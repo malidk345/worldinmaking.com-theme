@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { type PhilosopherBot } from '~nb-lib/philosophers'
 import type { ChatMessage, ThinkingStageView, OSActionCard } from '../types'
-import { parseThinkingTags } from '../utils'
 import { createNotebook } from '../../notebookStorage'
 import { useApp } from '../../../../../context/App'
+import { parseAiSseEvent } from 'lib/ai/contracts'
 
 export interface UseAskAIChatOptions {
     activeBot: PhilosopherBot
@@ -78,19 +78,6 @@ export function useAskAIChat({
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
 
-        const initialThinkingStages: ThinkingStageView[] = [
-            { id: 'perceive', label: 'Perceive', text: `Perceiving query through ${activeBot.name}'s lens...` },
-            { id: 'frame', label: 'Frame', text: `Framing epistemic stance & workspace context...` },
-            { id: 'tension', label: 'Tension', text: `Analyzing structural tensions & dialectical trade-offs...` },
-            { id: 'move', label: 'Move', text: `Formulating synthesis response & executable actions...` },
-        ]
-
-        const initialReasoningSteps = [
-            `Deconstructing premises from ${activeBot.name}'s stance`,
-            'Analyzing ideological contradictions & structural trade-offs',
-            'Formulating persona critique & dialectical resolution',
-        ]
-
         const aiMsgId = `${Date.now()}-a`
         const placeholderAiMsg: ChatMessage = {
             id: aiMsgId,
@@ -99,8 +86,8 @@ export function useAskAIChat({
             isStreaming: true,
             philosopherId: activeBot.id,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            thinkingStages: initialThinkingStages,
-            reasoningSteps: initialReasoningSteps,
+            thinkingStages: [],
+            reasoningSteps: [],
         }
 
         setMessages((prev) => [...prev, userMsg, placeholderAiMsg])
@@ -113,6 +100,7 @@ export function useAskAIChat({
 
         let accumulatedReply = ''
         let lastRenderedLength = 0
+        let streamedThinkingStages: ThinkingStageView[] = []
 
         try {
             // ── Primary: SSE streaming via /api/notebook/co-author ──────────────
@@ -141,40 +129,36 @@ export function useAskAIChat({
                     const lines = buffer.split('\n\n')
                     buffer = lines.pop() || ''
 
-                    for (const line of lines) {
-                        const cleanLine = line.replace(/^data:\s*/, '').trim()
-                        if (!cleanLine) continue
+                     for (const line of lines) {
+                         const parsed = parseAiSseEvent(line)
+                         if (!parsed) continue
 
-                        try {
-                            const parsed = JSON.parse(cleanLine)
-                            if (parsed.token) {
-                                accumulatedReply += parsed.token
-
-                                const { stages: liveStages, cleanText: currentCleanText } =
-                                    parseThinkingTags(accumulatedReply)
-
-                                // Typewriter effect: 3 chars per step at 2ms
-                                while (lastRenderedLength < currentCleanText.length) {
-                                    lastRenderedLength = Math.min(currentCleanText.length, lastRenderedLength + 3)
-                                    const charSlice = currentCleanText.slice(0, lastRenderedLength)
-                                    setMessages((prev) =>
-                                        prev.map((msgItem) =>
-                                            msgItem.id === aiMsgId
-                                                ? {
-                                                      ...msgItem,
-                                                      text: charSlice,
-                                                      thinkingStages: liveStages || msgItem.thinkingStages,
-                                                  }
-                                                : msgItem
-                                        )
-                                    )
-                                    await new Promise((r) => setTimeout(r, 2))
-                                }
-                            }
-                        } catch {
-                            /* ignore malformed chunk */
-                        }
-                    }
+                         if (parsed.type === 'thinking_step') {
+                             const stage: ThinkingStageView = {
+                                 id: parsed.step.id,
+                                 label: parsed.step.title,
+                                 text: parsed.step.detail,
+                             }
+                             streamedThinkingStages = [...streamedThinkingStages, stage]
+                             setMessages((prev) => prev.map((msgItem) =>
+                                 msgItem.id === aiMsgId
+                                     ? { ...msgItem, thinkingStages: [...(msgItem.thinkingStages || []), stage] }
+                                     : msgItem
+                             ))
+                         } else if (parsed.type === 'token') {
+                             accumulatedReply += parsed.text
+                             while (lastRenderedLength < accumulatedReply.length) {
+                                 lastRenderedLength = Math.min(accumulatedReply.length, lastRenderedLength + 3)
+                                 const charSlice = accumulatedReply.slice(0, lastRenderedLength)
+                                 setMessages((prev) => prev.map((msgItem) =>
+                                     msgItem.id === aiMsgId ? { ...msgItem, text: charSlice } : msgItem
+                                 ))
+                                 await new Promise((r) => setTimeout(r, 2))
+                             }
+                         } else if (parsed.type === 'done') {
+                             accumulatedReply = parsed.fullText || accumulatedReply
+                         }
+                     }
                 }
             }
 
@@ -191,9 +175,10 @@ export function useAskAIChat({
                     body: JSON.stringify({
                         action: 'chat',
                         bot: activeBot.id,
-                        question: `${notebookCtx}${text}`,
+                         question: text.slice(0, 8000),
+                         context: notebookCtx.slice(0, 12000),
                         mood: 'calm',
-                        taskType: 'paper_section',
+                         taskType: 'community_reply',
                     }),
                 })
 
@@ -203,9 +188,10 @@ export function useAskAIChat({
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             philosopher: activeBot.id,
-                            question: `${notebookCtx}${text}`,
+                             question: text.slice(0, 8000),
+                             context: notebookCtx.slice(0, 12000),
                             mood: 'calm',
-                            taskType: 'paper_section',
+                             taskType: 'community_reply',
                         }),
                     })
                 }
@@ -213,7 +199,8 @@ export function useAskAIChat({
                 responseData = await res.json().catch(() => null)
                 accumulatedReply =
                     (typeof responseData?.reply === 'string' && responseData.reply.trim()) ||
-                    `Response received for: "${text}"`
+                     (typeof responseData?.error === 'string' && responseData.error) ||
+                     'The AI service is unavailable right now.'
             }
 
             // ── OS Intent Detection ──────────────────────────────────────────────
@@ -245,10 +232,14 @@ export function useAskAIChat({
                 }
             }
 
-            // ── Final thinking stages ────────────────────────────────────────────
-            const { stages: parsedStages, cleanText: finalCleanText } = parseThinkingTags(accumulatedReply)
+            // ── Final safe analysis stages ───────────────────────────────────────
+            const finalCleanText = accumulatedReply
+                .replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?(?:<\/(?:analysis_summary|thinking|think)>|$)/gi, '')
+                .trim()
 
-            let realThinkingStages: ThinkingStageView[] | undefined = parsedStages ?? undefined
+            let realThinkingStages: ThinkingStageView[] | undefined = streamedThinkingStages.length > 0
+                ? streamedThinkingStages
+                : undefined
 
             if (!realThinkingStages && responseData?.thinking?.stages?.length > 0) {
                 realThinkingStages = responseData.thinking.stages.map((s: any) => ({
@@ -258,27 +249,7 @@ export function useAskAIChat({
                 }))
             }
 
-            const rawThought =
-                responseData?.thought ||
-                (realThinkingStages ? realThinkingStages.map((s) => s.text).join('\n') : '')
-
-            const fallbackSteps = rawThought
-                ? rawThought
-                      .split(/\n+|\.\s+/)
-                      .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
-                      .filter((s: string) => s.length > 5)
-                : [
-                      `Analyzing query through ${activeBot.name}'s stance`,
-                      'Evaluating structural trade-offs & context',
-                      'Formulating synthesis response',
-                  ]
-
-            const thinkingStages: ThinkingStageView[] = realThinkingStages || [
-                { id: 'perceive', label: 'Perceive', text: fallbackSteps[0] || `Analyzing query through ${activeBot.name}'s stance` },
-                { id: 'frame', label: 'Frame', text: fallbackSteps[1] || 'Evaluating structural trade-offs & context' },
-                { id: 'tension', label: 'Tension', text: fallbackSteps[2] || 'Formulating synthesis response' },
-                { id: 'move', label: 'Move', text: fallbackSteps[3] || 'Preparing actions' },
-            ]
+            const thinkingStages: ThinkingStageView[] = realThinkingStages || []
 
             const containsTable = finalCleanText.includes('|') && finalCleanText.includes('---')
 

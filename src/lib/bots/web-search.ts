@@ -85,16 +85,16 @@ export async function searchDuckDuckGo(query: string): Promise<string> {
         }
     }
 
-    // 3. Tier 3: DuckDuckGo HTML Lite Fallback Scraper
+    // 3. Tier 3: DuckDuckGo Lite Fallback Scraper (lite.duckduckgo.com)
     if (results.length < 3) {
         try {
-            const res = await fetch('https://html.duckduckgo.com/html/', {
+            const res = await fetch('https://lite.duckduckgo.com/lite/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 },
-                body: new URLSearchParams({ q: cleanQuery, b: '' }),
+                body: new URLSearchParams({ q: cleanQuery }),
                 signal: AbortSignal.timeout(5000),
             })
 
@@ -106,31 +106,29 @@ export async function searchDuckDuckGo(query: string): Promise<string> {
                               .replace(/&amp;/g, '&')
                               .replace(/&quot;/g, '"')
                               .replace(/&lt;/g, '<')
-                              .replace(/&gt;/g, '>');
+                              .replace(/&gt;/g, '>')
+                              .replace(/<[^>]+>/g, '');
                 }
 
-                // Split by result chunks
-                const chunks = html.split('<h2 class="result__title">').slice(1);
+                const rows = html.split('<a rel="nofollow" href="').slice(1);
                 
-                let count = 0
-                for (const chunk of chunks) {
-                    if (count >= 5) break; // Fetch up to 5 web results
+                let count = 0;
+                for (const row of rows) {
+                    if (count >= 5) break;
                     
-                    const titleMatch = chunk.match(/class="result__a" href="([^"]+)">([^<]+)<\/a>/);
-                    const snippetMatch = chunk.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+                    const urlMatch = row.match(/^([^"]+)" class='result-link'>([^<]+)<\/a>/);
+                    const snippetMatch = row.split("<td class='result-snippet'>")[1]?.split("</td>")[0];
                     
-                    if (titleMatch && snippetMatch) {
-                        const url = titleMatch[1];
-                        // If it's a DDG redirect, extract the actual URL
-                        let finalUrl = url;
-                        if (url.startsWith('//duckduckgo.com/l/?uddg=')) {
-                            finalUrl = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
-                        } else if (!url.startsWith('http')) {
-                            finalUrl = 'https:' + url;
+                    if (urlMatch && snippetMatch) {
+                        let finalUrl = urlMatch[1];
+                        if (finalUrl.startsWith('//duckduckgo.com/l/?uddg=')) {
+                            finalUrl = decodeURIComponent(finalUrl.split('uddg=')[1].split('&')[0]);
+                        } else if (!finalUrl.startsWith('http')) {
+                            finalUrl = 'https:' + finalUrl;
                         }
 
-                        const title = decodeHtml(titleMatch[2].trim());
-                        const snippet = decodeHtml(snippetMatch[1].replace(/<[^>]+>/g, '').trim());
+                        const title = decodeHtml(urlMatch[2].trim());
+                        const snippet = decodeHtml(snippetMatch.trim());
                         
                         if (title && snippet && snippet.length > 15) {
                             results.push({
@@ -138,15 +136,14 @@ export async function searchDuckDuckGo(query: string): Promise<string> {
                                 url: finalUrl,
                                 snippet,
                                 source: 'DuckDuckGo Web',
-                            })
-                            count++
+                            });
+                            count++;
                         }
                     }
                 }
             }
-        } catch (e) {
-            console.error('[WebSearch] DDG Lite Scraper error:', e)
-            /* Fallback completed */
+        } catch {
+            /* Final fallback reached */
         }
     }
 

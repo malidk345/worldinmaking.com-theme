@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
-import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, RotateCw, Edit2, FileText, ArrowDownToLine } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, Edit2, ArrowDownToLine } from 'lucide-react';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface ChatMessageProps {
   message: Message;
@@ -19,14 +19,19 @@ interface ChatMessageProps {
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
 
+function safeExternalUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
-  modelOptions,
-  targetChatId,
   onOpenArtifact,
   onEditPrompt,
-  onRetry,
-  onUpdateMessage,
   onExecuteOSAction,
   typewriterSpeed = 'smooth',
 }) => {
@@ -125,10 +130,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             <ThinkingBlock
               thinking={
                 message.thinkingProcess || {
-                  summary: 'Thought for 2 seconds',
-                  durationSeconds: 2.1,
-                  tokenCount: 840,
+                  summary: '',
+                  durationSeconds: 0,
+                  tokenCount: 0,
                   steps: [],
+                  source: 'none',
                 }
               }
               isLive={message.isStreaming}
@@ -139,7 +145,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="font-claude-serif text-[15px] sm:text-[15.5px] leading-[1.6] text-primary claude-prose max-w-none tracking-[0.01em]">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+               rehypePlugins={[rehypeSanitize]}
               components={{
                 p: ({ children }: any) => (
                   <div className="mb-2.5 leading-[1.55rem] break-words">{children}</div>
@@ -167,7 +173,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 },
               }}
             >
-              {displayedText.replace(/==([^=]+)==/g, '<mark>$1</mark>')}
+              {displayedText}
             </ReactMarkdown>
 
             {/* Typewriter cursor indicator */}
@@ -183,21 +189,24 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 Kaynaklar ({message.citations.length}):
               </span>
               <div className="flex flex-wrap gap-2">
-                {message.citations.map((c) => (
-                  <a
-                    key={c.id}
-                    href={c.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group inline-flex items-center gap-1.5 rounded-lg border border-primary bg-white px-2.5 py-1 text-xs text-primary hover:border-amber-500 transition-all"
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-secondary">
-                      {c.id}
-                    </span>
-                    <span className="max-w-[200px] truncate font-medium">{c.title}</span>
-                    <ExternalLink className="h-3 w-3 opacity-50" />
-                  </a>
-                ))}
+                {message.citations.map((c) => {
+                  const href = safeExternalUrl(c.url);
+                  return href ? (
+                    <a
+                      key={c.id}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group inline-flex items-center gap-1.5 rounded-lg border border-primary bg-white px-2.5 py-1 text-xs text-primary hover:border-amber-500 transition-all"
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-secondary">
+                        {c.id}
+                      </span>
+                      <span className="max-w-[200px] truncate font-medium">{c.title}</span>
+                      <ExternalLink className="h-3 w-3 opacity-50" />
+                    </a>
+                  ) : null;
+                })}
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@ import {
   Chat,
   Message,
   ModelId,
+  ModelOption,
   ProjectSpace,
   ThinkingBudget,
   StylePresetId,
@@ -25,54 +26,54 @@ import { SearchModal } from './components/SearchModal';
 import { ProjectModal } from './components/ProjectModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ShareModal } from './components/ShareModal';
-import { ClaudeSparkIcon } from './components/ThinkingBlock';
-import { Sparkles, Brain, Plus, Edit3, GraduationCap, Code, Coffee, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
-import { useApp, useAppSettings, useAppWindows } from '../../context/App';
-import { WINDOW_BG, PANEL_BG } from '../../constants/frostedSurfaces';
-import { getNotebooks, getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
+import { useApp, useAppWindows } from '../../context/App';
+import { WINDOW_BG } from '../../constants/frostedSurfaces';
+import { getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import type { OSActionCard as OSActionCardType } from './types';
 import { extractArtifactsFromContent } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
+import { parseAiSseEvent } from 'lib/ai/contracts';
+
+const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
+const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
+
+function readStored<T>(keys: string[], fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  for (const key of keys) {
+    try {
+      const saved = window.localStorage.getItem(key);
+      if (saved) return JSON.parse(saved) as T;
+     } catch {
+       // Ignore malformed local data and continue with the next migration key.
+     }
+   }
+   return fallback;
+}
 
 export default function App({ onClose }: { onClose?: () => void }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
-    const saved = localStorage.getItem('claude_workspace_chats_v6');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
+    const stored = readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS);
+    return Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
   });
 
   const [projects, setProjects] = useState<ProjectSpace[]>(() => {
-    const saved = localStorage.getItem('claude_workspace_projects_v6');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
+    const stored = readStored<unknown>(PROJECT_STORAGE_KEYS, INITIAL_PROJECTS);
+    return Array.isArray(stored) ? (stored as ProjectSpace[]) : INITIAL_PROJECTS;
   });
 
   const [settings, setSettings] = useState<UserSettings>(() => {
-    const saved = localStorage.getItem('claude_workspace_settings');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          typewriterSpeed: 'smooth',
-          defaultThinkingBudget: 'balanced',
-          defaultModel: 'nietzsche',
-          autoOpenArtifacts: true,
-          soundEffects: false,
-        };
+    const defaults: UserSettings = {
+      typewriterSpeed: 'smooth',
+      defaultThinkingBudget: 'balanced',
+      defaultModel: 'nietzsche',
+      autoOpenArtifacts: false,
+      soundEffects: false,
+    };
+    const stored = readStored<Partial<UserSettings> | null>(['claude_workspace_settings'], null);
+    return stored && typeof stored === 'object' ? { ...defaults, ...stored } : defaults;
   });
 
   // App Context for openNewChat params
@@ -84,6 +85,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   // Extract full active notebook text content from open notebook windows
   const activeNotebookContext = React.useMemo(() => {
+    if (typeof window === 'undefined') return '';
     const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
     if (notebookWindows.length === 0) return '';
     const top = notebookWindows.reduce((prev, cur) =>
@@ -94,13 +96,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
     if (notebookId) {
       const nb = getNotebook(notebookId);
       if (nb?.content) {
-        return nb.content.slice(0, 24000);
+        return nb.content.slice(0, 8000);
       }
     }
     return '';
   }, [appWindows]);
 
   const activeNotebookMeta = React.useMemo(() => {
+    if (typeof window === 'undefined') return null;
     const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
     if (notebookWindows.length === 0) return null;
     const top = notebookWindows.reduce((prev, cur) =>
@@ -175,15 +178,27 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   // Save to LocalStorage
   useEffect(() => {
-    localStorage.setItem('claude_workspace_chats_v4', JSON.stringify(chats));
+    try {
+      window.localStorage.setItem('claude_workspace_chats_v7', JSON.stringify(chats));
+    } catch {
+      // A full localStorage quota must not break an active conversation.
+    }
   }, [chats]);
 
   useEffect(() => {
-    localStorage.setItem('claude_workspace_projects', JSON.stringify(projects));
+    try {
+      window.localStorage.setItem('claude_workspace_projects_v7', JSON.stringify(projects));
+    } catch {
+      // Projects are local convenience data; persistence is best effort.
+    }
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('claude_workspace_settings', JSON.stringify(settings));
+    try {
+      window.localStorage.setItem('claude_workspace_settings', JSON.stringify(settings));
+    } catch {
+      // Settings persistence is best effort.
+    }
   }, [settings]);
 
   // Active chat object — nullable if chats array is empty (e.g. localStorage cleared)
@@ -215,12 +230,12 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
     if (activeChat?.messages) {
       const lastArt = [...activeChat.messages].reverse().find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
-      if (lastArt) {
+      if (lastArt && settings.autoOpenArtifacts) {
         setActiveArtifact(lastArt);
         setIsArtifactsOpen(true);
       }
     }
-  }, [activeChatId]);
+  }, [activeChatId, settings.autoOpenArtifacts]);
 
   // Handle New Chat Creation
   const handleNewChat = (projId?: string) => {
@@ -265,7 +280,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     if (!targetChatId || !chats.some((c) => c.id === targetChatId)) {
       const newChat: Chat = {
         id: `chat-${Date.now()}`,
-        title: promptText.slice(0, 30) || 'Yeni Sohbet',
+        title: promptText.slice(0, 30) || attachments[0]?.name || 'Yeni Sohbet',
         projectId: activeProjectId,
         modelId: selectedModelId,
         starred: false,
@@ -283,7 +298,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     const userMessage: Message = {
       id: `m-user-${Date.now()}`,
       role: 'user',
-      content: promptText,
+      content: promptText || attachments.map((attachment) => attachment.name).join(', '),
       timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
       attachments,
     };
@@ -311,7 +326,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           const isFirstUserMsg = c.messages.length === 0;
           return {
             ...c,
-            title: isFirstUserMsg ? promptText.slice(0, 32) || 'Yeni Sohbet' : c.title,
+            title: isFirstUserMsg ? promptText.slice(0, 32) || attachments[0]?.name || 'Yeni Sohbet' : c.title,
             updatedAt: new Date().toISOString(),
             messages: [...c.messages, userMessage, assistantMessage],
           };
@@ -328,24 +343,37 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
     let accumulatedContent = '';
     let currentThinkingProcess = {
-      durationSeconds: 2.5,
-      tokenCount: 840,
+      durationSeconds: 0,
+      tokenCount: 0,
       steps: [] as any[],
-      summary: 'Musing',
+      summary: '',
     };
 
     let isStreamComplete = false;
+    let backendError = false;
     try {
 
       const notebookCtx = activeNotebookContext.trim()
         ? `[NOTEBOOK CONTENT CONTEXT]\n"""\n${activeNotebookContext}\n"""\n`
         : '';
 
+      const attachmentContext = attachments
+        .map((attachment) => {
+          if (attachment.type === 'image') {
+            return `[Image attachment: ${attachment.name}. Image bytes are not sent to the text model.]`;
+          }
+          return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 3500)}`;
+        })
+        .join('\n\n')
+        .slice(0, 8000);
+      const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
+
       const conversationHistory = activeChat?.messages
         ? activeChat.messages
             .slice(-10) // Send last 10 turns of full chat memory
             .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
             .join('\n\n')
+            .slice(0, 8000)
         : '';
 
       // Tier 1: Try SSE Token Streaming via /api/notebook/co-author (Primary Ask AI Backend)
@@ -355,14 +383,15 @@ export default function App({ onClose }: { onClose?: () => void }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: abortControllerRef.current.signal,
-          body: JSON.stringify({
-            botName: selectedModelId,
-            mode: 'chat',
-            documentText: activeNotebookContext,
-            nodeContent: promptText,
-            chatHistory: conversationHistory,
-            webSearchEnabled: webSearchEnabled,
-          }),
+            body: JSON.stringify({
+              botName: selectedModelId,
+              mode: 'chat',
+              documentText: activeNotebookContext,
+              nodeContent: effectivePrompt,
+              chatHistory: conversationHistory,
+              webSearchEnabled: webSearchEnabled,
+              attachmentContext,
+            }),
         });
       } catch (e) {
         console.warn('co-author fetch failed, cascading to /api/bots/act');
@@ -382,176 +411,110 @@ export default function App({ onClose }: { onClose?: () => void }) {
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            const cleanLine = line.replace(/^data:\s*/, '').trim();
-            if (!cleanLine) continue;
+             try {
+               const parsed = parseAiSseEvent(line);
+               if (!parsed) continue;
 
-            try {
-              const parsed = JSON.parse(cleanLine);
-
-              // Handle live search event from backend
-              if (parsed.search) {
-                let detailText = `Query: "${parsed.search.query}"`;
-                if (parsed.search.results) {
+               // Handle live search event from the shared AI transport.
+               if (parsed.type === 'search') {
+                 let detailText = `Query: "${parsed.search.query}"`;
+                 if (parsed.search.results) {
                   detailText += `\n\nFetched Sources:\n${parsed.search.results}`;
                 }
                 const searchStep = {
                   id: 'search-step',
                   stepNumber: 0,
-                  title: 'Search Web & Sources',
-                  detail: detailText,
-                  completed: parsed.search.status === 'done',
+                   title: 'Search Web & Sources',
+                   detail: detailText,
+                   completed: parsed.search.status === 'done',
+                   source: 'system_event' as const,
                 };
                 const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
                 if (existingIdx >= 0) {
                   currentThinkingProcess.steps[existingIdx] = searchStep;
                 } else {
                   currentThinkingProcess.steps.unshift(searchStep);
-                }
-              }
+                 }
+               }
 
-              // Handle backend done signal — clean exit from stream loop
-              if (parsed.done) {
-                break;
-              }
+               if (parsed.type === 'thinking_start') {
+                 currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
+                 currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
+               }
 
-              // Handle backend error event — surface error and abort stream loop
-              if (parsed.error) {
-                console.error('[co-author SSE] backend error:', parsed.error);
-                backendError = true;
-                updateAssistantMessage(targetChatId, assistantMessageId, {
-                  content: `Bir hata oluştu: ${parsed.error}`,
-                  isStreaming: false,
-                  isTypingDone: true,
-                });
-                break;
-              }
-
-              if (parsed.token) {
-                accumulatedContent += parsed.token;
-
-                // Extract dynamic Ask AI thinking stages (<think>, <thinking>, <perceive>, <frame>, <tension>, <move>)
-                const thinkMatch = accumulatedContent.match(/<(?:thinking|think)>([\s\S]*?)(?:<\/(?:thinking|think)>|$)/i);
-                if (thinkMatch) {
-                  const thinkBody = thinkMatch[1] || '';
-                  // Dynamic XML/HTML tag extraction for any adaptive intent & philosopher persona step (<reflect>, <genealogy>, <search>, <structure>, etc.)
-                  const tagRegex = /<([a-z0-9_]+)>([\s\S]*?)(?:<\/\1>|$)/gi;
-                  let match: RegExpExecArray | null;
-                  const liveSteps: any[] = [];
-                  let stepIdx = 1;
-                  while ((match = tagRegex.exec(thinkBody)) !== null) {
-                    const tagName = match[1];
-                    const tagContent = match[2]?.trim();
-                    if (tagContent && tagName !== 'thinking' && tagName !== 'think') {
-                      const formattedTitle = tagName
-                        .replace(/_/g, ' ')
-                        .replace(/\b\w/g, (c) => c.toUpperCase());
-                      liveSteps.push({
-                        id: `s${stepIdx}`,
-                        stepNumber: stepIdx,
-                        title: formattedTitle,
-                        detail: tagContent,
-                        completed: true,
-                      });
-                      stepIdx++;
-                    }
-                  }
-
-                  // If no sub-tags were found (e.g. Qwen output plain reasoning inside <think>...</think>),
-                  // populate a "Think" step with the reasoning prose as detail!
-                  if (liveSteps.length === 0 && thinkBody.trim()) {
-                    // Try to parse Qwen/Markdown style steps
-                    // Look for patterns like "1. **Title:** Detail"
-                    const listMatches = [...thinkBody.matchAll(/(?:^|\n)\s*(?:\d+\.|\-|\*)\s+\*\*([^*]+)\*\*(?::)?\s*([\s\S]*?)(?=(?:\n\s*(?:\d+\.|\-|\*)\s+\*\*)|$)/g)];
-                    
-                    if (listMatches.length > 0) {
-                      listMatches.forEach((m, idx) => {
-                         liveSteps.push({
-                           id: 'q' + idx,
-                           stepNumber: idx + 1,
-                           title: m[1].trim(),
-                           detail: m[2].trim(),
-                           completed: true
-                         });
-                      });
-                      if (liveSteps.length > 0) {
-                         liveSteps[liveSteps.length - 1].completed = accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>');
-                      }
-                    } else {
-                      // Fallback: split by double newlines to treat paragraphs as steps
-                      const paragraphs = thinkBody.split(/\n\s*\n/).filter(p => p.trim() && !p.toLowerCase().includes("here's a thinking process") && !p.toLowerCase().includes("thinking process:"));
-                      
-                      if (paragraphs.length > 0) {
-                        paragraphs.forEach((p, idx) => {
-                           let title = 'Process';
-                           let detail = p.trim();
-                           // If paragraph starts with bold, use it as title
-                           const boldMatch = detail.match(/^\*\*([^*]+)\*\*:?\s*(.*)/);
-                           if (boldMatch) {
-                             title = boldMatch[1].trim();
-                             detail = boldMatch[2].trim();
-                           }
-                           liveSteps.push({
-                             id: 'p' + idx,
-                             stepNumber: idx + 1,
-                             title: title,
-                             detail: detail,
-                             completed: true
-                           });
-                        });
-                        if (liveSteps.length > 0) {
-                           liveSteps[liveSteps.length - 1].completed = accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>');
-                        }
-                      }
-                    }
-                    
-                    // If still empty (e.g. only "Here's a thinking process"), add a generic one
-                    if (liveSteps.length === 0) {
-                      liveSteps.push({
-                        id: 's1',
-                        stepNumber: 1,
-                        title: 'Think',
-                        detail: thinkBody.trim(),
-                        completed: accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>'),
-                      });
-                    }
-                  }
-
-                  if (liveSteps.length > 0) {
-                    const existingSearchStep = currentThinkingProcess.steps.find((s: any) => s.id === 'search-step');
-                    if (existingSearchStep) {
-                      currentThinkingProcess.steps = [existingSearchStep, ...liveSteps.filter((s: any) => s.id !== 'search-step')];
-                    } else {
-                      currentThinkingProcess.steps = liveSteps;
-                    }
-                  }
+                if (parsed.type === 'thinking_step') {
+                  const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === parsed.step.id);
+                  if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = parsed.step;
+                  else currentThinkingProcess.steps.push(parsed.step);
+                  
+                  currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+                  
+                  updateAssistantMessage(targetChatId, assistantMessageId, {
+                    content: accumulatedContent,
+                    thinkingProcess: { ...currentThinkingProcess },
+                  });
                 }
 
-                // Strip thinking tags if present; hide both closed and any trailing unclosed thinking tag text from visible bubble
-                let displayContent = accumulatedContent;
-                // 1. Remove all fully closed think blocks
-                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
-                // 2. Remove any trailing unclosed think block
-                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
-                displayContent = displayContent.trim();
+                if (parsed.type === 'phase') {
+                  const phaseLabels: Record<string, string> = {
+                    context: 'Context',
+                    generation: 'Generation',
+                    quality_gate: 'Quality check',
+                    persistence: 'Memory sync',
+                  };
+                  const phaseStep = {
+                    id: `phase-${parsed.phase.phase}`,
+                    stepNumber: currentThinkingProcess.steps.length + 1,
+                    title: phaseLabels[parsed.phase.phase] || parsed.phase.phase,
+                    detail: parsed.phase.detail || `${parsed.phase.phase} ${parsed.phase.status}`,
+                    completed: parsed.phase.status !== 'started',
+                    source: 'system_event' as const,
+                  };
+                  const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
+                  if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = phaseStep;
+                  else currentThinkingProcess.steps.push(phaseStep);
+                  
+                  currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+                  
+                  updateAssistantMessage(targetChatId, assistantMessageId, {
+                    content: accumulatedContent,
+                    thinkingProcess: { ...currentThinkingProcess },
+                  });
+                }
 
-                // Strip any stray inner tags from displayContent
-                displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+               // Handle backend error event — surface it and let the normal
+               // fallback ladder try the next API.
+               if (parsed.type === 'error') {
+                 console.error('[co-author SSE] backend error:', parsed.message);
+                 backendError = true;
+                 continue;
+               }
 
-                updateAssistantMessage(targetChatId, assistantMessageId, {
-                  content: displayContent, // REMOVED the "|| accumulatedContent" fallback which was causing the leak!
-                  thinkingProcess: { ...currentThinkingProcess },
-                });
-              }
-            } catch {
-              /* ignore chunk parse error */
-            }
+               if (parsed.type === 'token') {
+                 accumulatedContent += parsed.text;
+                 updateAssistantMessage(targetChatId, assistantMessageId, {
+                   content: accumulatedContent,
+                   thinkingProcess: { ...currentThinkingProcess },
+                 });
+               }
+
+               if (parsed.type === 'done') {
+                 accumulatedContent = parsed.fullText || accumulatedContent;
+                 updateAssistantMessage(targetChatId, assistantMessageId, {
+                   content: accumulatedContent,
+                 });
+                 break;
+               }
+             } catch {
+               /* ignore chunk parse error */
+             }
           }
         }
       }
 
       // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-      const finalCleanContent = accumulatedContent.replace(/<(?:thinking|think)>[\s\S]*?(?:<\/(?:thinking|think)>|$)/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
-      if (!finalCleanContent && !backendError) {
+       let finalCleanContent = accumulatedContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?(?:<\/(?:analysis_summary|thinking|think)>|$)/gi, '').replace(/<(?:analysis_summary|thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:analysis_summary|goal|approach|tradeoff|answer_plan|thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+       if (!finalCleanContent) {
         let res: Response | null = null;
         try {
           res = await fetch('/api/bots/act', {
@@ -561,9 +524,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
             body: JSON.stringify({
               action: 'chat',
               bot: selectedModelId,
-              question: `${notebookCtx}${promptText}`,
-              mood: 'calm',
-              taskType: 'paper_section',
+               question: effectivePrompt,
+               mood: 'calm',
+               taskType: 'autonomous_assistant',
+               context: `${notebookCtx}\n${attachmentContext}`.slice(0, 12000),
             }),
           });
         } catch {
@@ -578,9 +542,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
               signal: abortControllerRef.current.signal,
               body: JSON.stringify({
                 philosopher: selectedModelId,
-                question: `${notebookCtx}${promptText}`,
-                mood: 'calm',
-                taskType: 'paper_section',
+                 question: effectivePrompt,
+                 mood: 'calm',
+                 taskType: 'autonomous_assistant',
+                 context: `${notebookCtx}\n${attachmentContext}`.slice(0, 12000),
               }),
             });
           } catch {
@@ -595,12 +560,13 @@ export default function App({ onClose }: { onClose?: () => void }) {
             headers: { 'Content-Type': 'application/json' },
             signal: abortControllerRef.current.signal,
             body: JSON.stringify({
-              prompt: promptText,
+               prompt: effectivePrompt,
               modelId: selectedModelId,
               thinkingBudget,
               webSearchEnabled,
-              systemPrompt: activeProjectObj?.systemPrompt || '',
-              styleSuffix: selectedStyle?.promptSuffix || '',
+               systemPrompt: activeProjectObj?.systemPrompt || '',
+               styleSuffix: selectedStyle?.promptSuffix || '',
+               attachmentContext,
             }),
           });
         }
@@ -610,6 +576,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
           if (contentType.includes('application/json')) {
             const data = await res.json();
             const replyText = data.reply || data.content || data.fullText || data.text || '';
+
+            accumulatedContent = replyText;
+            finalCleanContent = replyText.trim();
 
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: replyText,
@@ -644,10 +613,65 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
                 if (!dataStr) continue;
 
-                try {
-                  const data = JSON.parse(dataStr);
+                 try {
+                   const data = JSON.parse(dataStr);
 
-                  if (eventType === 'thinking_start') {
+                   // The fallback endpoint uses the same data-only SSE contract
+                   // as the primary endpoint. Keep the old named-event branch
+                   // below for already-deployed edge responses during rollout.
+                   if (typeof data.type === 'string') {
+                     if (data.type === 'thinking_start') {
+                       currentThinkingProcess.durationSeconds = data.durationSeconds || 0;
+                       currentThinkingProcess.tokenCount = data.tokenCount || 0;
+                     } else if (data.type === 'thinking_step') {
+                       const existingIdx = currentThinkingProcess.steps.findIndex(s => s.id === data.step.id);
+                       if (existingIdx !== -1) {
+                           currentThinkingProcess.steps[existingIdx] = data.step;
+                       } else {
+                           currentThinkingProcess.steps.push(data.step);
+                       }
+                       currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+                       updateAssistantMessage(targetChatId, assistantMessageId, {
+                         content: accumulatedContent,
+                         thinkingProcess: { ...currentThinkingProcess },
+                       });
+                     } else if (data.type === 'token') {
+                       accumulatedContent += data.text || '';
+                       updateAssistantMessage(targetChatId, assistantMessageId, {
+                         content: accumulatedContent,
+                         thinkingProcess: { ...currentThinkingProcess },
+                       });
+                      } else if (data.type === 'done') {
+                        accumulatedContent = data.fullText || accumulatedContent;
+                        updateAssistantMessage(targetChatId, assistantMessageId, {
+                          content: accumulatedContent,
+                          thinkingProcess: { ...currentThinkingProcess },
+                        });
+                      } else if (data.type === 'phase') {
+                        const phaseLabels: Record<string, string> = {
+                          context: 'Context',
+                          generation: 'Generation',
+                          quality_gate: 'Quality check',
+                          persistence: 'Memory sync',
+                        };
+                        const phaseStep = {
+                          id: `phase-${data.phase.phase}`,
+                          stepNumber: currentThinkingProcess.steps.length + 1,
+                          title: phaseLabels[data.phase.phase] || data.phase.phase,
+                          detail: data.phase.detail || `${data.phase.phase} ${data.phase.status}`,
+                          completed: data.phase.status !== 'started',
+                          source: 'system_event' as const,
+                        };
+                        const phaseIndex = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
+                        if (phaseIndex >= 0) currentThinkingProcess.steps[phaseIndex] = phaseStep;
+                        else currentThinkingProcess.steps.push(phaseStep);
+                      } else if (data.type === 'error') {
+                       backendError = true;
+                     }
+                     continue;
+                   }
+
+                   if (eventType === 'thinking_start') {
                     currentThinkingProcess.durationSeconds = data.durationSeconds;
                     currentThinkingProcess.tokenCount = data.tokenCount;
                   } else if (eventType === 'thinking_step') {
@@ -669,10 +693,12 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   /* ignore SSE chunk error */
                 }
               }
-            }
-          }
-        } else {
-          throw new Error('All fallbacks failed');
+           }
+           finalCleanContent = accumulatedContent.trim();
+           if (!accumulatedContent.trim()) throw new Error('AI fallback returned no content');
+         }
+       } else {
+         throw new Error('All fallbacks failed');
         }
       }
 
@@ -759,9 +785,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
         
         let displayContent = accumulatedContent;
         if (displayContent) {
-          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
-          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
-          displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+          displayContent = displayContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?<\/(?:analysis_summary|thinking|think)>/gi, '');
+          displayContent = displayContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*$/gi, '');
+          displayContent = displayContent.replace(/<\/?(?:analysis_summary|goal|approach|tradeoff|answer_plan|thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
         }
 
         const errorMessage = displayContent 
@@ -891,10 +917,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
   };
 
   const handleResetData = () => {
-    localStorage.clear();
+    if (typeof window !== 'undefined') {
+      [...CHAT_STORAGE_KEYS, ...PROJECT_STORAGE_KEYS, 'claude_workspace_settings'].forEach((key) => {
+        window.localStorage.removeItem(key);
+      });
+    }
     setChats(INITIAL_CHATS);
     setProjects(INITIAL_PROJECTS);
-    setActiveChatId(INITIAL_CHATS[0].id);
+    setActiveChatId(INITIAL_CHATS[0]?.id || '');
     setActiveArtifact(null);
     setIsArtifactsOpen(false);
   };
@@ -904,20 +934,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const scrollToBottom = () => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const taskbarRef = app?.taskbarRef;
-  const panelRef = useRef<HTMLDivElement | null>(null);
-
-  const taskbarRect = taskbarRef?.current?.getBoundingClientRect();
-  const padding = taskbarRect?.left ?? 8;
-  const panelStyle =
-    typeof window === 'undefined'
-      ? undefined
-      : {
-          top: padding,
-          right: padding,
-          height: window.innerHeight - padding - (taskbarRect?.top ?? padding),
-        };
 
   return (
     <div className="relative flex h-full min-h-0 w-full text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
@@ -1100,7 +1116,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       <ShareModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        chat={activeChat}
+        chat={activeChat || null}
       />
     </div>
   );
@@ -1109,7 +1125,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
 export function ClaudeWorkspaceChatPanel() {
   const app = useApp();
   const { isClaudeChatOpen, setIsClaudeChatOpen, taskbarRef } = app;
-  const { siteSettings } = useAppSettings();
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const closePanel = () => {
@@ -1174,7 +1189,7 @@ export function ClaudeWorkspaceChatPanel() {
             transition={{ duration: 0.3, type: 'tween' }}
             style={panelStyle}
             data-scheme="primary"
-            data-skin={siteSettings.skin || 'classic'}
+             data-skin="classic"
             className={`fixed w-96 max-w-[calc(100vw-1rem)] text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A] notebook-app-scope ${WINDOW_BG}`}
           >
             <App onClose={closePanel} />

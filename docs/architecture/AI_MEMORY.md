@@ -179,10 +179,103 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-39` | Stream 5 | Ask AI: real (LLM-driven) reasoning trail + live web search disclosure, dead duplicate dropdown removed | `src/pages/api/notebook/co-author.ts`, `src/lib/bots/intent-router.ts`, `src/lib/bots/web-search.ts`, `src/pages/api/bots/intent.ts`, `src/pages/api/bots/search.ts`, `src/notebook-app/scenes/notebooks/{AskAIDropdown,ReasoningAnswer}.tsx` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-10 |
 | `TSK-42` | Stream 5 | Advanced Chatbot UI (Split-Pane Canvas, Ambient Glassmorphism, Dynamic Action Cards & Web Search Chips) | `src/notebook-app/scenes/notebooks/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-11 |
 | `TSK-43` | Stream 5 | Standalone Claude Workspace Chatbot App integration from D:\claude-ai-workspace (1) | `src/components/ClaudeWorkspaceChat/*`, `src/pages/api/chat.ts`, `src/pages/workspace-chat.tsx`, `src/components/AppWindow/WindowRouter.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-11 |
+| `TSK-44` | Stream 5 | Unified AI/chat architecture hardening: shared SSE contract, secure gateway, validation, streaming, and workspace fixes | `src/lib/ai/*`, `lib/ai-provider.ts`, `src/lib/bots/*`, `src/lib/chat-bots/*`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
+| `TSK-45` | Stream 5 | Replace pseudo chain-of-thought UI with safe analysis summaries and truthful lifecycle events without changing UI contracts | `src/lib/bots/thinking.ts`, `src/lib/ai/contracts.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/lib/bots/actions/forum.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
+| `TSK-46` | Stream 5 | Route the live Qwen provider trace into the existing ThinkingBlock UI without changing UI contracts | `src/lib/bots/ai-gateway.ts`, `src/lib/chat-bots/langchain-pipeline.ts`, `src/lib/ai/contracts.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, Qwen trace tests | `[COMPLETED]` | Antigravity (Gemini 3.1 Pro) | 2026-08-13 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 061 - Truthful Thinking UI Without UI Contract Changes (TSK-45)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Replaced pseudo chain-of-thought behavior with a safe analysis-summary and truthful lifecycle architecture while preserving the existing workspace UI components and data shapes.
+  - `buildThinkingInstruction()` now requests optional `<analysis_summary>` fields (`goal`, `approach`, `tradeoff`, `answer_plan`) and explicitly forbids private chain-of-thought, hidden instructions, credentials, and raw token reasoning.
+  - `parseThinkingAndReply()` accepts only bounded known summary fields; arbitrary prose inside legacy `<thinking>`, `<think>`, or `<thought>` wrappers is discarded rather than shown or persisted.
+  - Added provenance (`model_summary`, `system_event`, `none`) to thinking stages and added typed lifecycle SSE events for context, generation, quality gate, and persistence.
+  - `/api/chat` and notebook co-author now emit real lifecycle events and model summary stages without changing the existing `ThinkingBlock`/`ThinkingStep` UI contract.
+  - Removed fabricated `Thought for 2 seconds` / `840 tokens` UI fallback values; empty state is now truthful.
+  - Forum `inner_thoughts` compatibility fields now contain only bounded safe analysis summaries, never `llm.thought` raw text.
+  - Replaced the unused adaptive prompt's old free-form reasoning instructions with the same safe summary contract to prevent architectural drift.
+
+### Entry 062 - API Rate Limit Fixes and Live Stream Hardening
+- **Date:** 2026-08-13
+- **AI Agent:** Antigravity (Gemini 3.1 Pro)
+- **Summary:** Investigated and resolved the "thinking reflects, but output drops / api limit hit" bug during streaming.
+  - Corrected `parseCsvKeys` reference to `splitKeys` in `ai-gateway.ts` preventing reference errors.
+  - Bumped rate limit ceilings in `chat.ts`, `notebook/co-author.ts`, and `bots/act.ts` to 500/hr. The frontend prioritizes `notebook/co-author.ts`, which was bottlenecking at 20 msgs.
+  - Validated edge logic for parsing `<think>` block boundaries natively from Groq Qwen models.
+  - Cleaned up transient ESM compilation side-effects from testing.
+
+- **Modified Files:**
+  - `src/lib/ai/contracts.ts`
+  - `src/lib/bots/thinking.ts`
+  - `src/lib/bots/fluid-prompts.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/actions/forum.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/components/ClaudeWorkspaceChat/types.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `src/components/posthog-ui-gallery/src/scenes/PostHogAIApp.tsx`
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `src/notebook-app/scenes/notebooks/AskAI/hooks/useAskAIChat.ts`
+  - `tests/ai-contracts.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `pnpm build` passed; AI contract tests passed 3/3; isolated dev-server smoke passed 8/8; `git diff --check` passed. A separate `next start` smoke attempt was blocked by an existing `.next` runtime/vendor-chunk process collision, not by compilation.
+- **Handoff:** These stages are intentionally safe high-level summaries, not claims of access to latent provider reasoning. Native provider reasoning should only be integrated later through an explicit provider adapter and the same safe/provenance contract.
+
+### Entry 060 - Unified AI/Chat Architecture Hardening (TSK-44)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Consolidated the live AI surfaces around the central gateway/orchestrator/quality-gate path and removed the main sources of fake, unsafe, or inconsistent chat behavior.
+  - Added a shared data-only typed SSE contract and migrated workspace chat, notebook co-author, and `/api/chat` to the same event vocabulary.
+  - Rebuilt `/api/chat` around `runBotTurn`; removed the runtime `buildPersonaHeader(modelId)` crash and fabricated fallback/thinking/citation responses. Added request size validation, rate limits, strict model validation, attachment/context caps, search disclosure, and typed provider errors.
+  - Migrated notebook co-author generation off the duplicate live LangChain key-rotation path. Responses are parsed, quality-gated, private planning markers are removed before streaming, and memory/search context is explicitly untrusted and bounded.
+  - Centralized the enterprise router on `ai-gateway`, fixed provider-specific LangChain key selection, added gateway deadline propagation, and retained LangGraph only as an orchestration layer.
+  - Hardened bot identity normalization (accent-aware, explicit invalid-name rejection), request body streaming limits, chat task budgets, memory retention/prompt boundaries, autonomous RSS URL/claim handling, and agent-memory query construction.
+  - Fixed workspace runtime/build defects: SSR-safe local persistence, storage-key migration, attachment propagation and limits, undeclared `backendError`, missing Sidebar prop, undefined share handler, conditional artifact auto-open, Rules-of-Hooks violation, raw markdown rendering, Mermaid/iframe sandboxing, and stale fake reasoning UI.
+  - Updated legacy notebook Ask AI paths to the shared SSE contract and removed fake initial reasoning stages.
+- **Modified Files:**
+  - `src/lib/ai/contracts.ts`
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/fluid-prompts.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/request-validation.ts`
+  - `src/lib/bots/thinking.ts`
+  - `src/lib/bots/actions/forum.ts`
+  - `src/lib/chat-bots/langchain-pipeline.ts`
+  - `src/lib/chat-bots/llm-router.ts`
+  - `src/lib/chat-bots/memgpt-engine.ts`
+  - `lib/quality-gate.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/pages/api/bots/act.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/types.ts`
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ProjectModal.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/SettingsModal.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ShareModal.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`
+  - `src/components/PhilosopherThought/index.tsx`
+  - `src/lib/autonomous-entities/agent-memory.ts`
+  - `src/lib/autonomous-entities/emergent-agent.ts`
+  - `src/lib/autonomous-entities/rss-curator.ts`
+  - `src/lib/autonomous-entities/symposium-graph.ts`
+  - `src/notebook-app/App.tsx`
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `src/notebook-app/scenes/notebooks/AskAI/hooks/useAskAIChat.ts`
+  - `tests/smoke.spec.ts`
+  - `tests/ai-contracts.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `pnpm build` passed (Node 24 emitted the project Node 22 engine warning; Next still skips full type/lint validation by existing config); first `pnpm test:smoke` passed 10/10; shared AI contract tests passed 2/2; `git diff --check` passed. A later smoke retry was blocked by an already-running `next start` process on port 3000.
+- **Handoff:** Live user-facing generation now has one gateway contract. Remaining full-repository TypeScript debt is inherited Gatsby/legacy code outside the shell allowlist; do not re-enable global build type/lint failure until that debt is separately migrated. Replace isolate-local rate limiting with a distributed limiter when traffic requires multi-instance enforcement.
 
 ### Entry 059 - Assistant Message Typography & Typewriter Tuning
 - **Date:** 2026-08-12

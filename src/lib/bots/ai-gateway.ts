@@ -11,8 +11,18 @@ import {
     splitKeys,
 } from './runtime-env'
 
+
+export interface StreamResult {
+    ok: true
+    provider: GatewayProvider
+    stream: AsyncIterableIterator<string>
+    attempts: string[]
+    configured: Record<GatewayProvider, boolean>
+}
 export type GatewayProvider =
     | 'groq'
+    | 'groq:qwen'
+    | 'groq:llama'
     | 'openrouter'
     | `openrouter:${string}`
     | `gemini-fetch:${string}`
@@ -25,6 +35,8 @@ export interface GenerateResult {
     text: string
     provider: GatewayProvider
     latencyMs: number
+    /** Native provider trace format, when the selected model exposes one. */
+    trace?: 'qwen'
 }
 
 export interface GenerateFailure {
@@ -103,7 +115,7 @@ function isRateLimitDetail(detail: string): boolean {
     )
 }
 
-const PROVIDER_FAMILY_ORDER = ['groq', 'openrouter', 'gemini', 'huggingface'] as const
+const PROVIDER_FAMILY_ORDER = ['groq', 'gemini', 'huggingface', 'openrouter'] as const
 type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
 
 /** Consistent per-bot starting offset — same roster/hashing scheme used across the app. */
@@ -175,14 +187,114 @@ function isTransientDetail(detail: string): boolean {
  * Wraps a single provider call with one short retry on transient failures.
  */
 async function withRetry(
-    fn: () => Promise<{ ok: true; text: string } | { ok: false; detail: string }>
+    fn: () => Promise<{ ok: true; text: string } | { ok: false; detail: string }>,
+    deadline?: number,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     const first = await fn()
     if (first.ok || !isTransientDetail(first.detail)) return first
+    if (deadline && Date.now() + 350 >= deadline) return first
     await sleep(350)
     return fn()
 }
 
+
+async function chatCompletionsStream(
+    url: string,
+    apiKey: string,
+    model: string,
+    systemPrompt: string,
+    userPrompt: string,
+    temperature?: number,
+    extraHeaders: Record<string, string> = {},
+    deadline?: number,
+): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
+    try {
+        const timeoutMs = deadline
+            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
+            : PROVIDER_REQUEST_TIMEOUT_MS
+
+        const fetchRes = await fetchWithTimeout(url, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                ...extraHeaders,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt },
+                ],
+                temperature: temperature ?? 0.7,
+                max_tokens: 1800,
+                stream: true
+            }),
+        }, timeoutMs)
+
+        if (!fetchRes.ok) {
+            const raw = await fetchRes.text()
+            return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
+        }
+
+        if (!fetchRes.body) {
+            return { ok: false, detail: 'No response body' }
+        }
+
+        async function* streamGenerator(): AsyncIterableIterator<string> {
+            const reader = fetchRes.body!.getReader()
+            const decoder = new TextDecoder('utf-8')
+            let buffer = ''
+            
+            let hasStartedReasoning = false
+            let hasFinishedReasoning = false
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || ''
+                    
+                    for (let line of lines) {
+                        line = line.trim()
+                        if (!line || line === 'data: [DONE]') continue
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6))
+                                const delta = data.choices?.[0]?.delta
+                                
+                                if (delta?.reasoning_content) {
+                                    if (!hasStartedReasoning) {
+                                        hasStartedReasoning = true
+                                        yield '<think>'
+                                    }
+                                    yield delta.reasoning_content
+                                } else if (delta?.content) {
+                                    if (hasStartedReasoning && !hasFinishedReasoning) {
+                                        hasFinishedReasoning = true
+                                        yield '</think>'
+                                    }
+                                    yield delta.content
+                                }
+                            } catch {
+                                // Ignore parse errors in stream
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock()
+            }
+        }
+
+        return { ok: true, stream: streamGenerator() }
+    } catch (e: any) {
+        return { ok: false, detail: e?.message || 'fetch error' }
+    }
+}
 async function chatCompletions(
     url: string,
     apiKey: string,
@@ -190,9 +302,13 @@ async function chatCompletions(
     systemPrompt: string,
     userPrompt: string,
     temperature?: number,
-    extraHeaders: Record<string, string> = {}
+    extraHeaders: Record<string, string> = {},
+    deadline?: number,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
+        const timeoutMs = deadline
+            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
+            : PROVIDER_REQUEST_TIMEOUT_MS
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
             headers: {
@@ -209,7 +325,7 @@ async function chatCompletions(
                 temperature: temperature ?? 0.7,
                 max_tokens: 1800,
             }),
-        })
+        }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
             return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
@@ -220,7 +336,12 @@ async function chatCompletions(
         } catch {
             return { ok: false, detail: 'invalid json' }
         }
-        const text = data?.choices?.[0]?.message?.content
+        const message = data?.choices?.[0]?.message
+        const visibleContent = message?.content
+        const nativeReasoning = message?.reasoning_content || message?.reasoning
+        const text = nativeReasoning && typeof nativeReasoning === 'string' && !String(visibleContent || '').includes('<think>')
+            ? `<think>${nativeReasoning}</think>${typeof visibleContent === 'string' ? visibleContent : ''}`
+            : visibleContent
         if (!text || typeof text !== 'string') {
             return { ok: false, detail: 'empty content' }
         }
@@ -235,9 +356,13 @@ async function geminiGenerate(
     model: string,
     systemPrompt: string,
     userPrompt: string,
-    temperature?: number
+    temperature?: number,
+    deadline?: number,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
+        const timeoutMs = deadline
+            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
+            : PROVIDER_REQUEST_TIMEOUT_MS
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
@@ -247,7 +372,7 @@ async function geminiGenerate(
                 contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                 generationConfig: { temperature: temperature ?? 0.7, maxOutputTokens: 1800 },
             }),
-        })
+        }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
             return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
@@ -269,25 +394,36 @@ async function geminiGenerate(
     }
 }
 
-type FamilySuccess = { ok: true; text: string; provider: GatewayProvider }
+type FamilySuccess = { ok: true; text: string; provider: GatewayProvider; trace?: 'qwen' }
 
 /** Groq — rotate through all configured keys, first success wins. */
 async function tryGroqFamily(
     groqKeys: string[],
-    params: { systemPrompt: string; userPrompt: string; temperature?: number },
+    model: string,
+    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
     for (const key of groqKeys) {
+        if (Date.now() >= params.deadline) return null
         const r = await withRetry(() => chatCompletions(
             'https://api.groq.com/openai/v1/chat/completions',
             key,
-            'llama-3.3-70b-versatile',
+            model,
             params.systemPrompt,
             params.userPrompt,
-            params.temperature
-        ))
-        if (r.ok) return { ok: true, text: r.text, provider: 'groq' }
+            params.temperature,
+            {},
+            params.deadline,
+        ), params.deadline)
+        if (r.ok) {
+            return {
+                ok: true,
+                text: r.text,
+                provider: model.toLowerCase().includes('qwen') ? 'groq:qwen' : 'groq:llama',
+                ...(model.toLowerCase().includes('qwen') ? { trace: 'qwen' as const } : {}),
+            }
+        }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
         attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length}]: ${r.detail}`)
     }
@@ -300,7 +436,7 @@ async function tryOpenRouterFamily(
     openRouterKey: string,
     taskType: TaskType,
     runtimeEnv: EnvStore,
-    params: { systemPrompt: string; userPrompt: string; temperature?: number },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     if (!openRouterKey) return null
@@ -310,6 +446,7 @@ async function tryOpenRouterFamily(
     let creditsDepleted = false
     let sawRateLimit = false
     for (const model of models) {
+        if (Date.now() >= params.deadline) return null
         if (seen.has(model)) continue
         seen.add(model)
         if (creditsDepleted) { attempts.push(`openrouter(${model}): skipped-no-credits`); continue }
@@ -324,8 +461,9 @@ async function tryOpenRouterFamily(
                 'HTTP-Referer':
                     envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
                 'X-Title': 'WorldInMaking Philosopher Bots',
-            }
-        ))
+            },
+            params.deadline,
+        ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: `openrouter:${model}` }
         if (r.detail.startsWith('402')) creditsDepleted = true
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -338,14 +476,19 @@ async function tryOpenRouterFamily(
 /** Gemini — rotate through all keys × all models, first success wins. */
 async function tryGeminiFamily(
     geminiKeys: string[],
-    params: { systemPrompt: string; userPrompt: string; temperature?: number },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
     for (const key of geminiKeys) {
+        if (Date.now() >= params.deadline) return null
         const keyIdx = geminiKeys.indexOf(key) + 1
         for (const model of GEMINI_MODELS) {
-            const r = await withRetry(() => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature))
+            if (Date.now() >= params.deadline) return null
+            const r = await withRetry(
+                () => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature, params.deadline),
+                params.deadline,
+            )
             if (r.ok) return { ok: true, text: r.text, provider: `gemini-fetch:${model}` }
             if (isRateLimitDetail(r.detail)) sawRateLimit = true
             attempts.push(`gemini[${keyIdx}/${geminiKeys.length}](${model}): ${r.detail}`)
@@ -358,19 +501,22 @@ async function tryGeminiFamily(
 /** Hugging Face Inference Router — OpenAI-compatible endpoint, rotate through all keys. */
 async function tryHuggingFaceFamily(
     hfKeys: string[],
-    params: { systemPrompt: string; userPrompt: string; temperature?: number },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
     for (const key of hfKeys) {
+        if (Date.now() >= params.deadline) return null
         const r = await withRetry(() => chatCompletions(
             'https://router.huggingface.co/v1/chat/completions',
             key,
             HUGGINGFACE_MODEL,
             params.systemPrompt,
             params.userPrompt,
-            params.temperature
-        ))
+            params.temperature,
+            {},
+            params.deadline,
+        ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: 'huggingface' }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
         attempts.push(`huggingface[${hfKeys.indexOf(key) + 1}/${hfKeys.length}]: ${r.detail}`)
@@ -397,6 +543,8 @@ export async function generateWithGateway(params: {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
     const taskType = params.taskType ?? 'community_reply'
+    const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
+    const familyParams = { ...params, deadline }
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
@@ -419,6 +567,7 @@ export async function generateWithGateway(params: {
         'GROQ_KEYS',
         'GROQ_KEY',
     )
+    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
     const geminiRaw = envFrom(
@@ -445,24 +594,35 @@ export async function generateWithGateway(params: {
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
     for (const family of getFamilyOrder(params.botName)) {
-        if (Date.now() - started >= GATEWAY_TOTAL_TIMEOUT_MS) {
+        if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
         }
         let result: FamilySuccess | null = null
-        if (family === 'groq') result = await tryGroqFamily(groqKeys, params, attempts)
-        else if (family === 'openrouter') result = await tryOpenRouterFamily(openRouterKey, taskType, runtimeEnv, params, attempts)
-        else if (family === 'gemini') result = await tryGeminiFamily(geminiKeys, params, attempts)
-        else if (family === 'huggingface') result = await tryHuggingFaceFamily(huggingFaceKeys, params, attempts)
+        if (family === 'groq') {
+            result = await tryGroqFamily(groqKeys, groqModel, familyParams, attempts)
+            if (!result && groqModel !== 'llama-3.3-70b-versatile' && Date.now() < deadline) {
+                result = await tryGroqFamily(groqKeys, 'llama-3.3-70b-versatile', familyParams, attempts)
+            }
+        }
+        else if (family === 'openrouter') result = await tryOpenRouterFamily(openRouterKey, taskType, runtimeEnv, familyParams, attempts)
+        else if (family === 'gemini') result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
+        else if (family === 'huggingface') result = await tryHuggingFaceFamily(huggingFaceKeys, familyParams, attempts)
 
         if (result) {
-            return { ok: true, text: result.text, provider: result.provider, latencyMs: Date.now() - started }
+            return {
+                ok: true,
+                text: result.text,
+                provider: result.provider,
+                latencyMs: Date.now() - started,
+                ...(result.trace ? { trace: result.trace } : {}),
+            }
         }
     }
 
     // OpenAI via AI SDK — last-resort bonus provider, outside the family rotation
     // (not currently configured on Cloudflare; kept for optional local/dev use).
-    if (openaiKey) {
+    if (openaiKey && Date.now() < deadline) {
         try {
             const { createOpenAI } = await import('@ai-sdk/openai')
             const { generateText } = await import('ai')
@@ -499,6 +659,95 @@ export async function generateWithGateway(params: {
         error: anyConfigured
             ? 'All AI providers failed. Check attempts[] and Cloudflare Function logs.'
             : 'No AI keys visible to this Function. Bind GROQ_API_KEYS, OPENROUTER_API_KEY, GEMINI_API_KEYS, and/or HUGGINGFACE_API_KEY on Cloudflare Pages Production.',
+        latencyMs: Date.now() - started,
+    }
+}
+
+export async function streamWithGateway(params: {
+    systemPrompt: string
+    userPrompt: string
+    taskType?: TaskType
+    temperature?: number
+    botName?: string
+    env?: EnvStore
+}): Promise<StreamResult | GenerateFailure> {
+    const started = Date.now()
+    const runtimeEnv = params.env ?? getRuntimeEnv()
+    const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
+    const attempts: string[] = []
+    const configured = getProviderKeyFlags(runtimeEnv)
+
+    if (params.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS || params.userPrompt.length > MAX_USER_PROMPT_CHARS) {
+        return {
+            ok: false,
+            provider: 'none',
+            attempts: [],
+            configured,
+            error: `Prompt too large.`,
+            latencyMs: Date.now() - started,
+        }
+    }
+
+    const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY')
+    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
+    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY')
+
+    const openRouterKeys = splitKeys(openRouterKey)
+    const groqKeys = splitKeys(groqRaw)
+
+    // 1. Try Groq Streaming
+    if (groqKeys.length > 0 && !isFamilyCooling('groq')) {
+        let sawRateLimit = false
+        for (const key of groqKeys) {
+            if (Date.now() >= deadline) break
+            const r = await chatCompletionsStream(
+                'https://api.groq.com/openai/v1/chat/completions',
+                key,
+                groqModel,
+                params.systemPrompt,
+                params.userPrompt,
+                params.temperature,
+                {},
+                deadline,
+            )
+            if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+            if (isRateLimitDetail(r.detail)) sawRateLimit = true
+            attempts.push(`groq: ${r.detail}`)
+        }
+        if (sawRateLimit) markFamilyCooling('groq')
+    }
+
+    // 2. Try OpenRouter Streaming
+    if (openRouterKeys.length > 0 && !isFamilyCooling('openrouter')) {
+        let sawRateLimit = false
+        for (const key of openRouterKeys) {
+            if (Date.now() >= deadline) break
+            const r = await chatCompletionsStream(
+                'https://openrouter.ai/api/v1/chat/completions',
+                key,
+                'qwen/qwen-2.5-72b-instruct',
+                params.systemPrompt,
+                params.userPrompt,
+                params.temperature,
+                {
+                    'HTTP-Referer': 'https://worldinmaking.com',
+                    'X-Title': 'Ask AI',
+                },
+                deadline,
+            )
+            if (r.ok) return { ok: true, provider: 'openrouter', stream: r.stream, attempts, configured }
+            if (isRateLimitDetail(r.detail)) sawRateLimit = true
+            attempts.push(`openrouter: ${r.detail}`)
+        }
+        if (sawRateLimit) markFamilyCooling('openrouter')
+    }
+
+    return {
+        ok: false,
+        provider: 'none',
+        attempts,
+        configured,
+        error: 'All streaming providers failed.',
         latencyMs: Date.now() - started,
     }
 }

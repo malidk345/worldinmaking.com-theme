@@ -208,7 +208,7 @@ export function App() {
           bot: defaultBot,
           question: request.query,
           mood: 'calm',
-          taskType: 'paper_section',
+           taskType: 'community_reply',
           thinkingDepth: 'standard',
         }),
       })
@@ -221,7 +221,7 @@ export function App() {
             philosopher: defaultBot,
             question: request.query,
             mood: 'calm',
-            taskType: 'paper_section',
+             taskType: 'community_reply',
             thinkingDepth: 'standard',
           }),
         })

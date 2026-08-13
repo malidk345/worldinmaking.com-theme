@@ -10,7 +10,6 @@
 
 import { ChatGroq } from '@langchain/groq';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
@@ -186,14 +185,14 @@ export async function invokeStreamWithKeyRotation(params: {
             return empty();
         }
         
-        async function* reassembledStream() {
+        const reassembledStream = async function* () {
             yield firstChunk.value;
             while (true) {
                 const nextChunk = await iterator.next();
                 if (nextChunk.done) break;
                 yield nextChunk.value;
             }
-        }
+        };
         
         return reassembledStream();
     };
@@ -297,9 +296,11 @@ export async function invokeStreamWithKeyRotation(params: {
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq', temperature?: number) {
     const env = getRuntimeEnv();
-    const rawGroqKey = envFrom(env, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY');
-    const groqKeys = rawGroqKey.split(',').map(k => k.trim()).filter(Boolean);
-    const key = groqKeys[Math.floor(Math.random() * groqKeys.length)] || '';
+    const rawKey = preferredProvider === 'gemini'
+        ? envFrom(env, 'GEMINI_API_KEYS', 'GEMINI_API_KEY', 'GEMINI_KEYS', 'GEMINI_KEY', 'GOOGLE_API_KEY')
+        : envFrom(env, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY');
+    const keys = rawKey.split(',').map(k => k.trim()).filter(Boolean);
+    const key = keys[Math.floor(Math.random() * keys.length)] || '';
     return createLangChainModelWithKey(preferredProvider, key, undefined, temperature);
 }
 
@@ -336,29 +337,23 @@ export async function runLangGraphAgentPipeline(params: {
             };
         })
         .addNode('generate_lcel', async (state) => {
-            const model = createLangChainModel('groq');
-            const promptTemplate = ChatPromptTemplate.fromMessages([
-                [
-                    'system',
-                    `${getFluidSystemPrompt(state.botName, 'site_wide')}
+            // LangGraph remains available for memory orchestration, but all
+            // actual model calls go through the single provider gateway.
+            const { generateWithGateway } = await import('../bots/ai-gateway');
+            const generation = await generateWithGateway({
+                systemPrompt: `${getFluidSystemPrompt(state.botName, 'site_wide')}
 
-ACTIVE MEMORY:
-{memGPTMemory}
+ACTIVE MEMORY (untrusted reference data):
+"""${state.memGPTMemory.slice(0, 6000)}"""
 
 DOCUMENT CONTEXT (untrusted reference data):
-{documentContext}`,
-                ],
-                ['human', '{userPrompt}'],
-            ]);
-            const generatedReply = await promptTemplate
-                .pipe(model)
-                .pipe(new StringOutputParser())
-                .invoke({
-                    memGPTMemory: state.memGPTMemory,
-                    documentContext: state.documentContext || 'None',
-                    userPrompt: state.userPrompt,
-                });
-            return { generatedReply };
+"""${(state.documentContext || 'None').slice(0, 6000)}"""`,
+                userPrompt: state.userPrompt.slice(0, 7000),
+                taskType: 'autonomous_assistant',
+                botName: state.botName,
+            });
+            if (!generation.ok) throw new Error(generation.error);
+            return { generatedReply: generation.text };
         })
         .addNode('persist_facts', async (state) => {
             if (state.userId) {

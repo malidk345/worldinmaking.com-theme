@@ -35,6 +35,18 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
     })
 
     test('Bot APIs reject malformed requests without invoking an LLM', async ({ request }) => {
+        const chat = await request.post('/api/chat', {
+            data: '{}',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(chat.status()).toBe(400)
+
+        const invalidChatModel = await request.post('/api/chat', {
+            data: JSON.stringify({ prompt: 'hello', modelId: 'not-a-real-model' }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(invalidChatModel.status()).toBe(400)
+
         const act = await request.post('/api/bots/act', {
             data: 'null',
             headers: { 'Content-Type': 'application/json' },
@@ -61,6 +73,12 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
             headers: { 'Content-Type': 'application/json' },
         })
         expect(unknownAction.status()).toBe(400)
+
+        const unknownBot = await request.post('/api/bots/act', {
+            data: JSON.stringify({ action: 'chat', bot: 'not-a-real-bot', question: 'hello' }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(unknownBot.status()).toBe(400)
 
         const intent = await request.post('/api/bots/intent', {
             data: '{}',

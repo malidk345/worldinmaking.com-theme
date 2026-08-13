@@ -34,6 +34,7 @@ import { createNotebook } from './notebookStorage'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
 import Markdown from 'components/Markdown'
+import { parseAiSseEvent } from 'lib/ai/contracts'
 
 const Mermaid = dynamic(() => import('components/Mermaid'), { ssr: false })
 
@@ -211,19 +212,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
 
-        const initialReasoningSteps = [
-            `Deconstructing premises from ${activeBot.name}'s stance`,
-            'Analyzing ideological contradictions & structural trade-offs',
-            'Formulating persona critique & dialectical resolution',
-        ]
-
-        const initialThinkingStages = [
-            { id: 'perceive', label: 'Perceive', text: `Perceiving query through ${activeBot.name}'s lens...` },
-            { id: 'frame', label: 'Frame', text: `Framing epistemic stance & workspace context...` },
-            { id: 'tension', label: 'Tension', text: `Analyzing structural tensions & dialectical trade-offs...` },
-            { id: 'move', label: 'Move', text: `Formulating synthesis response & executable actions...` },
-        ]
-
         const aiMsgId = `${Date.now()}-a`
         const placeholderAiMsg: ChatMessage = {
             id: aiMsgId,
@@ -232,8 +220,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             isStreaming: true,
             philosopherId: activeBot.id,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            thinkingStages: initialThinkingStages,
-            reasoningSteps: initialReasoningSteps,
+            thinkingStages: [],
+            reasoningSteps: [],
         }
 
         setMessages((prev) => [...prev, userMsg, placeholderAiMsg])
@@ -262,7 +250,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 }),
             })
 
-            let lastRenderedLength = 0
+             let lastRenderedLength = 0
+             let streamedThinkingStages: ThinkingStageView[] = []
 
             if (sseRes.ok && sseRes.body) {
                 const reader = sseRes.body.getReader()
@@ -277,60 +266,38 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     const lines = buffer.split('\n\n')
                     buffer = lines.pop() || ''
 
-                    for (const line of lines) {
-                        const cleanLine = line.replace(/^data:\s*/, '').trim()
-                        if (!cleanLine) continue
+                     for (const line of lines) {
+                         const parsed = parseAiSseEvent(line)
+                         if (!parsed) continue
 
-                        try {
-                            const parsed = JSON.parse(cleanLine)
-                            if (parsed.token) {
-                                accumulatedReply += parsed.token
-
-                                // Extract real dynamic thinking stages (<perceive>, <frame>, <tension>, <move>) from LLM stream
-                                let liveStages: ThinkingStageView[] | undefined = undefined
-                                const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
-                                if (thinkMatch) {
-                                    const thinkBody = thinkMatch[1]
-                                    const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
-                                    const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
-                                    const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
-                                    const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
-
-                                    const extracted: ThinkingStageView[] = []
-                                    if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
-                                    if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
-                                    if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
-                                    if (m) extracted.push({ id: 'move', label: 'Move', text: m })
-
-                                    if (extracted.length > 0) {
-                                        liveStages = extracted
-                                    }
-                                }
-
-                                const currentCleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
-
-                                // Single-pass typewriter: advance 3 characters per step at 2ms for ultra-fast, smooth, flicker-free typing
-                                while (lastRenderedLength < currentCleanText.length) {
-                                    lastRenderedLength = Math.min(currentCleanText.length, lastRenderedLength + 3)
-                                    const charSlice = currentCleanText.slice(0, lastRenderedLength)
-                                    setMessages((prev) =>
-                                        prev.map((msgItem) =>
-                                            msgItem.id === aiMsgId
-                                                ? {
-                                                      ...msgItem,
-                                                      text: charSlice,
-                                                      thinkingStages: liveStages || msgItem.thinkingStages,
-                                                  }
-                                                : msgItem
-                                        )
-                                    )
-                                    await new Promise((r) => setTimeout(r, 2))
-                                }
-                            }
-                        } catch {
-                            /* ignore malformed chunk */
-                        }
-                    }
+                          if (parsed.type === 'thinking_step') {
+                              const stage = { id: parsed.step.id, label: parsed.step.title, text: parsed.step.detail }
+                              streamedThinkingStages = [...streamedThinkingStages, stage]
+                              setMessages((prev) => prev.map((msgItem) =>
+                                 msgItem.id === aiMsgId
+                                     ? {
+                                           ...msgItem,
+                                           thinkingStages: [
+                                               ...(msgItem.thinkingStages || []),
+                                                stage,
+                                           ],
+                                       }
+                                     : msgItem
+                             ))
+                         } else if (parsed.type === 'token') {
+                             accumulatedReply += parsed.text
+                             while (lastRenderedLength < accumulatedReply.length) {
+                                 lastRenderedLength = Math.min(accumulatedReply.length, lastRenderedLength + 3)
+                                 const charSlice = accumulatedReply.slice(0, lastRenderedLength)
+                                 setMessages((prev) => prev.map((msgItem) =>
+                                     msgItem.id === aiMsgId ? { ...msgItem, text: charSlice } : msgItem
+                                 ))
+                                 await new Promise((r) => setTimeout(r, 2))
+                             }
+                         } else if (parsed.type === 'done') {
+                             accumulatedReply = parsed.fullText || accumulatedReply
+                         }
+                     }
                 }
             }
 
@@ -347,9 +314,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     body: JSON.stringify({
                         action: 'chat',
                         bot: activeBot.id,
-                        question: `${notebookContextSnippet}${text}`,
+                         question: text.slice(0, 8000),
+                         context: notebookContextSnippet.slice(0, 12000),
                         mood: 'calm',
-                        taskType: 'paper_section',
+                         taskType: 'community_reply',
                     }),
                 })
 
@@ -359,9 +327,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             philosopher: activeBot.id,
-                            question: `${notebookContextSnippet}${text}`,
+                             question: text.slice(0, 8000),
+                             context: notebookContextSnippet.slice(0, 12000),
                             mood: 'calm',
-                            taskType: 'paper_section',
+                             taskType: 'community_reply',
                         }),
                     })
                 }
@@ -369,7 +338,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 responseData = await res.json().catch(() => null)
                 accumulatedReply =
                     (typeof responseData?.reply === 'string' && responseData.reply.trim()) ||
-                    `Response received for: "${text}"`
+                    (typeof responseData?.error === 'string' && responseData.error) ||
+                    'The AI service is unavailable right now.'
             }
 
             // Feature 5: OS Intent Recognition & Executable Action Cards
@@ -403,54 +373,19 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
             const containsTable = accumulatedReply.includes('|') && accumulatedReply.includes('---')
 
-            // Parse real dynamic thoughts from LLM output (<thinking> tags or responseData.thinking)
-            let finalCleanText = accumulatedReply
-            let realThinkingStages: ThinkingStageView[] | undefined = undefined
+             // Use only safe stages supplied by the shared transport or API.
+             let finalCleanText = accumulatedReply
+             let realThinkingStages: ThinkingStageView[] | undefined = streamedThinkingStages.length > 0 ? streamedThinkingStages : undefined
 
-            const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
-            if (thinkMatch) {
-                const thinkBody = thinkMatch[1]
-                const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
-                const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
-                const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
-                const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
+             if (responseData?.thinking?.stages?.length > 0) {
+                 realThinkingStages = responseData.thinking.stages.map((s: any) => ({
+                     id: s.id,
+                     label: s.label || s.id,
+                     text: s.text,
+                 }))
+             }
 
-                const extracted: ThinkingStageView[] = []
-                if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
-                if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
-                if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
-                if (m) extracted.push({ id: 'move', label: 'Move', text: m })
-
-                if (extracted.length > 0) {
-                    realThinkingStages = extracted
-                }
-                finalCleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
-            } else if (responseData?.thinking?.stages?.length > 0) {
-                realThinkingStages = responseData.thinking.stages.map((s: any) => ({
-                    id: s.id,
-                    label: s.label || s.id,
-                    text: s.text,
-                }))
-            }
-
-            const rawThought = responseData?.thought || (realThinkingStages ? realThinkingStages.map((s) => s.text).join('\n') : '')
-            const fallbackSteps = rawThought
-                ? rawThought
-                      .split(/\n+|\.\s+/)
-                      .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
-                      .filter((s: string) => s.length > 5)
-                : [
-                      `Analyzing query through ${activeBot.name}'s stance`,
-                      'Evaluating structural trade-offs & context',
-                      'Formulating synthesis response',
-                  ]
-
-            const thinkingStages: ThinkingStageView[] = realThinkingStages || [
-                { id: 'perceive', label: 'Perceive', text: fallbackSteps[0] || `Analyzing query through ${activeBot.name}'s stance` },
-                { id: 'frame', label: 'Frame', text: fallbackSteps[1] || 'Evaluating structural trade-offs & context' },
-                { id: 'tension', label: 'Tension', text: fallbackSteps[2] || 'Formulating synthesis response' },
-                { id: 'move', label: 'Move', text: fallbackSteps[3] || 'Preparing actions' },
-            ]
+             const thinkingStages: ThinkingStageView[] = realThinkingStages || []
 
             const generatedSuggestions = [
                 'Deconstruct primary premises',

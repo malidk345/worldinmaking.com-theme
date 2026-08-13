@@ -13,6 +13,7 @@ import {
   Brain,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 
 interface ThinkingBlockProps {
   thinking: ThinkingProcess;
@@ -22,7 +23,6 @@ interface ThinkingBlockProps {
 // Live Claude Spark Icon for header or status indicators
 export const ClaudeSparkIcon: React.FC<{ className?: string; isLive?: boolean }> = ({
   className = 'w-4 h-4',
-  isLive = true,
 }) => {
   return (
     <div className={`relative inline-flex items-center justify-center shrink-0 ${className}`}>
@@ -45,7 +45,9 @@ const getStepIconAndStyle = (step: ThinkingStep | { title: string; detail?: stri
   if (
     step.title?.toLowerCase() === 'thinking' ||
     step.title?.toLowerCase() === 'think' ||
-    step.title?.toLowerCase() === 'intent'
+    step.title?.toLowerCase() === 'thought' ||
+    step.title?.toLowerCase() === 'intent' ||
+    step.title?.toLowerCase() === 'native reasoning'
   ) {
     return { Icon: Brain, iconClass: 'text-stone-500 dark:text-stone-400' };
   }
@@ -132,7 +134,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     setIsOpen(isLive);
   }, [isLive]);
 
-  const durationSeconds = thinking?.durationSeconds || 1.2;
+  const durationSeconds = thinking?.durationSeconds || 0;
 
   // Build full step list including "Done" step if completed
   const rawSteps = thinking?.steps || [];
@@ -145,7 +147,9 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     ? `${activeStep.title}${activeStep.detail ? `: ${activeStep.detail}` : ''}`
     : isLive
     ? 'Thinking...'
-    : `Thought for ${durationSeconds.toFixed(1)} seconds`;
+    : durationSeconds > 0
+    ? `Thought for ${durationSeconds.toFixed(1)} seconds`
+    : 'Response generated';
 
   // Process display steps list
   const displaySteps = [...rawSteps];
@@ -206,7 +210,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
             transition={{ duration: 0.2, ease: [0.25, 0.9, 0.3, 1] }}
             className="overflow-hidden min-w-0"
           >
-            <div ref={scrollRef} className="flex flex-col pl-1 pt-2 pb-1 max-h-[140px] overflow-y-auto scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 pr-1">
+            <div ref={scrollRef} className="flex flex-col pl-1 pt-2 pb-1 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 pr-1">
               {displaySteps.map((step, index) => {
                 const isLast = index === displaySteps.length - 1;
                 const isCurrentActive = isLive && isLast;
@@ -240,23 +244,22 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
                           <div className="text-[13px] text-stone-700 dark:text-stone-200 leading-snug font-normal break-words">
                             {step.title}
                           </div>
-                          <div className="text-[12px] text-stone-500 dark:text-stone-400 leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
-                            {step.detail.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-                              part.match(/^https?:\/\//) ? (
-                                <a
-                                  key={i}
-                                  href={part}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#3B82F6] dark:text-[#60A5FA] underline hover:opacity-80 font-mono text-[11px]"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {part}
-                                </a>
-                              ) : (
-                                part
-                              )
-                            )}
+                          <div className="text-[11.5px] text-stone-500 dark:text-stone-400 leading-relaxed mt-0.5 break-words [&_p]:my-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_strong]:font-semibold [&_em]:italic">
+                            <ReactMarkdown
+                              components={{
+                                a: ({ node, ...props }) => (
+                                  <a
+                                    {...props}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#3B82F6] dark:text-[#60A5FA] underline hover:opacity-80 font-mono text-[11px]"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                )
+                              }}
+                            >
+                              {step.detail}
+                            </ReactMarkdown>
                           </div>
                         </>
                       ) : (

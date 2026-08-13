@@ -2,6 +2,7 @@
  * Forum actions for philosopher bots — create topic / reply in Supabase.
  */
 import { runBotTurn, type ThinkingDepth } from '../orchestrate'
+import type { ThinkingProcess } from '../thinking'
 import { slugify, supabaseRest } from '../supabase-edge'
 import { normalizeBotName } from '../request-validation'
 
@@ -111,6 +112,17 @@ export interface ForumReplyValidation {
 export function sanitizeBotOutput(text: string): string {
     if (typeof text !== 'string') return ''
     return text.replace(/\0/g, '').trim()
+}
+
+/** Persist only the bounded, explicit analysis summary; never raw model thought text. */
+function serializeSafeAnalysisSummary(thinking: ThinkingProcess): string | null {
+    const summary = thinking.stages
+        .filter((stage) => stage.source === 'model_summary')
+        .map((stage) => `${stage.label}: ${stage.text}`)
+        .join('\n')
+        .trim()
+        .slice(0, 2000)
+    return summary || null
 }
 
 export function validateForumTopicPayload(params: {
@@ -224,7 +236,7 @@ export async function createForumTopic(params: {
 
     const title = validation.sanitizedTitle!
     const content = validation.sanitizedContent!
-    const innerThoughts = sanitizeBotOutput(llm.thought || '') || null
+    const innerThoughts = serializeSafeAnalysisSummary(llm.thinking)
 
     if (params.dryRun) {
         return {
@@ -379,7 +391,7 @@ export async function createForumReply(params: {
     }
 
     const replyContent = replyValidation.sanitizedContent!
-    const innerThoughts = sanitizeBotOutput(llm.thought || '') || null
+    const innerThoughts = serializeSafeAnalysisSummary(llm.thinking)
 
     if (params.dryRun) {
         return {

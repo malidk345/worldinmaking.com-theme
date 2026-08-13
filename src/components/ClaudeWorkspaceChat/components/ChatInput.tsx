@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   ArrowDown,
   Brain,
+  ChevronDown,
   Sparkles,
   Check,
   Zap,
@@ -286,6 +287,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       )}
                     </div>
                     <span className="font-semibold text-primary tracking-tight truncate max-w-[100px] xs:max-w-[160px] sm:max-w-none">{activeModel?.name}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted stroke-[2] ml-0.5 shrink-0" />
                   </span>
                 );
               }}

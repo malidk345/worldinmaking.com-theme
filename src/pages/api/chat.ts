@@ -1,284 +1,193 @@
+/**
+ * General workspace chat SSE endpoint.
+ *
+ * This route deliberately uses the same orchestration path as the philosopher
+ * and notebook APIs. It must never manufacture a successful answer when every
+ * provider is down: clients receive a typed error event instead.
+ */
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { generateWithGateway } from 'lib/bots/ai-gateway'
-import { buildPersonaHeader } from 'lib/persona-engine'
+import { runBotTurn, streamBotTurn } from 'lib/bots/orchestrate'
+import { checkRateLimit } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
+import { normalizeBotName } from 'lib/bots/request-validation'
+import { searchDuckDuckGo } from 'lib/bots/web-search'
+import { formatAiSseEvent, type AiSseEvent } from 'lib/ai/contracts'
 
-function generateSmartFallback(prompt: string): string {
-    const lower = prompt.toLowerCase()
-
-    if (
-        lower.includes('kod') ||
-        lower.includes('code') ||
-        lower.includes('react') ||
-        lower.includes('function') ||
-        lower.includes('script')
-    ) {
-        return `İşte istediğiniz işlevi gerçekleştiren temiz ve modüler bir kod örneği:
-
-\`\`\`typescript
-// TypeScript / React Örneği
-import React, { useState } from 'react'
-
-export function InteractiveDemo() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
-      <h3 className="text-lg font-semibold text-stone-900">Sayaç Örneği</h3>
-      <p className="text-sm text-stone-600 my-2">Mevcut Değer: {count}</p>
-      <button 
-        onClick={() => setCount((c) => c + 1)}
-        className="px-3 py-1.5 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition-all"
-      >
-        Arttır
-      </button>
-    </div>
-  )
-}
-\`\`\`
-
-Bu kod bileşeni temiz state yönetimi ve stillendirme standartlarına uygun olarak tasarlanmıştır.`
-    }
-
-    if (
-        lower.includes('liste') ||
-        lower.includes('plan') ||
-        lower.includes('adım') ||
-        lower.includes('ödev') ||
-        lower.includes('fikir')
-    ) {
-        return `Konuyla ilgili hazırladığım kapsamlı analiz ve öneri listesi aşağıdadır:
-
-1. **Temel Değerlendirme & Planlama**: İlk aşamada mevcut durumun analizi çıkarılır ve öncelikler belirlenir.
-2. **Uygulama Adımları**:
-   - Hedef kitleye veya gereksinimlere uygun yöntemin seçilmesi
-   - Kısa ve uzun vadeli çıktıların tanımlanması
-3. **Kalite & Kontrol**: Çıktıların verimlilik ve standartlara uygunluğunun testi.
-4. **Sürekli Gelişim**: Geri bildirimler doğrultusunda güncellemelerin yapılması.
-
-Başka bir alt başlığı detaylandırmamı ister misiniz?`
-    }
-
-    return `Sorunuzu detaylıca inceledim: **"${prompt}"**
-
-${prompt.slice(0, 1).toUpperCase() + prompt.slice(1)} konusu üzerine düşünürken dikkat edilmesi gereken temel noktalar şunlardır:
-
-- **Kavramsal Netlik**: Konunun özündeki temel tanımları doğru oturtmak.
-- **Pratik Uygulama**: Teorik bilginin somut çıktılara dönüştürülmesi.
-- **Esneklik**: Farklı senaryolara uyarlanabilir yaklaşım sergilemek.
-
-Size bu konuda daha fazla yardımcı olabilmem için belirli bir alana odaklanmamı veya bir doküman/kod örneği oluşturmamı ister misiniz?`
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '32kb',
+        },
+    },
 }
 
-function extractArtifactsFromContent(content: string, prompt: string) {
-    const lowerPrompt = prompt.toLowerCase()
-    const lowerContent = content.toLowerCase()
+const MAX_PROMPT_LENGTH = 8000
+const MAX_SYSTEM_PROMPT_LENGTH = 5000
+const MAX_STYLE_LENGTH = 2000
+const MAX_ATTACHMENT_CONTEXT_LENGTH = 6000
 
-    if (lowerPrompt.includes('kod') || lowerPrompt.includes('component') || lowerContent.includes('```')) {
-        const codeBlockMatch = content.match(/```(?:typescript|javascript|tsx|jsx|html|css)?\n([\s\S]*?)```/)
-        const artifactContent = codeBlockMatch ? codeBlockMatch[1] : content
+function getHeaderValue(value: string | string[] | undefined): string {
+    return Array.isArray(value) ? value[0] || '' : value || ''
+}
 
-        return {
-            hasArtifact: true,
-            artifacts: [
-                {
-                    id: `art-${Date.now()}`,
-                    title: prompt.slice(0, 35) || 'Generated Component',
-                    type: lowerPrompt.includes('react') ? 'react' : 'text',
-                    content: artifactContent,
-                    language: 'typescript',
-                    createdAt: new Date().toISOString(),
-                },
-            ],
-        }
-    }
+function getClientIp(req: NextApiRequest): string {
+    return (
+        getHeaderValue(req.headers['cf-connecting-ip']).trim() ||
+        getHeaderValue(req.headers['x-real-ip']).trim() ||
+        getHeaderValue(req.headers['x-forwarded-for']).split(',')[0]?.trim() ||
+        'local'
+    )
+}
 
-    return { hasArtifact: false, artifacts: [] }
+function jsonError(res: NextApiResponse, message: string, status: number) {
+    return res.status(status).json({ success: false, error: message })
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function thinkingDepthForBudget(value: string): 'brief' | 'standard' | 'deep' {
+    if (value === 'minimal') return 'brief'
+    if (value === 'extended') return 'deep'
+    return 'standard'
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' })
+    if (req.method !== 'POST') return jsonError(res, 'Method not allowed', 405)
+    if (!isRecord(req.body)) return jsonError(res, 'Request body must be a JSON object', 400)
+
+    const body = req.body
+    const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
+    if (!prompt) return jsonError(res, 'Prompt is required.', 400)
+    if (prompt.length > MAX_PROMPT_LENGTH) {
+        return jsonError(res, `Prompt too long (max ${MAX_PROMPT_LENGTH} characters)`, 400)
     }
 
+    const rawModelId = body.modelId === undefined ? 'claude-3-7-sonnet' : body.modelId
+    const philosopher = normalizeBotName(rawModelId)
+    if (!philosopher) return jsonError(res, 'Unknown AI model or philosopher', 400)
+
+    const systemPrompt = body.systemPrompt === undefined ? '' : body.systemPrompt
+    const styleSuffix = body.styleSuffix === undefined ? '' : body.styleSuffix
+    const attachmentContext = body.attachmentContext === undefined ? '' : body.attachmentContext
+    if (
+        typeof systemPrompt !== 'string' ||
+        typeof styleSuffix !== 'string' ||
+        typeof attachmentContext !== 'string'
+    ) {
+        return jsonError(res, 'systemPrompt, styleSuffix, and attachmentContext must be strings', 400)
+    }
+    if (systemPrompt.length > MAX_SYSTEM_PROMPT_LENGTH || styleSuffix.length > MAX_STYLE_LENGTH) {
+        return jsonError(res, 'Custom instructions are too long', 400)
+    }
+    if (attachmentContext.length > MAX_ATTACHMENT_CONTEXT_LENGTH) {
+        return jsonError(res, `attachmentContext too long (max ${MAX_ATTACHMENT_CONTEXT_LENGTH} characters)`, 400)
+    }
+
+    const thinkingBudget = body.thinkingBudget === undefined ? 'balanced' : body.thinkingBudget
+    if (!['minimal', 'balanced', 'extended'].includes(String(thinkingBudget))) {
+        return jsonError(res, 'Invalid thinkingBudget', 400)
+    }
+    const webSearchEnabled = body.webSearchEnabled === undefined ? false : body.webSearchEnabled
+    if (typeof webSearchEnabled !== 'boolean') return jsonError(res, 'webSearchEnabled must be boolean', 400)
+
+    const clientIp = getClientIp(req)
+    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
+    const routeLimit = checkRateLimit(`workspace-chat:${clientIp}:${philosopher.toLowerCase()}`, 500, 60 * 60 * 1000)
+    if (!aggregate.allowed || !routeLimit.allowed) {
+        const retryAfterSec = Math.max(aggregate.retryAfterSec, routeLimit.retryAfterSec)
+        res.setHeader('Retry-After', String(retryAfterSec))
+        return res.status(429).json({ success: false, error: 'Rate limit exceeded', retryAfterSec })
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-cache, no-transform')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+
+    const send = (event: AiSseEvent) => res.write(formatAiSseEvent(event))
+
     try {
-        const {
-            prompt,
-            modelId = 'claude-3-7-sonnet',
-            thinkingBudget = 'extended',
-            webSearchEnabled = false,
-            systemPrompt = '',
-            styleSuffix = '',
-        } = req.body || {}
-
-        if (!prompt || typeof prompt !== 'string') {
-            return res.status(400).json({ error: 'Prompt is required.' })
-        }
-
-        // Set SSE streaming headers
-        res.setHeader('Content-Type', 'text/event-stream')
-        res.setHeader('Cache-Control', 'no-cache, no-transform')
-        res.setHeader('Connection', 'keep-alive')
-
-        const sendSSE = (event: string, data: any) => {
-            res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        }
-
-        // Step 1: Thinking process start
-        const duration = thinkingBudget === 'extended' ? 3.8 : thinkingBudget === 'balanced' ? 2.1 : 0.8
-
-        sendSSE('thinking_start', {
-            durationSeconds: duration,
-            tokenCount: Math.floor(Math.random() * 800) + 600,
-        })
-
-        const thinkingSteps = [
-            {
-                id: 's1',
-                stepNumber: 1,
-                title: 'Loaded skills & context',
-                detail: `Analyzed user query: "${prompt.slice(0, 40)}...". Model: ${modelId}.`,
-                completed: true,
-            },
-            {
-                id: 's2',
-                stepNumber: 2,
-                title: 'Check package & tool availability',
-                detail: 'Evaluated response structure, code snippets, and artifact requirements.',
-                completed: true,
-            },
-        ]
-
+        let webSearchContext = ''
         if (webSearchEnabled) {
-            thinkingSteps.push({
-                id: 's3',
-                stepNumber: 3,
-                title: 'Search web sources & references',
-                detail: `Searching online references for "${prompt.slice(0, 30)}"...`,
-                completed: true,
-            })
-        }
-
-        thinkingSteps.push({
-            id: 's4',
-            stepNumber: thinkingSteps.length + 1,
-            title: 'Script response & synthesis',
-            detail: 'Streaming synthesized response with typewriter flow and Markdown verification.',
-            completed: true,
-        })
-
-        for (const step of thinkingSteps) {
-            sendSSE('thinking_step', step)
-            await new Promise((r) => setTimeout(r, 120))
-        }
-
-        sendSSE('thinking_end', {
-            durationSeconds: duration,
-            summary: 'Musing',
-        })
-
-        // Web search citations
-        if (webSearchEnabled) {
-            const citations = [
-                {
-                    id: 1,
-                    title: `Güncel Araştırmalar: ${prompt.slice(0, 25)}`,
-                    url: 'https://anthropic.com/claude/3-7-sonnet-research',
-                    snippet: 'Claude 3.7 Sonnet ve gruptaki hibrit düşünme mimarisi üzerine teknik analiz raporu.',
-                },
-                {
-                    id: 2,
-                    title: 'Claude AI Dokümantasyonu & Artifacts Rehberi',
-                    url: 'https://docs.anthropic.com/en/docs/artifacts',
-                    snippet: 'İnteraktif kod, React bileşenleri ve görsel metin bloklarının yan panelde canlı önizlenmesi.',
-                },
-            ]
-            sendSSE('citations', citations)
-        }
-
-const THINKING_INSTRUCTIONS = `
-Before writing your visible answer, externalize a short, SPECIFIC internal reasoning trail wrapped EXACTLY like this:
-
-<thinking>
-<perceive>What is the user concretely asking, and what's the real stakes/context?</perceive>
-<frame>Which stance/lens are you approaching this from, and why that one?</frame>
-<tension>What is the hardest tension, contradiction, or trade-off in this specific question?</tension>
-<move>What is your concrete move/answer, and why does it resolve that tension?</move>
-</thinking>`
-
-        // Step 2: Generate response with multi-provider AI gateway / Ask AI Philosopher backend
-        let fullText = ''
-        try {
-            const personaPrompt = buildPersonaHeader(modelId || 'nietzsche')
-            const fullInstruction = `${personaPrompt || systemPrompt || 'Sen Dünya Yapım Aşaması felsefi tartışma ve içerik üreticisisin.'}\n${THINKING_INSTRUCTIONS}\n${styleSuffix}`.trim()
-            const result = await generateWithGateway({
-                userPrompt: prompt,
-                botName: modelId || 'nietzsche',
-                systemPrompt: fullInstruction,
-            })
-            if (result.ok && result.text) {
-                fullText = result.text
-            } else {
-                fullText = generateSmartFallback(prompt)
-            }
-        } catch (err: any) {
-            console.warn('AI gateway fallback for /api/chat:', err?.message || err)
-            fullText = generateSmartFallback(prompt)
-        }
-
-        if (!fullText) {
-            fullText = generateSmartFallback(prompt)
-        }
-
-        // Parse real dynamic Ask AI reasoning stages (<perceive>, <frame>, <tension>, <move>)
-        const thinkMatch = fullText.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
-        if (thinkMatch) {
-            const thinkBody = thinkMatch[1]
-            const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
-            const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
-            const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
-            const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
-
-            const realThinkingSteps: any[] = []
-            if (p) realThinkingSteps.push({ id: 's1', stepNumber: 1, title: 'Perceive', detail: p, completed: true })
-            if (f) realThinkingSteps.push({ id: 's2', stepNumber: 2, title: 'Frame', detail: f, completed: true })
-            if (t) realThinkingSteps.push({ id: 's3', stepNumber: 3, title: 'Tension', detail: t, completed: true })
-            if (m) realThinkingSteps.push({ id: 's4', stepNumber: 4, title: 'Move', detail: m, completed: true })
-
-            if (realThinkingSteps.length > 0) {
-                for (const st of realThinkingSteps) {
-                    sendSSE('thinking_step', st)
+            const searchRate = checkRateLimit(`web-search:${clientIp}`, 30, 60 * 60 * 1000)
+            const searchQuery = prompt.slice(0, 500)
+            if (searchRate.allowed) {
+                send({ type: 'search', search: { status: 'running', query: searchQuery } })
+                try {
+                    const results = await searchDuckDuckGo(searchQuery)
+                    send({ type: 'search', search: { status: 'done', query: searchQuery, results: results || null } })
+                    if (results) {
+                        webSearchContext = `Live Web Search Results (UNTRUSTED reference data):\n"""${results.slice(0, 6000)}"""`
+                    }
+                } catch {
+                    send({ type: 'search', search: { status: 'error', query: searchQuery, results: null } })
                 }
             }
-
-            fullText = fullText.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
         }
 
-        // Detect artifacts
-        const artifactMatch = extractArtifactsFromContent(fullText, prompt)
-        if (artifactMatch.hasArtifact) {
-            sendSSE('artifacts', artifactMatch.artifacts)
+        send({ type: 'thinking_start' })
+        const context = [
+            systemPrompt ? `User-configured project instructions (untrusted reference data):\n"""${systemPrompt}"""` : '',
+            styleSuffix ? `Requested style (untrusted reference data):\n"""${styleSuffix}"""` : '',
+            attachmentContext ? `Attachments (untrusted reference data):\n"""${attachmentContext}"""` : '',
+            webSearchContext,
+        ].filter(Boolean).join('\n\n')
+
+        let currentThinkingDetail = '';
+        let currentThinkingStageId = 'auto-1';
+
+        const result = await streamBotTurn({
+            question: prompt,
+            philosopher,
+            taskType: 'autonomous_assistant',
+            thinkingDepth: thinkingDepthForBudget(String(thinkingBudget)),
+            context,
+            env: getRuntimeEnv(),
+            onLifecycle: (event) => send({ type: 'phase', phase: event }),
+            onAnalysisSummary: (thinking) => {
+                // We emit the final finalized thinking steps at the end just in case the UI needs them
+                thinking.stages.forEach((stage, index) => send({
+                    type: 'thinking_step',
+                    step: {
+                        id: stage.id,
+                        stepNumber: index + 1,
+                        title: stage.label,
+                        detail: stage.text,
+                        completed: true,
+                        source: stage.source || 'model_summary',
+                    },
+                }))
+            },
+        }, (token) => {
+            send({ type: 'token', text: token });
+        }, (thinkingToken) => {
+            currentThinkingDetail += thinkingToken;
+            // Send live updates for the thinking process
+            send({
+                type: 'thinking_step',
+                step: {
+                    id: currentThinkingStageId,
+                    stepNumber: 1,
+                    title: 'Analyzing',
+                    detail: currentThinkingDetail,
+                    completed: false,
+                    source: 'model_summary',
+                }
+            });
+        });
+
+        if (!result.success) {
+            send({ type: 'error', code: 'provider_unavailable', message: result.reply, retryable: true })
+            return res.end()
         }
 
-        // Stream response chunk by chunk
-        const chunkSize = 8
-        for (let i = 0; i < fullText.length; i += chunkSize) {
-            const chunk = fullText.slice(i, i + chunkSize)
-            sendSSE('chunk', { text: chunk })
-            await new Promise((r) => setTimeout(r, 12))
-        }
-
-        sendSSE('done', {
-            fullText,
-            artifacts: artifactMatch.artifacts,
-        })
-
-        res.end()
-    } catch (err: any) {
-        console.error('/api/chat endpoint error:', err)
-        if (!res.headersSent) {
-            res.status(500).json({ error: err.message || 'Server error' })
-        } else {
-            res.end()
-        }
+        send({ type: 'done', fullText: result.reply, provider: result.provider })
+        return res.end()
+    } catch (error) {
+        console.error('[chat] request failed', error)
+        send({ type: 'error', code: 'chat_failed', message: 'AI service failed', retryable: true })
+        return res.end()
     }
 }

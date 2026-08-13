@@ -153,7 +153,9 @@ function checkEmojiPresence(body: string): string | null {
 function checkMinimumLength(body: string, task: TaskType): string | null {
     const wordCount = countWords(body);
     const minimums: Partial<Record<TaskType, number>> = {
-        community_reply: 30,
+        // Chat should be allowed to answer a greeting or a direct one-line
+        // question without triggering a long-form correction retry.
+        community_reply: 5,
         paper_section: 150,
         dialectic_challenge: 80,
         cross_examine: 80,
@@ -161,6 +163,7 @@ function checkMinimumLength(body: string, task: TaskType): string | null {
         synthesis: 200,
         thread_init: 50,
         fact_critique: 60,
+        autonomous_assistant: 5,
     };
     const minimum = minimums[task] ?? 30;
     if (wordCount < minimum) {
@@ -382,6 +385,7 @@ export function getDefaultWordBudget(task: TaskType): number {
         third_voice: 350,
         synthesis: 600,
         fact_critique: 200,
+        autonomous_assistant: 600,
     };
     return budgets[task] ?? 200;
 }

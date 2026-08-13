@@ -38,6 +38,7 @@ interface SidebarProps {
   projects: ProjectSpace[];
   activeProjectId?: string;
   onSelectProject: (id?: string) => void;
+  onCreateProjectClick: () => void;
   onOpenSearchModal: () => void;
   onOpenSettingsModal: () => void;
   artifacts?: import('../types').Artifact[];

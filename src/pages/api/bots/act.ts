@@ -54,7 +54,7 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 function assertCronIfNeeded(req: Request, action: ValidBotAction, env: Record<string, string | undefined>): string | null {
-    if (action === 'chat' || action === 'status') return null
+    if (action === 'chat') return null
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
     if (!secret) return 'Unauthorized: internal bot action secret is not configured'
     const header = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
@@ -69,6 +69,9 @@ export default async function handler(req: Request) {
     const env = getRuntimeEnv()
 
     if (req.method === 'GET') {
+        const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
+        const header = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+        if (!secret || header !== secret) return json({ success: false, error: 'Not found' }, 404)
         return json(getBotSystemStatus(env))
     }
 
@@ -114,22 +117,18 @@ export default async function handler(req: Request) {
     const context = directContext ?? payloadContext
     const dryRun = body.dryRun === true || payload.dryRun === true
 
-    if (action === 'status') {
-        return json(getBotSystemStatus())
-    }
-
     const authErr = assertCronIfNeeded(req, action, env)
     if (authErr) {
         return json({ success: false, error: authErr, action }, 401)
     }
 
+    if (action === 'status') return json(getBotSystemStatus(env))
+
     // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
     // Scoped per client IP so rotating bot names cannot bypass the bucket.
     const clientIp = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 60, 60 * 60 * 1000)
-    const rlKey = `act:${action}:${clientIp}:${bot.toLowerCase()}`
-    const limit = action === 'chat' ? 40 : 15
-    const rl = checkRateLimit(rlKey, limit, 60 * 60 * 1000)
+    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
+    const rl = checkRateLimit(`bot_act:${clientIp}`, 500, 60 * 60 * 1000)
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         return json(

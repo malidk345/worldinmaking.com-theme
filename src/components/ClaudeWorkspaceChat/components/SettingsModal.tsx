@@ -1,6 +1,6 @@
 import React from 'react';
-import { UserSettings, ThinkingBudget, ModelId } from '../types';
-import { X, Settings as SettingsIcon, Brain, Zap, Layers, RefreshCw } from 'lucide-react';
+import { UserSettings, ThinkingBudget } from '../types';
+import { X, Settings as SettingsIcon, Brain, RefreshCw } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;

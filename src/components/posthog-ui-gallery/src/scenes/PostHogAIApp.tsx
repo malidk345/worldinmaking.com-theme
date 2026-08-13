@@ -108,16 +108,11 @@ export function PostHogAIApp({ onBack, initialContextPath = '/community' }: Post
       })
       const data = await res.json()
 
-      const rawThought = data.thought || ''
-      const parsedSteps = rawThought
-        ? rawThought
-            .split(/\n+|\.\s+/)
-            .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
-            .filter((s: string) => s.length > 5)
-        : [
-            `Deconstructing premises from ${selectedPhilosopher}'s stance`,
-            'Analyzing ideological contradictions & structural trade-offs',
-          ]
+       const parsedSteps = Array.isArray(data.thinking?.stages)
+         ? data.thinking.stages
+             .filter((stage: { text?: unknown }) => typeof stage?.text === 'string')
+             .map((stage: { text: string }) => stage.text)
+         : []
 
       const aiMsg: AIMessage = {
         id: `ai-${Date.now()}`,

@@ -31,18 +31,39 @@ export function normalizeBotName(value: unknown, fallback?: string): string | nu
     const raw = value === undefined ? fallback : value
     if (typeof raw !== 'string' || !raw.trim()) return null
 
-    const lookup = raw.trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9]/g, '')
-    if (lookup.includes('claude') || lookup.includes('wim') || lookup.includes('ai')) {
+    // NFD removes accents without throwing away valid identities such as Žižek.
+    const lookup = raw
+        .trim()
+        .replace(/^@+/, '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+
+    const generalAiAliases = new Set([
+        'claude',
+        'claude37sonnet',
+        'wimsai',
+        'wimsaibots',
+        'generalai',
+    ])
+    if (generalAiAliases.has(lookup)) {
         return "wim's ai bots"
     }
 
     const bot = PHILOSOPHER_BOTS.find(
         (candidate) =>
             candidate.id === lookup ||
-            candidate.name.toLowerCase().replace(/[^a-z0-9]/g, '') === lookup
+            candidate.name
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '') === lookup
     )
 
-    return bot?.name || (typeof fallback === 'string' ? fallback : null)
+    // An explicitly supplied invalid bot must fail validation. Falling back here
+    // silently turns typos into Nietzsche and makes audit logs misleading.
+    return bot?.name || null
 }
 
 export function parseBotMood(value: unknown, fallback: BotMood = 'calm'): BotMood | null {
@@ -113,15 +134,26 @@ export async function readJsonObject(req: Request, maxBytes: number): Promise<Js
         return { ok: false, status: 413, error: `Request body too large (max ${maxBytes} bytes)` }
     }
 
-    let raw: string
+    let raw = ''
     try {
-        raw = await req.text()
+        if (req.body) {
+            const reader = req.body.getReader()
+            const decoder = new TextDecoder()
+            let bytesRead = 0
+            while (true) {
+                const { value, done } = await reader.read()
+                if (done) break
+                bytesRead += value.byteLength
+                if (bytesRead > maxBytes) {
+                    await reader.cancel()
+                    return { ok: false, status: 413, error: `Request body too large (max ${maxBytes} bytes)` }
+                }
+                raw += decoder.decode(value, { stream: true })
+            }
+            raw += decoder.decode()
+        }
     } catch {
         return { ok: false, status: 400, error: 'Invalid request body' }
-    }
-
-    if (new TextEncoder().encode(raw).byteLength > maxBytes) {
-        return { ok: false, status: 413, error: `Request body too large (max ${maxBytes} bytes)` }
     }
 
     let parsed: unknown

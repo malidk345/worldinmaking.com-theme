@@ -59,7 +59,7 @@ export function cleanAIOutput(text: string): string {
     for (const word of FORBIDDEN_AI_WORDS) {
         cleaned = cleaned.replace(new RegExp(`\\b${word}\\b`, 'gi'), '')
     }
-    return cleaned.replace(/\n{3,}/g, '\n\n').trim()
+    return cleaned.trim()
 }
 
 function depthForTask(taskType: TaskType, override?: ThinkingDepth): ThinkingDepth {
@@ -92,19 +92,12 @@ export function buildThinkingInstruction(taskType: TaskType, depth?: ThinkingDep
 
     return `
 THINKING PROCESS (mandatory before any public reply):
-You must reason privately inside <thinking>...</thinking> using these four stages, in order:
+You must reason privately inside <thinking>...</thinking>.
+Read the user's input, form your epistemic stance, identify any contradictions or pressure points, and plan your rhetorical move before you reply. Do this naturally and freely without being constrained to specific sub-tags.
 
-1. <perceive>...</perceive> — What is actually being said or asked? Quote or paraphrase the core claim without spinning it yet.
-2. <frame>...</frame> — Through your epistemic stance, how does this land? What kind of problem is this for you?
-3. <tension>...</tension> — Where is the contradiction, blind spot, or pressure point? What would a weak reply ignore?
-4. <move>...</move> — What rhetorical / philosophical move will your public reply make?
-
-Always close every tag. Example shape:
+Always close the tag. Example shape:
 <thinking>
-  <perceive>...</perceive>
-  <frame>...</frame>
-  <tension>...</tension>
-  <move>...</move>
+[Your unfiltered, raw reasoning process here]
 </thinking>
 Public reply here only.
 
@@ -113,6 +106,7 @@ ${lengthHint}
 PUBLIC REPLY STYLE & CONDITIONAL FORMATTING RULES:
 - Never start with AI-assistant filler (no "Certainly!", "Sure!", "As an AI...", "Hello!"). Begin immediately with substantive value.
 - Default output format: High-density, direct, clean markdown prose with bold headers and bullet points.
+- Do NOT over-philosophize practical, technical, or simple questions. Be concrete and highly practical. Avoid unnecessary rhetoric or academic jargon unless the topic is explicitly philosophical.
 - CONDITIONAL VISUAL FORMATTING (ONLY WHEN REQUESTED OR EXPLICITLY NEEDED):
   * IF AND ONLY IF the user explicitly asks for a table, comparison, or breakdown (or compares multiple structured items): Output a clean Markdown table.
   * IF AND ONLY IF the user explicitly asks for a diagram, flowchart, schema, sequence, or structural map (or uses /diagram, /mermaid): Output a valid Mermaid diagram inside \`\`\`mermaid code fences.
@@ -165,11 +159,46 @@ function extractStagesLoose(block: string): ThinkingStage[] {
 }
 
 function stagesFromBlock(inner: string): ThinkingStage[] {
-    const stages = extractStagesLoose(inner)
-    if (stages.length > 0) return stages
     const raw = cleanAIOutput(inner.replace(/<\/?(?:perceive|frame|tension|move|thinking|thought)>/gi, '').trim())
-    if (raw) return [{ id: 'raw', label: 'Thought', text: raw }]
-    return []
+    if (!raw) return []
+
+    // Split by multiple newlines to create natural chunks
+    const paragraphs = raw.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
+    if (paragraphs.length <= 1) {
+        return [{ id: 'raw', label: 'Thought', text: raw }]
+    }
+
+    const stages: ThinkingStage[] = []
+    let stepCount = 1
+
+    for (let i = 0; i < paragraphs.length; i++) {
+        const p = paragraphs[i]
+        const lower = p.toLowerCase()
+        let label = 'Thinking'
+
+        // Heuristic keyword matching to trigger correct icons in ThinkingBlock.tsx
+        if (i === 0) {
+            label = 'Analyzing'
+        } else if (lower.includes('wait') || lower.includes('however') || lower.includes('but') || lower.includes('tension') || lower.includes('contradiction')) {
+            label = 'Evaluating Tension'
+        } else if (lower.includes('search') || lower.includes('find') || lower.includes('look up') || lower.includes('reference') || lower.includes('source')) {
+            label = 'Searching'
+        } else if (lower.includes('structure') || lower.includes('document') || lower.includes('write') || lower.includes('code')) {
+            label = 'Structuring'
+        } else if (i === paragraphs.length - 1) {
+            label = 'Concluding'
+        } else {
+            label = 'Reflecting'
+        }
+
+        stages.push({
+            id: `auto-${stepCount++}` as any,
+            label,
+            text: p
+        })
+    }
+
+    return stages
 }
 
 /**
@@ -178,74 +207,65 @@ function stagesFromBlock(inner: string): ThinkingStage[] {
 export function parseThinkingAndReply(
     rawText: string,
     taskType: TaskType = 'community_reply',
-    depth?: ThinkingDepth
+    depth?: ThinkingDepth,
+    options?: { providerTrace?: string }
 ): { thinking: ThinkingProcess; reply: string } {
     const d = depthForTask(taskType, depth)
     const text = rawText || ''
+    
+    let stages: ThinkingStage[] = []
+    let reply = text
 
-    // Structured <thinking>...</thinking>
-    const thinkingMatch = text.match(/<thinking>([\s\S]*?)<\/thinking>/i)
-    if (thinkingMatch) {
-        const stages = stagesFromBlock(thinkingMatch[1])
-        const reply = cleanAIOutput(text.replace(/<thinking>[\s\S]*?<\/thinking>/i, '').trim())
-        const summary = stages.map((s) => s.text).join('\n\n')
+    // 1. Extract <think> (DeepSeek / Qwen native chain of thought)
+    const thinkRegex = /<think>\s*([\s\S]*?)(?:<\/think>|$)/gi
+    let match
+    while ((match = thinkRegex.exec(reply)) !== null) {
+        stages.push(...stagesFromBlock(match[1]))
+    }
+    reply = reply.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '')
 
-        return {
-            thinking: {
-                summary,
-                stages,
-                structured: stages.some((s) => s.id !== 'raw'),
-                depth: d,
-            },
-            reply,
+    // 2. Extract <thinking>
+    const thinkingRegex = /<thinking>\s*([\s\S]*?)(?:<\/thinking>|$)/gi
+    while ((match = thinkingRegex.exec(reply)) !== null) {
+        stages.push(...stagesFromBlock(match[1]))
+    }
+    reply = reply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '')
+
+    // 3. Extract <thought>
+    const thoughtRegex = /<thought>\s*([\s\S]*?)(?:<\/thought>|$)/gi
+    while ((match = thoughtRegex.exec(reply)) !== null) {
+        stages.push(...stagesFromBlock(match[1]))
+    }
+    reply = reply.replace(/<thought>[\s\S]*?(?:<\/thought>|$)/gi, '')
+
+    // 4. Loose philosophical tags without a wrapping block
+    if (/<perceive>/i.test(reply) || /<frame>/i.test(reply)) {
+        const looseStages = extractStagesLoose(reply)
+        if (looseStages.length > 0) {
+            stages.push(...looseStages)
+            for (const [id] of STAGE_ORDER) {
+                reply = reply
+                    .replace(new RegExp(`<${id}>[\\s\\S]*?(?:<\\/${id}>|$)`, 'gi'), '')
+                    // In case they are adjacent and unclosed
+                    .replace(new RegExp(`<${id}>[\\s\\S]*?(?=<perceive>|<frame>|<tension>|<move>|$)`, 'gi'), '')
+            }
         }
     }
 
-    // Legacy <thought>...</thought> (may still contain stage tags)
-    const thoughtMatch = text.match(/<thought>([\s\S]*?)<\/thought>/i)
-    if (thoughtMatch) {
-        const stages = stagesFromBlock(thoughtMatch[1])
-        const reply = cleanAIOutput(text.replace(/<thought>[\s\S]*?<\/thought>/i, '').trim())
-        const summary = stages.map((s) => s.text).join('\n\n')
-        return {
-            thinking: {
-                summary,
-                stages,
-                structured: stages.some((s) => s.id !== 'raw'),
-                depth: d,
-            },
-            reply,
-        }
+    reply = cleanAIOutput(reply.trim())
+
+    // Parse Provider Trace (Native Reasoning from API) if available, so it appears in UI seamlessly
+    if (options?.providerTrace && options.providerTrace.trim()) {
+        const traceStages = stagesFromBlock(options.providerTrace.trim())
+        stages.unshift(...traceStages)
     }
 
-    // Bare stage tags at top of output (model ignored wrapper)
-    if (/<perceive>/i.test(text) || /<frame>/i.test(text)) {
-        const stages = stagesFromBlock(text)
-        // Reply = text after last stage content (heuristic: strip all stage blocks)
-        let reply = text
-        for (const [id] of STAGE_ORDER) {
-            reply = reply
-                .replace(new RegExp(`<${id}>[\\s\\S]*?<\\/${id}>`, 'gi'), '')
-                .replace(new RegExp(`<${id}>[\\s\\S]*?(?=<perceive>|<frame>|<tension>|<move>|$)`, 'gi'), '')
-        }
-        reply = cleanAIOutput(reply)
-        // If stripping left nothing, treat non-stage paragraphs as reply is already empty — keep reply empty rather than duplicating
-        const summary = stages.map((s) => s.text).join('\n\n')
-        return {
-            thinking: {
-                summary,
-                stages,
-                structured: stages.some((s) => s.id !== 'raw'),
-                depth: d,
-            },
-            reply: reply || '',
-        }
-    }
+    const summary = stages.map((s) => s.text).join('\n\n')
+    const structured = stages.some((s) => s.id !== 'raw')
 
-    // No tags — entire body is public reply
     return {
-        thinking: { summary: '', stages: [], structured: false, depth: d },
-        reply: cleanAIOutput(text),
+        thinking: { summary, stages, structured, depth: d },
+        reply: reply || '',
     }
 }
 

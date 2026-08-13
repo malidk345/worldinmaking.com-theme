@@ -135,12 +135,19 @@ export async function runPaperStep(params: {
         return { ...llm, action: 'paper_step' as const, phase: 'llm_failed' as const, step, persisted: false }
     }
 
+    // Qwen's native trace may be shown to the requesting UI, but never store it
+    // in collaborative paper metadata. Persist only the safe model summary.
+    const persistedThinking = {
+        ...llm.thinking,
+        stages: llm.thinking.stages.filter((stage) => stage.source !== 'provider_trace'),
+    }
+    const persistedSummary = persistedThinking.stages.map((stage) => stage.text).join('\n\n').slice(0, 2000)
     const contribution = {
         bot: params.botUsername,
         step,
         body: llm.reply,
-        thought: llm.thought,
-        thinking: llm.thinking,
+        thought: persistedSummary,
+        thinking: { ...persistedThinking, summary: persistedSummary, source: persistedSummary ? 'model_summary' as const : 'none' as const },
         provider: llm.provider,
         at: new Date().toISOString(),
     }

@@ -4,7 +4,7 @@ import { Artifact } from '../types';
 import { X, Code2, Eye, Copy, Download, Check, ChevronDown, FileInput } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface ArtifactsPanelProps {
   artifact: Artifact | null;
@@ -24,7 +24,7 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
     const render = async () => {
       try {
         const mermaid = (await import('mermaid')).default;
-        mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+         mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' });
         const id = `mermaid-${Date.now()}`;
         const { svg } = await mermaid.render(id, chart.trim());
         if (!cancelled && ref.current) {
@@ -53,12 +53,12 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   onSelectArtifact,
   onInsertToNotebook,
 }) => {
-  if (!artifact) return null;
-
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
+
+  if (!artifact) return null;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(artifact.content);
@@ -354,7 +354,8 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                 title={artifact.title}
                 srcDoc={getIframeSrcDoc()}
                 className="w-full h-full border-none bg-white"
-                sandbox="allow-scripts allow-modals"
+                 sandbox="allow-scripts"
+                 referrerPolicy="no-referrer"
               />
             </div>
           </div>
@@ -363,7 +364,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           <div className="mx-auto w-full max-w-3xl py-8 px-6 sm:px-10 md:px-14 leading-[1.68rem] text-primary font-claude-serif text-[1rem] bg-white">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+               rehypePlugins={[rehypeSanitize]}
               components={{
                 h1: ({ children }) => (
                   <h1 className="mt-2 mb-4 text-[1.65rem] sm:text-[1.85rem] font-bold text-primary leading-tight font-claude-serif">
@@ -449,7 +450,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                 ),
               }}
             >
-              {artifact.content.replace(/==([^=]+)==/g, '<mark>$1</mark>')}
+              {artifact.content}
             </ReactMarkdown>
           </div>
         )}

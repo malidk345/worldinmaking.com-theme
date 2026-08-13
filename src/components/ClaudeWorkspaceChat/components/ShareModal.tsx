@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Chat } from '../types';
-import { X, Share2, Copy, Check, Download, Globe } from 'lucide-react';
+import { X, Share2, Copy, Check, Download } from 'lucide-react';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, chat })
                 className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono text-stone-600 select-all"
               />
               <button
-                onClick={handleCopyLink}
+                 onClick={handleCopy}
                 className="flex items-center gap-1 shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af]"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

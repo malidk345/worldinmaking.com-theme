@@ -21,6 +21,7 @@ export interface ThinkingStep {
   detail: string
   timestampMs?: number
   completed: boolean
+  source?: 'model_summary' | 'provider_trace' | 'system_event'
 }
 
 export interface ThinkingProcess {
@@ -28,6 +29,7 @@ export interface ThinkingProcess {
   tokenCount: number
   steps: ThinkingStep[]
   summary?: string
+  source?: 'model_summary' | 'provider_trace' | 'system_event' | 'none'
 }
 
 export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table'

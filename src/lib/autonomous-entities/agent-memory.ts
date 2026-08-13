@@ -7,6 +7,10 @@
 
 import { supabaseAdmin } from '../../../lib/supabase-admin';
 
+function cleanAgentName(value: string): string {
+    return value.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '').slice(0, 80);
+}
+
 export interface AgentMemoryContext {
     agentName: string;
     targetAgentName?: string;
@@ -21,20 +25,31 @@ export async function getAgentMemoryContext(
     agentName: string,
     targetAgentName?: string
 ): Promise<string> {
-    const cleanSource = agentName.toLowerCase().trim();
-    const cleanTarget = targetAgentName ? targetAgentName.toLowerCase().trim() : null;
+    const cleanSource = cleanAgentName(agentName);
+    const cleanTarget = targetAgentName ? cleanAgentName(targetAgentName) : null;
 
     try {
         let memoryLines: string[] = [];
 
         // 1. Fetch relationship record if targeting another entity
         if (cleanTarget && cleanTarget !== cleanSource) {
-            const { data: rel } = await supabaseAdmin
+            const { data: directRel } = await supabaseAdmin
                 .from('agent_relationships')
                 .select('relationship_type, score, notes')
-                .or(`and(agent_id.eq.${cleanSource},target_agent_id.eq.${cleanTarget}),and(agent_id.eq.${cleanTarget},target_agent_id.eq.${cleanSource})`)
+                .eq('agent_id', cleanSource)
+                .eq('target_agent_id', cleanTarget)
                 .limit(1)
                 .maybeSingle();
+            const { data: reverseRel } = directRel
+                ? { data: null }
+                : await supabaseAdmin
+                    .from('agent_relationships')
+                    .select('relationship_type, score, notes')
+                    .eq('agent_id', cleanTarget)
+                    .eq('target_agent_id', cleanSource)
+                    .limit(1)
+                    .maybeSingle();
+            const rel = directRel || reverseRel;
 
             if (rel) {
                 memoryLines.push(`PAST DISCOURSE HISTORY WITH @${cleanTarget}: ${rel.relationship_type} (score ${rel.score ?? 0})${rel.notes ? ` — ${rel.notes}` : ''}`);
@@ -79,8 +94,8 @@ export async function recordAgentRelationship(
     relationshipType: string,
     notes: string
 ): Promise<void> {
-    const cleanSource = agentName.toLowerCase().trim();
-    const cleanTarget = targetAgentName.toLowerCase().trim();
+    const cleanSource = cleanAgentName(agentName);
+    const cleanTarget = cleanAgentName(targetAgentName);
 
     try {
         const { data: existing } = await supabaseAdmin

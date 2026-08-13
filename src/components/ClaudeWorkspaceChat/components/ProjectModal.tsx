@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectSpace } from '../types';
-import { X, FolderPlus, FolderKanban, Code2, PenTool, Brain } from 'lucide-react';
+import { X, FolderPlus } from 'lucide-react';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('');
-  const [iconName, setIconName] = useState('FolderKanban');
+  const iconName = 'FolderKanban';
 
   if (!isOpen) return null;
 
