@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
 import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, Edit2, ArrowDownToLine } from 'lucide-react';
