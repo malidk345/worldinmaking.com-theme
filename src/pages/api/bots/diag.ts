@@ -3,7 +3,7 @@
  * REMOVE OR PROTECT THIS ENDPOINT AFTER DIAGNOSIS.
  * Only active if CRON_SECRET header matches, to prevent public exposure.
  */
-export const runtime = 'edge'
+
 
 import { getRuntimeEnv, getProviderKeyFlags, hasCloudflareContext } from 'lib/bots/runtime-env'
 import { envFrom } from 'lib/bots/runtime-env'

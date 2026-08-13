@@ -2,7 +2,7 @@
  * Local InstantSearch-compatible search over Supabase posts.
  * Cloudflare Pages (next-on-pages) requires Edge Runtime + Web Response API.
  */
-export const runtime = 'edge'
+
 
 import { searchSupabasePosts } from '../../lib/supabaseBlog'
 

@@ -10,7 +10,7 @@
  *
  * Cloudflare Pages (next-on-pages) requires Edge Runtime.
  */
-export const runtime = 'edge'
+
 
 import {
     listNotebooksByOwner,

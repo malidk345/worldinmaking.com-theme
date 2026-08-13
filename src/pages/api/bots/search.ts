@@ -1,4 +1,4 @@
-export const runtime = 'edge'
+
 
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'

@@ -1,5 +1,5 @@
 /** Authenticated admin-only manual trigger for one philosopher bot tick. */
-export const runtime = 'edge'
+
 
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
 import { runPhilosopherBotTick } from '../cron/philosopher-bots'

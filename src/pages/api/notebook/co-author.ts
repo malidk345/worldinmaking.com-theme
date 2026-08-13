@@ -6,7 +6,7 @@
  *
  * Edge runtime (next-on-pages): plain Request/Response + ReadableStream SSE.
  */
-export const runtime = 'edge'
+
 
 import { invokeStreamWithKeyRotation } from '../../../lib/chat-bots/langchain-pipeline'
 import { loadMemGPTState, extractAndPersistMemoryFacts } from '../../../lib/chat-bots/memgpt-engine'
