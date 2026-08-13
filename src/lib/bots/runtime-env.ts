@@ -6,9 +6,11 @@
  * We use a static import with try/catch so local Node.js dev falls back gracefully.
  */
 
-// import { getRequestContext } from '@cloudflare/next-on-pages' // Removed to fix server-only import in client components
-
-const getRequestContext = () => { throw new Error('Not supported in this context') }
+let getRequestContext: any = () => ({ env: {} })
+// Instead of importing getRequestContext statically which breaks Client Components,
+// or dynamically which breaks Webpack, we rely on the fact that standard nextjs builds inject ENV into process.env.
+// If running inside true Cloudflare workers in production, the bindings must be assigned to process.env manually
+// in a middleware or custom bootstrap since we're decoupling from the next-on-pages library in shared modules.
 
 export type EnvStore = Record<string, string | undefined>
 
