@@ -567,7 +567,7 @@ export async function generateWithGateway(params: {
         'GROQ_KEYS',
         'GROQ_KEY',
     )
-    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
+    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'llama-3.3-70b-versatile'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
     const geminiRaw = envFrom(
@@ -689,7 +689,7 @@ export async function streamWithGateway(params: {
     }
 
     const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY')
-    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
+    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'QWEN_MODEL') || 'llama-3.3-70b-versatile'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY')
 
     const openRouterKeys = splitKeys(openRouterKey)
