@@ -1062,6 +1062,45 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   const hasArtifactsInActiveChat = activeChat?.messages.some((m) => m.artifacts && m.artifacts.length > 0) || false;
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const meta = event.metaKey || event.ctrlKey
+      if (event.key === 'Escape') {
+        if (isSourcesOpen) {
+          event.preventDefault()
+          closeSources()
+          return
+        }
+        if (isArtifactsOpen) {
+          event.preventDefault()
+          closeArtifacts()
+          return
+        }
+        if (searchModalOpen) {
+          event.preventDefault()
+          setSearchModalOpen(false)
+          return
+        }
+      }
+      if (meta && event.key.toLowerCase() === 'n') {
+        event.preventDefault()
+        handleNewChat()
+        return
+      }
+      if (meta && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchModalOpen((open) => !open)
+        return
+      }
+      if (meta && event.key === '.' && isStreaming) {
+        event.preventDefault()
+        handleStopStreaming()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming])
+
   return (
     <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
       {/* Left Collapsible Sidebar */}
@@ -1174,7 +1213,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   key={msg.id}
                   message={msg}
                   targetChatId={activeChat.id}
-                  modelOptions={AVAILABLE_MODELS}
+                  modelOptions={models}
                   onOpenArtifact={(art, origin) => {
                     if (isArtifactsOpen && activeArtifact?.id === art.id && !isArtifactExpanded) {
                       setIsArtifactExpanded(true)

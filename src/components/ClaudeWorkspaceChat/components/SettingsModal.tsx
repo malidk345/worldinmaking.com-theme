@@ -41,7 +41,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               Response motion
             </label>
             <p className="text-[11px] text-stone-500 mb-2">
-              How new tokens appear while the answer streams.
+              Pace the on-screen reveal so short answers still linger a little.
             </p>
             <div className="grid grid-cols-4 gap-1.5">
               {[

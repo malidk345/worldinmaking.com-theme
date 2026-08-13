@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
 import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw } from 'lucide-react';
@@ -67,8 +67,33 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   )
 }
 
+function philosopherSurname(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  return parts[parts.length - 1] || name
+}
+
+function PhilosopherMark({ model }: { model?: ModelOption }) {
+  if (!model) return null
+  const surname = philosopherSurname(model.name)
+  return (
+    <div className="flex items-center gap-1.5" title={model.name}>
+      <span className="inline-flex size-[18px] shrink-0 overflow-hidden rounded-full border border-[#e8e8e8] bg-[#ececec]">
+        {model.avatarUrl ? (
+          <img src={model.avatarUrl} alt="" className="size-full object-cover object-top" />
+        ) : (
+          <span className={`flex size-full items-center justify-center text-[7px] font-semibold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
+            {model.initials || surname.slice(0, 1)}
+          </span>
+        )}
+      </span>
+      <span className="text-[12.5px] font-medium leading-none text-[#6a6a6a]">{surname}</span>
+    </div>
+  )
+}
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
+  modelOptions,
   onOpenArtifact,
   onOpenSources,
   onEditPrompt,
@@ -81,10 +106,53 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const displayedText = message.content;
-  const isLiveAnswer = !isUser && !!message.isStreaming && !message.isTypingDone;
+  const skipPace = useRef(isUser || !!message.isTypingDone || typewriterSpeed === 'off').current
+  const contentRef = useRef(message.content)
+  const revealedRef = useRef(skipPace ? message.content : '')
+  const [revealed, setRevealed] = useState(skipPace ? message.content : '')
+
+  useEffect(() => {
+    contentRef.current = message.content
+  }, [message.content])
+
+  useEffect(() => {
+    if (skipPace || typewriterSpeed === 'off') {
+      revealedRef.current = message.content
+      setRevealed(message.content)
+      return
+    }
+
+    const tickMs = typewriterSpeed === 'slow' ? 58 : typewriterSpeed === 'fast' ? 28 : 46
+    const stepChars = typewriterSpeed === 'slow' ? 1 : typewriterSpeed === 'fast' ? 3 : 2
+
+    const timer = window.setInterval(() => {
+      const target = contentRef.current
+      const prev = revealedRef.current
+      if (prev.length >= target.length) {
+        if (message.isTypingDone && prev !== target) {
+          revealedRef.current = target
+          setRevealed(target)
+        }
+        return
+      }
+
+      let next = Math.min(prev.length + stepChars, target.length)
+      const remainder = target.slice(next)
+      const wordEnd = remainder.search(/[\s.,;:!?]/)
+      if (wordEnd > 0 && wordEnd < 10) next += wordEnd + 1
+      const nextText = target.slice(0, next)
+      revealedRef.current = nextText
+      setRevealed(nextText)
+    }, tickMs)
+
+    return () => window.clearInterval(timer)
+  }, [message.content, message.isTypingDone, skipPace, typewriterSpeed])
+
+  const displayedText = revealed
+  const isRevealing = !isUser && revealed.length < message.content.length
+  const isLiveAnswer = !isUser && (isRevealing || (!!message.isStreaming && !message.isTypingDone))
   const fadeMs =
-    typewriterSpeed === 'off' ? 0 : typewriterSpeed === 'slow' ? 280 : typewriterSpeed === 'fast' ? 120 : 180;
+    typewriterSpeed === 'off' ? 0 : typewriterSpeed === 'slow' ? 220 : typewriterSpeed === 'fast' ? 90 : 160
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -157,8 +225,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
         </div>
       ) : (
-        /* ASSISTANT MESSAGE: Full width text in Anthropic Serif font */
+        /* ASSISTANT MESSAGE: philosopher pill above thinking, full-width reply */
         <div className="space-y-2 text-primary">
+          <PhilosopherMark
+            model={
+              modelOptions.find((option) => option.id === message.modelUsed) ||
+              modelOptions[0]
+            }
+          />
           {/* Thinking Process Accordion / Header */}
           <div className="flex items-center justify-between">
             <ThinkingBlock
@@ -171,7 +245,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   source: 'none',
                 }
               }
-              isLive={message.isStreaming}
+              isLive={!!message.isStreaming && revealed.length === 0}
             />
           </div>
 
@@ -184,12 +258,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 : undefined
             }
           >
+            {displayedText ? (
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
                rehypePlugins={[rehypeSanitize]}
               components={{
                 p: ({ children }: any) => (
-                  <div className="mb-2.5 leading-[1.55rem] break-words">{children}</div>
+                  <p className="mb-2.5 last:mb-0 leading-[1.55rem] break-words">{children}</p>
                 ),
                 code({ node, inline, className, children, ...props }: any) {
                   const match = /language-(\w+)/.exec(className || '');
@@ -216,11 +291,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             >
               {displayedText}
             </ReactMarkdown>
-            {isLiveAnswer ? (
-              <span
-                className="ml-0.5 inline-block h-[0.95em] w-[1.5px] translate-y-[0.12em] bg-current align-baseline animate-pulse"
-                aria-hidden="true"
-              />
             ) : null}
           </div>
 
@@ -261,7 +331,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
-          {!message.isStreaming && message.isTypingDone && (
+          {!isLiveAnswer && message.isTypingDone && (
             <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
               <button
                 onClick={handleCopy}

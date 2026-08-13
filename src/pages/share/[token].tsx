@@ -1,7 +1,6 @@
 import React from 'react'
 import type { GetServerSideProps } from 'next'
 import Link from 'next/link'
-import { getSharedChatByToken, isChatStoreUnavailable } from '../../lib/chat-store'
 import type { Chat } from '../../components/ClaudeWorkspaceChat/types'
 
 type SharePageProps = {
@@ -57,6 +56,7 @@ export const getServerSideProps: GetServerSideProps<SharePageProps> = async (ctx
     const token = typeof ctx.params?.token === 'string' ? ctx.params.token : ''
     if (!token) return { props: { chat: null } }
     try {
+        const { getSharedChatByToken, isChatStoreUnavailable } = await import('../../lib/chat-store')
         const chat = await getSharedChatByToken(token)
         if (!chat) return { props: { chat: null } }
         return {

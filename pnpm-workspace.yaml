@@ -8,7 +8,7 @@ minimumReleaseAgeExclude:
     - '@posthog/icons'
     - '@posthog/hedgehog-mode'
 blockExoticSubdeps: true
-trustPolicy: no-downgrade
+trustPolicy: off
 
 # Hoist Gatsby's internal dependencies for webpack compatibility
 publicHoistPattern:

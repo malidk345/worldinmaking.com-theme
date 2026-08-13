@@ -6,13 +6,26 @@
  * We use a static import with try/catch so local Node.js dev falls back gracefully.
  */
 
-import { getRequestContext } from '@cloudflare/next-on-pages'
-
-export type EnvStore = Record<string, string | undefined>
+function getCfRequestContext(): any {
+    try {
+        // Dynamic lookup to prevent 'server-only' package from being statically bundled into client graphs
+        const req = typeof (0, eval) === 'function' ? (0, eval)('require') : null
+        if (req) {
+            const mod = req('@cloudflare/next-on-pages')
+            if (mod && typeof mod.getRequestContext === 'function') {
+                return mod.getRequestContext()
+            }
+        }
+    } catch {
+        // Not in CF edge context (local dev or client) — silently ignore
+    }
+    return null
+}
 
 function getCfEnv(): Record<string, string> {
     try {
-        const { env } = getRequestContext()
+        const ctx = getCfRequestContext()
+        const env = ctx?.env
         if (env && typeof env === 'object') {
             const out: Record<string, string> = {}
             for (const [k, v] of Object.entries(env)) {
@@ -21,7 +34,7 @@ function getCfEnv(): Record<string, string> {
             return out
         }
     } catch {
-        // Not in CF edge context (local dev) — silently ignore
+        // Not in CF edge context
     }
     return {}
 }
@@ -56,8 +69,8 @@ export function splitKeys(raw: string): string[] {
 
 export function hasCloudflareContext(): boolean {
     try {
-        getRequestContext()
-        return true
+        const ctx = getCfRequestContext()
+        return !!ctx
     } catch {
         return false
     }

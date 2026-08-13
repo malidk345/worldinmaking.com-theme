@@ -16,7 +16,6 @@ if (fs.existsSync(publishSrc)) {
 
 // Fix common UTF-8 mojibake sequences
 const files = [
-    'src/notebook-app/scenes/notebooks/AskAIDropdown.tsx',
     'src/notebook-app/scenes/notebooks/NotebookCanvasScene.tsx',
     'src/notebook-app/scenes/notebooks/NotebooksListScene.tsx',
     'src/notebook-app/App.tsx',

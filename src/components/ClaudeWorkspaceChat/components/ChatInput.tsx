@@ -16,6 +16,12 @@ import {
   Globe,
 } from 'lucide-react';
 
+const SLASH_COMMANDS = [
+  { id: 'table', label: '/table', hint: 'Comparison table', insert: 'Make a clear comparison table of ' },
+  { id: 'diagram', label: '/diagram', hint: 'Mermaid diagram', insert: 'Draw a mermaid diagram of ' },
+  { id: 'notebook', label: '/notebook', hint: 'Notebook-ready draft', insert: 'Write a notebook-ready draft about ' },
+] as const
+
 interface ChatInputProps {
   onSendMessage: (prompt: string, attachments: FileAttachment[]) => void;
   onStopStreaming?: () => void;
@@ -54,6 +60,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [showThinkingPopover, setShowThinkingPopover] = useState(false);
+  const [slashIndex, setSlashIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -86,9 +93,43 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
     }
+    setSlashIndex(0)
   }, [prompt]);
 
+  const slashQuery = prompt.startsWith('/') ? prompt.slice(1).split(/\s/)[0].toLowerCase() : ''
+  const slashMatches = prompt.startsWith('/') && !prompt.includes(' ')
+    ? SLASH_COMMANDS.filter((command) => command.id.startsWith(slashQuery))
+    : []
+
+  const applySlashCommand = (insert: string) => {
+    setPrompt(insert)
+    setSlashIndex(0)
+    requestAnimationFrame(() => textareaRef.current?.focus())
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashMatches.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSlashIndex((index) => (index + 1) % slashMatches.length)
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSlashIndex((index) => (index - 1 + slashMatches.length) % slashMatches.length)
+        return
+      }
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault()
+        applySlashCommand(slashMatches[slashIndex]?.insert || slashMatches[0].insert)
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setPrompt('')
+        return
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -240,6 +281,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
+        {slashMatches.length > 0 && (
+          <div className="mb-2 overflow-hidden rounded-xl border border-[#ececec] bg-white py-1 shadow-sm">
+            {slashMatches.map((command, index) => (
+              <button
+                key={command.id}
+                type="button"
+                onClick={() => applySlashCommand(command.insert)}
+                className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-[13px] cursor-pointer ${
+                  index === slashIndex ? 'bg-[#f6f6f6]' : 'hover:bg-[#fafafa]'
+                }`}
+              >
+                <span className="font-medium text-[#1a1a1a]">{command.label}</span>
+                <span className="text-[11px] text-[#8a8a8a]">{command.hint}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {/* Textarea Placeholder: "Write a message..." */}
         <textarea
           ref={textareaRef}
@@ -338,7 +396,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <button
               type="button"
               onClick={onToggleWebSearch}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors cursor-pointer ${
                 webSearchEnabled
                   ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
                   : 'text-primary hover:bg-accent'
@@ -347,13 +405,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               aria-pressed={webSearchEnabled}
             >
               <Globe className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
+              {webSearchEnabled ? <span className="pr-0.5 text-[11px] font-medium">Search</span> : null}
             </button>
 
             <div className="relative" ref={popoverRef}>
               <button
                 type="button"
                 onClick={() => setShowThinkingPopover((open) => !open)}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors cursor-pointer ${
                   thinkingBudget === 'extended'
                     ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
                     : 'text-primary hover:bg-accent'
@@ -361,6 +420,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 title={`Thinking: ${budgetLabel}`}
               >
                 <Brain className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
+                {thinkingBudget === 'extended' ? (
+                  <span className="pr-0.5 text-[11px] font-medium">Extended</span>
+                ) : null}
               </button>
               {showThinkingPopover && (
                 <div className="absolute bottom-10 right-0 z-40 w-44 rounded-xl border border-primary bg-white p-1.5 shadow-lg">
