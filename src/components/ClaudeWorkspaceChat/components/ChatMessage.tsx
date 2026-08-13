@@ -188,10 +188,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {displayedText}
             </ReactMarkdown>
 
-            {/* Typewriter cursor indicator */}
-            {isTyping && (
-              <span className="inline-block w-2 h-4 ml-1 bg-[#1E3A8A] animate-pulse align-middle" />
-            )}
           </div>
 
           {/* Web Search Citation Badges */}
