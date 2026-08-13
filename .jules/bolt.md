@@ -12,3 +12,7 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+
+## 2024-05-30 - Bolt: Optimize reduce anti-patterns
+**Learning:** The array-as-object `.reduce` pattern (or spreading inside reduce and spreading iterables) causes V8 de-optimization and O(N^2) memory churn.
+**Action:** Use `Object.fromEntries()` combined with `.map()` and `for...of` loops instead of `.reduce()` for cleaner and more performant single-pass dictionary building.
