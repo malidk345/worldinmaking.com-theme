@@ -13,6 +13,8 @@ import { normalizeBotName } from 'lib/bots/request-validation'
 import { searchDuckDuckGo } from 'lib/bots/web-search'
 import { formatAiSseEvent, type AiSseEvent } from 'lib/ai/contracts'
 
+export const runtime = 'edge'
+
 export const config = {
     api: {
         bodyParser: {
