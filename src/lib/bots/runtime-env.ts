@@ -6,7 +6,9 @@
  * We use a static import with try/catch so local Node.js dev falls back gracefully.
  */
 
-import { getRequestContext } from '@cloudflare/next-on-pages'
+// import { getRequestContext } from '@cloudflare/next-on-pages' // Removed to fix server-only import in client components
+
+const getRequestContext = () => { throw new Error('Not supported in this context') }
 
 export type EnvStore = Record<string, string | undefined>
 
