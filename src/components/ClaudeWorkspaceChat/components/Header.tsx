@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onToggleSidebar}
             className="p-1.5 rounded-md text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            title="Sidebar Aç/Kapat"
+            title="Toggle sidebar"
           >
             <PanelLeft className="h-4 w-4 stroke-[1.6]" />
           </button>
@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
                       onCloseNotebookContext();
                     }}
                     className="p-0.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-black dark:hover:text-white shrink-0 ml-1 cursor-pointer"
-                    title="Kapat"
+                    title="Close"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -144,11 +144,11 @@ export const Header: React.FC<HeaderProps> = ({
                       ? 'bg-white dark:bg-stone-900 border border-black/10 dark:border-white/10 text-neutral-900 dark:text-neutral-100 shadow-2xs font-medium'
                       : 'bg-neutral-200/40 hover:bg-neutral-200/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-transparent'
                   }`}
-                  title={chat.title || 'Yeni Sohbet'}
+                  title={chat.title || 'New chat'}
                 >
                   <Sparkles className={`h-3.5 w-3.5 shrink-0 stroke-[1.6] ${isActive ? 'text-neutral-700 dark:text-neutral-200' : 'text-neutral-400'}`} />
                   <span className="truncate text-[11px] tracking-tight">
-                    {chat.title || 'Yeni Sohbet'}
+                    {chat.title || 'New chat'}
                   </span>
                   {chats.length > 1 && onCloseChat && (
                     <button
@@ -160,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className={`p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-black dark:hover:text-white shrink-0 ml-auto cursor-pointer ${
                         isActive ? 'opacity-70' : 'opacity-0 group-hover:opacity-100'
                       }`}
-                      title="Kapat"
+                      title="Close"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onNewChat}
             className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer ml-0.5"
-            title="Yeni Sohbet (+)"
+            title="New chat"
           >
             <Plus className="h-3.5 w-3.5 stroke-[1.8]" />
           </button>
@@ -190,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
               className={`p-1.5 rounded-md text-neutral-600 hover:text-black dark:text-neutral-300 transition-colors cursor-pointer text-xs ${
                 isArtifactsOpen ? 'bg-white dark:bg-stone-800 shadow-2xs' : 'hover:bg-neutral-200/60'
               }`}
-              title="Artifacts Paneli"
+              title="Artifacts"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
                 <rect x="4.5" y="3" width="15" height="18" rx="2.5" />
@@ -205,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-md text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-              title="Paneli Kapat"
+              title="Close panel"
             >
               <X className="h-3.5 w-3.5" />
             </button>

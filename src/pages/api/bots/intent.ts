@@ -3,7 +3,7 @@ export const runtime = 'edge'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'
 import { checkRateLimit } from 'lib/bots/rate-limit'
-import { classifyIntent } from 'lib/bots/intent-router'
+import { resolveSearchIntent } from 'lib/bots/intent-router'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -30,6 +30,11 @@ export default async function handler(req: Request) {
     if (!rate.allowed) return json({ error: 'Rate limited', retryAfterSec: rate.retryAfterSec }, 429)
     const boundedQuestion = question.trim().slice(0, 8000)
 
-    const result = await classifyIntent(boundedQuestion, env)
-    return json({ ...result })
+    const result = await resolveSearchIntent(boundedQuestion, { env })
+    return json({
+        needsSearch: result.needsSearch,
+        searchQuery: result.searchQuery,
+        formatRequest: result.formatRequest,
+        source: result.source,
+    })
 }

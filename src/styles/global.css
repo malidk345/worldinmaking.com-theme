@@ -2337,6 +2337,15 @@ li.squeak-left-border {
     @apply bottom-0 top-[unset];
 }
 
+@keyframes wim-token-fade {
+    from {
+        opacity: 0.45;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

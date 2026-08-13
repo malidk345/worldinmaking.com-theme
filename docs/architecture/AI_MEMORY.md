@@ -189,10 +189,126 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-51` | Stream 5 | Persist workspace chats to Supabase, real share links, auth quotas, edit/retry rewrite | `supabase/migrations/`, `src/lib/chat-store.ts`, `src/pages/api/chats/*`, `src/pages/share/`, `src/components/ClaudeWorkspaceChat/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
 | `TSK-52` | Stream 5 | Claude-level artifact canvas: 1:1 toolbar, identifier versioning, split preview | `src/components/ClaudeWorkspaceChat/*`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
 | `TSK-53` | Stream 5 | Industry-standard AI path: messages[], unified stream failover, telemetry | `src/lib/bots/*`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-54` | Stream 5 | Remove dead Inkeep/Ask AI leftovers; leave LangChain unwired | `src/hooks/useChat.tsx`, `src/components/Chat/`, `src/notebook-app/scenes/notebooks/AskAI*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-55` | Stream 5 | Auto search intent + Tavily/Brave/DDG ladder | `src/lib/bots/web-search.ts`, `src/lib/bots/intent-router.ts`, `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-56` | Stream 5 | Multi-key Tavily/Brave rotation + 429 failover | `src/lib/bots/web-search.ts`, `.env.example` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-57` | Stream 5 | Search follow-up queries + live search UI flush + citation source | `src/lib/bots/search-intent.ts`, `src/lib/bots/intent-router.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-58` | Stream 5 | Fix empty public reply after Qwen thinking (fake quota error) | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-59` | Stream 5 | Hybrid native Qwen reasoning: off for brief/balanced, on for extended; show full native trace without eating the public-reply budget | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/thinking.ts`, workspace thinking UI | `[PLANNED]` | - | - |
+| `TSK-60` | Stream 5 | Stop duplicate artifacts on table requests (prompt-triggered fallback + weak dedup) | `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-61` | Stream 5 | Chat UI polish: English chrome, empty starters, artifact card meta, token fade | `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 079 - Chat UI polish pack (TSK-61)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chrome is English. Empty chats show four starter chips that fill the composer. Artifact cards show `Table · v2` style meta instead of “Click to open document”. Streaming dropped the typewriter delay; tokens appear live with a short fade and caret. Settings “typewriter” is now “Response motion”.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/{Header,ChatInput,ArtifactsPanel,SettingsModal,ShareModal,SearchModal,ProjectModal,Sidebar}.tsx`
+  - `src/styles/global.css`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual pass on empty chat, artifact card, and a live stream. No smoke suite this turn.
+- **Handoff:** Content (user/assistant text) stays in the user’s language. TSK-59 still parked.
+
+### Entry 078 - Duplicate table artifacts (TSK-60)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Asking for a table produced one good titled artifact plus a second leftover document. Cause: `extractArtifactsFromContent` treated `tablo` in the user prompt as a document request and/or kept a second tag whose title was the prompt. `tablo` is no longer a document trigger; GFM tables become at most one table artifact; prompt-echo titles/bodies are dropped; merge uses containment dedup.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `tests/extract-artifacts.spec.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/extract-artifacts.spec.ts` — 4 passed.
+- **Handoff:** Smoke “bir tablo oluştur”; expect one artifact card and leftover prose in the chat bubble. TSK-59 still parked.
+
+### Entry 077 - Park hybrid native reasoning (TSK-59)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** User asked to park a follow-up: revisit Qwen 3.6 native reasoning later. Current state after TSK-58 is `reasoning_effort: none` plus prompted `<thinking>` tags so the public reply is not starved. Desired later design: keep native off for brief/balanced; turn native `default` on for extended; do not run native CoT and prompted `<thinking>` at the same time; raise/reserve token budget so `content` still arrives; stream the real `reasoning_content` into ThinkingBlock without claiming it is a complete latent trace.
+- **Modified Files:**
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** Docs only.
+- **Handoff:** Do not flip native reasoning back on until this task is claimed. TSK-58 empty-reply guard and recovery must stay.
+
+### Entry 076 - Empty public reply after Qwen thinking (TSK-58)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chat showed a fake "API provider quota" error after thinking + quality check. Root cause: Groq `qwen/qwen3.6-27b` native reasoning consumed `max_tokens` (1800), so the public reply was empty. Quality gate then failed the empty body. Gateway now sends `reasoning_effort: none` for Qwen 3.6 (our `<thinking>` tags remain), raises max_tokens to 4096, closes unclosed `<think>` on stream end, falls back to Llama on stream, and recovers an empty public reply with one no-thinking follow-up. Frontend only mentions quota on a real 429/quota error.
+- **Modified Files:**
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `tests/thinking-tags.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). `pnpm exec playwright test tests/thinking-tags.spec.ts` — 5 passed.
+- **Handoff:** Restart `pnpm dev` if it is already running so the gateway change is picked up. Smoke a search question and a simple greeting. Do not push until asked.
+
+### Entry 075 - Search follow-ups + live UI flush (TSK-57)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace search now inherits factual context on short follow-ups (`ya ethereum?` after `bitcoin nedir`). Search SSE paints the thinking row immediately instead of waiting for the first token. Citation chips show Tavily/Brave/Wikipedia/DDG. News-like queries ask Tavily `topic=news` and fall back to `general`. `.env.local` already has two Tavily keys.
+- **Modified Files:**
+  - `src/lib/bots/search-intent.ts`
+  - `src/lib/bots/intent-router.ts`
+  - `src/lib/bots/web-search.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/lib/ai/contracts.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/types.ts`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`
+  - `.env.example`
+  - `tests/search-intent.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). `pnpm exec playwright test tests/search-intent.spec.ts tests/web-search-keys.spec.ts` — 6 passed.
+- **Handoff:** Live smoke a two-turn chat: `bitcoin nedir` then `ya ethereum?`. Globe still forces search. Do not wire LangChain. Do not commit `.env.local`. Do not push until asked.
+
+### Entry 074 - Multi-key Tavily/Brave rotation (TSK-56)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Tavily and Brave now accept comma-separated keys from two accounts. Requests round-robin across keys; 401/403/429/5xx/timeout fail over to the next key. First key already in `.env.local`; second key not pasted yet.
+- **Modified Files:**
+  - `src/lib/bots/web-search.ts`
+  - `src/lib/bots/search-keys.ts` [NEW]
+  - `.env.example`
+  - `tests/web-search-keys.spec.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** key-collection unit test added. Live second key pending user paste.
+- **Handoff:** User will send the second Tavily key to append as `TAVILY_API_KEY=key1,key2`. Do not commit `.env.local`.
+
+### Entry 073 - Auto search intent + Tavily/Brave/DDG ladder (TSK-55)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chat and notebook co-author now decide search from intent, not only the globe toggle. Heuristic first (`araştır`, `nedir`, who/what/when, news/prices); ambiguous queries still call the existing temp-0 classifier. Search query is extracted (`search the web for X` → `X`) instead of the raw user prompt. Provider ladder is Tavily → Brave → Wikipedia (entity-like queries) → DuckDuckGo Instant → DDG Lite. No LangChain, no SearXNG, no Google scrape. Globe-on still forces search.
+- **Modified Files:**
+  - `src/lib/bots/web-search.ts`
+  - `src/lib/bots/search-intent.ts` [NEW]
+  - `src/lib/bots/intent-router.ts`
+  - `tests/search-intent.spec.ts` [NEW]
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/pages/api/bots/intent.ts`
+  - `.env.example`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). `pnpm exec playwright test tests/search-intent.spec.ts` — 3 passed. Live Tavily/Brave hits need keys; without them Wikipedia + DDG still run.
+- **Handoff:** Add Tavily or Brave keys for production-quality results. Do not wire LangChain tools. Do not push until the user asks.
+
+### Entry 072 - Remove Inkeep and dead Ask AI surfaces (TSK-54)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Deleted unused Inkeep/ChatOverlay stubs and the orphan Ask AI panel/hooks/dropdown. Notebook toolbar still opens Claude workspace chat via `AskAI/index.tsx`. LangChain stays on disk for verify scripts only — not wired into `/api/chat`.
+- **Modified Files:**
+  - Removed: `src/hooks/useChat.tsx`, `src/hooks/useInkeepSettings.ts`, `src/components/Chat/*`, leftover Ask AI panel files, `NotebookEditor`/`BotCoAuthor`
+  - `src/components/Wrapper/index.tsx`, `src/components/MainNav/index.tsx`, `src/context/App.tsx`, `src/lib/chat-bots/langchain-pipeline.ts`
+- **Verification:** Import graph check — live Ask AI launcher and OSActionCard remain. Typecheck not rerun this turn.
+- **Handoff:** Do not reconnect LangChain as a second generation path. Tool-loop later should sit on `ai-gateway`, not LangChain ChatGroq.
 
 ### Entry 071 - Industry-standard AI path without changing providers (TSK-53)
 - **Date:** 2026-08-13

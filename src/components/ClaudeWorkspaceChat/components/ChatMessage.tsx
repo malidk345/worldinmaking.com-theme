@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
-import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, Edit2, ArrowDownToLine, RotateCcw } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw } from 'lucide-react';
+import { SourceFavicon } from './SourceFavicon';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,6 +13,7 @@ interface ChatMessageProps {
   modelOptions: ModelOption[];
   targetChatId: string;
   onOpenArtifact?: (art: Artifact, origin?: DOMRect) => void;
+  onOpenSources?: (citations: Message['citations'], origin?: DOMRect) => void;
   onEditPrompt?: (content: string, messageId: string) => void;
   onRetry?: (messageId: string) => void;
   onFeedback?: (messageId: string, liked: boolean | null) => void;
@@ -20,18 +22,55 @@ interface ChatMessageProps {
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
 
-function safeExternalUrl(value: string): string | null {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
-  } catch {
-    return null;
+function detectSpeechLang(text: string): 'tr-TR' | 'en-US' {
+  const sample = text.slice(0, 800)
+  const turkishChars = (sample.match(/[çğıöşüÇĞİÖŞÜ]/g) || []).length
+  if (turkishChars >= 2) return 'tr-TR'
+  const turkishWords = (sample.match(/\b(ve|bir|bu|için|ile|ama|çok|daha|gibi|olarak|değil|nedir|var|yok)\b/gi) || []).length
+  const englishWords = (sample.match(/\b(the|and|for|with|this|that|from|have|not|what|is|are)\b/gi) || []).length
+  if (englishWords > turkishWords) return 'en-US'
+  return turkishChars > 0 ? 'tr-TR' : 'en-US'
+}
+
+function textForSpeech(value: string): string {
+  return value
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[#*_`>]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function artifactCardMeta(art: Artifact): string {
+  const kinds: Record<Artifact['type'], string> = {
+    table: 'Table',
+    chart: 'Chart',
+    react: 'Component',
+    html: 'HTML',
+    svg: 'SVG',
+    mermaid: 'Diagram',
+    markdown: 'Document',
+    json: 'JSON',
+    code: 'Code',
   }
+  const kind = kinds[art.type] || 'Document'
+  return art.version > 1 ? `${kind} · v${art.version}` : kind
+}
+
+function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+  if (!('speechSynthesis' in window)) return undefined
+  const voices = window.speechSynthesis.getVoices()
+  const prefix = lang.toLowerCase().slice(0, 2)
+  return (
+    voices.find((voice) => voice.lang.replace('_', '-').toLowerCase() === lang.toLowerCase()) ||
+    voices.find((voice) => voice.lang.toLowerCase().startsWith(prefix))
+  )
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   onOpenArtifact,
+  onOpenSources,
   onEditPrompt,
   onRetry,
   onFeedback,
@@ -42,49 +81,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-
-  // Typewriter effect state
-  const isHistorical = useRef(message.isTypingDone).current;
-  const isDirectDisplay = isUser || isHistorical || typewriterSpeed === 'off';
-  const [animatedText, setAnimatedText] = useState(isDirectDisplay ? message.content : '');
-  const [isTyping, setIsTyping] = useState(!isDirectDisplay);
-  const currentIndexRef = useRef(isDirectDisplay ? message.content.length : 0);
-  const contentRef = useRef(message.content);
-
-  useEffect(() => {
-    contentRef.current = message.content;
-  }, [message.content]);
-
-  const displayedText = isDirectDisplay ? message.content : animatedText;
-
-  useEffect(() => {
-    if (isDirectDisplay) {
-      if (isTyping) setIsTyping(false);
-      return;
-    }
-
-    setIsTyping(true);
-    const speedMs = typewriterSpeed === 'slow' ? 35 : typewriterSpeed === 'fast' ? 8 : 18;
-
-    const interval = setInterval(() => {
-      const fullText = contentRef.current;
-      if (currentIndexRef.current >= fullText.length) {
-        if (message.isTypingDone) {
-          setAnimatedText(fullText);
-          setIsTyping(false);
-          clearInterval(interval);
-        }
-      } else {
-        const distance = fullText.length - currentIndexRef.current;
-        const step = Math.max(1, distance > 200 ? 8 : distance > 50 ? 3 : 1);
-        currentIndexRef.current += step;
-        if (currentIndexRef.current > fullText.length) currentIndexRef.current = fullText.length;
-        setAnimatedText(fullText.slice(0, currentIndexRef.current));
-      }
-    }, speedMs);
-
-    return () => clearInterval(interval);
-  }, [message.isTypingDone, isDirectDisplay, typewriterSpeed]);
+  const displayedText = message.content;
+  const isLiveAnswer = !isUser && !!message.isStreaming && !message.isTypingDone;
+  const fadeMs =
+    typewriterSpeed === 'off' ? 0 : typewriterSpeed === 'slow' ? 280 : typewriterSpeed === 'fast' ? 120 : 180;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -92,20 +92,39 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return
+    const loadVoices = () => {
+      window.speechSynthesis.getVoices()
+    }
+    loadVoices()
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+      window.speechSynthesis.cancel()
+    }
+  }, [])
+
   const handleSpeak = () => {
     if (!('speechSynthesis' in window)) return;
 
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-    } else {
-      const utterance = new SpeechSynthesisUtterance(message.content);
-      utterance.lang = 'tr-TR';
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
+      return
     }
+
+    const spoken = textForSpeech(message.content)
+    if (!spoken) return
+    const lang = detectSpeechLang(spoken)
+    const utterance = new SpeechSynthesisUtterance(spoken);
+    utterance.lang = lang;
+    const voice = pickVoice(lang)
+    if (voice) utterance.voice = voice
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
   };
 
   return (
@@ -139,7 +158,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
       ) : (
         /* ASSISTANT MESSAGE: Full width text in Anthropic Serif font */
-        <div className="space-y-3 text-primary">
+        <div className="space-y-2 text-primary">
           {/* Thinking Process Accordion / Header */}
           <div className="flex items-center justify-between">
             <ThinkingBlock
@@ -157,7 +176,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
 
           {/* Response Text with High Quality Editorial Anthropic Serif Font */}
-          <div className="font-claude-serif text-[15px] sm:text-[15.5px] leading-[1.6] text-primary claude-prose max-w-none tracking-[0.01em]">
+          <div
+            className="font-claude-serif text-[15px] sm:text-[15.5px] leading-[1.6] text-primary claude-prose max-w-none tracking-[0.01em]"
+            style={
+              isLiveAnswer && fadeMs > 0
+                ? { animation: `wim-token-fade ${fadeMs}ms ease-out` }
+                : undefined
+            }
+          >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
                rehypePlugins={[rehypeSanitize]}
@@ -175,7 +201,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                           onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
                           className="flex items-center gap-1 hover:text-stone-200 transition-colors"
                         >
-                          <Copy className="h-3 w-3" /> Kopyala
+                          <Copy className="h-3 w-3" /> Copy
                         </button>
                       </div>
                       <pre className="p-3 overflow-x-auto font-mono text-xs">{children}</pre>
@@ -190,37 +216,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             >
               {displayedText}
             </ReactMarkdown>
-
+            {isLiveAnswer ? (
+              <span
+                className="ml-0.5 inline-block h-[0.95em] w-[1.5px] translate-y-[0.12em] bg-current align-baseline animate-pulse"
+                aria-hidden="true"
+              />
+            ) : null}
           </div>
-
-          {/* Web Search Citation Badges */}
-          {message.citations && message.citations.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-primary space-y-1.5 font-sans">
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
-                Kaynaklar ({message.citations.length}):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {message.citations.map((c) => {
-                  const href = safeExternalUrl(c.url);
-                  return href ? (
-                    <a
-                      key={c.id}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group inline-flex items-center gap-1.5 rounded-lg border border-primary bg-white px-2.5 py-1 text-xs text-primary hover:border-amber-500 transition-all"
-                    >
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-secondary">
-                        {c.id}
-                      </span>
-                      <span className="max-w-[200px] truncate font-medium">{c.title}</span>
-                      <ExternalLink className="h-3 w-3 opacity-50" />
-                    </a>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
@@ -230,14 +232,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-[#e7e7e7] bg-[#fafafa] px-4 py-3 text-left transition-colors hover:bg-white cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-[#e7e7e7] bg-[#fafafa] px-4 py-3 text-left transition-all hover:bg-white hover:shadow-sm cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-[#1a1a1a]">
                       {art.title}
                     </div>
                     <div className="mt-0.5 truncate text-[12.5px] text-[#8a8a8a]">
-                      {art.version > 1 ? `Click to open document · v${art.version}` : 'Click to open document'}
+                      {artifactCardMeta(art)}
                     </div>
                   </div>
                   <div className="pointer-events-none absolute right-3 top-1/2 flex h-[58px] w-[44px] -translate-y-1/2 -rotate-[8deg] items-center justify-center rounded-t-md border border-[#e5e5e5] bg-white shadow-sm transition-transform group-hover/artifact-block:-rotate-[5deg]" aria-hidden="true">
@@ -259,49 +261,33 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
-          {!isTyping && message.isTypingDone && (
-            <div className="pt-2 flex items-center gap-3 text-muted font-sans">
+          {!message.isStreaming && message.isTypingDone && (
+            <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
               <button
                 onClick={handleCopy}
-                className="p-1 hover:text-primary transition-colors text-xs flex items-center gap-1 cursor-pointer"
-                title="Metni Kopyala"
+                className="p-0.5 hover:text-primary transition-colors cursor-pointer"
+                title="Copy"
               >
-                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
-
-              {!isUser && !message.isStreaming && (
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent('wimNotebookInsertText', {
-                        detail: { text: message.content, mode: 'append' },
-                      })
-                    )
-                  }}
-                  className="p-1 hover:text-primary transition-colors cursor-pointer text-xs flex items-center gap-1"
-                  title="Not Defterine Ekle (Insert)"
-                >
-                  <ArrowDownToLine className="h-4 w-4" />
-                </button>
-              )}
 
               <button
                 onClick={handleSpeak}
-                className={`p-1 hover:text-primary transition-colors text-xs cursor-pointer ${
+                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
                   isSpeaking ? 'text-amber-600' : ''
                 }`}
-                title="Sesli Oynat"
+                title="Read aloud"
               >
-                {isSpeaking ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4" />}
+                {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5" />}
               </button>
 
               {onRetry && (
                 <button
                   onClick={() => onRetry(message.id)}
-                  className="p-1 hover:text-primary transition-colors cursor-pointer"
-                  title="Yeniden üret"
+                  className="p-0.5 hover:text-primary transition-colors cursor-pointer"
+                  title="Retry"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                 </button>
               )}
 
@@ -311,12 +297,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   setLiked(next)
                   onFeedback?.(message.id, next)
                 }}
-                className={`p-1 hover:text-primary transition-colors cursor-pointer ${
+                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
                   liked === true ? 'text-emerald-600' : ''
                 }`}
-                title="Beğendim"
+                title="Good response"
               >
-                <ThumbsUp className="h-4 w-4" />
+                <ThumbsUp className="h-3.5 w-3.5" />
               </button>
 
               <button
@@ -325,13 +311,38 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   setLiked(next)
                   onFeedback?.(message.id, next)
                 }}
-                className={`p-1 hover:text-primary transition-colors cursor-pointer ${
+                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
                   liked === false ? 'text-rose-600' : ''
                 }`}
-                title="Beğenmedim"
+                title="Bad response"
               >
-                <ThumbsDown className="h-4 w-4" />
+                <ThumbsDown className="h-3.5 w-3.5" />
               </button>
+
+              {message.citations && message.citations.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(event) => onOpenSources?.(message.citations, event.currentTarget.getBoundingClientRect())}
+                  className="ml-1.5 flex items-center cursor-pointer"
+                  title={`${message.citations.length} ${message.citations.length === 1 ? 'source' : 'sources'}`}
+                  aria-label={`${message.citations.length} ${message.citations.length === 1 ? 'source' : 'sources'}`}
+                >
+                  <span className="flex items-center">
+                    {message.citations.slice(0, 4).map((citation, index) => (
+                      <span
+                        key={citation.id}
+                        className="relative inline-flex rounded-full ring-2 ring-white"
+                        style={{ marginLeft: index === 0 ? 0 : -7, zIndex: 10 - index }}
+                      >
+                        <SourceFavicon citation={citation} size={18} />
+                      </span>
+                    ))}
+                  </span>
+                  {message.citations.length > 4 ? (
+                    <span className="ml-1 text-[10px] text-[#8a8a8a]">+{message.citations.length - 4}</span>
+                  ) : null}
+                </button>
+              )}
             </div>
           )}
         </div>

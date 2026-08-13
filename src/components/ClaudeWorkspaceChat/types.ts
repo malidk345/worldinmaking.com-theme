@@ -62,6 +62,7 @@ export interface WebCitation {
   title: string
   url: string
   snippet: string
+  source?: string
 }
 
 export interface FileAttachment {

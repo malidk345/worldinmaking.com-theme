@@ -2459,9 +2459,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         )
     }
 
-    // The chat UI is rendered once as a global overlay (see `ChatOverlay`) rather
-    // than as a managed window. Opening a chat just stores its params and flips the
-    // `chatOpen` flag; a fresh set of params remounts the overlay's `ChatProvider`.
+    // Workspace chat is the ClaudeWorkspaceChat slide-over, not a managed window.
     const openNewChat = (params: ChatParams) => {
         setChatParams(params)
         setChatOpen(true)

@@ -126,6 +126,21 @@ const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
 const GATEWAY_TOTAL_TIMEOUT_MS = 45_000
 const MAX_SYSTEM_PROMPT_CHARS = 30_000
 const MAX_USER_PROMPT_CHARS = 16_000
+const DEFAULT_MAX_TOKENS = 4096
+
+function isQwen36(model: string): boolean {
+    return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
+}
+
+/**
+ * Qwen 3.6 native reasoning can consume the entire max_tokens budget, leaving
+ * an empty public reply. The orchestrator already asks for <thinking> tags, so
+ * native chain-of-thought is redundant and must be turned off.
+ */
+function providerBodyExtras(model: string): Record<string, unknown> {
+    if (isQwen36(model)) return { reasoning_effort: 'none' }
+    return {}
+}
 
 function isFamilyCooling(name: string): boolean {
     const coolUntil = PROVIDER_COOLDOWNS.get(name)
@@ -263,8 +278,9 @@ async function chatCompletionsStream(
                 model,
                 messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
-                max_tokens: 1800,
-                stream: true
+                max_tokens: DEFAULT_MAX_TOKENS,
+                stream: true,
+                ...providerBodyExtras(model),
             }),
         }, timeoutMs)
 
@@ -301,25 +317,35 @@ async function chatCompletionsStream(
                             try {
                                 const data = JSON.parse(line.slice(6))
                                 const delta = data.choices?.[0]?.delta
-                                
-                                if (delta?.reasoning_content) {
+                                const reasoning = typeof delta?.reasoning_content === 'string'
+                                    ? delta.reasoning_content
+                                    : typeof delta?.reasoning === 'string'
+                                      ? delta.reasoning
+                                      : ''
+                                const content = typeof delta?.content === 'string' ? delta.content : ''
+
+                                if (reasoning) {
                                     if (!hasStartedReasoning) {
                                         hasStartedReasoning = true
                                         yield '<think>'
                                     }
-                                    yield delta.reasoning_content
-                                } else if (delta?.content) {
+                                    yield reasoning
+                                }
+                                if (content) {
                                     if (hasStartedReasoning && !hasFinishedReasoning) {
                                         hasFinishedReasoning = true
                                         yield '</think>'
                                     }
-                                    yield delta.content
+                                    yield content
                                 }
                             } catch {
                                 // Ignore parse errors in stream
                             }
                         }
                     }
+                }
+                if (hasStartedReasoning && !hasFinishedReasoning) {
+                    yield '</think>'
                 }
             } finally {
                 reader.releaseLock()
@@ -357,7 +383,8 @@ async function chatCompletions(
                 model,
                 messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
-                max_tokens: 1800,
+                max_tokens: DEFAULT_MAX_TOKENS,
+                ...providerBodyExtras(model),
             }),
         }, timeoutMs)
         const raw = await fetchRes.text()
@@ -773,22 +800,27 @@ export async function streamWithGateway(params: {
 
         if (family === 'groq' && groqKeys.length > 0) {
             let sawRateLimit = false
-            for (const key of groqKeys) {
-                if (Date.now() >= deadline) break
-                const r = await chatCompletionsStream(
-                    'https://api.groq.com/openai/v1/chat/completions',
-                    key,
-                    groqModel,
-                    params.systemPrompt,
-                    params.userPrompt,
-                    params.temperature,
-                    {},
-                    deadline,
-                    params.history,
-                )
-                if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
-                if (isRateLimitDetail(r.detail)) sawRateLimit = true
-                attempts.push(`groq: ${r.detail}`)
+            const groqModels = groqModel === 'llama-3.3-70b-versatile'
+                ? [groqModel]
+                : [groqModel, 'llama-3.3-70b-versatile']
+            for (const model of groqModels) {
+                for (const key of groqKeys) {
+                    if (Date.now() >= deadline) break
+                    const r = await chatCompletionsStream(
+                        'https://api.groq.com/openai/v1/chat/completions',
+                        key,
+                        model,
+                        params.systemPrompt,
+                        params.userPrompt,
+                        params.temperature,
+                        {},
+                        deadline,
+                        params.history,
+                    )
+                    if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+                    if (isRateLimitDetail(r.detail)) sawRateLimit = true
+                    attempts.push(`groq(${model}): ${r.detail}`)
+                }
             }
             if (sawRateLimit) markFamilyCooling('groq')
             continue

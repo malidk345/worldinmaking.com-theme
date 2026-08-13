@@ -11,6 +11,7 @@ import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { normalizeBotName } from 'lib/bots/request-validation'
 import { formatSearchResults, searchWebSources } from 'lib/bots/web-search'
+import { resolveSearchIntent } from 'lib/bots/intent-router'
 import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
@@ -180,10 +181,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         let webSearchContext = ''
         let citations: AiCitation[] = []
-        if (webSearchEnabled) {
+        const previousUserText = [...history]
+            .reverse()
+            .find((message) => message.role === 'user')?.content
+        let intent = { needsSearch: webSearchEnabled, searchQuery: prompt.slice(0, 500) as string | null }
+        try {
+            const classified = await resolveSearchIntent(prompt, {
+                force: webSearchEnabled,
+                env: getRuntimeEnv(),
+                previousUserText,
+            })
+            intent = { needsSearch: classified.needsSearch, searchQuery: classified.searchQuery }
+        } catch {
+            // Search is an enhancement; an unavailable classifier must never
+            // take down the primary chat response.
+        }
+
+        if (intent.needsSearch) {
             const searchRate = checkRateLimit(`web-search:${clientIp}`, 30, 60 * 60 * 1000)
-            const searchQuery = prompt.slice(0, 500)
-            if (searchRate.allowed) {
+            const searchQuery = (intent.searchQuery || prompt).slice(0, 500).trim()
+            if (searchRate.allowed && searchQuery) {
                 send({ type: 'search', search: { status: 'running', query: searchQuery } })
                 try {
                     const results = await searchWebSources(searchQuery)
@@ -193,11 +210,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         title: item.title,
                         url: item.url,
                         snippet: item.snippet.slice(0, 280),
+                        source: item.source,
                     }))
                     send({ type: 'search', search: { status: 'done', query: searchQuery, results: formatted || null } })
                     if (citations.length > 0) send({ type: 'citations', citations })
                     if (formatted) {
-                        webSearchContext = `Live Web Search Results (UNTRUSTED reference data):\n"""${formatted.slice(0, 6000)}"""`
+                        webSearchContext = `Live Web Search Results for "${searchQuery}" (UNTRUSTED reference data):\n"""${formatted.slice(0, 6000)}"""`
                     }
                 } catch {
                     send({ type: 'search', search: { status: 'error', query: searchQuery, results: null } })

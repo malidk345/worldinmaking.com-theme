@@ -1,22 +1,27 @@
 /**
  * Shared Intent Classifier — WorldInMaking.com
  *
- * Fast, deterministic (temperature 0) LLM classification of what a user
- * message is asking for: does it need a live web search, and/or a specific
- * output format (to-do list / plan)? Shared by `/api/bots/intent.ts` (client
- * dropdown) and `/api/notebook/co-author.ts` (Ask AI search step) so both
- * surfaces use the exact same prompt/parsing instead of two drifting copies.
+ * Heuristic first, then a temperature-0 LLM only when the query is ambiguous.
+ * Shared by `/api/chat`, `/api/bots/intent.ts`, and `/api/notebook/co-author.ts`
+ * so workspace chat and notebook co-author decide search the same way.
  */
 
 import { generateWithGateway } from './ai-gateway'
 import type { EnvStore } from './runtime-env'
 import { SECURITY_PREAMBLE } from './orchestrate'
+import {
+    DEFAULT_INTENT,
+    expandSearchQuery,
+    extractSearchQuery,
+    inferFormat,
+    inferSearchIntent,
+    looksLikeFollowUp,
+    type IntentResult,
+    type ResolvedSearchIntent,
+} from './search-intent'
 
-export interface IntentResult {
-    needsSearch: boolean
-    searchQuery: string | null
-    formatRequest: 'todo' | 'plan' | 'none'
-}
+export type { IntentResult, ResolvedSearchIntent, SearchIntentSource } from './search-intent'
+export { expandSearchQuery, extractSearchQuery, inferFormat, inferSearchIntent, looksLikeFollowUp }
 
 const INTENT_SYSTEM_PROMPT = `You are a fast intent classifier for a philosophical AI assistant.
 Your ONLY job is to analyze the user's request and output a STRICT JSON object representing what the user wants the assistant to do.
@@ -35,11 +40,100 @@ Output ONLY valid JSON with this exact structure, nothing else:
 
 Do not include markdown code fences. Just the raw JSON object.`
 
-const DEFAULT_RESULT: IntentResult = { needsSearch: false, searchQuery: null, formatRequest: 'none' }
+/**
+ * Force (globe on) → always search.
+ * Clear heuristic → skip LLM.
+ * Ambiguous → classifyIntent, falling back to the heuristic if the LLM is down.
+ */
+export async function resolveSearchIntent(
+    question: string,
+    opts?: { force?: boolean; env?: EnvStore; previousUserText?: string }
+): Promise<ResolvedSearchIntent> {
+    const bounded = question.trim().slice(0, 8000)
+    if (!bounded) return { ...DEFAULT_INTENT, source: 'none' }
+    const previousUserText = opts?.previousUserText?.trim().slice(0, 800) || ''
+
+    if (opts?.force) {
+        return {
+            needsSearch: true,
+            searchQuery: expandSearchQuery(bounded, previousUserText),
+            formatRequest: inferFormat(bounded),
+            source: 'force',
+        }
+    }
+
+    const heuristic = inferSearchIntent(bounded)
+
+    // Greetings / creative / self questions stay high-confidence no-search.
+    if (heuristic.confidence === 'high' && !heuristic.needsSearch) {
+        return {
+            needsSearch: false,
+            searchQuery: null,
+            formatRequest: heuristic.formatRequest,
+            source: 'heuristic',
+        }
+    }
+
+    if (previousUserText && looksLikeFollowUp(bounded)) {
+        const previous = inferSearchIntent(previousUserText)
+        if (previous.needsSearch || heuristic.needsSearch) {
+            return {
+                needsSearch: true,
+                searchQuery: expandSearchQuery(heuristic.searchQuery || bounded, previousUserText),
+                formatRequest: heuristic.formatRequest,
+                source: 'heuristic',
+            }
+        }
+    }
+
+    if (heuristic.confidence === 'high') {
+        return {
+            needsSearch: heuristic.needsSearch,
+            searchQuery: heuristic.needsSearch
+                ? expandSearchQuery(heuristic.searchQuery || bounded, previousUserText)
+                : heuristic.searchQuery,
+            formatRequest: heuristic.formatRequest,
+            source: 'heuristic',
+        }
+    }
+
+    try {
+        const llm = await classifyIntent(bounded, opts?.env)
+        if (llm.needsSearch) {
+            return {
+                needsSearch: true,
+                searchQuery: expandSearchQuery(
+                    llm.searchQuery || heuristic.searchQuery || bounded,
+                    previousUserText
+                ),
+                formatRequest: llm.formatRequest,
+                source: 'llm',
+            }
+        }
+        if (heuristic.needsSearch) {
+            return {
+                needsSearch: true,
+                searchQuery: expandSearchQuery(heuristic.searchQuery || bounded, previousUserText),
+                formatRequest: llm.formatRequest || heuristic.formatRequest,
+                source: 'heuristic',
+            }
+        }
+        return { ...llm, source: 'llm' }
+    } catch {
+        return {
+            needsSearch: heuristic.needsSearch,
+            searchQuery: heuristic.needsSearch
+                ? expandSearchQuery(heuristic.searchQuery || bounded, previousUserText)
+                : heuristic.searchQuery,
+            formatRequest: heuristic.formatRequest,
+            source: heuristic.needsSearch ? 'heuristic' : 'none',
+        }
+    }
+}
 
 export async function classifyIntent(question: string, env?: EnvStore): Promise<IntentResult> {
     const boundedQuestion = question.trim().slice(0, 8000)
-    if (!boundedQuestion) return DEFAULT_RESULT
+    if (!boundedQuestion) return DEFAULT_INTENT
 
     const gen = await generateWithGateway({
         systemPrompt: SECURITY_PREAMBLE + '\n\n' + INTENT_SYSTEM_PROMPT,
@@ -50,7 +144,7 @@ export async function classifyIntent(question: string, env?: EnvStore): Promise<
         temperature: 0,
     })
 
-    if (!gen.ok) return DEFAULT_RESULT
+    if (!gen.ok) return DEFAULT_INTENT
 
     try {
         let text = gen.text.trim()
@@ -63,6 +157,6 @@ export async function classifyIntent(question: string, env?: EnvStore): Promise<
             formatRequest: ['todo', 'plan', 'none'].includes(result.formatRequest) ? result.formatRequest : 'none',
         }
     } catch {
-        return DEFAULT_RESULT
+        return DEFAULT_INTENT
     }
 }

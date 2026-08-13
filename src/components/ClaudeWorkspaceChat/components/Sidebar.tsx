@@ -317,7 +317,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {artifacts.length > 0 && (
             <div className="pt-2 space-y-1 border-t border-primary/40">
               <div className="flex items-center justify-between px-3 py-1 text-[11px] font-medium text-muted uppercase tracking-wider">
-                <span>Belgeler & Artifacts</span>
+                <span>Documents & artifacts</span>
                 <span className="font-mono text-[10px] text-muted">{artifacts.length}</span>
               </div>
               {artifacts.map((art) => {

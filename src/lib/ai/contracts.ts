@@ -32,6 +32,7 @@ export interface AiCitation {
     title: string
     url: string
     snippet: string
+    source?: string
 }
 
 export type AiArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'

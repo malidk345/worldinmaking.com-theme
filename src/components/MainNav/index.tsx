@@ -35,7 +35,7 @@ import getAvatarURL from 'components/Squeak/util/getAvatar'
 import MediaUploadModal from 'components/MediaUploadModal'
 import SideModal from 'components/Modal/SideModal'
 import { Authentication } from 'components/Squeak'
-import { useChat } from 'hooks/useChat'
+
 
 export const Avatar = (props: { className?: string; src?: string }) => {
     return (
@@ -386,7 +386,6 @@ const TheoTooltip = () => {
 
 export const Main = () => {
     const { user, logout } = useUser()
-    const { openChat, hasUnread } = useChat()
     const {
         menu,
         parent,

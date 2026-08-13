@@ -14,11 +14,84 @@ export function titleFromArtifactContent(content: string, fallback = 'Untitled')
   const first = content
     .split('\n')
     .map((line) => line.trim())
-    .find((line) => line && !line.startsWith('<') && !line.startsWith('```') && !line.startsWith('{'))
+    .find((line) => line && !line.startsWith('<') && !line.startsWith('```') && !line.startsWith('{') && !line.startsWith('|'))
   if (first) {
     return first.replace(/^[*_`>~>\-\d.]+(?:\s+)/, '').trim().slice(0, 80) || fallback
   }
   return fallback
+}
+
+function normalizeArtifactBody(content: string): string {
+  return content.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+export function isPromptLikeTitle(title: string, userPrompt: string): boolean {
+  const titleNorm = title.toLowerCase().replace(/[\s\-_?!.]+/g, '')
+  const promptNorm = userPrompt.toLowerCase().replace(/[\s\-_?!.]+/g, '')
+  if (titleNorm.length < 8 || promptNorm.length < 8) return false
+  if (titleNorm === promptNorm) return true
+  const almostWholePrompt = titleNorm.length >= promptNorm.length * 0.8
+  if (almostWholePrompt && (titleNorm.includes(promptNorm) || promptNorm.includes(titleNorm))) return true
+  return false
+}
+
+export function dedupeArtifacts<T extends { id?: string; identifier?: string; type: string; title: string; content: string }>(
+  items: T[]
+): T[] {
+  const result: T[] = []
+  for (const item of items) {
+    const body = normalizeArtifactBody(item.content)
+    const existingIndex = result.findIndex((candidate) => {
+      if (item.id && candidate.id && item.id === candidate.id) return true
+      if (item.identifier && candidate.identifier && item.identifier === candidate.identifier) return true
+      const other = normalizeArtifactBody(candidate.content)
+      if (!body || !other) return false
+      if (body === other) return true
+      if (body.includes(other) || other.includes(body)) return true
+      return item.title.trim().toLowerCase() === candidate.title.trim().toLowerCase()
+    })
+    if (existingIndex < 0) {
+      result.push(item)
+      continue
+    }
+    const current = result[existingIndex]
+    const currentBody = normalizeArtifactBody(current.content)
+    const incomingIsTighterTable = item.type === 'table' && current.type !== 'table'
+    const incomingIsInnerCopy = body.length > 20 && currentBody.includes(body) && body.length < currentBody.length
+    if (incomingIsTighterTable || incomingIsInnerCopy) result[existingIndex] = item
+  }
+  return result
+}
+
+function isPromptEcho(content: string, userPrompt: string): boolean {
+  const body = normalizeArtifactBody(content)
+  const prompt = normalizeArtifactBody(userPrompt)
+  if (body.length < 8 || prompt.length < 8) return false
+  return body === prompt || (body.length <= prompt.length + 16 && (body.includes(prompt) || prompt.includes(body)))
+}
+
+function dropPromptEchoes<T extends { title: string; content: string }>(items: T[], userPrompt: string): T[] {
+  const kept = items.filter((item) => !isPromptLikeTitle(item.title, userPrompt) && !isPromptEcho(item.content, userPrompt))
+  return kept.length > 0 ? kept : items
+}
+
+function resolveArtifactTitle(rawTitle: string | undefined, content: string, userPrompt: string, fallback: string): string {
+  const fromContent = titleFromArtifactContent(content, fallback)
+  const title = (rawTitle || '').trim() || fromContent
+  if (isPromptLikeTitle(title, userPrompt)) return fromContent === title ? fallback : fromContent
+  return title
+}
+
+function extractGfmTables(content: string): string[] {
+  const tables: string[] = []
+  const tablePattern =
+    /(?:^|\n)((?:[^\n]*\n)?\|[^\n]+\|\r?\n\|[-:| \t]+\|(?:\r?\n\|[^\n]+\|)*)/g
+  let match: RegExpExecArray | null
+  while ((match = tablePattern.exec(content)) !== null) {
+    const table = match[1].trim()
+    if (table.split('\n').filter(Boolean).length >= 2) tables.push(table)
+  }
+  return tables
 }
 
 export function extractArtifactsFromContent(content: string, userPrompt: string): Artifact[] {
@@ -54,10 +127,10 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     // Chart envelopes are parsed by the shared, validated chart parser above.
     if (rawType === 'chart' || rawType === 'visualization') continue;
 
-    const title = (titleMatch?.[1] || '').trim() || titleFromArtifactContent(artContent, 'Untitled');
     const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
       ? rawType
       : 'markdown') as ArtifactType;
+    const title = resolveArtifactTitle(titleMatch?.[1], artContent, userPrompt, 'Untitled');
 
     if (artContent) {
       artifacts.push({
@@ -67,17 +140,20 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
         type,
         language: langMatch ? langMatch[1] : undefined,
         content: artContent,
-        description: type === 'markdown' ? 'Document' : `Created for "${userPrompt.slice(0, 40)}"`,
+        description: type === 'markdown' || type === 'table' ? 'Document' : 'Generated artifact',
         version: 1,
         createdAt: now,
       });
     }
   }
 
-  if (artifacts.length > 0) return [...chartArtifacts, ...artifacts];
+  if (artifacts.length > 0) return dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt);
 
   // 2. Code block & Document extraction (```html, ```react, ```svg, ```markdown, etc.)
-  const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|şema|sema|tablo|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor|grafik|diyagram|diagram|chart|graph|dashboard|arayüz|arayuz|ui|component|tasarım|tasarim)/i.test(userPrompt);
+  // "tablo" is NOT a document request — it used to wrap the whole assistant
+  // reply as a second markdown artifact next to the real table.
+  const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor)/i.test(userPrompt);
+  const isTableRequested = /\b(tablo|table|karşılaştırma|karsilastirma|comparison)\b/i.test(userPrompt);
 
   const codeBlockRegex = /```([a-z0-9_-]*)\n([\s\S]*?)```/gi;
   let codeMatch: RegExpExecArray | null;
@@ -123,7 +199,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
       artType = 'code';
     }
 
-    const title = titleFromArtifactContent(blockContent, lang ? `${lang} artifact` : 'Untitled')
+    const title = resolveArtifactTitle(undefined, blockContent, userPrompt, lang ? `${lang} artifact` : 'Untitled')
 
     artifacts.push({
       id: `art-${Date.now()}-${blockCount + 1}`,
@@ -138,14 +214,32 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     blockCount++;
   }
 
-  // 3. Fallback: If user explicitly asked for a document ("belge oluştur") and no explicit tag or code block was parsed, turn response into a Markdown Document Artifact!
+  // 3. A markdown table in the visible reply is at most one table artifact.
+  if (artifacts.length === 0 && isTableRequested) {
+    const tables = extractGfmTables(content)
+    if (tables[0]) {
+      artifacts.push({
+        id: `art-${Date.now()}-table`,
+        identifier: 'table-1',
+        title: resolveArtifactTitle(undefined, content, userPrompt, 'Tablo'),
+        type: 'table',
+        language: 'markdown',
+        content: tables[0],
+        description: 'Document',
+        version: 1,
+        createdAt: now,
+      })
+    }
+  }
+
+  // 4. Fallback: only real document asks ("belge oluştur"), never table/chart/UI keywords.
   if (artifacts.length === 0 && chartArtifacts.length === 0 && isDocumentRequested && content.length > 15) {
     const isReactContent = content.includes('import React') || content.includes("from 'react'") || content.includes('from "react"');
 
     artifacts.push({
       id: `art-${Date.now()}-doc`,
       identifier: isReactContent ? 'ui-1' : 'doc-1',
-      title: titleFromArtifactContent(content, isReactContent ? 'Interface' : 'Untitled'),
+      title: resolveArtifactTitle(undefined, content, userPrompt, isReactContent ? 'Interface' : 'Untitled'),
       type: isReactContent ? 'react' : 'markdown',
       language: isReactContent ? 'react' : 'markdown',
       content: isReactContent ? content.replace(/```(?:react|jsx|js)?/gi, '').replace(/```/g, '').trim() : content,
@@ -155,5 +249,5 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     });
   }
 
-  return [...chartArtifacts, ...artifacts];
+  return dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt);
 }

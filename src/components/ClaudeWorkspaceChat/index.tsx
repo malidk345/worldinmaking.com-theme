@@ -9,6 +9,7 @@ import {
   StylePresetId,
   Artifact,
   ArtifactOrigin,
+  WebCitation,
   UserSettings,
   FileAttachment,
 } from './types';
@@ -23,6 +24,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { ArtifactsPanel } from './components/ArtifactsPanel';
+import { SourcesPanel } from './components/SourcesPanel';
 import { SearchModal } from './components/SearchModal';
 import { ProjectModal } from './components/ProjectModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -33,7 +35,7 @@ import { useApp, useAppWindows } from '../../context/App';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import type { OSActionCard as OSActionCardType } from './types';
-import { extractArtifactsFromContent } from './utils/extractArtifacts';
+import { dedupeArtifacts, extractArtifactsFromContent } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
@@ -47,6 +49,13 @@ import {
   setRemoteChatShare,
   setRemoteMessageLiked,
 } from '../../lib/chat-remote';
+
+const EMPTY_STARTERS = [
+  { label: 'What’s at stake?', prompt: 'What’s actually at stake here? Give me the conflict in plain language, then one implication.' },
+  { label: 'Make a table', prompt: 'Make a clear comparison table of the main options, with a short note on each tradeoff.' },
+  { label: 'Explain plainly', prompt: 'Explain this as plainly as you can. No jargon unless you define it in one line.' },
+  { label: 'Give me a plan', prompt: 'Give me a short practical plan with the next three steps, in order.' },
+]
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -200,6 +209,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [isArtifactsOpen, setIsArtifactsOpen] = useState<boolean>(false);
   const [isArtifactExpanded, setIsArtifactExpanded] = useState(false);
   const [artifactOrigin, setArtifactOrigin] = useState<ArtifactOrigin | null>(null);
+  const [activeSources, setActiveSources] = useState<WebCitation[] | null>(null);
+  const [isSourcesOpen, setIsSourcesOpen] = useState(false);
+  const [sourcesOrigin, setSourcesOrigin] = useState<ArtifactOrigin | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
   const captureOrigin = (rect?: DOMRect | null): ArtifactOrigin => {
@@ -224,7 +236,22 @@ export default function App({ onClose }: { onClose?: () => void }) {
     }
   }
 
+  const closeSources = () => {
+    setIsSourcesOpen(false)
+    setActiveSources(null)
+  }
+
+  const openSources = (citations: WebCitation[] | undefined, origin?: DOMRect | null) => {
+    if (!citations || citations.length === 0) return
+    setIsArtifactsOpen(false)
+    setIsArtifactExpanded(false)
+    setActiveSources(citations)
+    setIsSourcesOpen(true)
+    setSourcesOrigin(captureOrigin(origin))
+  }
+
   const openArtifact = (art: Artifact, opts?: { expand?: boolean; keepSize?: boolean; origin?: DOMRect | null }) => {
+    closeSources()
     setActiveArtifact(art)
     setIsArtifactsOpen(true)
     if (opts?.origin || !artifactOrigin) {
@@ -251,10 +278,17 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLElement>(null);
+  const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
   const pendingEditMessageIdRef = useRef<string | null>(null);
   const persistChatIdRef = useRef<string | null>(null);
   const [composerDraft, setComposerDraft] = useState('');
   const [composerDraftNonce, setComposerDraftNonce] = useState(0);
+
+  const fillComposer = (text: string) => {
+    setComposerDraft(text)
+    setComposerDraftNonce((value) => value + 1)
+  }
   const [shareBusy, setShareBusy] = useState(false);
 
   // Save to LocalStorage
@@ -334,9 +368,48 @@ export default function App({ onClose }: { onClose?: () => void }) {
   };
 
 
+  const updateAwayFromBottom = () => {
+    const scroller = chatScrollRef.current
+    if (!scroller) {
+      setIsAwayFromBottom(false)
+      return
+    }
+    const gap = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight)
+    setIsAwayFromBottom(gap > 96)
+  }
+
+  const scrollChatToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const scroller = chatScrollRef.current
+    if (!scroller) return
+    if (behavior === 'auto') {
+      scroller.scrollTop = scroller.scrollHeight
+    } else {
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' })
+    }
+    setIsAwayFromBottom(false)
+  }
+
+  const scrollToBottom = () => {
+    scrollChatToBottom('smooth')
+  }
+
+  useEffect(() => {
+    const scroller = chatScrollRef.current
+    if (!scroller) return
+    updateAwayFromBottom()
+    scroller.addEventListener('scroll', updateAwayFromBottom, { passive: true })
+    const observer = new ResizeObserver(updateAwayFromBottom)
+    observer.observe(scroller)
+    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
+    return () => {
+      scroller.removeEventListener('scroll', updateAwayFromBottom)
+      observer.disconnect()
+    }
+  }, [activeChatId, activeChat?.messages.length, isStreaming])
+
   // Auto scroll & auto open artifact
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollChatToBottom('auto');
 
     if (activeChat?.messages) {
       const lastArt = [...activeChat.messages].reverse().find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
@@ -350,7 +423,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const handleNewChat = (projId?: string) => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
-      title: 'Yeni Sohbet',
+      title: 'New chat',
       projectId: projId || activeProjectId,
       modelId: selectedModelId,
       starred: false,
@@ -403,7 +476,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       baseMessages = [];
       const newChat: Chat = {
         id: `chat-${Date.now()}`,
-        title: promptText.slice(0, 30) || attachments[0]?.name || 'Yeni Sohbet',
+        title: promptText.slice(0, 30) || attachments[0]?.name || 'New chat',
         projectId: activeProjectId,
         modelId: selectedModelId,
         starred: false,
@@ -452,7 +525,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           const isFirstUserMsg = baseMessages.length === 0;
           return {
             ...c,
-            title: isFirstUserMsg ? promptText.slice(0, 32) || attachments[0]?.name || 'Yeni Sohbet' : c.title,
+            title: isFirstUserMsg ? promptText.slice(0, 32) || attachments[0]?.name || 'New chat' : c.title,
             updatedAt: new Date().toISOString(),
             messages: nextMessages,
           };
@@ -562,21 +635,28 @@ export default function App({ onClose }: { onClose?: () => void }) {
           if (!parsed) continue;
 
           if (parsed.type === 'search') {
-            let detailText = `Query: "${parsed.search.query}"`;
-            if (parsed.search.results) {
-              detailText += `\n\nFetched Sources:\n${parsed.search.results}`;
-            }
+            const searchTitle =
+              parsed.search.status === 'running'
+                ? `Searching the web for “${parsed.search.query}”`
+                : parsed.search.status === 'error'
+                ? `Web search failed for “${parsed.search.query}”`
+                : `Searched the web for “${parsed.search.query}”`;
             const searchStep = {
               id: 'search-step',
               stepNumber: 0,
-              title: 'Search Web & Sources',
-              detail: detailText,
+              title: searchTitle,
+              detail: parsed.search.results || '',
               completed: parsed.search.status === 'done',
               source: 'system_event' as const,
             };
             const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
             if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = searchStep;
             else currentThinkingProcess.steps.unshift(searchStep);
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            currentThinkingProcess.summary = parsed.search.status === 'running' ? searchTitle : '';
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              thinkingProcess: { ...currentThinkingProcess },
+            });
           }
 
           if (parsed.type === 'citations') {
@@ -702,13 +782,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Extract Artifacts & Process Version Revisions (v1, v2, v3)
-      const rawArtifacts = [...streamedArtifacts, ...extractArtifactsFromContent(finalCleanContent, promptText)].filter(
-        (artifact, index, all) =>
-          all.findIndex((candidate) =>
-            candidate.id === artifact.id ||
-            (candidate.type === artifact.type && candidate.content === artifact.content)
-          ) === index
-      );
+      const rawArtifacts = dedupeArtifacts([
+        ...streamedArtifacts,
+        ...extractArtifactsFromContent(finalCleanContent, promptText),
+      ]);
       let extractedArtifacts: Artifact[] = [];
 
       if (rawArtifacts.length > 0) {
@@ -732,14 +809,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
           .trim();
       }
       if (!visibleMessageText && extractedArtifacts.length > 0) {
-        const artifactLabel = extractedArtifacts[0].type === 'chart' ? 'grafik' : 'detaylı belge';
-        visibleMessageText = `İstediğiniz **"${extractedArtifacts[0].title}"** başlıklı ${artifactLabel} oluşturuldu (v${extractedArtifacts[0].version || 1}). İncelemek için aşağıdaki karta tıklayabilirsin.`;
+        const artifactLabel = extractedArtifacts[0].type === 'chart' ? 'chart' : 'document';
+        visibleMessageText = `Created **"${extractedArtifacts[0].title}"** (${artifactLabel} v${extractedArtifacts[0].version || 1}). Open the card below to review it.`;
       }
 
       // If we had a backend error, do not overwrite the assistant message again with empty content!
       if (!backendError) {
         updateAssistantMessage(targetChatId, assistantMessageId, {
-          content: visibleMessageText || finalCleanContent || 'Yanıt oluşturuldu.',
+          content: visibleMessageText || finalCleanContent || 'Response ready.',
           thinkingProcess: { ...currentThinkingProcess },
           artifacts: extractedArtifacts.length > 0 ? extractedArtifacts : undefined,
           isStreaming: false,
@@ -760,10 +837,15 @@ export default function App({ onClose }: { onClose?: () => void }) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
         const displayContent = sanitizePublicAssistantText(accumulatedContent);
-
-        const errorMessage = displayContent 
-          ? displayContent 
-          : 'Üzgünüm, yanıt oluşturulurken bir bağlantı hatası meydana geldi. (API sağlayıcınız limiti doldurdu)';
+        const rawError = String(err?.message || '');
+        const looksLikeQuota = /429|rate limit|quota|resource_exhausted|too many requests/i.test(rawError);
+        const errorMessage = displayContent
+          ? displayContent
+          : rawError === 'AI returned no content'
+            ? 'The model finished thinking but did not produce a public answer. Please try again.'
+            : looksLikeQuota
+              ? 'The reply could not be completed. The API provider hit a rate limit.'
+              : 'The reply could not be completed because of a connection error.';
 
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: errorMessage,
@@ -980,10 +1062,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   const hasArtifactsInActiveChat = activeChat?.messages.some((m) => m.artifacts && m.artifacts.length > 0) || false;
 
-  const scrollToBottom = () => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
       {/* Left Collapsible Sidebar */}
@@ -1046,10 +1124,22 @@ export default function App({ onClose }: { onClose?: () => void }) {
         />
 
         {/* Chat Stream & Conversation Body */}
-        <main className="flex-1 overflow-y-auto scroll-smooth relative">
+        <main ref={chatScrollRef} className="flex-1 overflow-y-auto scroll-smooth relative">
           {!activeChat || activeChat.messages.length === 0 ? (
             /* Centered Input Screen when empty (no landing text or chips) */
             <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
+              <div className="mb-5 flex w-full flex-wrap justify-center gap-2">
+                {EMPTY_STARTERS.map((starter) => (
+                  <button
+                    key={starter.label}
+                    type="button"
+                    onClick={() => fillComposer(starter.prompt)}
+                    className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[13px] text-[#3d3d3d] hover:border-[#d4d4d4] hover:bg-[#fafafa] cursor-pointer"
+                  >
+                    {starter.label}
+                  </button>
+                ))}
+              </div>
               <motion.div
                 layout
                 layoutId="chat-input-container"
@@ -1092,6 +1182,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                     }
                     openArtifact(art, { origin })
                   }}
+                  onOpenSources={openSources}
                   onEditPrompt={handleEditPrompt}
                   onRetry={handleRetry}
                   onFeedback={handleMessageFeedback}
@@ -1125,7 +1216,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 selectedStylePreset={selectedStylePreset}
                 onChangeStylePreset={setSelectedStylePreset}
                 onScrollToBottom={scrollToBottom}
-                showScrollToBottom={activeChat.messages.length > 2}
+                showScrollToBottom={isAwayFromBottom}
                 models={models}
                 selectedModelId={selectedModelId}
                 onSelectModel={handleSelectModel}
@@ -1135,6 +1226,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
             </motion.div>
           </div>
         )}
+
+      {isSourcesOpen && activeSources && (
+        <SourcesPanel
+          citations={activeSources}
+          origin={sourcesOrigin}
+          onClose={closeSources}
+        />
+      )}
 
       {isArtifactsOpen && (
         <ArtifactsPanel

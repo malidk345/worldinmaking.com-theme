@@ -34,7 +34,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const handleExportMarkdown = () => {
-    let mdContent = `# ${chat.title}\n*Oluşturulma Tarihi: ${new Date(chat.createdAt).toLocaleString('tr-TR')}*\n\n---\n\n`;
+    let mdContent = `# ${chat.title}\n*Created: ${new Date(chat.createdAt).toLocaleString('en-US')}*\n\n---\n\n`;
 
     chat.messages.forEach((m) => {
       mdContent += `### ${m.role === 'user' ? 'you' : "wim's ai bots"}\n${m.content}\n\n`;
@@ -56,7 +56,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
           <div className="flex items-center gap-2 text-stone-900 font-semibold text-base">
             <Share2 className="h-5 w-5 text-[#1E3A8A]" />
-            <span>Sohbeti Paylaş & Dışa Aktar</span>
+            <span>Share & export</span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-stone-400 hover:text-stone-700">
             <X className="h-5 w-5" />
@@ -65,7 +65,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-medium text-stone-700 mb-1">Doğrudan Bağlantı / Link</label>
+            <label className="block font-medium text-stone-700 mb-1">Share link</label>
             {shareUrl ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     className="flex items-center gap-1 shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af]"
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    <span>{copied ? 'Kopyalandı' : 'Kopyala'}</span>
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
                 {onDisableShare && (
@@ -89,7 +89,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     disabled={shareBusy}
                     className="text-[11px] text-stone-500 hover:text-stone-800"
                   >
-                    Linki kapat
+                    Disable link
                   </button>
                 )}
               </div>
@@ -99,7 +99,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 disabled={shareBusy || !onEnableShare}
                 className="w-full rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
               >
-                {shareBusy ? 'Link hazırlanıyor…' : 'Paylaşılabilir link oluştur'}
+                {shareBusy ? 'Creating link…' : 'Create shareable link'}
               </button>
             )}
           </div>
@@ -109,7 +109,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               onClick={handleExportMarkdown}
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 py-2.5 font-semibold text-stone-800 hover:bg-stone-100 transition-colors"
             >
-              <Download className="h-4 w-4" /> Markdown (.md) Olarak İndir
+              <Download className="h-4 w-4" /> Download Markdown
             </button>
           </div>
         </div>
@@ -119,7 +119,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             onClick={onClose}
             className="rounded-xl border border-stone-200 px-4 py-2 font-medium text-stone-600 hover:bg-stone-100"
           >
-            Kapat
+            Close
           </button>
         </div>
       </div>

@@ -1,11 +1,9 @@
 /**
- * LangChain & LangGraph Ecosystem Pipeline — WorldInMaking.com
+ * LangChain / LangGraph experiment — NOT the live chat path.
  *
- * Integrates open-source LangChain & LangGraph packages:
- *   - `@langchain/core`: LCEL Prompt Templates & Output Parsers
- *   - `@langchain/groq`: Groq openai/gpt-oss-120b (reasoning, 120B, free tier)
- *   - `@langchain/google-genai`: Google Gemini 2.0 Flash integration
- *   - `@langchain/langgraph`: Stateful Multi-Agent Graph & Checkpointing
+ * Live traffic: `/api/chat` → `orchestrate` → `ai-gateway` (plain fetch).
+ * This file is only used by `scripts/verify-langchain.js` and similar.
+ * Do not call it from product APIs; it bypasses gateway failover, SSE, and quotas.
  */
 
 import { ChatGroq } from '@langchain/groq';

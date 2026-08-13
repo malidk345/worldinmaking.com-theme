@@ -144,7 +144,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
   const headerSummaryText = thinking?.summary && thinking.summary !== 'Musing'
     ? thinking.summary
     : activeStep
-    ? `${activeStep.title}${activeStep.detail ? `: ${activeStep.detail}` : ''}`
+    ? activeStep.title
     : isLive
     ? 'Thinking...'
     : durationSeconds > 0

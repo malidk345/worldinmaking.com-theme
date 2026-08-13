@@ -5,7 +5,6 @@ import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
 import CookieBannerToast from 'components/CookieBanner/ToastVersion'
-import { ChatOverlay } from 'hooks/useChat'
 import AppContainer from 'components/AppContainer'
 import { TooltipProvider } from 'components/RadixUI/Tooltip'
 
@@ -64,7 +63,6 @@ export default function Wrapper() {
                 {!compact && <Dock />}
                 */}
                 <SearchOverlay />
-                <ChatOverlay />
                 <CookieBannerToast />
                 <ActiveWindowsPanel />
                 <FooterBar />

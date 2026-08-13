@@ -55,4 +55,12 @@ test.describe('thinking stream routing', () => {
         expect(stripThinkingBlocks('Before<thought>hidden</thought>After')).toBe('BeforeAfter')
         expect(stripThinkingBlocks('Before<thought>hidden')).toBe('Before')
     })
+
+    test('think-only Qwen output leaves an empty public reply', () => {
+        const parsed = parseThinkingAndReply('<think>The price moved because the Fed hinted a cut.</think>')
+
+        expect(parsed.reply).toBe('')
+        expect(parsed.thinking.summary).toContain('Fed hinted')
+        expect(stripThinkingBlocks(parsed.thinking.summary || '')).toContain('Fed hinted')
+    })
 })

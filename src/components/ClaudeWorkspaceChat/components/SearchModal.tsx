@@ -62,7 +62,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tüm mesajlarda ve sohbet başlıklarında ara..."
+            placeholder="Search chats and messages..."
             className="w-full bg-transparent text-sm text-stone-900 placeholder-stone-400 focus:outline-none"
             autoFocus
           />
@@ -78,7 +78,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {results.length === 0 ? (
             <div className="py-12 text-center text-xs text-stone-400">
-              {query ? 'Aramanıza uygun sohbet bulunamadı.' : 'Arama yapmak için bir kelime yazın.'}
+              {query ? 'No matching chats.' : 'Type to search.'}
             </div>
           ) : (
             results.map(({ chat, matchingMessage }) => (
@@ -101,7 +101,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       </h4>
                       <span className="flex items-center gap-1 text-[10px] text-stone-400 shrink-0">
                         <Calendar className="h-2.5 w-2.5" />
-                        {new Date(chat.createdAt).toLocaleDateString('tr-TR')}
+                        {new Date(chat.createdAt).toLocaleDateString('en-US')}
                       </span>
                     </div>
 
@@ -122,9 +122,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         {/* Footer info */}
         <div className="border-t border-stone-200 px-4 py-2 bg-stone-50 text-[11px] text-stone-400 flex items-center justify-between">
           <span>
-            <strong>ESC</strong> ile kapatabilirsiniz
+            Press <strong>ESC</strong> to close
           </span>
-          <span>{results.length} sonuç</span>
+          <span>{results.length} {results.length === 1 ? 'result' : 'results'}</span>
         </div>
       </div>
     </div>

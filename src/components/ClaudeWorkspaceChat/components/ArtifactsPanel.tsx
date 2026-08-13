@@ -192,7 +192,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           if (found) {
             ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(window[found]));
           } else {
-            document.getElementById('root').innerHTML = '<p style="padding:16px;color:#6D6B67;font-family:sans-serif">Bileşen yüklendi fakat render edilemedi. Bir hata oluşmuş olabilir.</p>';
+            document.getElementById('root').innerHTML = '<p style="padding:16px;color:#6D6B67;font-family:sans-serif">The component loaded but could not render.</p>';
           }
         `;
 
@@ -269,7 +269,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
                 activeTab === 'preview' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
               }`}
-              title="Önizleme"
+              title="Preview"
               aria-label="Preview"
               aria-pressed={activeTab === 'preview'}
             >
@@ -281,7 +281,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
                 activeTab === 'code' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
               }`}
-              title="Kod"
+              title="Code"
               aria-label="Code"
               aria-pressed={activeTab === 'code'}
             >
@@ -301,7 +301,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                 type="button"
                 onClick={() => setIsVersionMenuOpen(!isVersionMenuOpen)}
                 className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-[#8b8b8b] hover:text-[#1a1a1a] cursor-pointer"
-                title="Sürüm geçmişi"
+                title="Version history"
               >
                 <span>v{artifact.version || 1}</span>
                 <ChevronDown className="h-3 w-3" />
@@ -320,7 +320,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                         art.version === artifact.version ? 'font-semibold text-[#1a1a1a]' : 'text-[#6f6f6f]'
                       }`}
                     >
-                      <span>v{art.version || 1} sürümü</span>
+                      <span>Version {art.version || 1}</span>
                       {art.version === artifact.version && <Check className="h-3 w-3 text-emerald-600" />}
                     </button>
                   ))}
@@ -332,30 +332,41 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
 
         <div className="flex shrink-0 items-center gap-1">
           <div className="relative">
+            <div className="flex h-8 overflow-hidden rounded border border-[#e5e5e5] bg-white">
+            {onInsertToNotebook ? (
+              <button
+                type="button"
+                onClick={() => onInsertToNotebook(artifact.content)}
+                className="flex items-center gap-1.5 px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
+                title="Insert to notebook"
+              >
+                <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                <span>Insert to notebook</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
+                title="Copy"
+              >
+                <Copy className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowCopyOptions(!showCopyOptions)}
-              className="flex h-8 items-center gap-1 rounded border border-[#e5e5e5] bg-white px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
-              title="Copy"
+              className="flex w-7 items-center justify-center border-l border-[#e5e5e5] text-[#8c8c8c] hover:bg-[#fafafa] hover:text-[#1f1f1f] cursor-pointer"
+              title="More"
+              aria-label="More actions"
+              aria-expanded={showCopyOptions}
             >
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-[#8c8c8c]" />
+              <ChevronDown className="h-3.5 w-3.5" />
             </button>
+            </div>
             {showCopyOptions && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded border border-[#ececec] bg-white py-1 text-xs shadow-lg">
-                {onInsertToNotebook && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onInsertToNotebook(artifact.content)
-                      setShowCopyOptions(false)
-                    }}
-                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#1a1a1a] hover:bg-[#f7f7f7]"
-                  >
-                    <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
-                    <span>Insert to notebook</span>
-                  </button>
-                )}
+              <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded border border-[#ececec] bg-white py-1 text-xs shadow-lg">
                 <button
                   type="button"
                   onClick={() => {
@@ -365,7 +376,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                   className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#1a1a1a] hover:bg-[#f7f7f7]"
                 >
                   <Copy className="h-3.5 w-3.5 text-[#8b8b8b]" />
-                  <span>Copy</span>
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
                 <button
                   type="button"
@@ -387,7 +398,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               type="button"
               onClick={onToggleExpand}
               className="flex h-8 w-8 items-center justify-center text-[#8c8c8c] hover:text-[#1f1f1f] cursor-pointer"
-              title={expanded ? 'Küçült' : 'Büyüt'}
+              title={expanded ? 'Collapse' : 'Expand'}
               aria-label={expanded ? 'Collapse artifact' : 'Expand artifact'}
             >
               {expanded ? <Minimize2 className="h-4 w-4" strokeWidth={1.7} /> : <Maximize2 className="h-4 w-4" strokeWidth={1.7} />}
@@ -398,7 +409,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center text-[#8c8c8c] hover:text-[#1f1f1f] cursor-pointer"
-            title="Kapat"
+            title="Close"
             aria-label="Close"
           >
             <X className="h-[18px] w-[18px]" strokeWidth={1.6} />
@@ -427,7 +438,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               <ChartArtifactRenderer spec={artifact.chartSpec} />
             ) : (
               <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                Grafik verisi doğrulanamadı. Kod veya veri sekmesinden çıktıyı inceleyebilirsin.
+                Chart data could not be validated. Check the code tab.
               </div>
             )}
           </div>

@@ -38,17 +38,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Typewriter Speed */}
           <div>
             <label className="block font-semibold text-stone-800 mb-1">
-              Daktilo Yanıt Hızı (Typewriter Effect)
+              Response motion
             </label>
             <p className="text-[11px] text-stone-500 mb-2">
-              Arayüzde model yanıtının akış hızını ayarlayın.
+              How new tokens appear while the answer streams.
             </p>
             <div className="grid grid-cols-4 gap-1.5">
               {[
-                { id: 'slow', label: 'Yavaş' },
-                { id: 'smooth', label: 'Akıcı' },
-                { id: 'fast', label: 'Hızlı' },
-                { id: 'off', label: 'Kapalı' },
+                { id: 'slow', label: 'Gentle' },
+                { id: 'smooth', label: 'Smooth' },
+                { id: 'fast', label: 'Snappy' },
+                { id: 'off', label: 'Off' },
               ].map((sp) => (
                 <button
                   key={sp.id}
@@ -68,13 +68,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Default Thinking Budget */}
           <div>
             <label className="block font-semibold text-stone-800 mb-1 flex items-center gap-1.5">
-              <Brain className="h-4 w-4 text-amber-700" /> varsayılan Düşünme Bütçesi
+              <Brain className="h-4 w-4 text-amber-700" /> Default thinking budget
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { id: 'minimal', label: '1.0k (Hızlı)' },
-                { id: 'balanced', label: '3.0k (Dengeli)' },
-                { id: 'extended', label: '6.0k (Derin)' },
+                { id: 'minimal', label: '1.0k Fast' },
+                { id: 'balanced', label: '3.0k Balanced' },
+                { id: 'extended', label: '6.0k Extended' },
               ].map((b) => (
                 <button
                   key={b.id}
@@ -94,8 +94,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Auto Open Artifacts */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50">
             <div>
-              <div className="font-semibold text-stone-800">Otomatik Artifacts Paneli</div>
-              <div className="text-[10px] text-stone-500">Kod veya çizim üretildiğinde sağ paneli otomatik aç.</div>
+              <div className="font-semibold text-stone-800">Auto-open artifacts</div>
+              <div className="text-[10px] text-stone-500">Open the canvas when a document or chart is created.</div>
             </div>
             <input
               type="checkbox"
@@ -109,14 +109,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="pt-2 border-t border-stone-100">
             <button
               onClick={() => {
-                if (confirm('Tüm sohbet geçmişini ve verileri sıfırlamak istiyor musunuz?')) {
+                if (confirm('Reset all chats and local demo data?')) {
                   onResetData();
                   onClose();
                 }
               }}
               className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 py-2 font-medium text-rose-700 hover:bg-rose-100 transition-colors"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Demo Verilerini Sıfırla
+              <RefreshCw className="h-3.5 w-3.5" /> Reset demo data
             </button>
           </div>
         </div>
