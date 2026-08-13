@@ -289,10 +289,12 @@ export default function People() {
 
     const teamSize = teamMembers.length - 1
 
-    const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
-        acc[team.name] = team.crest?.data?.attributes?.url
-        return acc
-    }, {})
+    const teamCrestMap = useMemo(
+        () => Object.fromEntries(
+            (allTeams?.nodes || []).map((team: any) => [team.name, team.crest?.data?.attributes?.url])
+        ),
+        [allTeams?.nodes]
+    )
 
     const availableFilters = useMemo(
         () => [

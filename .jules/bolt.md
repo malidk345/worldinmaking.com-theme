@@ -12,3 +12,7 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+## 2024-12-07 - Refactoring `reduce` logic with Object creation
+
+**Learning:** When building dictionary maps for React components, moving object construction into `useMemo` prevents unnecessary O(N) re-evaluations and new object allocations on every render.
+**Action:** When performing object aggregations in functional React components, wrap the resulting calculation in `useMemo` with minimal dependencies so it only recalculates when necessary. Also note that standard `reduce` mutations (`acc[key] = value`) are highly efficient single-pass operations and should not be confused with the O(N^2) memory churn caused by object spread (`...acc`), and chained array functions (`.filter().map().fromEntries()`) should be avoided as they construct multiple intermediate array structures.

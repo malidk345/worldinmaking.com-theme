@@ -207,12 +207,11 @@ export default function PeopleMap({ members: membersProp }: { members?: any[] })
     // Fetch team mini crest data
     const { allSqueakTeam } = {}
     const teamMiniCrestMap = useMemo(() => {
-        return (allSqueakTeam?.nodes || []).reduce((acc: Record<string, string>, team: any) => {
-            if (team.miniCrest?.data?.attributes?.url) {
-                acc[team.name] = team.miniCrest.data.attributes.url
-            }
-            return acc
-        }, {})
+        return Object.fromEntries(
+            (allSqueakTeam?.nodes || [])
+                .filter((team: any) => team.miniCrest?.data?.attributes?.url)
+                .map((team: any) => [team.name, team.miniCrest.data.attributes.url])
+        )
     }, [allSqueakTeam])
 
     useEffect(() => {
@@ -280,22 +279,20 @@ export default function PeopleMap({ members: membersProp }: { members?: any[] })
     useEffect(() => {
         const next: Record<string, Array<{ longitude: number; latitude: number }>> = {}
         // Build groups by resolved coordinates (rounded) so similar queries share jitter set
-        const groups = members.reduce((acc, m) => {
+        const groups: Record<string, { coords: Coordinates; profiles: ProfileNode[] }> = {}
+        for (const m of members) {
             const q = buildMemberQuery(m)
-            if (!q) {
-                return acc
-            }
+            if (!q) continue
+
             const coords = coordsByQuery[q]
-            if (!coords) {
-                return acc
-            }
+            if (!coords) continue
+
             const key = `${coords.longitude.toFixed(4)},${coords.latitude.toFixed(4)}`
-            if (!acc[key]) {
-                acc[key] = { coords, profiles: [] as ProfileNode[] }
+            if (!groups[key]) {
+                groups[key] = { coords, profiles: [] }
             }
-            acc[key].profiles.push(m)
-            return acc
-        }, {} as Record<string, { coords: Coordinates; profiles: ProfileNode[] }>)
+            groups[key].profiles.push(m)
+        }
         Object.entries(groups).forEach(([key, { coords, profiles }]) => {
             const offsets = computeOffsets(profiles.length, DEFAULT_SPREAD_RADIUS)
             next[key] = offsets.map(({ dx, dy }) => ({
@@ -375,22 +372,19 @@ export default function PeopleMap({ members: membersProp }: { members?: any[] })
 
             // Show individual people markers when zoomed in
             // Group members by their geocode query so people in the same location are combined
-            const groups = membersRef.current.reduce((acc, m) => {
+            const groups: Record<string, { coords: Coordinates; profiles: ProfileNode[]; label: string; key: string }> = {}
+            for (const m of membersRef.current) {
                 const q = buildMemberQuery(m)
-                if (!q) {
-                    return acc
-                }
+                if (!q) continue
                 const coords = coordsByQueryRef.current[q]
-                if (!coords) {
-                    return acc
-                }
+                if (!coords) continue
+
                 const key = `${coords.longitude.toFixed(4)},${coords.latitude.toFixed(4)}`
-                if (!acc[key]) {
-                    acc[key] = { coords, profiles: [] as ProfileNode[], label: q, key }
+                if (!groups[key]) {
+                    groups[key] = { coords, profiles: [], label: q, key }
                 }
-                acc[key].profiles.push(m)
-                return acc
-            }, {} as Record<string, { coords: Coordinates; profiles: ProfileNode[]; label: string; key: string }>)
+                groups[key].profiles.push(m)
+            }
 
             Object.values(groups).forEach(({ coords: { longitude, latitude }, profiles, label, key }) => {
                 const positions = jitteredPositionsByGroupRef.current[key] || []
