@@ -1572,7 +1572,7 @@ export interface SiteSettings {
     theme: 'light' | 'dark' | string
     skinMode: 'modern' | 'classic'
     cursor: 'default' | 'xl' | 'james'
-    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party'
+    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party' | 'agora'
     screensaverDisabled?: boolean
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'

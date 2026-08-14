@@ -27,6 +27,7 @@ const NotebooksListSkeleton = dynamic(
 import HandbookTemplate from '../templates/Handbook'
 import Legal from '../components/Legal'
 import DisplayOptions from '../components/DisplayOptions'
+import { SharedChatView } from '../components/Share/SharedChatView'
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
@@ -129,7 +130,9 @@ export default function DynamicSlugPage() {
 
     let element: React.ReactElement
 
-    if (rootSegment === 'ideas' || rootSegment === 'blueprints') {
+    if (rootSegment === 'share') {
+        element = <SharedChatView key={fullPath} token={slugs[1] || ''} />
+    } else if (rootSegment === 'ideas' || rootSegment === 'blueprints') {
         element = <IdeasHub key={fullPath} path={fullPath} />
     } else if (rootSegment === 'profile' || rootSegment === 'u') {
         element = <ProfileWrapper key={fullPath} path={fullPath} />

@@ -85,6 +85,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-35` | Stream 3 | Additive CSS/SVG `agora` wallpaper (do not change existing scenes or default) | `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-36` | Stream 1 | CF Pages: edge-runtime `/api/chat` + `/share/[token]` | `src/pages/api/chat.ts`, `src/pages/share.tsx`, `src/pages/[...slug].tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -217,6 +218,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 099 - CF Pages: edge `/api/chat`, drop Node `/share/[token]` (TSK-36)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Cloudflare `next-on-pages` rejected Node `/api/chat` and GSSP `/share/[token]`. Chat is now Request/Response + ReadableStream SSE with `export const runtime = 'edge'` (same pattern as co-author). The share page no longer uses getServerSideProps; `/share/:token` is rendered client-side via existing `[...slug]` + `/api/share/:token`.
+- **Modified Files:** `src/pages/api/chat.ts`, `src/pages/share.tsx`, `src/components/Share/SharedChatView.tsx`, `src/pages/[...slug].tsx`, deleted `src/pages/share/[token].tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/smoke.spec.ts --grep "Bot APIs reject|Shared chat page"` — 2 passed.
+- **Handoff:** Redeploy Pages. If CF still lists a share route, confirm `src/pages/share/[token].tsx` is gone from the commit.
 
 ### Entry 098 - CF Pages edge build: drop Function() in runtime-env (TSK-76)
 - **Date:** 2026-08-14

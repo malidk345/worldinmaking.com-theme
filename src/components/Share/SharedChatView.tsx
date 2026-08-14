@@ -1,14 +1,61 @@
-import React from 'react'
-import type { GetServerSideProps } from 'next'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { Chat } from '../../components/ClaudeWorkspaceChat/types'
+import type { Chat } from '../ClaudeWorkspaceChat/types'
 
-type SharePageProps = {
-    chat: Pick<Chat, 'id' | 'title' | 'modelId' | 'createdAt' | 'updatedAt' | 'messages'> | null
-}
+type SharedChat = Pick<Chat, 'id' | 'title' | 'modelId' | 'createdAt' | 'updatedAt' | 'messages'>
 
-export default function SharedChatPage({ chat }: SharePageProps) {
-    if (!chat) {
+export function SharedChatView({ token }: { token: string }) {
+    const [chat, setChat] = useState<SharedChat | null>(null)
+    const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading')
+
+    useEffect(() => {
+        if (!token) {
+            setStatus('missing')
+            return
+        }
+
+        let cancelled = false
+        const abort = new AbortController()
+        const timeout = window.setTimeout(() => abort.abort(), 8000)
+        const load = async () => {
+            try {
+                const res = await fetch(`/api/share/${encodeURIComponent(token)}`, { signal: abort.signal })
+                const data = (await res.json().catch(() => null)) as { chat?: SharedChat } | null
+                if (cancelled) return
+                if (!res.ok || !data?.chat) {
+                    setChat(null)
+                    setStatus('missing')
+                    return
+                }
+                setChat(data.chat)
+                setStatus('ready')
+            } catch {
+                if (!cancelled) {
+                    setChat(null)
+                    setStatus('missing')
+                }
+            } finally {
+                window.clearTimeout(timeout)
+            }
+        }
+
+        void load()
+        return () => {
+            cancelled = true
+            abort.abort()
+            window.clearTimeout(timeout)
+        }
+    }, [token])
+
+    if (status === 'loading') {
+        return (
+            <main className="min-h-screen bg-[#f4f4f5] text-stone-800 font-sans flex items-center justify-center p-6">
+                <p className="text-sm text-stone-500">Yükleniyor…</p>
+            </main>
+        )
+    }
+
+    if (status === 'missing' || !chat) {
         return (
             <main className="min-h-screen bg-[#f4f4f5] text-stone-800 font-sans flex items-center justify-center p-6">
                 <div className="max-w-md text-center space-y-3">
@@ -50,34 +97,4 @@ export default function SharedChatPage({ chat }: SharePageProps) {
             </div>
         </main>
     )
-}
-
-export const getServerSideProps: GetServerSideProps<SharePageProps> = async (ctx) => {
-    const token = typeof ctx.params?.token === 'string' ? ctx.params.token : ''
-    if (!token) return { props: { chat: null } }
-    try {
-        const { getSharedChatByToken, isChatStoreUnavailable } = await import('../../lib/chat-store')
-        const chat = await getSharedChatByToken(token)
-        if (!chat) return { props: { chat: null } }
-        return {
-            props: {
-                chat: {
-                    id: chat.id,
-                    title: chat.title,
-                    modelId: chat.modelId,
-                    createdAt: chat.createdAt,
-                    updatedAt: chat.updatedAt,
-                    messages: chat.messages.map((message) => ({
-                        ...message,
-                        thinkingProcess: undefined,
-                        attachments: undefined,
-                        osAction: undefined,
-                    })),
-                },
-            },
-        }
-    } catch (err) {
-        if (isChatStoreUnavailable(err)) return { props: { chat: null } }
-        return { props: { chat: null } }
-    }
 }

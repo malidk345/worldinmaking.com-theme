@@ -533,6 +533,7 @@ module.exports = {
             addVariant('wallpaper-hogzilla', 'body[data-wallpaper="hogzilla"] &')
             addVariant('wallpaper-office-party', 'body[data-wallpaper="office-party"] &')
             addVariant('wallpaper-startup-monopoly', 'body[data-wallpaper="startup-monopoly"] &')
+            addVariant('wallpaper-agora', 'body[data-wallpaper="agora"] &')
             // Site toggle (data attr, set early in theme-init) + OS prefers-reduced-transparency
             // html/body both get the attr in Next (_document theme script); keep both selectors.
             addVariant('reduce-transparency', [
