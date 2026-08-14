@@ -89,6 +89,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-37` | Stream 5 | Shared Groq/Gemini key rotation + per-key cooldown | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-38` | Stream 5 | Gemini native thinking + live stream | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-39` | Stream 5 | Alternate Groq/Gemini as lead family per request | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-40` | Stream 5 | Chat: full generate then SSE playback (no live provider stream) | `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -221,6 +222,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 104 - Pace thinking playback
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Thinking was dumped as one completed block after generate. Chat now grows `auto-1` detail in chunks with a short delay, then typewrites the public reply.
+- **Modified Files:** `src/pages/api/chat.ts`, `src/lib/ai/playback.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Playback helpers unchanged; restart `pnpm dev`.
+- **Handoff:** Tune `wait(20)` / `wait(12)` if ticker feels slow or still snaps.
+
+### Entry 103 - Chat generate-then-playback SSE (TSK-40)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `/api/chat` now uses `runBotTurn` (full generate + parse/continue) then plays thinking and the public reply back over the existing SSE events. Notebook `/api/notebook/co-author` still live-streams.
+- **Modified Files:** `src/pages/api/chat.ts`, `src/lib/ai/playback.ts`, `tests/chat-playback.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chat-playback.spec.ts` — 2 passed. Smoke bot API validation — 1 passed.
+- **Handoff:** Restart `pnpm dev`. First token arrives after the full model reply. Client contract unchanged.
 
 ### Entry 102 - Alternate Groq/Gemini lead per request (TSK-39)
 - **Date:** 2026-08-14

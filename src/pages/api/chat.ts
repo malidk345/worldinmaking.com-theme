@@ -9,7 +9,7 @@
  */
 export const runtime = 'edge'
 
-import { streamBotTurn } from 'lib/bots/orchestrate'
+import { runBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
@@ -18,6 +18,7 @@ import { resolveSearchIntent } from 'lib/bots/intent-router'
 import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
+import { playbackChunks, wait } from 'lib/ai/playback'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
@@ -231,12 +232,10 @@ export default async function handler(req: Request) {
                     .filter(Boolean)
                     .join('\n\n')
 
-                let currentThinkingDetail = ''
-                const currentThinkingStageId = 'auto-1'
                 send({
                     type: 'thinking_step',
                     step: {
-                        id: currentThinkingStageId,
+                        id: 'auto-1',
                         stepNumber: 1,
                         title: 'Thinking',
                         detail: '…',
@@ -245,50 +244,16 @@ export default async function handler(req: Request) {
                     },
                 })
 
-                const result = await streamBotTurn(
-                    {
-                        question: prompt,
-                        philosopher,
-                        taskType: 'autonomous_assistant',
-                        thinkingDepth: 'deep',
-                        context,
-                        messages: history,
-                        env: getRuntimeEnv(),
-                        onLifecycle: (event) => send({ type: 'phase', phase: event }),
-                        onAnalysisSummary: (thinking) => {
-                            thinking.stages.forEach((stage, index) =>
-                                send({
-                                    type: 'thinking_step',
-                                    step: {
-                                        id: stage.id,
-                                        stepNumber: index + 1,
-                                        title: stage.label,
-                                        detail: stage.text,
-                                        completed: true,
-                                        source: stage.source || 'model_summary',
-                                    },
-                                })
-                            )
-                        },
-                    },
-                    (token) => {
-                        send({ type: 'token', text: token })
-                    },
-                    (thinkingToken) => {
-                        currentThinkingDetail += thinkingToken
-                        send({
-                            type: 'thinking_step',
-                            step: {
-                                id: currentThinkingStageId,
-                                stepNumber: 1,
-                                title: 'Analyzing',
-                                detail: currentThinkingDetail,
-                                completed: false,
-                                source: 'model_summary',
-                            },
-                        })
-                    }
-                )
+                const result = await runBotTurn({
+                    question: prompt,
+                    philosopher,
+                    taskType: 'autonomous_assistant',
+                    thinkingDepth: 'deep',
+                    context,
+                    messages: history,
+                    env: getRuntimeEnv(),
+                    onLifecycle: (event) => send({ type: 'phase', phase: event }),
+                })
 
                 if (!result.success) {
                     const attempts = 'attempts' in result ? result.attempts : []
@@ -317,6 +282,46 @@ export default async function handler(req: Request) {
                     createdAt: new Date().toISOString(),
                 }))
                 const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+                const thinkingText =
+                    result.thinking.stages
+                        .map((stage) => stage.text)
+                        .filter(Boolean)
+                        .join('\n\n') || result.thought || ''
+
+                let thinkingAcc = ''
+                for (const chunk of playbackChunks(thinkingText, 42)) {
+                    thinkingAcc += chunk
+                    send({
+                        type: 'thinking_step',
+                        step: {
+                            id: 'auto-1',
+                            stepNumber: 1,
+                            title: 'Analyzing',
+                            detail: thinkingAcc,
+                            completed: false,
+                            source: 'model_summary',
+                        },
+                    })
+                    await wait(20)
+                }
+                if (thinkingAcc) {
+                    send({
+                        type: 'thinking_step',
+                        step: {
+                            id: 'auto-1',
+                            stepNumber: 1,
+                            title: 'Analyzing',
+                            detail: thinkingAcc,
+                            completed: true,
+                            source: 'model_summary',
+                        },
+                    })
+                }
+
+                for (const chunk of playbackChunks(visibleReply)) {
+                    send({ type: 'token', text: chunk })
+                    await wait(12)
+                }
 
                 if (chartArtifacts.length > 0) {
                     send({ type: 'artifacts', artifacts: chartArtifacts })
