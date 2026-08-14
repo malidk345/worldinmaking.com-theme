@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
 import {
     envFrom,
@@ -7,7 +8,7 @@ import {
     getRuntimeEnv,
     hasCloudflareContext,
 } from '../src/lib/bots/runtime-env'
-import { nextGroqKeyStart, resetGroqKeyCursor } from '../src/lib/bots/groq-key-cursor'
+import { nextFamilyKeyStart, nextGroqKeyStart, resetFamilyKeyCursor, resetGroqKeyCursor } from '../src/lib/bots/groq-key-cursor'
 
 const CF_REQUEST_CONTEXT = Symbol.for('__cloudflare-request-context__')
 
@@ -50,11 +51,28 @@ test.describe('edge-safe runtime env', () => {
     })
 
     test('groq key cursor still round-robins', () => {
+        process.env.WIM_GROQ_CURSOR_FILE = join(tmpdir(), `wim-groq-cursor-runtime-${Date.now()}`)
         resetGroqKeyCursor()
         expect(nextGroqKeyStart(3)).toBe(0)
         expect(nextGroqKeyStart(3)).toBe(1)
         expect(nextGroqKeyStart(3)).toBe(2)
         expect(nextGroqKeyStart(3)).toBe(0)
         resetGroqKeyCursor()
+        delete process.env.WIM_GROQ_CURSOR_FILE
+    })
+
+    test('gemini key cursor round-robins independently of groq', () => {
+        process.env.WIM_GEMINI_CURSOR_FILE = join(tmpdir(), `wim-gemini-cursor-runtime-${Date.now()}`)
+        process.env.WIM_GROQ_CURSOR_FILE = join(tmpdir(), `wim-groq-cursor-runtime-gemini-${Date.now()}`)
+        resetFamilyKeyCursor('gemini')
+        resetFamilyKeyCursor('groq')
+        expect(nextFamilyKeyStart('gemini', 2)).toBe(0)
+        expect(nextFamilyKeyStart('gemini', 2)).toBe(1)
+        expect(nextGroqKeyStart(2)).toBe(0)
+        expect(nextFamilyKeyStart('gemini', 2)).toBe(0)
+        resetFamilyKeyCursor('gemini')
+        resetFamilyKeyCursor('groq')
+        delete process.env.WIM_GEMINI_CURSOR_FILE
+        delete process.env.WIM_GROQ_CURSOR_FILE
     })
 })

@@ -1,11 +1,11 @@
 /**
- * Sequential Groq key index that survives `pnpm dev` restarts.
+ * Sequential provider-key index that survives `pnpm dev` restarts.
  * Edge isolates without fs fall back to in-memory only.
  *
  * Node builtins are loaded via process.getBuiltinModule (Node 22) so this file
  * stays Edge-webpack-safe — no Function()/eval()/require().
  */
-let memoryCursor = 0
+const memoryCursors = new Map<string, number>()
 
 type NodeFs = {
     existsSync: (path: string) => boolean
@@ -28,23 +28,28 @@ function nodeBuiltin<T>(name: string): T | null {
     }
 }
 
-function cursorPath(): string | null {
+function cursorEnvName(family: string): string {
+    return `WIM_${family.toUpperCase()}_CURSOR_FILE`
+}
+
+function cursorPath(family: string): string | null {
     try {
-        if (typeof process !== 'undefined' && process.env?.WIM_GROQ_CURSOR_FILE) {
-            return process.env.WIM_GROQ_CURSOR_FILE
+        if (typeof process !== 'undefined') {
+            const override = process.env?.[cursorEnvName(family)]
+            if (override) return override
         }
         const os = nodeBuiltin<NodeOs>('os')
         const path = nodeBuiltin<NodePath>('path')
         if (!os || !path) return null
-        return path.join(os.tmpdir(), 'wim-groq-key-cursor')
+        return path.join(os.tmpdir(), `wim-${family}-key-cursor`)
     } catch {
         return null
     }
 }
 
-function readFsCursor(): number | null {
+function readFsCursor(family: string): number | null {
     try {
-        const file = cursorPath()
+        const file = cursorPath(family)
         if (!file) return null
         const fs = nodeBuiltin<NodeFs>('fs')
         if (!fs || !fs.existsSync(file)) return null
@@ -55,9 +60,9 @@ function readFsCursor(): number | null {
     }
 }
 
-function writeFsCursor(value: number): void {
+function writeFsCursor(family: string, value: number): void {
     try {
-        const file = cursorPath()
+        const file = cursorPath(family)
         if (!file) return
         const fs = nodeBuiltin<NodeFs>('fs')
         if (!fs) return
@@ -68,18 +73,34 @@ function writeFsCursor(value: number): void {
 }
 
 /** Returns the start index for this request, then advances for the next one. */
-export function nextGroqKeyStart(keyCount: number): number {
+export function nextFamilyKeyStart(family: string, keyCount: number): number {
     if (keyCount <= 1) return 0
-    const stored = readFsCursor()
-    const current = stored === null ? memoryCursor : stored
+    const stored = readFsCursor(family)
+    const current = stored === null ? memoryCursors.get(family) || 0 : stored
     const start = ((current % keyCount) + keyCount) % keyCount
     const next = (start + 1) % keyCount
-    memoryCursor = next
-    writeFsCursor(next)
+    memoryCursors.set(family, next)
+    writeFsCursor(family, next)
     return start
 }
 
+export function resetFamilyKeyCursor(family?: string): void {
+    if (family) {
+        memoryCursors.set(family, 0)
+        writeFsCursor(family, 0)
+        return
+    }
+    const families = new Set(['groq', 'gemini', 'primary', ...memoryCursors.keys()])
+    for (const name of families) {
+        memoryCursors.set(name, 0)
+        writeFsCursor(name, 0)
+    }
+}
+
+export function nextGroqKeyStart(keyCount: number): number {
+    return nextFamilyKeyStart('groq', keyCount)
+}
+
 export function resetGroqKeyCursor(): void {
-    memoryCursor = 0
-    writeFsCursor(0)
+    resetFamilyKeyCursor('groq')
 }

@@ -1,16 +1,22 @@
 import { test, expect } from '@playwright/test'
 import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction } from '../src/lib/bots/thinking'
 import {
+    collectGeminiKeys,
     collectGroqKeys,
     closeReasoningWrap,
+    extractGeminiThoughtAndText,
     extractProviderReasoning,
+    mergeGeminiThoughtText,
+    usesGeminiNativeThinking,
     fitGroqRequest,
     getFamilyOrder,
+    nextPrimaryFamilyStart,
     GROQ_TPM_LIMIT,
     isRequestTooLarge,
     markFamilyCooling,
     markGroqKeyCooling,
     resetProviderCooldowns,
+    takeGeminiKeyOrder,
     takeGroqKeyOrder,
     wrapReasoningContentChunk,
 } from '../src/lib/bots/ai-gateway'
@@ -132,16 +138,27 @@ test.describe('thinking stream routing', () => {
         expect(buildThinkingInstruction('autonomous_assistant', 'brief')).toContain('<thinking>')
     })
 
-    test('every philosopher uses Groq first unless Groq is cooling', () => {
+    test('alternates Groq and Gemini as the lead family, then keeps failover', () => {
         resetProviderCooldowns()
-        expect(getFamilyOrder()).toEqual(['groq', 'gemini', 'huggingface', 'openrouter'])
+        expect(getFamilyOrder([], 0)).toEqual(['groq', 'gemini', 'huggingface', 'openrouter'])
+        expect(getFamilyOrder([], 1)).toEqual(['gemini', 'groq', 'huggingface', 'openrouter'])
         markFamilyCooling('groq')
-        expect(getFamilyOrder()[0]).not.toBe('groq')
-        expect(getFamilyOrder()[getFamilyOrder().length - 1]).toBe('groq')
+        expect(getFamilyOrder([], 0)[0]).toBe('gemini')
+        expect(getFamilyOrder([], 0)[getFamilyOrder([], 0).length - 1]).toBe('groq')
         resetProviderCooldowns()
-        expect(getFamilyOrder()[0]).toBe('groq')
-        expect(getFamilyOrder(['groq'])).not.toContain('groq')
-        expect(getFamilyOrder(['groq'])[0]).toBe('gemini')
+        expect(getFamilyOrder(['groq'], 0)).not.toContain('groq')
+        expect(getFamilyOrder(['groq'], 0)[0]).toBe('gemini')
+        expect(getFamilyOrder(['groq'], 1)[0]).toBe('gemini')
+    })
+
+    test('each request flips the Groq/Gemini lead without touching key order helpers', () => {
+        process.env.WIM_PRIMARY_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-primary-cursor-test`
+        resetProviderCooldowns()
+        expect(nextPrimaryFamilyStart()).toBe(0)
+        expect(nextPrimaryFamilyStart()).toBe(1)
+        expect(nextPrimaryFamilyStart()).toBe(0)
+        resetProviderCooldowns()
+        delete process.env.WIM_PRIMARY_CURSOR_FILE
     })
 
     test('rotates Groq keys instead of always starting at the first one', () => {
@@ -167,6 +184,23 @@ test.describe('thinking stream routing', () => {
         expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('c')
         expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('a')
         resetProviderCooldowns()
+        delete process.env.WIM_GROQ_CURSOR_FILE
+    })
+
+    test('rotates Gemini keys independently of Groq and merges env aliases', () => {
+        process.env.WIM_GEMINI_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-gemini-cursor-test`
+        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test-gemini`
+        resetProviderCooldowns()
+        expect(collectGeminiKeys({
+            GEMINI_API_KEYS: 'AIza_aaa, AIza_bbb',
+            GOOGLE_API_KEY: 'AIza_ccc',
+        })).toEqual(['AIza_aaa', 'AIza_bbb', 'AIza_ccc'])
+        expect(takeGeminiKeyOrder(['g1', 'g2', 'g3'])[0]).toBe('g1')
+        expect(takeGeminiKeyOrder(['g1', 'g2', 'g3'])[0]).toBe('g2')
+        expect(takeGeminiKeyOrder(['g1', 'g2', 'g3'])[0]).toBe('g3')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('a')
+        resetProviderCooldowns()
+        delete process.env.WIM_GEMINI_CURSOR_FILE
         delete process.env.WIM_GROQ_CURSOR_FILE
     })
 
@@ -256,5 +290,38 @@ test.describe('thinking stream routing', () => {
                 choices: [{ delta: { reasoning: { content: 'Nested reasoning object.' } } }],
             })
         ).toBe('Nested reasoning object.')
+    })
+
+    test('Gemini thought parts become tagged thinking, not public text', () => {
+        expect(usesGeminiNativeThinking('gemini-2.5-flash', 'deep')).toBe(true)
+        expect(usesGeminiNativeThinking('gemini-flash-latest', 'deep')).toBe(true)
+        expect(usesGeminiNativeThinking('gemini-2.0-flash', 'deep')).toBe(false)
+        expect(usesGeminiNativeThinking('gemini-2.5-flash', 'brief')).toBe(false)
+
+        const extracted = extractGeminiThoughtAndText({
+            candidates: [
+                {
+                    content: {
+                        parts: [
+                            { thought: true, text: 'The user asked for a table.' },
+                            { text: 'Here is the table.' },
+                        ],
+                    },
+                },
+            ],
+        })
+        expect(extracted.thought).toBe('The user asked for a table.')
+        expect(extracted.text).toBe('Here is the table.')
+
+        const merged = mergeGeminiThoughtText(extracted.thought, extracted.text)
+        expect(merged).toBe('<think>The user asked for a table.</think>Here is the table.')
+
+        const demux = new ThinkingStreamDemux()
+        const publicText: string[] = []
+        const thinkingText: string[] = []
+        demux.push(merged, (value) => publicText.push(value), (value) => thinkingText.push(value))
+        demux.finish((value) => publicText.push(value), (value) => thinkingText.push(value))
+        expect(publicText.join('')).toBe('Here is the table.')
+        expect(thinkingText.join('')).toContain('The user asked for a table.')
     })
 })

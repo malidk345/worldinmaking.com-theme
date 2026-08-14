@@ -86,6 +86,9 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-35` | Stream 3 | Additive CSS/SVG `agora` wallpaper (do not change existing scenes or default) | `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-36` | Stream 1 | CF Pages: edge-runtime `/api/chat` + `/share/[token]` | `src/pages/api/chat.ts`, `src/pages/share.tsx`, `src/pages/[...slug].tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-37` | Stream 5 | Shared Groq/Gemini key rotation + per-key cooldown | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-38` | Stream 5 | Gemini native thinking + live stream | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-39` | Stream 5 | Alternate Groq/Gemini as lead family per request | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -218,6 +221,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 102 - Alternate Groq/Gemini lead per request (TSK-39)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Each chat/generate request now flips the lead family (Groq ↔ Gemini). Internal key rotation is unchanged. The other family remains failover; Hugging Face and OpenRouter stay last. Cooling still pushes a family to the end.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 21 passed.
+- **Handoff:** Restart `pnpm dev`. Logs should alternate `groq stream ok` / `gemini stream ok` when both have keys.
+
+### Entry 101 - Gemini native thinking + SSE stream (TSK-38)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Gemini 2.5 Flash now requests `thinkingConfig.includeThoughts` on standard/deep turns, streams via `streamGenerateContent`, and wraps `thought: true` parts as `<think>` so ThinkingBlock works like Groq. 2.5 is tried first. Unsupported thinkingConfig retries without it. 2.0/1.5 stay prompted-tag only.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 20 passed.
+- **Handoff:** Chat still prefers Groq. Gemini thinking appears when Groq fails over or is cooling. Restart `pnpm dev` to pick up the gateway change.
+
+### Entry 100 - Groq/Gemini shared key rotation (TSK-37)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Gemini now uses the same round-robin + per-key cooldown as Groq. `GEMINI_API_KEYS` / `GEMINI_API_KEY` / Google aliases merge. A 429/401 on one Gemini key skips the rest of that key's models and moves on. Groq behavior unchanged.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts`, `tests/thinking-tags.spec.ts`, `tests/runtime-env.spec.ts`, `.env.example`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts tests/runtime-env.spec.ts` — 24 passed.
+- **Handoff:** Bind extra keys as comma lists. No need to rename KEY → KEYS.
 
 ### Entry 099 - CF Pages: edge `/api/chat`, drop Node `/share/[token]` (TSK-36)
 - **Date:** 2026-08-14

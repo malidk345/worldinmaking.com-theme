@@ -12,7 +12,7 @@ import {
     splitKeys,
 } from './runtime-env'
 import { collectApiKeys, rotateKeys } from './search-keys'
-import { nextGroqKeyStart, resetGroqKeyCursor } from './groq-key-cursor'
+import { nextFamilyKeyStart, resetFamilyKeyCursor } from './groq-key-cursor'
 
 
 
@@ -115,7 +115,7 @@ const OPENROUTER_MODELS = [
     'openrouter/auto',
 ]
 
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash']
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']
 
 // Hugging Face Inference Router (OpenAI-compatible /v1/chat/completions) — real,
 // configured fallback provider (HUGGINGFACE_API_KEY is bound on Cloudflare Pages).
@@ -166,6 +166,14 @@ export function isRequestTooLarge(detail: string): boolean {
 
 function isQwen36(model: string): boolean {
     return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
+}
+
+function isGemini25(model: string): boolean {
+    return /gemini-2\.5|gemini-3|gemini-flash-latest|gemini-pro-latest/i.test(model)
+}
+
+export function usesGeminiNativeThinking(model: string, depth?: ThinkingDepth): boolean {
+    return isGemini25(model) && (depth === 'standard' || depth === 'deep')
 }
 
 function isGroqEndpoint(url: string): boolean {
@@ -328,6 +336,55 @@ export function closeReasoningWrap(state: ReasoningWrapState): string[] {
     return []
 }
 
+export function extractGeminiThoughtAndText(payload: unknown): { thought: string; text: string } {
+    if (!payload || typeof payload !== 'object') return { thought: '', text: '' }
+    const parts = (payload as { candidates?: Array<{ content?: { parts?: unknown } }> }).candidates?.[0]
+        ?.content?.parts
+    if (!Array.isArray(parts)) return { thought: '', text: '' }
+    let thought = ''
+    let text = ''
+    for (const part of parts) {
+        if (!part || typeof part !== 'object') continue
+        const piece = part as { text?: unknown; thought?: unknown }
+        const value = typeof piece.text === 'string' ? piece.text : ''
+        if (!value) continue
+        if (piece.thought === true) thought += value
+        else text += value
+    }
+    return { thought, text }
+}
+
+export function mergeGeminiThoughtText(thought: string, text: string): string {
+    if (thought && !THINK_TAG_HINT.test(text)) return `<think>${thought}</think>${text}`
+    return text || (thought ? `<think>${thought}</think>` : '')
+}
+
+function geminiGenerationConfig(model: string, thinkingDepth?: ThinkingDepth, temperature?: number) {
+    const thinking = usesGeminiNativeThinking(model, thinkingDepth)
+    const config: Record<string, unknown> = {
+        temperature: temperature ?? 0.7,
+        maxOutputTokens: thinking ? 4096 : 1800,
+    }
+    if (thinking) {
+        config.thinkingConfig = {
+            thinkingBudget: thinkingDepth === 'deep' ? 2048 : 1024,
+            includeThoughts: true,
+        }
+    }
+    return config
+}
+
+function geminiRequestTimeoutMs(model: string, thinkingDepth?: ThinkingDepth, deadline?: number): number {
+    const desired = usesGeminiNativeThinking(model, thinkingDepth) ? 25_000 : PROVIDER_REQUEST_TIMEOUT_MS
+    if (!deadline) return desired
+    return Math.max(1, Math.min(desired, deadline - Date.now()))
+}
+
+function isGeminiThinkingUnsupported(detail: string): boolean {
+    const d = detail.toLowerCase()
+    return d.includes('thinkingconfig') || d.includes('thinking_config') || d.includes('includethoughts')
+}
+
 /** Groq/OpenAI-compatible reasoning can sit on several fields depending on format. */
 export function extractProviderReasoning(payload: unknown): string {
     if (!payload || typeof payload !== 'object') return ''
@@ -397,57 +454,103 @@ function isAuthDetail(detail: string): boolean {
     )
 }
 
-const PROVIDER_FAMILY_ORDER = ['groq', 'gemini', 'huggingface', 'openrouter'] as const
+const PRIMARY_FAMILIES = ['groq', 'gemini'] as const
+const SECONDARY_FAMILIES = ['huggingface', 'openrouter'] as const
+const PROVIDER_FAMILY_ORDER = [...PRIMARY_FAMILIES, ...SECONDARY_FAMILIES] as const
 export type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
 
-/** Groq Qwen first for every philosopher. Cooling families move to the end. */
-export function getFamilyOrder(skipFamilies: ProviderFamily[] = []): ProviderFamily[] {
+/** Alternate Groq/Gemini as the lead. Key rotation inside each family is separate. */
+export function getFamilyOrder(skipFamilies: ProviderFamily[] = [], start = 0): ProviderFamily[] {
     const skip = new Set(skipFamilies)
-    const active = PROVIDER_FAMILY_ORDER.filter((family) => !isFamilyCooling(family) && !skip.has(family))
-    const cooling = PROVIDER_FAMILY_ORDER.filter((family) => isFamilyCooling(family) && !skip.has(family))
+    const primaries = rotateKeys([...PRIMARY_FAMILIES], ((start % PRIMARY_FAMILIES.length) + PRIMARY_FAMILIES.length) % PRIMARY_FAMILIES.length)
+    const ordered = [...primaries, ...SECONDARY_FAMILIES].filter(
+        (family): family is ProviderFamily => !skip.has(family as ProviderFamily)
+    )
+    const active = ordered.filter((family) => !isFamilyCooling(family))
+    const cooling = ordered.filter((family) => isFamilyCooling(family))
     return [...active, ...cooling]
+}
+
+export function nextPrimaryFamilyStart(): number {
+    return nextFamilyKeyStart('primary', PRIMARY_FAMILIES.length)
 }
 
 export function resetProviderCooldowns(): void {
     PROVIDER_COOLDOWNS.clear()
-    GROQ_KEY_COOLDOWNS.clear()
-    resetGroqKeyCursor()
+    KEY_COOLDOWNS.clear()
+    resetFamilyKeyCursor()
 }
 
-export { markFamilyCooling, markGroqKeyCooling }
+export { markFamilyCooling, markGroqKeyCooling, markFamilyKeyCooling }
 
-const GROQ_KEY_COOLDOWNS = new Map<string, number>()
+const KEY_COOLDOWNS = new Map<string, number>()
+const RATE_LIMIT_KEY_COOLDOWN_MS = HEAVY_THINKING_COOLDOWN_MS
+const AUTH_KEY_COOLDOWN_MS = 30 * 60 * 1000
 
-function groqKeyId(key: string): string {
+function keyId(key: string): string {
     return key.slice(-10)
 }
 
-function isGroqKeyCooling(key: string): boolean {
-    const until = GROQ_KEY_COOLDOWNS.get(groqKeyId(key))
+function cooldownSlot(family: string, key: string): string {
+    return `${family}:${keyId(key)}`
+}
+
+function isFamilyKeyCooling(family: string, key: string): boolean {
+    const slot = cooldownSlot(family, key)
+    const until = KEY_COOLDOWNS.get(slot)
     if (!until) return false
     if (Date.now() > until) {
-        GROQ_KEY_COOLDOWNS.delete(groqKeyId(key))
+        KEY_COOLDOWNS.delete(slot)
         return false
     }
     return true
 }
 
+function markFamilyKeyCooling(family: string, key: string, ms = RATE_LIMIT_KEY_COOLDOWN_MS): void {
+    KEY_COOLDOWNS.set(cooldownSlot(family, key), Date.now() + ms)
+}
+
+function isGroqKeyCooling(key: string): boolean {
+    return isFamilyKeyCooling('groq', key)
+}
+
 function markGroqKeyCooling(key: string, ms = HEAVY_THINKING_COOLDOWN_MS): void {
-    GROQ_KEY_COOLDOWNS.set(groqKeyId(key), Date.now() + ms)
+    markFamilyKeyCooling('groq', key, ms)
 }
 
 export function collectGroqKeys(store: EnvStore): string[] {
     return collectApiKeys(store.GROQ_API_KEYS, store.GROQ_API_KEY, store.GROQ_KEYS, store.GROQ_KEY)
 }
 
-/** Sequential: request 1 uses key 1, request 2 uses key 2, then wraps. */
-export function takeGroqKeyOrder(keys: string[], start?: number): string[] {
+export function collectGeminiKeys(store: EnvStore): string[] {
+    return collectApiKeys(
+        store.GEMINI_API_KEYS,
+        store.GEMINI_API_KEY,
+        store.GEMINI_KEYS,
+        store.GEMINI_KEY,
+        store.GOOGLE_GENERATIVE_AI_API_KEY,
+        store.GOOGLE_API_KEY,
+        store.GOOGLE_AI_API_KEY,
+        store.GOOGLE_GEMINI_API_KEY,
+    )
+}
+
+/** Sequential: request 1 uses key 1, request 2 uses key 2, then wraps. Hot keys go last. */
+export function takeFamilyKeyOrder(family: string, keys: string[], start?: number): string[] {
     if (keys.length <= 1) return keys
-    const index = typeof start === 'number' ? start : nextGroqKeyStart(keys.length)
+    const index = typeof start === 'number' ? start : nextFamilyKeyStart(family, keys.length)
     const rotated = rotateKeys(keys, index)
-    const live = rotated.filter((key) => !isGroqKeyCooling(key))
-    const cooling = rotated.filter((key) => isGroqKeyCooling(key))
+    const live = rotated.filter((key) => !isFamilyKeyCooling(family, key))
+    const cooling = rotated.filter((key) => isFamilyKeyCooling(family, key))
     return live.length > 0 ? [...live, ...cooling] : rotated
+}
+
+export function takeGroqKeyOrder(keys: string[], start?: number): string[] {
+    return takeFamilyKeyOrder('groq', keys, start)
+}
+
+export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
+    return takeFamilyKeyOrder('gemini', keys, start)
 }
 
 function sleep(ms: number): Promise<void> {
@@ -720,11 +823,11 @@ async function geminiGenerate(
     temperature?: number,
     deadline?: number,
     history?: GatewayMessage[],
+    thinkingDepth?: ThinkingDepth,
+    disableNativeThinking = false,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
-        const timeoutMs = deadline
-            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
-            : PROVIDER_REQUEST_TIMEOUT_MS
+        const timeoutMs = geminiRequestTimeoutMs(model, disableNativeThinking ? 'brief' : thinkingDepth, deadline)
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
@@ -732,25 +835,133 @@ async function geminiGenerate(
             body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 contents: toGeminiContents(userPrompt, history),
-                generationConfig: { temperature: temperature ?? 0.7, maxOutputTokens: 1800 },
+                generationConfig: geminiGenerationConfig(
+                    model,
+                    disableNativeThinking ? 'brief' : thinkingDepth,
+                    temperature,
+                ),
             }),
         }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
-            return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
+            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            if (!disableNativeThinking && isGeminiThinkingUnsupported(detail)) {
+                return geminiGenerate(
+                    apiKey,
+                    model,
+                    systemPrompt,
+                    userPrompt,
+                    temperature,
+                    deadline,
+                    history,
+                    thinkingDepth,
+                    true,
+                )
+            }
+            return { ok: false, detail }
         }
-        let data: any
+        let data: unknown
         try {
             data = JSON.parse(raw)
         } catch {
             return { ok: false, detail: 'invalid json' }
         }
-        const text = data?.candidates?.[0]?.content?.parts
-            ?.map((p: any) => p?.text)
-            .filter(Boolean)
-            .join('')
+        const extracted = extractGeminiThoughtAndText(data)
+        const text = mergeGeminiThoughtText(extracted.thought, extracted.text)
         if (!text) return { ok: false, detail: 'empty content' }
         return { ok: true, text }
+    } catch (e: any) {
+        return { ok: false, detail: e?.message || 'fetch error' }
+    }
+}
+
+async function geminiGenerateStream(
+    apiKey: string,
+    model: string,
+    systemPrompt: string,
+    userPrompt: string,
+    temperature?: number,
+    deadline?: number,
+    history?: GatewayMessage[],
+    thinkingDepth?: ThinkingDepth,
+    disableNativeThinking = false,
+): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
+    try {
+        const timeoutMs = geminiRequestTimeoutMs(model, disableNativeThinking ? 'brief' : thinkingDepth, deadline)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`
+        const fetchRes = await fetchWithTimeout(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: toGeminiContents(userPrompt, history),
+                generationConfig: geminiGenerationConfig(
+                    model,
+                    disableNativeThinking ? 'brief' : thinkingDepth,
+                    temperature,
+                ),
+            }),
+        }, timeoutMs)
+        if (!fetchRes.ok) {
+            const raw = await fetchRes.text()
+            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            if (!disableNativeThinking && isGeminiThinkingUnsupported(detail)) {
+                return geminiGenerateStream(
+                    apiKey,
+                    model,
+                    systemPrompt,
+                    userPrompt,
+                    temperature,
+                    deadline,
+                    history,
+                    thinkingDepth,
+                    true,
+                )
+            }
+            return { ok: false, detail }
+        }
+        if (!fetchRes.body) return { ok: false, detail: 'empty stream' }
+
+        const reader = fetchRes.body.getReader()
+        async function* streamGenerator(): AsyncIterableIterator<string> {
+            const decoder = new TextDecoder()
+            const wrapState: ReasoningWrapState = { opened: false, closed: false }
+            let buffer = ''
+            try {
+                while (true) {
+                    const { value, done } = await reader.read()
+                    if (done) break
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || ''
+                    for (const line of lines) {
+                        const trimmed = line.trim()
+                        if (!trimmed.startsWith('data:')) continue
+                        const payload = trimmed.slice(5).trim()
+                        if (!payload || payload === '[DONE]') continue
+                        try {
+                            const extracted = extractGeminiThoughtAndText(JSON.parse(payload))
+                            for (const piece of wrapReasoningContentChunk(
+                                wrapState,
+                                extracted.thought,
+                                extracted.text,
+                            )) {
+                                yield piece
+                            }
+                        } catch {
+                            // Ignore parse errors in stream
+                        }
+                    }
+                }
+                for (const piece of closeReasoningWrap(wrapState)) {
+                    yield piece
+                }
+            } finally {
+                reader.releaseLock()
+            }
+        }
+
+        return { ok: true, stream: streamGenerator() }
     } catch (e: any) {
         return { ok: false, detail: e?.message || 'fetch error' }
     }
@@ -793,7 +1004,7 @@ async function tryGroqFamily(
             }
             console.info('[gateway] groq generate ok', {
                 model,
-                key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}`,
+                key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
             })
             return {
                 ok: true,
@@ -804,17 +1015,17 @@ async function tryGroqFamily(
         }
         if (isRateLimitDetail(r.detail)) {
             markGroqKeyCooling(key)
-            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
             continue
         }
         if (isRequestTooLarge(r.detail)) {
-            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
             continue
         }
         if (isAuthDetail(r.detail)) {
-            markGroqKeyCooling(key, 30 * 60 * 1000)
+            markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
         }
-        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
     }
     if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
         markFamilyCooling('groq')
@@ -872,22 +1083,49 @@ async function tryGeminiFamily(
     params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
-    let sawRateLimit = false
     for (const key of geminiKeys) {
         if (Date.now() >= params.deadline) return null
         const keyIdx = geminiKeys.indexOf(key) + 1
+        let skipRestOfKey = false
         for (const model of GEMINI_MODELS) {
             if (Date.now() >= params.deadline) return null
+            if (skipRestOfKey) break
             const r = await withRetry(
-                () => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature, params.deadline, params.history),
+                () =>
+                    geminiGenerate(
+                        key,
+                        model,
+                        params.systemPrompt,
+                        params.userPrompt,
+                        params.temperature,
+                        params.deadline,
+                        params.history,
+                        params.thinkingDepth,
+                    ),
                 params.deadline,
             )
-            if (r.ok) return { ok: true, text: r.text, provider: `gemini-fetch:${model}` }
-            if (isRateLimitDetail(r.detail)) sawRateLimit = true
-            attempts.push(`gemini[${keyIdx}/${geminiKeys.length}](${model}): ${r.detail}`)
+            if (r.ok) {
+                console.info('[gateway] gemini generate ok', {
+                    model,
+                    key: `${keyIdx}/${geminiKeys.length} …${keyId(key)}`,
+                })
+                return { ok: true, text: r.text, provider: `gemini-fetch:${model}` }
+            }
+            attempts.push(`gemini[${keyIdx}/${geminiKeys.length} …${keyId(key)}](${model}): ${r.detail}`)
+            if (isRateLimitDetail(r.detail)) {
+                markFamilyKeyCooling('gemini', key)
+                skipRestOfKey = true
+                continue
+            }
+            if (isAuthDetail(r.detail)) {
+                markFamilyKeyCooling('gemini', key, AUTH_KEY_COOLDOWN_MS)
+                skipRestOfKey = true
+            }
         }
     }
-    if (geminiKeys.length > 0 && sawRateLimit) markFamilyCooling('gemini')
+    if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
+        markFamilyCooling('gemini')
+    }
     return null
 }
 
@@ -951,17 +1189,7 @@ export async function generateWithGateway(params: {
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
-    const geminiRaw = envFrom(
-        runtimeEnv,
-        'GEMINI_API_KEYS',              // CF Dashboard exact name (comma-separated)
-        'GEMINI_API_KEY',
-        'GEMINI_KEYS',
-        'GEMINI_KEY',
-        'GOOGLE_GENERATIVE_AI_API_KEY',
-        'GOOGLE_API_KEY',
-        'GOOGLE_AI_API_KEY',
-        'GOOGLE_GEMINI_API_KEY',
-    )
+    const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
     const huggingFaceRaw = envFrom(
         runtimeEnv,
         'HUGGINGFACE_API_KEYS',
@@ -969,10 +1197,9 @@ export async function generateWithGateway(params: {
         'HF_API_KEY',
         'HF_TOKEN',
     )
-    const geminiKeys = splitKeys(geminiRaw) // e.g. ['AIza...1', 'AIza...2']
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
-    for (const family of getFamilyOrder(params.skipFamilies)) {
+    for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -1063,20 +1290,8 @@ export async function streamWithGateway(params: {
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const hfRaw = envFrom(runtimeEnv, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN')
-    const geminiRaw = envFrom(
-        runtimeEnv,
-        'GEMINI_API_KEYS',
-        'GEMINI_API_KEY',
-        'GEMINI_KEYS',
-        'GEMINI_KEY',
-        'GOOGLE_GENERATIVE_AI_API_KEY',
-        'GOOGLE_API_KEY',
-        'GOOGLE_AI_API_KEY',
-        'GOOGLE_GEMINI_API_KEY',
-    )
-
     const hfKeys = splitKeys(hfRaw)
-    const geminiKeys = splitKeys(geminiRaw)
+    const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
     const openRouterModel =
         envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[params.taskType || 'community_reply'] || OPENROUTER_MODELS[0]
 
@@ -1089,7 +1304,7 @@ export async function streamWithGateway(params: {
         thinkingDepth: params.thinkingDepth,
     }
 
-    for (const family of getFamilyOrder(params.skipFamilies)) {
+    for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -1116,23 +1331,23 @@ export async function streamWithGateway(params: {
                         }
                         console.info('[gateway] groq stream ok', {
                             model: groqModel,
-                            key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}`,
+                            key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
                         })
                         return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
                     }
                     if (isRateLimitDetail(r.detail)) {
                         markGroqKeyCooling(key)
-                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
                         continue
                     }
                     if (isRequestTooLarge(r.detail)) {
-                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
                         continue
                     }
                     if (isAuthDetail(r.detail)) {
-                        markGroqKeyCooling(key, 30 * 60 * 1000)
+                        markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
                     }
-                    attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+                    attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
             }
             if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
                 markFamilyCooling('groq')
@@ -1141,15 +1356,43 @@ export async function streamWithGateway(params: {
         }
 
         if (family === 'gemini' && geminiKeys.length > 0) {
-            // Gemini has no token stream in this gateway; use the same generate family so
-            // a configured Gemini key is not skipped during streaming chat.
-            const result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
-            if (result) {
-                const text = result.text
-                const oneShot = async function* (): AsyncIterableIterator<string> {
-                    yield text
+            for (const key of geminiKeys) {
+                if (Date.now() >= deadline) break
+                const keyIdx = geminiKeys.indexOf(key) + 1
+                let skipRestOfKey = false
+                for (const model of GEMINI_MODELS) {
+                    if (Date.now() >= deadline || skipRestOfKey) break
+                    const r = await geminiGenerateStream(
+                        key,
+                        model,
+                        systemPrompt,
+                        userPrompt,
+                        params.temperature,
+                        deadline,
+                        params.history,
+                        params.thinkingDepth,
+                    )
+                    if (r.ok) {
+                        console.info('[gateway] gemini stream ok', {
+                            model,
+                            key: `${keyIdx}/${geminiKeys.length} …${keyId(key)}`,
+                        })
+                        return { ok: true, provider: `gemini-fetch:${model}`, stream: r.stream, attempts, configured }
+                    }
+                    attempts.push(`gemini[${keyIdx}/${geminiKeys.length} …${keyId(key)}](${model}): ${r.detail}`)
+                    if (isRateLimitDetail(r.detail)) {
+                        markFamilyKeyCooling('gemini', key)
+                        skipRestOfKey = true
+                        continue
+                    }
+                    if (isAuthDetail(r.detail)) {
+                        markFamilyKeyCooling('gemini', key, AUTH_KEY_COOLDOWN_MS)
+                        skipRestOfKey = true
+                    }
                 }
-                return { ok: true, provider: result.provider, stream: oneShot(), attempts, configured }
+            }
+            if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
+                markFamilyCooling('gemini')
             }
             continue
         }
