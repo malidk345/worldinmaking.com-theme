@@ -102,4 +102,3 @@ files.forEach(f => {
   fs.writeFileSync(f, content, 'utf8');
 });
 
-console.log('done replacing');
