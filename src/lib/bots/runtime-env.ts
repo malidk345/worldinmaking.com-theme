@@ -2,24 +2,30 @@
  * Runtime env for Cloudflare Pages (next-on-pages) + local next dev.
  *
  * CRITICAL: In CF edge runtime, process.env is NOT populated with secrets.
- * Secrets bound in CF Pages dashboard are ONLY accessible via getRequestContext().env.
- * We use a static import with try/catch so local Node.js dev falls back gracefully.
+ * Secrets bound in CF Pages dashboard are ONLY accessible via the
+ * next-on-pages request context (same symbol as getRequestContext()).
+ *
+ * Do not use Function()/eval()/require() here — Next.js Edge webpack rejects
+ * dynamic code evaluation at build time (`philosopher-bot` and other edge routes).
+ * Reading the published CF symbol keeps webpack edge-safe and avoids bundling
+ * the `@cloudflare/next-on-pages` CLI package.
  */
 
 export type EnvStore = Record<string, string | undefined>
 
-function getCfRequestContext(): any {
+const CF_REQUEST_CONTEXT = Symbol.for('__cloudflare-request-context__')
+
+type CfRequestContext = {
+    env?: Record<string, unknown>
+    [key: string]: unknown
+}
+
+function getCfRequestContext(): CfRequestContext | null {
     try {
-        // Dynamic lookup so webpack does not statically bundle the server-only CF helper.
-        const req = Function('return typeof require === "function" ? require : null')() as
-            | ((id: string) => any)
-            | null
-        if (req) {
-            const mod = req('@cloudflare/next-on-pages')
-            if (mod && typeof mod.getRequestContext === 'function') {
-                return mod.getRequestContext()
-            }
-        }
+        const ctx = (globalThis as typeof globalThis & {
+            [CF_REQUEST_CONTEXT]?: CfRequestContext
+        })[CF_REQUEST_CONTEXT]
+        if (ctx && typeof ctx === 'object') return ctx
     } catch {
         // Not in CF edge context (local dev or client) — silently ignore
     }

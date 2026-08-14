@@ -84,6 +84,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-32` | Stream 5 | Transform Ask AI dropdown into slide-over panel (Notifications Panel style) | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-35` | Stream 3 | Additive CSS/SVG `agora` wallpaper (do not change existing scenes or default) | `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -211,10 +212,51 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-73` | Stream 5 | Empty public reply: parse unclosed think tail; recover may use Groq brief | `thinking.ts`, `orchestrate.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-74` | Stream 5 | Groq 429 must try the next account key, not abandon the family | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-75` | Stream 5 | Stop thinking leaking into public reply; stop public replies being cut off | `thinking-tags.ts`, `thinking.ts`, `ai-gateway.ts`, `persona-engine.ts`, `orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-76` | Stream 1 / 5 | Fix CF Pages edge webpack: no Function()/eval in runtime-env (and groq-key-cursor) | `src/lib/bots/runtime-env.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 098 - CF Pages edge build: drop Function() in runtime-env (TSK-76)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Cloudflare Pages `pnpm run build` died on Next.js Edge webpack: `Dynamic Code Evaluation not allowed` in `src/lib/bots/runtime-env.ts` (`Function('return require')`), imported by `philosopher-bot.ts`. CF secrets are now read from the published next-on-pages symbol (`Symbol.for('__cloudflare-request-context__')`) — same as `getRequestContext()`, without eval/require and without bundling the next-on-pages CLI. Same `Function()` pattern removed from `groq-key-cursor.ts` (in the same edge graph) via `process.getBuiltinModule`.
+- **Modified Files:** `src/lib/bots/runtime-env.ts`, `src/lib/bots/groq-key-cursor.ts`, `tests/runtime-env.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/runtime-env.spec.ts` — 4 passed. `pnpm typecheck:shell` still fails on 2 pre-existing unused locals in `ai-gateway.ts` (`GROQ_HISTORY_TURNS` / `GROQ_HISTORY_CHARS`), not this change.
+- **Handoff:** Commit and redeploy. Production CF secrets still come from Pages bindings via the request-context symbol, not `process.env`. Do not reintroduce `Function()`/`eval()` in any `runtime: 'edge'` import graph.
+
+### Entry 097 - Agora density field
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Agora speckle is no longer a repeating even tile. One full-frame field: packed clusters, empty pockets, denser rim/top. Hogzilla unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual — Display options → Agora. Center should read quieter than corners.
+- **Handoff:** Tune `densityAt` blobs / rim if clusters sit in the wrong place.
+
+### Entry 096 - Agora speckle (dense / jittered)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the regular 16px Agora dot grid with a deterministic jittered speckle (fine + loose tiles). Hogzilla still untouched.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual — Display options → Agora. Pattern should read as dust, not a grid.
+- **Handoff:** Density lives in `speckleTile` cells / skip. Other directions if user dislikes this: film grain, edge-weighted halo, constellation.
+
+### Entry 095 - Agora = Hogzilla field + dots (TSK-35)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Reworked the additive `agora` wallpaper only: same Hogzilla light/dark gradients, plus a tiled SVG-dot overlay (office-party style texture). Hogzilla and the other three scenes are untouched. Default remains hogzilla.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual — Display options → Agora. Hogzilla picker must stay a plain gradient.
+- **Handoff:** Tune `dotTile` fill/size in `Agora` if the mesh is too loud or too faint.
+
+### Entry 094 - Additive Agora wallpaper (TSK-35)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added a fifth desktop wallpaper, `agora`: CSS field + faint construction grid + meridian SVG. No photo. Existing hogzilla / keyboard-garden / office-party / startup-monopoly scenes and the hogzilla default are unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Additive-only wiring. Pick **Agora** in Display options or cycle with `\`.
+- **Handoff:** Do not flip the site default to agora unless the user asks. Tune wash/grid opacity in `Agora` if the header tint is too strong/weak.
 
 ### Entry 093 - Thinking / public split (TSK-75)
 - **Date:** 2026-08-14
