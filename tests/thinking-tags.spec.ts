@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test'
 import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction } from '../src/lib/bots/thinking'
-import { extractProviderReasoning, getFamilyOrder, markFamilyCooling, resetProviderCooldowns } from '../src/lib/bots/ai-gateway'
+import {
+    extractProviderReasoning,
+    fitGroqRequest,
+    getFamilyOrder,
+    GROQ_TPM_LIMIT,
+    isRequestTooLarge,
+    markFamilyCooling,
+    resetProviderCooldowns,
+} from '../src/lib/bots/ai-gateway'
 import { ThinkingStreamDemux, stripThinkingBlocks } from '../src/lib/bots/thinking-tags'
 
 test.describe('thinking stream routing', () => {
@@ -107,6 +115,51 @@ test.describe('thinking stream routing', () => {
         expect(getFamilyOrder()[getFamilyOrder().length - 1]).toBe('groq')
         resetProviderCooldowns()
         expect(getFamilyOrder()[0]).toBe('groq')
+        expect(getFamilyOrder(['groq'])).not.toContain('groq')
+        expect(getFamilyOrder(['groq'])[0]).toBe('gemini')
+    })
+
+    test('fits thinking requests under Groq 8k TPM including max_tokens', () => {
+        const hugeSystem = 'persona '.repeat(3000)
+        const hugeUser = 'soru '.repeat(1500)
+        const history = Array.from({ length: 8 }, (_, i) => ({
+            role: i % 2 === 0 ? 'user' as const : 'assistant' as const,
+            content: 'onceki tur '.repeat(400),
+        }))
+
+        const fitted = fitGroqRequest({
+            model: 'qwen/qwen3.6-27b',
+            systemPrompt: hugeSystem,
+            userPrompt: hugeUser,
+            history,
+            thinkingDepth: 'standard',
+        })
+
+        expect(fitted.skip).toBe(false)
+        expect(fitted.maxTokens).toBeGreaterThanOrEqual(256)
+        expect(fitted.promptTokens + fitted.maxTokens).toBeLessThanOrEqual(GROQ_TPM_LIMIT)
+        expect(isRequestTooLarge('413 Request too large for model minute (TPM): Limit 8000')).toBe(true)
+    })
+
+    test('compact Groq thinking budget is smaller than the default thinking budget', () => {
+        const systemPrompt = 'You are Nietzsche. '.repeat(200)
+        const userPrompt = 'What is will to power? '.repeat(80)
+        const normal = fitGroqRequest({
+            model: 'qwen/qwen3.6-27b',
+            systemPrompt,
+            userPrompt,
+            thinkingDepth: 'deep',
+        })
+        const compact = fitGroqRequest({
+            model: 'qwen/qwen3.6-27b',
+            systemPrompt,
+            userPrompt,
+            thinkingDepth: 'deep',
+            compact: true,
+        })
+
+        expect(compact.promptTokens + compact.maxTokens).toBeLessThanOrEqual(GROQ_TPM_LIMIT)
+        expect(compact.promptTokens).toBeLessThanOrEqual(normal.promptTokens)
     })
 
     test('reads Groq parsed and OpenAI-style reasoning fields', () => {

@@ -37,23 +37,38 @@ export type GatewayMessage = {
     content: string
 }
 
+type PromptCaps = {
+    system: number
+    user: number
+    turns: number
+    turnChars: number
+}
+
+const DEFAULT_PROMPT_CAPS: PromptCaps = {
+    system: 8_000,
+    user: 4_000,
+    turns: 6,
+    turnChars: 1_200,
+}
+
 function buildCompletionMessages(
     systemPrompt: string,
     userPrompt: string,
-    history?: GatewayMessage[]
+    history?: GatewayMessage[],
+    caps: PromptCaps = DEFAULT_PROMPT_CAPS,
 ): GatewayMessage[] {
     const messages: GatewayMessage[] = [{
         role: 'system',
-        content: systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS),
+        content: systemPrompt.slice(0, caps.system),
     }]
     if (history?.length) {
-        for (const item of history.slice(-GROQ_HISTORY_TURNS)) {
+        for (const item of history.slice(-caps.turns)) {
             if ((item.role === 'user' || item.role === 'assistant') && item.content.trim()) {
-                messages.push({ role: item.role, content: item.content.slice(0, GROQ_HISTORY_CHARS) })
+                messages.push({ role: item.role, content: item.content.slice(0, caps.turnChars) })
             }
         }
     }
-    messages.push({ role: 'user', content: userPrompt.slice(0, MAX_USER_PROMPT_CHARS) })
+    messages.push({ role: 'user', content: userPrompt.slice(0, caps.user) })
     return messages
 }
 
@@ -134,14 +149,103 @@ const MAX_USER_PROMPT_CHARS = 4_000
 const DEFAULT_MAX_TOKENS = 2048
 const GROQ_HISTORY_TURNS = 6
 const GROQ_HISTORY_CHARS = 1200
+/** Groq on_demand qwen/qwen3.6-27b: 8K TPM. Request size = input + max_tokens. */
+export const GROQ_TPM_LIMIT = 8_000
+const GROQ_TPM_SAFETY = 500
+const MIN_GROQ_COMPLETION_TOKENS = 256
+const HEAVY_THINKING_COOLDOWN_MS = 25_000
 
-function isRequestTooLarge(detail: string): boolean {
+export function isRequestTooLarge(detail: string): boolean {
     const d = detail.toLowerCase()
     return d.startsWith('413') || d.includes('request too large') || d.includes('tpm')
 }
 
 function isQwen36(model: string): boolean {
     return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
+}
+
+function isGroqEndpoint(url: string): boolean {
+    return url.includes('api.groq.com')
+}
+
+/** Conservative mixed TR/EN estimate. Groq's TPM check is also conservative. */
+export function estimateTokensFromText(text: string): number {
+    if (!text) return 0
+    return Math.ceil(text.length / 3)
+}
+
+export function estimateMessagesTokens(messages: GatewayMessage[]): number {
+    return messages.reduce((sum, message) => sum + estimateTokensFromText(message.content) + 8, 16)
+}
+
+function groqPromptCaps(thinking: boolean, compact: boolean): PromptCaps {
+    if (compact) {
+        return { system: 3_200, user: 1_400, turns: 3, turnChars: 400 }
+    }
+    if (thinking) {
+        return { system: 4_200, user: 1_800, turns: 4, turnChars: 600 }
+    }
+    return { system: 5_500, user: 2_400, turns: 5, turnChars: 800 }
+}
+
+function wantedGroqMaxTokens(model: string, thinking: boolean, compact: boolean): number {
+    if (isQwen36(model)) {
+        if (thinking) return compact ? 1_024 : 1_792
+        return compact ? 768 : 1_280
+    }
+    return compact ? 768 : DEFAULT_MAX_TOKENS
+}
+
+function shrinkMessagesForTpm(messages: GatewayMessage[], neededCompletion: number): GatewayMessage[] {
+    const fitted = messages.map((message) => ({ ...message }))
+    const hardCap = GROQ_TPM_LIMIT - GROQ_TPM_SAFETY
+
+    const roomFor = () => hardCap - estimateMessagesTokens(fitted)
+
+    while (roomFor() < neededCompletion) {
+        if (fitted.length > 2) {
+            fitted.splice(1, 1)
+            continue
+        }
+        const system = fitted[0]
+        if (system && system.content.length > 1_600) {
+            system.content = system.content.slice(0, Math.floor(system.content.length * 0.75))
+            continue
+        }
+        const user = fitted[fitted.length - 1]
+        if (user && user.content.length > 700) {
+            user.content = user.content.slice(0, Math.floor(user.content.length * 0.75))
+            continue
+        }
+        break
+    }
+
+    return fitted
+}
+
+export function fitGroqRequest(options: {
+    model: string
+    systemPrompt: string
+    userPrompt: string
+    history?: GatewayMessage[]
+    thinkingDepth?: ThinkingDepth
+    compact?: boolean
+}): { messages: GatewayMessage[]; maxTokens: number; promptTokens: number; skip: boolean } {
+    const thinking = usesNativeQwenReasoning(options.thinkingDepth)
+    const compact = !!options.compact
+    const wanted = wantedGroqMaxTokens(options.model, thinking, compact)
+    const caps = groqPromptCaps(thinking, compact)
+    let messages = buildCompletionMessages(options.systemPrompt, options.userPrompt, options.history, caps)
+    messages = shrinkMessagesForTpm(messages, Math.min(wanted, 768))
+    const promptTokens = estimateMessagesTokens(messages)
+    const room = GROQ_TPM_LIMIT - GROQ_TPM_SAFETY - promptTokens
+    const maxTokens = Math.max(MIN_GROQ_COMPLETION_TOKENS, Math.min(wanted, room))
+    return {
+        messages,
+        maxTokens,
+        promptTokens,
+        skip: room < MIN_GROQ_COMPLETION_TOKENS,
+    }
 }
 
 /**
@@ -184,9 +288,10 @@ export function extractProviderReasoning(payload: unknown): string {
     )
 }
 
-function resolveMaxTokens(model: string): number {
-    // Groq on_demand TPM is 8000 and counts max_tokens against the request.
-    if (isQwen36(model)) return 3072
+function resolveMaxTokens(model: string, thinkingDepth?: ThinkingDepth): number {
+    if (isQwen36(model)) {
+        return usesNativeQwenReasoning(thinkingDepth) ? 1792 : 1280
+    }
     return DEFAULT_MAX_TOKENS
 }
 
@@ -206,8 +311,8 @@ function isFamilyCooling(name: string): boolean {
     return true
 }
 
-function markFamilyCooling(name: string): void {
-    PROVIDER_COOLDOWNS.set(name, Date.now() + COOLDOWN_MS)
+function markFamilyCooling(name: string, ms = COOLDOWN_MS): void {
+    PROVIDER_COOLDOWNS.set(name, Date.now() + ms)
 }
 
 function isRateLimitDetail(detail: string): boolean {
@@ -226,9 +331,10 @@ const PROVIDER_FAMILY_ORDER = ['groq', 'gemini', 'huggingface', 'openrouter'] as
 export type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
 
 /** Groq Qwen first for every philosopher. Cooling families move to the end. */
-export function getFamilyOrder(): ProviderFamily[] {
-    const active = PROVIDER_FAMILY_ORDER.filter((family) => !isFamilyCooling(family))
-    const cooling = PROVIDER_FAMILY_ORDER.filter((family) => isFamilyCooling(family))
+export function getFamilyOrder(skipFamilies: ProviderFamily[] = []): ProviderFamily[] {
+    const skip = new Set(skipFamilies)
+    const active = PROVIDER_FAMILY_ORDER.filter((family) => !isFamilyCooling(family) && !skip.has(family))
+    const cooling = PROVIDER_FAMILY_ORDER.filter((family) => isFamilyCooling(family) && !skip.has(family))
     return [...active, ...cooling]
 }
 
@@ -290,6 +396,32 @@ async function withRetry(
 }
 
 
+function resolveChatPayload(
+    url: string,
+    model: string,
+    systemPrompt: string,
+    userPrompt: string,
+    history?: GatewayMessage[],
+    thinkingDepth?: ThinkingDepth,
+    compact?: boolean,
+): { messages: GatewayMessage[]; maxTokens: number; skip: boolean } {
+    if (isGroqEndpoint(url)) {
+        return fitGroqRequest({
+            model,
+            systemPrompt,
+            userPrompt,
+            history,
+            thinkingDepth,
+            compact,
+        })
+    }
+    return {
+        messages: buildCompletionMessages(systemPrompt, userPrompt, history),
+        maxTokens: resolveMaxTokens(model, thinkingDepth),
+        skip: false,
+    }
+}
+
 async function chatCompletionsStream(
     url: string,
     apiKey: string,
@@ -301,9 +433,14 @@ async function chatCompletionsStream(
     deadline?: number,
     history?: GatewayMessage[],
     thinkingDepth?: ThinkingDepth,
+    compact?: boolean,
 ): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
     try {
         const timeoutMs = resolveRequestTimeoutMs(model, deadline)
+        const payload = resolveChatPayload(url, model, systemPrompt, userPrompt, history, thinkingDepth, compact)
+        if (payload.skip) {
+            return { ok: false, detail: '413 prompt exceeds groq tpm budget' }
+        }
 
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
@@ -314,9 +451,9 @@ async function chatCompletionsStream(
             },
             body: JSON.stringify({
                 model,
-                messages: buildCompletionMessages(systemPrompt, userPrompt, history),
+                messages: payload.messages,
                 temperature: temperature ?? 0.7,
-                max_tokens: resolveMaxTokens(model),
+                max_tokens: payload.maxTokens,
                 stream: true,
                 ...providerBodyExtras(model, thinkingDepth),
             }),
@@ -324,7 +461,23 @@ async function chatCompletionsStream(
 
         if (!fetchRes.ok) {
             const raw = await fetchRes.text()
-            return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
+            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            if (!compact && isGroqEndpoint(url) && isRequestTooLarge(detail)) {
+                return chatCompletionsStream(
+                    url,
+                    apiKey,
+                    model,
+                    systemPrompt,
+                    userPrompt,
+                    temperature,
+                    extraHeaders,
+                    deadline,
+                    history,
+                    thinkingDepth,
+                    true,
+                )
+            }
+            return { ok: false, detail }
         }
 
         if (!fetchRes.body) {
@@ -402,9 +555,14 @@ async function chatCompletions(
     deadline?: number,
     history?: GatewayMessage[],
     thinkingDepth?: ThinkingDepth,
+    compact?: boolean,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
         const timeoutMs = resolveRequestTimeoutMs(model, deadline)
+        const payload = resolveChatPayload(url, model, systemPrompt, userPrompt, history, thinkingDepth, compact)
+        if (payload.skip) {
+            return { ok: false, detail: '413 prompt exceeds groq tpm budget' }
+        }
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
             headers: {
@@ -414,15 +572,31 @@ async function chatCompletions(
             },
             body: JSON.stringify({
                 model,
-                messages: buildCompletionMessages(systemPrompt, userPrompt, history),
+                messages: payload.messages,
                 temperature: temperature ?? 0.7,
-                max_tokens: resolveMaxTokens(model),
+                max_tokens: payload.maxTokens,
                 ...providerBodyExtras(model, thinkingDepth),
             }),
         }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
-            return { ok: false, detail: `${fetchRes.status} ${raw.slice(0, 200)}` }
+            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            if (!compact && isGroqEndpoint(url) && isRequestTooLarge(detail)) {
+                return chatCompletions(
+                    url,
+                    apiKey,
+                    model,
+                    systemPrompt,
+                    userPrompt,
+                    temperature,
+                    extraHeaders,
+                    deadline,
+                    history,
+                    thinkingDepth,
+                    true,
+                )
+            }
+            return { ok: false, detail }
         }
         let data: any
         try {
@@ -531,6 +705,7 @@ async function tryGroqFamily(
         }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
         attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length}]: ${r.detail}`)
+        if (isRequestTooLarge(r.detail)) break
     }
     if (groqKeys.length > 0 && sawRateLimit) markFamilyCooling('groq')
     return null
@@ -649,6 +824,7 @@ export async function generateWithGateway(params: {
     botName?: string
     env?: EnvStore
     thinkingDepth?: ThinkingDepth
+    skipFamilies?: ProviderFamily[]
 }): Promise<GenerateResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
@@ -694,7 +870,7 @@ export async function generateWithGateway(params: {
     const geminiKeys = splitKeys(geminiRaw) // e.g. ['AIza...1', 'AIza...2']
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
-    for (const family of getFamilyOrder()) {
+    for (const family of getFamilyOrder(params.skipFamilies)) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -711,6 +887,9 @@ export async function generateWithGateway(params: {
         else if (family === 'huggingface') result = await tryHuggingFaceFamily(huggingFaceKeys, familyParams, attempts)
 
         if (result) {
+            if (family === 'groq' && usesNativeQwenReasoning(params.thinkingDepth)) {
+                markFamilyCooling('groq', HEAVY_THINKING_COOLDOWN_MS)
+            }
             return {
                 ok: true,
                 text: result.text,
@@ -773,6 +952,7 @@ export async function streamWithGateway(params: {
     botName?: string
     env?: EnvStore
     thinkingDepth?: ThinkingDepth
+    skipFamilies?: ProviderFamily[]
 }): Promise<StreamResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
@@ -814,7 +994,7 @@ export async function streamWithGateway(params: {
         thinkingDepth: params.thinkingDepth,
     }
 
-    for (const family of getFamilyOrder()) {
+    for (const family of getFamilyOrder(params.skipFamilies)) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -825,6 +1005,7 @@ export async function streamWithGateway(params: {
             const groqModels = groqModel === 'llama-3.3-70b-versatile'
                 ? [groqModel]
                 : [groqModel, 'llama-3.3-70b-versatile']
+            groqLoop:
             for (const model of groqModels) {
                 for (const key of groqKeys) {
                     if (Date.now() >= deadline) break
@@ -840,9 +1021,15 @@ export async function streamWithGateway(params: {
                         params.history,
                         params.thinkingDepth,
                     )
-                    if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+                    if (r.ok) {
+                        if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(model)) {
+                            markFamilyCooling('groq', HEAVY_THINKING_COOLDOWN_MS)
+                        }
+                        return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+                    }
                     if (isRateLimitDetail(r.detail)) sawRateLimit = true
                     attempts.push(`groq(${model}): ${r.detail}`)
+                    if (isRequestTooLarge(r.detail)) break groqLoop
                 }
             }
             if (sawRateLimit) markFamilyCooling('groq')

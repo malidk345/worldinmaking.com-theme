@@ -200,10 +200,28 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-62` | Stream 5 | Show the model's live reasoning text in ThinkingBlock instead of empty Generation/Quality labels | `src/lib/bots/ai-gateway.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-63` | Stream 5 | Restore labeled thinking stages (Analyzing / Reflecting / Structuring / Concluding) | `src/lib/bots/thinking.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-64` | Stream 5 | Groq-first for all philosophers; native XOR prompted thinking; keep thought accordion open | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `ThinkingBlock.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-65` | Stream 5 | Claude-style thinking viewport: 6–7 line auto-scroll stream with fade, no icon timeline | `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `ChatMessage.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-66` | Stream 5 | Thinking-on Groq 413/429: fit prompt+max_tokens under 8k TPM, compact retry, skip Groq on recovery | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 086 - Thinking-on Groq TPM / rate limit (TSK-66)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Groq on_demand Qwen is 8K TPM and counts `prompt + max_tokens`. Thinking used 3072 max_tokens plus a fat persona prompt, so the first thinking request 413'd and the follow-up recover call 429'd. Gateway now fits thinking requests under 8K, retries compact on 413, skips remaining Groq keys on size errors, cools Groq 25s after a heavy think, and recoverPublicReply skips Groq (Gemini first).
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 12 passed.
+- **Handoff:** Restart `pnpm dev`. Balanced/extended should either fit Groq or fail over to Gemini instead of showing a rate-limit error. Daily TPD (200K) still needs extra Groq keys or a paid tier if volume is high.
+
+### Entry 085 - Claude-style thinking viewport (TSK-65)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** ThinkingBlock is no longer a 400px icon timeline. It is a Claude-style 6–7 line faded viewport: header `Thinking · Analyzing` / `Thought for 8s`, flowing prose auto-scrolls while live, user can scroll up to unpin, stages stay as tiny labels inside the stream.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** UI-only; thinking stream contract unchanged. Restart `pnpm dev` and send a balanced/extended chat to see the compact ticker.
+- **Handoff:** If the window feels too short/tall, tweak `h-[10.5rem]` only. Do not bring back the step-icon timeline unless the user asks.
 
 ### Entry 084 - Groq-first + thinking contract (TSK-64)
 - **Date:** 2026-08-14

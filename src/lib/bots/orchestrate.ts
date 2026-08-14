@@ -295,6 +295,7 @@ async function recoverPublicReply(input: {
         env: input.runtimeEnv,
         temperature: 0.4,
         thinkingDepth: 'brief',
+        skipFamilies: ['groq'],
     })
     if (!gen.ok) return ''
     return stripThinkingBlocks(gen.text).trim()

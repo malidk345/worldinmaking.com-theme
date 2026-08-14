@@ -233,8 +233,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               modelOptions[0]
             }
           />
-          {/* Thinking Process Accordion / Header */}
-          <div className="flex items-center justify-between">
+          <div className="w-full min-w-0">
             <ThinkingBlock
               thinking={
                 message.thinkingProcess || {
