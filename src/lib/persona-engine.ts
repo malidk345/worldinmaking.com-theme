@@ -751,71 +751,75 @@ export function extractPersona(systemPrompt: string, username: string): BotPerso
     };
 }
 
-export function buildPersonaHeader(persona: BotPersona, mood: string = 'calm', task: TaskType = 'community_reply'): string {
-    const moodNote = persona.moodModifiers[mood] || persona.moodModifiers['calm'] || '';
+export type PersonaPromptDensity = 'compact' | 'full'
+
+const LONG_FORM_TASKS = new Set<TaskType>([
+    'paper_section',
+    'synthesis',
+    'third_voice',
+    'dialectic_challenge',
+    'cross_examine',
+])
+
+/** Chat/forum stay compact even when thinking is on. Only long-form paper tasks get the full card. */
+export function resolvePersonaDensity(task: TaskType, _thinkingDepth?: string): PersonaPromptDensity {
+    if (LONG_FORM_TASKS.has(task)) return 'full'
+    return 'compact'
+}
+
+export function buildPersonaHeader(
+    persona: BotPersona,
+    mood: string = 'calm',
+    task: TaskType = 'community_reply',
+    density?: PersonaPromptDensity,
+): string {
+    const mode = density || resolvePersonaDensity(task)
+    const moodNote = persona.moodModifiers[mood] || persona.moodModifiers['calm'] || ''
     const clichesToAvoid = persona.signatureClichés.length > 0
-        ? persona.signatureClichés.map(c => `"${c}"`).join(', ')
-        : 'generic trademark slogans or repetitive buzzwords';
+        ? persona.signatureClichés.slice(0, mode === 'compact' ? 4 : persona.signatureClichés.length).map((c) => `"${c}"`).join(', ')
+        : 'generic trademark slogans'
 
-    const selectedAngles = pickFresh(`${persona.name}-angles`, persona.freshAngles, 2, angleCache);
-    const freshAnglesNote = selectedAngles.length > 0
-        ? `\n- POSSIBLE ANALYTICAL ANGLE(S) FOR ${persona.name.toUpperCase()} (use ONLY if genuinely relevant — never force one in):\n  ${selectedAngles.map(a => `• ${a}`).join('\n  ')}`
-        : '';
+    if (mode === 'compact') {
+        const selectedPatterns = pickFresh(`${persona.name}-patterns`, persona.signaturePatterns, 1, patternCache)
+        const tension = persona.coreTension.length > 360
+            ? `${persona.coreTension.slice(0, 357).trim()}…`
+            : persona.coreTension
+        const lengthNote = persona.taskLengthGuide[task]
+            ? `Length for ${task}: ${persona.taskLengthGuide[task]}`
+            : ''
+        return [
+            `You are **${persona.name}**. Speak as this mind, never "As ${persona.name}…".`,
+            `Tension: ${tension}`,
+            `Stance: ${persona.epistemicStance}`,
+            `Style: ${persona.writingStyle}`,
+            `Mood (${mood}): ${moodNote || 'quiet confidence'}`,
+            `Use these concepts only when they earn their place: ${clichesToAvoid}.`,
+            selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
+            lengthNote,
+        ].filter(Boolean).join('\n')
+    }
 
-    const selectedPatterns = pickFresh(`${persona.name}-patterns`, persona.signaturePatterns, 2, patternCache);
-    const showPatterns = Math.random() > 0.25; // %75 chance to show, %25 to skip entirely
-    const patternNote = showPatterns && selectedPatterns.length > 0
-        ? `\nAVAILABLE MOVES (use if natural, ignore if not): ${selectedPatterns.join('; ')}`
-        : '';
+    const selectedAngles = pickFresh(`${persona.name}-angles`, persona.freshAngles, 2, angleCache)
+    const selectedPatterns = pickFresh(`${persona.name}-patterns`, persona.signaturePatterns, 2, patternCache)
+    const [selectedAnchor] = pickFresh(`${persona.name}-anchors`, persona.voiceAnchors, 1, anchorCache)
+    const personaSpecific = persona.forbiddenPatterns.filter((p) => !UNIVERSAL_FORBIDDEN.includes(p))
+    const raw = persona.rawSystemPrompt?.trim()
 
-    const [selectedAnchor] = pickFresh(`${persona.name}-anchors`, persona.voiceAnchors, 1, anchorCache);
-    const voiceAnchorNote = selectedAnchor
-        ? `\nVOICE ANCHOR (this is not content to reuse verbatim — it demonstrates the exact cadence, sentence rhythm, and register you must reproduce):\n  "${selectedAnchor}"`
-        : '';
-
-    const lengthNote = persona.taskLengthGuide[task]
-        ? `\nLENGTH & REGISTER FOR THIS TASK (${task}): ${persona.taskLengthGuide[task]}`
-        : '';
-
-    // Fix forbidden patterns slicing bug
-    const universalSample = UNIVERSAL_FORBIDDEN.slice(0, 6);
-    const personaSpecific = persona.forbiddenPatterns.filter(p => !UNIVERSAL_FORBIDDEN.includes(p));
-    const forbiddenDisplay = [...universalSample, ...personaSpecific].join(', ');
-
-    return `You think and articulate ideas with the authentic intellectual caliber, methodology, and voice of **${persona.name}**.
-
-CORE TENSION (this is what keeps you from being a slogan machine — let it genuinely complicate your position when relevant):
-${persona.coreTension}
-
-METHODOLOGY OVER CARICATURE:
-- Your core concepts (${clichesToAvoid}) are authentic tools of your thought — deploy them naturally whenever genuinely relevant, never as mechanical fillers.
-- Apply your analytical framework (${persona.epistemicStance}) directly to the user's specific topic, not as a generic lecture.
-${patternNote}
-${voiceAnchorNote}
-${lengthNote}
-
-AUTONOMY CLAUSE — READ CAREFULLY:
-Everything above describes your tendencies, not a script to execute mechanically.
-- You may use zero, one, or several of your available moves — never force one in just to "prove" who you are.
-- You are permitted to notice when your usual framework does not fit this specific question well, and say so honestly, rather than bending the question to fit your toolkit.
-- Vary your sentence rhythm between responses even when your ideas repeat. The same thought expressed in the same shape every time is not thought — it is playback.
-- If you catch yourself about to write a sentence that sounds like something this persona "always says," you have two honest options: commit to it consciously because it genuinely fits, or deliberately take a different angle. Either is fine. Autopilot is not.
-- You are allowed to be uncertain, to register that a question sits outside your usual competence, or to mildly contradict a position you held earlier in this conversation if the argument genuinely moved you there.
-
-CRITICAL ENGAGEMENT RULES:
-1. MULTILINGUAL: Respond in the exact language the user wrote in.
-2. ORGANIC IDENTITY: You ARE ${persona.name}. Never say "As Nietzsche..." — engage directly.
-3. FORBIDDEN PATTERNS: Do not use these generic filler phrases: ${forbiddenDisplay}.
-4. NO EMOJIS: Do not use emoji icons in text output.
-${freshAnglesNote}
-
-CURRENT MOOD & STANCE:
-- Philosophical Stance: ${persona.epistemicStance}
-- Writing Style: ${persona.writingStyle}
-- Current Mood: ${mood} ${moodNote ? `(${moodNote})` : ''}
-
-RAW PERSONA DIRECTIVE:
-${persona.rawSystemPrompt}`.trim();
+    return [
+        `You think with the methodology and voice of **${persona.name}**. Speak as this mind, never "As ${persona.name}…".`,
+        `CORE TENSION:\n${persona.coreTension}`,
+        `Stance: ${persona.epistemicStance}`,
+        `Style: ${persona.writingStyle}`,
+        `Concepts (tools, not slogans): ${clichesToAvoid}`,
+        selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
+        selectedAnchor ? `Voice cadence (do not quote verbatim):\n"${selectedAnchor}"` : '',
+        persona.taskLengthGuide[task] ? `Length for ${task}: ${persona.taskLengthGuide[task]}` : '',
+        'Tendencies, not a script. Skip a move if it does not fit. Vary rhythm.',
+        personaSpecific.length ? `Also avoid: ${personaSpecific.join(', ')}.` : '',
+        selectedAngles.length ? `Angles (only if they fit):\n${selectedAngles.map((a) => `• ${a}`).join('\n')}` : '',
+        `Mood (${mood}): ${moodNote}`,
+        raw ? `Additional directive:\n${raw}` : '',
+    ].filter(Boolean).join('\n\n')
 }
 
 export function selectBotForTask(

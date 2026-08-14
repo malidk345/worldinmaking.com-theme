@@ -81,7 +81,7 @@ function depthForTask(taskType: TaskType, override?: ThinkingDepth): ThinkingDep
 }
 
 export function usesNativeQwenReasoning(depth?: ThinkingDepth): boolean {
-    return depthForTask('autonomous_assistant', depth) !== 'brief'
+    return depth === 'standard' || depth === 'deep'
 }
 
 export function shouldPromptThinkingTags(depth?: ThinkingDepth): boolean {
@@ -94,37 +94,21 @@ export function shouldPromptThinkingTags(depth?: ThinkingDepth): boolean {
  */
 export function buildThinkingInstruction(taskType: TaskType, depth?: ThinkingDepth): string {
     const d = depthForTask(taskType, depth)
-    const publicRules = `
-PUBLIC REPLY STYLE & CONDITIONAL FORMATTING RULES:
-- Never start with AI-assistant filler (no "Certainly!", "Sure!", "As an AI...", "Hello!"). Begin immediately with substantive value.
-- Default output format: High-density, direct, clean markdown prose with bold headers and bullet points.
-- Do NOT over-philosophize practical, technical, or simple questions. Be concrete and highly practical. Avoid unnecessary rhetoric or academic jargon unless the topic is explicitly philosophical.
-- CONDITIONAL VISUAL FORMATTING (ONLY WHEN REQUESTED OR EXPLICITLY NEEDED):
-  * IF AND ONLY IF the user explicitly asks for a table, comparison, or breakdown (or compares multiple structured items): Output a clean Markdown table.
-  * IF AND ONLY IF the user explicitly asks for a diagram, flowchart, schema, sequence, or structural map (or uses /diagram, /mermaid): Output a valid Mermaid diagram inside \`\`\`mermaid code fences.
-  * IF AND ONLY IF code is requested: Output syntax-highlighted code fences.
-
-Do not mention that you reasoned or checked quality. Never use AI-assistant filler.
-`.trim()
+    // Public style lives once in getFluidSystemPrompt — do not repeat it here.
 
     if (usesNativeQwenReasoning(d)) {
-        return `
-After any private reasoning, write a complete public reply the user can read. Do not stop after reasoning.
-If you have no separate reasoning channel, wrap scratch work in <thinking>...</thinking> then write the public reply.
-Do not summarize your reasoning in the public reply.
-
-${publicRules}
-`.trim()
+        return [
+            'After any private reasoning, close the thinking tag and write a complete public reply the user can read.',
+            'Never put the user-visible answer inside thinking tags. Never stop after reasoning.',
+            'If you have no separate reasoning channel, write 40-80 words inside <thinking>...</thinking>, close the tag, then write the full public reply.',
+        ].join('\n')
     }
 
-    return `
-THINKING PROCESS (mandatory before any public reply):
-Reason privately inside <thinking>...</thinking>. This is real working-out, not a synopsis.
-Include what the question asks, what is uncertain, and how you decide. Separate distinct moves with a blank line.
-Always close the tag, then write only the public reply.
-
-${publicRules}
-`.trim()
+    return [
+        'THINKING PROCESS (mandatory, keep it short):',
+        'Write at most 80 words inside <thinking>...</thinking>, then you MUST close the tag.',
+        'After </thinking> write the full public reply. Never end inside the thinking tag. Never put the answer inside the tag.',
+    ].join('\n')
 }
 
 function extractTag(block: string, tag: string): string {
@@ -229,15 +213,37 @@ export function parseThinkingAndReply(
     // Route every known wrapper through the same parser. The stream demux uses
     // this exact grammar, so a tag variant cannot leak only during live output.
     const wrapperNames = ['analysis_summary', 'thinking', 'think', 'thought', 'reasoning', 'analysis', 'reflection', 'internal']
-    const wrapperPattern = new RegExp(
-        `<(${wrapperNames.join('|')})(?:\\s[^>]*)?>\\s*([\\s\\S]*?)(?:<\\/\\1\\s*>|$)`,
+
+    // leftover reasoning</think>Public — no opening tag, prefix is private.
+    const strayClosePattern = new RegExp(
+        `^([\\s\\S]*?)</(${wrapperNames.join('|')})\\s*>([\\s\\S]*)$`,
+        'i'
+    )
+    const openBeforeClose = new RegExp(`<(${wrapperNames.join('|')})(?:\\s[^>]*)?>`, 'i')
+    const stray = strayClosePattern.exec(reply)
+    if (stray && !openBeforeClose.test(stray[1])) {
+        if (stray[1].trim()) stages.push(...stagesFromBlock(stray[1].trim()))
+        reply = stray[3]
+    }
+
+    const closedPattern = new RegExp(
+        `<(${wrapperNames.join('|')})(?:\\s[^>]*)?>\\s*([\\s\\S]*?)<\\/\\1\\s*>`,
         'gi'
     )
     let match: RegExpExecArray | null
-    while ((match = wrapperPattern.exec(reply)) !== null) {
+    while ((match = closedPattern.exec(reply)) !== null) {
         stages.push(...stagesFromBlock(match[2]))
     }
-    reply = reply.replace(wrapperPattern, '')
+    reply = reply.replace(closedPattern, '')
+
+    const unclosedPattern = new RegExp(`<(${wrapperNames.join('|')})(?:\\s[^>]*)?>\\s*([\\s\\S]*)$`, 'i')
+    const unclosed = unclosedPattern.exec(reply)
+    if (unclosed) {
+        // An unclosed think block is all private. Do not promote its last
+        // paragraph into the public reply — that is how thinking leaked.
+        stages.push(...stagesFromBlock(unclosed[2].trim()))
+        reply = reply.slice(0, unclosed.index).trim()
+    }
 
     // 4. Loose philosophical tags without a wrapping block
     if (/<perceive>/i.test(reply) || /<frame>/i.test(reply)) {
@@ -253,7 +259,9 @@ export function parseThinkingAndReply(
         }
     }
 
-    reply = stripThinkingBlocks(cleanAIOutput(reply.trim()))
+    // Do not run cleanAIOutput on the public reply — it deletes filler
+    // words mid-sentence and makes answers look cut off.
+    reply = stripThinkingBlocks(reply.trim())
 
     // Parse Provider Trace (Native Reasoning from API) if available, so it appears in UI seamlessly
     if (options?.providerTrace && options.providerTrace.trim()) {

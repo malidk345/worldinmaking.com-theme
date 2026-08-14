@@ -17,11 +17,11 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { getSupabaseUserFromBearer } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
-import type { GatewayMessage } from 'lib/bots/ai-gateway'
+import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 
-const GUEST_HOURLY_LIMIT = 20
+const GUEST_HOURLY_LIMIT = 80
 const AUTH_HOURLY_LIMIT = 120
-const GUEST_DAILY_LIMIT = 40
+const GUEST_DAILY_LIMIT = 200
 const AUTH_DAILY_LIMIT = 400
 
 export const config = {
@@ -59,12 +59,6 @@ function jsonError(res: NextApiResponse, message: string, status: number) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return !!value && typeof value === 'object' && !Array.isArray(value)
-}
-
-function thinkingDepthForBudget(value: string): 'brief' | 'standard' | 'deep' {
-    if (value === 'minimal') return 'brief'
-    if (value === 'extended') return 'deep'
-    return 'standard'
 }
 
 function readOptionalBoundedString(
@@ -112,13 +106,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!chatHistory.ok) return jsonError(res, chatHistory.error, 400)
     if (!notebookContext.ok) return jsonError(res, notebookContext.error, 400)
 
-    const thinkingBudget = body.thinkingBudget === undefined ? 'balanced' : body.thinkingBudget
-    if (!['minimal', 'balanced', 'extended'].includes(String(thinkingBudget))) {
-        return jsonError(res, 'Invalid thinkingBudget', 400)
-    }
-    const webSearchEnabled = body.webSearchEnabled === undefined ? false : body.webSearchEnabled
-    if (typeof webSearchEnabled !== 'boolean') return jsonError(res, 'webSearchEnabled must be boolean', 400)
-
     const conversationId = readOptionalBoundedString(body.conversationId, 80, 'conversationId')
     if (!conversationId.ok) return jsonError(res, conversationId.error, 400)
 
@@ -151,7 +138,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.setHeader('Retry-After', String(hourly.retryAfterSec))
         return res.status(429).json({
             success: false,
-            error: user ? 'Hourly chat quota exceeded' : 'Guest hourly quota exceeded. Sign in for a higher limit.',
+            error: user
+                ? `[app] Hourly chat quota exceeded (${hourlyLimit}/h)`
+                : `[app] Guest hourly quota exceeded (${hourlyLimit}/h). Sign in for a higher limit.`,
             retryAfterSec: hourly.retryAfterSec,
         })
     }
@@ -162,7 +151,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             res.setHeader('Retry-After', '86400')
             return res.status(429).json({
                 success: false,
-                error: user ? 'Daily chat quota exceeded' : 'Guest daily quota exceeded. Sign in for a higher limit.',
+                error: user
+                    ? `[app] Daily chat quota exceeded (${dailyLimit}/d)`
+                    : `[app] Guest daily quota exceeded (${dailyLimit}/d). Sign in for a higher limit.`,
                 retryAfterSec: 86400,
             })
         }
@@ -189,10 +180,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const previousUserText = [...history]
             .reverse()
             .find((message) => message.role === 'user')?.content
-        let intent = { needsSearch: webSearchEnabled, searchQuery: prompt.slice(0, 500) as string | null }
+        let intent = { needsSearch: false, searchQuery: prompt.slice(0, 500) as string | null }
         try {
             const classified = await resolveSearchIntent(prompt, {
-                force: webSearchEnabled,
                 env: getRuntimeEnv(),
                 previousUserText,
             })
@@ -228,6 +218,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         }
 
+        const groqKeysVisible = collectGroqKeys(getRuntimeEnv())
+        console.info(
+            '[chat] groq keys visible',
+            groqKeysVisible.length,
+            groqKeysVisible.map((key, index) => `${index + 1}:…${key.slice(-4)}`).join(' ')
+        )
         send({ type: 'thinking_start' })
         const context = [
             systemPrompt.value
@@ -250,13 +246,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         let currentThinkingDetail = ''
         const currentThinkingStageId = 'auto-1'
+        send({
+            type: 'thinking_step',
+            step: {
+                id: currentThinkingStageId,
+                stepNumber: 1,
+                title: 'Thinking',
+                detail: '…',
+                completed: false,
+                source: 'system_event',
+            },
+        })
 
         const result = await streamBotTurn(
             {
                 question: prompt,
                 philosopher,
                 taskType: 'autonomous_assistant',
-                thinkingDepth: thinkingDepthForBudget(String(thinkingBudget)),
+                thinkingDepth: 'deep',
                 context,
                 messages: history,
                 env: getRuntimeEnv(),
@@ -299,12 +306,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!result.success) {
             const attempts = 'attempts' in result ? result.attempts : []
             console.error('[chat] providers failed', { error: result.error, attempts })
-            const looksLikeQuota = attempts.some((item) => /429|rate limit|quota|too large|413/i.test(item))
+            const lastAttempt = (attempts[attempts.length - 1] || '').replace(/\s+/g, ' ').slice(0, 180)
             send({
                 type: 'error',
                 code: 'provider_unavailable',
-                message: looksLikeQuota
-                    ? 'The reply could not be completed. The API provider hit a rate or size limit. Please try again in a moment.'
+                message: lastAttempt
+                    ? `The reply could not be completed. ${lastAttempt}`
                     : result.reply,
                 retryable: true,
             })

@@ -5,7 +5,6 @@ import {
   ModelId,
   ModelOption,
   ProjectSpace,
-  ThinkingBudget,
   StylePresetId,
   Artifact,
   ArtifactOrigin,
@@ -170,8 +169,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || '');
   const [selectedModelId, setSelectedModelId] = useState<ModelId>(settings.defaultModel);
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
-  const [thinkingBudget, setThinkingBudget] = useState<ThinkingBudget>(settings.defaultThinkingBudget);
-  const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
   const [selectedStylePreset, setSelectedStylePreset] = useState<StylePresetId>('default');
 
 
@@ -429,8 +426,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
       starred: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      thinkingBudget,
-      webSearchEnabled,
+      thinkingBudget: 'extended',
+      webSearchEnabled: false,
       messages: [],
     };
 
@@ -482,8 +479,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
         starred: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        thinkingBudget,
-        webSearchEnabled,
+        thinkingBudget: 'extended',
+        webSearchEnabled: false,
         messages: [],
       };
       setChats((prev) => [newChat, ...prev]);
@@ -591,8 +588,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
         body: JSON.stringify({
           prompt: effectivePrompt,
           modelId: selectedModelId,
-          thinkingBudget,
-          webSearchEnabled,
           systemPrompt: activeProjectObj?.systemPrompt || '',
           styleSuffix: selectedStyle?.promptSuffix || '',
           attachmentContext,
@@ -807,17 +802,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
         
         const displayContent = sanitizePublicAssistantText(accumulatedContent);
         const rawError = String(err?.message || '');
-        const looksLikeQuota = /429|rate limit|quota|resource_exhausted|too many requests/i.test(rawError);
-        const shortReason = rawError.replace(/\s+/g, ' ').trim().slice(0, 160)
+        const shortReason = rawError.replace(/\s+/g, ' ').trim().slice(0, 220)
         const errorMessage = displayContent
           ? displayContent
           : rawError === 'AI returned no content'
             ? 'The model finished thinking but did not produce a public answer. Please try again.'
-            : looksLikeQuota
-              ? 'The reply could not be completed. The API provider hit a rate limit.'
-              : shortReason
-                ? `The reply could not be completed. ${shortReason}`
-                : 'The reply could not be completed because of a connection error.';
+            : shortReason
+              ? shortReason
+              : 'The reply could not be completed because of a connection error.';
 
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: errorMessage,
@@ -1162,10 +1154,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   onSendMessage={handleSendMessage}
                   onStopStreaming={handleStopStreaming}
                   isStreaming={isStreaming}
-                  thinkingBudget={thinkingBudget}
-                  onChangeThinkingBudget={setThinkingBudget}
-                  webSearchEnabled={webSearchEnabled}
-                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
                   selectedStylePreset={selectedStylePreset}
                   onChangeStylePreset={setSelectedStylePreset}
                   onScrollToBottom={scrollToBottom}
@@ -1221,10 +1209,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 onSendMessage={handleSendMessage}
                 onStopStreaming={handleStopStreaming}
                 isStreaming={isStreaming}
-                thinkingBudget={thinkingBudget}
-                onChangeThinkingBudget={setThinkingBudget}
-                webSearchEnabled={webSearchEnabled}
-                onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
                 selectedStylePreset={selectedStylePreset}
                 onChangeStylePreset={setSelectedStylePreset}
                 onScrollToBottom={scrollToBottom}

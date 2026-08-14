@@ -7,7 +7,11 @@ export function collectApiKeys(...rawValues: Array<string | undefined>): string[
     const seen = new Set<string>()
     const keys: string[] = []
     for (const raw of rawValues) {
-        for (const key of (raw || '').split(',').map((item) => item.trim()).filter(Boolean)) {
+        const pieces = (raw || '')
+            .split(/[,;\n\r]+/)
+            .map((item) => item.trim().replace(/^['"]+|['"]+$/g, ''))
+            .filter(Boolean)
+        for (const key of pieces) {
             if (seen.has(key)) continue
             seen.add(key)
             keys.push(key)

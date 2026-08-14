@@ -1,13 +1,18 @@
 import { test, expect } from '@playwright/test'
 import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction } from '../src/lib/bots/thinking'
 import {
+    collectGroqKeys,
+    closeReasoningWrap,
     extractProviderReasoning,
     fitGroqRequest,
     getFamilyOrder,
     GROQ_TPM_LIMIT,
     isRequestTooLarge,
     markFamilyCooling,
+    markGroqKeyCooling,
     resetProviderCooldowns,
+    takeGroqKeyOrder,
+    wrapReasoningContentChunk,
 } from '../src/lib/bots/ai-gateway'
 import { ThinkingStreamDemux, stripThinkingBlocks } from '../src/lib/bots/thinking-tags'
 
@@ -48,12 +53,12 @@ test.describe('thinking stream routing', () => {
         const publicText: string[] = []
         const thinkingText: string[] = []
 
-        demux.push('Public </thi', (value) => publicText.push(value), (value) => thinkingText.push(value))
+        demux.push('leftover CoT </thi', (value) => publicText.push(value), (value) => thinkingText.push(value))
         demux.push('nking> next', (value) => publicText.push(value), (value) => thinkingText.push(value))
         demux.finish((value) => publicText.push(value), (value) => thinkingText.push(value))
 
-        expect(publicText.join('')).toBe('Public  next')
-        expect(thinkingText).toEqual([])
+        expect(publicText.join('')).toBe(' next')
+        expect(thinkingText.join('')).toContain('leftover CoT')
     })
 
     test('cleans final public replies while retaining parsed thinking content', () => {
@@ -71,6 +76,24 @@ test.describe('thinking stream routing', () => {
         expect(parsed.reply).toBe('')
         expect(parsed.thinking.summary).toContain('Fed hinted')
         expect(stripThinkingBlocks(parsed.thinking.summary || '')).toContain('Fed hinted')
+    })
+
+    test('unclosed thinking stays private and does not leak the last paragraph', () => {
+        const parsed = parseThinkingAndReply(
+            '<thinking>Private scratch that never closes.\n\nThe will is a name we give to a pattern of drives.'
+        )
+
+        expect(parsed.reply).toBe('')
+        expect(parsed.thinking.summary).toContain('Private scratch')
+        expect(parsed.thinking.summary).toContain('will is a name')
+    })
+
+    test('stray close keeps leftover reasoning out of the public reply', () => {
+        const parsed = parseThinkingAndReply('The user wants a table of rates.</think>\nHere is the table.')
+
+        expect(parsed.reply).toContain('Here is the table')
+        expect(parsed.reply).not.toContain('user wants')
+        expect(parsed.thinking.summary).toContain('user wants')
     })
 
     test('native think blocks become multiple thinking stages', () => {
@@ -97,13 +120,15 @@ test.describe('thinking stream routing', () => {
         expect(publicText.join('').trim()).toBe('Four')
     })
 
-    test('native Qwen reasoning is on for balanced and off for brief', () => {
+    test('native Qwen reasoning is on for medium and extended', () => {
+        expect(usesNativeQwenReasoning(undefined)).toBe(false)
         expect(usesNativeQwenReasoning('brief')).toBe(false)
         expect(usesNativeQwenReasoning('standard')).toBe(true)
         expect(usesNativeQwenReasoning('deep')).toBe(true)
         expect(shouldPromptThinkingTags('brief')).toBe(true)
         expect(shouldPromptThinkingTags('standard')).toBe(false)
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard')).not.toMatch(/1–3 sentences/)
+        expect(shouldPromptThinkingTags('deep')).toBe(false)
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard')).toMatch(/40-80 words/)
         expect(buildThinkingInstruction('autonomous_assistant', 'brief')).toContain('<thinking>')
     })
 
@@ -117,6 +142,32 @@ test.describe('thinking stream routing', () => {
         expect(getFamilyOrder()[0]).toBe('groq')
         expect(getFamilyOrder(['groq'])).not.toContain('groq')
         expect(getFamilyOrder(['groq'])[0]).toBe('gemini')
+    })
+
+    test('rotates Groq keys instead of always starting at the first one', () => {
+        resetProviderCooldowns()
+        expect(collectGroqKeys({
+            GROQ_API_KEYS: 'gsk_aaa, gsk_bbb',
+            GROQ_API_KEY: 'gsk_ccc',
+        })).toEqual(['gsk_aaa', 'gsk_bbb', 'gsk_ccc'])
+        expect(takeGroqKeyOrder(['a', 'b', 'c'], 0)).toEqual(['a', 'b', 'c'])
+        expect(takeGroqKeyOrder(['a', 'b', 'c'], 1)).toEqual(['b', 'c', 'a'])
+        expect(takeGroqKeyOrder(['a', 'b', 'c'], 2)).toEqual(['c', 'a', 'b'])
+        markGroqKeyCooling('b')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'], 0)[0]).not.toBe('b')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'], 0)).toContain('b')
+        resetProviderCooldowns()
+    })
+
+    test('each request advances to the next Groq key in order', () => {
+        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test`
+        resetProviderCooldowns()
+        expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('a')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('b')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('c')
+        expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('a')
+        resetProviderCooldowns()
+        delete process.env.WIM_GROQ_CURSOR_FILE
     })
 
     test('fits thinking requests under Groq 8k TPM including max_tokens', () => {
@@ -139,6 +190,7 @@ test.describe('thinking stream routing', () => {
         expect(fitted.maxTokens).toBeGreaterThanOrEqual(256)
         expect(fitted.promptTokens + fitted.maxTokens).toBeLessThanOrEqual(GROQ_TPM_LIMIT)
         expect(isRequestTooLarge('413 Request too large for model minute (TPM): Limit 8000')).toBe(true)
+        expect(isRequestTooLarge('429 Rate limit reached for model on tokens per minute (TPM): Limit 8000')).toBe(false)
     })
 
     test('compact Groq thinking budget is smaller than the default thinking budget', () => {
@@ -160,6 +212,32 @@ test.describe('thinking stream routing', () => {
 
         expect(compact.promptTokens + compact.maxTokens).toBeLessThanOrEqual(GROQ_TPM_LIMIT)
         expect(compact.promptTokens).toBeLessThanOrEqual(normal.promptTokens)
+    })
+
+    test('does not emit unwrapped reasoning when content already has think tags', () => {
+        const state = { opened: false, closed: false }
+        const pieces = wrapReasoningContentChunk(state, 'duplicate CoT', '<think>real CoT</think>Answer')
+        expect(pieces.join('')).toBe('<think>real CoT</think>Answer')
+        expect(pieces.join('')).not.toContain('duplicate CoT')
+    })
+
+    test('wraps provider reasoning so it cannot leak as public text', () => {
+        const state = { opened: false, closed: false }
+        const mixed = [
+            ...wrapReasoningContentChunk(state, 'private chain', ''),
+            ...wrapReasoningContentChunk(state, '', 'Visible answer'),
+            ...closeReasoningWrap(state),
+        ].join('')
+
+        const demux = new ThinkingStreamDemux()
+        const publicText: string[] = []
+        const thinkingText: string[] = []
+        demux.push(mixed, (value) => publicText.push(value), (value) => thinkingText.push(value))
+        demux.finish((value) => publicText.push(value), (value) => thinkingText.push(value))
+
+        expect(publicText.join('')).toBe('Visible answer')
+        expect(thinkingText.join('')).toContain('private chain')
+        expect(publicText.join('')).not.toContain('private chain')
     })
 
     test('reads Groq parsed and OpenAI-style reasoning fields', () => {

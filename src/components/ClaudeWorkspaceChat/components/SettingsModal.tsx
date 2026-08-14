@@ -1,6 +1,6 @@
 import React from 'react';
-import { UserSettings, ThinkingBudget } from '../types';
-import { X, Settings as SettingsIcon, Brain, RefreshCw } from 'lucide-react';
+import { UserSettings } from '../types';
+import { X, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -60,32 +60,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }`}
                 >
                   {sp.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Default Thinking Budget */}
-          <div>
-            <label className="block font-semibold text-stone-800 mb-1 flex items-center gap-1.5">
-              <Brain className="h-4 w-4 text-amber-700" /> Default thinking budget
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {[
-                { id: 'minimal', label: '1.0k Fast' },
-                { id: 'balanced', label: '3.0k Balanced' },
-                { id: 'extended', label: '6.0k Extended' },
-              ].map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => onUpdateSettings({ defaultThinkingBudget: b.id as ThinkingBudget })}
-                  className={`py-2 rounded-xl border text-center font-medium transition-all ${
-                    settings.defaultThinkingBudget === b.id
-                      ? 'bg-amber-100 border-amber-300 text-amber-900 font-semibold'
-                      : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
-                  }`}
-                >
-                  {b.label}
                 </button>
               ))}
             </div>

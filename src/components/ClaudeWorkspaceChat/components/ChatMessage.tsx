@@ -244,7 +244,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   source: 'none',
                 }
               }
-              isLive={!!message.isStreaming && revealed.length === 0}
+              isLive={!!message.isStreaming}
             />
           </div>
 

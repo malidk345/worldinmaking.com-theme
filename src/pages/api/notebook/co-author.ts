@@ -198,7 +198,7 @@ export default async function handler(req: Request) {
                     question: `User contribution:\n"""${nodeContent}"""`,
                     philosopher: botName,
                     taskType: gateTask,
-                    thinkingDepth: 'standard',
+                    thinkingDepth: 'deep',
                     context,
                     scope: 'notebook_coauthor',
                     trustedInstruction: modeInstruction,

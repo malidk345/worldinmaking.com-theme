@@ -157,10 +157,15 @@ export class ThinkingStreamDemux {
 
                 const strayClosing = findThinkingClose(this.buffer)
                 if (strayClosing) {
-                    if (strayClosing.index > 0) onPublic(this.buffer.slice(0, strayClosing.index))
+                    // Text before a lone </think> is leftover reasoning, not the public answer.
+                    if (strayClosing.index > 0) onThinking(this.buffer.slice(0, strayClosing.index))
                     this.buffer = this.buffer.slice(strayClosing.index + strayClosing.length)
                     continue
                 }
+
+                // A split </think> is still arriving. Hold the whole head so the
+                // prefix is not flushed as public and then reclassified too late.
+                if (hasPartialTagSuffix(this.buffer, true)) return
 
                 const safeFlushLength = this.findSafeFlushLength(false)
                 if (safeFlushLength > 0) {

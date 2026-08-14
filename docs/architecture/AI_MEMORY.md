@@ -202,10 +202,75 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-64` | Stream 5 | Groq-first for all philosophers; native XOR prompted thinking; keep thought accordion open | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `ThinkingBlock.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-65` | Stream 5 | Claude-style thinking viewport: 6–7 line auto-scroll stream with fade, no icon timeline | `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `ChatMessage.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-66` | Stream 5 | Thinking-on Groq 413/429: fit prompt+max_tokens under 8k TPM, compact retry, skip Groq on recovery | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-67` | Stream 5 | Correct stage icons (Clock default) + Claude sheen through Thinking text, not orbit | `ThinkingBlock.tsx`, `src/styles/global.css` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-68` | Stream 5 | Groq keys actually round-robin; cool one key not the whole family | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-69` | Stream 5 | Do not treat 429 TPM as request-too-large; fail over to the next Groq account | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-70` | Stream 5 | Native Qwen thinking only when budget is on; stop mislabeling app quota as Groq 429 | `thinking.ts`, `intent-router.ts`, `chat.ts`, `index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-71` | Stream 5 | Keep Groq-first; slim duplicate prompts; native think only extended; 429 → Gemini | `thinking.ts`, `fluid-prompts.ts`, `ai-gateway.ts`, `chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-72` | Stream 5 | Dynamic persona pack: only selected philosopher; compact card for chat, full for paper/extended | `src/lib/persona-engine.ts`, `orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-73` | Stream 5 | Empty public reply: parse unclosed think tail; recover may use Groq brief | `thinking.ts`, `orchestrate.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-74` | Stream 5 | Groq 429 must try the next account key, not abandon the family | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-75` | Stream 5 | Stop thinking leaking into public reply; stop public replies being cut off | `thinking-tags.ts`, `thinking.ts`, `ai-gateway.ts`, `persona-engine.ts`, `orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 093 - Thinking / public split (TSK-75)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Thinking was leaking into the public bubble and public replies were being cut off. Three causes: (1) Groq `delta.reasoning` was yielded unwrapped whenever content already had `<think>` tags, so CoT streamed as public tokens; (2) unclosed think blocks promoted the last paragraph to public, and a stray `</think>` left leftover reasoning in the reply; (3) chat always sent `thinkingDepth: deep`, which packed the full persona card and starved `max_tokens` so thinking ate the answer. Gateway now wraps/skips reasoning so it cannot appear as public text. Parser/demux treat unclosed think and stray-close prefixes as private. Chat stays on the compact persona card even with thinking on, leaving the full 3072 completion budget. Truncated public replies get one Gemini continue pass.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/thinking-tags.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/persona-engine.ts`, `tests/thinking-tags.spec.ts`, `tests/groq-token-budget.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts tests/groq-token-budget.spec.ts` — 20 passed. Fitted Nietzsche chat turn: prompt 2864 + max 3072 = 5936 / 8000.
+- **Handoff:** Restart `pnpm dev`. Public bubble should only show text after `</think>`. If a reply still stops mid-sentence, the continue pass needs Gemini. Do not promote unclosed think tails back into public.
+
+### Entry 092 - Dynamic persona density (TSK-72)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** All 16 philosophers were never sent — the selected card was ~4.2k because every chat turn dumped autonomy essay, duplicate rules, empty RAW, 2 angles, voice anchors. Chat/forum now pack a compact card (~1.2k); paper/dialectic/extended keep the fuller card. Library lookup is still `PERSONA_LIBRARY[name]` only.
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/orchestrate.ts`, `tests/groq-token-budget.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/groq-token-budget.spec.ts tests/thinking-tags.spec.ts` — 15 passed. Nietzsche chat system ~11.2k → ~4.5k chars.
+- **Handoff:** Context/search still added only when present. Next slim target if needed: chat history 6×1200.
+
+### Entry 091 - Groq-first stays; slim prompt; extended-only native; 429→Gemini (TSK-71)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Groq remains first. Duplicate output rules live once in fluid (`OUTPUT_CONTRACT`); thinking instruction is only the think-tag / after-reasoning lines. Native Qwen reasoning is `deep`/extended only. Qwen max_tokens 900 when thinking, 1024 otherwise. First Groq 429/413 aborts the Groq family (no llama tour) and continues to Gemini. Error text uses the last attempt, not any earlier 429.
+- **Modified Files:** `src/lib/bots/thinking.ts`, `src/lib/bots/fluid-prompts.ts`, `src/lib/bots/ai-gateway.ts`, `src/pages/api/chat.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts tests/groq-token-budget.spec.ts` — 14 passed. System prompt ~11.2k→7.8k chars; fluid 4.8k→2.3k.
+- **Handoff:** Restart `pnpm dev`. Balanced = prompted `<thinking>`. Extended = native Qwen. Production needs `GEMINI_API_KEY` for 429 failover.
+
+### Entry 090 - Hidden quota + accidental thinking (TSK-70)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `usesNativeQwenReasoning(undefined)` was true, so intent/search/quality Groq calls also ran native thinking and burned TPM before the real reply. Guest hourly 20 + the word `quota` was shown as "API provider rate limit". Native reasoning is now only on for standard/deep. Guest limits 80/hour and 200/day. Client shows the real app-quota text.
+- **Modified Files:** `src/lib/bots/thinking.ts`, `src/lib/bots/intent-router.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `tests/thinking-tags.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 13 passed.
+- **Handoff:** Restart `pnpm dev`. Terminal should log `[chat] groq keys visible 4`.
+
+### Entry 089 - Groq 429 must try the next account (TSK-69)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Groq 429 bodies contain `TPM`, and `isRequestTooLarge` treated that as a size error, so the gateway broke the key loop after the first account. 429 now fail over; only 413 / request-too-large stops the Groq family.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 13 passed.
+- **Handoff:** Restart `pnpm dev`. Terminal `[chat] providers failed` attempts should show `groq[2/4 …RKQN]` if key 1 429s.
+
+### Entry 088 - Groq key round-robin (TSK-68)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Groq was failover-only: every request started at key 1, and one 429/think cooled the whole family so unused keys sat idle. Keys now merge from all GROQ_* env names, round-robin each request, and cool per-key. Family cooldown only if every key is hot.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 13 passed.
+- **Handoff:** Put keys in `GROQ_API_KEYS=gsk_a,gsk_b,gsk_c` (or mix GROQ_API_KEY). Restart `pnpm dev`.
+
+### Entry 087 - Claude sheen + correct stage icons (TSK-67)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** First attempt used an amber orbiting spark and over-mapped Analyzing→Brain / Reflecting→Zap, plus `ara` matched Analyzing as Globe. Now: Claude sheen slides through the word Thinking (and through the spark shape). Stage icons use the original mapping with tokenized short words: Analyzing/Reflecting/Concluding = Clock, Searching = Globe, Structuring = File, Evaluating Tension = Zap.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `src/styles/global.css`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** UI-only. Restart `pnpm dev`.
+- **Handoff:** Do not add orbit rings or amber accents. The thinking effect is a monochrome highlight through the letters.
 
 ### Entry 086 - Thinking-on Groq TPM / rate limit (TSK-66)
 - **Date:** 2026-08-14

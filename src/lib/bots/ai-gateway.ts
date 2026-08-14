@@ -11,6 +11,8 @@ import {
     getRuntimeEnv,
     splitKeys,
 } from './runtime-env'
+import { collectApiKeys, rotateKeys } from './search-keys'
+import { nextGroqKeyStart, resetGroqKeyCursor } from './groq-key-cursor'
 
 
 
@@ -157,7 +159,9 @@ const HEAVY_THINKING_COOLDOWN_MS = 25_000
 
 export function isRequestTooLarge(detail: string): boolean {
     const d = detail.toLowerCase()
-    return d.startsWith('413') || d.includes('request too large') || d.includes('tpm')
+    // 429 TPM/TPD is per-account quota — other Groq keys must still be tried.
+    if (d.startsWith('429')) return false
+    return d.startsWith('413') || d.includes('request too large')
 }
 
 function isQwen36(model: string): boolean {
@@ -190,8 +194,8 @@ function groqPromptCaps(thinking: boolean, compact: boolean): PromptCaps {
 
 function wantedGroqMaxTokens(model: string, thinking: boolean, compact: boolean): number {
     if (isQwen36(model)) {
-        if (thinking) return compact ? 1_024 : 1_792
-        return compact ? 768 : 1_280
+        if (thinking) return compact ? 1_536 : 3_072
+        return compact ? 1_024 : 2_048
     }
     return compact ? 768 : DEFAULT_MAX_TOKENS
 }
@@ -250,12 +254,17 @@ export function fitGroqRequest(options: {
 
 /**
  * Qwen 3.6 native reasoning is the live ThinkingBlock source.
- * Brief/minimal keeps it off so short replies are not starved.
- * Balanced/extended use parsed traces so `delta.reasoning` is visible.
+ * Medium/balanced and extended/deep request it so ThinkingBlock always has a live trace.
  */
 function providerBodyExtras(model: string, thinkingDepth?: ThinkingDepth): Record<string, unknown> {
     if (!isQwen36(model)) return {}
-    return { reasoning_effort: usesNativeQwenReasoning(thinkingDepth) ? 'default' : 'none' }
+    if (!usesNativeQwenReasoning(thinkingDepth)) {
+        return { reasoning_effort: 'none' }
+    }
+    // raw keeps CoT inside <think> in content so ThinkingStreamDemux sees it.
+    // Groq's default include_reasoning=true puts it on delta.reasoning instead,
+    // which often never reaches the ticker.
+    return { reasoning_effort: 'default', reasoning_format: 'raw' }
 }
 
 function firstString(...values: unknown[]): string {
@@ -267,6 +276,56 @@ function firstString(...values: unknown[]): string {
         }
     }
     return ''
+}
+
+/**
+ * Merge a provider delta into tagged text the demux can split.
+ * Never emit raw `reasoning` as public content — that is the main leak path.
+ */
+export type ReasoningWrapState = {
+    opened: boolean
+    closed: boolean
+}
+
+const THINK_TAG_HINT = /<\/?think(?:ing)?\b/i
+
+export function wrapReasoningContentChunk(
+    state: ReasoningWrapState,
+    reasoning: string,
+    content: string
+): string[] {
+    const out: string[] = []
+    const contentHasThinkTags = THINK_TAG_HINT.test(content)
+
+    // If this content chunk already carries <think>, skip the parallel
+    // reasoning field so we do not dump an unwrapped CoT into public.
+    if (reasoning && !contentHasThinkTags) {
+        if (!state.opened) {
+            state.opened = true
+            out.push('<think>')
+        }
+        out.push(reasoning)
+    }
+
+    if (content) {
+        if (state.opened && !state.closed) {
+            if (contentHasThinkTags || content.trim()) {
+                state.closed = true
+                out.push('</think>')
+            }
+        }
+        out.push(content)
+    }
+
+    return out
+}
+
+export function closeReasoningWrap(state: ReasoningWrapState): string[] {
+    if (state.opened && !state.closed) {
+        state.closed = true
+        return ['</think>']
+    }
+    return []
 }
 
 /** Groq/OpenAI-compatible reasoning can sit on several fields depending on format. */
@@ -290,7 +349,7 @@ export function extractProviderReasoning(payload: unknown): string {
 
 function resolveMaxTokens(model: string, thinkingDepth?: ThinkingDepth): number {
     if (isQwen36(model)) {
-        return usesNativeQwenReasoning(thinkingDepth) ? 1792 : 1280
+        return usesNativeQwenReasoning(thinkingDepth) ? 3072 : 2048
     }
     return DEFAULT_MAX_TOKENS
 }
@@ -327,6 +386,17 @@ function isRateLimitDetail(detail: string): boolean {
     )
 }
 
+function isAuthDetail(detail: string): boolean {
+    const d = detail.toLowerCase()
+    return (
+        d.startsWith('401') ||
+        d.startsWith('403') ||
+        d.includes('invalid_api_key') ||
+        d.includes('unauthorized') ||
+        d.includes('forbidden')
+    )
+}
+
 const PROVIDER_FAMILY_ORDER = ['groq', 'gemini', 'huggingface', 'openrouter'] as const
 export type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
 
@@ -340,9 +410,45 @@ export function getFamilyOrder(skipFamilies: ProviderFamily[] = []): ProviderFam
 
 export function resetProviderCooldowns(): void {
     PROVIDER_COOLDOWNS.clear()
+    GROQ_KEY_COOLDOWNS.clear()
+    resetGroqKeyCursor()
 }
 
-export { markFamilyCooling }
+export { markFamilyCooling, markGroqKeyCooling }
+
+const GROQ_KEY_COOLDOWNS = new Map<string, number>()
+
+function groqKeyId(key: string): string {
+    return key.slice(-10)
+}
+
+function isGroqKeyCooling(key: string): boolean {
+    const until = GROQ_KEY_COOLDOWNS.get(groqKeyId(key))
+    if (!until) return false
+    if (Date.now() > until) {
+        GROQ_KEY_COOLDOWNS.delete(groqKeyId(key))
+        return false
+    }
+    return true
+}
+
+function markGroqKeyCooling(key: string, ms = HEAVY_THINKING_COOLDOWN_MS): void {
+    GROQ_KEY_COOLDOWNS.set(groqKeyId(key), Date.now() + ms)
+}
+
+export function collectGroqKeys(store: EnvStore): string[] {
+    return collectApiKeys(store.GROQ_API_KEYS, store.GROQ_API_KEY, store.GROQ_KEYS, store.GROQ_KEY)
+}
+
+/** Sequential: request 1 uses key 1, request 2 uses key 2, then wraps. */
+export function takeGroqKeyOrder(keys: string[], start?: number): string[] {
+    if (keys.length <= 1) return keys
+    const index = typeof start === 'number' ? start : nextGroqKeyStart(keys.length)
+    const rotated = rotateKeys(keys, index)
+    const live = rotated.filter((key) => !isGroqKeyCooling(key))
+    const cooling = rotated.filter((key) => isGroqKeyCooling(key))
+    return live.length > 0 ? [...live, ...cooling] : rotated
+}
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -489,8 +595,7 @@ async function chatCompletionsStream(
             const decoder = new TextDecoder('utf-8')
             let buffer = ''
             
-            let hasStartedReasoning = false
-            let hasFinishedReasoning = false
+            const wrapState: ReasoningWrapState = { opened: false, closed: false }
 
             try {
                 while (true) {
@@ -510,20 +615,8 @@ async function chatCompletionsStream(
                                 const delta = data.choices?.[0]?.delta
                                 const reasoning = extractProviderReasoning(data)
                                 const content = typeof delta?.content === 'string' ? delta.content : ''
-
-                                if (reasoning) {
-                                    if (!hasStartedReasoning) {
-                                        hasStartedReasoning = true
-                                        yield '<think>'
-                                    }
-                                    yield reasoning
-                                }
-                                if (content) {
-                                    if (hasStartedReasoning && !hasFinishedReasoning) {
-                                        hasFinishedReasoning = true
-                                        yield '</think>'
-                                    }
-                                    yield content
+                                for (const piece of wrapReasoningContentChunk(wrapState, reasoning, content)) {
+                                    yield piece
                                 }
                             } catch {
                                 // Ignore parse errors in stream
@@ -531,8 +624,8 @@ async function chatCompletionsStream(
                         }
                     }
                 }
-                if (hasStartedReasoning && !hasFinishedReasoning) {
-                    yield '</think>'
+                for (const piece of closeReasoningWrap(wrapState)) {
+                    yield piece
                 }
             } finally {
                 reader.releaseLock()
@@ -680,7 +773,6 @@ async function tryGroqFamily(
     params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
-    let sawRateLimit = false
     for (const key of groqKeys) {
         if (Date.now() >= params.deadline) return null
         const r = await withRetry(() => chatCompletions(
@@ -696,6 +788,13 @@ async function tryGroqFamily(
             params.thinkingDepth,
         ), params.deadline)
         if (r.ok) {
+            if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(model)) {
+                markGroqKeyCooling(key)
+            }
+            console.info('[gateway] groq generate ok', {
+                model,
+                key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}`,
+            })
             return {
                 ok: true,
                 text: r.text,
@@ -703,11 +802,23 @@ async function tryGroqFamily(
                 ...(model.toLowerCase().includes('qwen') ? { trace: 'qwen' as const } : {}),
             }
         }
-        if (isRateLimitDetail(r.detail)) sawRateLimit = true
-        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length}]: ${r.detail}`)
-        if (isRequestTooLarge(r.detail)) break
+        if (isRateLimitDetail(r.detail)) {
+            markGroqKeyCooling(key)
+            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+            continue
+        }
+        if (isRequestTooLarge(r.detail)) {
+            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+            continue
+        }
+        if (isAuthDetail(r.detail)) {
+            markGroqKeyCooling(key, 30 * 60 * 1000)
+        }
+        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
     }
-    if (groqKeys.length > 0 && sawRateLimit) markFamilyCooling('groq')
+    if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
+        markFamilyCooling('groq')
+    }
     return null
 }
 
@@ -836,14 +947,7 @@ export async function generateWithGateway(params: {
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
-    // Support all common CF Dashboard naming conventions for key sets
-    const groqRaw = envFrom(
-        runtimeEnv,
-        'GROQ_API_KEYS',   // CF Dashboard exact name (comma-separated)
-        'GROQ_API_KEY',
-        'GROQ_KEYS',
-        'GROQ_KEY',
-    )
+    const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
@@ -865,8 +969,6 @@ export async function generateWithGateway(params: {
         'HF_API_KEY',
         'HF_TOKEN',
     )
-    // All keys as arrays — failover through each one
-    const groqKeys = splitKeys(groqRaw)   // e.g. ['gsk_aaa', 'gsk_bbb', 'gsk_ccc']
     const geminiKeys = splitKeys(geminiRaw) // e.g. ['AIza...1', 'AIza...2']
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
@@ -878,18 +980,12 @@ export async function generateWithGateway(params: {
         let result: FamilySuccess | null = null
         if (family === 'groq') {
             result = await tryGroqFamily(groqKeys, groqModel, familyParams, attempts)
-            if (!result && groqModel !== 'llama-3.3-70b-versatile' && Date.now() < deadline) {
-                result = await tryGroqFamily(groqKeys, 'llama-3.3-70b-versatile', familyParams, attempts)
-            }
         }
         else if (family === 'openrouter') result = await tryOpenRouterFamily(openRouterKey, taskType, runtimeEnv, familyParams, attempts)
         else if (family === 'gemini') result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
         else if (family === 'huggingface') result = await tryHuggingFaceFamily(huggingFaceKeys, familyParams, attempts)
 
         if (result) {
-            if (family === 'groq' && usesNativeQwenReasoning(params.thinkingDepth)) {
-                markFamilyCooling('groq', HEAVY_THINKING_COOLDOWN_MS)
-            }
             return {
                 ok: true,
                 text: result.text,
@@ -963,7 +1059,7 @@ export async function streamWithGateway(params: {
     const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
     const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
 
-    const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')
+    const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const hfRaw = envFrom(runtimeEnv, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN')
@@ -979,7 +1075,6 @@ export async function streamWithGateway(params: {
         'GOOGLE_GEMINI_API_KEY',
     )
 
-    const groqKeys = splitKeys(groqRaw)
     const hfKeys = splitKeys(hfRaw)
     const geminiKeys = splitKeys(geminiRaw)
     const openRouterModel =
@@ -1001,18 +1096,12 @@ export async function streamWithGateway(params: {
         }
 
         if (family === 'groq' && groqKeys.length > 0) {
-            let sawRateLimit = false
-            const groqModels = groqModel === 'llama-3.3-70b-versatile'
-                ? [groqModel]
-                : [groqModel, 'llama-3.3-70b-versatile']
-            groqLoop:
-            for (const model of groqModels) {
-                for (const key of groqKeys) {
+            for (const key of groqKeys) {
                     if (Date.now() >= deadline) break
                     const r = await chatCompletionsStream(
                         'https://api.groq.com/openai/v1/chat/completions',
                         key,
-                        model,
+                        groqModel,
                         systemPrompt,
                         userPrompt,
                         params.temperature,
@@ -1022,17 +1111,32 @@ export async function streamWithGateway(params: {
                         params.thinkingDepth,
                     )
                     if (r.ok) {
-                        if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(model)) {
-                            markFamilyCooling('groq', HEAVY_THINKING_COOLDOWN_MS)
+                        if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(groqModel)) {
+                            markGroqKeyCooling(key)
                         }
+                        console.info('[gateway] groq stream ok', {
+                            model: groqModel,
+                            key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}`,
+                        })
                         return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
                     }
-                    if (isRateLimitDetail(r.detail)) sawRateLimit = true
-                    attempts.push(`groq(${model}): ${r.detail}`)
-                    if (isRequestTooLarge(r.detail)) break groqLoop
-                }
+                    if (isRateLimitDetail(r.detail)) {
+                        markGroqKeyCooling(key)
+                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+                        continue
+                    }
+                    if (isRequestTooLarge(r.detail)) {
+                        attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
+                        continue
+                    }
+                    if (isAuthDetail(r.detail)) {
+                        markGroqKeyCooling(key, 30 * 60 * 1000)
+                    }
+                    attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${groqKeyId(key)}]: ${r.detail}`)
             }
-            if (sawRateLimit) markFamilyCooling('groq')
+            if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
+                markFamilyCooling('groq')
+            }
             continue
         }
 

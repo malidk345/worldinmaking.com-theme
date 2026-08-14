@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
-import { ThinkingBudget, StylePresetId, FileAttachment, ModelId, ModelOption } from '../types';
+import { StylePresetId, FileAttachment, ModelId, ModelOption } from '../types';
 import {
   Plus,
   Mic,
@@ -9,11 +9,8 @@ import {
   FileText,
   Image as ImageIcon,
   ArrowDown,
-  Brain,
   ChevronDown,
-  Check,
   ArrowUp,
-  Globe,
 } from 'lucide-react';
 
 const SLASH_COMMANDS = [
@@ -26,10 +23,6 @@ interface ChatInputProps {
   onSendMessage: (prompt: string, attachments: FileAttachment[]) => void;
   onStopStreaming?: () => void;
   isStreaming: boolean;
-  thinkingBudget: ThinkingBudget;
-  onChangeThinkingBudget: (budget: ThinkingBudget) => void;
-  webSearchEnabled: boolean;
-  onToggleWebSearch: () => void;
   selectedStylePreset: StylePresetId;
   onChangeStylePreset: (preset: StylePresetId) => void;
   onScrollToBottom?: () => void;
@@ -45,10 +38,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   onStopStreaming,
   isStreaming,
-  thinkingBudget,
-  onChangeThinkingBudget,
-  webSearchEnabled,
-  onToggleWebSearch,
   onScrollToBottom,
   showScrollToBottom = true,
   models = [],
@@ -59,26 +48,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
-  const [showThinkingPopover, setShowThinkingPopover] = useState(false);
   const [slashIndex, setSlashIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-
-  // Close popover when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setShowThinkingPopover(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (draftNonce > 0) {
@@ -226,9 +202,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       }
     }
   };
-
-  const budgetLabel =
-    thinkingBudget === 'extended' ? 'Extended' : thinkingBudget === 'balanced' ? 'Medium' : 'Fast';
 
   return (
     <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
@@ -391,70 +364,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 
 
-          {/* Right Side Controls: Search | Thinking | Mic | Send */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={onToggleWebSearch}
-              className={`inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors cursor-pointer ${
-                webSearchEnabled
-                  ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
-                  : 'text-primary hover:bg-accent'
-              }`}
-              title={webSearchEnabled ? 'Web search on' : 'Web search off'}
-              aria-pressed={webSearchEnabled}
-            >
-              <Globe className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
-              {webSearchEnabled ? <span className="pr-0.5 text-[11px] font-medium">Search</span> : null}
-            </button>
-
-            <div className="relative" ref={popoverRef}>
-              <button
-                type="button"
-                onClick={() => setShowThinkingPopover((open) => !open)}
-                className={`inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors cursor-pointer ${
-                  thinkingBudget === 'extended'
-                    ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
-                    : 'text-primary hover:bg-accent'
-                }`}
-                title={`Thinking: ${budgetLabel}`}
-              >
-                <Brain className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
-                {thinkingBudget === 'extended' ? (
-                  <span className="pr-0.5 text-[11px] font-medium">Extended</span>
-                ) : null}
-              </button>
-              {showThinkingPopover && (
-                <div className="absolute bottom-10 right-0 z-40 w-44 rounded-xl border border-primary bg-white p-1.5 shadow-lg">
-                  {([
-                    { id: 'minimal', label: 'Fast', hint: 'Short answers' },
-                    { id: 'balanced', label: 'Medium', hint: 'Default depth' },
-                    { id: 'extended', label: 'Extended', hint: 'Deeper analysis' },
-                  ] as const).map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => {
-                        onChangeThinkingBudget(option.id);
-                        setShowThinkingPopover(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs ${
-                        thinkingBudget === option.id
-                          ? 'bg-accent text-primary font-semibold'
-                          : 'text-secondary hover:bg-bg-primary'
-                      }`}
-                    >
-                      <span>
-                        {option.label}
-                        <span className="block text-[10px] font-normal text-muted">{option.hint}</span>
-                      </span>
-                      {thinkingBudget === option.id && <Check className="h-3.5 w-3.5" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Microphone Button */}
             <button
               type="button"

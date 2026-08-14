@@ -6,6 +6,7 @@ test.describe('search API key collection', () => {
         expect(collectApiKeys('tvly-a, tvly-b', 'tvly-b', ' tvly-c ')).toEqual(['tvly-a', 'tvly-b', 'tvly-c'])
         expect(collectApiKeys(undefined, '', 'tvly-only')).toEqual(['tvly-only'])
         expect(collectApiKeys()).toEqual([])
+        expect(collectApiKeys('gsk_one\ngsk_two;gsk_three')).toEqual(['gsk_one', 'gsk_two', 'gsk_three'])
     })
 
     test('rotates the starting key so two accounts share load', () => {

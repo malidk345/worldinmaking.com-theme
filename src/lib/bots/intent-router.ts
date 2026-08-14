@@ -97,37 +97,13 @@ export async function resolveSearchIntent(
         }
     }
 
-    try {
-        const llm = await classifyIntent(bounded, opts?.env)
-        if (llm.needsSearch) {
-            return {
-                needsSearch: true,
-                searchQuery: expandSearchQuery(
-                    llm.searchQuery || heuristic.searchQuery || bounded,
-                    previousUserText
-                ),
-                formatRequest: llm.formatRequest,
-                source: 'llm',
-            }
-        }
-        if (heuristic.needsSearch) {
-            return {
-                needsSearch: true,
-                searchQuery: expandSearchQuery(heuristic.searchQuery || bounded, previousUserText),
-                formatRequest: llm.formatRequest || heuristic.formatRequest,
-                source: 'heuristic',
-            }
-        }
-        return { ...llm, source: 'llm' }
-    } catch {
-        return {
-            needsSearch: heuristic.needsSearch,
-            searchQuery: heuristic.needsSearch
-                ? expandSearchQuery(heuristic.searchQuery || bounded, previousUserText)
-                : heuristic.searchQuery,
-            formatRequest: heuristic.formatRequest,
-            source: heuristic.needsSearch ? 'heuristic' : 'none',
-        }
+    // Do not spend a Groq/Gemini turn classifying search. Ambiguous prompts
+    // stay no-search unless the globe is on or a later heuristic hits.
+    return {
+        needsSearch: false,
+        searchQuery: null,
+        formatRequest: heuristic.formatRequest,
+        source: 'heuristic',
     }
 }
 
@@ -142,6 +118,7 @@ export async function classifyIntent(question: string, env?: EnvStore): Promise<
         botName: 'intent_router',
         env,
         temperature: 0,
+        thinkingDepth: 'brief',
     })
 
     if (!gen.ok) return DEFAULT_INTENT
