@@ -192,12 +192,13 @@ export default async function handler(req: Request) {
 
                 send({ type: 'thinking_start' })
                 let currentThinkingDetail = '';
-                let currentThinkingStageId = 'auto-1';
+                const currentThinkingStageId = 'auto-1';
 
                 const result = await streamBotTurn({
                     question: `User contribution:\n"""${nodeContent}"""`,
                     philosopher: botName,
                     taskType: gateTask,
+                    thinkingDepth: 'standard',
                     context,
                     scope: 'notebook_coauthor',
                     trustedInstruction: modeInstruction,

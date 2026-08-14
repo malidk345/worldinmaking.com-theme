@@ -1,11 +1,13 @@
 export { getRuntimeEnv, envFrom, getProviderKeyFlags, hasCloudflareContext } from './runtime-env'
-export { generateWithGateway } from './ai-gateway'
+export { generateWithGateway, extractProviderReasoning } from './ai-gateway'
 export type { GenerateResult, GenerateFailure, GatewayProvider, GatewayMessage } from './ai-gateway'
 export {
     buildThinkingInstruction,
     parseThinkingAndReply,
     cleanAIOutput,
     thinkingDepthForTask,
+    usesNativeQwenReasoning,
+    shouldPromptThinkingTags,
 } from './thinking'
 export type { ThinkingProcess, ThinkingStage, ThinkingDepth } from './thinking'
 export { runBotTurn, getBotSystemStatus } from './orchestrate'

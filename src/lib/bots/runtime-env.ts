@@ -6,10 +6,14 @@
  * We use a static import with try/catch so local Node.js dev falls back gracefully.
  */
 
+export type EnvStore = Record<string, string | undefined>
+
 function getCfRequestContext(): any {
     try {
-        // Dynamic lookup to prevent 'server-only' package from being statically bundled into client graphs
-        const req = typeof (0, eval) === 'function' ? (0, eval)('require') : null
+        // Dynamic lookup so webpack does not statically bundle the server-only CF helper.
+        const req = Function('return typeof require === "function" ? require : null')() as
+            | ((id: string) => any)
+            | null
         if (req) {
             const mod = req('@cloudflare/next-on-pages')
             if (mod && typeof mod.getRequestContext === 'function') {

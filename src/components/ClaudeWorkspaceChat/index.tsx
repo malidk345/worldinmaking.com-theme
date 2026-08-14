@@ -558,10 +558,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
           (candidate.type === artifact.type && candidate.content === artifact.content)
         ) === index
       );
-      const latest = streamedArtifacts[streamedArtifacts.length - 1]
-      if (latest) {
-        openArtifact(latest, { keepSize: true })
-      }
     };
 
     let isStreamComplete = false;
@@ -581,10 +577,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
       const conversationHistory = baseMessages
         .filter((message) => message.role === 'user' || message.role === 'assistant')
-        .slice(-10)
+        .slice(-6)
         .map((message) => ({
           role: message.role as 'user' | 'assistant',
-          content: message.content.slice(0, 4000),
+          content: message.content.slice(0, 1200),
         }))
         .filter((message) => message.content.trim().length > 0)
 
@@ -690,31 +686,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
             });
           }
 
-          if (parsed.type === 'phase') {
-            const phaseLabels: Record<string, string> = {
-              context: 'Context',
-              generation: 'Generation',
-              quality_gate: 'Quality check',
-              persistence: 'Memory sync',
-            };
-            const phaseStep = {
-              id: `phase-${parsed.phase.phase}`,
-              stepNumber: currentThinkingProcess.steps.length + 1,
-              title: phaseLabels[parsed.phase.phase] || parsed.phase.phase,
-              detail: parsed.phase.detail || `${parsed.phase.phase} ${parsed.phase.status}`,
-              completed: parsed.phase.status !== 'started',
-              source: 'system_event' as const,
-            };
-            const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
-            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = phaseStep;
-            else currentThinkingProcess.steps.push(phaseStep);
-            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-            updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: sanitizePublicAssistantText(accumulatedContent),
-              thinkingProcess: { ...currentThinkingProcess },
-            });
-          }
-
           if (parsed.type === 'error') {
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
@@ -781,19 +752,21 @@ export default function App({ onClose }: { onClose?: () => void }) {
         };
       }
 
-      // Extract Artifacts & Process Version Revisions (v1, v2, v3)
-      const rawArtifacts = dedupeArtifacts([
-        ...streamedArtifacts,
-        ...extractArtifactsFromContent(finalCleanContent, promptText),
-      ]);
       let extractedArtifacts: Artifact[] = [];
-
-      if (rawArtifacts.length > 0) {
-        const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
-        for (const rawArt of rawArtifacts) {
-          const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt);
-          extractedArtifacts.push(revisedArt);
+      try {
+        const rawArtifacts = dedupeArtifacts([
+          ...streamedArtifacts,
+          ...extractArtifactsFromContent(finalCleanContent, promptText),
+        ]);
+        if (rawArtifacts.length > 0) {
+          const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
+          for (const rawArt of rawArtifacts) {
+            const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt);
+            extractedArtifacts.push(revisedArt);
+          }
         }
+      } catch (artifactError) {
+        console.error('[workspace chat] artifact extract failed', artifactError)
       }
 
       // Clean chat message text — strip ALL artifact content so it doesn't duplicate inside the chat bubble.
@@ -825,10 +798,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
         });
       }
 
-      if (extractedArtifacts.length > 0) {
-        openArtifact(extractedArtifacts[0], { keepSize: true });
-      }
-      
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
       if (err.name === 'AbortError') {
@@ -839,16 +808,20 @@ export default function App({ onClose }: { onClose?: () => void }) {
         const displayContent = sanitizePublicAssistantText(accumulatedContent);
         const rawError = String(err?.message || '');
         const looksLikeQuota = /429|rate limit|quota|resource_exhausted|too many requests/i.test(rawError);
+        const shortReason = rawError.replace(/\s+/g, ' ').trim().slice(0, 160)
         const errorMessage = displayContent
           ? displayContent
           : rawError === 'AI returned no content'
             ? 'The model finished thinking but did not produce a public answer. Please try again.'
             : looksLikeQuota
               ? 'The reply could not be completed. The API provider hit a rate limit.'
-              : 'The reply could not be completed because of a connection error.';
+              : shortReason
+                ? `The reply could not be completed. ${shortReason}`
+                : 'The reply could not be completed because of a connection error.';
 
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: errorMessage,
+          thinkingProcess: { ...currentThinkingProcess },
           isStreaming: false,
           isTypingDone: true,
         });

@@ -27,8 +27,9 @@ const AUTH_DAILY_LIMIT = 400
 export const config = {
     api: {
         bodyParser: {
-            sizeLimit: '32kb',
+            sizeLimit: '1mb',
         },
+        responseLimit: false,
     },
 }
 
@@ -37,7 +38,7 @@ const MAX_SYSTEM_PROMPT_LENGTH = 5000
 const MAX_STYLE_LENGTH = 2000
 const MAX_ATTACHMENT_CONTEXT_LENGTH = 6000
 const MAX_HISTORY_LENGTH = 8000
-const MAX_NOTEBOOK_CONTEXT_LENGTH = 8000
+const MAX_NOTEBOOK_CONTEXT_LENGTH = 3500
 
 function getHeaderValue(value: string | string[] | undefined): string {
     return Array.isArray(value) ? value[0] || '' : value || ''
@@ -176,7 +177,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Connection', 'keep-alive')
     res.setHeader('X-Accel-Buffering', 'no')
 
-    const send = (event: AiSseEvent) => res.write(formatAiSseEvent(event))
+    const send = (event: AiSseEvent) => {
+        res.write(formatAiSseEvent(event))
+        const flushable = res as unknown as { flush?: () => void }
+        if (typeof flushable.flush === 'function') flushable.flush()
+    }
 
     try {
         let webSearchContext = ''
@@ -292,7 +297,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
 
         if (!result.success) {
-            send({ type: 'error', code: 'provider_unavailable', message: result.reply, retryable: true })
+            const attempts = 'attempts' in result ? result.attempts : []
+            console.error('[chat] providers failed', { error: result.error, attempts })
+            const looksLikeQuota = attempts.some((item) => /429|rate limit|quota|too large|413/i.test(item))
+            send({
+                type: 'error',
+                code: 'provider_unavailable',
+                message: looksLikeQuota
+                    ? 'The reply could not be completed. The API provider hit a rate or size limit. Please try again in a moment.'
+                    : result.reply,
+                retryable: true,
+            })
             return res.end()
         }
 

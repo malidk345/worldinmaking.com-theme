@@ -194,13 +194,87 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-56` | Stream 5 | Multi-key Tavily/Brave rotation + 429 failover | `src/lib/bots/web-search.ts`, `.env.example` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-57` | Stream 5 | Search follow-up queries + live search UI flush + citation source | `src/lib/bots/search-intent.ts`, `src/lib/bots/intent-router.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-58` | Stream 5 | Fix empty public reply after Qwen thinking (fake quota error) | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
-| `TSK-59` | Stream 5 | Hybrid native Qwen reasoning: off for brief/balanced, on for extended; show full native trace without eating the public-reply budget | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/thinking.ts`, workspace thinking UI | `[PLANNED]` | - | - |
+| `TSK-59` | Stream 5 | Hybrid native Qwen reasoning: off for brief, on for balanced/extended; show native trace without eating the public-reply budget | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/thinking.ts`, workspace thinking UI | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-60` | Stream 5 | Stop duplicate artifacts on table requests (prompt-triggered fallback + weak dedup) | `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-61` | Stream 5 | Chat UI polish: English chrome, empty starters, artifact card meta, token fade | `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-62` | Stream 5 | Show the model's live reasoning text in ThinkingBlock instead of empty Generation/Quality labels | `src/lib/bots/ai-gateway.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-63` | Stream 5 | Restore labeled thinking stages (Analyzing / Reflecting / Structuring / Concluding) | `src/lib/bots/thinking.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-64` | Stream 5 | Groq-first for all philosophers; native XOR prompted thinking; keep thought accordion open | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `ThinkingBlock.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 084 - Groq-first + thinking contract (TSK-64)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** All philosophers now use Groq → Gemini → HuggingFace → OpenRouter. Bot-name rotation removed. Balanced/extended Qwen uses native `<think>` without a short prompted essay; brief uses prompted `<thinking>`. ThinkingBlock no longer collapses when public tokens start if thought text exists.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/index.ts`, `ThinkingBlock.tsx`, `src/lib/ai/contracts.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 10 passed.
+- **Handoff:** Restart `pnpm dev`. New Nietzsche/Marx chat should hit Qwen first; Analyzing should fill before the public answer.
+
+### Entry 083 - Thinking timer without text
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Header showed "Thought for Xs" with an empty body. `reasoning_format: parsed` moved Qwen traces out of `<think>` content into a delta field that often never streamed, so the timer ran and no step text arrived. Gateway now uses `raw` so traces stay in `<think>` for the demux. Prompted thinking tags are always on as a fallback. ThinkingBlock starts expanded.
+- **Modified Files:**
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** Targeted thinking tests not rerun this pass; change is format + always-open UI.
+- **Handoff:** Restart `pnpm dev`. Thought accordion should open with Analyzing/Reflecting text under the timer, not just the seconds.
+
+### Entry 082 - Restore labeled thinking stages (TSK-63)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** User wanted the named timeline back (Analyzing / Reflecting / Structuring / Concluding), not a single Thinking blob or Generation label. TSK-62 had collapsed the live trace into one step and only split on blank lines, so Qwen's single-newline/sentence traces never became those labels. Splitter now uses blank lines, then lines, then sentences. Live SSE emits those labeled steps again.
+- **Modified Files:**
+  - `src/lib/bots/thinking.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`
+  - `tests/thinking-tags.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/thinking-tags.spec.ts` — 9 passed.
+- **Handoff:** Restart `pnpm dev`. New turns should show Analyzing → Reflecting/Structuring → Concluding under Thought, with the model's text under each label.
+
+### Entry 081 - Show live model thinking text (TSK-62)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** User could see "Generation" but not the model's actual thoughts. Groq Qwen traces were not requested as `reasoning_format: parsed`, so `delta.reasoning` never reached ThinkingBlock. Gateway now asks for parsed traces, reads reasoning from delta/message/nested fields, and streams one growing `Thinking` step with the full text. Generation/Quality check are no longer shown as fake thought stages once real reasoning arrives.
+- **Modified Files:**
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/index.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`
+  - `tests/thinking-tags.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). `pnpm exec playwright test tests/thinking-tags.spec.ts` — 8 passed.
+- **Handoff:** Restart `pnpm dev`. Open a new balanced/extended turn and expand Thinking — the model's live reasoning text should appear, not just Generation.
+
+### Entry 080 - Restore native thinking stages (TSK-59)
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** TSK-58 set Qwen `reasoning_effort: none`, so ThinkingBlock only showed lifecycle phases (Generation, Quality check). Native reasoning is back for balanced/extended (`default`, 8192 tokens, 25s TTFB). Brief/minimal stays off and still uses prompted `<thinking>` tags. Native on does not also ask for `<thinking>`. Empty-reply recovery and quality-gate corrections force brief. Live thinking now splits into Analyzing / Evaluating Tension / … as the trace arrives. Restored missing `EnvStore` export that the previous CF webpack fix dropped.
+- **Modified Files:**
+  - `src/lib/bots/thinking.ts`
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/index.ts`
+  - `src/lib/bots/runtime-env.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `tests/thinking-tags.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). `pnpm exec playwright test tests/thinking-tags.spec.ts` — 7 passed.
+- **Handoff:** Restart `pnpm dev` so the gateway change is picked up. Default budget is balanced → native thinking should stream again. Minimal keeps prompted tags only. Empty-reply recovery from TSK-58 stays.
 
 ### Entry 079 - Chat UI polish pack (TSK-61)
 - **Date:** 2026-08-14

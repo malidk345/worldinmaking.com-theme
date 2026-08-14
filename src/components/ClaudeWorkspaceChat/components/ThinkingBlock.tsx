@@ -127,39 +127,43 @@ const getStepIconAndStyle = (step: ThinkingStep | { title: string; detail?: stri
 };
 
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false }) => {
-  const [isOpen, setIsOpen] = useState(isLive);
-  const [elapsed, setElapsed] = useState(0);
-  const elapsedRef = React.useRef(0);
+  const [isOpen, setIsOpen] = useState(true);
+  const rawSteps = thinking?.steps || [];
+  const hasThoughtText = rawSteps.some((step) => String(step.detail || '').trim().length > 0);
 
   React.useEffect(() => {
-    setIsOpen(isLive);
-  }, [isLive]);
+    if (isLive || hasThoughtText) setIsOpen(true);
+  }, [isLive, hasThoughtText]);
 
-  React.useEffect(() => {
-    if (!isLive) return
-    const started = Date.now() - elapsedRef.current * 1000
-    const timer = window.setInterval(() => {
-      const next = (Date.now() - started) / 1000
-      elapsedRef.current = next
-      setElapsed(next)
-    }, 100)
-    return () => window.clearInterval(timer)
-  }, [isLive]);
+  const durationSeconds = thinking?.durationSeconds || 0;
 
-  const rawSteps = (thinking?.steps || []).filter((step) => step.title?.toLowerCase() !== 'done');
-  const searchStep = rawSteps.find((step) => step.id === 'search-step');
-  const searchRunning = isLive && !!searchStep && !searchStep.completed;
-  const durationSeconds = Math.max(thinking?.durationSeconds || 0, elapsedRef.current, elapsed);
-
-  const headerSummaryText = searchRunning
-    ? searchStep?.title || 'Searching…'
+  // Build full step list including "Done" step if completed
+  // Format summary header text
+  const activeStep = rawSteps.length > 0 ? rawSteps[rawSteps.length - 1] : null;
+  const headerSummaryText = thinking?.summary && thinking.summary !== 'Musing'
+    ? thinking.summary
+    : activeStep
+    ? activeStep.title
     : isLive
-    ? `Thinking… ${elapsed.toFixed(1)}s`
+    ? 'Thinking...'
     : durationSeconds > 0
-    ? `Thought for ${durationSeconds.toFixed(1)}s`
-    : 'Thought';
+    ? `Thought for ${durationSeconds.toFixed(1)} seconds`
+    : 'Response generated';
 
-  const displaySteps = rawSteps;
+  // Process display steps list
+  const displaySteps = [...rawSteps];
+
+  // If process is finished (not live) and last step isn't "Done", append the "Done" step (matching screenshot)
+  const hasDoneStep = displaySteps.some(s => s.title?.toLowerCase() === 'done');
+  if (!isLive && !hasDoneStep && displaySteps.length > 0) {
+    displaySteps.push({
+      id: 'done-step',
+      stepNumber: displaySteps.length + 1,
+      title: 'Done',
+      detail: '',
+      completed: true,
+    });
+  }
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
 

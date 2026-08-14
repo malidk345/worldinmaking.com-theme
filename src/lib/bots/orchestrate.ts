@@ -108,6 +108,23 @@ const SECURITY_PREAMBLE = [
 
 export { SECURITY_PREAMBLE }
 
+function buildTurnSystemPrompt(
+    input: BotRunInput,
+    persona: BotPersona,
+    mood: string,
+    taskType: TaskType
+): string {
+    return [
+        SECURITY_PREAMBLE,
+        input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
+        buildPersonaHeader(persona, mood, taskType),
+        getFluidSystemPrompt(persona.name, input.scope || 'site_wide'),
+        buildThinkingInstruction(taskType, input.thinkingDepth),
+    ]
+        .filter(Boolean)
+        .join('\n\n')
+}
+
 function buildUserPrompt(input: BotRunInput, _taskType: TaskType): string {
     const parts: string[] = []
     const boundedContext = input.context?.trim().slice(0, 8500)
@@ -137,13 +154,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const runtimeEnv = input.env ?? getRuntimeEnv()
     const persona = extractPersona('', philosopher)
 
-    const systemPrompt = [
-        SECURITY_PREAMBLE,
-        input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
-        buildPersonaHeader(persona, mood, taskType),
-        getFluidSystemPrompt(persona.name, input.scope || 'site_wide'),
-        buildThinkingInstruction(taskType, input.thinkingDepth),
-    ].join('\n\n')
+    const systemPrompt = buildTurnSystemPrompt(input, persona, mood, taskType)
 
     const userPrompt = buildUserPrompt(input, taskType)
 
@@ -156,6 +167,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         botName: persona.name,
         env: runtimeEnv,
         temperature: persona.temperature,
+        thinkingDepth: input.thinkingDepth,
     })
 
     if (!gen.ok) {
@@ -282,6 +294,7 @@ async function recoverPublicReply(input: {
         botName: input.persona.name,
         env: input.runtimeEnv,
         temperature: 0.4,
+        thinkingDepth: 'brief',
     })
     if (!gen.ok) return ''
     return stripThinkingBlocks(gen.text).trim()
@@ -366,13 +379,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
     const runtimeEnv = input.env ?? getRuntimeEnv()
     const persona = extractPersona('', philosopher)
 
-    const systemPrompt = [
-        SECURITY_PREAMBLE,
-        input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
-        buildPersonaHeader(persona, mood, taskType),
-        getFluidSystemPrompt(persona.name, input.scope || 'site_wide'),
-        buildThinkingInstruction(taskType, input.thinkingDepth),
-    ].join('\n\n')
+    const systemPrompt = buildTurnSystemPrompt(input, persona, mood, taskType)
 
     const userPrompt = buildUserPrompt(input, taskType)
 
@@ -386,6 +393,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         botName: persona.name,
         env: runtimeEnv,
         temperature: persona.temperature,
+        thinkingDepth: input.thinkingDepth,
     })
 
     if (!gen.ok) {

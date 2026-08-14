@@ -3,6 +3,7 @@
  * Used by chat, /api/bots/act, and future forum/paper workers.
  */
 import type { TaskType } from 'lib/persona-engine'
+import { usesNativeQwenReasoning, type ThinkingDepth } from './thinking'
 import {
     EnvStore,
     envFrom,
@@ -10,6 +11,7 @@ import {
     getRuntimeEnv,
     splitKeys,
 } from './runtime-env'
+
 
 
 export interface StreamResult {
@@ -40,15 +42,18 @@ function buildCompletionMessages(
     userPrompt: string,
     history?: GatewayMessage[]
 ): GatewayMessage[] {
-    const messages: GatewayMessage[] = [{ role: 'system', content: systemPrompt }]
+    const messages: GatewayMessage[] = [{
+        role: 'system',
+        content: systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS),
+    }]
     if (history?.length) {
-        for (const item of history.slice(-16)) {
+        for (const item of history.slice(-GROQ_HISTORY_TURNS)) {
             if ((item.role === 'user' || item.role === 'assistant') && item.content.trim()) {
-                messages.push({ role: item.role, content: item.content.slice(0, 4000) })
+                messages.push({ role: item.role, content: item.content.slice(0, GROQ_HISTORY_CHARS) })
             }
         }
     }
-    messages.push({ role: 'user', content: userPrompt })
+    messages.push({ role: 'user', content: userPrompt.slice(0, MAX_USER_PROMPT_CHARS) })
     return messages
 }
 
@@ -124,22 +129,71 @@ const PROVIDER_COOLDOWNS = new Map<string, number>()
 const COOLDOWN_MS = 60_000
 const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
 const GATEWAY_TOTAL_TIMEOUT_MS = 45_000
-const MAX_SYSTEM_PROMPT_CHARS = 30_000
-const MAX_USER_PROMPT_CHARS = 16_000
-const DEFAULT_MAX_TOKENS = 4096
+const MAX_SYSTEM_PROMPT_CHARS = 8_000
+const MAX_USER_PROMPT_CHARS = 4_000
+const DEFAULT_MAX_TOKENS = 2048
+const GROQ_HISTORY_TURNS = 6
+const GROQ_HISTORY_CHARS = 1200
+
+function isRequestTooLarge(detail: string): boolean {
+    const d = detail.toLowerCase()
+    return d.startsWith('413') || d.includes('request too large') || d.includes('tpm')
+}
 
 function isQwen36(model: string): boolean {
     return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
 }
 
 /**
- * Qwen 3.6 native reasoning can consume the entire max_tokens budget, leaving
- * an empty public reply. The orchestrator already asks for <thinking> tags, so
- * native chain-of-thought is redundant and must be turned off.
+ * Qwen 3.6 native reasoning is the live ThinkingBlock source.
+ * Brief/minimal keeps it off so short replies are not starved.
+ * Balanced/extended use parsed traces so `delta.reasoning` is visible.
  */
-function providerBodyExtras(model: string): Record<string, unknown> {
-    if (isQwen36(model)) return { reasoning_effort: 'none' }
-    return {}
+function providerBodyExtras(model: string, thinkingDepth?: ThinkingDepth): Record<string, unknown> {
+    if (!isQwen36(model)) return {}
+    return { reasoning_effort: usesNativeQwenReasoning(thinkingDepth) ? 'default' : 'none' }
+}
+
+function firstString(...values: unknown[]): string {
+    for (const value of values) {
+        if (typeof value === 'string' && value) return value
+        if (value && typeof value === 'object' && typeof (value as { content?: unknown }).content === 'string') {
+            const nested = (value as { content: string }).content
+            if (nested) return nested
+        }
+    }
+    return ''
+}
+
+/** Groq/OpenAI-compatible reasoning can sit on several fields depending on format. */
+export function extractProviderReasoning(payload: unknown): string {
+    if (!payload || typeof payload !== 'object') return ''
+    const root = payload as Record<string, any>
+    const choice = root.choices?.[0] || root
+    const delta = choice?.delta || {}
+    const message = choice?.message || root.message || {}
+    return firstString(
+        delta.reasoning,
+        delta.reasoning_content,
+        delta.reasoning_text,
+        message.reasoning,
+        message.reasoning_content,
+        message.reasoning_text,
+        root.reasoning,
+        root.reasoning_content
+    )
+}
+
+function resolveMaxTokens(model: string): number {
+    // Groq on_demand TPM is 8000 and counts max_tokens against the request.
+    if (isQwen36(model)) return 3072
+    return DEFAULT_MAX_TOKENS
+}
+
+function resolveRequestTimeoutMs(model: string, deadline?: number): number {
+    const desired = isQwen36(model) ? 25_000 : PROVIDER_REQUEST_TIMEOUT_MS
+    if (!deadline) return desired
+    return Math.max(1, Math.min(desired, deadline - Date.now()))
 }
 
 function isFamilyCooling(name: string): boolean {
@@ -169,35 +223,20 @@ function isRateLimitDetail(detail: string): boolean {
 }
 
 const PROVIDER_FAMILY_ORDER = ['groq', 'gemini', 'huggingface', 'openrouter'] as const
-type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
+export type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
 
-/** Consistent per-bot starting offset — same roster/hashing scheme used across the app. */
-const BOT_ROTATION_INDEX: Record<string, number> = {
-    marx: 0, nietzsche: 1, deleuze: 2, sartre: 3,
-    spinoza: 0, althusser: 1, heidegger: 2, hegel: 3,
-    baudrillard: 0, weber: 1, adorno: 2, zizek: 3,
-    derrida: 0, lenin: 1, arendt: 2, rand: 3,
-}
-
-/**
- * Orders provider families for this request. Spreads bots across families via a
- * consistent per-bot offset (so a burst of simultaneous requests, e.g. a cron-triggered
- * round of forum replies across 16 bots, doesn't all hammer Groq first) and pushes any
- * currently-cooling family to the end instead of skipping it entirely.
- */
-function getFamilyOrder(botName?: string): ProviderFamily[] {
-    const name = (botName || '').toLowerCase().trim()
-    const offset = name
-        ? BOT_ROTATION_INDEX[name] ?? (name.charCodeAt(0) % PROVIDER_FAMILY_ORDER.length)
-        : 0
-    const rotated: ProviderFamily[] = []
-    for (let i = 0; i < PROVIDER_FAMILY_ORDER.length; i++) {
-        rotated.push(PROVIDER_FAMILY_ORDER[(offset + i) % PROVIDER_FAMILY_ORDER.length])
-    }
-    const active = rotated.filter((f) => !isFamilyCooling(f))
-    const cooling = rotated.filter((f) => isFamilyCooling(f))
+/** Groq Qwen first for every philosopher. Cooling families move to the end. */
+export function getFamilyOrder(): ProviderFamily[] {
+    const active = PROVIDER_FAMILY_ORDER.filter((family) => !isFamilyCooling(family))
+    const cooling = PROVIDER_FAMILY_ORDER.filter((family) => isFamilyCooling(family))
     return [...active, ...cooling]
 }
+
+export function resetProviderCooldowns(): void {
+    PROVIDER_COOLDOWNS.clear()
+}
+
+export { markFamilyCooling }
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -261,11 +300,10 @@ async function chatCompletionsStream(
     extraHeaders: Record<string, string> = {},
     deadline?: number,
     history?: GatewayMessage[],
+    thinkingDepth?: ThinkingDepth,
 ): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
     try {
-        const timeoutMs = deadline
-            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
-            : PROVIDER_REQUEST_TIMEOUT_MS
+        const timeoutMs = resolveRequestTimeoutMs(model, deadline)
 
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
@@ -278,9 +316,9 @@ async function chatCompletionsStream(
                 model,
                 messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
-                max_tokens: DEFAULT_MAX_TOKENS,
+                max_tokens: resolveMaxTokens(model),
                 stream: true,
-                ...providerBodyExtras(model),
+                ...providerBodyExtras(model, thinkingDepth),
             }),
         }, timeoutMs)
 
@@ -317,11 +355,7 @@ async function chatCompletionsStream(
                             try {
                                 const data = JSON.parse(line.slice(6))
                                 const delta = data.choices?.[0]?.delta
-                                const reasoning = typeof delta?.reasoning_content === 'string'
-                                    ? delta.reasoning_content
-                                    : typeof delta?.reasoning === 'string'
-                                      ? delta.reasoning
-                                      : ''
+                                const reasoning = extractProviderReasoning(data)
                                 const content = typeof delta?.content === 'string' ? delta.content : ''
 
                                 if (reasoning) {
@@ -367,11 +401,10 @@ async function chatCompletions(
     extraHeaders: Record<string, string> = {},
     deadline?: number,
     history?: GatewayMessage[],
+    thinkingDepth?: ThinkingDepth,
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
-        const timeoutMs = deadline
-            ? Math.max(1, Math.min(PROVIDER_REQUEST_TIMEOUT_MS, deadline - Date.now()))
-            : PROVIDER_REQUEST_TIMEOUT_MS
+        const timeoutMs = resolveRequestTimeoutMs(model, deadline)
         const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
             headers: {
@@ -383,8 +416,8 @@ async function chatCompletions(
                 model,
                 messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
-                max_tokens: DEFAULT_MAX_TOKENS,
-                ...providerBodyExtras(model),
+                max_tokens: resolveMaxTokens(model),
+                ...providerBodyExtras(model, thinkingDepth),
             }),
         }, timeoutMs)
         const raw = await fetchRes.text()
@@ -399,8 +432,8 @@ async function chatCompletions(
         }
         const message = data?.choices?.[0]?.message
         const visibleContent = message?.content
-        const nativeReasoning = message?.reasoning_content || message?.reasoning
-        const text = nativeReasoning && typeof nativeReasoning === 'string' && !String(visibleContent || '').includes('<think>')
+        const nativeReasoning = extractProviderReasoning(data)
+        const text = nativeReasoning && !String(visibleContent || '').includes('<think>')
             ? `<think>${nativeReasoning}</think>${typeof visibleContent === 'string' ? visibleContent : ''}`
             : visibleContent
         if (!text || typeof text !== 'string') {
@@ -463,6 +496,7 @@ type FamilyParams = {
     history?: GatewayMessage[]
     temperature?: number
     deadline: number
+    thinkingDepth?: ThinkingDepth
 }
 
 /** Groq — rotate through all configured keys, first success wins. */
@@ -485,6 +519,7 @@ async function tryGroqFamily(
             {},
             params.deadline,
             params.history,
+            params.thinkingDepth,
         ), params.deadline)
         if (r.ok) {
             return {
@@ -534,6 +569,7 @@ async function tryOpenRouterFamily(
             },
             params.deadline,
             params.history,
+            params.thinkingDepth,
         ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: `openrouter:${model}` }
         if (r.detail.startsWith('402')) creditsDepleted = true
@@ -588,6 +624,7 @@ async function tryHuggingFaceFamily(
             {},
             params.deadline,
             params.history,
+            params.thinkingDepth,
         ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: 'huggingface' }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -599,9 +636,8 @@ async function tryHuggingFaceFamily(
 
 /**
  * Run system+user prompts through available providers.
- * Family order (Groq / OpenRouter / Gemini / HuggingFace) rotates per bot name so a burst
- * of simultaneous requests doesn't all hammer the same provider first; OpenAI SDK is an
- * always-last bonus provider outside the rotation (rarely configured).
+ * Family order is Groq → Gemini → HuggingFace → OpenRouter for every philosopher.
+ * Cooling families move to the end. OpenAI SDK remains an optional last resort.
  */
 export async function generateWithGateway(params: {
     systemPrompt: string
@@ -612,25 +648,17 @@ export async function generateWithGateway(params: {
     /** Optional bot/persona name — used purely to pick a starting provider offset. */
     botName?: string
     env?: EnvStore
+    thinkingDepth?: ThinkingDepth
 }): Promise<GenerateResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
     const taskType = params.taskType ?? 'community_reply'
     const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
-    const familyParams = { ...params, deadline }
+    const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
+    const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
+    const familyParams = { ...params, systemPrompt, userPrompt, deadline }
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
-
-    if (params.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS || params.userPrompt.length > MAX_USER_PROMPT_CHARS) {
-        return {
-            ok: false,
-            provider: 'none',
-            attempts: [],
-            configured,
-            error: `Prompt too large (system max ${MAX_SYSTEM_PROMPT_CHARS}, user max ${MAX_USER_PROMPT_CHARS} characters).`,
-            latencyMs: Date.now() - started,
-        }
-    }
 
     // Support all common CF Dashboard naming conventions for key sets
     const groqRaw = envFrom(
@@ -666,7 +694,7 @@ export async function generateWithGateway(params: {
     const geminiKeys = splitKeys(geminiRaw) // e.g. ['AIza...1', 'AIza...2']
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
-    for (const family of getFamilyOrder(params.botName)) {
+    for (const family of getFamilyOrder()) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -744,6 +772,7 @@ export async function streamWithGateway(params: {
     temperature?: number
     botName?: string
     env?: EnvStore
+    thinkingDepth?: ThinkingDepth
 }): Promise<StreamResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
@@ -751,16 +780,8 @@ export async function streamWithGateway(params: {
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
-    if (params.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS || params.userPrompt.length > MAX_USER_PROMPT_CHARS) {
-        return {
-            ok: false,
-            provider: 'none',
-            attempts: [],
-            configured,
-            error: `Prompt too large.`,
-            latencyMs: Date.now() - started,
-        }
-    }
+    const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
+    const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
 
     const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
@@ -785,14 +806,15 @@ export async function streamWithGateway(params: {
         envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[params.taskType || 'community_reply'] || OPENROUTER_MODELS[0]
 
     const familyParams: FamilyParams = {
-        systemPrompt: params.systemPrompt,
-        userPrompt: params.userPrompt,
+        systemPrompt,
+        userPrompt,
         history: params.history,
         temperature: params.temperature,
         deadline,
+        thinkingDepth: params.thinkingDepth,
     }
 
-    for (const family of getFamilyOrder(params.botName)) {
+    for (const family of getFamilyOrder()) {
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -810,12 +832,13 @@ export async function streamWithGateway(params: {
                         'https://api.groq.com/openai/v1/chat/completions',
                         key,
                         model,
-                        params.systemPrompt,
-                        params.userPrompt,
+                        systemPrompt,
+                        userPrompt,
                         params.temperature,
                         {},
                         deadline,
                         params.history,
+                        params.thinkingDepth,
                     )
                     if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
                     if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -848,12 +871,13 @@ export async function streamWithGateway(params: {
                     'https://router.huggingface.co/v1/chat/completions',
                     key,
                     HUGGINGFACE_MODEL,
-                    params.systemPrompt,
-                    params.userPrompt,
+                    systemPrompt,
+                    userPrompt,
                     params.temperature,
                     {},
                     deadline,
                     params.history,
+                    params.thinkingDepth,
                 )
                 if (r.ok) return { ok: true, provider: 'huggingface', stream: r.stream, attempts, configured }
                 if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -869,8 +893,8 @@ export async function streamWithGateway(params: {
                 'https://openrouter.ai/api/v1/chat/completions',
                 openRouterKey,
                 openRouterModel,
-                params.systemPrompt,
-                params.userPrompt,
+                systemPrompt,
+                userPrompt,
                 params.temperature,
                 {
                     'HTTP-Referer':
@@ -879,6 +903,7 @@ export async function streamWithGateway(params: {
                 },
                 deadline,
                 params.history,
+                params.thinkingDepth,
             )
             if (r.ok) return { ok: true, provider: 'openrouter', stream: r.stream, attempts, configured }
             if (isRateLimitDetail(r.detail)) sawRateLimit = true

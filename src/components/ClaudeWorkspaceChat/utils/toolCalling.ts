@@ -42,11 +42,11 @@ export function processArtifactRevision(
   newArtData: Omit<Artifact, 'id' | 'version' | 'createdAt'>
 ): { artifacts: Artifact[]; activeArtifact: Artifact } {
   const now = new Date().toISOString();
-  const normalizedNewTitle = newArtData.title.toLowerCase().trim().replace(/[\s\-_]+/g, '');
+  const normalizedNewTitle = (newArtData.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
 
   const matchingIndex = existingArtifacts.findIndex((a) => {
     if (newArtData.identifier && a.identifier && newArtData.identifier === a.identifier) return true
-    const normalizedExistingTitle = a.title.toLowerCase().trim().replace(/[\s\-_]+/g, '');
+    const normalizedExistingTitle = (a.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
     return (
       normalizedExistingTitle === normalizedNewTitle ||
       normalizedExistingTitle.includes(normalizedNewTitle) ||

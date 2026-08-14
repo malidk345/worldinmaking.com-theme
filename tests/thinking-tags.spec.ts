@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
-import { parseThinkingAndReply } from '../src/lib/bots/thinking'
+import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction } from '../src/lib/bots/thinking'
+import { extractProviderReasoning, getFamilyOrder, markFamilyCooling, resetProviderCooldowns } from '../src/lib/bots/ai-gateway'
 import { ThinkingStreamDemux, stripThinkingBlocks } from '../src/lib/bots/thinking-tags'
 
 test.describe('thinking stream routing', () => {
@@ -62,5 +63,67 @@ test.describe('thinking stream routing', () => {
         expect(parsed.reply).toBe('')
         expect(parsed.thinking.summary).toContain('Fed hinted')
         expect(stripThinkingBlocks(parsed.thinking.summary || '')).toContain('Fed hinted')
+    })
+
+    test('native think blocks become multiple thinking stages', () => {
+        const parsed = parseThinkingAndReply(
+            '<think>First look at the claim.\n\nHowever the numbers contradict it.\n\nSo the move is to reject the premise.</think>Public answer'
+        )
+
+        expect(parsed.reply).toBe('Public answer')
+        expect(parsed.thinking.stages.length).toBeGreaterThanOrEqual(2)
+        expect(parsed.thinking.stages.map((stage) => stage.label)).toContain('Evaluating Tension')
+    })
+
+    test('demuxes Groq default Qwen chunks that start with a think tag', () => {
+        const demux = new ThinkingStreamDemux()
+        const publicText: string[] = []
+        const thinkingText: string[] = []
+
+        for (const chunk of ['\n<think>\n', 'Here', "'s", ' a', ' process', '</think>', 'Four']) {
+            demux.push(chunk, (value) => publicText.push(value), (value) => thinkingText.push(value))
+        }
+        demux.finish((value) => publicText.push(value), (value) => thinkingText.push(value))
+
+        expect(thinkingText.join('')).toContain("Here's a process")
+        expect(publicText.join('').trim()).toBe('Four')
+    })
+
+    test('native Qwen reasoning is on for balanced and off for brief', () => {
+        expect(usesNativeQwenReasoning('brief')).toBe(false)
+        expect(usesNativeQwenReasoning('standard')).toBe(true)
+        expect(usesNativeQwenReasoning('deep')).toBe(true)
+        expect(shouldPromptThinkingTags('brief')).toBe(true)
+        expect(shouldPromptThinkingTags('standard')).toBe(false)
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard')).not.toMatch(/1–3 sentences/)
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief')).toContain('<thinking>')
+    })
+
+    test('every philosopher uses Groq first unless Groq is cooling', () => {
+        resetProviderCooldowns()
+        expect(getFamilyOrder()).toEqual(['groq', 'gemini', 'huggingface', 'openrouter'])
+        markFamilyCooling('groq')
+        expect(getFamilyOrder()[0]).not.toBe('groq')
+        expect(getFamilyOrder()[getFamilyOrder().length - 1]).toBe('groq')
+        resetProviderCooldowns()
+        expect(getFamilyOrder()[0]).toBe('groq')
+    })
+
+    test('reads Groq parsed and OpenAI-style reasoning fields', () => {
+        expect(
+            extractProviderReasoning({
+                choices: [{ delta: { reasoning: 'The user wants a table.' } }],
+            })
+        ).toBe('The user wants a table.')
+        expect(
+            extractProviderReasoning({
+                choices: [{ message: { reasoning_content: 'Check the numbers first.' } }],
+            })
+        ).toBe('Check the numbers first.')
+        expect(
+            extractProviderReasoning({
+                choices: [{ delta: { reasoning: { content: 'Nested reasoning object.' } } }],
+            })
+        ).toBe('Nested reasoning object.')
     })
 })

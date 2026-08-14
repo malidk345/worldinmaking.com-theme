@@ -80,32 +80,21 @@ function depthForTask(taskType: TaskType, override?: ThinkingDepth): ThinkingDep
     }
 }
 
+export function usesNativeQwenReasoning(depth?: ThinkingDepth): boolean {
+    return depthForTask('autonomous_assistant', depth) !== 'brief'
+}
+
+export function shouldPromptThinkingTags(depth?: ThinkingDepth): boolean {
+    return !usesNativeQwenReasoning(depth)
+}
+
 /**
- * System prompt block that forces a multi-step thinking process.
+ * System prompt block for private reasoning + public reply.
+ * Native Qwen already emits <think>; do not also demand a short <thinking> essay.
  */
 export function buildThinkingInstruction(taskType: TaskType, depth?: ThinkingDepth): string {
     const d = depthForTask(taskType, depth)
-
-    const lengthHint =
-        d === 'brief'
-            ? 'Keep each stage to 1–2 short sentences.'
-            : d === 'deep'
-              ? 'Each stage may be 2–5 sentences; show real dialectical work.'
-              : 'Each stage 1–3 sentences.'
-
-    return `
-THINKING PROCESS (mandatory before any public reply):
-You must reason privately inside <thinking>...</thinking>.
-Read the user's input, form your epistemic stance, identify any contradictions or pressure points, and plan your rhetorical move before you reply. Do this naturally and freely without being constrained to specific sub-tags.
-
-Always close the tag. Example shape:
-<thinking>
-[Your unfiltered, raw reasoning process here]
-</thinking>
-Public reply here only.
-
-${lengthHint}
-
+    const publicRules = `
 PUBLIC REPLY STYLE & CONDITIONAL FORMATTING RULES:
 - Never start with AI-assistant filler (no "Certainly!", "Sure!", "As an AI...", "Hello!"). Begin immediately with substantive value.
 - Default output format: High-density, direct, clean markdown prose with bold headers and bullet points.
@@ -115,9 +104,26 @@ PUBLIC REPLY STYLE & CONDITIONAL FORMATTING RULES:
   * IF AND ONLY IF the user explicitly asks for a diagram, flowchart, schema, sequence, or structural map (or uses /diagram, /mermaid): Output a valid Mermaid diagram inside \`\`\`mermaid code fences.
   * IF AND ONLY IF code is requested: Output syntax-highlighted code fences.
 
-Do NOT put the public answer inside <thinking>. After </thinking>, write only the public reply in your voice.
-Never mention that you are following a "thinking process" or stages in the public reply.
-Never use AI-assistant filler.
+Do not mention that you reasoned or checked quality. Never use AI-assistant filler.
+`.trim()
+
+    if (usesNativeQwenReasoning(d)) {
+        return `
+After any private reasoning, write a complete public reply the user can read. Do not stop after reasoning.
+If you have no separate reasoning channel, wrap scratch work in <thinking>...</thinking> then write the public reply.
+Do not summarize your reasoning in the public reply.
+
+${publicRules}
+`.trim()
+    }
+
+    return `
+THINKING PROCESS (mandatory before any public reply):
+Reason privately inside <thinking>...</thinking>. This is real working-out, not a synopsis.
+Include what the question asks, what is uncertain, and how you decide. Separate distinct moves with a blank line.
+Always close the tag, then write only the public reply.
+
+${publicRules}
 `.trim()
 }
 
