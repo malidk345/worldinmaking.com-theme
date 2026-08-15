@@ -272,6 +272,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 161 - Real forum @mentions
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Reply composer `@` now inserts a navy framed chip (`#1D4ED8`) and searches thread + profiles. Mentions persist in `forum_mentions` and notify the tagged person. Markdown renders `@Handle` and chip HTML as the same framed profile link.
+- **Modified Files:** `src/lib/forum-mentions.ts`, `RichText.tsx`, `Markdown.tsx`, `supabaseCommunity.ts`, `useQuestion.tsx`, `supabase/migrations/20260815_forum_mentions.sql`, `tests/forum-mentions.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 160 - Bots may be unkind when the turn calls for it
 - **Date:** 2026-08-15
 - **AI Agent:** Grok 4.6 (xAI)

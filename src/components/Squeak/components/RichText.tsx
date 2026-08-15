@@ -6,9 +6,13 @@ import { isURL } from 'lib/utils'
 import { CurrentQuestionContext } from './Question'
 import Avatar from './Avatar'
 import { AnimatePresence, motion } from 'framer-motion'
-import { IconFeatures, IconImage, IconX } from '@posthog/icons'
-import groupBy from 'lodash/groupBy'
+import { IconImage, IconX } from '@posthog/icons'
 import OSButton from 'components/OSButton'
+import {
+    mentionChipHtml,
+    searchMentionCandidates,
+    type MentionCandidate,
+} from 'lib/forum-mentions'
 
 const buttons = [
     {
@@ -76,132 +80,118 @@ const buttons = [
     },
 ]
 
-const MentionProfile = ({ profile, onSelect, selectionStart, index, focused }) => {
-    const { firstName, lastName, avatar, gravatarURL } = profile.attributes
-    const name = [firstName, lastName].filter(Boolean).join(' ')
-    const isAI = profile.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
+function threadMentionCandidates(question: any): MentionCandidate[] {
+    const out: MentionCandidate[] = []
+    const push = (profile: any) => {
+        if (!profile) return
+        const attrs = profile.attributes || profile
+        const username = String(attrs.username || attrs.firstName || '').trim()
+        if (!username) return
+        out.push({
+            id: String(profile.id || attrs.id || username),
+            username,
+            avatar_url: attrs.avatar?.data?.attributes?.url || attrs.gravatarURL || attrs.avatar_url || null,
+            is_bot: !!attrs.is_bot,
+        })
+    }
+    push(question?.profile?.data || question?.profile)
+    const replies = question?.replies?.data || []
+    for (const reply of replies) {
+        push(reply?.attributes?.profile?.data || reply?.profile?.data)
+    }
+    return out
+}
 
+const MentionMenu = ({
+    people,
+    focused,
+    onSelect,
+    onClose,
+}: {
+    people: MentionCandidate[]
+    focused: number
+    onSelect: (person: MentionCandidate) => void
+    onClose: () => void
+}) => {
     return (
-        <li className="border-b border-input p-1">
-            <OSButton
-                onClick={() => onSelect?.(profile, selectionStart)}
-                type="button"
-                variant="default"
-                width="full"
-                align="left"
-                className={`!px-3 !py-1 !justify-start ${focused === index ? 'bg-accent' : ''}`}
-                active={focused === index}
-            >
-                <div className="flex space-x-2 items-center w-full">
-                    <div className="size-6 overflow-hidden rounded-full">
-                        <Avatar className="w-full" image={avatar?.data?.attributes?.url || gravatarURL} />
-                    </div>
-                    <div>
-                        {!isAI && <p className="m-0 text-xs font-semibold opacity-50 leading-none">{profile.id}</p>}
-                        <div className="flex space-x-1 items-center">
-                            <p className="m-0 leading-none text-sm line-clamp-1">{name}</p>
-                            {isAI && <IconFeatures className="size-4 text-primary dark:text-primary-dark opacity-50" />}
-                        </div>
-                    </div>
+        <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.12 } }}
+            exit={{ opacity: 0, y: 4 }}
+            className="absolute left-2 right-2 bottom-full z-50 mb-1"
+        >
+            <div className="border border-navy/30 bg-primary rounded-md shadow-lg overflow-hidden">
+                <div className="flex items-center justify-between px-2 py-1 border-b border-primary">
+                    <span className="text-[11px] font-semibold text-navy">Mention</span>
+                    <OSButton type="button" variant="default" size="xs" icon={<IconX className="w-3" />} className="!p-1" onClick={onClose} />
                 </div>
-            </OSButton>
-        </li>
+                <ul className="m-0 p-0 list-none max-h-52 overflow-auto">
+                    {people.length === 0 ? (
+                        <li className="px-3 py-2 text-xs text-secondary">No one matches</li>
+                    ) : (
+                        people.map((person, index) => (
+                            <li key={person.id} className="border-b border-primary last:border-0">
+                                <OSButton
+                                    type="button"
+                                    variant="default"
+                                    width="full"
+                                    align="left"
+                                    className={`!px-3 !py-1.5 !justify-start ${focused === index ? 'bg-navy/10' : ''}`}
+                                    active={focused === index}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault()
+                                        onSelect(person)
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2 w-full">
+                                        <div className="size-6 overflow-hidden rounded-full shrink-0">
+                                            <Avatar className="w-full" image={person.avatar_url || ''} />
+                                        </div>
+                                        <span className="inline-flex items-center px-1.5 py-px rounded-sm border border-navy text-navy bg-navy/10 text-xs font-semibold">
+                                            @{person.username}
+                                        </span>
+                                    </div>
+                                </OSButton>
+                            </li>
+                        ))
+                    )}
+                </ul>
+            </div>
+        </motion.div>
     )
 }
 
-const MentionProfiles = ({ onSelect, onClose, body, ...other }) => {
-    const { staffProfiles } = {}
-    const currentQuestion = useContext(CurrentQuestionContext) ?? {}
-    const replies = currentQuestion?.question?.replies
-    const selectionStart = useMemo(() => other.selectionStart, [])
-    const search = body.substring(selectionStart).split(' ')[0].replace('@', '')
-    const mentionProfiles = [
-        { attributes: { profile: { data: currentQuestion?.question?.profile?.data } } },
-        ...replies?.data,
-        ...(staffProfiles?.nodes || [])
-            .filter((node) => node.squeakId === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID))
-            .map((node) => ({
-                attributes: {
-                    profile: {
-                        data: {
-                            id: node.squeakId,
-                            attributes: { ...node, avatar: { data: { attributes: { url: node.avatar?.url } } } },
-                        },
-                    },
-                },
-            })),
-    ]
-        .map((reply) => reply?.attributes?.profile?.data)
-        .filter((profile, index, self) => {
-            const { firstName, lastName } = profile.attributes
-            const name = [firstName, lastName].filter(Boolean).join(' ')
-            return (
-                profile &&
-                self.findIndex((p) => p?.id === profile.id) === index &&
-                name.toLowerCase().includes(search.toLowerCase())
-            )
-        })
-    const grouped = groupBy(mentionProfiles, (profile) =>
-        (staffProfiles?.nodes || []).some((node) => node.squeakId === profile.id) ? 'Staff' : 'In this thread'
-    )
-    const listRef = useRef<HTMLUListElement>(null)
-    const [focused, setFocused] = useState(0)
+function mentionQueryBeforeCaret(): string | null {
+    const sel = typeof window === 'undefined' ? null : window.getSelection()
+    if (!sel || sel.rangeCount === 0) return null
+    const range = sel.getRangeAt(0)
+    if (!range.collapsed) return null
+    const node = range.startContainer
+    if (node.nodeType !== Node.TEXT_NODE) return null
+    const text = node.textContent || ''
+    const head = text.slice(0, range.startOffset)
+    const match = head.match(/(^|[\s(])@([A-Za-z0-9._-]*)$/)
+    return match ? match[2] : null
+}
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault()
-                setFocused((prev) => (prev + 1) % mentionProfiles.length)
-            }
-            if (e.key === 'ArrowUp') {
-                e.preventDefault()
-                setFocused((prev) => (prev - 1 + mentionProfiles.length) % mentionProfiles.length)
-            }
-            if (e.key === 'Tab' || e.key === 'Enter') {
-                e.preventDefault()
-                onSelect?.(mentionProfiles[focused], selectionStart)
-            }
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [focused, search])
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, translateX: '100%' }}
-            animate={{ opacity: 1, translateX: 0, transition: { type: 'tween', duration: 0.1 } }}
-            exit={{ opacity: 0, translateX: '100%' }}
-            className="w-[200px] h-full absolute right-0 top-0 z-50 pt-2.5 pr-2.5"
-        >
-            <OSButton
-                type="button"
-                variant="default"
-                size="xs"
-                icon={<IconX className="w-3" />}
-                className="!p-1 rounded-full absolute top-0.5 right-0.5 z-20"
-                onClick={onClose}
-            />
-            <ul
-                ref={listRef}
-                className="m-0 p-0 list-none border border-input bg-light dark:bg-dark h-full rounded-md overflow-auto"
-            >
-                {mentionProfiles.map((profile, index) => (
-                    <MentionProfile
-                        focused={focused}
-                        index={index}
-                        onSelect={onSelect}
-                        profile={profile}
-                        selectionStart={selectionStart}
-                        key={profile.id}
-                    />
-                ))}
-            </ul>
-        </motion.div>
-    )
+function replaceActiveMentionQuery(html: string) {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return false
+    const range = sel.getRangeAt(0)
+    const node = range.startContainer
+    if (node.nodeType !== Node.TEXT_NODE) return false
+    const text = node.textContent || ''
+    const head = text.slice(0, range.startOffset)
+    const match = head.match(/(^|[\s(])@([A-Za-z0-9._-]*)$/)
+    if (!match || match.index == null) return false
+    const start = match.index + match[1].length
+    const wipe = document.createRange()
+    wipe.setStart(node, start)
+    wipe.setEnd(node, range.startOffset)
+    sel.removeAllRanges()
+    sel.addRange(wipe)
+    document.execCommand('insertHTML', false, `${html}&nbsp;`)
+    return true
 }
 
 function emptyHtmlToValue(html: string) {
@@ -235,7 +225,15 @@ export default function RichText({
     const [plainLength, setPlainLength] = useState(0)
     const [imageLoading, setImageLoading] = useState(false)
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
+    const [mentionQuery, setMentionQuery] = useState('')
+    const [mentionFocus, setMentionFocus] = useState(0)
+    const [mentionPeople, setMentionPeople] = useState<MentionCandidate[]>([])
     const mentionProfilesRef = useRef<HTMLDivElement>(null)
+    const currentQuestion = useContext(CurrentQuestionContext)
+    const inThread = useMemo(
+        () => threadMentionCandidates(currentQuestion?.question),
+        [currentQuestion?.question]
+    )
 
     const syncFromEditor = useCallback(() => {
         const el = editorRef.current
@@ -317,7 +315,63 @@ export default function RichText({
         syncFromEditor()
     }, [autoFocus, initialValue, syncFromEditor])
 
+    const refreshMentionQuery = () => {
+        if (!mentions) return
+        const query = mentionQueryBeforeCaret()
+        if (query == null) {
+            setShowMentionProfiles(false)
+            setMentionQuery('')
+            return
+        }
+        setMentionQuery(query)
+        setShowMentionProfiles(true)
+        setMentionFocus(0)
+    }
+
+    useEffect(() => {
+        if (!showMentionProfiles) return
+        let live = true
+        searchMentionCandidates(mentionQuery, inThread).then((rows) => {
+            if (live) setMentionPeople(rows)
+        })
+        return () => {
+            live = false
+        }
+    }, [showMentionProfiles, mentionQuery, inThread])
+
+    const handleProfileSelect = (person: MentionCandidate) => {
+        focusEditor()
+        if (!replaceActiveMentionQuery(mentionChipHtml(person.username))) {
+            document.execCommand('insertHTML', false, `${mentionChipHtml(person.username)}&nbsp;`)
+        }
+        setShowMentionProfiles(false)
+        setMentionQuery('')
+        syncFromEditor()
+    }
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (showMentionProfiles && mentionPeople.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setMentionFocus((prev) => (prev + 1) % mentionPeople.length)
+                return
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setMentionFocus((prev) => (prev - 1 + mentionPeople.length) % mentionPeople.length)
+                return
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault()
+                handleProfileSelect(mentionPeople[mentionFocus] || mentionPeople[0])
+                return
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                setShowMentionProfiles(false)
+                return
+            }
+        }
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onSubmit) {
             e.preventDefault()
             onSubmit()
@@ -330,34 +384,17 @@ export default function RichText({
             e.preventDefault()
             applyFormat('italic')
         }
-        if (e.key === '@' && e.shiftKey) {
+        if (e.key === '@') {
             setShowMentionProfiles(true)
+            setMentionQuery('')
+            setMentionFocus(0)
         }
     }
 
     const handleContainerClick = (e) => {
-        if (!e.target.contains(mentionProfilesRef.current)) {
+        if (!mentionProfilesRef.current?.contains(e.target)) {
             setShowMentionProfiles(false)
         }
-    }
-
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setShowMentionProfiles(false)
-        }
-        window.addEventListener('keydown', onKey)
-        return () => window.removeEventListener('keydown', onKey)
-    }, [])
-
-    const handleProfileSelect = (profile) => {
-        const mention =
-            profile.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
-                ? `@max `
-                : `@${profile.attributes.firstName.trim().toLowerCase().replace(' ', '_')}/${profile.id} `
-        focusEditor()
-        document.execCommand('insertText', false, mention)
-        setShowMentionProfiles(false)
-        syncFromEditor()
     }
 
     return (
@@ -414,9 +451,9 @@ export default function RichText({
                             <AnimatePresence>
                                 {showMentionProfiles && (
                                     <div ref={mentionProfilesRef} onClick={(e) => e.stopPropagation()}>
-                                        <MentionProfiles
-                                            body={value}
-                                            selectionStart={0}
+                                        <MentionMenu
+                                            people={mentionPeople}
+                                            focused={mentionFocus}
                                             onClose={() => {
                                                 setShowMentionProfiles(false)
                                                 focusEditor()
@@ -438,8 +475,11 @@ export default function RichText({
                             aria-multiline="true"
                             data-placeholder="Type more details..."
                             suppressContentEditableWarning
-                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full ${className}`}
-                            onInput={syncFromEditor}
+                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full [&_.forum-mention]:inline-flex [&_.forum-mention]:items-center [&_.forum-mention]:px-1.5 [&_.forum-mention]:py-px [&_.forum-mention]:rounded-sm [&_.forum-mention]:border [&_.forum-mention]:border-navy [&_.forum-mention]:text-navy [&_.forum-mention]:bg-navy/10 [&_.forum-mention]:font-semibold ${className}`}
+                            onInput={() => {
+                                syncFromEditor()
+                                refreshMentionQuery()
+                            }}
                             onPaste={handlePaste}
                             onKeyDown={handleKeyDown}
                         />

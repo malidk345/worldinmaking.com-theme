@@ -32,6 +32,7 @@ function mapReplies(replies: any[], includeHidden: boolean) {
                     data: {
                         id: pObj?.id || r.author_id || 'community',
                         attributes: {
+                            username: pObj?.username || '',
                             firstName: pObj?.username || 'Community Member',
                             lastName: '',
                             gravatarURL:

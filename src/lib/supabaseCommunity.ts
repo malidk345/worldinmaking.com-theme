@@ -211,6 +211,15 @@ export async function postSupabaseCommunityReply(
         }
         const rows = await res.json()
         const row = Array.isArray(rows) ? rows[0] : rows
+        if (row?.id) {
+            const { persistForumMentions } = await import('./forum-mentions')
+            await persistForumMentions({
+                postId,
+                replyId: row.id,
+                authorId: auth.userId,
+                content,
+            })
+        }
         return { ok: true, id: row?.id }
     } catch (e) {
         console.error('Error posting reply to Supabase:', e)

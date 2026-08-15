@@ -2,12 +2,22 @@ import React from 'react'
 import Highlight, { defaultProps, Language } from 'prism-react-renderer'
 import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import { ZoomImage } from 'components/ZoomImage'
 import { TransformImage } from 'react-markdown/lib/ast-to-react'
 import remarkGfm from 'remark-gfm'
 import { cn } from '../../../utils'
 import Link from 'components/Link'
+import { decorateForumMentions, forumMentionClassName, mentionProfileHref } from 'lib/forum-mentions'
+
+const forumMarkdownSchema = {
+    ...defaultSchema,
+    attributes: {
+        ...defaultSchema.attributes,
+        span: [...((defaultSchema.attributes as any)?.span || []), 'className', 'class', 'dataMention', 'data-mention'],
+        a: [...((defaultSchema.attributes as any)?.a || []), 'className', 'class'],
+    },
+}
 
 const cleanMdxContent = (content: string): string => {
     if (!content || typeof content !== 'string') return ''
@@ -18,14 +28,16 @@ const cleanMdxContent = (content: string): string => {
     return cleaned.trim()
 }
 
-const replaceMentions = (body: string) => {
-    if (!body || typeof body !== 'string') return ''
-    return body.replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
-        if (username === 'max') {
-            return `[${match}](/profile/${process.env.NEXT_PUBLIC_AI_PROFILE_ID})`
-        }
-        return `[${match}](/profile/${username.split('/')[1]})`
-    })
+function ForumMentionChip({ username, children }: { username?: string; children?: React.ReactNode }) {
+    const handle = String(username || '')
+        .replace(/^@/, '')
+        .trim()
+    const href = mentionProfileHref(handle || String(children || ''))
+    return (
+        <Link href={href} className={forumMentionClassName()} state={{ newWindow: true }}>
+            {children || `@${handle}`}
+        </Link>
+    )
 }
 
 export const Markdown = ({
@@ -50,7 +62,7 @@ export const Markdown = ({
             allowedElements={allowedElements}
             remarkPlugins={[remarkGfm]}
             transformImageUri={transformImageUri}
-            rehypePlugins={[rehypeRaw, rehypeSanitize]}
+            rehypePlugins={[rehypeRaw, [rehypeSanitize, forumMarkdownSchema]]}
             className={cn(
                 'markdown prose dark:prose-invert prose-sm max-w-full min-w-0 text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full',
                 !regularText,
@@ -83,14 +95,35 @@ export const Markdown = ({
                 code: ({ node, ...props }) => {
                     return <code {...props} className="break-all inline-block" />
                 },
-                a: ({ node, ...props }) => {
-                    return <Link rel="nofollow noopener noreferrer" {...props} state={{ newWindow: true }} />
+                a: ({ node, className, ...props }) => {
+                    if (String(className || '').includes('forum-mention')) {
+                        return (
+                            <ForumMentionChip username={String((props as { 'data-mention'?: string })['data-mention'] || '')}>
+                                {props.children}
+                            </ForumMentionChip>
+                        )
+                    }
+                    return (
+                        <Link
+                            rel="nofollow noopener noreferrer"
+                            className={className}
+                            {...props}
+                            state={{ newWindow: true }}
+                        />
+                    )
+                },
+                span: ({ node, className, ...props }) => {
+                    const mention = (props as { 'data-mention'?: string })['data-mention']
+                    if (mention || String(className || '').includes('forum-mention')) {
+                        return <ForumMentionChip username={mention}>{props.children}</ForumMentionChip>
+                    }
+                    return <span className={className} {...props} />
                 },
                 img: ZoomImage,
                 ...components,
             }}
         >
-            {cleanMdxContent(replaceMentions(children))}
+            {decorateForumMentions(cleanMdxContent(children))}
         </ReactMarkdown>
     )
 }
