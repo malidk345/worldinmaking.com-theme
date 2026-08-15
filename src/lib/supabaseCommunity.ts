@@ -30,7 +30,11 @@ export interface SupabaseCommunityReply {
     }
 }
 
-export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number | string): Promise<SupabaseCommunityPost[]> {
+export async function fetchSupabaseCommunityPosts(
+    slug?: string,
+    postId?: number | string,
+    options?: { authorId?: string; limit?: number }
+): Promise<SupabaseCommunityPost[]> {
     let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
     if (postId || (slug && !isNaN(Number(slug)))) {
         const idToUse = postId || slug
@@ -40,6 +44,12 @@ export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number
         url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(words)}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
         url += `&title=not.ilike.comment_*`
+    }
+    if (options?.authorId) {
+        url += `&author_id=eq.${encodeURIComponent(options.authorId)}`
+    }
+    if (!postId && !(slug && !isNaN(Number(slug)))) {
+        url += `&limit=${options?.limit ?? 1000}`
     }
     return fetchWithCache(url)
 }
@@ -78,8 +88,9 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
             numReplies: 0,
             profile: {
                 data: {
-                    id: profileObj?.id || '1',
+                    id: profileObj?.id || post.author_id || '1',
                     attributes: {
+                        username: profileObj?.username || '',
                         firstName: username,
                         lastName: '',
                         gravatarURL: avatarUrl,

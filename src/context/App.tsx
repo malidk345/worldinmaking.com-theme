@@ -18,7 +18,6 @@ import useDataPipelinesNav from '../navs/useDataPipelinesNav'
 import useSourcesNav from '../navs/useSourcesNav'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
-import { IconDay, IconLaptop, IconNight } from '@posthog/icons'
 import { themeOptions } from '../hooks/useTheme'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
@@ -1355,7 +1354,8 @@ const appSettings: AppSettings = {
                 width: 600,
                 height: 500,
             },
-            fixed: true,
+            // Regular window — fixed:true draws the full-site bg-black/50 dimmer.
+            fixed: false,
             autoHeight: true,
         },
         position: {
@@ -2667,6 +2667,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 target.tagName === 'INPUT' ||
                 target.tagName === 'TEXTAREA' ||
                 target.shadowRoot ||
+                target.isContentEditable ||
+                target.closest('[contenteditable="true"]') ||
+                target.closest('[role="textbox"]') ||
                 (target instanceof HTMLElement && target.closest('.mdxeditor'))
             ) {
                 return
@@ -2695,56 +2698,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 e.preventDefault()
                 // Open keyboard shortcuts pane
                 safePush('/kbd', { state: { newWindow: true } })
-            }
-
-            // Theme toggle with m key
-            if (e.key === 'm' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                e.preventDefault()
-                e.stopPropagation()
-
-                // Cycle through system -> light -> dark -> system
-                let nextMode: 'system' | 'light' | 'dark'
-                let toastMessage: React.ReactNode
-
-                if (siteSettings.colorMode === 'system') {
-                    nextMode = 'light'
-                    toastMessage = (
-                        <>
-                            <IconDay className="size-5 inline-block mr-1" />
-                            Switched to light mode
-                        </>
-                    )
-                } else if (siteSettings.colorMode === 'light') {
-                    nextMode = 'dark'
-                    toastMessage = (
-                        <>
-                            <IconNight className="size-5 inline-block mr-1" />
-                            Switched to dark mode
-                        </>
-                    )
-                } else {
-                    nextMode = 'system'
-                    toastMessage = (
-                        <>
-                            <IconLaptop className="size-5 inline-block mr-1" />
-                            Switched to system mode
-                        </>
-                    )
-                }
-
-                if (typeof window !== 'undefined' && window.__setPreferredTheme) {
-                    const newTheme = window.__setPreferredTheme(nextMode)
-                    updateSiteSettings({
-                        ...siteSettings,
-                        theme: newTheme as SiteSettings['theme'],
-                        colorMode: nextMode,
-                    })
-                    // Add toast notification
-                    addToast({
-                        description: toastMessage,
-                        duration: 2000,
-                    })
-                }
             }
 
             // Wallpaper cycle with \ key (without Shift)

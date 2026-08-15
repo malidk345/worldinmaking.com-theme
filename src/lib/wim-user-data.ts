@@ -9,6 +9,7 @@ export type WimBookmark = {
     title: string
     description: string
     notes: string
+    savedAt?: string
 }
 
 async function requireUserId(): Promise<string | null> {
@@ -42,6 +43,7 @@ export async function fetchUserBookmarks(userId?: string): Promise<WimBookmark[]
         title: row.post_title || row.post_slug || 'Saved',
         description: '',
         notes: '',
+        savedAt: row.saved_at || '',
     }))
 }
 

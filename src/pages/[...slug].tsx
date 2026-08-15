@@ -27,6 +27,7 @@ const NotebooksListSkeleton = dynamic(
 import HandbookTemplate from '../templates/Handbook'
 import Legal from '../components/Legal'
 import DisplayOptions from '../components/DisplayOptions'
+import Bookmarks from './bookmarks'
 import { SharedChatView } from '../components/Share/SharedChatView'
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
@@ -136,6 +137,8 @@ export default function DynamicSlugPage() {
         element = <IdeasHub key={fullPath} path={fullPath} />
     } else if (rootSegment === 'profile' || rootSegment === 'u') {
         element = <ProfileWrapper key={fullPath} path={fullPath} />
+    } else if (rootSegment === 'community' && slugs[1] === 'profiles') {
+        element = <ProfileWrapper key={fullPath} path={fullPath} />
     } else if (rootSegment === 'notebooks') {
         element = <NotebooksListSkeleton key={fullPath} path={fullPath} />
     } else if (rootSegment === 'questions' || rootSegment === 'forum' || rootSegment === 'community') {
@@ -144,6 +147,8 @@ export default function DynamicSlugPage() {
         element = <Legal key={fullPath} defaultTab={'/' + rootSegment} />
     } else if (rootSegment === 'display-options') {
         element = <DisplayOptions key={fullPath} />
+    } else if (rootSegment === 'bookmarks') {
+        element = <Bookmarks key={fullPath} />
     } else if (rootSegment === 'handbook' || rootSegment === 'docs' || rootSegment === 'manual') {
         const handbookData = {
             data: {

@@ -3,12 +3,13 @@
  * No Squeak/Strapi, no mock fallbacks in production paths.
  */
 import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
+import { handleFromDisplayName } from './profile-path'
 
 export interface SupabasePost {
     id: string
     title: string
     slug: string
-    content: string
+    content?: string
     excerpt?: string
     category?: string
     created_at: string
@@ -45,24 +46,99 @@ function restPostsUrl(query: string): string {
     return `${SUPABASE_URL}/rest/v1/posts?${query}`
 }
 
+/** List/sidebar page size — never dump the whole `posts` table. */
+export const BLOG_LIST_PAGE_SIZE = 10
+const MAX_LIST_LIMIT = 40
+
+/** Columns the listing/sidebar need. Full `content` stays on the detail query. */
+const LIST_SELECT = 'id,title,slug,excerpt,category,created_at,image_url,author,author_avatar,tags'
+const LIST_SELECT_WITH_BODY = `${LIST_SELECT},content`
+
+export type SupabasePostsPage = {
+    posts: SupabasePost[]
+    total: number
+    hasMore: boolean
+}
+
+function clampListLimit(limit?: number): number {
+    const n = Number(limit)
+    if (!Number.isFinite(n)) return BLOG_LIST_PAGE_SIZE
+    return Math.min(MAX_LIST_LIMIT, Math.max(1, Math.floor(n)))
+}
+
+function parseContentRangeTotal(range: string | null): number | null {
+    if (!range) return null
+    const raw = range.split('/')[1]
+    if (!raw || raw === '*') return null
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : null
+}
+
+/**
+ * One page of posts from Supabase. Uses `Prefer: count=exact` so the UI
+ * can paginate without `select=*` / limit=1000.
+ */
+export async function fetchSupabasePostsPage(options?: {
+    limit?: number
+    offset?: number
+    category?: string
+    authorId?: string
+    author?: string
+    includeBody?: boolean
+}): Promise<SupabasePostsPage> {
+    const limit = clampListLimit(options?.limit)
+    const offset = Math.max(0, Math.floor(options?.offset ?? 0))
+    const select = options?.includeBody ? LIST_SELECT_WITH_BODY : LIST_SELECT
+    const parts = [`select=${select}`, `order=created_at.desc`, `limit=${limit}`, `offset=${offset}`]
+    if (options?.category) {
+        parts.push(`category=ilike.*${encodeURIComponent(options.category)}*`)
+    }
+    const authorId = options?.authorId?.trim()
+    const author = options?.author?.trim()
+    if (authorId && author) {
+        parts.push(
+            `or=(author_id.eq.${encodeURIComponent(authorId)},author.ilike.${encodeURIComponent(author)})`
+        )
+    } else if (authorId) {
+        parts.push(`author_id=eq.${encodeURIComponent(authorId)}`)
+    } else if (author) {
+        parts.push(`author=ilike.${encodeURIComponent(author)}`)
+    }
+
+    try {
+        const res = await fetch(restPostsUrl(parts.join('&')), {
+            headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                Prefer: 'count=exact',
+            },
+        })
+        if (!res.ok) {
+            const errText = await res.text().catch(() => '')
+            console.error('[supabaseBlog] fetchSupabasePostsPage', res.status, errText.slice(0, 200))
+            return { posts: [], total: 0, hasMore: false }
+        }
+        const data = await res.json()
+        const posts = Array.isArray(data) ? (data as SupabasePost[]) : []
+        const rangeTotal = parseContentRangeTotal(res.headers.get('content-range'))
+        const total = rangeTotal ?? offset + posts.length + (posts.length === limit ? 1 : 0)
+        return { posts, total, hasMore: offset + posts.length < total }
+    } catch (e) {
+        console.error('[supabaseBlog] fetchSupabasePostsPage', e)
+        return { posts: [], total: 0, hasMore: false }
+    }
+}
+
 export async function fetchSupabasePosts(options?: {
     limit?: number
     offset?: number
     category?: string
+    authorId?: string
+    author?: string
+    includeBody?: boolean
 }): Promise<SupabasePost[]> {
-    try {
-        const limit = options?.limit ?? 1000
-        const offset = options?.offset ?? 0
-        const parts = [`select=*`, `order=created_at.desc`, `limit=${limit}`, `offset=${offset}`]
-        if (options?.category) {
-            parts.push(`category=ilike.*${encodeURIComponent(options.category)}*`)
-        }
-        const data = await fetchWithCache(restPostsUrl(parts.join('&')))
-        return Array.isArray(data) ? data : []
-    } catch (e) {
-        console.error('[supabaseBlog] fetchSupabasePosts', e)
-        return []
-    }
+    const { posts } = await fetchSupabasePostsPage(options)
+    return posts
 }
 
 /**
@@ -146,9 +222,7 @@ export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePos
 
 /** Strapi-shaped row for PostListing / ClientPost / Edition UI */
 export function formatSupabasePostToStrapi(post: SupabasePost) {
-    const avatarUrl =
-        post.author_avatar ||
-        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+    const avatarUrl = post.author_avatar?.trim() || ''
     const imageUrl =
         post.image_url && post.image_url.trim() !== ''
             ? post.image_url
@@ -156,6 +230,7 @@ export function formatSupabasePostToStrapi(post: SupabasePost) {
     const bare = normalizePostSlug(post.slug || post.id)
     const cleanSlug = `/posts/${bare}`
     const folder = categoryToFolder(post.category)
+    const authorHandle = handleFromDisplayName(post.author) || 'worldinmaking'
 
     return {
         id: post.id,
@@ -172,8 +247,9 @@ export function formatSupabasePostToStrapi(post: SupabasePost) {
             authors: {
                 data: [
                     {
-                        id: '1',
+                        id: authorHandle,
                         attributes: {
+                            username: authorHandle,
                             firstName: post.author ? post.author.split(' ')[0] : 'WorldInMaking',
                             lastName: post.author ? post.author.split(' ').slice(1).join(' ') : 'Team',
                             avatar: {

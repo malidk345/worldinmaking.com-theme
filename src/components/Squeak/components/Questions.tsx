@@ -1,12 +1,13 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { Question } from './Question'
 import { QuestionForm } from './QuestionForm'
 import { useQuestions } from 'hooks/useQuestions'
+import HourglassLoader from 'components/HourglassLoader'
 
 type QuestionsProps = {
     slug?: string
     limit?: number
-    profileId?: number
+    profileId?: number | string
     topicId?: number
     showForm?: boolean
     title?: string
@@ -36,12 +37,16 @@ export const Questions = ({
     autoFocus,
     noQuestionsMessage,
 }: QuestionsProps) => {
-    const containerRef = useRef<HTMLDivElement>(null)
-
-    const { questions, fetchMore, refresh, isLoading } = useQuestions({ slug, limit, topicId, profileId })
+    const { questions, fetchMore, refresh, isLoading, isLoadingMore, hasMore } = useQuestions({
+        slug,
+        limit,
+        topicId,
+        profileId,
+    })
     const hasQuestions = questions.data && questions.data.length > 0
     return (
         <div className={className}>
+            {isLoading && <HourglassLoader title="Loading discussions..." />}
             {hasQuestions && title && <h3>{title}</h3>}
             {hasQuestions && (
                 <ul className="not-prose m-0 p-0 list-none mb-6">
@@ -55,6 +60,21 @@ export const Questions = ({
                 </ul>
             )}
             {!isLoading && !hasQuestions && noQuestionsMessage}
+            {hasMore && !isLoading && (
+                <div className="mb-4">
+                    {isLoadingMore ? (
+                        <HourglassLoader title="Loading more discussions..." />
+                    ) : (
+                        <button
+                            type="button"
+                            className="text-sm font-semibold underline text-secondary hover:text-primary"
+                            onClick={() => void fetchMore()}
+                        >
+                            Load more
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/*start + limit < count && (
                     <button disabled={loading} className="squeak-show-more-questions-button" onClick={fetchMore}>

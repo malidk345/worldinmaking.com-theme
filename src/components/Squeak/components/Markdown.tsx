@@ -22,9 +22,9 @@ const replaceMentions = (body: string) => {
     if (!body || typeof body !== 'string') return ''
     return body.replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
         if (username === 'max') {
-            return `[${match}](/community/profiles/${process.env.NEXT_PUBLIC_AI_PROFILE_ID})`
+            return `[${match}](/profile/${process.env.NEXT_PUBLIC_AI_PROFILE_ID})`
         }
-        return `[${match}](/community/profiles/${username.split('/')[1]})`
+        return `[${match}](/profile/${username.split('/')[1]})`
     })
 }
 
@@ -52,7 +52,7 @@ export const Markdown = ({
             transformImageUri={transformImageUri}
             rehypePlugins={[rehypeRaw, rehypeSanitize]}
             className={cn(
-                'markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere]',
+                'markdown prose dark:prose-invert prose-sm max-w-full min-w-0 text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full',
                 !regularText,
                 className
             )}

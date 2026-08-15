@@ -21,7 +21,7 @@ import { Questions } from 'components/Squeak'
 import { useRouter } from 'next/router'
 import qs from 'qs'
 import Breadcrumbs from 'components/Edition/Breadcrumbs'
-import { CallToAction } from 'components/CallToAction'
+import OSButton from 'components/OSButton'
 import { IconFilter, IconSort, IconSpinner } from '@posthog/icons'
 import { NewsletterForm } from 'components/NewsletterForm'
 import BuiltBy from 'components/BuiltBy'
@@ -144,7 +144,10 @@ export const Contributors = ({ contributors }) => {
                 {contributors.map(({ profile_id, image, name, role, profile }) => {
                     return (
                         <Contributor
-                            url={profile_id && `/community/profiles/${profile_id}`}
+                            url={
+                                (profile?.username && `/profile/${encodeURIComponent(profile.username)}`) ||
+                                (profile_id && `/profile/${encodeURIComponent(String(profile_id))}`)
+                            }
                             image={profile?.avatar?.url || image}
                             name={profile ? [profile.firstName, profile.lastName].filter(Boolean).join(' ') : name}
                             key={name}
@@ -167,7 +170,9 @@ const ContributorsSmall = ({ contributors }) => {
                 <ul className="flex list-none !m-0 !p-0 space-x-2">
                     {contributors.map(({ profile_id, name, profile, ...other }) => {
                         const image = profile?.avatar?.url || other?.image
-                        const url = profile_id && `/community/profiles/${profile_id}`
+                        const url =
+                            (profile?.username && `/profile/${encodeURIComponent(profile.username)}`) ||
+                            (profile_id && `/profile/${encodeURIComponent(String(profile_id))}`)
                         const Container = url ? Link : 'div'
                         const gatsbyImage = image && getImage(image)
                         return (
@@ -557,7 +562,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
                         <Filters tag={tag} setTag={setTag} sort={sort} setSort={setSort} activeMenu={activeMenu} />
                         {isLoading ? (
                             <div className="space-y-2">
-                                {Array.from({ length: 20 }).map((_, index) => (
+                                {Array.from({ length: 10 }).map((_, index) => (
                                     <div key={index} className="bg-accent h-8 w-full rounded-md animate-pulse" />
                                 ))}
                             </div>
@@ -578,15 +583,21 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
                             />
                         )}
                         {hasMore && (
-                            <CallToAction
+                            <OSButton
+                                type="button"
                                 disabled={isValidating}
                                 size="sm"
                                 width="full"
+                                hover="background"
                                 className="my-2"
-                                onClick={() => fetchMore()}
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    void fetchMore()
+                                }}
                             >
                                 {isValidating ? <IconSpinner className="size-5 mx-auto animate-spin" /> : 'Load more'}
-                            </CallToAction>
+                            </OSButton>
                         )}
                     </div>
                 }

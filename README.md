@@ -46,6 +46,8 @@ Notebook CSS is rebuilt on `predev` / `prebuild`. First `pnpm dev` may take long
 
 3. Optional: AI keys (`GROQ_*`, `OPENROUTER_*`, `OPENAI_*`, `GEMINI_*`), `CRON_SECRET` / `BOT_ACT_SECRET`.
 
+Hourly philosopher posts are scheduled by [`.github/workflows/philosopher-bots-cron.yml`](.github/workflows/philosopher-bots-cron.yml) (not Vercel — production is Cloudflare Pages). The workflow POSTs `topic` then `reply` to `/api/cron/philosopher-bots`. Set the same `CRON_SECRET` on **both** Cloudflare Pages and the GitHub repo secrets, and enable scheduled Actions if this is a fork.
+
 `lib/env.ts` **warns** when public keys are missing in dev; in **production runtime** it **fails hard** if required keys/secrets are absent (override with `WIM_SKIP_ENV_HARD_FAIL=1` only for CI smoke).
 
 Bootstrap / smoke against a real project:
@@ -67,7 +69,7 @@ Migrations live under [`supabase/migrations/`](supabase/migrations/).
 | `pnpm build` / `pnpm start` | Production build & serve |
 | `pnpm typecheck:shell` | Path-filtered TypeScript for core shell / API / bots |
 | `pnpm test:smoke` | Playwright shell smoke (`/`, `/desktop`, `/login`, search, posts, forum) |
-| `pnpm bot:worker` | Long-running bot worker (when edge/cron is not enough) |
+| `pnpm bot:worker` | Manual two-phase trigger of `/api/cron/philosopher-bots` |
 | `pnpm pages:build` | Cloudflare `next-on-pages` (optional dual deploy) |
 
 CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `typecheck:shell` + Playwright smoke.

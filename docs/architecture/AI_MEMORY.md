@@ -122,6 +122,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-102` | Stream 3 | Blog sidebar pin/settings sat at the bottom of the post | `WindowRouter`, `WindowContent` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-103` | Stream 3 | Soften blog body type: smaller, regular weight | `ReaderView`, `ClientPostMarkdown` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-104` | Stream 3 | Writing UX: no zoom, dock fields to the keyboard | `useKeyboardInset`, `_app`, `_document`, `global.css` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-105` | Stream 5 | Insight-like chart chrome using site tokens only | `ChartArtifactRenderer.tsx`, `NotebookWimBlocks.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-106` | Stream 5 | Hourly philosopher cron dies on CF edge (2 LLM + sequential RSS) | `philosopher-tick.ts`, `api/cron/philosopher-bots.ts`, GH workflow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-107` | Stream 5 | Forum threads: RSS briefing, full thread context, growing debates | `forum-rss.ts`, `philosopher-tick.ts`, `actions/forum.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-108` | Stream 2 | Forum thread detail layout shifts (indent / overflow) | `Question.tsx`, `Reply.tsx`, `Avatar.tsx`, `Inbox` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-109` | Stream 2 | Forum mobile first-load clips; refresh fixes it | `Inbox/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-110` | Stream 4 | Blog list/sidebar must not fetch all posts; page 10 from DB | `supabaseBlog.ts`, `usePaginatedPosts.ts`, `usePosts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-111` | Stream 3 | Blog settings wallpaper + Load more opening a new window | `ReaderView/index.tsx`, `BlogPost.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-112` | Stream 3 | Save button next to blog sidebar settings | `ReaderView/index.tsx`, `BookmarkButton` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-113` | Stream 4 | Profile clicks open the wrong person / login shows own profile | `Profile`, `WindowRouter`, `useProfileData` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-114` | Stream 3 | Remove reputation and pineapple-on-pizza from profile edit | `profile/edit.tsx`, `ProfileView.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-115` | Stream 4 | Profile posts/discussions must be that user's, with hourglass | `ProfileView`, `usePosts`, `useQuestions` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -255,6 +266,76 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 150 - Profile posts and discussions are that author's, with the hourglass
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Profile tabs were listing the latest site-wide posts because `usePosts` ignored the author filter and `profileId` was the URL username, not `author_id`. Posts now query `author_id` / author name; discussions query `community_posts.author_id`. Both tabs always show, empty states are honest, and loading uses the same hourglass as blog/community.
+- **Modified Files:** `HourglassLoader.tsx`, `supabaseBlog.ts`, `supabaseCommunity.ts`, `usePosts.ts`, `useQuestions.tsx`, `Questions.tsx`, `PostsTable.tsx`, `ProfileView.tsx`
+
+### Entry 149 - Profile edit no longer has reputation or pineapple on pizza
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the pineapple-on-pizza toggle from Community → Edit profile and from the ProfileView editor. Reputation badge and pineapple preference are gone from the profile Details block as well.
+- **Modified Files:** `src/pages/community/profile/edit.tsx`, `src/components/Profile/ProfileView.tsx`, `src/pages/community/profiles/me.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 148 - Profile clicks open that author, not whoever is signed in
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** OS windows ignored `/profile/:handle` and `useProfileData` fell back to the logged-in user, so every avatar opened “me”. ProfileWrapper now reads the handle from the window path. `/community/profiles/*` is a profile, not the forum inbox. Forum/blog links use `/profile/:username` (or author_id), never a fake id `1`. Login no longer rewrites the destination to your own profile.
+- **Modified Files:** `src/lib/profile-path.ts`, `src/components/Profile/index.tsx`, `WindowRouter.tsx`, `[...slug].tsx`, `useProfileData.ts`, forum/blog profile links, `tests/profile-path.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/profile-path.spec.ts` — 4 passed.
+
+### Entry 147 - Save sits next to the blog sidebar gear
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Bookmark/save control is now in the ReaderView sidebar action row, immediately left of the settings gear. Tooltip is Save / Saved. Unsigned users get the existing sign-in modal; signed-in users write to `user_saved_posts` via `useUser` add/remove bookmark.
+- **Modified Files:** `src/components/ReaderView/index.tsx`, `src/components/BookmarkButton/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 146 - Blog settings wallpaper gone; Load more stays in the sidebar
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Gear menu no longer has the James/Godzilla background-image picker, and the article no longer paints that wallpaper. Sidebar Load more was a `CallToAction`/`Link` with no `href`; `sanitizeNavigationUrl` turned that into `/` and `addWindow` opened a new desktop window. It is now a real `OSButton` that only fetches the next 10 posts.
+- **Modified Files:** `src/components/ReaderView/index.tsx`, `src/templates/BlogPost.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 145 - Blog list and sidebar page 10 posts from the database
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Blog listing and the post sidebar were calling `fetchSupabasePosts()` with `select=*` and `limit=1000`, then slicing in the client. They now request one page of 10 list columns (`id,title,slug,excerpt,...`, no `content`) with `Prefer: count=exact`. Sidebar Load more fetches the next 10. Command palette searches via `searchSupabasePosts` instead of prefetching the table.
+- **Modified Files:** `src/lib/supabaseBlog.ts`, `src/components/Edition/hooks/usePaginatedPosts.ts`, `src/components/Edition/hooks/usePosts.ts`, `src/templates/PostListing.tsx`, `src/templates/BlogPost.tsx`, `src/components/Blog/BlogPosts/index.tsx`, `src/components/CommandPalette/index.tsx`, `tests/blog-list-page.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Live REST `0-9/108` with no `content` field. `pnpm exec playwright test tests/blog-list-page.spec.ts` — 2 passed.
+
+### Entry 144 - Forum no longer opens 600px-wide on the first mobile paint
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** First mobile visit restored desktop `sideBySide` and set the thread pane to 600px before the window was measured (`width || 1024`). Refresh looked fine because size existed. Inbox now clamps the pane to the container and re-fits on resize. Stacked vs side-by-side stays a user choice in the thread toolbar — mobile side-by-side is still full-width, not forced stacked.
+- **Modified Files:** `src/components/Inbox/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 143 - Forum thread detail no longer shifts sideways
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Forum detail content sat in PostHog's name-column gutter, then sat too close to the window's right edge (5px) and was clipped by the rounded chrome / overlay controls. Flattened the left gutter, gave the thread `pr-8`, cleared `pr-24` for window buttons on the list header, and made ScrollArea/list columns `min-w-0` so they shrink instead of overflowing.
+- **Modified Files:** `Question.tsx`, `Reply.tsx`, `Profile.tsx`, `Avatar.tsx`, `Markdown.tsx`, `Replies.tsx`, `Inbox/index.tsx`, `global.css`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 142 - Forum ticks are briefings and growing threads, not title lotteries
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Philosopher forum quality was the product gap. RSS now pulls ~23 feeds in parallel and builds a briefing (headline + excerpt + neighboring headlines) instead of a random title. Replies load the full transcript and a new voice that has not spoken yet. A live thread keeps growing up to five replies across hours before a new one opens. Forum task types use the full persona card and essay-length trusted instructions.
+- **Modified Files:** `src/lib/bots/forum-rss.ts`, `src/lib/bots/forum-thread.ts`, `src/lib/bots/philosopher-tick.ts`, `src/lib/bots/actions/forum.ts`, `src/lib/persona-engine.ts`, `src/lib/bots/index.ts`, `tests/philosopher-tick.spec.ts`, `tests/groq-token-budget.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `playwright test tests/philosopher-tick.spec.ts tests/groq-token-budget.spec.ts` — 11 passed.
+
+### Entry 141 - Hourly philosopher cron no longer dies on CF Pages
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Production `POST /api/cron/philosopher-bots` was reachable (405/401) but the hourly tick could not finish: one CF Pages request ran sequential RSS (5×8s) plus two `thinkingDepth: 'standard'` LLM writes. Split the tick into `topic` / `reply` phases, race RSS with a 6s budget, resume a half-finished hour instead of opening a second thread, and make GitHub Actions POST the two phases with retries plus a :20 catch-up. Admin trigger uses `waitUntil` when the isolate exposes it.
+- **Modified Files:** `src/lib/bots/philosopher-tick.ts`, `src/pages/api/cron/philosopher-bots.ts`, `src/pages/api/admin/philosopher-bots.ts`, `src/lib/bots/runtime-env.ts`, `src/lib/bots/index.ts`, `.github/workflows/philosopher-bots-cron.yml`, `scripts/bot-worker.js`, `tests/philosopher-tick.spec.ts`, `tests/smoke.spec.ts`, `README.md`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `playwright test tests/philosopher-tick.spec.ts` + cron smoke — 8 passed. `pnpm typecheck:shell` still fails on 8 pre-existing gated errors outside this change.
+
+### Entry 140 - Charts use site tokens, insight-card quiet chrome
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Did not import PostHog LineGraph/Query. Restyled the existing Chart.js renderer: navy series, title outside the canvas, faint grid from `--border`, ticks from `--text-muted`, light line fill. Notebook chart block uses the same card chrome. No new packages.
+- **Modified Files:** `ChartArtifactRenderer.tsx`, `NotebookWimBlocks.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 139 - Typing no longer zooms the page; fields follow the keyboard
 - **Date:** 2026-08-15

@@ -19,6 +19,7 @@ import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
 import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
+import BookmarkButton from 'components/BookmarkButton'
 import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
 
 const MDXRenderer = ({ children }: any) => {
@@ -246,15 +247,6 @@ interface ReaderViewProps {
     className?: string
 }
 
-interface BackgroundImageOption {
-    label: string
-    value: string
-    backgroundImage: string
-    backgroundPosition?: string
-    backgroundRepeat?: 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat'
-    backgroundSize?: string
-}
-
 const contentWidthOptions: ToggleOption[] = [
     {
         label: 'Fixed',
@@ -266,42 +258,6 @@ const contentWidthOptions: ToggleOption[] = [
         label: 'Full',
         value: 'full',
         icon: <IconTextWidth className="size-5" />,
-    },
-]
-
-const backgroundImageOptions: (BackgroundImageOption & ToggleOption)[] = [
-    {
-        label: 'None',
-        value: 'none',
-        backgroundImage: 'none',
-        default: true,
-    },
-    {
-        label: '2',
-        value: 'james',
-        icon: (
-            <img
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png"
-                className="size-5"
-            />
-        ),
-        backgroundImage: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png',
-        backgroundRepeat: 'repeat',
-        backgroundSize: '10%',
-    },
-    {
-        label: '3',
-        value: 'godzilla',
-        icon: (
-            <img
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/Frame_10127_b7362fd913.png"
-                className="size-5"
-            />
-        ),
-        backgroundImage: 'https://res.cloudinary.com/dmukukwp6/image/upload/Frame_10127_b7362fd913.png',
-        backgroundPosition: 'bottom right',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
     },
 ]
 
@@ -425,10 +381,7 @@ const EditHistoryPopover = ({ commits }: { commits: any[] }) => {
 }
 
 const AppOptionsButton = ({ isMdx }: { isMdx: boolean }) => {
-    const { fullWidthContent, setFullWidthContent, setBackgroundImage, backgroundImage } = useReaderView()
-
-    const selectedOption =
-        backgroundImageOptions.find((option) => option.value === backgroundImage) || backgroundImageOptions[0]
+    const { fullWidthContent, setFullWidthContent } = useReaderView()
 
     const handleContentWidthChange = (value: string) => {
         const isFullWidth = value === 'full'
@@ -460,19 +413,6 @@ const AppOptionsButton = ({ isMdx }: { isMdx: boolean }) => {
                         </div>
                     </Fieldset>
                 )}
-
-                <Fieldset legend="Why not?">
-                    <div className="grid grid-cols-2 gap-2">
-                        <ToggleGroup
-                            title="Background image"
-                            options={backgroundImageOptions}
-                            value={selectedOption.value}
-                            onValueChange={(value) => {
-                                setBackgroundImage(value === 'none' ? null : value)
-                            }}
-                        />
-                    </div>
-                </Fieldset>
 
                 <p className="text-[13px]">
                     Toggle light/dark mode in{' '}
@@ -914,6 +854,7 @@ interface LeftSidebarProps {
     sourceInstanceName?: string
     commits?: any[]
     pageUrl: string | undefined
+    saveTitle?: string
     rightActionButtons?: React.ReactNode
     hideAppOptions?: boolean
     productSelect?: React.ReactNode
@@ -1068,6 +1009,7 @@ const LeftSidebar = ({
     sourceInstanceName,
     commits,
     pageUrl,
+    saveTitle,
     rightActionButtons,
     hideAppOptions = false,
     productSelect,
@@ -1394,6 +1336,13 @@ const LeftSidebar = ({
                             <ConditionalMarkdownDropdown pageUrl={pageUrl} />
                             <EditHistoryPopover commits={commits || []} />
                             <EditOnGitHubButton filePath={filePath} sourceInstanceName={sourceInstanceName} />
+                            <BookmarkButton
+                                bookmark={{
+                                    title: saveTitle || 'Untitled',
+                                    description: '',
+                                }}
+                                labels={{ add: 'Save', remove: 'Saved' }}
+                            />
                             {!hideAppOptions && <AppOptionsButton isMdx={isMdx} />}
                             {rightActionButtons}
                         </div>
@@ -1487,7 +1436,7 @@ function ReaderViewContent({
     const contentRef = useRef<HTMLDivElement>(null)
     const articleColumnRef = useRef<HTMLDivElement>(null)
 
-    const { isNavVisible, isTocVisible, isNarrow, fullWidthContent, backgroundImage, toggleNav, toggleToc } =
+    const { isNavVisible, isTocVisible, isNarrow, fullWidthContent, toggleNav, toggleToc } =
         useReaderView()
 
     const showSidebar = !hideRightSidebar
@@ -1501,10 +1450,6 @@ function ReaderViewContent({
     useEffect(() => {
         setMobileNavOpen(false)
     }, [appWindow?.path])
-
-    const selectedBackgroundOption = backgroundImage
-        ? backgroundImageOptions.find((option) => option.value === backgroundImage)
-        : null
 
     const prevPathRef = useRef(appWindow?.path)
 
@@ -1559,9 +1504,6 @@ function ReaderViewContent({
         'flex-col',
         'relative',
         chrome ? 'bg-primary border border-primary rounded m-2' : '',
-        selectedBackgroundOption && selectedBackgroundOption.value !== 'none'
-            ? 'before:absolute before:inset-0 before:bg-primary before:opacity-75 before:pointer-events-none'
-            : '',
         // Left rail already reserves width via flex-basis. Extra pl-[250px] here
         // doubled the offset and shoved the article to the right.
     ]
@@ -1587,6 +1529,7 @@ function ReaderViewContent({
                         sourceInstanceName={sourceInstanceName}
                         commits={commits}
                         pageUrl={appWindow?.path}
+                        saveTitle={title}
                         rightActionButtons={rightActionButtons}
                         hideAppOptions={hideAppOptions}
                         productSelect={productSelect}
@@ -1616,16 +1559,6 @@ function ReaderViewContent({
                     ref={articleColumnRef}
                     data-scheme="primary"
                     className={articleColumnClasses}
-                    style={
-                        selectedBackgroundOption && selectedBackgroundOption.value !== 'none'
-                            ? {
-                                  backgroundImage: `url(${selectedBackgroundOption.backgroundImage})`,
-                                  backgroundRepeat: selectedBackgroundOption.backgroundRepeat || 'repeat',
-                                  backgroundSize: selectedBackgroundOption.backgroundSize || 'auto',
-                                  backgroundPosition: selectedBackgroundOption.backgroundPosition || 'center',
-                              }
-                            : undefined
-                    }
                 >
                     {showMobileNav && (
                         <button

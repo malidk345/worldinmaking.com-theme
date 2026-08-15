@@ -12,6 +12,8 @@ test('chat packs only the selected philosopher, compact by default', () => {
     expect(resolvePersonaDensity('autonomous_assistant', 'standard')).toBe('compact')
     expect(resolvePersonaDensity('autonomous_assistant', 'deep')).toBe('compact')
     expect(resolvePersonaDensity('paper_section', 'standard')).toBe('full')
+    expect(resolvePersonaDensity('thread_init', 'standard')).toBe('full')
+    expect(resolvePersonaDensity('community_reply', 'brief')).toBe('full')
     expect(compact).toContain('Nietzsche')
     expect(compact).not.toMatch(/Marx|Hegel|Sartre/)
     expect(compact.length).toBeLessThan(full.length)

@@ -86,6 +86,20 @@ export function hasCloudflareContext(): boolean {
     }
 }
 
+/** Cloudflare Workers ExecutionContext.waitUntil, if this isolate exposes it. */
+export function getWaitUntil(): ((promise: Promise<unknown>) => void) | null {
+    try {
+        const ctx = getCfRequestContext() as { ctx?: { waitUntil?: (promise: Promise<unknown>) => void } } | null
+        const waitUntil = ctx?.ctx?.waitUntil
+        if (typeof waitUntil === 'function') {
+            return (promise) => waitUntil.call(ctx!.ctx, promise)
+        }
+    } catch {
+        // Not in CF edge context
+    }
+    return null
+}
+
 export function getProviderKeyFlags(store: EnvStore) {
     return {
         groq: !!(envFrom(store, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')),

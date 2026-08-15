@@ -8,92 +8,16 @@ import { Avatar as DefaultAvatar } from 'components/Community/Sidebar'
 import Layout from 'components/Layout'
 import { communityMenu } from '../../../navs'
 import Link from 'components/Link'
-import Switch from 'components/Toggle'
 import { CallToAction } from 'components/CallToAction'
 import { useToast } from '../../../context/Toast'
 import SEO from 'components/seo'
 import { flattenStrapiResponse } from '../../../utils'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { profileBackgrounds } from '../../../data/profileBackgrounds'
-import CloudinaryImage from 'components/CloudinaryImage'
 import { OSInput, OSTextarea } from 'components/OSForm'
-import ConnectedAccounts from 'components/Squeak/components/ConnectedAccounts'
-import { PROFILE_COLORS } from 'constants/profileColors'
-
-function convertCentimetersToInches(centimeters: number): number {
-    return centimeters / 2.54
-}
-
-const HeightField = ({ values, setFieldValue }) => {
-    const [unit, setUnit] = useState('in')
-    const [height, setHeight] = useState(values.height)
-
-    return (
-        <div className="max-w-[170px]">
-            <div className="flex space-x-2 items-end">
-                <OSInput
-                    onChange={(e) => {
-                        const value = Number(e.target.value)
-                        setHeight(value)
-                        setFieldValue('height', unit === 'cm' ? convertCentimetersToInches(value) : value)
-                    }}
-                    value={height}
-                    type="number"
-                    name="height"
-                    placeholder="Height"
-                    label="Height"
-                    direction="column"
-                    size="md"
-                />
-                <div className="flex-grow flex-shrink-0 w-[85px]">
-                    <Toggle
-                        checked={unit === 'in'}
-                        onChange={(checked) => setUnit(checked ? 'in' : 'cm')}
-                        options={['in', 'cm']}
-                    />
-                </div>
-            </div>
-        </div>
-    )
-}
-
-const ToggleButton = ({ onClick, active, label }) => {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={`py-2 z-10 ${active ? 'font-bold text-white' : 'opacity-60'}`}
-        >
-            {label}
-        </button>
-    )
-}
-
-const Toggle = ({ name, label, checked, onChange, options }) => {
-    return (
-        <div>
-            {label && (
-                <label htmlFor={name} className="font-bold">
-                    <span>{label}</span>
-                </label>
-            )}
-            <div className="grid grid-cols-2 rounded-md bg-accent relative text-center overflow-hidden mt-1 text-base border border-input">
-                <span
-                    className={`bg-red dark:bg-yellow w-1/2 h-full absolute transition-all left-0 ${
-                        checked === null ? 'hidden' : checked ? '' : 'translate-x-full'
-                    }`}
-                />
-                <ToggleButton onClick={() => onChange(true)} active={checked === true} label={options[0]} />
-                <ToggleButton onClick={() => onChange(false)} active={checked === false} label={options[1]} />
-            </div>
-        </div>
-    )
-}
 
 function Avatar({ values, setFieldValue, error }) {
     const inputRef = useRef<HTMLInputElement>(null)
     const [imageURL, setImageURL] = useState(values?.avatar?.url)
-    const favoriteColor = values.color
 
     const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
         const file = e.target.files[0]
@@ -116,13 +40,7 @@ function Avatar({ values, setFieldValue, error }) {
 
     return (
         <div
-            className={`relative w-full aspect-square rounded-full flex justify-center items-center border-[1.5px] ${
-                favoriteColor
-                    ? imageURL
-                        ? `bg-${favoriteColor} border-primary dark:`
-                        : `border-${favoriteColor} dark:border-${favoriteColor}`
-                    : `border-primary dark:`
-            }  text-black/50 dark:text-white/50 overflow-hidden group ${error ? '' : '-mb-2'}`}
+            className={`relative w-full aspect-square rounded-full flex justify-center items-center border-[1.5px] border-primary text-black/50 dark:text-white/50 overflow-hidden group ${error ? '' : '-mb-2'}`}
         >
             {imageURL ? (
                 <img className="w-full absolute inset-0 object-cover" src={imageURL} />
@@ -185,20 +103,6 @@ const formSections = [
                 label: 'Location',
                 className: 'w-full sm:w-1/2',
             },
-            pineappleOnPizza: {
-                className: 'w-full sm:w-1/2',
-                component: ({ values, setFieldValue }) => {
-                    return (
-                        <Toggle
-                            name="pineappleOnPizza"
-                            label="Does pineapple belong on pizza?"
-                            checked={values.pineappleOnPizza}
-                            onChange={(checked) => setFieldValue('pineappleOnPizza', checked)}
-                            options={['Yes', 'No']}
-                        />
-                    )
-                },
-            },
             pronouns: {
                 className: 'w-full sm:w-1/2',
                 component: ({ values, setFieldValue }) => {
@@ -224,93 +128,26 @@ const formSections = [
                     )
                 },
             },
-            color: {
-                label: 'Favorite color',
+            username: {
+                type: 'text',
+                label: 'Username',
                 className: 'w-full',
-                component: ({ values, setFieldValue }) => {
-                    return (
-                        <>
-                            <label className="font-bold">Pick your favorite color</label>
-                            <ul className="list-none m-0 p-0 mt-2 flex space-x-1">
-                                {PROFILE_COLORS.map((color) => {
-                                    const active = values.color === color
-                                    return (
-                                        <li key={color} onClick={() => setFieldValue('color', color)}>
-                                            <button
-                                                type="button"
-                                                className={`w-6 h-6 rounded-full bg-${color} border-[1.5px] ${
-                                                    active ? 'border-black dark:border-white' : 'border-transparent'
-                                                }`}
-                                            />
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                        </>
-                    )
-                },
             },
-        },
-    },
-    {
-        title: 'Profile background',
-        fields: {
-            backgroundImage: {
-                label: 'Choose a background for your profile',
-                className: 'w-full',
-                component: ({ values, setFieldValue }) => {
-                    const currentBg = values.backgroundImage
-                    return (
-                        <>
-                            <label className="font-bold">Choose a background for your profile</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
-                                {profileBackgrounds.map((bg) => {
-                                    const isSelected = currentBg?.id === bg.id
-                                    return (
-                                        <button
-                                            key={bg.id}
-                                            type="button"
-                                            onClick={() =>
-                                                setFieldValue('backgroundImage', {
-                                                    id: bg.id,
-                                                    url: bg.url,
-                                                    backgroundSize: bg.backgroundSize,
-                                                    backgroundRepeat: bg.backgroundRepeat,
-                                                    backgroundPosition: bg.backgroundPosition,
-                                                })
-                                            }
-                                            className={`relative overflow-hidden rounded-md border-2 ${
-                                                isSelected ? 'border-red dark:border-yellow' : 'border-input'
-                                            } transition-all hover:scale-105`}
-                                        >
-                                            <div
-                                                className="aspect-video w-full"
-                                                style={{
-                                                    backgroundImage: `url(${bg.url})`,
-                                                    backgroundSize: bg.backgroundSize || 'auto',
-                                                    backgroundRepeat: bg.backgroundRepeat || 'no-repeat',
-                                                    backgroundPosition: bg.backgroundPosition || 'center',
-                                                }}
-                                            />
-                                            <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1">
-                                                {bg.name}
-                                            </span>
-                                        </button>
-                                    )
-                                })}
-                                {currentBg && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setFieldValue('backgroundImage', null)}
-                                        className="relative overflow-hidden rounded-md border-2 border-input transition-all hover:scale-105 flex items-center justify-center aspect-video bg-accent"
-                                    >
-                                        <span className="text-sm font-bold">Remove background</span>
-                                    </button>
-                                )}
-                            </div>
-                        </>
-                    )
-                },
+            birthDate: {
+                className: 'w-full sm:w-1/2',
+                component: ({ values, setFieldValue, error }) => (
+                    <OSInput
+                        type="date"
+                        name="birthDate"
+                        label="Date of birth"
+                        value={values.birthDate || ''}
+                        onChange={(e) => setFieldValue('birthDate', e.target.value || '')}
+                        direction="column"
+                        size="md"
+                        touched={!!error}
+                        error={error}
+                    />
+                ),
             },
         },
     },
@@ -362,98 +199,15 @@ const formSections = [
             },
         },
     },
-    {
-        modOnly: true,
-        title: 'Special moderator things!',
-        subtitle: 'We use these fields for different things.',
-        fields: {
-            companyRole: {
-                label: 'Role',
-                placeholder: 'Software engineer',
-                className: 'w-full',
-            },
-            country: {
-                className: 'w-full',
-                component: ({ values, setFieldValue }) => {
-                    return (
-                        <div className="grid sm:flex justify-between">
-                            <OSInput
-                                label="Country code (2 digit ISO)"
-                                name="country"
-                                onChange={(e) => setFieldValue('country', e.target.value)}
-                                placeholder="US"
-                                type="text"
-                                value={values['country']}
-                                width="auto"
-                                direction="column"
-                                size="md"
-                                className="max-w-[72px]"
-                            />
-                            <Link href="https://countrycode.org/"
-                                externalNoIcon
-                                className="font-bold text-sm sm:mt-0 mt-1"
-                            >
-                                Look up your country code
-                            </Link>
-                        </div>
-                    )
-                },
-            },
-            height: {
-                label: 'Height',
-                className: 'w-full',
-                component: HeightField,
-            },
-            amaEnabled: {
-                className: 'w-full',
-                component: ({ values, setFieldValue }) => {
-                    return (
-                        <div className="flex space-x-2 space-between w-full">
-                            <div className="flex-grow">
-                                <p className="font-bold m-0">Show comments</p>
-                                <p className="m-0">
-                                    Let visitors comment on your profile. You'll get comment notifications via email.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={values.amaEnabled}
-                                onChange={() => setFieldValue('amaEnabled', !values.amaEnabled)}
-                            />
-                        </div>
-                    )
-                },
-            },
-        },
-    },
-    {
-        modOnly: true,
-        title: 'README',
-        fields: {
-            readme: {
-                component: ({ values, setFieldValue, error }) => (
-                    <OSTextarea
-                        value={values.readme}
-                        onChange={(e) => setFieldValue('readme', e.target.value)}
-                        rows={6}
-                        name="readme"
-                        label="How can we best work with you?"
-                        placeholder="I typically work best when..."
-                        description="Supports Markdown"
-                        direction="column"
-                        size="md"
-                        touched={!!error}
-                        error={error}
-                    />
-                ),
-                className: 'w-full',
-            },
-        },
-    },
 ]
 
 const ValidationSchema = Yup.object().shape({
     firstName: Yup.string().required('Required'),
-    lastName: Yup.string().required('Required'),
+    lastName: Yup.string().nullable(),
+    username: Yup.string()
+        .required('Required')
+        .matches(/^[A-Za-z0-9_-]{2,32}$/, '2–32 letters, numbers, _ or -'),
+    birthDate: Yup.string().nullable(),
     website: Yup.string().url('Invalid URL').nullable(),
     github: Yup.string().url('Invalid URL').nullable(),
     linkedin: Yup.string().url('Invalid URL').nullable(),
@@ -500,6 +254,9 @@ function EditProfile({ profile, mutate }) {
 
             const { updateWimProfile } = await import('lib/wim-auth')
             const patch: Record<string, string | null> = {
+                username: String(values.username || '').trim() || null,
+                first_name: String(values.firstName || '').trim() || null,
+                last_name: String(values.lastName || '').trim() || null,
                 bio: values.biography ?? null,
                 location: values.location ?? null,
                 website: values.website ?? null,
@@ -507,14 +264,10 @@ function EditProfile({ profile, mutate }) {
                 linkedin: values.linkedin ?? null,
                 twitter: values.twitter ?? null,
                 pronouns: values.pronouns ?? null,
+                birth_date: values.birthDate ? String(values.birthDate).slice(0, 10) : null,
             }
             if (avatarUrl !== undefined) {
                 patch.avatar_url = avatarUrl || null
-            }
-            // Prefer username from first+last if present
-            if (values.firstName || values.lastName) {
-                const uname = [values.firstName, values.lastName].filter(Boolean).join(' ').trim()
-                if (uname) patch.username = uname.replace(/\s+/g, '_').toLowerCase().slice(0, 32)
             }
 
             const { error } = await updateWimProfile(id, patch as any)
@@ -551,20 +304,7 @@ function EditProfile({ profile, mutate }) {
 
     return (
         <ScrollArea>
-            <div
-                data-scheme="primary"
-                className="bg-primary min-h-full"
-                style={
-                    values.backgroundImage
-                        ? {
-                              backgroundImage: `url(${values.backgroundImage.url})`,
-                              backgroundSize: values.backgroundImage.backgroundSize || 'auto',
-                              backgroundRepeat: values.backgroundImage.backgroundRepeat || 'no-repeat',
-                              backgroundPosition: values.backgroundImage.backgroundPosition || 'center',
-                          }
-                        : undefined
-                }
-            >
+            <div data-scheme="primary" className="bg-primary min-h-full">
                 <SEO noindex title="Edit profile - PostHog" />
                 <section className="max-w-2xl mx-auto py-12 px-4 bg-primary/90 backdrop-blur-sm rounded-lg">
                     <form className="m-0 space-y-6" onSubmit={handleSubmit}>
@@ -611,9 +351,6 @@ function EditProfile({ profile, mutate }) {
                             Update
                         </CallToAction>
                     </form>
-                    <div className="mt-8 pt-6 border-t border-border">
-                        <ConnectedAccounts />
-                    </div>
                 </section>
             </div>
         </ScrollArea>

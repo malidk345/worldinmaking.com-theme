@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
+    BLOG_LIST_PAGE_SIZE,
     categoryToFolder,
-    fetchSupabasePosts,
+    fetchSupabasePostsPage,
     formatSupabasePostToStrapi,
 } from 'lib/supabaseBlog'
 
-const POSTS_PER_PAGE = 20
+const POSTS_PER_PAGE = BLOG_LIST_PAGE_SIZE
 
 interface UsePaginatedPostsProps {
     params?: any
@@ -13,9 +14,19 @@ interface UsePaginatedPostsProps {
     onPageChange?: (page: number) => void
 }
 
+function categoryFromParams(params: any): string | undefined {
+    const root =
+        params?.filters?.post_category?.folder?.$eq ||
+        params?.filters?.post_category?.folder?.$eqi ||
+        params?.root ||
+        null
+    if (!root || typeof root !== 'string') return undefined
+    if (root === 'blog' || root === 'posts') return undefined
+    return root
+}
+
 /**
- * Blog/posts listing — Supabase `posts` only (no Squeak, no mock list).
- * Client-side page slice; full set loaded once (WIM ~100 posts is fine).
+ * Blog/posts listing — one page from Supabase, never the full table.
  */
 export const usePaginatedPosts = ({
     params,
@@ -23,64 +34,46 @@ export const usePaginatedPosts = ({
     onPageChange,
 }: UsePaginatedPostsProps = {}) => {
     const [currentPage, setCurrentPage] = useState(0)
-    const [allPosts, setAllPosts] = useState<any[]>([])
+    const [posts, setPosts] = useState<any[]>([])
+    const [total, setTotal] = useState(0)
     const [loaded, setLoaded] = useState(false)
     const [error, setError] = useState<Error | undefined>()
+    const category = categoryFromParams(params)
 
-    const load = useCallback(async () => {
-        setLoaded(false)
-        try {
-            const rows = await fetchSupabasePosts()
-            setAllPosts((rows || []).map(formatSupabasePostToStrapi))
-            setError(undefined)
-        } catch (e) {
-            console.error('[usePaginatedPosts]', e)
-            setAllPosts([])
-            setError(e instanceof Error ? e : new Error('Failed to load posts'))
-        } finally {
-            setLoaded(true)
-        }
-    }, [])
+    const load = useCallback(
+        async (page: number) => {
+            setLoaded(false)
+            try {
+                const { posts: rows, total: count } = await fetchSupabasePostsPage({
+                    limit: pageSize,
+                    offset: page * pageSize,
+                    category,
+                })
+                setPosts((rows || []).map(formatSupabasePostToStrapi))
+                setTotal(count)
+                setError(undefined)
+            } catch (e) {
+                console.error('[usePaginatedPosts]', e)
+                setPosts([])
+                setTotal(0)
+                setError(e instanceof Error ? e : new Error('Failed to load posts'))
+            } finally {
+                setLoaded(true)
+            }
+        },
+        [pageSize, category]
+    )
 
     useEffect(() => {
-        void load()
-    }, [load])
+        void load(currentPage)
+    }, [load, currentPage])
 
-    // Optional filter from PostListing params (root folder / category)
-    const filtered = useMemo(() => {
-        let list = allPosts
-        const root =
-            params?.filters?.post_category?.folder?.$eq ||
-            params?.filters?.post_category?.folder?.$eqi ||
-            params?.root ||
-            null
-        if (root && typeof root === 'string') {
-            list = list.filter((p) => {
-                const folder = p?.attributes?.post_category?.data?.attributes?.folder
-                // "posts" and "blog" are interchangeable for WIM
-                if (root === 'blog' || root === 'posts') {
-                    return folder === 'blog' || folder === 'posts' || !folder
-                }
-                return folder === root
-            })
-        }
-        // Sort: newest default; popularity ignored without scores
-        const sort = params?.sort
-        if (Array.isArray(sort) && sort[0]?.includes('date')) {
-            list = [...list].sort((a, b) =>
-                String(b.attributes?.date || '').localeCompare(String(a.attributes?.date || ''))
-            )
-        }
-        return list
-    }, [allPosts, params])
-
-    const total = filtered.length
     const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1)
     const safePage = Math.min(currentPage, totalPages - 1)
-    const pagePosts = useMemo(() => {
-        const start = safePage * pageSize
-        return filtered.slice(start, start + pageSize)
-    }, [filtered, safePage, pageSize])
+
+    useEffect(() => {
+        if (currentPage > safePage) setCurrentPage(safePage)
+    }, [currentPage, safePage])
 
     const hasNextPage = safePage < totalPages - 1
     const hasPrevPage = safePage > 0
@@ -95,17 +88,15 @@ export const usePaginatedPosts = ({
     )
 
     const nextPage = useCallback(() => {
-        if (hasNextPage) {
-            setCurrentPage((p) => p + 1)
-            onPageChange?.(currentPage + 1)
-        }
+        if (!hasNextPage) return
+        setCurrentPage((p) => p + 1)
+        onPageChange?.(currentPage + 1)
     }, [hasNextPage, currentPage, onPageChange])
 
     const prevPage = useCallback(() => {
-        if (hasPrevPage) {
-            setCurrentPage((p) => p - 1)
-            onPageChange?.(currentPage - 1)
-        }
+        if (!hasPrevPage) return
+        setCurrentPage((p) => p - 1)
+        onPageChange?.(currentPage - 1)
     }, [hasPrevPage, currentPage, onPageChange])
 
     const reset = useCallback(() => {
@@ -118,7 +109,7 @@ export const usePaginatedPosts = ({
     }, [params])
 
     return {
-        posts: pagePosts,
+        posts,
         isLoading: !loaded,
         isValidating: false,
         error,
@@ -132,11 +123,10 @@ export const usePaginatedPosts = ({
         prevPage,
         goToPage,
         reset,
-        mutate: load,
-        /** full unfiltered count for debugging */
+        mutate: () => load(currentPage),
         _source: 'supabase' as const,
         _categoryFolders: Array.from(
-            new Set(allPosts.map((p) => categoryToFolder(p?.attributes?.post_category?.data?.attributes?.label)))
+            new Set(posts.map((p) => categoryToFolder(p?.attributes?.post_category?.data?.attributes?.label)))
         ),
     }
 }

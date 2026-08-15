@@ -1,24 +1,18 @@
-import React, { ChangeEvent, useEffect, useRef, useState, useCallback, useContext, useMemo } from 'react'
-import MarkdownLogo from './MarkdownLogo'
+import React, { useEffect, useRef, useState, useCallback, useContext, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import Spinner from 'components/Spinner'
-import Markdown from './Markdown'
 import slugify from 'slugify'
-import { Edit } from 'components/Icons'
-import Tooltip from 'components/RadixUI/Tooltip'
 import { isURL } from 'lib/utils'
 import { CurrentQuestionContext } from './Question'
 import Avatar from './Avatar'
 import { AnimatePresence, motion } from 'framer-motion'
 import { IconFeatures, IconImage, IconX } from '@posthog/icons'
 import groupBy from 'lodash/groupBy'
-import OSTextarea from 'components/OSForm/textarea'
 import OSButton from 'components/OSButton'
 
 const buttons = [
     {
-        cursor: -2,
-        replaceWith: (selectedText: string) => `**${selectedText}**`,
+        command: 'bold' as const,
         icon: (
             <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -30,8 +24,7 @@ const buttons = [
         tooltipContent: 'Bold',
     },
     {
-        cursor: -1,
-        replaceWith: (selectedText: string) => `*${selectedText}*`,
+        command: 'italic' as const,
         icon: (
             <svg width="4" height="13" viewBox="0 0 4 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -43,8 +36,7 @@ const buttons = [
         tooltipContent: 'Italic',
     },
     {
-        cursor: -4,
-        replaceWith: (selectedText: string) => `\n\`\`\`\n${selectedText}\n\`\`\``,
+        command: 'code' as const,
         icon: (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -60,8 +52,7 @@ const buttons = [
         tooltipContent: 'Code',
     },
     {
-        cursor: -1,
-        replaceWith: (selectedText: string) => `[${selectedText}]()`,
+        command: 'link' as const,
         icon: (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clipPath="url(#clip0_3781_82365)">
@@ -213,6 +204,19 @@ const MentionProfiles = ({ onSelect, onClose, body, ...other }) => {
     )
 }
 
+function emptyHtmlToValue(html: string) {
+    const text = html
+        .replace(/<br\s*\/?>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    return text ? html : ''
+}
+
+function selectedText() {
+    return typeof window === 'undefined' ? '' : window.getSelection()?.toString() || ''
+}
+
 export default function RichText({
     initialValue = '',
     setFieldValue,
@@ -220,36 +224,60 @@ export default function RichText({
     values,
     onSubmit,
     maxLength = 2000,
-    preview = true,
     label = '',
     mentions = false,
     bodyKey = 'body',
     className = '',
     cta = React.ReactNode,
 }: any) {
-    const textarea = useRef<HTMLTextAreaElement>(null)
+    const editorRef = useRef<HTMLDivElement>(null)
     const [value, setValue] = useState(initialValue)
-    const [cursor, setCursor] = useState<number | null>(null)
+    const [plainLength, setPlainLength] = useState(0)
     const [imageLoading, setImageLoading] = useState(false)
-    const [showPreview, setShowPreview] = useState(false)
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
     const mentionProfilesRef = useRef<HTMLDivElement>(null)
+
+    const syncFromEditor = useCallback(() => {
+        const el = editorRef.current
+        if (!el) return
+        const html = emptyHtmlToValue(el.innerHTML)
+        const length = (el.innerText || '').replace(/\u200b/g, '').trimEnd().length
+        setValue(html)
+        setPlainLength(length)
+        setFieldValue(bodyKey, html)
+    }, [bodyKey, setFieldValue])
+
+    const focusEditor = () => editorRef.current?.focus()
+
+    const applyFormat = (command: 'bold' | 'italic' | 'code' | 'link') => {
+        focusEditor()
+        if (command === 'bold' || command === 'italic') {
+            document.execCommand(command, false)
+        } else if (command === 'code') {
+            const text = selectedText() || 'code'
+            document.execCommand('insertHTML', false, `<code>${text}</code>&nbsp;`)
+        } else if (command === 'link') {
+            const url = window.prompt('Link URL')
+            if (url) document.execCommand('createLink', false, url)
+        }
+        syncFromEditor()
+    }
 
     const onDrop = useCallback(
         async (acceptedFiles) => {
             const file = acceptedFiles[0]
+            if (!file) return
             const fakeImagePath = `/${Date.now()}/${slugify(file.name)}`
+            const objectURL = URL.createObjectURL(file)
             setFieldValue('images', [
-                ...values.images,
-                {
-                    fakeImagePath,
-                    file,
-                    objectURL: URL.createObjectURL(file),
-                },
+                ...(values.images || []),
+                { fakeImagePath, file, objectURL },
             ])
-            setValue(value + `![${file.name}](${fakeImagePath})`)
+            focusEditor()
+            document.execCommand('insertHTML', false, `<img src="${objectURL}" alt="${file.name}" />`)
+            syncFromEditor()
         },
-        [value]
+        [setFieldValue, syncFromEditor, values.images]
     )
 
     const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
@@ -260,76 +288,47 @@ export default function RichText({
         accept: { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/gif': ['.gif'] },
     })
 
-    const replaceSelection = (selectionStart?: number, selectionEnd?: number, text = '', value: string) => {
-        return value.substring(0, selectionStart) + text + value.substring(selectionEnd, value.length)
-    }
-
-    const getTextSelection = () => {
-        const selectionStart = textarea?.current?.selectionStart
-        const selectionEnd = textarea?.current?.selectionEnd
-        const selectedText = textarea?.current?.value.slice(selectionStart, selectionEnd)
-        return { selectedText, selectionStart, selectionEnd }
-    }
-
-    const handleClick = (
-        e: React.MouseEvent<HTMLButtonElement>,
-        replaceWith: (text: string) => string,
-        cursor: number
-    ) => {
-        e.preventDefault()
-
-        const { selectionStart, selectionEnd, selectedText } = getTextSelection()
-        textarea?.current?.focus()
-        setValue((prevValue) => replaceSelection(selectionStart, selectionEnd, replaceWith(selectedText), prevValue))
-        setCursor(cursor)
-    }
-
-    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-        setValue(e.target.value)
-    }
-
-    const replaceSelectionWithLink = (url: string) => {
-        const { selectionStart, selectionEnd, selectedText } = getTextSelection()
-        if (selectedText) {
-            textarea?.current?.focus()
-            setValue((prevValue) =>
-                replaceSelection(selectionStart, selectionEnd, `[${selectedText}](${url})`, prevValue)
-            )
-        }
-    }
-
-    const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        const text = e.clipboardData.getData('text')
-        if (text && isURL(text)) {
-            replaceSelectionWithLink(text)
-        }
+    const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
         const images = Array.from(e.clipboardData.items).filter((item) =>
             ['image/jpeg', 'image/png'].includes(item.type)
         )
         if (images.length > 0) {
+            e.preventDefault()
             const image = images[0].getAsFile()
-            await onDrop([image])
+            if (image) await onDrop([image])
+            return
+        }
+        const text = e.clipboardData.getData('text/plain')
+        if (text && isURL(text) && selectedText()) {
+            e.preventDefault()
+            document.execCommand('createLink', false, text)
+            syncFromEditor()
         }
     }
 
     useEffect(() => {
-        if (cursor && textarea.current) {
-            textarea.current.focus()
-            textarea.current.setSelectionRange(
-                textarea.current.value.length + cursor,
-                textarea.current.value.length + cursor
-            )
-            setCursor(null)
-        }
-    }, [cursor])
+        const el = editorRef.current
+        if (!el) return
+        if (autoFocus) el.focus()
+        if (!initialValue || el.innerHTML) return
+        el.innerHTML = /^\s*</.test(initialValue)
+            ? initialValue
+            : initialValue.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>')
+        syncFromEditor()
+    }, [autoFocus, initialValue, syncFromEditor])
 
-    useEffect(() => {
-        setFieldValue(bodyKey, value)
-    }, [value])
-
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onSubmit) {
+            e.preventDefault()
             onSubmit()
+        }
+        if (e.key === 'b' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            applyFormat('bold')
+        }
+        if (e.key === 'i' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            applyFormat('italic')
         }
         if (e.key === '@' && e.shiftKey) {
             setShowMentionProfiles(true)
@@ -343,28 +342,22 @@ export default function RichText({
     }
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' || e.key === ' ') {
-                setShowMentionProfiles(false)
-            }
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowMentionProfiles(false)
         }
-
-        window.addEventListener('keydown', handleKeyDown)
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
     }, [])
 
-    const handleProfileSelect = (profile, selectionStart) => {
-        const { selectionEnd } = getTextSelection()
+    const handleProfileSelect = (profile) => {
         const mention =
             profile.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
                 ? `@max `
                 : `@${profile.attributes.firstName.trim().toLowerCase().replace(' ', '_')}/${profile.id} `
-        setValue((prevValue) => replaceSelection(selectionStart, selectionEnd, mention, prevValue))
+        focusEditor()
+        document.execCommand('insertText', false, mention)
         setShowMentionProfiles(false)
-        textarea.current?.focus()
+        syncFromEditor()
     }
 
     return (
@@ -386,10 +379,13 @@ export default function RichText({
                                         icon={button.icon}
                                         iconClassName="size-5 justify-center items-center flex"
                                         className="!text-secondary hover:!text-primary"
-                                        tooltip={!imageLoading && !showPreview ? button.tooltipContent : undefined}
+                                        tooltip={!imageLoading ? button.tooltipContent : undefined}
                                         tooltipDelay={500}
-                                        disabled={imageLoading || showPreview}
-                                        onClick={(e) => handleClick(e, button.replaceWith, button.cursor)}
+                                        disabled={imageLoading}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault()
+                                            applyFormat(button.command)
+                                        }}
                                     />
                                 </li>
                             )
@@ -399,11 +395,11 @@ export default function RichText({
                                 type="button"
                                 variant="default"
                                 size="md"
-                                disabled={imageLoading || showPreview}
+                                disabled={imageLoading}
                                 icon={<IconImage />}
                                 iconClassName="size-5 justify-center items-center flex"
                                 className="!text-secondary hover:!text-primary"
-                                tooltip={!imageLoading && !showPreview ? 'Image' : undefined}
+                                tooltip={!imageLoading ? 'Image' : undefined}
                                 tooltipDelay={500}
                                 onClick={(e) => {
                                     e.preventDefault()
@@ -411,72 +407,8 @@ export default function RichText({
                                 }}
                             />
                         </li>
-                        {preview && (
-                            <>
-                                <li className="!ml-auto">
-                                    <OSButton
-                                        type="button"
-                                        variant="default"
-                                        size="md"
-                                        icon={<Edit />}
-                                        iconClassName="size-5 justify-center items-center flex"
-                                        tooltip="Edit"
-                                        onClick={() => setShowPreview(false)}
-                                        active={!showPreview}
-                                        type="button"
-                                    />
-                                </li>
-                                <li>
-                                    <OSButton
-                                        type="button"
-                                        variant="default"
-                                        size="md"
-                                        icon={
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={1.5}
-                                                stroke="currentColor"
-                                                className="w-5 h-5"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                                                />
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                                />
-                                            </svg>
-                                        }
-                                        tooltip="Preview"
-                                        onClick={() => setShowPreview(true)}
-                                        active={showPreview}
-                                        iconClassName="size-5 justify-center items-center flex"
-                                        type="button"
-                                    />
-                                </li>
-                            </>
-                        )}
                     </ul>
                 </div>
-                {showPreview ? (
-                    <div className="bg-primary text-primary text-base h-[200px] px-3 py-2 resize-none w-full outline-none focus:ring-0 overflow-auto border border-primary border-t-0">
-                        <Markdown
-                            transformImageUri={(fakeImagePath) => {
-                                const objectURL = values.images.find(
-                                    (image) => image.fakeImagePath === fakeImagePath
-                                )?.objectURL
-                                return objectURL || fakeImagePath
-                            }}
-                        >
-                            {value}
-                        </Markdown>
-                    </div>
-                ) : (
                     <div className="relative border border-primary border-t-0 rounded-b">
                         {mentions && (
                             <AnimatePresence>
@@ -484,10 +416,10 @@ export default function RichText({
                                     <div ref={mentionProfilesRef} onClick={(e) => e.stopPropagation()}>
                                         <MentionProfiles
                                             body={value}
-                                            selectionStart={textarea.current?.selectionStart}
+                                            selectionStart={0}
                                             onClose={() => {
                                                 setShowMentionProfiles(false)
-                                                textarea.current?.focus()
+                                                focusEditor()
                                             }}
                                             onSelect={handleProfileSelect}
                                         />
@@ -498,22 +430,18 @@ export default function RichText({
                         {label && !!value && (
                             <label className="text-sm opacity-60 block font-medium mb-1">{label}</label>
                         )}
-                        <OSTextarea
-                            onPaste={handlePaste}
-                            disabled={imageLoading}
-                            autoFocus={autoFocus}
-                            className={`w-full [field-sizing:content] border-none rounded-b min-h-40 markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold max-h-[500px] break-words [overflow-wrap:anywhere] ${className}`}
-                            onBlur={(e) => e.preventDefault()}
-                            name="body"
-                            value={value}
-                            onChange={handleChange}
-                            ref={textarea}
-                            required
+                        <div
                             id="body"
-                            placeholder={'Type more details...'}
-                            maxLength={maxLength}
+                            ref={editorRef}
+                            contentEditable={!imageLoading}
+                            role="textbox"
+                            aria-multiline="true"
+                            data-placeholder="Type more details..."
+                            suppressContentEditableWarning
+                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full ${className}`}
+                            onInput={syncFromEditor}
+                            onPaste={handlePaste}
                             onKeyDown={handleKeyDown}
-                            showLabel={false}
                         />
 
                         {isDragActive && (
@@ -522,7 +450,6 @@ export default function RichText({
                             </div>
                         )}
                     </div>
-                )}
 
                 {imageLoading && (
                     <div className="w-full h-full inset-0 bg-white/50 dark:bg-black/50 absolute flex justify-center items-center">
@@ -534,18 +461,8 @@ export default function RichText({
                     <div className="flex gap-2 items-center">{typeof cta === 'function' ? cta() : cta}</div>
                     <aside className="flex items-center gap-2">
                         <span className="text-xs opacity-70 text-primary">
-                            {values[bodyKey]?.length} / {maxLength}
+                            {plainLength} / {maxLength}
                         </span>
-
-                        <a
-                            className="text-muted hover:text-secondary"
-                            href="https://www.markdownguide.org/cheat-sheet/"
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Supports Markdown syntax"
-                        >
-                            <MarkdownLogo />
-                        </a>
                     </aside>
                 </div>
             </div>

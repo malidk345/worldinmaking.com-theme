@@ -49,7 +49,7 @@ export const Replies = ({ expanded, setExpanded, isInForum = false }: RepliesPro
     const isOP = profile?.data?.id === user?.profile?.id
 
     return replies && replies.data.length > 0 ? (
-        <ul className={`${isInForum ? '' : 'ml-5'} !mb-0 p-0 list-none`}>
+        <ul className={`${isInForum ? 'min-w-0' : 'ml-5'} !mb-0 p-0 list-none`}>
             {expanded || replies.data.length < 3 || (isInForum && !resolvedBy?.data?.id) ? (
                 <Expanded replies={replies} resolvedBy={resolvedBy?.data?.id} isOP={isOP} isInForum={isInForum} />
             ) : (
@@ -150,8 +150,10 @@ const Collapsed = ({ setExpanded, replies, resolvedBy, isInForum }: CollapsedPro
 
             <li
                 key={reply?.id}
-                className={`pr-[5px] pl-[30px] !mb-0 relative ${
-                    isInForum ? '' : 'border-l border-solid border-primary squeak-left-border before:border-l-0'
+                className={`!mb-0 relative min-w-0 ${
+                    isInForum
+                        ? 'pl-5 pr-8'
+                        : 'pr-[5px] pl-[30px] border-l border-solid border-primary squeak-left-border before:border-l-0'
                 }`}
             >
                 <Reply reply={reply} badgeText={badgeText} isInForum={isInForum} />
@@ -189,10 +191,10 @@ const Expanded = ({ replies, isInForum }: ExpandedProps) => {
                 return (
                     <li
                         key={reply.id}
-                        className={`pr-[5px] !mb-0 relative pb-4 border-primary ${
+                        className={`!mb-0 relative pb-4 border-primary min-w-0 ${
                             isInForum
-                                ? 'border-t pt-4 px-5'
-                                : 'border-l border-solid squeak-left-border before:border-l-0 pl-[30px]'
+                                ? 'border-t pt-4 pl-5 pr-8'
+                                : 'pr-[5px] border-l border-solid squeak-left-border before:border-l-0 pl-[30px]'
                         } ${getComunityClasses(reply, resolvedBy?.data?.id === reply.id)}`}
                     >
                         <Reply reply={reply} badgeText={badgeText} isInForum={isInForum} />

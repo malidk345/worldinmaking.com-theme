@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { TreeMenu } from 'components/TreeMenu'
+
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { Question, QuestionForm } from 'components/Squeak'
 import OSButton from 'components/OSButton'
-import { IconSidePanel, IconBottomPanel, IconChevronDown, IconNotification, IconPin, IconCheck } from '@posthog/icons'
+import { IconSidePanel, IconBottomPanel, IconChevronDown, IconPin, IconCheck } from '@posthog/icons'
 import Switch from 'components/RadixUI/Switch'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import { useToast } from '../../context/Toast'
@@ -17,18 +17,13 @@ import { useUser } from 'hooks/useUser'
 import hourglassAnimation from '../../images/icons8-hourglass.json'
 import hourglassAnimationWhite from '../../images/icons8-hourglass-white.json'
 import { useInView } from 'react-intersection-observer'
-import useTopicsNav from '../../navs/useTopicsNav'
+
 import { useWindow } from '../../context/Window'
 import Tooltip from 'components/RadixUI/Tooltip'
-import { DebugContainerQuery } from 'components/DebugContainerQuery'
-import { useSubscribedQuestions } from 'hooks/useSubscribedQuestions'
 import { flattenStrapiResponse } from '../../utils'
 import { useApp, useAppActions } from '../../context/App'
-import Link from 'components/Link'
 import { Select } from 'components/RadixUI/Select'
 import SEO from 'components/seo'
-import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
-import { InlineSearch, AlgoliaSearchResults } from 'components/Search/InlineSearch'
 dayjs.extend(relativeTime)
 
 // lottie-react bundles lottie-web (~600 KiB); load it on demand instead of on every page.
@@ -49,119 +44,48 @@ function useDesktopNavigate() {
     }
 }
 
-const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => {
-    const { user } = useUser()
-    const topicsNav = useTopicsNav()
-    const { appWindow } = useWindow()
-    const navigate = useDesktopNavigate()
 
-    const filteredTopicsNav = useMemo(() => {
-        return [
-            ...(user
-                ? [
-                      {
-                          name: 'My subscriptions',
-                          url: '/questions/subscriptions',
-                          icon: <IconNotification />,
-                      },
-                  ]
-                : []),
-            ...topicsNav,
-        ]
-    }, [topicsNav])
 
-    const defaultValue = useMemo(() => {
-        return filteredTopicsNav.find((topic) => topic.url === appWindow?.path)?.url || filteredTopicsNav[0]?.url
-    }, [appWindow?.path])
+const FORUM_TOPICS = [
+    { id: 'all', name: 'All threads', match: [] as string[] },
+    { id: 'technology', name: 'Technology', match: ['technolog', 'algorithm', 'software', 'machine', 'automat', 'ai ', 'digital', 'comput'] },
+    { id: 'politics', name: 'Politics', match: ['politic', 'state', 'power', 'govern', 'sovereign', 'populist', ' grievan'] },
+    { id: 'ethics', name: 'Ethics', match: ['ethic', 'moral', 'responsib', 'freedom', 'agency', 'will', 'choice'] },
+    { id: 'aesthetics', name: 'Aesthetics', match: ['aesthetic', 'art', 'image', 'fiction', 'desire', 'beauty', 'style'] },
+    { id: 'economy', name: 'Economy', match: ['econom', 'labor', 'capital', 'value', 'class', 'market', 'product'] },
+    { id: 'metaphysics', name: 'Metaphysics', match: ['being', 'essence', 'ontolog', 'realit', 'existenc', 'metaphys'] },
+    { id: 'culture', name: 'Culture', match: ['cultur', 'media', 'universit', 'archiv', 'language', 'symbol'] },
+] as const
 
-    useEffect(() => {
-        onValueChange(defaultValue)
-    }, [])
+type ForumTopicId = (typeof FORUM_TOPICS)[number]['id']
 
-    return (
-        <>
-            <div className="@2xl:hidden">
-                <Select
-                    className="w-full border-none rounded-none"
-                    placeholder="Navigate to a topic"
-                    defaultValue={defaultValue}
-                    onValueChange={(value) => {
-                        onValueChange(value)
-                        navigate(value)
-                    }}
-                    groups={[
-                        {
-                            label: 'Topics',
-                            items: filteredTopicsNav.map((topic) => ({
-                                label: topic.name,
-                                value: topic.url,
-                            })),
-                        },
-                    ]}
-                />
-            </div>
-
-            <div className="hidden @2xl:block">
-                <ScrollArea className="p-2">
-                    <TreeMenu key={user?.id} watchPath={false} items={filteredTopicsNav} />
-                </ScrollArea>
-            </div>
-        </>
-    )
-}
-
-const SidebarContent = ({
-    onMenuValueChange,
-    onSubmitQuestion,
-}: {
-    onMenuValueChange: (value: string) => void
-    onSubmitQuestion: () => void
-}) => {
-    const { addWindow } = useApp()
-    const { searchQuery } = useSearch()
-    const isSearching = searchQuery.length >= 2
-
-    return (
-        <div className="flex flex-col h-full">
-            <div className="border-b border-primary">
-                <div className="px-2 mt-2 pb-2">
-                    <OSButton
-                        variant="primary"
-                        size="md"
-                        width="full"
-                        onClick={() =>
-                            addWindow(
-                                <AskAQuestion
-                                    newWindow
-                                    location={{ pathname: `ask-a-question` }}
-                                    key={`ask-a-question`}
-                                    onSubmit={onSubmitQuestion}
-                                />
-                            )
-                        }
-                    >
-                        Ask a question
-                    </OSButton>
-                </div>
-            </div>
-            <ScrollArea className="h-full">
-                <InlineSearch
-                    placeholder="Search questions..."
-                    className="p-2 @2xl:pb-0 @2xl:border-b-0 border-b border-primary"
-                />
-                {isSearching ? (
-                    <div className="p-2">
-                        <AlgoliaSearchResults facetFilters={['type:question']} />
-                    </div>
-                ) : (
-                    <Menu onValueChange={onMenuValueChange} />
-                )}
-            </ScrollArea>
-        </div>
-    )
+function threadMatchesTopic(question: any, topicId: ForumTopicId) {
+    if (topicId === 'all') return true
+    const topic = FORUM_TOPICS.find((item) => item.id === topicId)
+    if (!topic || topic.match.length === 0) return true
+    const attrs = question?.attributes || question || {}
+    const hay = `${attrs.subject || attrs.title || ''} ${attrs.body || attrs.content || ''}`.toLowerCase()
+    return topic.match.some((needle) => hay.includes(needle))
 }
 
 const SIDE_WIDTH_DEFAULT = 600
+const INBOX_NARROW_PX = 896
+
+function inboxViewportWidth() {
+    if (typeof window === 'undefined') return 0
+    return window.visualViewport?.width || window.innerWidth || 0
+}
+
+function inboxBox(el: HTMLElement | null) {
+    if (!el) return { w: 0, h: 0 }
+    const r = el.getBoundingClientRect()
+    return { w: r.width, h: r.height }
+}
+
+function inboxIsNarrow(appWidth: number | undefined, containerW: number) {
+    const width = containerW > 0 ? containerW : appWidth && appWidth > 0 ? appWidth : inboxViewportWidth()
+    return width > 0 && width < INBOX_NARROW_PX
+}
 
 interface QuestionRowProps {
     question: any
@@ -215,7 +139,7 @@ const QuestionRow = ({
                 size="md"
                 key={question.id}
                 className={` 
-                    flex-wrap @3xl:flex-nowrap !gap-0 @3xl:!gap-1 !items-start
+                    flex-wrap @3xl:flex-nowrap !gap-0 @3xl:!gap-1 !items-start min-w-0
                     ${active ? 'font-bold bg-accent' : ''}
                     ${pinned ? 'bg-accent border-b border-primary' : ''}
                 `}
@@ -250,7 +174,7 @@ const QuestionRow = ({
                     <span className="text-muted text-sm ml-1 @3xl:hidden">{numReplies}</span>
                 </div>
                 <div
-                    className={`order-3 @3xl:order-none flex-[1_0_100%] @3xl:flex-1 ${
+                    className={`order-3 @3xl:order-none flex-[1_0_100%] @3xl:flex-1 min-w-0 break-words ${
                         active ? 'font-medium @3xl:font-bold' : 'font-medium'
                     }`}
                 >
@@ -258,7 +182,7 @@ const QuestionRow = ({
                 </div>
                 <div className="hidden @3xl:block w-24 text-center">{numReplies}</div>
                 <div
-                    className={`order-2 text-right @3xl:text-left @3xl:basis-auto @3xl:w-60 font-normal ${
+                    className={`order-2 min-w-0 truncate text-right @3xl:text-left @3xl:basis-auto @3xl:w-36 @4xl:w-52 font-normal ${
                         pinned || resolved ? 'basis-[30%]' : 'basis-[25%]'
                     }`}
                 >
@@ -427,6 +351,79 @@ const QuestionToolbar = ({
     )
 }
 
+const ForumSidebar = ({
+    selectedTopic,
+    onSelectTopic,
+    onSubmitQuestion,
+}: {
+    selectedTopic: ForumTopicId
+    onSelectTopic: (id: ForumTopicId) => void
+    onSubmitQuestion: () => void
+}) => {
+    const { addWindow } = useApp()
+
+    return (
+        <div className="flex flex-col h-full min-h-0">
+            <div className="border-b border-primary px-2 pt-2 pb-2">
+                <OSButton
+                    variant="primary"
+                    size="md"
+                    width="full"
+                    onClick={() =>
+                        addWindow(
+                            <AskAQuestion
+                                newWindow
+                                location={{ pathname: `ask-a-question` }}
+                                key={`ask-a-question`}
+                                onSubmit={onSubmitQuestion}
+                            />
+                        )
+                    }
+                >
+                    Ask a question
+                </OSButton>
+            </div>
+            <div className="@2xl:hidden">
+                <Select
+                    className="w-full border-none rounded-none"
+                    placeholder="Topic"
+                    value={selectedTopic}
+                    onValueChange={(value) => onSelectTopic(value as ForumTopicId)}
+                    groups={[
+                        {
+                            label: 'Topics',
+                            items: FORUM_TOPICS.map((topic) => ({
+                                label: topic.name,
+                                value: topic.id,
+                            })),
+                        },
+                    ]}
+                />
+            </div>
+            <ScrollArea className="hidden @2xl:block flex-1 min-h-0 p-2">
+                <p className="px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-secondary">
+                    Topics
+                </p>
+                <div className="flex flex-col gap-px">
+                    {FORUM_TOPICS.map((topic) => (
+                        <OSButton
+                            key={topic.id}
+                            align="left"
+                            width="full"
+                            hover="background"
+                            size="sm"
+                            className={selectedTopic === topic.id ? 'font-semibold bg-accent' : ''}
+                            onClick={() => onSelectTopic(topic.id)}
+                        >
+                            {topic.name}
+                        </OSButton>
+                    ))}
+                </div>
+            </ScrollArea>
+        </div>
+    )
+}
+
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
     const { addToast } = useToast()
     const { appWindow } = useWindow()
@@ -440,7 +437,6 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
     return (
         <div data-scheme="secondary" className="bg-primary size-full p-4">
             <QuestionForm
-                showTopicSelector
                 onSubmit={(_values, _type, data) => {
                     onSubmit()
                     closeWindow(appWindow)
@@ -502,7 +498,7 @@ export default function Inbox(props) {
     const [filters, setFilters] = useState(defaultFilters)
     const { addToast } = useToast()
     const { user, setSubscription, isSubscribed, isValidating } = useUser()
-    const { questions, isLoading, fetchMore, hasMore, refresh, pinnedQuestions } = useQuestions({
+    const { questions, isLoading, isLoadingMore, fetchMore, hasMore, refresh, pinnedQuestions } = useQuestions({
         limit: 20,
         sortBy: 'activity',
         filters,
@@ -523,10 +519,12 @@ export default function Inbox(props) {
     const [dragStartWidth, setDragStartWidth] = useState(0)
     const [lastQuestionRef, inView] = useInView({ threshold: 0.1 })
     const [sideBySide, setSideBySide] = useState(false)
-    const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
-    const { questions: subscribedQuestions } = useSubscribedQuestions()
-    const [menuValue, setMenuValue] = useState('')
-    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
+    const [menuValue, setMenuValue] = useState('/questions')
+    const [selectedTopic, setSelectedTopic] = useState<ForumTopicId>('all')
+    const [narrow, setNarrow] = useState(() =>
+        inboxIsNarrow(appWindow?.size?.width, 0)
+    )
+    const isMobile = narrow
 
     // Keep local thread in sync when path changes externally (back/forward, topic nav)
     useEffect(() => {
@@ -545,12 +543,15 @@ export default function Inbox(props) {
             // 1) Open panel immediately (local state — never wait on path)
             setActiveThread(clean)
             // 2) Always set a visible panel height (stacked mode)
-            const ch = containerRef.current?.getBoundingClientRect().height || 0
-            const nextH = ch > 100 ? Math.max(360, ch * 0.72) : 420
+            const box = inboxBox(containerRef.current)
+            const nextH = box.h > 100 ? Math.min(box.h, Math.max(240, box.h * 0.72)) : 320
             setBottomHeight(nextH)
-            if (sideBySide) {
-                const cw = containerRef.current?.getBoundingClientRect().width || 800
-                setSideWidth(Math.max(SIDE_WIDTH_DEFAULT, Math.min(cw * 0.55, cw - 280)))
+            if (sideBySide && box.w > 0) {
+                setSideWidth(
+                    inboxIsNarrow(appWindow?.size?.width, box.w)
+                        ? box.w
+                        : Math.min(SIDE_WIDTH_DEFAULT, Math.max(280, Math.min(box.w * 0.55, box.w - 200)))
+                )
             }
             // 3) Sync window path after paint (stable key — no remount)
             if (appWindow) {
@@ -603,9 +604,17 @@ export default function Inbox(props) {
         }
     }, [bottomHeight, sideWidth, sideBySide, containerRef.current, isMobile])
 
-    const handleSideBySide = (sideBySide: boolean) => {
-        setSideBySide(sideBySide)
-        localStorage.setItem('sideBySide', sideBySide.toString())
+    const handleSideBySide = (next: boolean) => {
+        setSideBySide(next)
+        try {
+            localStorage.setItem('sideBySide', next.toString())
+        } catch {
+            // private mode
+        }
+        const box = inboxBox(containerRef.current)
+        if (next && box.w > 0) {
+            setSideWidth(isMobile ? box.w : Math.min(SIDE_WIDTH_DEFAULT, Math.max(280, box.w * 0.55)))
+        }
     }
 
     const expandOrCollapse = (expandable: boolean) => {
@@ -631,15 +640,16 @@ export default function Inbox(props) {
     const handleHorizontalDrag = (_event, info) => {
         if (!containerRef.current) return
         const containerWidth = containerRef.current.getBoundingClientRect().width
-        const newSideWidth = Math.min(Math.max(dragStartWidth - info.offset.x, 400), containerWidth)
+        const minWidth = isMobile ? 0 : 280
+        const newSideWidth = Math.min(Math.max(dragStartWidth - info.offset.x, minWidth), containerWidth)
         setSideWidth(newSideWidth)
     }
 
     useEffect(() => {
-        if (inView && hasMore) {
-            fetchMore()
+        if (inView && hasMore && !isLoading && !isLoadingMore) {
+            void fetchMore()
         }
-    }, [inView, hasMore])
+    }, [inView, hasMore, isLoading, isLoadingMore, fetchMore])
 
     useEffect(() => {
         if (initialTopicID && initialTopicID !== filters.topics?.id?.$eq) {
@@ -655,52 +665,53 @@ export default function Inbox(props) {
     }, [question, user])
 
     useEffect(() => {
-        if (props.path === '/questions/subscriptions') {
-            if (user) {
-                setShowSubscribedQuestions(true)
-            } else {
-                navigate('/questions')
-            }
-            setReady(true)
-        } else if (props.path === '/questions' || initialTopicID) {
-            setShowSubscribedQuestions(false)
+        if (props.path === '/questions' || initialTopicID) {
             setFilters(defaultFilters)
         }
     }, [isValidating, props.path])
 
-    useEffect(() => {
-        const sideBySide = localStorage.getItem('sideBySide')
-        if (sideBySide) {
-            setSideBySide(sideBySide === 'true')
-        }
-    }, [])
+    const restoredSplit = useRef(false)
+    useLayoutEffect(() => {
+        const fit = () => {
+            const box = inboxBox(containerRef.current)
+            const nextNarrow = inboxIsNarrow(appWindow?.size?.width, box.w)
+            setNarrow(nextNarrow)
 
-    // Only when layout mode changes (wimpos) — do not re-run on every size tick
-    useEffect(() => {
-        if (!containerRef.current) return
-        const containerRect = containerRef.current.getBoundingClientRect()
-
-        if (sideBySide) {
-            setSideWidth(Math.max(400, SIDE_WIDTH_DEFAULT))
-        } else {
-            setBottomHeight(Math.max(containerRect.height / 2, bottomHeightDefault))
+            if (box.w > 0) {
+                setSideWidth((w) => {
+                    const next = nextNarrow ? Math.min(Math.max(w, 0), box.w) : Math.min(Math.max(w, 280), box.w)
+                    return next === w ? w : next
+                })
+            }
+            if (box.h > 0) {
+                setBottomHeight((h) => {
+                    const next = Math.min(Math.max(h, 160), box.h)
+                    return next === h ? h : next
+                })
+            }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sideBySide])
 
-    useEffect(() => {
-        if (isMobile && sideBySide && containerRef.current) {
-            setSideWidth(containerRef.current.getBoundingClientRect().width)
+        if (!restoredSplit.current) {
+            restoredSplit.current = true
+            try {
+                setSideBySide(localStorage.getItem('sideBySide') === 'true')
+            } catch {
+                // private mode
+            }
         }
-    }, [isMobile, sideBySide, appWindow?.size?.width])
 
-    // When a thread opens and panel is collapsed to chrome height, lift it (wimpos QuestionRow onClick)
-    useEffect(() => {
-        if (!permalink || !containerRef.current) return
-        if (bottomHeight <= 45) {
-            setBottomHeight(Math.max(bottomHeightDefault, containerRef.current.getBoundingClientRect().height * 0.8))
+        fit()
+        const node = containerRef.current
+        const ro = typeof ResizeObserver !== 'undefined' && node ? new ResizeObserver(fit) : null
+        if (node) ro?.observe(node)
+        window.addEventListener('resize', fit)
+        window.visualViewport?.addEventListener('resize', fit)
+        return () => {
+            ro?.disconnect()
+            window.removeEventListener('resize', fit)
+            window.visualViewport?.removeEventListener('resize', fit)
         }
-    }, [permalink, bottomHeight, bottomHeightDefault])
+    }, [appWindow?.size?.width, appWindow?.size?.height, permalink, ready])
 
     return (
         <>
@@ -715,17 +726,19 @@ export default function Inbox(props) {
                             data-scheme="secondary"
                             className="w-full @2xl:w-64 bg-primary flex-shrink-0 @2xl:border-r border-primary @2xl:h-full @2xl:min-h-0"
                         >
-                            <SearchProvider>
-                                <SidebarContent onMenuValueChange={setMenuValue} onSubmitQuestion={refresh} />
-                            </SearchProvider>
+                            <ForumSidebar
+                                selectedTopic={selectedTopic}
+                                onSelectTopic={setSelectedTopic}
+                                onSubmitQuestion={refresh}
+                            />
                         </aside>
                         <main
                             data-scheme="primary"
-                            className="flex-1 min-h-0 bg-primary overflow-hidden border-primary @2xl:border-none border-t flex flex-col"
+                            className="flex-1 min-h-0 bg-primary overflow-hidden @2xl:border-none border-t border-primary flex flex-col"
                         >
                             <div
                                 ref={containerRef}
-                                className={`flex flex-1 min-h-0 ${sideBySide ? 'flex-row' : 'flex-col'}`}
+                                className={`flex flex-1 min-h-0 min-w-0 ${sideBySide ? 'flex-row' : 'flex-col'}`}
                             >
                                 <div
                                     className={`@container flex-1 min-h-0 min-w-0 text-sm overflow-hidden ${
@@ -733,22 +746,26 @@ export default function Inbox(props) {
                                     }`}
                                 >
                                     <ScrollArea className="h-full">
-                                        <div className="flex items-center pl-2.5 pr-4 py-2 border-b border-primary font-medium bg-accent text-sm bg-accent-2 sticky top-0 text-primary z-10 whitespace-nowrap">
+                                        <div className="flex items-center gap-2 pl-2.5 pr-24 py-2 border-b border-primary font-medium bg-accent text-sm bg-accent-2 sticky top-0 text-primary z-10 min-w-0">
                                             <div className="w-8 shrink-0 @3xl:block hidden" />
-                                            <div className="hidden @3xl:block w-48">Author</div>
-                                            <div className="flex-1">
+                                            <div className="hidden @3xl:block w-36 @4xl:w-48 shrink-0">Author</div>
+                                            <div className="flex-1 min-w-0 truncate">
                                                 <span className="@3xl:hidden">Author / Replies</span>
                                                 <span className="hidden @3xl:block">Subject</span>
                                             </div>
-                                            <div className="hidden @3xl:block w-24 text-center">Replies</div>
-                                            <div className="w-60 text-right @3xl:text-left">Last activity</div>
+                                            <div className="hidden @3xl:block w-16 text-center shrink-0">Replies</div>
+                                            <div className="hidden @xl:block min-w-0 max-w-[9rem] @4xl:max-w-[14rem] text-right @3xl:text-left truncate">
+                                                Last activity
+                                            </div>
                                         </div>
                                         <div className="px-1 py-1 space-y-px">
-                                            {pinnedQuestions?.map((question) => (
+                                            {pinnedQuestions
+                                                ?.filter((question) => threadMatchesTopic(question, selectedTopic))
+                                                .map((question) => (
                                                 <QuestionRow
                                                     key={question.id}
                                                     question={question}
-                                                    lastQuestionRef={lastQuestionRef}
+                                                    lastQuestionRef={() => undefined}
                                                     appWindowPath={appWindow?.path}
                                                     bottomHeight={bottomHeight}
                                                     setBottomHeight={setBottomHeight}
@@ -757,16 +774,17 @@ export default function Inbox(props) {
                                                     onOpenThread={openThread}
                                                 />
                                             ))}
-                                            {(showSubscribedQuestions
-                                                ? subscribedQuestions
-                                                : flattenStrapiResponse(questions.data)?.filter(
-                                                      (question) => !question?.pinnedTopics?.[0]
-                                                  )
-                                            )?.map((question) => (
+                                            {flattenStrapiResponse(questions.data)
+                                                ?.filter(
+                                                    (question) =>
+                                                        !question?.pinnedTopics?.[0] &&
+                                                        threadMatchesTopic(question, selectedTopic)
+                                                )
+                                                ?.map((question, index, list) => (
                                                 <QuestionRow
                                                     key={question.id}
                                                     question={question}
-                                                    lastQuestionRef={lastQuestionRef}
+                                                    lastQuestionRef={index === list.length - 1 ? lastQuestionRef : () => undefined}
                                                     appWindowPath={appWindow?.path}
                                                     bottomHeight={bottomHeight}
                                                     setBottomHeight={setBottomHeight}
@@ -774,18 +792,26 @@ export default function Inbox(props) {
                                                     onOpenThread={openThread}
                                                 />
                                             ))}
-                                            {!isLoading && (!questions.data || questions.data.length === 0) && (
+                                            {!isLoading &&
+                                                !(
+                                                    pinnedQuestions?.some((question) =>
+                                                        threadMatchesTopic(question, selectedTopic)
+                                                    ) ||
+                                                    flattenStrapiResponse(questions.data)?.some(
+                                                        (question) =>
+                                                            !question?.pinnedTopics?.[0] &&
+                                                            threadMatchesTopic(question, selectedTopic)
+                                                    )
+                                                ) && (
                                                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-primary">
-                                                    <div className="text-lg mb-2 font-semibold">No questions found</div>
+                                                    <div className="text-lg mb-2 font-semibold">No threads here</div>
                                                     <div className="text-secondary text-sm">
-                                                        {props.path === '/questions/subscriptions'
-                                                            ? "You haven't subscribed to any questions yet."
-                                                            : 'There are no questions in this topic yet.'}
+                                                        There are no threads in this topic yet.
                                                     </div>
                                                 </div>
                                             )}
-                                            {isLoading && (
-                                                <div className="flex items-center justify-center py-8 h-full">
+                                            {(isLoading || isLoadingMore) && (
+                                                <div className="flex items-center justify-center py-8">
                                                     <Suspense fallback={null}>
                                                         <Lottie
                                                             animationData={hourglassAnimation}
@@ -813,10 +839,16 @@ export default function Inbox(props) {
                                             }`}
                                             style={
                                                 sideBySide
-                                                    ? { width: Math.max(sideWidth, 280), height: '100%', flex: '0 0 auto' }
+                                                    ? {
+                                                          width: isMobile ? sideWidth : Math.max(sideWidth, 280),
+                                                          maxWidth: '100%',
+                                                          height: '100%',
+                                                          flex: '0 0 auto',
+                                                      }
                                                     : {
-                                                          height: Math.max(bottomHeight, 280),
+                                                          height: Math.max(bottomHeight, isMobile ? 200 : 280),
                                                           width: '100%',
+                                                          maxWidth: '100%',
                                                           flex: '0 0 auto',
                                                       }
                                             }
@@ -853,8 +885,8 @@ export default function Inbox(props) {
                                                 />
                                             )}
 
-                                            <ScrollArea>
-                                                <div className="pb-[64px]">
+                                            <ScrollArea className="min-w-0" viewportClasses="min-w-0">
+                                                <div className="pb-[64px] min-w-0 max-w-full box-border">
                                                     <Question
                                                         key={permalink}
                                                         id={permalink}

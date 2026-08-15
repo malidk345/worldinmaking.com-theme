@@ -35,7 +35,11 @@ const UserBar = () => {
                         Signed in as{' '}
                         <Link
                             className="dark:text-yellow dark:hover:text-yellow text-red hover:text-red"
-                            to={`/community/profiles/${user?.profile.id}`}
+                            to={
+                                user?.username
+                                    ? `/profile/${encodeURIComponent(user.username)}`
+                                    : `/profile/${encodeURIComponent(String(user?.profile?.id || ''))}`
+                            }
                         >
                             {name}
                         </Link>

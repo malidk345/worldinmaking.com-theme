@@ -1,16 +1,12 @@
-import React, { useEffect, useRef } from 'react'
-import { Skeleton } from './Views/Default'
-import Spinner from 'components/Spinner'
+import React from 'react'
 import { child, container } from 'components/CallToAction'
 
 import Link from 'components/Link'
-import { useLocation } from 'hooks/useLocation'
-import { useBreakpoint } from 'hooks/useBreakpoint'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import isToday from 'dayjs/plugin/isToday'
-import { useLayoutData } from 'components/Layout/hooks'
 import LikeButton from './LikeButton'
+import HourglassLoader from 'components/HourglassLoader'
 dayjs.extend(relativeTime)
 dayjs.extend(isToday)
 
@@ -37,13 +33,14 @@ function Post({ id, title, date, publishedAt, authors, slug }) {
                             <span className={`ml-1 inline-flex items-center space-x-1 font-medium leading-none`}>
                                 <span className="text-[.933rem]">by</span>
                                 <ul className={`m-0 p-0 list-none flex`}>
-                                    {authors?.data?.map(({ id, attributes: { firstName, lastName } }) => {
+                                    {authors?.data?.map(({ id, attributes: { firstName, lastName, username } }) => {
                                         const name = [firstName, lastName].filter(Boolean).join(' ')
+                                        const handle = username || id
                                         return (
                                             <li className='even:before:content-[","] even:before:mr-1' key={id}>
                                                 <Link
                                                     className="text-[.933rem]"
-                                                    to={`/community/profiles/${id}`}
+                                                    to={`/profile/${encodeURIComponent(String(handle))}`}
                                                     state={{ newWindow: true }}
                                                 >
                                                     {name}
@@ -67,22 +64,24 @@ export default function PostsTable({ posts, isLoading, hasMore, isValidating, fe
             {posts.map(({ id, attributes }, index) => {
                 return <Post articleView={articleView} key={id} {...attributes} id={id} />
             })}
-            {isLoading && <Skeleton />}
+            {isLoading && (
+                <li>
+                    <HourglassLoader title="Loading posts..." />
+                </li>
+            )}
             {hasMore && (
                 <li className="mt-4 md:mb-24 px-4">
-                    <button
-                        onClick={fetchMore}
-                        disabled={isLoading || isValidating}
-                        className={`${container()} w-full`}
-                    >
-                        <span className={`${child()}`}>
-                            {isLoading || isValidating ? (
-                                <Spinner className="!w-6 !h-6 mx-auto text-white" />
-                            ) : (
-                                'Load more'
-                            )}
-                        </span>
-                    </button>
+                    {isValidating ? (
+                        <HourglassLoader title="Loading more posts..." />
+                    ) : (
+                        <button
+                            onClick={fetchMore}
+                            disabled={isLoading || isValidating}
+                            className={`${container()} w-full`}
+                        >
+                            <span className={`${child()}`}>Load more</span>
+                        </button>
+                    )}
                 </li>
             )}
         </ul>

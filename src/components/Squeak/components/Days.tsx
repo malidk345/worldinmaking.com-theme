@@ -17,7 +17,7 @@ const Edit = ({ image, color, name, date, profileID, text }) => {
                 <Avatar image={image} color={color} className="size-6" />
                 <span>
                     <Link
-                        to={`/community/profiles/${profileID}`}
+                        to={profileID ? `/profile/${encodeURIComponent(String(profileID))}` : '#'}
                         className="font-semibold hover:underline"
                         state={{ newWindow: true }}
                     >

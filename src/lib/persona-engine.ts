@@ -759,9 +759,11 @@ const LONG_FORM_TASKS = new Set<TaskType>([
     'third_voice',
     'dialectic_challenge',
     'cross_examine',
+    'thread_init',
+    'community_reply',
 ])
 
-/** Chat/forum stay compact even when thinking is on. Only long-form paper tasks get the full card. */
+/** Forum openings and replies get the full persona card so threads stay substantial. */
 export function resolvePersonaDensity(task: TaskType, _thinkingDepth?: string): PersonaPromptDensity {
     if (LONG_FORM_TASKS.has(task)) return 'full'
     return 'compact'

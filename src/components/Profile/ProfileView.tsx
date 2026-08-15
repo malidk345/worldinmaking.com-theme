@@ -6,54 +6,38 @@ import Link from 'components/Link'
 import Markdown from 'components/Squeak/components/Markdown'
 import { Questions } from 'components/Squeak'
 import { useUser } from 'hooks/useUser'
-import { supabase } from 'lib/supabase'
-import useSWR from 'swr'
-import { ProfileData, StrapiRecord } from 'lib/strapi'
+import { ProfileData } from 'lib/strapi'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
-import qs from 'qs'
 import usePostHog from 'hooks/usePostHog'
-import useTopicsNav from 'navs/useTopicsNav'
 import { usePosts } from 'components/Edition/hooks/usePosts'
-import PostsTable from 'components/Edition/PostsTable'
 import { sortOptions } from 'components/Edition/Posts'
 import NotFoundPage from 'components/NotFoundPage'
-import PublicProfile from 'components/Profile/PublicProfile'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { Popover } from 'components/RadixUI/Popover'
-import Stickers from 'components/Stickers/Index'
 import Tooltip from 'components/RadixUI/Tooltip'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import OSTabs from 'components/OSTabs'
-import { TeamMember } from 'components/People'
-import { PROFILE_COLORS } from 'constants/profileColors'
 import {
-    IconThumbsUpFilled,
-    IconThumbsDownFilled,
     IconArrowUpRight,
     IconUpload,
     IconX,
     IconCheck,
     IconExternal,
-    IconPresent,
-    IconSparkles,
 } from '@posthog/icons'
 import { Fieldset } from 'components/OSFieldset'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import RichText from 'components/Squeak/components/RichText'
-import transformValues from 'components/Squeak/util/transformValues'
-import { profileBackgrounds } from 'data/profileBackgrounds'
 import { Select } from 'components/RadixUI/Select'
 import OSInput from 'components/OSForm/input'
 import { useToast } from 'context/Toast'
 import HeaderBar from 'components/OSChrome/HeaderBar'
-import LevelBadge from 'components/Squeak/components/LevelBadge'
 import OSButton from 'components/OSButton'
 import { IconNoEntry, IconStrapi } from 'components/OSIcons'
-import Points from 'components/Points'
-import ConnectedAccounts from 'components/Squeak/components/ConnectedAccounts'
+import HourglassLoader from 'components/HourglassLoader'
+import { ageFromBirthDate, isValidProfileUsername } from 'lib/profile-path'
+import ProfileDocumentGrid from 'components/Profile/ProfileDocumentGrid'
+
 import { useWindow } from 'context/Window'
 
 dayjs.extend(relativeTime)
@@ -79,67 +63,6 @@ const WebsiteIcon = () => {
 
 const stripUrlPrefix = (url: string) => {
     return url.replace(/^https?:\/\/(www\.)?/, '')
-}
-
-const BackgroundImageField = ({
-    setFieldValue,
-    values,
-}: {
-    setFieldValue: (field: string, value: any) => void
-    values: any
-}) => {
-    const currentBg = values.backgroundImage
-    return (
-        <Block title="Fun things">
-            <label className="text-sm font-bold">Choose a background for your profile</label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-                {profileBackgrounds.map((bg) => {
-                    const isSelected = currentBg?.id === bg.id
-                    return (
-                        <button
-                            key={bg.id}
-                            type="button"
-                            onClick={() =>
-                                setFieldValue('backgroundImage', {
-                                    id: bg.id,
-                                    url: bg.url,
-                                    backgroundSize: bg.backgroundSize,
-                                    backgroundRepeat: bg.backgroundRepeat,
-                                    backgroundPosition: bg.backgroundPosition,
-                                })
-                            }
-                            className={`relative overflow-hidden rounded-md border-2 ${
-                                isSelected ? 'border-red dark:border-yellow' : 'border-input'
-                            } transition-all hover:scale-105`}
-                        >
-                            <div
-                                className="aspect-video w-full"
-                                style={{
-                                    backgroundImage: `url(${bg.url})`,
-                                    backgroundSize: bg.backgroundSize || 'auto',
-                                    backgroundRepeat: bg.backgroundRepeat || 'no-repeat',
-                                    backgroundPosition: bg.backgroundPosition || 'center',
-                                }}
-                            />
-                            <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1">
-                                {bg.name}
-                            </span>
-                        </button>
-                    )
-                })}
-
-                <button
-                    type="button"
-                    onClick={() => setFieldValue('backgroundImage', null)}
-                    className={`relative overflow-hidden rounded-md border-2 ${
-                        !currentBg ? 'border-red dark:border-yellow' : 'border-input'
-                    } transition-all hover:scale-105 aspect-video`}
-                >
-                    <span className="text-sm font-bold">No background</span>
-                </button>
-            </div>
-        </Block>
-    )
 }
 
 const Links = ({
@@ -273,6 +196,7 @@ const Input = ({
     error,
     dataScheme,
     tooltip,
+    type = 'text',
 }: {
     label: string
     name: string
@@ -281,11 +205,13 @@ const Input = ({
     error?: string
     tooltip?: string | React.ReactNode
     dataScheme?: 'primary' | 'secondary' | 'tertiary'
+    type?: string
 }) => {
     return (
         <OSInput
             label={label}
             name={name}
+            type={type}
             value={value}
             onChange={onChange}
             placeholder={label}
@@ -362,7 +288,7 @@ const AvatarBlock = ({
                     )}
                 </div>
             )}
-            <Avatar className="w-full border-b border-primary" src={imageURL} color={profile.color} />
+            <Avatar className="w-full border-b border-primary" src={imageURL} />
             {isEditing ? (
                 <div className="p-3 w-full space-y-3">
                     <Input
@@ -379,33 +305,20 @@ const AvatarBlock = ({
                         onChange={(e) => setFieldValue('lastName', e.target.value)}
                         error={errors.lastName}
                     />
-                    <div>
-                        <label className="text-[15px]">Favorite color</label>
-                        <ul className="list-none m-0 p-0 flex space-x-1 mt-1">
-                            {PROFILE_COLORS.map((color) => {
-                                const active = values.color === color
-                                return (
-                                    <li key={color} onClick={() => setFieldValue('color', color)}>
-                                        <button
-                                            type="button"
-                                            className={`size-5 rounded-full bg-${color} border-[1.5px] ${
-                                                active ? 'border-black dark:border-white' : 'border-transparent'
-                                            }`}
-                                        />
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
+                    <Input
+                        label="Username"
+                        name="username"
+                        value={values.username}
+                        onChange={(e) => setFieldValue('username', e.target.value)}
+                        error={errors.username}
+                    />
                 </div>
             ) : (
-                <div className="flex items-center space-x-2 my-2">
-                    <h2 className="uppercase">{name}</h2>
-                    {profile.country && (
-                        <Tooltip trigger={<Stickers country={profile.country} className="w-6 h-6" />} delay={0}>
-                            {profile.location || profile.country}
-                        </Tooltip>
-                    )}
+                <div className="my-2">
+                    <div className="flex items-center space-x-2">
+                        <h2 className="uppercase">{name}</h2>
+                    </div>
+                    {profile.username && <p className="text-sm text-muted m-0">@{profile.username}</p>}
                 </div>
             )}
             {!isEditing && profile.companyRole && (
@@ -415,7 +328,7 @@ const AvatarBlock = ({
     )
 }
 
-const Details = ({ profile, isEditing, setFieldValue, values, errors, isTeamMember }) => {
+const Details = ({ profile, isEditing, setFieldValue, values, errors }) => {
     const [showPronounsInput, setShowPronounsInput] = useState(!!values.pronouns)
 
     // Update showPronounsInput when values.pronouns changes
@@ -424,55 +337,31 @@ const Details = ({ profile, isEditing, setFieldValue, values, errors, isTeamMemb
     }, [values.pronouns])
     return (
         <div className="text-sm space-y-3">
-            {!isEditing && profile.reputation != null && (
-                <p className="flex justify-between items-center m-0">
-                    <span className="font-semibold">Reputation</span>
-                    <LevelBadge points={profile.reputation} />
-                </p>
-            )}
             {!isEditing && (
                 <p className="flex justify-between m-0">
-                    {isTeamMember ? (
-                        <>
-                            <span className="font-semibold">Joined PostHog</span>
-                            <span suppressHydrationWarning>{dayjs(profile.startDate).fromNow()}</span>
-                        </>
-                    ) : (
-                        <>
-                            <span className="font-semibold">Community member since</span>
-                            <span suppressHydrationWarning>{dayjs(profile.createdAt).format('MMMM D, YYYY')}</span>
-                        </>
-                    )}
+                    <span className="font-semibold">Community member since</span>
+                    <span suppressHydrationWarning>{dayjs(profile.createdAt).format('MMMM D, YYYY')}</span>
                 </p>
             )}
             {isEditing ? (
-                <div>
-                    <ToggleGroup
-                        title="Pineapple on pizza?"
-                        options={[
-                            {
-                                label: 'Yes',
-                                value: 'yes',
-                            },
-                            {
-                                label: 'No',
-                                value: 'no',
-                            },
-                        ]}
-                        value={values.pineappleOnPizza === null ? undefined : values.pineappleOnPizza ? 'yes' : 'no'}
-                        onValueChange={(value) => setFieldValue('pineappleOnPizza', value === 'yes' ? true : false)}
-                    />
-                </div>
+                <Input
+                    label="Date of birth"
+                    name="birthDate"
+                    type="date"
+                    value={values.birthDate || ''}
+                    onChange={(e) => setFieldValue('birthDate', e.target.value || null)}
+                    error={errors.birthDate}
+                />
             ) : (
-                profile.pineappleOnPizza !== null && (
+                profile.birthDate && (
                     <p className="flex justify-between m-0">
-                        <span className="font-semibold">Pineapple on pizza:</span>
+                        <span className="font-semibold">Age:</span>
                         <span>
-                            {profile.pineappleOnPizza ? (
-                                <IconThumbsUpFilled className="size-4 text-green" />
-                            ) : (
-                                <IconThumbsDownFilled className="size-4 text-red" />
-                            )}
+                            {ageFromBirthDate(profile.birthDate) ?? '—'}
+                            <span className="text-muted">
+                                {' '}
+                                ({dayjs(profile.birthDate).format('MMM D, YYYY')})
+                            </span>
                         </span>
                     </p>
                 )
@@ -534,264 +423,6 @@ const Details = ({ profile, isEditing, setFieldValue, values, errors, isTeamMemb
     )
 }
 
-function convertCentimetersToInches(centimeters: number): number {
-    return centimeters / 2.54
-}
-
-// Also defined in src/pages/team-directory.tsx ÔÇö update both if changed
-const unisexSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL']
-const femaleSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL']
-
-const unisexSizeDataIn = {
-    sizes: unisexSizes,
-    rows: [
-        { label: 'Length', values: ['26.25', '27.50', '28.50', '29.50', '30.50', '31.50'] },
-        { label: 'Width', values: ['18.00', '19.50', '21.00', '22.50', '24.00', '25.50'] },
-        { label: 'Sleeve', values: ['16.00', '16.875', '17.75', '18.625', '19.50', '20.375'] },
-    ],
-}
-
-const unisexSizeDataCm = {
-    sizes: unisexSizes,
-    rows: [
-        { label: 'Length', values: ['66', '69', '72', '74', '77', '80'] },
-        { label: 'Width', values: ['45', '49', '53', '57', '60', '64'] },
-        { label: 'Sleeve', values: ['40', '42', '45', '47', '49', '51'] },
-    ],
-}
-
-const womensSizeDataUS = {
-    sizes: femaleSizes,
-    rows: [{ label: 'Fits Sizes', values: ['2-6', '6-10', '10-14', '14-18', '18-22', '23-27'] }],
-}
-
-const womensSizeDataUK = {
-    sizes: femaleSizes,
-    rows: [{ label: 'Fits Sizes', values: ['6-10', '10-14', '14-18', '18-22', '22-26', '27-31'] }],
-}
-
-const UnisexSizeChart = () => {
-    const [unit, setUnit] = useState('in')
-    return (
-        <div className="w-[380px]">
-            <ToggleGroup
-                title="Unit"
-                hideTitle
-                options={[
-                    { label: 'in', value: 'in' },
-                    { label: 'cm', value: 'cm' },
-                ]}
-                value={unit}
-                onValueChange={(value) => value && setUnit(value)}
-                className="mb-2"
-            />
-            <SizeTable data={unit === 'cm' ? unisexSizeDataCm : unisexSizeDataIn} />
-        </div>
-    )
-}
-
-const WomensSizeChart = () => {
-    const [region, setRegion] = useState('US')
-    return (
-        <div>
-            <ToggleGroup
-                title="Region"
-                hideTitle
-                options={[
-                    { label: 'US', value: 'US' },
-                    { label: 'UK', value: 'UK' },
-                ]}
-                value={region}
-                onValueChange={(value) => value && setRegion(value)}
-                className="mb-2"
-            />
-            <SizeTable data={region === 'UK' ? womensSizeDataUK : womensSizeDataUS} />
-        </div>
-    )
-}
-
-const SizeTable = ({ data }: { data: typeof unisexSizeDataIn }) => (
-    <table className="text-xs text-left border-collapse w-full">
-        <thead>
-            <tr>
-                <th className="pr-3 py-1 font-semibold" />
-                {data.sizes.map((s) => (
-                    <th key={s} className="px-2 py-1 font-semibold text-center">
-                        {s}
-                    </th>
-                ))}
-            </tr>
-        </thead>
-        <tbody>
-            {data.rows.map((row) => (
-                <tr key={row.label} className="border-t border-primary">
-                    <td className="pr-3 py-1 font-semibold whitespace-nowrap">{row.label}</td>
-                    {row.values.map((v, i) => (
-                        <td key={i} className="px-2 py-1 text-center">
-                            {v}
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </tbody>
-    </table>
-)
-
-const ModeratorFields = ({ setFieldValue, values, errors }) => {
-    const [heightUnit, setHeightUnit] = useState('in')
-    const [height, setHeight] = useState(values.height)
-    const tShirt = values.tShirt || { fit: null, size: null, additionalInfo: null }
-    const availableSizes = tShirt.fit === 'female' ? femaleSizes : tShirt.fit === 'unisex' ? unisexSizes : []
-
-    useEffect(() => {
-        setFieldValue('height', heightUnit === 'cm' ? convertCentimetersToInches(height) : height)
-    }, [heightUnit])
-
-    return (
-        <div className="space-y-3">
-            <Input
-                label="Role"
-                name="companyRole"
-                value={values.companyRole}
-                onChange={(e) => setFieldValue('companyRole', e.target.value)}
-                error={errors.companyRole}
-            />
-            <Input
-                label="Country (2-char code)"
-                tooltip={
-                    <Link href="https://countrycode.org/" external>
-                        Look this up
-                    </Link>
-                }
-                name="country"
-                value={values.country}
-                onChange={(e) => setFieldValue('country', e.target.value)}
-                error={errors.country}
-            />
-            <div>
-                <label className="text-[15px] block mb-1">Height</label>
-                <p className="text-xs text-secondary m-0 mb-2">
-                    We use this to <s>estimate how much pizza you can eat</s> find how many hedgehogs long your small
-                    team is tall ÔÇô in aggregate. (Important research.)
-                </p>
-                <div className="flex items-center space-x-1">
-                    <input
-                        className="bg-primary text-primary border border-input rounded px-3 py-1.5 text-[15px] placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-orange/50"
-                        type="number"
-                        name="height"
-                        value={height}
-                        data-scheme="primary"
-                        onChange={(e) => {
-                            const value = Number(e.target.value)
-                            setHeight(value)
-                            setFieldValue('height', heightUnit === 'cm' ? convertCentimetersToInches(value) : value)
-                        }}
-                        required
-                    />
-                    <ToggleGroup
-                        title="Height unit"
-                        hideTitle
-                        options={[
-                            { label: 'in', value: 'in' },
-                            { label: 'cm', value: 'cm' },
-                        ]}
-                        value={heightUnit}
-                        onValueChange={(value) => setHeightUnit(value)}
-                    />
-                </div>
-            </div>
-            <div>
-                <label className="text-[15px]">Show comments</label>
-                <p className="text-xs text-secondary m-0 mb-2">
-                    Let visitors comment on your profile. You'll get comment notifications via email.
-                </p>
-                <ToggleGroup
-                    title="Show comments"
-                    hideTitle
-                    options={[
-                        { label: 'Yes', value: 'yes' },
-                        { label: 'No', value: 'no' },
-                    ]}
-                    value={values.amaEnabled === null ? undefined : values.amaEnabled ? 'yes' : 'no'}
-                    onValueChange={(value) => setFieldValue('amaEnabled', value === 'yes' ? true : false)}
-                />
-            </div>
-            <div>
-                <ToggleGroup
-                    title="T-shirt fit"
-                    options={[
-                        { label: 'Unisex', value: 'unisex' },
-                        { label: 'Female', value: 'female' },
-                    ]}
-                    value={tShirt.fit || undefined}
-                    onValueChange={(value) => {
-                        if (!value) return
-                        const newSizes = value === 'female' ? femaleSizes : unisexSizes
-                        setFieldValue('tShirt', {
-                            ...tShirt,
-                            fit: value,
-                            size: newSizes.includes(tShirt.size) ? tShirt.size : null,
-                        })
-                    }}
-                />
-            </div>
-            {tShirt.fit && (
-                <div>
-                    <label className="text-[15px] flex items-center gap-2 mb-1">
-                        T-shirt size
-                        {tShirt.fit === 'unisex' ? (
-                            <Tooltip
-                                delay={0}
-                                side="right"
-                                trigger={
-                                    <span className="text-xs text-secondary hover:text-primary underline cursor-help">
-                                        Unisex size guide
-                                    </span>
-                                }
-                            >
-                                <UnisexSizeChart />
-                            </Tooltip>
-                        ) : (
-                            <Tooltip
-                                delay={0}
-                                side="right"
-                                trigger={
-                                    <span className="text-xs text-secondary hover:text-primary underline cursor-help">
-                                        Women's size guide
-                                    </span>
-                                }
-                            >
-                                <WomensSizeChart />
-                            </Tooltip>
-                        )}
-                    </label>
-                    <ToggleGroup
-                        title="T-shirt size"
-                        hideTitle
-                        options={availableSizes.map((size) => ({ label: size, value: size }))}
-                        value={tShirt.size || undefined}
-                        onValueChange={(value) => {
-                            if (!value) return
-                            setFieldValue('tShirt', { ...tShirt, size: value })
-                        }}
-                    />
-                </div>
-            )}
-            <div>
-                <label className="text-[15px] block mb-1">T-shirt additional info</label>
-                <textarea
-                    className="bg-primary text-primary border border-input rounded px-3 py-1.5 text-[15px] placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-orange/50 w-full resize-y"
-                    name="tShirtAdditionalInfo"
-                    value={tShirt.additionalInfo || ''}
-                    data-scheme="primary"
-                    onChange={(e) => setFieldValue('tShirt', { ...tShirt, additionalInfo: e.target.value })}
-                    placeholder="Any additional notes about t-shirt preferences"
-                    rows={3}
-                />
-            </div>
-        </div>
-    )
-}
 
 const ProfileSkeleton = () => {
     return (
@@ -886,23 +517,31 @@ const Avatar = (props: { className?: string; src?: string; color?: string }) => 
     )
 }
 
-const LikedPosts = ({ profileID }) => {
-    const posts = usePosts({
-        params: {
-            filters: {
-                likes: {
-                    id: {
-                        $eq: profileID,
-                    },
-                },
-            },
-        },
-    })
+const SavedPosts = () => {
+    const { user, isLoading } = useUser()
+    const bookmarks = user?.profile?.bookmarks || []
+
+    if (isLoading) {
+        return <HourglassLoader title="Loading saved posts..." />
+    }
+
+    if (bookmarks.length === 0) {
+        return (
+            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
+                You haven't saved any posts yet
+            </p>
+        )
+    }
 
     return (
-        <ul className="list-none m-0 p-0">
-            <PostsTable {...posts} />
-        </ul>
+        <ProfileDocumentGrid
+            items={bookmarks.map((bookmark) => ({
+                key: bookmark.url,
+                title: bookmark.title || bookmark.url,
+                href: bookmark.url,
+                excerpt: bookmark.description,
+            }))}
+        />
     )
 }
 
@@ -942,29 +581,20 @@ const BodyEditor = ({ values, setFieldValue, bodyKey, initialValue, maxLength })
     )
 }
 
-const ProfileTabs = ({ profile, firstName, id, isEditing, values, errors, setFieldValue }) => {
+const ProfileTabs = ({ profile, firstName, id, username, isEditing, values, errors, setFieldValue }) => {
     const { appWindow } = useWindow()
-    const { user, isModerator } = useUser()
+    const { user } = useUser()
     const [sort, setSort] = useState(sortOptions[0].label)
-    const [hasPosts, setHasPosts] = useState(false)
+    const authorId = id ? String(id) : undefined
+    const authorName = username || profile?.username || firstName
     const posts = usePosts({
+        authorId,
+        author: authorName,
+        includeBody: true,
         params: {
             sort: sortOptions.find((option) => option.label === sort)?.sort,
-            filters: {
-                authors: {
-                    id: {
-                        $eq: id,
-                    },
-                },
-            },
         },
     })
-
-    useEffect(() => {
-        if (!hasPosts && posts.posts.length > 0) {
-            setHasPosts(true)
-        }
-    }, [posts])
 
     const tabs = [
         {
@@ -981,88 +611,87 @@ const ProfileTabs = ({ profile, firstName, id, isEditing, values, errors, setFie
                 <Markdown className="">{profile.biography || `${firstName} hasn't written a bio yet`}</Markdown>
             ),
         },
-        ...((isModerator && isEditing) || profile.readme
-            ? [
-                  {
-                      value: 'readme',
-                      label: 'README',
-                      content: isEditing ? (
-                          <BodyEditor
-                              values={values}
-                              setFieldValue={setFieldValue}
-                              bodyKey="readme"
-                              initialValue={profile.readme}
-                              maxLength={10000}
-                          />
-                      ) : (
-                          <Markdown className="prose dark:prose-invert prose-sm">{profile.readme}</Markdown>
-                      ),
-                  },
-              ]
-            : []),
         {
             value: 'discussions',
             label: 'Discussions',
             content: (
                 <>
                     <Questions
-                        profileId={id}
+                        profileId={authorId}
                         disclaimer={false}
                         showForm={false}
                         noQuestionsMessage={
                             <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
-                                {firstName} hasn't participated in any discussions yet
+                                {firstName} hasn't started any discussions yet
                             </p>
                         }
                     />
                 </>
             ),
         },
-        ...(hasPosts
+        {
+            value: 'posts',
+            label: 'Posts',
+            content: (
+                <>
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-lg font-bold m-0">Posts</h4>
+                        <Select
+                            groups={[
+                                {
+                                    items: sortOptions.map((option) => ({
+                                        label: option.label,
+                                        value: option.label,
+                                    })),
+                                    label: 'Sort by',
+                                },
+                            ]}
+                            value={sort}
+                            onValueChange={(value) => setSort(value)}
+                        />
+                    </div>
+                    <ProfileDocumentGrid
+                        loading={posts.isLoading}
+                        items={posts.posts.map((post: any) => ({
+                            key: post.id,
+                            title: post.attributes?.title || 'Untitled',
+                            href: post.attributes?.slug || '#',
+                            excerpt: post.attributes?.body || '',
+                            imageUrl: post.attributes?.featuredImage?.url,
+                            date: post.attributes?.date,
+                            kind: 'md' as const,
+                        }))}
+                        empty={
+                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
+                                {firstName} hasn't published any posts yet
+                            </p>
+                        }
+                    />
+                    {posts.hasMore && (
+                        <div className="mt-6">
+                            {posts.isValidating ? (
+                                <HourglassLoader title="Loading more posts..." />
+                            ) : (
+                                <OSButton size="sm" width="full" hover="background" onClick={() => posts.fetchMore()}>
+                                    Load more
+                                </OSButton>
+                            )}
+                        </div>
+                    )}
+                </>
+            ),
+        },
+        ...(user?.profile?.id === id || user?.id === id
             ? [
                   {
-                      value: 'posts',
-                      label: 'Posts',
+                      value: 'saved',
+                      label: 'Saved posts',
                       content: (
                           <>
-                              <div className="flex justify-between items-center mb-4">
-                                  <h4 className="text-lg font-bold m-0">All posts</h4>
-                                  <Select
-                                      groups={[
-                                          {
-                                              items: sortOptions.map((option) => ({
-                                                  label: option.label,
-                                                  value: option.label,
-                                              })),
-                                              label: 'Sort by',
-                                          },
-                                      ]}
-                                      value={sort}
-                                      onValueChange={(value) => setSort(value)}
-                                  />
-                              </div>
-                              <PostsTable {...posts} />
+                              <h4 className="text-lg font-bold mb-4">Saved</h4>
+                              <SavedPosts />
                           </>
                       ),
-                  },
-              ]
-            : []),
-        ...(user?.profile?.id === id
-            ? [
-                  {
-                      value: 'likes',
-                      label: 'Liked posts',
-                      content: (
-                          <>
-                              <h4 className="text-lg font-bold mb-4">Your liked posts</h4>
-                              <LikedPosts profileID={id} />
-                          </>
-                      ),
-                  },
-                  {
-                      value: 'points',
-                      label: 'Points',
-                      content: <Points />,
                   },
               ]
             : []),
@@ -1082,13 +711,16 @@ const ProfileTabs = ({ profile, firstName, id, isEditing, values, errors, setFie
 
 const ValidationSchema = Yup.object().shape({
     firstName: Yup.string().required('Required'),
-    lastName: Yup.string().required('Required'),
+    lastName: Yup.string().nullable(),
+    username: Yup.string()
+        .required('Required')
+        .test('username', '2–32 letters, numbers, _ or -', (value) => isValidProfileUsername(value)),
+    birthDate: Yup.string().nullable(),
     website: Yup.string().url('Invalid URL').nullable(),
     github: Yup.string().url('Invalid URL').nullable(),
     linkedin: Yup.string().url('Invalid URL').nullable(),
     twitter: Yup.string().url('Invalid URL').nullable(),
     biography: Yup.string().max(3000, 'Please limit your bio to 3,000 characters, you wordsmith!').nullable(),
-    country: Yup.string().nullable(),
     location: Yup.string().nullable(),
 })
 
@@ -1112,13 +744,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
     const posthog = usePostHog()
     const { addToast } = useToast()
-    const { user, getJwt } = useUser()
+    const { user, getJwt, fetchUser } = useUser()
     const [isEditing, setIsEditing] = useState(false)
-    const [giftPopoverOpen, setGiftPopoverOpen] = useState(false)
-    const [giftAmount, setGiftAmount] = useState<number>()
-    const [giftNote, setGiftNote] = useState('')
-    const [giftSubmitting, setGiftSubmitting] = useState(false)
-    const [giftConfirming, setGiftConfirming] = useState(false)
 
     const { profileData: data, error, isLoading, isCurrentUser, isModerator, mutate } = useProfileData(rawId)
 
@@ -1232,16 +859,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
     const { attributes: profile } = data || {}
     const { firstName, lastName } = profile || {}
 
-    const name = [firstName, lastName].filter(Boolean).join(' ')
-    const isTeamMember = profile?.teams?.data?.length > 0
-    const team = profile?.teams?.data[0]
-
-    // Create a map of team names to crest data for quick lookup
-    const teamCrestMap = team?.attributes?.crest?.data
-        ? {
-              [team.attributes.name]: team.attributes.crest.data.attributes.url,
-          }
-        : {}
+    const name = [firstName, lastName].filter(Boolean).join(' ') || profile?.username || 'Profile'
 
     const { submitForm, isSubmitting, setFieldValue, values, resetForm, errors } = useFormik({
         validationSchema: ValidationSchema,
@@ -1254,193 +872,79 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             avatar: getAvatarURL(profile),
             firstName: profile?.firstName,
             lastName: profile?.lastName,
+            username: profile?.username || '',
+            birthDate: profile?.birthDate ? String(profile.birthDate).slice(0, 10) : '',
             location: profile?.location,
-            country: profile?.country,
             pronouns: profile?.pronouns,
-            pineappleOnPizza: profile?.pineappleOnPizza,
             biography: profile?.biography,
             images: [],
-            readme: profile?.readme,
-            height: profile?.height,
-            color: profile?.color,
-            backgroundImage: profile?.backgroundImage,
             companyRole: profile?.companyRole,
-            amaEnabled: profile?.amaEnabled,
-            tShirt: profile?.tShirt || { fit: null, size: null, additionalInfo: null },
         },
         onSubmit: async ({ avatar, images, ...values }) => {
             try {
-                posthog?.capture('squeak profile update start', {
-                    profileId: id,
-                    ...values,
-                })
+                const userId = String(data?.id || user?.id || '')
+                if (!userId) throw new Error('Not signed in')
+                if (!isValidProfileUsername(values.username)) {
+                    throw new Error('Username must be 2–32 letters, numbers, _ or -')
+                }
 
-                const JWT = await getJwt()
-                let image = avatar
-
-                // WIM: profile edits go through community/profile/edit → updateWimProfile.
-                // This ProfileView editor still targets Squeak/Strapi when host is set.
-                const squeakHost = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
-                if (!squeakHost) {
-                    addToast({
-                        description: 'Use Community → Edit profile to update your Supabase profile.',
-                        duration: 4000,
+                let avatarUrl: string | undefined
+                if (avatar instanceof File) {
+                    avatarUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => resolve(String(reader.result || ''))
+                        reader.onerror = reject
+                        reader.readAsDataURL(avatar)
                     })
-                    setIsEditing(false)
-                    return
+                } else if (avatar === null) {
+                    avatarUrl = ''
                 }
 
-                if (avatar && typeof avatar === 'object') {
-                    const formData = new FormData()
-                    formData.append('files', avatar)
-
-                    const uploadedImage = await fetch(`${squeakHost}/api/upload`, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            Authorization: `Bearer ${JWT}`,
-                        },
-                    }).then((res) => res.json())
-
-                    if (uploadedImage?.length > 0) {
-                        image = uploadedImage[0]
-                    }
+                const { updateWimProfile } = await import('lib/wim-auth')
+                const patch: Record<string, string | null> = {
+                    username: String(values.username).trim(),
+                    first_name: String(values.firstName || '').trim() || null,
+                    last_name: String(values.lastName || '').trim() || null,
+                    bio: values.biography ?? null,
+                    location: values.location ?? null,
+                    website: values.website ?? null,
+                    github: values.github ?? null,
+                    linkedin: values.linkedin ?? null,
+                    twitter: values.twitter ?? null,
+                    pronouns: values.pronouns ?? null,
+                    birth_date: values.birthDate ? String(values.birthDate).slice(0, 10) : null,
+                }
+                if (avatarUrl !== undefined) {
+                    patch.avatar_url = avatarUrl || null
                 }
 
-                const { body: biography } =
-                    values.biography && images.length > 0
-                        ? await transformValues({ body: values.biography, images }, id, JWT)
-                        : {}
+                const { error } = await updateWimProfile(userId, patch as any)
+                if (error) throw new Error(error)
 
-                const { body: readme } =
-                    values.readme && images.length > 0
-                        ? await transformValues({ body: values.readme, images }, id, JWT)
-                        : {}
-
-                const body = {
-                    data: {
-                        ...values,
-                        ...((image && typeof image !== 'string') || image === null
-                            ? { avatar: image?.id ?? null }
-                            : {}),
-                        ...(biography ? { biography } : {}),
-                        ...(readme ? { readme } : {}),
-                    },
-                }
-
-                const { data } = await fetch(`${squeakHost}/api/profiles/${id}?populate=avatar`, {
-                    method: 'PUT',
-                    body: JSON.stringify(body),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${JWT}`,
-                    },
-                }).then((res) => res.json())
-
-                if (data) {
-                    await mutate()
-
-                    // Show success toast
-                    addToast({
-                        description: (
-                            <>
-                                <IconCheck className="text-green size-4 inline-block mr-1" />
-                                Profile saved successfully
-                            </>
-                        ),
-                        duration: 3000,
-                    })
-                }
-
-                posthog?.capture('squeak profile update', {
-                    profileId: id,
-                    ...values,
+                await fetchUser()
+                await mutate()
+                addToast({
+                    description: (
+                        <>
+                            <IconCheck className="text-green size-4 inline-block mr-1" />
+                            Profile saved
+                        </>
+                    ),
+                    duration: 3000,
                 })
+                posthog?.capture('wim profile update', { profileId: userId })
             } catch (error) {
-                posthog?.capture('squeak error', {
-                    source: 'EditProfile.handleSubmit',
-                    error: JSON.stringify(error),
-                    profileId: id,
-                    ...values,
+                addToast({
+                    description: error instanceof Error ? error.message : 'Profile update failed',
+                    error: true,
+                    duration: 4000,
                 })
-
                 throw error
             } finally {
                 setIsEditing(false)
             }
         },
     })
-
-    const handleGift = async () => {
-        if (!giftAmount || !giftNote?.trim()) {
-            addToast({
-                description: 'Amount and description are required',
-                error: true,
-                duration: 3000,
-            })
-            return
-        }
-
-        setGiftSubmitting(true)
-        try {
-            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
-            if (!host) {
-                addToast({
-                    description: 'Points gifting is not available on WorldInMaking yet',
-                    error: true,
-                    duration: 3000,
-                })
-                return
-            }
-            const jwt = await getJwt()
-            const response = await fetch(`${host}/api/points/gift`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${jwt}`,
-                },
-                body: JSON.stringify({
-                    profileId: id,
-                    amount: giftAmount,
-                    note: giftNote.trim(),
-                }),
-            })
-
-            if (response.ok) {
-                addToast({
-                    description: (
-                        <>
-                            <IconCheck className="text-green size-4 inline-block mr-1" />
-                            Gift sent successfully
-                        </>
-                    ),
-                    duration: 3000,
-                })
-                setGiftPopoverOpen(false)
-                setGiftAmount(undefined)
-                setGiftNote('')
-                setGiftConfirming(false)
-                mutate()
-            } else {
-                const data = await response.json()
-                addToast({
-                    description: data?.error?.message || 'Failed to send gift',
-                    error: true,
-                    duration: 3000,
-                })
-            }
-        } catch (err) {
-            console.error(err)
-            addToast({
-                description: 'Failed to send gift',
-                error: true,
-                duration: 3000,
-            })
-        } finally {
-            setGiftSubmitting(false)
-            setGiftConfirming(false)
-        }
-    }
 
     if (!profile && (isLoading || !isReady)) {
         return <ProfileSkeleton />
@@ -1452,19 +956,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
         <div data-scheme="secondary" className="pt-4 h-full bg-primary text-primary flex flex-col">
             <SEO title={`${name}'s profile - PostHog`} />
 
-            <ScrollArea
-                className="min-h-0 h-full"
-                style={
-                    values.backgroundImage
-                        ? {
-                              backgroundImage: `url(${values.backgroundImage.url})`,
-                              backgroundSize: values.backgroundImage.backgroundSize || 'auto',
-                              backgroundRepeat: values.backgroundImage.backgroundRepeat || 'no-repeat',
-                              backgroundPosition: values.backgroundImage.backgroundPosition || 'center',
-                          }
-                        : undefined
-                }
-            >
+            <ScrollArea className="min-h-0 h-full">
                 <div data-scheme="primary" className="mx-auto max-w-screen-xl px-4 pb-4 @container">
                     <div className="flex flex-col @2xl:flex-row gap-6 p-4">
                         <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4">
@@ -1477,11 +969,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 errors={errors}
                             />
 
-                            {(isEditing ||
-                                profile.reputation != null ||
-                                profile.pineappleOnPizza !== null ||
-                                profile.pronouns ||
-                                profile.location) && (
+                            {(isEditing || profile.pronouns || profile.location || profile.birthDate) && (
                                 <Block title="Details">
                                     <Details
                                         profile={profile}
@@ -1489,7 +977,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                         setFieldValue={setFieldValue}
                                         values={values}
                                         errors={errors}
-                                        isTeamMember={isTeamMember}
                                     />
                                 </Block>
                             )}
@@ -1510,26 +997,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 </Block>
                             )}
 
-                            {profile.achievements?.length > 0 && (
-                                <Block title="Achievements" url={`/community/achievements`}>
-                                    <AchievementsGrid
-                                        achievements={profile.achievements}
-                                        profile={profile}
-                                        mutate={mutate}
-                                    />
-                                </Block>
-                            )}
-                            {isEditing && <BackgroundImageField setFieldValue={setFieldValue} values={values} />}
-                            {isEditing && isCurrentUser && (
-                                <Block title="Connected accounts">
-                                    <ConnectedAccounts hideHeading stacked />
-                                </Block>
-                            )}
-                            {isModerator && isEditing && (
-                                <Block title="Special employee things">
-                                    <ModeratorFields setFieldValue={setFieldValue} values={values} errors={errors} />
-                                </Block>
-                            )}
                             {(isCurrentUser || (isModerator && user?.webmaster)) && (
                                 <div className="flex gap-2 mt-4">
                                     {isEditing ? (
@@ -1571,67 +1038,13 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             <ProfileTabs
                                 profile={profile}
                                 firstName={firstName}
-                                id={id}
+                                id={data?.id || id}
+                                username={profile?.username}
                                 isEditing={isEditing}
                                 values={values}
                                 errors={errors}
                                 setFieldValue={setFieldValue}
                             />
-                            {profile?.teams?.data?.length === 1 ? (
-                                // Single team - use Block (OSFieldset)
-                                <div className="mt-6">
-                                    <Block
-                                        title={`${profile.teams.data[0].attributes.name} Team`}
-                                        url={`/teams/${profile.teams.data[0].attributes.slug}`}
-                                        className="pt-6"
-                                    >
-                                        <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4 pt-8">
-                                            <TeamMembersList self={data} team={profile.teams.data[0]} />
-                                        </div>
-                                    </Block>
-                                </div>
-                            ) : profile?.teams?.data?.length > 1 ? (
-                                // Multiple teams - use OSTabs
-                                <div className="mt-6" data-scheme="secondary">
-                                    <OSTabs
-                                        tabs={profile.teams.data.map((team) => ({
-                                            value: team.attributes.slug,
-                                            label: <>{team.attributes.name} Team</>,
-                                            content: (
-                                                <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4">
-                                                    <div className="col-span-full border-b border-primary pb-2 mb-10">
-                                                        <Link href={`/teams/${team.attributes.slug}`}
-                                                            state={{ newWindow: true }}
-                                                            className="group font-bold flex items-center gap-1 hover:underline"
-                                                        >
-                                                            {team.attributes.name} Team
-                                                            <IconArrowUpRight className="size-3 text-muted group-hover:text-secondary" />
-                                                        </Link>
-                                                    </div>
-                                                    <TeamMembersList self={data} team={team} />
-                                                </div>
-                                            ),
-                                        }))}
-                                        defaultValue={profile.teams.data[0].attributes.slug}
-                                        triggerDataScheme="primary"
-                                    />
-                                </div>
-                            ) : null}
-
-                            {profile.amaEnabled && (
-                                <div className="mt-6">
-                                    <Block title="Comments">
-                                        <Questions
-                                            initialView={'question-form'}
-                                            slug={window?.location?.pathname}
-                                            profileId={undefined}
-                                            showForm
-                                            disclaimer={false}
-                                            autoFocus={false}
-                                        />
-                                    </Block>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -1642,122 +1055,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                         <>
                             {isModerator && (
                                 <div className="flex gap-px">
-                                    <Popover
-                                        dataScheme="primary"
-                                        open={giftPopoverOpen}
-                                        onOpenChange={setGiftPopoverOpen}
-                                        trigger={
-                                            <span>
-                                                <OSButton
-                                                    asLink
-                                                    size="md"
-                                                    tooltip={<>Gift this user points</>}
-                                                    icon={<IconPresent />}
-                                                    iconClassName="size-5"
-                                                />
-                                            </span>
-                                        }
-                                        contentClassName="w-80 !p-0 overflow-hidden border border-primary rounded-md"
-                                    >
-                                        <div className="bg-gradient-to-br from-yellow/20 via-orange/10 to-red/10 p-4 border-b border-primary">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-yellow/30 rounded-full p-2">
-                                                    <IconPresent className="size-5 text-orange" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-sm font-bold m-0 flex items-center gap-1">
-                                                        Gift points to {firstName}
-                                                        <IconSparkles className="size-3.5 text-yellow" />
-                                                    </h4>
-                                                    <p className="text-xs text-secondary m-0">
-                                                        Reward great contributions
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 pt-2 space-y-2">
-                                            <div>
-                                                <label
-                                                    htmlFor="gift-amount"
-                                                    className="text-xs font-semibold text-secondary block mb-1"
-                                                >
-                                                    Points
-                                                </label>
-                                                <OSInput
-                                                    id="gift-amount"
-                                                    direction="column"
-                                                    showLabel={false}
-                                                    label="Points"
-                                                    type="number"
-                                                    min={1}
-                                                    value={giftAmount}
-                                                    onChange={(e) =>
-                                                        setGiftAmount(e.target.value ? Number(e.target.value) : '')
-                                                    }
-                                                    placeholder="How many points?"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label
-                                                    htmlFor="gift-reason"
-                                                    className="text-xs font-semibold  text-secondary block mb-1"
-                                                >
-                                                    Reason
-                                                </label>
-                                                <OSInput
-                                                    id="gift-reason"
-                                                    direction="column"
-                                                    showLabel={false}
-                                                    label="Reason"
-                                                    type="text"
-                                                    value={giftNote}
-                                                    onChange={(e) => setGiftNote(e.target.value)}
-                                                    placeholder="What's this gift for?"
-                                                />
-                                            </div>
-                                            {giftConfirming ? (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-secondary text-center">
-                                                        Send{' '}
-                                                        <span className="font-bold">
-                                                            {giftAmount} point{giftAmount === 1 ? '' : 's'}
-                                                        </span>{' '}
-                                                        to {profile?.firstName}?
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <OSButton
-                                                            size="md"
-                                                            variant="secondary"
-                                                            onClick={() => setGiftConfirming(false)}
-                                                            disabled={giftSubmitting}
-                                                            width="full"
-                                                        >
-                                                            Cancel
-                                                        </OSButton>
-                                                        <OSButton
-                                                            size="md"
-                                                            variant="primary"
-                                                            onClick={handleGift}
-                                                            disabled={giftSubmitting}
-                                                            width="full"
-                                                        >
-                                                            {giftSubmitting ? 'Sending...' : 'Confirm'}
-                                                        </OSButton>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <OSButton
-                                                    size="md"
-                                                    variant="primary"
-                                                    onClick={() => setGiftConfirming(true)}
-                                                    disabled={!giftAmount || !giftNote?.trim()}
-                                                    width="full"
-                                                >
-                                                    Send gift
-                                                </OSButton>
-                                            )}
-                                        </div>
-                                    </Popover>
                                     <OSButton
                                         asLink
                                         size="md"
@@ -1794,221 +1091,5 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                 />
             </div>
         </div>
-    )
-}
-
-const TeamMembersList = ({ self, team }) => {
-    const selfTeammate = team.attributes.profiles.data.find((teammate) => teammate.id === self.id)
-    const otherTeammates = team.attributes.profiles.data.filter((teammate) => teammate.id !== self.id)
-    const teammates = [selfTeammate, ...otherTeammates].filter(
-        (teammate) => teammate?.attributes?.startDate && new Date(teammate.attributes.startDate) <= new Date()
-    )
-
-    return (
-        <>
-            {teammates.map((teammate) => {
-                return (
-                    <Link key={teammate.id} to={`/community/profiles/${teammate.id}`} state={{ newWindow: true }}>
-                        <TeamMember
-                            avatar={{
-                                url:
-                                    teammate.attributes.avatar?.data?.attributes?.url ||
-                                    teammate.attributes.avatar?.url,
-                            }}
-                            firstName={teammate.attributes.firstName}
-                            lastName={teammate.attributes.lastName}
-                            companyRole={teammate.attributes.companyRole}
-                            country={teammate.attributes.country}
-                            location={teammate.attributes.location}
-                            squeakId={teammate.id}
-                            color={teammate.attributes.color || 'yellow'}
-                            biography={teammate.attributes.biography || ''}
-                            pineappleOnPizza={teammate.attributes.pineappleOnPizza}
-                            startDate={teammate.attributes.startDate}
-                            isTeamLead={team.attributes?.leadProfiles?.data?.some(
-                                ({ id: leadID }) => leadID === teammate.id
-                            )}
-                        />
-                    </Link>
-                )
-            })}
-        </>
-    )
-}
-
-const AchievementTooltipContent = ({ icon, title, description, iconSize = 'size-16' }) => (
-    <>
-        <div className="flex justify-center -mx-1.5 -mt-1 mb-2 py-2 bg-accent/50 rounded">
-            <img className={iconSize} src={icon} />
-        </div>
-        <h4 className="text-lg m-0">{title}</h4>
-        {description && <p className="m-0 mt-1 text-sm">{description}</p>}
-    </>
-)
-
-const AchievementGrouped = ({ items, profile, mutate }) => {
-    const groupData = items[0].achievement.data.attributes.achievement_group.data.attributes
-
-    if (groupData.tiered && items.length === 1) {
-        const { achievement, hidden, id } = items[0]
-        return (
-            <Achievement {...achievement.data.attributes} id={id} hidden={hidden} profile={profile} mutate={mutate} />
-        )
-    }
-
-    return (
-        <Tooltip
-            delay={0}
-            side="bottom"
-            trigger={
-                <span className="relative">
-                    <img className="w-full" src={groupData.icon?.data?.attributes?.url} />
-                    {items.length > 1 && (
-                        <span className="absolute -top-1 -right-1 bg-accent text-primary text-[10px] font-bold rounded-full size-4 flex items-center justify-center border border-primary">
-                            x{items.length}
-                        </span>
-                    )}
-                </span>
-            }
-        >
-            <div className="max-w-[220px] text-left">
-                <AchievementTooltipContent
-                    icon={groupData.icon?.data?.attributes?.url}
-                    title={groupData.Title}
-                    description={groupData.description}
-                    iconSize="size-24"
-                />
-                <div className="border-t border-primary mt-3 pt-2.5">
-                    <p className="text-xs font-semibold opacity-50 m-0 mb-2">Unlocked by</p>
-                    <ul className="m-0 p-0 list-none flex flex-col gap-2">
-                        {items.map(({ achievement, id }, index) => (
-                            <li key={id} className="relative flex items-center gap-2">
-                                <div className="size-7 flex-shrink-0 relative">
-                                    {index < items.length - 1 && (
-                                        <div className="absolute w-px h-full left-1/2 -translate-x-1/2 bg-border dark:bg-border-dark bottom-0 translate-y-1/2" />
-                                    )}
-                                    <img
-                                        className="size-full relative"
-                                        src={achievement.data.attributes.icon?.data?.attributes?.url}
-                                    />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold m-0 leading-tight">
-                                        {achievement.data.attributes.title}
-                                    </p>
-                                    {achievement.data.attributes.description && (
-                                        <p className="text-xs opacity-60 m-0 leading-tight mt-0.5">
-                                            {achievement.data.attributes.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        </Tooltip>
-    )
-}
-
-const AchievementsGrid = ({ achievements, profile, mutate }) => {
-    const groups = useMemo(() => {
-        const grouped = achievements.filter((item) => item.achievement?.data?.attributes?.achievement_group?.data)
-        return Object.groupBy(grouped, (item) => item.achievement.data.attributes.achievement_group.data.id)
-    }, [achievements])
-
-    return (
-        <ul className="grid grid-cols-7 gap-2 m-0 p-0 list-none">
-            {achievements.map(({ achievement, hidden, id }) => {
-                if (!achievement?.data) return null
-                const group = achievement.data.attributes?.achievement_group?.data
-                if (group) {
-                    if (groups[group.id][0].id !== id) return null
-                    return (
-                        <li key={`group-${group.id}`} className="flex justify-center">
-                            <AchievementGrouped items={groups[group.id]} profile={profile} mutate={mutate} />
-                        </li>
-                    )
-                }
-                return (
-                    <li key={id} className="flex justify-center">
-                        <Achievement
-                            {...achievement.data.attributes}
-                            id={id}
-                            hidden={hidden}
-                            profile={profile}
-                            mutate={mutate}
-                        />
-                    </li>
-                )
-            })}
-        </ul>
-    )
-}
-
-const Achievement = ({ title, description, image, icon, id, mutate, profile, ...other }) => {
-    const { user, getJwt } = useUser()
-    const [hidden, setHidden] = useState(other.hidden)
-    const [opacity, setOpacity] = useState(hidden ? 0.6 : 1)
-    const isCurrentUser = user?.profile?.id === profile.id
-    const handleClick = async (hidden: boolean) => {
-        if (isCurrentUser) {
-            setHidden(hidden)
-            try {
-                const jwt = await getJwt()
-                const body = {
-                    data: {
-                        achievements: [
-                            ...profile.achievements
-                                .filter((achievement) => achievement.id !== id)
-                                .map(({ id, hidden }) => ({ id, hidden })),
-                            {
-                                id,
-                                hidden,
-                            },
-                        ],
-                    },
-                }
-                await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${user.profile.id}?populate=avatar`, {
-                    method: 'PUT',
-                    body: JSON.stringify(body),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${jwt}`,
-                    },
-                })
-                await mutate()
-            } catch (err) {
-                console.error(err)
-            }
-        }
-    }
-
-    useEffect(() => {
-        setOpacity(hidden ? 0.6 : 1)
-    }, [hidden])
-
-    const ImageContainer = isCurrentUser ? 'button' : 'span'
-
-    return (
-        <Tooltip
-            delay={0}
-            side="bottom"
-            trigger={
-                <ImageContainer
-                    onClick={isCurrentUser ? () => handleClick(!hidden) : undefined}
-                    onMouseEnter={isCurrentUser ? () => setOpacity(0.8) : undefined}
-                    onMouseOut={isCurrentUser ? () => setOpacity(hidden ? 0.6 : 1) : undefined}
-                    style={{ opacity }}
-                    className={`relative transition-opacity`}
-                >
-                    <img className="w-full" src={icon?.data?.attributes?.url} />
-                </ImageContainer>
-            }
-        >
-            <div className="max-w-[220px] text-left">
-                <AchievementTooltipContent icon={icon?.data?.attributes?.url} title={title} description={description} />
-            </div>
-        </Tooltip>
     )
 }

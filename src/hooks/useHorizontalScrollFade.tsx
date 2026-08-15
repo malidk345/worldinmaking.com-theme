@@ -75,20 +75,19 @@ interface HorizontalScrollFadesProps {
 }
 
 /**
- * Renders left/right gradient overlays that fade to the page background,
- * hinting that a table (or other content) can be scrolled horizontally.
- * Render inside a `relative` container that clips the scroll area.
+ * Thin inset edge so a horizontally scrollable pane reads as recessed,
+ * not as a white wash. Render inside a `relative` container.
  */
-export function HorizontalScrollFades({ showStart, showEnd, width = 'w-8' }: HorizontalScrollFadesProps): JSX.Element {
+export function HorizontalScrollFades({ showStart, showEnd, width = 'w-4' }: HorizontalScrollFadesProps): JSX.Element {
     return (
         <div aria-hidden className="pointer-events-none">
             <div
-                className={`scrollarea-fade-x absolute top-0 bottom-0 left-0 ${width} bg-gradient-to-l from-[color-mix(in_srgb,rgb(var(--bg))_0%,transparent)] to-[rgb(var(--bg))] transition-opacity duration-150 ${
+                className={`scrollarea-fade-x absolute top-0 bottom-0 left-0 ${width} bg-gradient-to-r from-black/[0.12] dark:from-black/35 to-transparent transition-opacity duration-150 ${
                     showStart ? 'opacity-100' : 'opacity-0'
                 }`}
             />
             <div
-                className={`scrollarea-fade-x absolute top-0 bottom-0 right-0 ${width} bg-gradient-to-r from-[color-mix(in_srgb,rgb(var(--bg))_0%,transparent)] to-[rgb(var(--bg))] transition-opacity duration-150 ${
+                className={`scrollarea-fade-x absolute top-0 bottom-0 right-0 ${width} bg-gradient-to-l from-black/[0.12] dark:from-black/35 to-transparent transition-opacity duration-150 ${
                     showEnd ? 'opacity-100' : 'opacity-0'
                 }`}
             />

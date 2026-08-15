@@ -3,6 +3,7 @@ import { StrapiRecord, ProfileData } from 'lib/strapi'
 import Avatar from './Avatar'
 import getAvatarURL from '../util/getAvatar'
 import Link from 'components/Link'
+import { profileHref } from 'lib/profile-path'
 
 type ProfileProps = {
     className?: string
@@ -13,17 +14,17 @@ export const Profile = ({ className, profile }: ProfileProps) => {
     const handle =
         profile?.attributes?.username ||
         profile?.attributes?.user?.data?.attributes?.username ||
-        (profile?.attributes?.firstName ? profile.attributes.firstName.toLowerCase().replace(/\s+/g, '-') : null) ||
         profile?.id ||
         ''
+    const href = profileHref(handle)
     return profile?.attributes ? (
         <Link
             className={`flex items-center relative !no-underline hover:!underline ${className}`}
-            to={`/profile/${handle}`}
+            to={href || '#'}
         >
-            <div className="w-[44px] h-[44px] ml-[-2px] rounded-full mr-[10px] overflow-hidden">
+            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
                 <Avatar
-                    className={`w-[40px]`}
+                    className="size-10"
                     image={getAvatarURL(profile?.attributes)}
                     color={profile.attributes.color}
                 />

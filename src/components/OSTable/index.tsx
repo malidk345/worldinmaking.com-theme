@@ -299,7 +299,11 @@ const OSTable: React.FC<OSTableProps> = ({
                     className="hidden @sm:block pointer-events-none absolute inset-0 bg-black blur-xl opacity-10 -z-10 rounded-md"
                 />
             )}
-            <ScrollArea fullWidth fadeX={fadeHorizontal}>
+            <ScrollArea
+                fullWidth
+                fadeX={fadeHorizontal}
+                className="!h-auto !flex-none !overflow-hidden rounded-md"
+            >
                 <div
                     className={`md:@2xs/not-full-width:px-0 flex ${
                         width === 'full'
@@ -372,31 +376,31 @@ const OSTable: React.FC<OSTableProps> = ({
                                   />
                               ))}
                     </div>
-                    {(loading || fetchMore) && (
-                        <div className="mt-4 mb-16">
-                            {loading ? (
-                                <RowSkeleton />
-                            ) : fetchMore ? (
-                                <CallToAction onClick={() => fetchMore()} size="md" width="full">
-                                    Load more
-                                </CallToAction>
-                            ) : null}
-                        </div>
-                    )}
                 </div>
-                {children}
-                {pagination && (
-                    <Pagination
-                        currentPage={pagination.currentPage}
-                        totalPages={pagination.totalPages}
-                        goToPage={pagination.goToPage}
-                        nextPage={pagination.nextPage}
-                        prevPage={pagination.prevPage}
-                        hasNextPage={pagination.hasNextPage}
-                        hasPrevPage={pagination.hasPrevPage}
-                    />
-                )}
             </ScrollArea>
+            {(loading || fetchMore) && (
+                <div className="mt-4 mb-16">
+                    {loading ? (
+                        <RowSkeleton />
+                    ) : fetchMore ? (
+                        <CallToAction onClick={() => fetchMore()} size="md" width="full">
+                            Load more
+                        </CallToAction>
+                    ) : null}
+                </div>
+            )}
+            {children}
+            {pagination && (
+                <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    goToPage={pagination.goToPage}
+                    nextPage={pagination.nextPage}
+                    prevPage={pagination.prevPage}
+                    hasNextPage={pagination.hasNextPage}
+                    hasPrevPage={pagination.hasPrevPage}
+                />
+            )}
         </div>
     )
 }

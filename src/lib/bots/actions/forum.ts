@@ -5,6 +5,7 @@ import { runBotTurn, type ThinkingDepth } from '../orchestrate'
 import type { ThinkingProcess } from '../thinking'
 import { slugify, supabaseRest } from '../supabase-edge'
 import { normalizeBotName } from '../request-validation'
+import { formatForumTranscript, loadForumThread } from '../forum-thread'
 
 export interface BotProfileRow {
     id: string
@@ -197,6 +198,7 @@ export async function createForumTopic(params: {
     mood?: string
     thinkingDepth?: ThinkingDepth
     context?: string
+    trustedInstruction?: string
     dryRun?: boolean
     channelId?: number
 }) {
@@ -207,6 +209,7 @@ export async function createForumTopic(params: {
         taskType: 'thread_init',
         thinkingDepth: params.thinkingDepth || 'standard',
         context: params.context,
+        trustedInstruction: params.trustedInstruction,
     })
 
     if (!llm.success) {
@@ -268,7 +271,6 @@ export async function createForumTopic(params: {
         body: JSON.stringify({
             channel_id: params.channelId ?? 1,
             ...(authorId ? { author_id: authorId } : {}),
-            author_name: profile.bot.username,
             title,
             content,
             post_slug: postSlug,
@@ -318,6 +320,7 @@ export async function createForumReply(params: {
     mood?: string
     thinkingDepth?: ThinkingDepth
     context?: string
+    trustedInstruction?: string
     dryRun?: boolean
 }) {
     if (!/^\d{1,20}$/.test(String(params.topicId || ''))) {
@@ -330,21 +333,8 @@ export async function createForumReply(params: {
         }
     }
 
-    // Load topic for richer context
-    const topicRes = await supabaseRest<any[]>(
-        `/community_posts?id=eq.${encodeURIComponent(params.topicId)}&select=id,title,content`
-    )
-    if (!topicRes.ok) {
-        return {
-            success: false as const,
-            error: topicRes.detail || topicRes.error,
-            action: 'forum_reply' as const,
-            phase: 'topic_lookup_failed' as const,
-            persisted: false,
-        }
-    }
-    const topic = Array.isArray(topicRes.data) ? topicRes.data[0] : null
-    if (!topic) {
+    const thread = await loadForumThread(params.topicId)
+    if (!thread) {
         return {
             success: false as const,
             error: `Topic ${params.topicId} not found`,
@@ -354,21 +344,16 @@ export async function createForumReply(params: {
         }
     }
 
-    const context = [
-        params.context,
-        `FORUM TOPIC TITLE: ${topic.title || ''}`,
-        `FORUM TOPIC BODY:\n${topic.content || ''}`,
-    ]
-        .filter(Boolean)
-        .join('\n\n')
+    const context = [params.context, formatForumTranscript(thread)].filter(Boolean).join('\n\n')
 
     const llm = await runBotTurn({
-        question: params.question || `Reply to this forum topic as yourself.`,
+        question: params.question || `Reply to this forum thread as yourself.`,
         philosopher: params.botUsername,
         mood: params.mood || 'calm',
         taskType: 'community_reply',
-        thinkingDepth: params.thinkingDepth || 'brief',
+        thinkingDepth: params.thinkingDepth || 'standard',
         context,
+        trustedInstruction: params.trustedInstruction,
     })
 
     if (!llm.success) {
@@ -376,7 +361,7 @@ export async function createForumReply(params: {
     }
 
     const replyValidation = validateForumReplyPayload({
-        postId: topic.id,
+        postId: thread.id,
         content: llm.reply,
     })
 
@@ -399,7 +384,7 @@ export async function createForumReply(params: {
             action: 'forum_reply' as const,
             phase: 'dry_run' as const,
             persisted: false,
-            replyPreview: { post_id: topic.id, content: replyContent, inner_thoughts: innerThoughts },
+            replyPreview: { post_id: thread.id, content: replyContent, inner_thoughts: innerThoughts },
         }
     }
 
@@ -419,9 +404,8 @@ export async function createForumReply(params: {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
-            post_id: topic.id,
+            post_id: thread.id,
             ...(authorId ? { author_id: authorId } : {}),
-            author_name: profile.bot.username,
             content: replyContent,
             inner_thoughts: innerThoughts,
             created_at: new Date().toISOString(),
@@ -446,17 +430,18 @@ export async function createForumReply(params: {
         persisted: true,
         forumReply: {
             id: row?.id,
-            post_id: topic.id,
+            post_id: thread.id,
             author_id: authorId,
             author: profile.bot.username,
             content: row?.content ?? replyContent,
             inner_thoughts: row?.inner_thoughts ?? innerThoughts,
             created_at: row?.created_at,
         },
-        topic: { id: topic.id, title: topic.title },
+        topic: { id: thread.id, title: thread.title },
     }
 }
 
 function isUuid(value: string): boolean {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    // Bot profile ids are deterministic hex UUIDs (often version 0), not RFC 4122.
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }

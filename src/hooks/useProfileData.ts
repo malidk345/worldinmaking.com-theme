@@ -6,17 +6,13 @@ import { supabase } from 'lib/supabase'
 
 function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
     const username = dbProfile.username || 'user'
-    const display = username
-        .split(/[-_]/)
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
 
     return {
         id: dbProfile.id as any,
         attributes: {
             username,
-            firstName: display,
-            lastName: '',
+            firstName: dbProfile.first_name || '',
+            lastName: dbProfile.last_name || '',
             biography: dbProfile.bio || '',
             location: dbProfile.location || null,
             website: dbProfile.website || null,
@@ -24,12 +20,8 @@ function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
             github: dbProfile.github || null,
             linkedin: dbProfile.linkedin || null,
             pronouns: dbProfile.pronouns || null,
-            reputation: 0,
-            company: null,
+            birthDate: dbProfile.birth_date || null,
             companyRole: dbProfile.role || 'member',
-            country: null,
-            amaEnabled: false,
-            height: null,
             bookmarks: [],
             gravatarURL: null,
             createdAt: dbProfile.created_at || new Date().toISOString(),
@@ -78,8 +70,11 @@ export function useProfileData(identifier?: string | number) {
     const { user, isValidating: userValidating } = useUser()
 
     const rawId = useMemo(() => {
-        if (identifier && String(identifier).trim() !== 'me') {
-            return String(identifier).trim()
+        const given = identifier == null ? '' : String(identifier).trim()
+        // Only the explicit "me" / empty /profile route is the signed-in user.
+        // A real handle must never fall back to whoever is logged in.
+        if (given && given.toLowerCase() !== 'me') {
+            return given
         }
         return user?.username || (user?.profile?.id ? String(user.profile.id) : user?.id ? String(user.id) : '')
     }, [identifier, user])
@@ -112,18 +107,15 @@ export function useProfileData(identifier?: string | number) {
         if (data) return data
         if (isCurrentUser && user) {
             const username = user.username || 'user'
-            const display = username
-                .split(/[-_]/)
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(' ')
             return {
                 id: (user.profile?.id || user.id) as any,
                 attributes: {
                     username,
-                    firstName: user.profile?.firstName || display,
+                    firstName: user.profile?.firstName || '',
                     lastName: user.profile?.lastName || '',
                     biography: user.profile?.biography || '',
                     location: user.profile?.location || null,
+                    birthDate: user.profile?.birthDate || null,
                     website: user.profile?.website || null,
                     twitter: user.profile?.twitter || null,
                     github: user.profile?.github || null,

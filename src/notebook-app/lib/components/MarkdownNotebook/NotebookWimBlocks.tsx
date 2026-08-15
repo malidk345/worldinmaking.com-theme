@@ -46,8 +46,15 @@ export function NotebookWimCodeBlock({
             data-markdown-notebook-node-id={node.id}
         >
             {spec ? (
-                <div className="p-4" data-testid="notebook-chart-block">
-                    <ChartArtifactRenderer spec={spec} />
+                <div data-testid="notebook-chart-block">
+                    {spec.title ? (
+                        <div className="border-b border-primary px-3 py-2 text-[13px] font-semibold text-primary">
+                            {spec.title}
+                        </div>
+                    ) : null}
+                    <div className="px-2 py-2">
+                        <ChartArtifactRenderer spec={{ ...spec, title: undefined }} chrome={false} />
+                    </div>
                 </div>
             ) : isNotebookReactFence(language) || isNotebookHtmlFence(language) ? (
                 <div className="h-[360px] w-full" data-testid="notebook-ui-block">

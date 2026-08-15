@@ -15,7 +15,7 @@ export default function MyProfilePage() {
         if (!isValidating && user?.username) {
             router.replace(`/profile/${encodeURIComponent(user.username)}`)
         } else if (!isValidating && user?.profile?.id) {
-            router.replace(`/profile/${user.profile.id}`)
+            router.replace(`/profile/${encodeURIComponent(String(user.profile.id))}`)
         }
     }, [isValidating, user, router])
 
@@ -34,8 +34,7 @@ export default function MyProfilePage() {
                 <div data-scheme="primary" className="mx-auto max-w-md px-4 py-16 text-center">
                     <h1 className="text-2xl font-bold mb-2">View your profile</h1>
                     <p className="text-secondary mb-6">
-                        Sign in to the community to view and edit your profile, track your reputation, and manage your
-                        achievements.
+                        Sign in to the community to view and edit your profile.
                     </p>
                     <OSButton
                         variant="primary"
@@ -43,7 +42,11 @@ export default function MyProfilePage() {
                         onClick={() => {
                             openSignIn((user) => {
                                 if (user?.profile?.id) {
-                                    router.replace(`/community/profiles/${user.profile.id}`)
+                                    router.replace(
+                                        user.username
+                                            ? `/profile/${encodeURIComponent(user.username)}`
+                                            : `/profile/${encodeURIComponent(String(user.profile.id))}`
+                                    )
                                 }
                             })
                         }}

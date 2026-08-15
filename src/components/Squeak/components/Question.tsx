@@ -369,7 +369,7 @@ export function Question(props: QuestionProps) {
                 mutate,
             }}
         >
-            <div className={`text-primary ${isModerator && !publishedAt ? '' : ''}`}>
+            <div className={`text-primary min-w-0 max-w-full overflow-x-hidden ${isModerator && !publishedAt ? '' : ''}`}>
                 {archived && (
                     <div
                         data-scheme="secondary"
@@ -389,7 +389,7 @@ export function Question(props: QuestionProps) {
                         </p>
                     )}
                     <div
-                        className={`flex items-center space-x-2 w-full ${isInForum ? 'pt-5 pl-5 pr-8' : ''} ${
+                        className={`flex items-center gap-2 w-full min-w-0 flex-wrap ${isInForum ? 'pt-5 pl-5 pr-8' : ''} ${
                             !questionData.attributes.subject && '-mb-2'
                         }`}
                     >
@@ -403,7 +403,7 @@ export function Question(props: QuestionProps) {
                             profile={questionData.attributes.profile?.data}
                             edits={questionData.attributes.edits}
                         />
-                        <div className="!ml-auto flex items-center space-x-px [&>*]:inline-flex">
+                        <div className="!ml-auto flex items-center space-x-px [&>*]:inline-flex shrink-0">
                             {user?.role?.type === 'moderator' && showActions && (
                                 <>
                                     {!archived && (
@@ -458,12 +458,12 @@ export function Question(props: QuestionProps) {
 
                     <div className={archived ? 'opacity-50' : ''}>
                         <div
-                            className={`pb-4 ${
-                                isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'border-l border-primary ml-5 pl-[30px]'
+                            className={`pb-4 min-w-0 max-w-full box-border ${
+                                isInForum ? 'pl-5 pr-8' : 'border-l border-primary ml-5 pl-[30px]'
                             }`}
                         >
                             {questionData.attributes.subject && (
-                                <h3 className="text-base font-semibold !m-0 pb-1 leading-5">
+                                <h3 className="text-base font-semibold !m-0 pb-1 leading-5 break-words">
                                     <Link href={`/questions/${questionData.attributes.permalink}`}
                                         className="!no-underline hover:!underline font-semibold"
                                     >
@@ -521,7 +521,7 @@ export function Question(props: QuestionProps) {
                                 </h4>
                                 <div className="grid grid-cols-2">
                                     <div>
-                                        <Link href={`/profile/${questionData?.attributes?.profile?.data?.attributes?.username || questionData?.attributes?.profile?.data?.id}`}
+                                        <Link href={`/profile/${encodeURIComponent(String(questionData?.attributes?.profile?.data?.attributes?.username || questionData?.attributes?.profile?.data?.id || ''))}`}
                                             className="text-yellow font-bold"
                                         >
                                             {questionData?.attributes?.profile?.data?.attributes?.firstName

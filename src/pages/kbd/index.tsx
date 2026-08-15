@@ -41,7 +41,6 @@ export default function KBDShortcuts(): JSX.Element {
             shortcuts: [
                 { keys: ['\\'], description: 'Cycle wallpapers' },
                 { keys: ['Shift', 'Z'], description: 'Start screensaver' },
-                { keys: ['M'], description: 'Cycle color themes', info: 'Light, dark, system' },
             ],
         },
         {

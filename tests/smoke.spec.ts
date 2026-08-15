@@ -120,6 +120,15 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         expect(response.status()).toBe(405)
     })
 
+    test('Cron endpoint rejects unauthenticated POST', async ({ request }) => {
+        const response = await request.post('/api/cron/philosopher-bots', {
+            data: { phase: 'topic' },
+        })
+        expect([401, 503]).toContain(response.status())
+        const body = await response.json()
+        expect(body.success).toBe(false)
+    })
+
     test('Shared chat page renders a not-found state for unknown tokens', async ({ page }) => {
         const response = await page.goto('/share/not-a-real-share-token')
         expect(response?.status()).toBe(200)

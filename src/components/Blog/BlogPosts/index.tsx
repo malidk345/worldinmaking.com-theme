@@ -5,7 +5,7 @@ export const BlogPosts = ({ render }: { render: (posts: Array<any>) => JSX.Eleme
     const [posts, setPosts] = useState<any[]>([])
 
     useEffect(() => {
-        fetchSupabasePosts().then((data) => {
+        fetchSupabasePosts({ limit: 10 }).then((data) => {
             const formatted = (data || []).map((post) => ({
                 node: {
                     id: post.id,

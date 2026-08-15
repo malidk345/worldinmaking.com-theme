@@ -7,6 +7,7 @@ import Avatar from './Avatar'
 import getAvatarURL from '../util/getAvatar'
 import { CurrentQuestionContext } from './Question'
 import Link from 'components/Link'
+import { profileHref } from 'lib/profile-path'
 import { Logo } from './Logo'
 import { CallToAction } from 'components/CallToAction'
 import {
@@ -356,24 +357,23 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
     const replyHandle =
         replyAttrs?.username ||
         replyAttrs?.user?.data?.attributes?.username ||
-        (replyAttrs?.firstName ? replyAttrs.firstName.toLowerCase().replace(/\s+/g, '-') : null) ||
         profile?.data?.id ||
         ''
 
     return profile?.data ? (
         <div className={`transition-opacity duration-300 ${pendingDelete ? 'opacity-30 pointer-events-none' : ''}`}>
-            <div className={`pb-1 flex items-center space-x-2 ${isInForum ? 'pr-8' : ''}`}>
+            <div className="pb-1 flex items-center gap-2 min-w-0 flex-wrap">
                 {isMax ? (
                     <Tooltip
                         trigger={
                             <div className="relative">
                                 <Link
                                     className="flex items-center !text-black dark:!text-white"
-                                    to={`/profile/${replyHandle}`}
+                                    to={profileHref(replyHandle) || '#'}
                                 >
-                                    <div className="mr-2 relative ml-[-2px]">
+                                    <div className="mr-2.5 relative shrink-0">
                                         <Avatar
-                                            className={`${isInForum ? 'size-[40px]' : 'size-[25px]'} rounded-full`}
+                                            className={`${isInForum ? 'size-10' : 'size-[25px]'} rounded-full`}
                                             image={getAvatarURL(profile?.data?.attributes)}
                                             color={profile?.data.attributes.color}
                                         />
@@ -403,11 +403,11 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                 ) : (
                     <Link
                         className="flex items-center !text-black dark:!text-white"
-                        to={`/profile/${replyHandle}`}
+                        to={profileHref(replyHandle) || '#'}
                     >
-                        <div className="mr-2 relative ml-[-2px]">
+                        <div className="mr-2.5 relative shrink-0">
                             <Avatar
-                                className={`${isInForum ? 'size-[40px]' : 'size-[25px]'} rounded-full ${
+                                className={`${isInForum ? 'size-10' : 'size-[25px]'} rounded-full ${
                                     profile?.data.attributes.color ? `bg-${profile.data.attributes.color}` : ''
                                 }`}
                                 image={getAvatarURL(profile?.data?.attributes)}
@@ -443,7 +443,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         )}
                     </>
                 )}
-                <div className="!ml-auto flex items-center space-x-1">
+                <div className="!ml-auto flex items-center space-x-1 shrink-0">
                     {isModerator && (
                         <OSButton
                             size="sm"
@@ -484,7 +484,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                 </div>
             </div>
 
-            <div className={`border-l-0 ${isInForum ? 'pl-[calc(44px_+_.5rem)] pr-8 -mt-2' : 'ml-[33px]'} pl-0 pb-1`}>
+            <div className={`border-l-0 min-w-0 max-w-full box-border ${isInForum ? 'pt-1' : 'ml-[33px]'} pb-1`}>
                 {isMax &&
                     helpful === null &&
                     (isModerator || isAuthor) &&

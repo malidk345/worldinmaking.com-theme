@@ -1,40 +1,33 @@
 /**
  * Manual/local trigger for the philosopher bot forum tick.
  *
- * @deprecated as a standalone content generator. This script used to duplicate
- * its own raw fetch() calls to Groq/Gemini/OpenRouter and write directly to
- * Supabase — completely bypassing the persona engine, the AI gateway's
- * provider failover, and the quality gate. That logic has been superseded by
- * the unified pipeline (`src/lib/bots/orchestrate.ts` -> `runBotTurn()`),
- * which is what `/api/cron/philosopher-bots` already uses and what both the
- * Vercel cron (`vercel.json`) and the GitHub Actions workflow
- * (`.github/workflows/philosopher-bots-cron.yml`) hit on a schedule.
+ * Production scheduling is GitHub Actions → POST /api/cron/philosopher-bots
+ * in two phases (topic, then reply). This script uses the same contract so a
+ * local `pnpm bot:worker` does not re-introduce the CF edge timeout that a
+ * single full tick hits (two LLM writes + RSS).
  *
- * This script now just calls that same unified endpoint, so `pnpm bot:worker`
- * remains useful for a manual/local trigger without duplicating (and drifting
- * from) the real logic.
+ * Do not duplicate Groq/Gemini/OpenRouter fetch + Supabase writes here — that
+ * path bypasses the persona engine, gateway failover, and quality gate.
  */
 require('dotenv').config({ path: '.env.local' })
 
-const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://worldinmaking.com'
+const SITE_URL = (process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://worldinmaking.com').replace(
+    /\/$/,
+    ''
+)
 const CRON_SECRET = process.env.CRON_SECRET || process.env.BOT_ACT_SECRET || ''
 
-async function main() {
-    const url = `${SITE_URL.replace(/\/$/, '')}/api/cron/philosopher-bots`
-    console.log(`🤖 Triggering unified philosopher bot tick: ${url}`)
-
-    if (!CRON_SECRET) {
-        throw new Error('CRON_SECRET / BOT_ACT_SECRET is required for bot-worker')
-    }
-
+async function postPhase(phase, payload) {
+    const url = `${SITE_URL}/api/cron/philosopher-bots`
+    console.log(`🤖 ${phase}: ${url}`)
     const res = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${CRON_SECRET}`,
         },
+        body: JSON.stringify(payload),
     })
-
     const text = await res.text()
     let body
     try {
@@ -42,16 +35,39 @@ async function main() {
     } catch {
         body = text
     }
-
     if (!res.ok) {
-        console.error(`❌ Cron endpoint returned ${res.status}:`, body)
+        console.error(`❌ ${phase} returned ${res.status}:`, body)
         process.exit(1)
     }
-
-    console.log('✅ Philosopher bot tick complete:', JSON.stringify(body, null, 2))
+    return body
 }
 
-main().catch(err => {
+async function main() {
+    if (!CRON_SECRET) {
+        throw new Error('CRON_SECRET / BOT_ACT_SECRET is required for bot-worker')
+    }
+
+    const topic = await postPhase('topic', { phase: 'topic' })
+    if (topic.success !== true || !topic.topic?.id) {
+        console.error('❌ Topic phase incomplete:', topic)
+        process.exit(1)
+    }
+    console.log('✅ Topic:', JSON.stringify(topic, null, 2))
+
+    const reply = await postPhase('reply', {
+        phase: 'reply',
+        topicId: String(topic.topic.id),
+        topicTitle: topic.topic.title || '',
+        postBot: topic.topic.author || '',
+    })
+    if (reply.success !== true || (reply.skipped !== true && reply.reply?.persisted !== true)) {
+        console.error('❌ Reply phase incomplete:', reply)
+        process.exit(1)
+    }
+    console.log('✅ Reply:', JSON.stringify(reply, null, 2))
+}
+
+main().catch((err) => {
     console.error('Fatal bot worker error:', err)
     process.exit(1)
 })

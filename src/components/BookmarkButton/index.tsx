@@ -11,7 +11,13 @@ interface Bookmark {
     description: string
 }
 
-export default function BookmarkButton({ bookmark }: { bookmark: Bookmark }) {
+export default function BookmarkButton({
+    bookmark,
+    labels = { add: 'Bookmark this page', remove: 'Remove from bookmarks' },
+}: {
+    bookmark: Bookmark
+    labels?: { add: string; remove: string }
+}) {
     const { user, addBookmark, removeBookmark } = useUser()
     const { openSignIn } = useApp()
     const { appWindow } = useWindow()
@@ -43,10 +49,12 @@ export default function BookmarkButton({ bookmark }: { bookmark: Bookmark }) {
                     size="md"
                     icon={isBookmarked ? <IconBookmarkSolid /> : <IconBookmark />}
                     onClick={() => handleBookmark(!isBookmarked)}
+                    aria-label={isBookmarked ? labels.remove : labels.add}
+                    active={!!isBookmarked}
                 />
             }
         >
-            {isBookmarked ? 'Remove from bookmarks' : 'Bookmark this page'}
+            {isBookmarked ? labels.remove : labels.add}
         </Tooltip>
     )
 }

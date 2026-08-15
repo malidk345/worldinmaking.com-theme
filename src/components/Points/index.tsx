@@ -6,10 +6,10 @@ import RewardCard from './RewardCard'
 import TransactionTitle from './TransactionTitle'
 import type { Reward } from './types'
 
+const REWARDS: Reward[] = []
+
 export default function Points() {
-    const {
-        allReward: { nodes: rewards },
-    } = useStaticQuery<{ allReward: { nodes: Reward[] } }>(null)
+    const rewards = REWARDS
     const { user } = useUser()
     const transactions = user?.wallet?.transactions || []
     const total = user?.wallet?.balance || 0
@@ -53,13 +53,15 @@ export default function Points() {
                 </div>
             </div>
 
-            <Fieldset legend="Redeem points">
-                <div className="grid @md:grid-cols-2 @2xl:grid-cols-4 gap-3 pt-2">
-                    {rewards.map((reward) => (
-                        <RewardCard key={reward.handle} reward={reward} total={total} />
-                    ))}
-                </div>
-            </Fieldset>
+            {rewards.length > 0 && (
+                <Fieldset legend="Redeem points">
+                    <div className="grid @md:grid-cols-2 @2xl:grid-cols-4 gap-3 pt-2">
+                        {rewards.map((reward) => (
+                            <RewardCard key={reward.handle} reward={reward} total={total} />
+                        ))}
+                    </div>
+                </Fieldset>
+            )}
 
             {transactions.length > 0 && (
                 <Fieldset legend="Recent activity">

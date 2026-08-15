@@ -1,42 +1,128 @@
 name: Philosopher Bots Hourly Cron
 
+# Required repository secrets:
+#   CRON_SECRET — must match the Cloudflare Pages CRON_SECRET / BOT_ACT_SECRET
+# Optional:
+#   SITE_URL — defaults to https://worldinmaking.com
+#
+# The edge handler cannot finish two LLM writes in one CF Pages request.
+# We POST topic, then reply. :20 is a catch-up; the handler is idempotent
+# for the current hour so a completed tick is a no-op.
+
 on:
   schedule:
-    # Runs at minute 0 of every hour
     - cron: '0 * * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+    - cron: '20 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: philosopher-bots-hourly
+  cancel-in-progress: false
 
 jobs:
   tick-philosophers:
     name: Run hourly philosopher bot tick
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
-      - name: Trigger cron endpoint
+      - name: Trigger topic then reply phases
+        env:
+          TARGET_URL: ${{ secrets.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          TARGET_URL="${{ secrets.SITE_URL }}"
-          if [ -z "$TARGET_URL" ]; then
+          if [ -z "${TARGET_URL}" ]; then
             TARGET_URL="https://worldinmaking.com"
           fi
-          CRON_SECRET="${{ secrets.CRON_SECRET }}"
-          if [ -z "$CRON_SECRET" ]; then
+          TARGET_URL="${TARGET_URL%/}"
+          if [ -z "${CRON_SECRET}" ]; then
             echo "CRON_SECRET repository secret is required"
             exit 1
           fi
-          echo "Triggering $TARGET_URL/api/cron/philosopher-bots"
-          response=$(curl -X POST "$TARGET_URL/api/cron/philosopher-bots" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            -H "Content-Type: application/json" \
-            --fail --show-error -s)
-          printf '%s\n' "$response"
-          printf '%s' "$response" | node -e '
+
+          post_phase() {
+            local phase="$1"
+            local payload="$2"
+            local attempt=1
+            local body=""
+            local code=0
+            while [ "$attempt" -le 3 ]; do
+              echo "POST phase=${phase} attempt=${attempt}"
+              set +e
+              body=$(curl -sS -X POST "${TARGET_URL}/api/cron/philosopher-bots" \
+                -H "Authorization: Bearer ${CRON_SECRET}" \
+                -H "Content-Type: application/json" \
+                -H "User-Agent: WorldInMakingCron/1.0" \
+                --connect-timeout 10 \
+                --max-time 55 \
+                --data "${payload}")
+              code=$?
+              set -e
+              if [ "$code" -eq 0 ] && [ -n "${body}" ]; then
+                printf '%s\n' "${body}"
+                PHASE_JSON="${body}"
+                return 0
+              fi
+              echo "curl exit=${code}; retrying in 8s"
+              attempt=$((attempt + 1))
+              sleep 8
+            done
+            echo "Failed to reach cron endpoint for phase=${phase}"
+            exit 1
+          }
+
+          post_phase topic '{"phase":"topic"}'
+          TOPIC_JSON="${PHASE_JSON}"
+          printf '%s' "${TOPIC_JSON}" | node -e '
             let input = "";
-            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("data", (chunk) => { input += chunk; });
             process.stdin.on("end", () => {
               const result = JSON.parse(input);
-              if (result.success !== true || result.reply?.persisted !== true) {
-                console.error("Cron returned an incomplete result");
+              if (result.success !== true) {
+                console.error("Topic phase failed:", result.error || result);
                 process.exit(1);
               }
+              if (!result.topic || !result.topic.id) {
+                console.error("Topic phase returned no topic id");
+                process.exit(1);
+              }
+              console.log("topic_ok id=" + result.topic.id + " skipped=" + !!result.skipped);
+            });
+          '
+
+          REPLY_PAYLOAD=$(printf '%s' "${TOPIC_JSON}" | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const result = JSON.parse(input);
+              process.stdout.write(JSON.stringify({
+                phase: "reply",
+                topicId: String(result.topic.id),
+                topicTitle: result.topic.title || "",
+                postBot: result.topic.author || "",
+              }));
+            });
+          ')
+
+          post_phase reply "${REPLY_PAYLOAD}"
+          REPLY_JSON="${PHASE_JSON}"
+          printf '%s' "${REPLY_JSON}" | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const result = JSON.parse(input);
+              if (result.success !== true) {
+                console.error("Reply phase failed:", result.error || result);
+                process.exit(1);
+              }
+              if (result.skipped !== true && result.reply && result.reply.persisted !== true) {
+                console.error("Reply was not persisted");
+                process.exit(1);
+              }
+              if (result.skipped !== true && !result.reply) {
+                console.error("Reply phase returned no reply");
+                process.exit(1);
+              }
+              console.log("reply_ok skipped=" + !!result.skipped + " persisted=" + !!(result.reply && result.reply.persisted));
             });
           '

@@ -3,7 +3,7 @@ import React from 'react'
 
 const Image = ({ src, className = '' }: { src: string | null | undefined; className?: '' }) => {
     return src ? (
-        <img className={`object-fill rounded-full ${className}`} src={src} />
+        <img className={`block object-cover rounded-full ${className}`} src={src} alt="" />
     ) : (
         <svg
             className={`bg-accent rounded-full ${className}`}
@@ -35,8 +35,7 @@ export const Avatar = ({
 }) => {
     return (
         <div
-            className={`float-left 
-        leading-[0] rounded-full relative inline-block aspect-square p-px bg-light dark:bg-dark border border-primary ${
+            className={`shrink-0 leading-[0] rounded-full relative inline-flex overflow-hidden aspect-square p-px bg-light dark:bg-dark border border-primary ${
             color ? `hover:border-${color}` : 'hover:border-[rgba(0,0,0,0.2)] dark:hover:border-[rgba(255,255,255,0.2)]'
         }`}
         >

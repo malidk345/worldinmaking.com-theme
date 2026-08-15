@@ -23,6 +23,9 @@ export type WimProfileRow = {
     updated_at: string | null
     preferred_language?: string | null
     is_bot?: boolean | null
+    birth_date?: string | null
+    first_name?: string | null
+    last_name?: string | null
 }
 
 export function isWimAuthReady(): boolean {
@@ -73,7 +76,13 @@ export function mapSupabaseToUser(
         (meta.username as string) ||
         (authUser.email ? authUser.email.split('@')[0] : null) ||
         'user'
-    const { firstName, lastName } = splitName(meta, username)
+    const fromProfile = {
+        firstName: profile?.first_name?.trim() || null,
+        lastName: profile?.last_name?.trim() || null,
+    }
+    const { firstName, lastName } = fromProfile.firstName || fromProfile.lastName
+        ? fromProfile
+        : splitName(meta, null)
     const avatarUrl = profile?.avatar_url || (meta.avatar_url as string) || null
     const createdAt = profile?.created_at || authUser.created_at || new Date().toISOString()
 
@@ -110,6 +119,8 @@ export function mapSupabaseToUser(
         height: null,
         bookmarks: [],
         reputation: 0,
+        username,
+        birthDate: profile?.birth_date ?? null,
     }
 
     // Site User historically used numeric Strapi ids; WIM uses UUID strings throughout.
@@ -180,6 +191,8 @@ export async function ensureWimProfile(
         role: 'member',
         avatar_url: (meta.avatar_url as string) || null,
         bio: null,
+        first_name: extras?.firstName || (meta.first_name as string) || (meta.firstName as string) || null,
+        last_name: extras?.lastName || (meta.last_name as string) || (meta.lastName as string) || null,
     }
 
     const { data, error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' }).select('*').single()
@@ -274,9 +287,29 @@ export async function requestPasswordReset(email: string): Promise<{ error?: str
 
 export async function updateWimProfile(
     userId: string,
-    patch: Partial<Pick<WimProfileRow, 'username' | 'bio' | 'avatar_url' | 'website' | 'github' | 'linkedin' | 'twitter' | 'location' | 'pronouns' | 'cover_url'>>
+    patch: Partial<
+        Pick<
+            WimProfileRow,
+            | 'username'
+            | 'bio'
+            | 'avatar_url'
+            | 'website'
+            | 'github'
+            | 'linkedin'
+            | 'twitter'
+            | 'location'
+            | 'pronouns'
+            | 'cover_url'
+            | 'birth_date'
+            | 'first_name'
+            | 'last_name'
+        >
+    >
 ): Promise<{ profile: WimProfileRow | null; error?: string }> {
     const { data, error } = await supabase.from('profiles').update(patch).eq('id', userId).select('*').single()
-    if (error) return { profile: null, error: error.message }
+    if (error) {
+        const taken = /duplicate|unique/i.test(error.message)
+        return { profile: null, error: taken ? 'That username is already taken' : error.message }
+    }
     return { profile: data as WimProfileRow }
 }

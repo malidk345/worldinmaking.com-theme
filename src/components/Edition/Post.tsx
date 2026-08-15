@@ -80,11 +80,12 @@ export default function Post({
                             <span className={`ml-1 inline-flex items-center space-x-1 font-medium leading-none`}>
                                 <span className="text-[.933rem]">by</span>
                                 <ul className={`m-0 p-0 list-none flex`}>
-                                    {authors?.data?.map(({ id, attributes: { firstName, lastName } }: any) => {
+                                    {authors?.data?.map(({ id, attributes: { firstName, lastName, username } }: any) => {
                                         const name = [firstName, lastName].filter(Boolean).join(' ')
+                                        const handle = username || id
                                         return (
                                             <li className='even:before:content-[","] even:before:mr-1' key={id}>
-                                                <Link className="text-[.933rem]" to={`/community/profiles/${id}`}>
+                                                <Link className="text-[.933rem]" to={`/profile/${encodeURIComponent(String(handle))}`}>
                                                     {name}
                                                 </Link>
                                             </li>

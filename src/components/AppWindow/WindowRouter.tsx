@@ -30,7 +30,9 @@ function AuthWindow() {
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
+import Bookmarks from '../../pages/bookmarks'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
+import { isProfilePath } from '../../lib/profile-path'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 
@@ -95,11 +97,14 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (path === '/display-options') {
         return <DisplayOptions />
     }
+    if (path === '/bookmarks') {
+        return <Bookmarks />
+    }
     if (/^\/ideas|^\/blueprints/.test(path)) {
         return <IdeasHub />
     }
-    if (/^\/profile|^\/u\//.test(path)) {
-        return <ProfileWrapper {...props} />
+    if (isProfilePath(path)) {
+        return <ProfileWrapper path={path} {...props} />
     }
     if (/^\/notebooks/.test(path)) {
         return <NotebooksListSkeleton />

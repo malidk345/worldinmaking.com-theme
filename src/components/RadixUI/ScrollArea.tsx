@@ -49,7 +49,7 @@ const ScrollArea = ({
         <RadixScrollArea.Root
             type="scroll"
             data-scheme={dataScheme}
-            className={`app-scroll-area relative overflow-hidden h-full flex-1 [&>div>div]:!block ${
+            className={`app-scroll-area relative overflow-hidden h-full min-w-0 flex-1 [&>div>div]:!block [&>div>div]:!min-w-0 [&>div>div]:!max-w-full [&>div>div]:!w-full ${
                 fullWidth ? 'max-w-screen' : ''
             } ${className}`}
             style={style}

@@ -1092,6 +1092,10 @@ fieldset {
 
 /* applies to question and reply content */
 .question-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+
     a {
         @apply font-semibold underline;
     }

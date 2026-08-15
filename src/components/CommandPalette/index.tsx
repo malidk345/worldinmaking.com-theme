@@ -10,7 +10,7 @@ import {
     IconApps,
 } from '@posthog/icons'
 import { useApp, useAppActions, useAppWindows } from '../../context/App'
-import { fetchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
+import { searchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 
 export default function CommandPalette() {
     const { windows } = useAppWindows()
@@ -36,31 +36,34 @@ export default function CommandPalette() {
 
     useEffect(() => {
         if (isOpen) {
-            fetchSupabasePosts().then((res) => {
-                if (res && res.length > 0) {
-                    setPosts(res)
-                }
-            })
             setTimeout(() => inputRef.current?.focus(), 50)
         } else {
             setQuery('')
+            setPosts([])
             setSelectedIndex(0)
         }
     }, [isOpen])
 
-    const filterPosts = (q: string) => {
-        if (!q.trim()) return []
-        const lower = q.toLowerCase()
-        return posts
-            .filter(
-                (p) =>
-                    p.title.toLowerCase().includes(lower) ||
-                    (p.category && p.category.toLowerCase().includes(lower))
-            )
-            .slice(0, 5)
-    }
+    useEffect(() => {
+        if (!isOpen) return
+        const q = query.trim()
+        if (q.length < 2) {
+            setPosts([])
+            return
+        }
+        let cancelled = false
+        const timer = window.setTimeout(() => {
+            searchSupabasePosts(q).then((res) => {
+                if (!cancelled) setPosts((res || []).slice(0, 5))
+            })
+        }, 200)
+        return () => {
+            cancelled = true
+            window.clearTimeout(timer)
+        }
+    }, [isOpen, query])
 
-    const matchedPosts = filterPosts(query)
+    const matchedPosts = posts
 
     const baseActions = [
         {
