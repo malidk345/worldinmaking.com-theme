@@ -4,7 +4,7 @@ import {
     fetchSupabaseCommunityReplies,
     formatSupabaseCommunityToStrapi,
 } from 'lib/supabaseCommunity'
-import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
+import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
 
 type UseQuestionsOptions = {
     slug?: string
@@ -41,9 +41,9 @@ async function formatCommunityPost(post: any) {
                                     username: pObj?.username || '',
                                     firstName: pObj?.username || 'Community Member',
                                     lastName: '',
-                                    gravatarURL: resolvePhilosopherAvatar(pObj?.username, pObj?.avatar_url),
+                                    gravatarURL: resolveUserOrPhilosopherAvatar(pObj?.username, pObj?.avatar_url),
                                     avatar: (() => {
-                                        const url = resolvePhilosopherAvatar(pObj?.username, pObj?.avatar_url)
+                                        const url = resolveUserOrPhilosopherAvatar(pObj?.username, pObj?.avatar_url)
                                         return url
                                             ? { data: { attributes: { url } } }
                                             : null

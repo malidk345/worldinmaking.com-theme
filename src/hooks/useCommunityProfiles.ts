@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import useSWR from 'swr'
 import { supabase } from 'lib/supabase'
-import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
+import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
 
 const PROFILES_PER_PAGE = 25
 
@@ -40,7 +40,7 @@ function mapRow(row: any): CommunityProfile {
         email: null,
         createdAt: row.created_at || null,
         reputation: null,
-        avatarUrl: resolvePhilosopherAvatar(username, row.avatar_url) || null,
+        avatarUrl: resolveUserOrPhilosopherAvatar(username, row.avatar_url) || null,
         color: null,
         isTeamMember: row.role === 'admin' || row.role === 'moderator',
         username,

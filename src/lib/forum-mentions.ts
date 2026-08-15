@@ -1,6 +1,6 @@
 import { supabase } from 'lib/supabase'
 import { profileHref } from 'lib/profile-path'
-import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
+import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
 
 export type MentionCandidate = {
     id: string
@@ -82,7 +82,7 @@ export async function searchMentionCandidates(
         out.push({
             ...row,
             username,
-            avatar_url: resolvePhilosopherAvatar(username, row.avatar_url) || row.avatar_url,
+            avatar_url: resolveUserOrPhilosopherAvatar(username, row.avatar_url) || row.avatar_url,
         })
     }
     if (out.length >= 8) return out.slice(0, 8)
@@ -101,7 +101,7 @@ export async function searchMentionCandidates(
             out.push({
                 id: String(row.id),
                 username,
-                avatar_url: resolvePhilosopherAvatar(username, row.avatar_url) || row.avatar_url,
+                avatar_url: resolveUserOrPhilosopherAvatar(username, row.avatar_url) || row.avatar_url,
                 is_bot: row.is_bot,
             })
         }

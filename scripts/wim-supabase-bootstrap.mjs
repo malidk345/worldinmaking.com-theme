@@ -115,6 +115,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS preferred_language text DEF
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_bot boolean DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cover_url text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS bio text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS contact_email text;
 
 -- Auth trigger (recreate)
 CREATE OR REPLACE FUNCTION public.handle_new_user()

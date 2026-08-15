@@ -11,6 +11,7 @@ export type WimProfileRow = {
     username: string | null
     avatar_url: string | null
     website: string | null
+    contact_email: string | null
     role: string | null
     bio: string | null
     github: string | null
@@ -98,6 +99,7 @@ export function mapSupabaseToUser(
         location: profile?.location ?? null,
         twitter: profile?.twitter ?? null,
         website: profile?.website ?? null,
+        contactEmail: profile?.contact_email ?? null,
         createdAt,
         updatedAt: profile?.updated_at ?? null,
         publishedAt: createdAt,
@@ -322,6 +324,7 @@ export async function updateWimProfile(
             | 'bio'
             | 'avatar_url'
             | 'website'
+            | 'contact_email'
             | 'github'
             | 'linkedin'
             | 'twitter'

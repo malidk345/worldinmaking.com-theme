@@ -153,6 +153,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-133` | Stream 3 | Home window landing page in site chrome | `src/components/Home/HomeWindow.tsx`, `WindowRouter.tsx` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-134` | Stream 3 | Pixel-art navy bang mark (taskbar experiment) | `src/components/WimLogo/index.tsx`, `src/components/TaskBarMenu/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-135` | Stream 3 | Desktop-style painted bang icon (keep pixel header) | `src/images/icons/bang-*.png`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-136` | Stream 4 | Public contact email on user profiles | `profiles.contact_email`, ProfileView, edit.tsx, wim-auth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -286,6 +287,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 206 - Public contact email on profiles
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Users can set an optional public `contact_email` (not login email). Shown as a mailto link on the profile. Column added live + migration.
+- **Modified Files:** `supabase/migrations/20260816_profiles_contact_email.sql`, `scripts/wim-supabase-bootstrap.mjs`, `src/lib/strapi.ts`, `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts`, `src/components/Profile/ProfileView.tsx`, `src/pages/community/profile/edit.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 205 - Pixel busts on philosopher profiles
 - **Date:** 2026-08-15

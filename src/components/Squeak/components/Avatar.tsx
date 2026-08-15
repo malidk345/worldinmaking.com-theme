@@ -2,7 +2,9 @@ import Link from 'components/Link'
 import React from 'react'
 
 const Image = ({ src, className = '' }: { src: string | null | undefined; className?: '' }) => {
-    const isPixel = typeof src === 'string' && src.includes('/philosophers/')
+    const isPixel =
+        typeof src === 'string' &&
+        (src.includes('/philosophers/') || src.includes('mustafa-pixel') || src.includes('pixel.png'))
     return src ? (
         <img
             className={`block rounded-full ${isPixel ? 'object-contain' : 'object-cover'} ${className}`}

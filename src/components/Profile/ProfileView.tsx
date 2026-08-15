@@ -61,6 +61,25 @@ const WebsiteIcon = () => {
     )
 }
 
+const EmailIcon = () => {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6 opacity-80 hover:opacity-100 transition-opacity"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+            />
+        </svg>
+    )
+}
+
 const stripUrlPrefix = (url: string) => {
     return url.replace(/^https?:\/\/(www\.)?/, '')
 }
@@ -180,6 +199,33 @@ const Links = ({
                             }
                         >
                             {stripUrlPrefix(profile.website)}
+                        </Tooltip>
+                    </li>
+                )
+            )}
+            {isEditing ? (
+                <li>
+                    <Input
+                        error={errors.contactEmail}
+                        label="Email"
+                        name="contactEmail"
+                        type="email"
+                        value={formValues.contactEmail}
+                        onChange={(e) => setFieldValue('contactEmail', e.target.value)}
+                    />
+                </li>
+            ) : (
+                profile.contactEmail && (
+                    <li>
+                        <Tooltip
+                            delay={0}
+                            trigger={
+                                <Link href={`mailto:${profile.contactEmail}`} externalNoIcon>
+                                    <EmailIcon />
+                                </Link>
+                            }
+                        >
+                            {profile.contactEmail}
                         </Tooltip>
                     </li>
                 )
@@ -720,6 +766,7 @@ const ValidationSchema = Yup.object().shape({
     github: Yup.string().url('Invalid URL').nullable(),
     linkedin: Yup.string().url('Invalid URL').nullable(),
     twitter: Yup.string().url('Invalid URL').nullable(),
+    contactEmail: Yup.string().transform((v) => (v === '' ? null : v)).email('Invalid email').nullable(),
     biography: Yup.string().max(3000, 'Please limit your bio to 3,000 characters, you wordsmith!').nullable(),
     location: Yup.string().nullable(),
 })
@@ -866,6 +913,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
         enableReinitialize: true,
         initialValues: {
             website: profile?.website,
+            contactEmail: profile?.contactEmail || '',
             twitter: profile?.twitter,
             linkedin: profile?.linkedin,
             github: profile?.github,
@@ -908,6 +956,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     bio: values.biography ?? null,
                     location: values.location ?? null,
                     website: values.website ?? null,
+                    contact_email: values.contactEmail?.trim() || null,
                     github: values.github ?? null,
                     linkedin: values.linkedin ?? null,
                     twitter: values.twitter ?? null,
@@ -985,7 +1034,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 profile.github ||
                                 profile.twitter ||
                                 profile.linkedin ||
-                                profile.website) && (
+                                profile.website ||
+                                profile.contactEmail) && (
                                 <Block title="Links">
                                     <Links
                                         errors={errors}

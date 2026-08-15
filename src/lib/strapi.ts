@@ -69,6 +69,7 @@ export type ProfileData = {
     location: string | null
     twitter: string | null
     website: string | null
+    contactEmail?: string | null
     createdAt: string
     updatedAt: string | null
     publishedAt: string | null

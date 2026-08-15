@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { ProfileData, StrapiRecord } from 'lib/strapi'
 import { useUser } from 'hooks/useUser'
 import { supabase } from 'lib/supabase'
-import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
+import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
 
 function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
     const username = dbProfile.username || 'user'
@@ -17,6 +17,7 @@ function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
             biography: dbProfile.bio || '',
             location: dbProfile.location || null,
             website: dbProfile.website || null,
+            contactEmail: dbProfile.contact_email || null,
             twitter: dbProfile.twitter || null,
             github: dbProfile.github || null,
             linkedin: dbProfile.linkedin || null,
@@ -31,7 +32,7 @@ function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
             questionSubscriptions: { data: [] } as any,
             topicSubscriptions: { data: [] } as any,
             avatar: (() => {
-                const url = resolvePhilosopherAvatar(username, dbProfile.avatar_url)
+                const url = resolveUserOrPhilosopherAvatar(username, dbProfile.avatar_url)
                 return url
                     ? ({
                           data: {
@@ -120,11 +121,20 @@ export function useProfileData(identifier?: string | number) {
                     biography: user.profile?.biography || '',
                     location: user.profile?.location || null,
                     birthDate: user.profile?.birthDate || null,
+                    contactEmail: user.profile?.contactEmail || null,
                     website: user.profile?.website || null,
                     twitter: user.profile?.twitter || null,
                     github: user.profile?.github || null,
                     linkedin: user.profile?.linkedin || null,
-                    avatar: user.profile?.avatar,
+                    avatar: (() => {
+                        const url = resolveUserOrPhilosopherAvatar(username, undefined)
+                        if (url) {
+                            return {
+                                data: { id: 0, attributes: { url } },
+                            } as any
+                        }
+                        return user.profile?.avatar
+                    })(),
                     reputation: user.profile?.reputation || 0,
                     companyRole: user.role?.type || 'member',
                     createdAt: user.createdAt || new Date().toISOString(),

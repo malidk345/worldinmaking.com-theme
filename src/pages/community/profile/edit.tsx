@@ -197,6 +197,11 @@ const formSections = [
                 placeholder: 'https://x.com',
                 type: 'url',
             },
+            contactEmail: {
+                label: 'Email',
+                placeholder: 'you@example.com',
+                type: 'email',
+            },
         },
     },
 ]
@@ -212,6 +217,7 @@ const ValidationSchema = Yup.object().shape({
     github: Yup.string().url('Invalid URL').nullable(),
     linkedin: Yup.string().url('Invalid URL').nullable(),
     twitter: Yup.string().url('Invalid URL').nullable(),
+    contactEmail: Yup.string().transform((v) => (v === '' ? null : v)).email('Invalid email').nullable(),
     biography: Yup.string().max(3000, 'Please limit your bio to 3,000 characters, you wordsmith!').nullable(),
     avatar: Yup.mixed()
         .nullable()
@@ -263,6 +269,7 @@ function EditProfile({ profile, mutate }) {
                 github: values.github ?? null,
                 linkedin: values.linkedin ?? null,
                 twitter: values.twitter ?? null,
+                contact_email: values.contactEmail?.trim() || null,
                 pronouns: values.pronouns ?? null,
                 birth_date: values.birthDate ? String(values.birthDate).slice(0, 10) : null,
             }
