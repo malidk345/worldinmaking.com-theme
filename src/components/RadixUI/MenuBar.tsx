@@ -382,8 +382,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ menus, className, triggerAsChild, cus
                                 menu.bold ? 'font-bold' : 'font-medium'
                             } ${customTriggerClasses}`}
                         >
-                            {menu.trigger}
-                            {!menu.hideChevron && <IconChevronDown className="size-5 opacity-60 -mr-2 hidden" />}
+                            {triggerAsChild ? (
+                                menu.trigger
+                            ) : (
+                                <>
+                                    {menu.trigger}
+                                    {!menu.hideChevron && (
+                                        <IconChevronDown className="size-5 opacity-60 -mr-2 hidden" />
+                                    )}
+                                </>
+                            )}
                         </RadixMenubar.Trigger>
                         <RadixMenubar.Portal container={portalContainer || undefined}>
                             <RadixMenubar.Content

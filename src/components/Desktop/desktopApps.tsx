@@ -16,6 +16,18 @@ export const useProductLinks = () => {
                 url: '/notebooks',
                 source: 'desktop',
             },
+            {
+                label: 'WIM AI',
+                Icon: <AppIcon name="wimAi" />,
+                url: '/workspace-chat',
+                source: 'desktop',
+            },
+            {
+                label: 'Posts',
+                Icon: <AppIcon name="posts" />,
+                url: '/posts',
+                source: 'desktop',
+            },
         ],
         []
     )

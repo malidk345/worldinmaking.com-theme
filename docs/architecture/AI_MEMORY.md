@@ -140,6 +140,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-120` | Stream 5 | Ask AI: less rhetoric, keep forum-only voice rules off chat | `persona-engine.ts`, `fluid-prompts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-121` | Stream 3 | Archive interior + desktop drag match site chrome | `ArchiveWindow.tsx`, `DesktopIcon.tsx`, `ArchiveContext.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-122` | Stream 3 | Desktop Archive icon should match the other OS app icons | `src/components/OSIcons/AppIcon.tsx`, `public/images/icons/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-123` | Stream 3 | Archive box vanished: PNG import was `[object Object]` | `src/components/OSIcons/AppIcon.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-124` | Stream 3 | WIM AI desktop icon in the same OS set as Archive | `src/components/OSIcons/AppIcon.tsx`, `src/images/icons/`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-125` | Stream 3 | Alternate WIM AI icon (keep current on desktop) | `src/images/icons/wim-ai-alt-*.png` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-126` | Stream 3 | Recolor WIM AI monitor to site navy and put it on the desktop | `src/images/icons/`, `AppIcon.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-127` | Stream 3 | Posts desktop icon to /posts in a new site color | `src/images/icons/`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-128` | Stream 3 | Desktop-to-Archive drag should carry the real icon | `DesktopIcon.tsx`, `AppIcon.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-129` | Stream 2 | Archive: move Restore all; add per-icon restore menu | `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -273,6 +280,55 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 173 - Archive ⋮ menu Slot crash
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `MenuBar triggerAsChild` passed a button plus a chevron into Radix Slot and crashed (`Primitive.button failed to slot`). Archive now uses Popover. MenuBar only slots a single child when `triggerAsChild` is set.
+- **Modified Files:** `src/components/Archive/ArchiveWindow.tsx`, `src/components/RadixUI/MenuBar.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 172 - Archive restore actions leave the window chrome
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Restore all left the HeaderBar (it sat on the close/minimize buttons). Search + Restore all now live in an in-window toolbar. Each archived app has a ⋮ menu (and still a right-click) for Restore to Desktop.
+- **Modified Files:** `src/components/Archive/ArchiveWindow.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 171 - Archive drag carries the real desktop icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dragging onto Archive no longer uses the browser's link ghost. The actual icon (glyph + label) follows the cursor. Source fades, Archive lifts slightly with a quiet blue ring. No bounce/pulse. Inner links are not URL-draggable; a drag no longer opens the app.
+- **Modified Files:** `src/components/Desktop/DesktopIcon.tsx`, `src/components/OSIcons/AppIcon.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 170 - Posts desktop icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added a folded-newspaper Posts icon in site teal `#29DBBB` and green `#6AA84F` (not navy). Left desktop, opens `/posts`.
+- **Modified Files:** `src/images/icons/posts-modern.png`, `src/images/icons/posts-classic.png`, `src/components/OSIcons/AppIcon.tsx`, `src/components/Desktop/desktopApps.tsx`, `src/components/Archive/ArchiveWindow.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 169 - WIM AI monitor in site navy
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Desktop WIM AI now uses the monitor icon recolored to site navy `#1D4ED8` (shades `#1E40AF` / `#172554`). Speech-bubble originals kept. Click still opens `/workspace-chat`.
+- **Modified Files:** `src/images/icons/wim-ai-monitor-modern.png`, `src/images/icons/wim-ai-monitor-classic.png`, `src/components/OSIcons/AppIcon.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 168 - Alternate WIM AI icon (monitor)
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Kept the speech-bubble WIM AI on the desktop. Added a second candidate: cream monitor with a chat bubble on the screen and an orange sparkle. Not wired — waiting for user pick.
+- **Modified Files:** `src/images/icons/wim-ai-alt-modern.png`, `src/images/icons/wim-ai-alt-classic.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 167 - WIM AI desktop icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added a cream speech-bubble + orange sparkle icon in the same thick-outline family as Archive. It lives on the left desktop as WIM AI and opens `/workspace-chat`.
+- **Modified Files:** `src/components/OSIcons/AppIcon.tsx`, `src/components/Desktop/desktopApps.tsx`, `src/images/icons/wim-ai-modern.png`, `src/images/icons/wim-ai-classic.png`, `src/components/Archive/ArchiveWindow.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 166 - Archive box was a broken `[object Object]` URL
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Webpack/Next PNG imports are `{ src }` objects. Putting them in the SVG `href` requested `/[object Object]`, so the new box vanished from the desktop. `importedSrc()` now unwraps `.src`. Same cardboard icon.
+- **Modified Files:** `src/components/OSIcons/AppIcon.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Test/Verification:** `/desktop` HTML has `data-icon-label="Archive"` and `href="/_next/static/media/archive-modern.0f410c48.png"` (200, 18219 bytes).
 
 ### Entry 165 - Desktop Archive icon matches the OS set
 - **Date:** 2026-08-15

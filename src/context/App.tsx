@@ -2375,7 +2375,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const newWin: AppWindow = {
                 key,
                 path,
-                title: item.title || (path === '/archive' ? 'Archive' : path.startsWith('/notebooks') ? 'Notebooks' : path.split('/').pop() || 'Window'),
+                title: item.title || (path === '/archive' ? 'Archive' : path === '/workspace-chat' || path.startsWith('/workspace-chat/') ? 'WIM AI' : path === '/posts' || path === '/blog' ? 'Posts' : path.startsWith('/notebooks') ? 'Notebooks' : path.split('/').pop() || 'Window'),
                 size,
                 position,
                 previousSize: item.size || { width: 900, height: 650 },

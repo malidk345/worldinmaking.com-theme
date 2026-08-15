@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react'
 import { useArchive } from 'context/ArchiveContext'
 import SEO from 'components/seo'
-import HeaderBar from 'components/OSChrome/HeaderBar'
 import OSInput from 'components/OSForm/input'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import { Popover } from 'components/RadixUI/Popover'
 import { AppIcon, AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import { apps, useProductLinks } from 'components/Desktop/desktopApps'
-import { IconArchive } from '@posthog/icons'
+import { IconArchive, IconEllipsis } from '@posthog/icons'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -21,6 +21,9 @@ const FALLBACK_APPS: Record<string, AppItem> = {
     '/community/new': { label: 'Write Post', Icon: <AppIcon name="notebook" />, url: '/community/new' },
     '/customers': { label: 'Customers', Icon: <AppIcon name="spreadsheet" />, url: '/customers' },
     '/admin': { label: 'Admin', Icon: <AppIcon name="bookmark" />, url: '/admin' },
+    '/workspace-chat': { label: 'WIM AI', Icon: <AppIcon name="wimAi" />, url: '/workspace-chat' },
+    '/posts': { label: 'Posts', Icon: <AppIcon name="posts" />, url: '/posts' },
+    '/blog': { label: 'Posts', Icon: <AppIcon name="posts" />, url: '/posts' },
 }
 
 function loadPinnedApps(): AppItem[] {
@@ -36,6 +39,58 @@ function loadPinnedApps(): AppItem[] {
     } catch {
         return []
     }
+}
+
+function ArchivedAppTile({
+    app,
+    archivedAt,
+    onRestore,
+}: {
+    app: AppItem
+    archivedAt: string
+    onRestore: () => void
+}) {
+    const restoreItem = {
+        type: 'item' as const,
+        label: 'Restore to Desktop',
+        onClick: onRestore,
+    }
+
+    return (
+        <li className="group relative w-28 min-h-[84px] flex justify-center items-start">
+            <div className="relative flex flex-col items-center w-full">
+                <div
+                    className="absolute -top-1 right-1 z-10"
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                    }}
+                >
+                    <Popover
+                        dataScheme="primary"
+                        header={false}
+                        side="bottom"
+                        contentClassName="w-auto p-1 min-w-[10rem]"
+                        trigger={
+                            <button
+                                type="button"
+                                aria-label={`Actions for ${app.label}`}
+                                className="flex items-center justify-center size-6 rounded text-muted hover:text-primary hover:bg-accent-2"
+                            >
+                                <IconEllipsis className="size-4 rotate-90" />
+                            </button>
+                        }
+                    >
+                        <OSButton size="sm" width="full" onClick={onRestore}>
+                            Restore to Desktop
+                        </OSButton>
+                    </Popover>
+                </div>
+                <AppLink {...app} source={undefined} customMenuItems={[restoreItem]} />
+                <span className="text-[10px] text-muted mt-0.5 leading-tight">{dayjs(archivedAt).fromNow()}</span>
+            </div>
+        </li>
+    )
 }
 
 function resolveAppItem(url: string, label: string, catalog: Record<string, AppItem>): AppItem {
@@ -106,30 +161,25 @@ export default function ArchiveWindow() {
             onDrop={handleDrop}
         >
             <SEO title="Archive – WorldInMaking OS" />
-            <HeaderBar
-                className="!bg-transparent"
-                showCustomLeft={
-                    <div className="w-[min(16rem,70vw)]">
-                        <OSInput
-                            label="Search archive"
-                            showLabel={false}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search archive"
-                            size="sm"
-                        />
-                    </div>
-                }
-                rightActionButtons={
-                    archivedItems && archivedItems.length > 0 ? (
-                        <OSButton size="sm" onClick={clearArchive}>
-                            Restore all
-                        </OSButton>
-                    ) : null
-                }
-            />
+            <div className="flex items-center gap-2 px-4 pt-3 pb-1 flex-shrink-0">
+                <div className="flex-1 min-w-0 max-w-xs">
+                    <OSInput
+                        label="Search archive"
+                        showLabel={false}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search archive"
+                        size="sm"
+                    />
+                </div>
+                {archivedItems && archivedItems.length > 0 ? (
+                    <OSButton size="sm" variant="underlineOnHover" onClick={clearArchive}>
+                        Restore all
+                    </OSButton>
+                ) : null}
+            </div>
             <ScrollArea className="flex-1 min-h-0">
-                <div className="p-4">
+                <div className="p-4 pt-2">
                     {filteredItems.length === 0 ? (
                         <div className="text-center py-12">
                             <IconArchive className="size-12 mx-auto mb-2 text-muted" />
@@ -147,27 +197,12 @@ export default function ArchiveWindow() {
                             {filteredItems.map((item) => {
                                 const app = resolveAppItem(item.url, item.label, catalog)
                                 return (
-                                    <li
+                                    <ArchivedAppTile
                                         key={item.url}
-                                        className="w-28 min-h-[84px] flex justify-center items-start"
-                                    >
-                                        <div className="flex flex-col items-center">
-                                            <AppLink
-                                                {...app}
-                                                source={undefined}
-                                                customMenuItems={[
-                                                    {
-                                                        type: 'item',
-                                                        label: 'Restore to Desktop',
-                                                        onClick: () => unarchiveApp(item.url, app.label),
-                                                    },
-                                                ]}
-                                            />
-                                            <span className="text-[10px] text-muted mt-0.5 leading-tight">
-                                                {dayjs(item.archivedAt).fromNow()}
-                                            </span>
-                                        </div>
-                                    </li>
+                                        app={app}
+                                        archivedAt={item.archivedAt}
+                                        onRestore={() => unarchiveApp(item.url, app.label)}
+                                    />
                                 )
                             })}
                         </ul>

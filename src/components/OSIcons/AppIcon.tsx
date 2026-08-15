@@ -7,6 +7,20 @@ import { useAppSettings } from '../../context/App'
 import usePostHog from 'hooks/usePostHog'
 import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
+import wimAiClassicIcon from '../../images/icons/wim-ai-monitor-classic.png'
+import wimAiModernIcon from '../../images/icons/wim-ai-monitor-modern.png'
+import postsClassicIcon from '../../images/icons/posts-classic.png'
+import postsModernIcon from '../../images/icons/posts-modern.png'
+
+// Next/webpack PNG imports are `{ src }` objects, not URL strings
+const importedSrc = (mod: unknown): string => {
+    if (typeof mod === 'string') return mod
+    if (mod && typeof mod === 'object' && 'src' in mod) {
+        const src = (mod as { src?: unknown }).src
+        if (typeof src === 'string') return src
+    }
+    return ''
+}
 
 // App icon mapping for different skins
 type AppIconVariants = {
@@ -201,8 +215,16 @@ const PRODUCT_ICON_MAP = {
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/switch_modern_5aa70666d1.png',
     },
     archive: {
-        classic: archiveClassicIcon as unknown as string,
-        default: archiveModernIcon as unknown as string,
+        classic: importedSrc(archiveClassicIcon),
+        default: importedSrc(archiveModernIcon),
+    },
+    wimAi: {
+        classic: importedSrc(wimAiClassicIcon),
+        default: importedSrc(wimAiModernIcon),
+    },
+    posts: {
+        classic: importedSrc(postsClassicIcon),
+        default: importedSrc(postsModernIcon),
     },
 } as const satisfies Record<string, AppIconVariants>
 
@@ -222,7 +244,7 @@ export interface IconImageProps extends IconProps {
 
 export const IconImage = ({ url, className }: IconImageProps) => (
     <BaseIcon viewBox="0 0 40 40" width="100%" height="100%" className={`size-10 ${className ? className : ''}`}>
-        <image width="40" height="40" href={url} />
+        <image width="40" height="40" href={importedSrc(url) || url} />
     </BaseIcon>
 )
 
@@ -466,6 +488,7 @@ export const AppLink = ({
             {url ? (
                 <Link
                     to={url}
+                    draggable={false}
                     {...(external ? { externalNoIcon: true } : { state: { newWindow: true } })}
                     customMenuItems={customMenuItems}
                     className={`${commonClassName} ${orientationClassName} ${shadowClassName}`}
