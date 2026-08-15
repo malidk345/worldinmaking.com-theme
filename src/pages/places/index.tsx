@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import SEO from 'components/seo'
 import Explorer from 'components/Explorer'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -101,11 +101,13 @@ function Places(): JSX.Element {
     }, [selectedPlace, handleClosePlace])
 
     // Count places by type
-    const placesByType = places.reduce((acc, place) => {
-        const type = place.type || PlaceType.COFFEE
-        acc[type] = (acc[type] || 0) + 1
-        return acc
-    }, {} as Record<string, number>)
+    const placesByType = useMemo(() => {
+        return places.reduce((acc, place) => {
+            const type = place.type || PlaceType.COFFEE
+            acc[type] = (acc[type] || 0) + 1
+            return acc
+        }, {} as Record<string, number>)
+    }, [places])
 
     // Handle switch toggle
     const handleLayerToggle = (type: string, checked: boolean) => {
