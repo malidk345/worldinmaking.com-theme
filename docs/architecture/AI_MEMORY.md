@@ -272,6 +272,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 162 - Cron was opening a new thread every tick
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Hourly lock/continue treated every post as non-bot because `loadBotNameMap` selected `bot_profiles.name`, which does not exist (400). Authors became `unknown`, so every run chose `fresh` and GH :20 opened another topic. Map now starts from `profiles.is_bot`.
+- **Modified Files:** `src/lib/bots/forum-thread.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 161 - Real forum @mentions
 - **Date:** 2026-08-15
 - **AI Agent:** Grok 4.6 (xAI)

@@ -7,28 +7,39 @@ import { instructionForForumMove } from './forum-moves'
 
 const botNameCache = new Map<string, string>()
 
+function rememberBot(id: unknown, name: unknown) {
+    const handle = String(name || '').trim()
+    if (!handle) return
+    const key = String(id || '').trim()
+    if (key) botNameCache.set(key, handle)
+    botNameCache.set(handle.toLowerCase(), handle)
+}
+
 export async function loadBotNameMap(): Promise<Map<string, string>> {
     if (botNameCache.size > 0) return botNameCache
-    const current = await supabaseRest<any[]>(`/bot_profiles?select=id,name&is_active=eq.true`)
-    if (current.ok && Array.isArray(current.data) && current.data.some((row) => row.name)) {
-        for (const row of current.data) {
-            const name = String(row.name || '').trim()
-            if (!name) continue
-            botNameCache.set(String(row.id), name)
-            botNameCache.set(name.toLowerCase(), name)
-        }
-        return botNameCache
+
+    // Live identities live on profiles (is_bot). bot_profiles has no `name` column.
+    const fromProfiles = await supabaseRest<any[]>(
+        `/profiles?select=id,username&is_bot=eq.true&username=not.is.null&limit=80`
+    )
+    if (fromProfiles.ok && Array.isArray(fromProfiles.data)) {
+        for (const row of fromProfiles.data) rememberBot(row.id, row.username)
     }
+    if (botNameCache.size > 0) return botNameCache
+
+    const current = await supabaseRest<any[]>(`/bot_profiles?select=id,name&is_active=eq.true`)
+    if (current.ok && Array.isArray(current.data)) {
+        for (const row of current.data) rememberBot(row.id, row.name)
+    }
+    if (botNameCache.size > 0) return botNameCache
+
     const legacy = await supabaseRest<any[]>(
         `/bot_profiles?select=id,is_active,profiles(username)&is_active=eq.true`
     )
     if (legacy.ok && Array.isArray(legacy.data)) {
         for (const row of legacy.data) {
             const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
-            const name = String(profile?.username || '').trim()
-            if (!name) continue
-            botNameCache.set(String(row.id), name)
-            botNameCache.set(name.toLowerCase(), name)
+            rememberBot(row.id, profile?.username)
         }
     }
     return botNameCache

@@ -192,6 +192,13 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(transcript).toContain('Latest speaker: @nietzsche')
     })
 
+    test('authorFromRow resolves bot ids from the live name map', async () => {
+        const { authorFromRow } = await import('../src/lib/bots/forum-thread')
+        const names = new Map([['00000000-0000-0000-0000-000000000012', 'Nietzsche']])
+        expect(authorFromRow({ author_id: '00000000-0000-0000-0000-000000000012' }, names)).toBe('Nietzsche')
+        expect(authorFromRow({ author_id: 'missing' }, names)).toBe('unknown')
+    })
+
     test('a live thread continues until five replies', () => {
         expect(shouldContinueThread(0, 1, 16)).toBe(false)
         expect(shouldContinueThread(1, 2, 16)).toBe(true)
