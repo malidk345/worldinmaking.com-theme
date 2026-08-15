@@ -12,3 +12,6 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+## 2024-11-20 - Memoizing the places array reduce operation in Places component
+**Learning:** In the `Places` component, computing the `placesByType` count map on every render using an array `.reduce()` operation created an O(N) rendering bottleneck, which triggered unnecessary calculations when unrelated state like `selectedLayers` was toggled. Pre-computing this reduction and wrapping it in `useMemo` with a dependency on `places` significantly reduces CPU pressure during React re-renders.
+**Action:** When calculating derived state or aggregating statistics from a large array of objects (like `places`), always wrap the reduction operation in `useMemo` so that the O(N) computation only executes when the underlying data array actually changes.
