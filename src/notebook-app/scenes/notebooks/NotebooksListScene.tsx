@@ -120,7 +120,7 @@ export function NotebooksListScene({
                 reloadNotebooks()
                 onSelectNotebook(nb.id)
             } catch (e) {
-                alert('Invalid notebook JSON file')
+                console.error('Invalid notebook JSON file')
             }
         }
         input.click()
@@ -170,7 +170,7 @@ export function NotebooksListScene({
 
             // Also trigger standard markdown download as document export
             handleExportMd(notebook)
-            alert(`"${docTitle}" exported to your Desktop & downloaded successfully!`)
+            console.info(`"${docTitle}" exported to your Desktop & downloaded successfully!`)
         } catch (e) {
             console.error('Failed to export notebook to desktop:', e)
             handleExportMd(notebook)

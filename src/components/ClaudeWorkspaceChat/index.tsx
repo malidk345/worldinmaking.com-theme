@@ -795,9 +795,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.log('[ClaudeWorkspaceChat] Request aborted by user/system.');
-      } else if (!isStreamComplete) {
+      if (err.name !== "AbortError" && !isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
         const displayContent = sanitizePublicAssistantText(accumulatedContent);

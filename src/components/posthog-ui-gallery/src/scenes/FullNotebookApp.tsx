@@ -394,7 +394,7 @@ export function FullNotebookApp({
               <LemonButton type="secondary" onClick={() => setShowShareModal(false)}>
                 Close
               </LemonButton>
-              <LemonButton type="primary" onClick={() => { alert('Link copied to clipboard!'); setShowShareModal(false); }}>
+              <LemonButton type="primary" onClick={() => { console.info('Link copied to clipboard!'); setShowShareModal(false); }}>
                 Copy Link
               </LemonButton>
             </div>

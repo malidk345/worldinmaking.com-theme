@@ -7,7 +7,7 @@ const DontClickButton = ({ alertMessage, children, ...props }) => (
         className="dont-click flex items-center space-x-1 text-muted text-sm @xl:text-[15px]"
         onClick={(e) => {
             e.preventDefault()
-            alert(alertMessage)
+            console.warn(alertMessage)
         }}
         {...props}
     >
