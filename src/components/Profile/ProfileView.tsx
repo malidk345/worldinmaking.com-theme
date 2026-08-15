@@ -627,7 +627,7 @@ const BodyEditor = ({ values, setFieldValue, bodyKey, initialValue, maxLength })
     )
 }
 
-const ProfileTabs = ({ profile, firstName, id, username, isEditing, values, errors, setFieldValue }) => {
+const ProfileTabs = ({ profile, firstName, id, username }) => {
     const { appWindow } = useWindow()
     const { user } = useUser()
     const [sort, setSort] = useState(sortOptions[0].label)
@@ -643,38 +643,6 @@ const ProfileTabs = ({ profile, firstName, id, username, isEditing, values, erro
     })
 
     const tabs = [
-        {
-            value: 'bio',
-            label: 'Bio',
-            content: isEditing ? (
-                <BodyEditor
-                    values={values}
-                    setFieldValue={setFieldValue}
-                    bodyKey="biography"
-                    initialValue={profile.biography}
-                />
-            ) : (
-                <Markdown className="">{profile.biography || `${firstName} hasn't written a bio yet`}</Markdown>
-            ),
-        },
-        {
-            value: 'discussions',
-            label: 'Discussions',
-            content: (
-                <>
-                    <Questions
-                        profileId={authorId}
-                        disclaimer={false}
-                        showForm={false}
-                        noQuestionsMessage={
-                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
-                                {firstName} hasn't started any discussions yet
-                            </p>
-                        }
-                    />
-                </>
-            ),
-        },
         {
             value: 'posts',
             label: 'Posts',
@@ -724,6 +692,24 @@ const ProfileTabs = ({ profile, firstName, id, username, isEditing, values, erro
                             )}
                         </div>
                     )}
+                </>
+            ),
+        },
+        {
+            value: 'discussions',
+            label: 'Discussions',
+            content: (
+                <>
+                    <Questions
+                        profileId={authorId}
+                        disclaimer={false}
+                        showForm={false}
+                        noQuestionsMessage={
+                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
+                                {firstName} hasn't started any discussions yet
+                            </p>
+                        }
+                    />
                 </>
             ),
         },
@@ -1030,6 +1016,31 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 </Block>
                             )}
 
+                            {(isEditing || profile.biography) && (
+                                <Block title="Bio">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <textarea
+                                                name="biography"
+                                                value={values.biography || ''}
+                                                onChange={(e) => setFieldValue('biography', e.target.value)}
+                                                rows={6}
+                                                maxLength={3000}
+                                                className="w-full text-sm rounded-md border border-primary bg-primary text-primary p-2 resize-y min-h-[8rem] focus:outline-none focus:ring-1 focus:ring-primary"
+                                                placeholder="A short bio"
+                                            />
+                                            {errors.biography && (
+                                                <p className="text-red text-xs font-bold m-0">{errors.biography}</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <Markdown className="prose dark:prose-invert prose-sm max-w-full m-0">
+                                            {profile.biography}
+                                        </Markdown>
+                                    )}
+                                </Block>
+                            )}
+
                             {(isEditing ||
                                 profile.github ||
                                 profile.twitter ||
@@ -1090,10 +1101,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 firstName={firstName}
                                 id={data?.id || id}
                                 username={profile?.username}
-                                isEditing={isEditing}
-                                values={values}
-                                errors={errors}
-                                setFieldValue={setFieldValue}
                             />
                         </div>
                     </div>
