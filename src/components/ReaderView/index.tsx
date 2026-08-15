@@ -30,6 +30,71 @@ const MDXRenderer = ({ children }: any) => {
 }
 const getImage = (img: any) => img?.publicURL || img?.url || img
 
+const NEXT_IMAGE_HOSTS = /^(res\.cloudinary\.com|user-images\.githubusercontent\.com|raw\.githubusercontent\.com|(?:[\w-]+\.)?posthog\.com)$/i
+
+function resolveImageSrc(img: unknown): string {
+    if (typeof img === 'string') return img.trim()
+    if (img && typeof img === 'object') {
+        const record = img as { publicURL?: string; url?: string; src?: string }
+        return String(record.publicURL || record.url || record.src || '').trim()
+    }
+    return ''
+}
+
+function canOptimizeRemoteImage(src: string): boolean {
+    try {
+        const host = new URL(src, 'https://worldinmaking.com').hostname
+        return NEXT_IMAGE_HOSTS.test(host)
+    } catch {
+        return false
+    }
+}
+
+function RemoteImage({
+    src,
+    alt,
+    className,
+    fill,
+    width,
+    height,
+    style,
+}: {
+    src: string
+    alt: string
+    className?: string
+    fill?: boolean
+    width?: number
+    height?: number
+    style?: React.CSSProperties
+}) {
+    if (!src) return null
+    if (canOptimizeRemoteImage(src)) {
+        return (
+            <Image
+                src={src}
+                alt={alt}
+                className={className}
+                fill={fill}
+                width={fill ? undefined : width}
+                height={fill ? undefined : height}
+                style={style}
+            />
+        )
+    }
+    return (
+        <img
+            src={src}
+            alt={alt}
+            className={className}
+            style={
+                fill
+                    ? { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: style?.objectFit || 'contain', ...style }
+                    : style
+            }
+        />
+    )
+}
+
 import { fetchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 import { useRouter as useNextRouter } from 'next/router'
 
@@ -80,7 +145,10 @@ import { getVideoClasses } from 'constants'
 import AboutPostHog from 'components/AboutPostHog'
 
 
-const getProseClasses = (size?: any) => 'prose dark:prose-invert max-w-none'
+const getProseClasses = (size?: 'sm' | 'base' | 'lg') => {
+    const scale = size === 'lg' ? 'prose-lg' : size === 'base' ? '' : 'prose-sm'
+    return `prose ${scale} dark:prose-invert max-w-none font-normal`.replace(/\s+/g, ' ').trim()
+}
 
 dayjs.extend(relativeTime)
 
@@ -262,8 +330,8 @@ const ContributorsSmall = ({ contributors }) => {
                                         src={image}
                                     />
                                 ) : gatsbyImage ? (
-                                    <Image
-                                        src={gatsbyImage?.publicURL || gatsbyImage?.url || gatsbyImage || ''}
+                                    <RemoteImage
+                                        src={resolveImageSrc(gatsbyImage)}
                                         alt={name}
                                         className={`w-6 h-6 border border-primary rounded-full overflow-hidden bg-${
                                             color ? color : 'red'
@@ -1129,9 +1197,9 @@ const LeftSidebar = ({
     return (
         <aside
             data-scheme="secondary"
-            className={`relative flex-shrink-0 ${hasMounted && !mobile ? 'transition-[flex-basis] duration-300' : ''} ${
-                mobile ? 'basis-0' : isPinned ? 'basis-[250px]' : 'basis-12'
-            }`}
+            className={`relative flex-shrink-0 h-full min-h-0 self-stretch ${
+                hasMounted && !mobile ? 'transition-[flex-basis] duration-300' : ''
+            } ${mobile ? 'w-0 basis-0' : isPinned ? 'w-[250px] basis-[250px]' : 'w-12 basis-12'}`}
         >
             <div
                 onTransitionEnd={(e) => {
@@ -1494,7 +1562,8 @@ function ReaderViewContent({
         selectedBackgroundOption && selectedBackgroundOption.value !== 'none'
             ? 'before:absolute before:inset-0 before:bg-primary before:opacity-75 before:pointer-events-none'
             : '',
-        renderLeftSidebar && !isNarrow ? (isNavVisible ? 'pl-[250px]' : 'pl-12') : '',
+        // Left rail already reserves width via flex-basis. Extra pl-[250px] here
+        // doubled the offset and shoved the article to the right.
     ]
         .filter(Boolean)
         .join(' ')
@@ -1598,19 +1667,19 @@ function ReaderViewContent({
                                 <div
                                     ref={contentRef}
                                     className={`@container/reader-content relative ${
-                                        chrome ? '' : 'font-medium pt-12'
+                                        chrome ? '' : 'font-normal pt-12'
                                     } ${
                                         padding
                                             ? 'p-4 @md/reader-content-container:px-6 @lg/reader-content-container:px-8 @xl/reader-content-container:px-12 @2xl/reader-content-container:px-16 @3xl/reader-content-container:px-20'
                                             : ''
                                     }`}
                                 >
-                                    {body?.featuredImage && !body?.featuredVideo && (
+                                    {resolveImageSrc(body?.featuredImage) && !body?.featuredVideo && (
                                         <div className="not-prose mb-6 relative">
                                             <div className="text-center relative min-h-[300px]">
-                                                <Image
-                                                    src={body.featuredImage?.publicURL || body.featuredImage?.url || body.featuredImage || ''}
-                                                    alt={title}
+                                                <RemoteImage
+                                                    src={resolveImageSrc(body.featuredImage)}
+                                                    alt={title || ''}
                                                     className="rounded"
                                                     fill
                                                     style={{ objectFit: 'contain' }}

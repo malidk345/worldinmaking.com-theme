@@ -3085,6 +3085,18 @@ article.reader-view-content-container:has(.quest-sidebar) {
     }
 }
 
+/* Header is data-scheme=primary; windows are tertiary. Same `border-primary`
+   class therefore draws two different greys. Pin both chrome strokes to the
+   container's primary --border so the frame is one line. */
+#app-container {
+    --os-chrome-border: var(--border);
+}
+
+#app-container #taskbar,
+#app-container div[data-app='AppWindow'] {
+    border-color: rgb(var(--os-chrome-border));
+}
+
 #app-container[data-window-expanded] #taskbar {
     @apply rounded-bl-none rounded-br-none;
 }
@@ -3108,11 +3120,11 @@ article.reader-view-content-container:has(.quest-sidebar) {
 }
 
 #app-container[data-window-snapped-left] div[data-app='AppWindow'][data-snapped='left']:not([data-fixed-size]) {
-    @apply rounded-tl-none rounded-tr-none rounded-br-none;
+    @apply rounded-tl-none rounded-tr-none rounded-br-none border-t-0 shadow-none;
 }
 
 #app-container[data-window-snapped-right] div[data-app='AppWindow'][data-snapped='right']:not([data-fixed-size]) {
-    @apply rounded-tl-none rounded-tr-none rounded-bl-none;
+    @apply rounded-tl-none rounded-tr-none rounded-bl-none border-t-0 shadow-none;
 }
 
 /* Per-page windowed width overrides (desktop only; mobile stays full-screen above). */
@@ -3121,6 +3133,48 @@ article.reader-view-content-container:has(.quest-sidebar) {
         div[data-app='AppWindow'][data-windowed][data-path='/']:not([data-fixed-size]) {
         max-width: 1200px;
     }
+}
+
+:root {
+    --keyboard-inset: 0px;
+}
+
+[data-writing-dock] {
+    padding-bottom: calc(0.75rem + var(--keyboard-inset, 0px));
+    transition: padding-bottom 0.16s ease-out;
+}
+
+/* iOS zooms any focused field under 16px. Keep writing surfaces at 16px on phones. */
+@media (max-width: 767px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not([type='submit']):not(
+            [type='reset']
+        ):not([type='file']):not([type='color']):not([type='hidden']),
+    textarea,
+    select,
+    [contenteditable='true'] {
+        font-size: 16px !important;
+    }
+}
+
+html[data-keyboard='open'],
+html[data-keyboard='open'] body {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+.keyboard-lift {
+    bottom: var(--keyboard-inset, 0px) !important;
+    transition: bottom 0.16s ease-out;
+}
+
+.keyboard-pad {
+    padding-bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px));
+    transition: padding-bottom 0.16s ease-out;
+}
+
+html[data-keyboard='open'] [data-os-toolbar] {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .reader-content-container {

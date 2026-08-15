@@ -19,6 +19,8 @@ import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-ar
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { playbackChunks, wait } from 'lib/ai/playback'
+import { NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
+import { extractUiScreenSource, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../../lib/ai/design-request'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
@@ -244,6 +246,11 @@ export default async function handler(req: Request) {
                     },
                 })
 
+                const notebookBound = body.notebookBound === true
+                const designRequest = isUiDesignRequest(prompt)
+                const trustedInstruction = [designRequest ? UI_DESIGN_INSTRUCTION : '', notebookBound ? NOTEBOOK_EDITOR_INSTRUCTION : '']
+                    .filter(Boolean)
+                    .join('\n\n')
                 const result = await runBotTurn({
                     question: prompt,
                     philosopher,
@@ -252,6 +259,8 @@ export default async function handler(req: Request) {
                     context,
                     messages: history,
                     env: getRuntimeEnv(),
+                    scope: notebookBound ? 'notebook_coauthor' : 'site_wide',
+                    trustedInstruction: trustedInstruction || undefined,
                     onLifecycle: (event) => send({ type: 'phase', phase: event }),
                 })
 
@@ -281,6 +290,20 @@ export default async function handler(req: Request) {
                     version: 1,
                     createdAt: new Date().toISOString(),
                 }))
+                const uiScreen = extractUiScreenSource(result.reply)
+                if (uiScreen) {
+                    chartArtifacts.push({
+                        id: `art-${Date.now()}-ui`,
+                        title: uiScreen.title,
+                        type: 'react' as const,
+                        language: 'react',
+                        content: uiScreen.content,
+                        chartSpec: undefined,
+                        description: 'Sandbox screen',
+                        version: 1,
+                        createdAt: new Date().toISOString(),
+                    } as typeof chartArtifacts[number])
+                }
                 const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
                 const thinkingText =
                     result.thinking.stages

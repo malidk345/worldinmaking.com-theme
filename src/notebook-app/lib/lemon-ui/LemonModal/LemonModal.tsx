@@ -10,6 +10,7 @@ import { useFloatingContainer } from 'lib/hooks/useFloatingContainerContext'
 import { LemonButton } from 'lib/lemon-ui/LemonButton'
 
 import { Tooltip } from '../Tooltip'
+import { useSiteThemeSync } from '../../useSiteThemeSync'
 
 interface LemonModalInnerProps {
     children?: React.ReactNode
@@ -97,6 +98,7 @@ export function LemonModal({
 }: LemonModalProps): JSX.Element {
     const nodeRef = useRef(null)
     const [ignoredOverlayClickCount, setIgnoredOverlayClickCount] = useState(0)
+    const hostTheme = useSiteThemeSync()
 
     useEffect(() => setIgnoredOverlayClickCount(0), [hasUnsavedInput]) // Reset when there no longer is unsaved input
 
@@ -191,10 +193,17 @@ export function LemonModal({
             shouldCloseOnEsc={closable}
             onAfterClose={onAfterClose}
             closeTimeoutMS={250}
-            className={clsx('LemonModal', 'notebook-app-scope', fullScreen && 'LemonModal--fullscreen', className)}
+            className={clsx(
+                'LemonModal',
+                'notebook-app-scope',
+                hostTheme === 'dark' && 'dark',
+                fullScreen && 'LemonModal--fullscreen',
+                className
+            )}
             overlayClassName={clsx(
                 'LemonModal__overlay',
                 'notebook-app-scope',
+                hostTheme === 'dark' && 'dark',
                 zIndex && `LemonModal__overlay--z-${zIndex}`,
                 forceAbovePopovers && 'LemonModal__overlay--force-modal-above-popovers',
                 overlayClassName

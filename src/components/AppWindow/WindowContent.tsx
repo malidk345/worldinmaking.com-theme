@@ -19,13 +19,15 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
         (/^\/community/.test(path) &&
             !path.startsWith('/community/profiles') &&
             !path.startsWith('/community/achievements'))
+    const isBlogShell = /^\/(blog|posts)(\/|$)/.test(path)
+    const lockToWindow = isForumShell || isBlogShell
 
     return (
         <div
             onPointerDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
             className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overscroll-contain ${
-                isForumShell ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+                lockToWindow ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
             } ${
                 chrome
                     ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${

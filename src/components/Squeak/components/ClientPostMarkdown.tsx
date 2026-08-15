@@ -42,10 +42,12 @@ export const ClientPostMarkdown = ({
     if (isMostlyHtml(cleanedContent)) {
         return (
             <div
-                className="forum-markdown article-html prose dark:prose-invert max-w-none text-primary break-words [overflow-wrap:anywhere]
-                    [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3
-                    [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-2
-                    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-4
+                className="forum-markdown article-html max-w-none font-normal text-[15px] leading-[1.7] text-primary break-words [overflow-wrap:anywhere]
+                    [&_p]:mb-3 [&_p]:font-normal [&_p]:text-[15px] [&_p]:leading-[1.7]
+                    [&_li]:font-normal [&_li]:text-[15px] [&_li]:leading-[1.7]
+                    [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:mb-3
+                    [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-6 [&_h2]:mb-2
+                    [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4
                     [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
                     [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic
                     [&_a]:underline [&_img]:max-w-full [&_img]:rounded-md"

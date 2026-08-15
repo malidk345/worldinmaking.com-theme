@@ -68,7 +68,9 @@ html.light .notebook-app-scope,
 }
 html.dark .notebook-app-scope,
 .dark .notebook-app-scope,
-.notebook-app-scope.dark {
+.notebook-app-scope.dark,
+[data-notebook-host-theme='dark'] .notebook-app-scope,
+[theme='dark'].notebook-app-scope {
   --color-bg-surface-primary: #1e1f23;
   --color-bg-surface-secondary: #232429;
   --color-bg-surface-tertiary: #2a2b31;
@@ -89,6 +91,29 @@ html.dark .notebook-app-scope,
   --color-text-primary: #fafafa;
   --text-3000: #fafafa;
   --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --bg-light: #232429;
+  --bg-3000: #141518;
+}
+
+html.dark .MarkdownNotebook,
+.dark .MarkdownNotebook,
+[data-notebook-host-theme='dark'] .MarkdownNotebook,
+[theme='dark'] .MarkdownNotebook {
+  --markdown-notebook-component-background: var(--color-bg-surface-tertiary, #2a2b31);
+  --markdown-notebook-component-border: var(--color-border-primary, #3e424f);
+  --markdown-notebook-text-group-background: var(--color-bg-surface-tertiary, #2a2b31);
+  --markdown-notebook-text-group-border: var(--color-border-primary, #3e424f);
+  --markdown-notebook-text-group-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+  --markdown-notebook-code-background: var(--color-bg-surface-tertiary, #2a2b31);
+  --markdown-notebook-code-border: var(--color-border-primary, #3e424f);
+  --markdown-notebook-code-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --bg-light: var(--color-bg-surface-secondary, #232429);
+}
+
+html.dark .MarkdownNotebook__wim-block,
+.dark .MarkdownNotebook__wim-block,
+[data-notebook-host-theme='dark'] .MarkdownNotebook__wim-block {
+  background: var(--color-bg-surface-primary, #1e1f23) !important;
 }
 .notebook-app-scope.Popover > .Popover__box {
   background: var(--color-bg-surface-popover) !important;

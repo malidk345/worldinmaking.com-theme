@@ -194,7 +194,9 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    &.dark {
+    &.dark,
+    html.dark &,
+    [data-notebook-host-theme='dark'] & {
         @include panel-dark;
     }
 
@@ -311,7 +313,9 @@
     width: 100% !important;
     max-width: none !important;
 
-    &.dark {
+    &.dark,
+    html.dark &,
+    [data-notebook-host-theme='dark'] & {
         @include panel-dark;
         background: transparent !important;
     }

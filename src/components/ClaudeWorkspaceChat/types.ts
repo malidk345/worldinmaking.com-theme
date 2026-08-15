@@ -129,9 +129,10 @@ export interface Chat {
   systemPrompt?: string
   shareToken?: string
   isShared?: boolean
+  notebookId?: string
 }
 
-export type StylePresetId = 'default' | 'concise' | 'explanatory' | 'code-master' | 'turkish-formal'
+export type StylePresetId = 'default' | 'concise' | 'explanatory' | 'code-master' | 'formal' | 'turkish-formal'
 
 export interface StylePreset {
   id: StylePresetId

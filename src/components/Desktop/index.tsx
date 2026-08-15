@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'components/Link'
-import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState, useAppWindows } from '../../context/App'
+import { openAskAiWindow } from '../../lib/open-ask-ai-window'
 import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
 import ContextMenu from 'components/RadixUI/ContextMenu'
@@ -14,6 +15,7 @@ import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { useToast } from '../../context/Toast'
+
 
 export const useProductLinks = () => {
     return React.useMemo(
@@ -68,17 +70,23 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
     const productLinks = useProductLinks()
-    const { setScreensaverPreviewActive, setConfetti, updateSiteSettings, setIsClaudeChatOpen } = useAppActions()
-    const { siteSettings, compact } = useAppSettings()
+    const { setScreensaverPreviewActive, setConfetti, updateSiteSettings, addWindow, updateWindow, handleSnapToSide } =
+        useAppActions()
+    const { siteSettings, compact, isMobile } = useAppSettings()
+    const { windows } = useAppWindows()
     const { screensaverPreviewActive, confetti } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
     const router = useRouter()
 
-    // Open Claude chat panel when redirected from /workspace-chat
     useEffect(() => {
         if (router.query.open === 'chat') {
-            setIsClaudeChatOpen(true)
-            // Clean the query param from the URL without re-render
+            openAskAiWindow({
+                windows,
+                isMobile,
+                addWindow,
+                updateWindow,
+                snapWindow: handleSnapToSide,
+            })
             router.replace('/desktop', undefined, { shallow: true })
         }
     }, [router.query.open])

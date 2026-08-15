@@ -20,7 +20,10 @@ export default function FooterBar() {
     const [isExpanded, setIsExpanded] = useState(false)
 
     return (
-        <aside className="fixed bottom-3 left-3 z-[9999] flex items-center gap-1.5 pointer-events-auto">
+        <aside
+            data-os-toolbar
+            className="keyboard-lift fixed bottom-3 left-3 z-[9999] flex items-center gap-1.5 pointer-events-auto"
+        >
             {!isExpanded ? (
                 <Tooltip
                     trigger={

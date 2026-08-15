@@ -30,7 +30,7 @@ const MAX_SERIES = 8
 const MAX_CELL_LENGTH = 500
 const MAX_TITLE_LENGTH = 120
 const CHART_REQUEST_PATTERN =
-    /(grafik|grafiği|grafiğini|chart|graph|plot|dashboard|visuali[sz]ation|diagram|diyagram|trend|bar chart|line chart|pie chart)/i
+    /(grafik|grafiği|grafiğini|chart|graph|plot|visuali[sz]ation|diagram|diyagram|trend|bar chart|line chart|pie chart)/i
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value)

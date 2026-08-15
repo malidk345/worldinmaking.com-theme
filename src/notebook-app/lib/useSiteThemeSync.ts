@@ -41,8 +41,10 @@ export function useSiteThemeSync(): 'light' | 'dark' {
     return theme
 }
 
-function readHostTheme(): 'light' | 'dark' {
+export function readHostTheme(): 'light' | 'dark' {
     if (typeof document === 'undefined') return 'light'
+    const fromAttr = document.documentElement?.dataset.notebookHostTheme
+    if (fromAttr === 'dark' || fromAttr === 'light') return fromAttr
     const fromBody = document.body?.classList.contains('dark')
     const fromHtml = document.documentElement?.classList.contains('dark')
     return fromBody || fromHtml ? 'dark' : 'light'

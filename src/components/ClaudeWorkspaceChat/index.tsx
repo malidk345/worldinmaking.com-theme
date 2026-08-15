@@ -33,11 +33,21 @@ import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
+import {
+  NOTEBOOK_CHAT_BIND_EVENT,
+  type NotebookChatBind,
+  buildNotebookAgentContext,
+  readNotebookChatBind,
+  readNotebookSelection,
+} from '../../lib/notebook-chat-bind';
+import { messageToNotebookMarkdown } from '../../lib/notebook-artifact-block';
 import type { OSActionCard as OSActionCardType } from './types';
-import { dedupeArtifacts, extractArtifactsFromContent } from './utils/extractArtifacts';
+import { dedupeArtifacts, extractArtifactsFromContent, stripExtractedArtifactMarkup } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
+import { isAdminNavigationRequest, isUiDesignRequest } from 'lib/ai/design-request';
+import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import {
   chatAuthHeaders,
@@ -92,7 +102,7 @@ function sanitizePublicAssistantText(value: string): string {
   return stripThinkingBlocks(stripChartArtifactMarkup(value));
 }
 
-export default function App({ onClose }: { onClose?: () => void }) {
+export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
     const stored = readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS);
@@ -122,47 +132,54 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const processedInitialQuestionRef = useRef<string | null>(null);
   // Subscribe to windows via dedicated context so we re-render when windows change
   const { windows: appWindows } = useAppWindows();
+  const [notebookBind, setNotebookBind] = useState<NotebookChatBind | null>(null);
+  const selectedModelIdRef = useRef<ModelId>(settings.defaultModel);
 
   // Extract full active notebook text content from open notebook windows
   const activeNotebookContext = React.useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
-    if (notebookWindows.length === 0) return '';
-    const top = notebookWindows.reduce((prev, cur) =>
-      (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
-    );
-    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/([^?#]+)/);
-    const notebookId = idMatch?.[1] || '';
-    if (notebookId) {
-      const nb = getNotebook(notebookId);
-      if (nb?.content) {
-        return nb.content.slice(0, 8000);
-      }
+    const boundId = notebookBind?.notebookId
+    if (boundId) {
+      const bound = getNotebook(boundId)
+      return buildNotebookAgentContext({
+        title: bound?.title || notebookBind?.title,
+        content: bound?.content,
+        selection: readNotebookSelection(),
+      })
     }
     return '';
-  }, [appWindows]);
+  }, [appWindows, notebookBind]);
 
-  const activeNotebookMeta = React.useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
-    if (notebookWindows.length === 0) return null;
-    const top = notebookWindows.reduce((prev, cur) =>
-      (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
-    );
-    // Extract id from /notebooks?id=xxx or hash #/notebook/xxx
-    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/([^?#]+)/);
-    const notebookId = idMatch?.[1] || '';
-    if (notebookId) {
-      const nb = getNotebook(notebookId);
-      if (nb?.title) return { title: nb.title, path: top.path };
-    }
-    // Fallback to window title (App.tsx sets it as the notebook title)
-    if (top.title && top.title !== 'Notebooks' && top.title !== 'Notebook') {
-      return { title: top.title, path: top.path };
-    }
-    return { title: 'Notebook', path: top.path };
-  }, [appWindows]);
+  const insertIntoNotebook = (content: string) => {
+    const text = String(content || '').trim()
+    if (!text) return
+    const notebookOpen = appWindows.some(
+      (windowItem) => /notebook/i.test(windowItem.path || '') || windowItem.component === 'NotebookApp'
+    )
+    const insert = () =>
+      window.dispatchEvent(
+        new CustomEvent('wimNotebookInsertText', {
+          detail: {
+            text,
+            mode: 'append',
+            notebookId: notebookBind?.notebookId,
+          },
+        })
+      )
 
+    if (!notebookOpen && app?.addWindow) {
+      app.addWindow({
+        title: 'Notebooks',
+        icon: 'DocumentTextIcon',
+        component: 'NotebookApp',
+        path: '/notebooks',
+      })
+      window.setTimeout(insert, 350)
+      return
+    }
+
+    insert()
+  }
 
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
@@ -170,6 +187,41 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [selectedModelId, setSelectedModelId] = useState<ModelId>(settings.defaultModel);
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
   const [selectedStylePreset, setSelectedStylePreset] = useState<StylePresetId>('default');
+  selectedModelIdRef.current = selectedModelId
+
+  useEffect(() => {
+    const applyBind = (bind: NotebookChatBind | null) => {
+      setNotebookBind(bind)
+      if (!bind) return
+      setChats((prev) => {
+        const existing = prev.find((chat) => chat.notebookId === bind.notebookId)
+        if (existing) {
+          setActiveChatId(existing.id)
+          return prev
+        }
+        const boundChat: Chat = {
+          id: `chat-nb-${bind.notebookId}`,
+          title: bind.title ? `Notebook: ${bind.title}` : 'Notebook editor',
+          notebookId: bind.notebookId,
+          modelId: selectedModelIdRef.current,
+          starred: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          thinkingBudget: 'extended',
+          webSearchEnabled: false,
+          messages: [],
+        }
+        setActiveChatId(boundChat.id)
+        return [boundChat, ...prev]
+      })
+    }
+    applyBind(readNotebookChatBind())
+    const onBind = (event: Event) => {
+      applyBind((event as CustomEvent<NotebookChatBind | null>).detail || readNotebookChatBind())
+    }
+    window.addEventListener(NOTEBOOK_CHAT_BIND_EVENT, onBind)
+    return () => window.removeEventListener(NOTEBOOK_CHAT_BIND_EVENT, onBind)
+  }, [])
 
 
 
@@ -254,17 +306,31 @@ export default function App({ onClose }: { onClose?: () => void }) {
     if (opts?.origin || !artifactOrigin) {
       setArtifactOrigin(captureOrigin(opts?.origin))
     }
-    if (opts?.keepSize) {
+    const isUi = art.type === 'react' || art.type === 'html'
+    if (opts?.keepSize && !isUi) {
       if (!isArtifactsOpen) setIsArtifactExpanded(false)
       return
     }
-    if (opts?.expand) setIsArtifactExpanded(true)
+    if (opts?.expand || isUi) setIsArtifactExpanded(true)
     else setIsArtifactExpanded(false)
   }
 
   const closeArtifacts = () => {
     setIsArtifactsOpen(false)
     setIsArtifactExpanded(false)
+  }
+
+  const handleHealArtifact = (art: Artifact, content: string) => {
+    setActiveArtifact((current) => (current && current.id === art.id ? { ...current, content } : current))
+    setChats((prev) =>
+      prev.map((chat) => ({
+        ...chat,
+        messages: chat.messages.map((message) => ({
+          ...message,
+          artifacts: message.artifacts?.map((item) => (item.id === art.id ? { ...item, content } : item)),
+        })),
+      }))
+    )
   }
 
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -420,7 +486,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const handleNewChat = (projId?: string) => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
-      title: 'New chat',
+      title: notebookBind?.title ? `Notebook: ${notebookBind.title}` : 'New chat',
+      notebookId: notebookBind?.notebookId,
       projectId: projId || activeProjectId,
       modelId: selectedModelId,
       starred: false,
@@ -474,6 +541,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       const newChat: Chat = {
         id: `chat-${Date.now()}`,
         title: promptText.slice(0, 30) || attachments[0]?.name || 'New chat',
+        notebookId: notebookBind?.notebookId,
         projectId: activeProjectId,
         modelId: selectedModelId,
         starred: false,
@@ -593,6 +661,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           attachmentContext,
           messages: conversationHistory,
           notebookContext: activeNotebookContext,
+          notebookBound: Boolean(notebookBind?.notebookId),
           conversationId: targetChatId,
         }),
       });
@@ -738,7 +807,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           description: 'Publish thread to community forum',
           payload: { title: promptText, content: finalCleanContent },
         };
-      } else if (lowerText.includes('open admin') || lowerText.includes('dashboard')) {
+      } else if (isAdminNavigationRequest(promptText) && !isUiDesignRequest(promptText)) {
         detectedAction = {
           type: 'open_window',
           title: 'Open Admin OS Dashboard',
@@ -757,7 +826,11 @@ export default function App({ onClose }: { onClose?: () => void }) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
           for (const rawArt of rawArtifacts) {
             const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt);
-            extractedArtifacts.push(revisedArt);
+            extractedArtifacts.push(
+              revisedArt.type === 'react'
+                ? { ...revisedArt, content: prepareSandpackSource(revisedArt.content) }
+                : revisedArt
+            );
           }
         }
       } catch (artifactError) {
@@ -769,16 +842,16 @@ export default function App({ onClose }: { onClose?: () => void }) {
       // that were successfully extracted into Artifact objects by extractArtifactsFromContent.
       let visibleMessageText = finalCleanContent;
       if (extractedArtifacts.length > 0) {
-        visibleMessageText = visibleMessageText
-          // 1. Strip explicit <antArtifact> / <artifact> XML tags
-          .replace(/<(?:antArtifact|artifact)[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
-          // 2. Strip markdown code blocks that were extracted as artifacts (html, react, svg, markdown, json, table, etc.)
-          .replace(/```(?:html|htm|react|jsx|tsx|svg|mermaid|chart|chartjson|markdown|md|json|csv|table|js|ts|py|sh|bash|css|sql|python|javascript|typescript)[^\n]*\n[\s\S]*?```/gi, '')
-          .trim();
+        visibleMessageText = stripExtractedArtifactMarkup(visibleMessageText)
       }
       if (!visibleMessageText && extractedArtifacts.length > 0) {
-        const artifactLabel = extractedArtifacts[0].type === 'chart' ? 'chart' : 'document';
-        visibleMessageText = `Created **"${extractedArtifacts[0].title}"** (${artifactLabel} v${extractedArtifacts[0].version || 1}). Open the card below to review it.`;
+        const first = extractedArtifacts[0]
+        const isScreen = first.type === 'react' || first.type === 'html'
+        const artifactLabel =
+          first.type === 'chart' ? 'chart' : isScreen ? 'screen' : 'document'
+        visibleMessageText = isScreen
+          ? `Opened **"${first.title}"** in the preview workspace.`
+          : `Created **"${first.title}"** (${artifactLabel} v${first.version || 1}). Open the card below to review it.`;
       }
 
       // If we had a backend error, do not overwrite the assistant message again with empty content!
@@ -791,6 +864,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
           isTypingDone: true,
           osAction: detectedAction,
         });
+        const uiArtifact = extractedArtifacts.find((artifact) => artifact.type === 'react' || artifact.type === 'html')
+        if (uiArtifact) {
+          openArtifact(uiArtifact, { expand: true })
+        }
       }
 
       isStreamComplete = true; // successfully reached the end!
@@ -1025,19 +1102,19 @@ export default function App({ onClose }: { onClose?: () => void }) {
     closeArtifacts();
   };
 
-  const hasArtifactsInActiveChat = activeChat?.messages.some((m) => m.artifacts && m.artifacts.length > 0) || false;
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const meta = event.metaKey || event.ctrlKey
       if (event.key === 'Escape') {
         if (isSourcesOpen) {
           event.preventDefault()
+          event.stopPropagation()
           closeSources()
           return
         }
         if (isArtifactsOpen) {
           event.preventDefault()
+          event.stopPropagation()
           closeArtifacts()
           return
         }
@@ -1079,52 +1156,15 @@ export default function App({ onClose }: { onClose?: () => void }) {
         onDeleteChat={handleDeleteChat}
         onRenameChat={handleRenameChat}
         onToggleStarChat={handleToggleStarChat}
-        onExportChat={() => setShareModalOpen(true)}
-        onImportChat={handleImportChat}
-        projects={projects}
-        activeProjectId={activeProjectId}
-        onSelectProject={(pId) => setActiveProjectId(pId)}
-        onCreateProjectClick={() => setProjectModalOpen(true)}
         onOpenSearchModal={() => setSearchModalOpen(true)}
-        onOpenSettingsModal={() => setSettingsModalOpen(true)}
-        artifacts={activeChat?.messages.flatMap((m) => m.artifacts || []) || []}
-        activeArtifactId={activeArtifact?.id}
-        onSelectArtifact={(art) => openArtifact(art)}
-        onToggleArtifacts={() => {
-          if (isArtifactsOpen) closeArtifacts()
-          else if (activeArtifact) openArtifact(activeArtifact)
-        }}
       />
 
       {/* Main Workspace Area */}
       <div ref={workspaceRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Top Header Bar */}
         <Header
-          models={models}
-          selectedModelId={selectedModelId}
-          onSelectModel={handleSelectModel}
-          projects={projects}
-          activeProjectId={activeProjectId}
-          onSelectProject={setActiveProjectId}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onNewChat={() => handleNewChat()}
-          onOpenSearchModal={() => setSearchModalOpen(true)}
-          onOpenShareModal={() => setShareModalOpen(true)}
-          hasArtifacts={hasArtifactsInActiveChat}
-          onToggleArtifacts={() => {
-            if (isArtifactsOpen) closeArtifacts()
-            else if (activeArtifact) openArtifact(activeArtifact)
-          }}
-          isArtifactsOpen={isArtifactsOpen}
           activeChatTitle={activeChat?.title}
-          hasMessages={Boolean(activeChat && activeChat.messages.length > 0)}
-          onOpenSettingsModal={() => setSettingsModalOpen(true)}
-          onClose={onClose}
-          activeNotebookMeta={activeNotebookMeta}
-          chats={chats}
-          activeChatId={activeChatId}
-          onSelectChat={(id) => setActiveChatId(id)}
-          onCloseChat={(id) => handleDeleteChat(id)}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -1167,8 +1207,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
               </motion.div>
             </div>
           ) : (
-            /* Message List - Smooth Flowing Flow with Generous Bottom Padding */
-            <div className="pt-4 pb-48 sm:pb-56 space-y-6">
+            <div className="pt-4 pb-6 space-y-6">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1188,6 +1227,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   onFeedback={handleMessageFeedback}
                   onUpdateMessage={updateAssistantMessage}
                   onExecuteOSAction={executeOSAction}
+                  onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
@@ -1196,30 +1236,25 @@ export default function App({ onClose }: { onClose?: () => void }) {
           )}
         </main>
 
-        {/* Floating Input Area at Bottom (Only when messages exist) */}
         {activeChat && activeChat.messages.length > 0 && (
-          <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none bg-gradient-to-t from-primary/80 via-primary/40 to-transparent pt-8 pb-3">
-            <motion.div
-              layout
-              layoutId="chat-input-container"
-              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              className="w-full pointer-events-auto"
-            >
-              <ChatInput
-                onSendMessage={handleSendMessage}
-                onStopStreaming={handleStopStreaming}
-                isStreaming={isStreaming}
-                selectedStylePreset={selectedStylePreset}
-                onChangeStylePreset={setSelectedStylePreset}
-                onScrollToBottom={scrollToBottom}
-                showScrollToBottom={isAwayFromBottom}
-                models={models}
-                selectedModelId={selectedModelId}
-                onSelectModel={handleSelectModel}
-                draftPrompt={composerDraft}
-                draftNonce={composerDraftNonce}
-              />
-            </motion.div>
+          <div
+            data-writing-dock
+            className="relative z-20 shrink-0 bg-gradient-to-t from-primary via-primary/90 to-transparent pt-3 pb-3"
+          >
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              onStopStreaming={handleStopStreaming}
+              isStreaming={isStreaming}
+              selectedStylePreset={selectedStylePreset}
+              onChangeStylePreset={setSelectedStylePreset}
+              onScrollToBottom={scrollToBottom}
+              showScrollToBottom={isAwayFromBottom}
+              models={models}
+              selectedModelId={selectedModelId}
+              onSelectModel={handleSelectModel}
+              draftPrompt={composerDraft}
+              draftNonce={composerDraftNonce}
+            />
           </div>
         )}
 
@@ -1235,6 +1270,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
         <ArtifactsPanel
           artifact={activeArtifact}
           expanded={isArtifactExpanded}
+          contained={layout === 'window'}
           origin={artifactOrigin}
           onToggleExpand={() => setIsArtifactExpanded((value) => !value)}
           onClose={closeArtifacts}
@@ -1244,30 +1280,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
               : []
           }
           onSelectArtifact={(art) => openArtifact(art, { keepSize: true })}
-          onInsertToNotebook={(content) => {
-            const notebookOpen = appWindows.some((windowItem) =>
-              /notebook/i.test(windowItem.path || '') || windowItem.component === 'NotebookApp'
-            )
-            const insert = () =>
-              window.dispatchEvent(
-                new CustomEvent('wimNotebookInsertText', {
-                  detail: { text: content, mode: 'append' },
-                })
-              )
-
-            if (!notebookOpen && app?.addWindow) {
-              app.addWindow({
-                title: 'Notebooks',
-                icon: 'DocumentTextIcon',
-                component: 'NotebookApp',
-                path: '/notebooks',
-              })
-              window.setTimeout(insert, 350)
-              return
-            }
-
-            insert()
-          }}
+          onHealArtifact={handleHealArtifact}
+          onInsertToNotebook={insertIntoNotebook}
         />
       )}
       </div>
@@ -1318,9 +1332,11 @@ export function ClaudeWorkspaceChatPanel() {
   useEffect(() => {
     if (!isClaudeChatOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
+      if (document.querySelector('[data-wim-artifact-stage]')) return;
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         const target = event.target as HTMLElement;
         if (
+          target.closest?.('[data-wim-artifact-stage]') ||
           target.closest?.('[data-radix-popper-content-wrapper]') ||
           target.closest?.('[role="menu"]') ||
           target.closest?.('[role="listbox"]') ||
@@ -1338,9 +1354,10 @@ export function ClaudeWorkspaceChatPanel() {
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closePanel();
-      }
+      if (event.key !== 'Escape') return;
+      if (event.defaultPrevented) return;
+      if (document.querySelector('[data-wim-artifact-stage]')) return;
+      closePanel();
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);

@@ -3,6 +3,7 @@ import {
     dedupeArtifacts,
     extractArtifactsFromContent,
     isPromptLikeTitle,
+    stripExtractedArtifactMarkup,
 } from '../src/components/ClaudeWorkspaceChat/utils/extractArtifacts'
 
 test.describe('workspace artifact extraction', () => {
@@ -69,5 +70,66 @@ test.describe('workspace artifact extraction', () => {
         expect(merged).toHaveLength(1)
         expect(merged[0].type).toBe('table')
         expect(merged[0].title).toBe('Karşılaştırma')
+    })
+
+    test('a design request with a tsx fence becomes a react sandbox artifact', () => {
+        const prompt = 'profesyonel bir analytics dashboard tasarla'
+        const content = [
+            'İşte örnek bir operasyon ekranı.',
+            '',
+            '```tsx',
+            'export default function AnalyticsDashboard() {',
+            '  return (',
+            '    <div className="min-h-screen bg-slate-50 p-6">',
+            '      <h1 className="text-2xl font-semibold">Revenue</h1>',
+            '      <p className="text-slate-500">Sample data</p>',
+            '    </div>',
+            '  )',
+            '}',
+            '```',
+        ].join('\n')
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('react')
+        expect(artifacts[0].content).toContain('function AnalyticsDashboard')
+    })
+
+    test('promotes a code artifact that is actually a React screen', () => {
+        const prompt = 'bir login ekranı tasarla'
+        const content =
+            '<antArtifact type="code" title="Login Screen">function LoginScreen() {\n  return <div className="min-h-screen p-8"><form className="space-y-3"><input className="border px-3 py-2" /></form></div>\n}</antArtifact>'
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('react')
+        expect(artifacts[0].content).toContain('LoginScreen')
+    })
+
+    test('extracts a truncated antArtifact that never closed', () => {
+        const prompt = 'bana basit bir arayüz yapar mısın dashboard arayüzü'
+        const content = [
+            'Elbette, o veri tabloları ve boş hücrelerle dolu kağıt parçasını bir kenara bırak.',
+            '',
+            '<antArtifact identifier="ui-1" type="react" title="Basit Operasyonel Durum Paneli">',
+            '```jsx',
+            'export default function SimpleDashboard() {',
+            '  return (',
+            '    <div className="p-6">',
+            '      <h1 className="text-3xl">Gösterge Paneli</h1>',
+            '      <tr key={order.id} className="',
+        ].join('\n')
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('react')
+        expect(artifacts[0].title).toBe('Basit Operasyonel Durum Paneli')
+        expect(artifacts[0].content).toContain('function SimpleDashboard')
+        expect(artifacts[0].content).not.toContain('<antArtifact')
+
+        const visible = stripExtractedArtifactMarkup(content)
+        expect(visible).toContain('Elbette, o veri tabloları')
+        expect(visible).not.toContain('className=')
+        expect(visible).not.toContain('SimpleDashboard')
     })
 })

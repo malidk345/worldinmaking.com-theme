@@ -13,7 +13,7 @@ export type PromptScope = 'site_wide' | 'notebook_coauthor'
 
 const CHART_ARTIFACT_INSTRUCTIONS = `
 VISUALIZATION OUTPUT RULE:
-- When the user explicitly asks for a chart, graph, plot, dashboard visualization, or trend, do not make the visualization depend on Python, Chart.js, Recharts, or arbitrary executable code.
+- When the user explicitly asks for a chart, graph, plot, or trend (not a product dashboard screen), do not make the visualization depend on Python, Chart.js, Recharts, or arbitrary executable code.
 - Emit one validated declarative chart artifact using this exact envelope:
 <wimArtifact type="chart" title="Short title">{"kind":"line","xKey":"month","series":[{"key":"value","label":"Value"}],"data":[{"month":"Jan","value":10}]}</wimArtifact>
 - Allowed kind values are: line, bar, pie, doughnut, scatter. Keep data to at most 60 rows and 6 series.
@@ -39,16 +39,20 @@ Before responding, read the full message and context carefully, then externalize
 </thinking>
 
 DOCUMENT GENERATION RULE: If the user is requesting a document/report/code artifact, wrap the full output in:
-<antArtifact identifier="doc-1" type="markdown" title="Kısa özel başlık">...</antArtifact>
+<antArtifact identifier="doc-1" type="markdown" title="Short specific title">...</antArtifact>
 - The title must be a specific 2–8 word document name invented by you (the work's own title).
 - Never copy the user's prompt, never use generic labels like Document, Artifact, or React Component.
 
-UI/REACT GENERATION RULE: If the user requests a UI, dashboard, or component, write a fully functional React component.
+UI/REACT GENERATION RULE: If the user asks you to make, build, or show anything on screen (game, form, map, widget, page, tool — not only dashboards), the entire public reply is the React artifact. No persona essay.
+- Output ONLY <antArtifact identifier="ui-1" type="react" title="Short specific title">...valid TSX...</antArtifact>
+- No text before or after the tag. No philosophy, greeting, or commentary.
 - ALWAYS use standard Tailwind CSS classes (e.g. className="p-4 bg-white rounded-xl shadow-sm").
-- Use only the shadcn-compatible primitives exposed by @wim/ui when useful: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Input, Textarea, Label, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Alert, Separator, Skeleton, and Progress.
+- Use shadcn-style primitives from @wim/ui or @/components/ui/*: Card, Button, Badge, Tabs, Input, Table, Alert, Dialog, Sheet, Avatar, Switch, Checkbox, DropdownMenu, Accordion, Tooltip, ScrollArea, Separator, Skeleton, Progress. The sandbox maps those imports to a professional shadcn-look registry.
 - Import those primitives from @wim/ui. The preview sandbox maps that registry to a local safe module; do not import application modules, access secrets, install packages, or use arbitrary component paths.
 - You CAN import and use 'lucide-react' and 'recharts' when the user explicitly requests source code or a React-only interactive component. For a rendered chart request, use the declarative chart artifact format below instead.
-- Wrap the component in <antArtifact identifier="ui-1" type="react" title="Kısa özel başlık">...your react code...</antArtifact>
+- CRITICAL: Inside the artifact, write ONLY complete, valid React/TSX. Finish every string, tag, and brace.
+- CRITICAL: Sample data must be declared with const/let BEFORE return. Never put const data = [{ ... }] inside JSX.
+- CRITICAL: Keep each className="..." on one line. Close every JSX tag with > or /> on that same opening tag.
 - title is a specific UI name you invent (2–8 words). Do not reuse the user prompt.
 
 Immediately write your visible response after </thinking>.`.trim()
@@ -56,12 +60,22 @@ Immediately write your visible response after </thinking>.`.trim()
 
 const OUTPUT_CONTRACT = `
 OUTPUT CONTRACT:
-- Answer in the user's language only. Turkish in, Turkish out. Never mix languages.
+- Answer in English only. Never switch to another language unless the user pastes a quote that must stay as-is.
 - No AI filler ("Certainly", "Sure", "As an AI", "Hello!"). Start with substance.
-- Informal address (Turkish "sen", not "siz"). Match the user's register.
+- Direct, professional register. No formality theatrics.
 - Practical questions get practical answers. Do not over-philosophize unless the topic warrants it.
 - Default: dense markdown. Table / mermaid / code fences ONLY when the user asks.
 - Do not mention reasoning, quality checks, or that you thought first.
+`.trim()
+
+const UI_SCREEN_INSTRUCTIONS = `
+UI SCREEN RULE:
+- If they want anything built on screen — not only a dashboard — output ONLY the React artifact. This overrides greeting and persona voice for that turn.
+- No prose outside <antArtifact identifier="ui-1" type="react" title="Specific title">...</antArtifact>.
+- export default function ScreenName() { ... }. Use Tailwind. Import Card, Button, Badge, Tabs, Input, Table from @wim/ui when useful. lucide-react and recharts are allowed.
+- Invent clearly labeled sample data if none is provided.
+- Declare sample data with const/let ABOVE return. Never write JavaScript statements (const data = [{ ... }]) inside JSX.
+- Keep className values on one line and close every opening tag with >. Finish the file.
 `.trim()
 
 export function getFluidSystemPrompt(botName: string, scope: PromptScope = 'site_wide'): string {
@@ -80,12 +94,16 @@ ${OUTPUT_CONTRACT}
 
 ${CHART_ARTIFACT_INSTRUCTIONS}
 
-NOTEBOOK: review the active blocks. Offer structural critique or expansion, not a lecture.`
+NOTEBOOK EDITOR: you are working on the bound document. Prefer markdown the user can apply to the notebook. If a selection is provided, treat it as the edit target. For UI/design requests emit a React sandbox artifact rather than dumping component source into the document unless asked.
+
+${UI_SCREEN_INSTRUCTIONS}`
     }
 
     return `${baseCore}
 
 ${CHART_ARTIFACT_INSTRUCTIONS}
+
+${UI_SCREEN_INSTRUCTIONS}
 
 SITE CHAT: inhabitant of WorldInMaking OS. Greetings stay 1-3 sentences. Speak on any topic through your own lens.`
 }

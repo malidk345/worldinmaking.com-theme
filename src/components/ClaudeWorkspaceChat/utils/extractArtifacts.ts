@@ -1,5 +1,6 @@
 import { Artifact, ArtifactType } from '../types';
 import { extractChartArtifacts, isChartRequest, parseChartSpec } from 'lib/ai/chart-artifacts';
+import { extractUiScreenSource, isUiDesignRequest, looksLikeReactSource } from 'lib/ai/design-request';
 
 /**
  * Extracts Artifact objects from assistant response text or user prompt directives.
@@ -94,6 +95,15 @@ function extractGfmTables(content: string): string[] {
   return tables
 }
 
+export function stripExtractedArtifactMarkup(text: string): string {
+  return String(text || '')
+    .replace(/<(?:antArtifact|artifact)\b[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
+    .replace(/<(?:antArtifact|artifact)\b[\s\S]*$/gi, '')
+    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*?```/gi, '')
+    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*$/gi, '')
+    .trim()
+}
+
 export function extractArtifactsFromContent(content: string, userPrompt: string): Artifact[] {
   if (!content || !content.trim()) return [];
   const chartArtifacts: Artifact[] = extractChartArtifacts(content, userPrompt).map((artifact, index) => ({
@@ -113,6 +123,15 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
   // 1. Explicit <antArtifact> or <artifact> tags
   const antArtifactRegex = /<(?:antArtifact|artifact)\s+([^>]*?)>([\s\S]*?)<\/(?:antArtifact|artifact)>/gi;
   let match: RegExpExecArray | null;
+
+  function takeUnclosedAntArtifact(source: string): { attrs: string; body: string } | null {
+    const opens = [...source.matchAll(/<(?:antArtifact|artifact)\s+([^>]*?)>/gi)]
+    const last = opens[opens.length - 1]
+    if (!last || last.index === undefined) return null
+    const body = source.slice(last.index + last[0].length)
+    if (/<\/(?:antArtifact|artifact)>/i.test(body)) return null
+    return { attrs: last[1] || '', body }
+  }
 
   while ((match = antArtifactRegex.exec(content)) !== null) {
     const attrStr = match[1];
@@ -147,7 +166,39 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     }
   }
 
-  if (artifacts.length > 0) return dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt);
+  if (artifacts.length === 0) {
+    const unclosed = takeUnclosedAntArtifact(content)
+    if (unclosed?.body.trim()) {
+      const titleMatch = unclosed.attrs.match(/title=["']([^"']+)["']/i)
+      const identifierMatch = unclosed.attrs.match(/identifier=["']([^"']+)["']/i)
+      const typeMatch = unclosed.attrs.match(/type=["']([^"']+)["']/i)
+      const langMatch = unclosed.attrs.match(/language=["']([^"']+)["']/i)
+      const rawType = (typeMatch ? typeMatch[1] : 'react').toLowerCase()
+      if (rawType !== 'chart' && rawType !== 'visualization') {
+        const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
+          ? rawType
+          : 'react') as ArtifactType
+        const artContent = unclosed.body.replace(/^```[a-z0-9_-]*[ \t]*\r?\n?/i, '').trim()
+        artifacts.push({
+          id: `art-${Date.now()}-open`,
+          identifier: identifierMatch?.[1],
+          title: resolveArtifactTitle(titleMatch?.[1], artContent, userPrompt, 'Untitled'),
+          type,
+          language: langMatch ? langMatch[1] : undefined,
+          content: artContent,
+          description: 'Generated artifact',
+          version: 1,
+          createdAt: now,
+        })
+      }
+    }
+  }
+
+  if (artifacts.length > 0) {
+    const merged = promoteUiArtifacts(dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt))
+    const hasUi = merged.some((item) => item.type === 'react' || item.type === 'html')
+    if (hasUi || !isUiDesignRequest(userPrompt)) return merged
+  }
 
   // 2. Code block & Document extraction (```html, ```react, ```svg, ```markdown, etc.)
   // "tablo" is NOT a document request — it used to wrap the whole assistant
@@ -155,7 +206,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
   const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor)/i.test(userPrompt);
   const isTableRequested = /\b(tablo|table|karşılaştırma|karsilastirma|comparison)\b/i.test(userPrompt);
 
-  const codeBlockRegex = /```([a-z0-9_-]*)\n([\s\S]*?)```/gi;
+  const codeBlockRegex = /```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*?)```/gi;
   let codeMatch: RegExpExecArray | null;
   let blockCount = 0;
 
@@ -190,7 +241,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     const isUI = blockContent.includes('import React') || blockContent.includes("from 'react'") || blockContent.includes('from "react"') || blockContent.includes('export default function') || blockContent.includes('className=');
 
     if (['html', 'htm'].includes(lang)) artType = 'html';
-    else if (['jsx', 'tsx', 'react'].includes(lang) || isUI) artType = 'react';
+    else if (['jsx', 'tsx', 'react'].includes(lang) || isUI || looksLikeReactSource(blockContent)) artType = 'react';
     else if (['svg'].includes(lang)) artType = 'svg';
     else if (['mermaid'].includes(lang)) artType = 'mermaid';
     else if (['json'].includes(lang)) artType = 'json';
@@ -214,6 +265,30 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     blockCount++;
   }
 
+  if (blockCount === 0) {
+    const openFence = content.match(/```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*)$/i)
+    const openBody = openFence?.[2]?.trim() || ''
+    if (openBody.length >= 20 && !openBody.includes('```')) {
+      const lang = (openFence?.[1] || 'jsx').toLowerCase()
+      const isUI =
+        ['jsx', 'tsx', 'react'].includes(lang) ||
+        looksLikeReactSource(openBody) ||
+        openBody.includes('export default function') ||
+        openBody.includes('className=')
+      artifacts.push({
+        id: `art-${Date.now()}-open-fence`,
+        title: resolveArtifactTitle(undefined, openBody, userPrompt, lang ? `${lang} artifact` : 'Untitled'),
+        type: isUI ? 'react' : 'code',
+        language: lang,
+        content: openBody,
+        description: `Generated Artifact (${lang})`,
+        version: 1,
+        createdAt: now,
+      })
+      blockCount++
+    }
+  }
+
   // 3. A markdown table in the visible reply is at most one table artifact.
   if (artifacts.length === 0 && isTableRequested) {
     const tables = extractGfmTables(content)
@@ -226,6 +301,23 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
         language: 'markdown',
         content: tables[0],
         description: 'Document',
+        version: 1,
+        createdAt: now,
+      })
+    }
+  }
+
+  if (!artifacts.some((item) => item.type === 'react' || item.type === 'html') && isUiDesignRequest(userPrompt)) {
+    const screen = extractUiScreenSource(content)
+    if (screen) {
+      artifacts.push({
+        id: `art-${Date.now()}-ui`,
+        identifier: 'ui-1',
+        title: resolveArtifactTitle(screen.title, screen.content, userPrompt, 'Designed screen'),
+        type: 'react',
+        language: 'react',
+        content: screen.content,
+        description: 'Sandbox screen',
         version: 1,
         createdAt: now,
       })
@@ -249,5 +341,20 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     });
   }
 
-  return dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt);
+  return promoteUiArtifacts(dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt));
+}
+
+function promoteUiArtifacts(items: Artifact[]): Artifact[] {
+  return items.map((item) => {
+    if (item.type === 'react' || item.type === 'html') return item
+    if ((item.type === 'code' || item.type === 'markdown') && looksLikeReactSource(item.content)) {
+      return {
+        ...item,
+        type: 'react',
+        language: item.language && item.language !== 'markdown' ? item.language : 'tsx',
+        description: 'Sandbox screen',
+      }
+    }
+    return item
+  })
 }

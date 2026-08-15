@@ -58,6 +58,10 @@ export default function Document() {
     return (
         <Html lang="en" className="light" suppressHydrationWarning>
             <Head>
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual"
+                />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
             <body data-scheme="primary" data-skin="modern" data-wallpaper="hogzilla" suppressHydrationWarning>

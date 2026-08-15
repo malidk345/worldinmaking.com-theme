@@ -30,7 +30,7 @@ export default function Anniversaries() {
         )
         const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
         if (!host) {
-            setAnniversaries([])
+            setTeamMembers([])
             setLoading(false)
             return
         }

@@ -90,6 +90,38 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-38` | Stream 5 | Gemini native thinking + live stream | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-39` | Stream 5 | Alternate Groq/Gemini as lead family per request | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-40` | Stream 5 | Chat: full generate then SSE playback (no live provider stream) | `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-42` | Stream 5 | Bind Ask AI chat to the open notebook as an editor agent | `src/lib/notebook-chat-bind.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-43` | Stream 5 | Design replies open a desktop preview stage, not just code in chat | `src/components/ClaudeWorkspaceChat/*`, `src/lib/ai/design-request.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-44` | Stream 5 | Fix design preview crypto.subtle.digest crash (drop Sandpack) | `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `ArtifactsPanel.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-45` | Stream 5 | Fix design preview "Script error" (compile in parent, no Babel-in-iframe) | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-77` | Stream 5 | Fix sandbox Preview.tsx `expected "}"` for JSX-embedded const / arrow bodies | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-78` | Stream 5 | Stop Preview.tsx `expected "}"` by lifting data arrays out of JSX unconditionally | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-79` | Stream 5 | Restore Sandpack as the React preview runtime; polyfill crypto.subtle | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-80` | Stream 5 | Contain Sandpack SyntaxError: transpile CJS + iframe fallback | `next.config.js`, `ReactPreviewIframe.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-81` | Stream 5 | Repair multiline JSX className strings before Sandpack | `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-82` | Stream 5 | Close unclosed JSX tags (`className=""`) and stop Sandpack SyntaxError.message crash | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-83` | Stream 5 | Finish truncated React artifacts (unclosed antArtifact + complete JSX tree) | `extractArtifacts.ts`, `reactPreview.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-84` | Stream 5 | Never mount Sandpack on unparseable JSX (readonly `error.message` overlay) | `SandpackPreviewFrame.tsx`, `ReactPreviewIframe.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-85` | Stream 5 | Repair unterminated JS strings inside JSX expressions (not only className / tables) | `reactPreview.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-86` | Stream 5 | Self-heal UI preview: hide compiler dumps, one silent model repair | `repair-ui.ts`, `LocalPreviewIframe.tsx`, `api/repair-ui.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-87` | Stream 5 | UI requests: model must emit only React code, no persona prose | `design-request.ts`, `fluid-prompts.ts`, `chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-88` | Stream 5 | Code-only reply for any build request, not just dashboard keywords | `design-request.ts`, `fluid-prompts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-89` | Stream 5 | Make sandbox UI match shadcn tokens/look without installing the package | `wimUiSource.ts`, `shadcnTheme.ts`, sandbox frames | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-90` | Stream 5 | Insert AI artifacts into the notebook as blocks, not raw source | `notebook-artifact-block.ts`, MarkdownNotebook, chat insert | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-91` | Stream 2 | Ask AI opens as a snapped AppWindow beside the notebook | `open-ask-ai-window.ts`, AskAI, WindowRouter, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-92` | Stream 2 | Windows-like snap zones while dragging (left / right / maximize) | `SnapAssistOverlay.tsx`, `useWindowManager.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-93` | Stream 2 | Left snap inset vs header: compute snap from constraintsRef | `SnapAssistOverlay.tsx`, `App.tsx`, `tests/snap-assist.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-94` | Stream 2 | Match header and window chrome stroke (scheme + join) | `global.css`, `AppWindow/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-95` | Stream 2 | Remove extra window title strip; restore original chrome | `WindowChrome.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-96` | Stream 2 | Drag is free-move; snap only when the cursor intends an edge | `SnapAssistOverlay.tsx`, `useWindowManager.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-97` | Stream 5 | Ask AI: drop browser header + bind bar; history-only sidebar | `Header.tsx`, `Sidebar.tsx`, `ChatMessage.tsx`, chat index | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-98` | Stream 5 | Remove chat header +/close so they do not collide with window chrome | `Header.tsx`, chat index | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-99` | Stream 2 | Notebook areas that stay light in dark mode | MarkdownNotebook, portals, WIM blocks | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-100` | Stream 3 | Blog posts crash on next/image hosts outside the allowlist | `ReaderView/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-101` | Stream 3 | Blog article was double-offset to the right of the left rail | `ReaderView/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-102` | Stream 3 | Blog sidebar pin/settings sat at the bottom of the post | `WindowRouter`, `WindowContent` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-103` | Stream 3 | Soften blog body type: smaller, regular weight | `ReaderView`, `ClientPostMarkdown` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-104` | Stream 3 | Writing UX: no zoom, dock fields to the keyboard | `useKeyboardInset`, `_app`, `_document`, `global.css` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -218,10 +250,277 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-74` | Stream 5 | Groq 429 must try the next account key, not abandon the family | `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-75` | Stream 5 | Stop thinking leaking into public reply; stop public replies being cut off | `thinking-tags.ts`, `thinking.ts`, `ai-gateway.ts`, `persona-engine.ts`, `orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-76` | Stream 1 / 5 | Fix CF Pages edge webpack: no Function()/eval in runtime-env (and groq-key-cursor) | `src/lib/bots/runtime-env.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-77` | Stream 5 | Fix sandbox Preview.tsx `expected "}"` when LLM puts `const data = [{...}]` inside JSX | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 139 - Typing no longer zooms the page; fields follow the keyboard
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Site-wide writing pass. Viewport is `interactive-widget=resizes-content`. Phone inputs stay 16px so iOS does not zoom. `visualViewport` sets `--keyboard-inset` and locks `--app-shell-height` so the shell does not grow. Chat composer and the OS toolbar lift with the keyboard; focused fields scroll into view.
+- **Modified Files:** `useKeyboardInset.ts` [NEW], `_app.tsx`, `_document.tsx`, `global.css`, `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`, `FooterBar.tsx`, `CommandPalette/index.tsx`
+
+### Entry 138 - Blog body type is smaller and regular weight
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Reader body was `font-medium` plus default `prose` (and a second `prose` on HTML posts), so paragraphs looked large and heavy. Default reader prose is now `prose-sm` + `font-normal`. HTML posts use 15px regular weight and semibold headings.
+- **Modified Files:** `ReaderView/index.tsx`, `ClientPostMarkdown.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 137 - Blog sidebar chrome stays on the window, not the post foot
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Pin / settings lived at the bottom of the article because blog windows used `h-auto` and the window scrolled the whole page. The sidebar stretched with the post. Blog/posts now fill the window like the forum; the article scrolls inside ReaderView.
+- **Modified Files:** `WindowRouter.tsx`, `WindowContent.tsx`, `ReaderView/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Open a long blog post. Sidebar open/close and settings should stay at the bottom of the window without scrolling the post.
+
+### Entry 136 - Blog article no longer sits 250px too far right
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The left rail already reserved 250px with flex-basis, and the article column added another `pl-[250px]`. Reading column started 500px in. Removed the extra padding so content sits in the space between nav and TOC.
+- **Modified Files:** `src/components/ReaderView/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Open a blog post. The body should be centered in the remaining pane, not shoved toward the TOC.
+
+### Entry 135 - Blog posts no longer crash on off-allowlist covers
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** ReaderView used `next/image` for featured images. Many Supabase posts use covers on filomythos.com, vox.com, cloudfront, etc. Those hosts are not in `next.config.js` remotePatterns, so the page threw `Invalid src prop`. Allowed hosts still use `next/image`; everything else falls back to a plain img.
+- **Modified Files:** `src/components/ReaderView/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Open a post like `/posts/homo-artista-training-asceticism-and-the-design-of-the-human`. The cover should render instead of a Next image error overlay.
+
+### Entry 134 - Notebook dark mode reaches editor chrome and portals
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Several notebook surfaces stayed light because markdown dark tokens only ran under `[theme='dark']` (never set) and code/cards mixed toward white. The host theme is now set as `theme` + `.dark` on the notebook root and on portaled popovers/modals. Injected palette + markdown tokens follow `html.dark` / `data-notebook-host-theme`. WIM blocks no longer hardcode `bg-white`.
+- **Modified Files:** `App.tsx`, `useSiteThemeSync.ts`, `MarkdownNotebook.scss`, `NotebookWimBlocks.tsx`, `Popover.tsx`, `LemonModal.tsx`, `ensureLemonStyles.ts`, `site-bridge.scss`, `notebook-dark-panel.scss`
+- **Handoff:** Hard-refresh, switch Display options to dark. Editor cards, code, tables, insert menus, and publish dropdowns should match the dark window.
+
+### Entry 133 - Chat header no longer stacks on window chrome
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the in-chat + / preview / close buttons from the Ask AI header. They sat under the window min/max/close. New chat stays in the history sidebar. Header is history toggle + title, with right padding so the title does not run under the window icons.
+- **Modified Files:** `Header.tsx`, `ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Ask AI top-right should only show the window’s own icons.
+
+### Entry 132 - Ask AI is a chat, not a browser
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the fake browser tab strip (localhost URL / Globe) and the Notebook editor / Add to notebook / Unbind banner. Header is now title + history + new chat. Sidebar is recents only (no Import / Projects / Upgrade / fake user). Insert lives on the assistant message as Add, and still on the artifact preview.
+- **Modified Files:** `Header.tsx`, `Sidebar.tsx`, `ChatMessage.tsx`, `ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts tests/open-ask-ai-window.spec.ts` — 12 passed.
+- **Handoff:** Hard-refresh Ask AI. No URL tabs, no bind bar. Add is under the reply.
+
+### Entry 131 - Drag moves freely; snap is an edge intent
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Snapped/maximized windows were trapped: the window already kissed an edge, so drag immediately re-armed left/right/maximize. Drag now peels a docked window back to its floating size under the cursor. Snap preview/commit only if the pointer has moved and is on a desktop edge that is not the zone the drag started in. Passing through a zone no longer captures the drop.
+- **Modified Files:** `src/hooks/useWindowManager.ts`, `src/components/AppWindow/SnapAssistOverlay.tsx`, `tests/snap-assist.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/snap-assist.spec.ts` — 9 passed.
+- **Handoff:** Drag a snapped notebook toward the center. It should float and stay where you drop it. Snap glass only when the cursor hits a screen edge.
+
+### Entry 130 - Remove extra window title strip
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The always-on 28px title bar (Notebooks / Ask AI text) was an extra chrome layer. Restored original chrome: title strip only when the app has a toolbar; otherwise min/max/close overlay the content. Drag still works from the toolbar, or from a 8px invisible top edge when there is no toolbar.
+- **Modified Files:** `src/components/AppWindow/WindowChrome.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Notebook and Ask AI should no longer have a separate title row. Window buttons sit in the top-right of the content again.
+
+### Entry 129 - Header and window use the same chrome stroke
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Header is `data-scheme=primary` (`--border` 192) and windows are tertiary (`--border` 156), so the same `border-primary` class drew two different lines. Both now use `--os-chrome-border` from the container. Snapped windows also drop their top border and shadow (same as maximize) so they join the header as one frame instead of stacking two strokes.
+- **Modified Files:** `src/styles/global.css`, `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Handoff:** Hard-refresh. Header edge and window frame should be the same grey. Snapped/maximized windows should share the header's bottom line, not draw a second one under it.
+
+### Entry 128 - Left snap flush with header
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Snap placement no longer uses `#taskbar.left` as a desktop-local x. Windows live inside `constraintsRef`; that extra inset pushed the left half inward of the header while the right half clipped flush. `snapLayout` now computes both halves from the desktop box. Commit uses pad 0 (flush with header). Glass preview still has an 8px inset.
+- **Modified Files:** `src/components/AppWindow/SnapAssistOverlay.tsx`, `src/context/App.tsx`, `tests/snap-assist.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/snap-assist.spec.ts` — 7 passed.
+- **Handoff:** Snap a window left. Its left edge should line up with the taskbar/header, same as the right half already did.
+
+### Entry 127 - Snap commits on drop; named notebook/ask-ai slots
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Drag-end now recomputes the snap zone from the cursor *and* the window box, always writes a clamped position (no bounce-back), then clears the drag transform. Notebook and Ask AI are named slots: snapping one tiles the other. Glass overlay unchanged.
+- **Modified Files:** `useWindowManager.ts`, `SnapAssistOverlay.tsx`, `AppWindow/index.tsx`, `App.tsx`, `open-ask-ai-window.ts`, snap/ask-ai tests
+- **Handoff:** Drag a notebook to the left edge until the glass shows, then release. It should fill the left half; Ask AI if open fills the right.
+
+### Entry 126 - Windows-like snap assist overlay
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dragging a window toward a screen edge now shows a Windows-style snap preview (left half, right half, or full maximize at the top). Drop commits the snap. Chrome and drag physics were not rewritten; detection now follows the cursor, not the window box.
+- **Modified Files:** `src/components/AppWindow/SnapAssistOverlay.tsx` [NEW], `src/hooks/useWindowManager.ts`, `src/components/AppWindow/index.tsx`, `tests/snap-assist.spec.ts` [NEW]
+- **Handoff:** Drag a window title bar to the left, right, or top of the desktop. A frosted rectangle should preview the slot before you release.
+
+### Entry 125 - Ask AI is a snapped window beside the notebook
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI no longer opens only as a slide-over. It opens as a real `/workspace-chat` AppWindow. On desktop the notebook snaps left and AI snaps right. Preview stays inside the chat window so it does not cover the notebook. Window chrome/physics were not rewritten — snap reuse only. Mobile still gets a full-screen window (taskbar switch); sheet split is next.
+- **Modified Files:** `src/lib/open-ask-ai-window.ts` [NEW], `AskAiWindow.tsx` [NEW], `AskAI/index.tsx`, `WindowRouter.tsx`, `App.tsx`, `Desktop/index.tsx`, `ArtifactsPanel.tsx`, `ClaudeWorkspaceChat/index.tsx`, `workspace-chat.tsx`, `tests/open-ask-ai-window.spec.ts` [NEW]
+- **Handoff:** Open a notebook, click Ask AI. Desktop should tile. Mobile: AI is a second full window on the taskbar.
+
+### Entry 124 - Sandbox UI uses shadcn tokens and extra primitives
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Preview now loads shadcn zinc CSS variables and utilities (`bg-primary`, `text-muted-foreground`). @wim/ui components were restyled to that look. Dialog, Sheet, Avatar, Switch, Checkbox, DropdownMenu, Accordion, Tooltip, ScrollArea are available so model shadcn imports render instead of going missing.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/shadcnTheme.ts` [NEW], `wimUiSource.ts`, `reactPreview.ts`, `SandpackPreviewFrame.tsx`, `src/lib/bots/fluid-prompts.ts`, `src/lib/ai/design-request.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "maps shadcn|adds a default|prepares Sandpack|closes an unterminated|finishes a dashboard|rewrites sandbox"` — 6 passed.
+- **Handoff:** Hard-refresh. New screens should look closer to shadcn (dark primary buttons, muted labels, real dialogs).
+
+### Entry 123 - Code-only for any on-screen build, not dashboard keywords
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `isUiDesignRequest` now treats any make/build/draw ask as a live preview (game, calculator, map, "basit bir şey yap"), not only dashboard/UI words. English phrasing is covered too (`make me`, `build a`, `I want a landing page`, `show me a widget`). Table, chart, document, and explain asks stay out. Prompts say build what they asked for, code only.
+- **Modified Files:** `src/lib/ai/design-request.ts`, `src/lib/bots/fluid-prompts.ts`, `src/lib/notebook-chat-bind.ts`, `tests/notebook-chat-bind.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts` — 6 passed.
+- **Handoff:** "oyun yap" / "hesap makinesi oluştur" now get the same code-only instruction as a dashboard.
+
+### Entry 122 - UI turns emit code only
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Design/dashboard turns now override persona voice. The public reply must be a single `<antArtifact type="react">` with no greeting, philosophy, or 1-3 sentence wrap-up. Instruction is placed first in the trusted application task so it is not truncated.
+- **Modified Files:** `src/lib/ai/design-request.ts`, `src/lib/bots/fluid-prompts.ts`, `src/pages/api/chat.ts`, `tests/notebook-chat-bind.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts` — 5 passed.
+- **Handoff:** New UI prompts after refresh should skip Marx preamble and spend tokens on the component.
+
+### Entry 121 - Self-heal preview instead of showing compiler dumps
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Stop playing whack-a-mole with each new JSX syntax. Local repairs still run first. If the preview still cannot compile, it silently calls `/api/repair-ui` once, persists the fixed source, and never shows `Preview.tsx: Unterminated string…` to the user. Failure is a short retry card.
+- **Modified Files:** `src/lib/ai/repair-ui.ts` [NEW], `src/pages/api/repair-ui.ts` [NEW], `LocalPreviewIframe.tsx`, `ReactPreviewIframe.tsx`, `SandpackPreviewFrame.tsx`, `ArtifactsPanel.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/repair-ui.spec.ts` [NEW], `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/repair-ui.spec.ts tests/chart-artifacts.spec.ts --grep "silent UI|closes an unterminated|finishes a dashboard"` — 5 passed.
+- **Handoff:** Hard-refresh. Broken screens should say "Arayüz toparlanıyor…" then render, or "Yeniden dene" — not a Babel dump.
+
+### Entry 120 - Repair unterminated strings inside JSX expressions
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Preview is not dashboard-only. A network map died on `fill={isSelected ? '#1e3a5f` (unterminated string inside `{expr}`). Attribute-string folding missed it because the quote is after `?`, not `=`. Those strings are now closed, incomplete ternaries get a fallback color, and leftover `{` / `(` are balanced.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "closes an unterminated color|finishes a dashboard|closes a JSX|folds multiline"` — 9 related tests passed.
+- **Handoff:** Hard-refresh. The existing network/map artifact should preview without regenerating.
+
+### Entry 119 - Do not mount Sandpack until repaired JSX parses
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The `Cannot assign to read only property 'message'` overlay lives inside Sandpack's bundler iframe, so `useErrorMessage` never hid it in a second chat/window. Preview now parses repaired TSX first; syntax errors skip Sandpack and use the local iframe. Sandpack mounts only when Babel can parse the file.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/SandpackPreviewFrame.tsx`, `ReactPreviewIframe.tsx`, `LocalPreviewIframe.tsx` [NEW], `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "finishes a dashboard|refuses to treat|closes a JSX|folds multiline|closes className|does not collapse|does not close a multi-line|closes a className"` — 8 passed.
+- **Handoff:** Hard-refresh every open workspace/desktop chat window. A new dashboard request in another chat should no longer show the readonly overlay.
+
+### Entry 118 - Finish truncated dashboard artifacts cut off at className="
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Marx's dashboard was truncated mid-`<tr className="` with no `</antArtifact>`. Chat leaked the JSX (tags eaten as HTML) and preview still died after we only inserted `>`. Unclosed artifacts/fences are now extracted and stripped from chat; leftover JSX tags/parens/braces are closed and empty `tr` rows get `<td>` cells from the mapped data object.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `utils/extractArtifacts.ts`, `index.tsx`, `src/lib/ai/design-request.ts`, `tests/chart-artifacts.spec.ts`, `tests/extract-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` — 28 passed; stored chart canvas test failed on missing preview (unrelated server/UI).
+- **Handoff:** Hard-refresh. The existing "Basit Operasyonel Durum Paneli" artifact should preview without regenerating.
+
+### Entry 117 - Close dangling JSX tags so Sandpack does not crash on SyntaxError.message
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Model emitted `<tr key={order.id} className="">` with no `>`. Sandpack's Babel then threw SyntaxError and crashed a second time with `Cannot assign to read only property 'message'`. Opening tags are now closed before the next child/`</`, and remaining compile errors fall back to the local iframe instead of Sandpack's overlay.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `SandpackPreviewFrame.tsx`, `ReactPreviewIframe.tsx`, `src/lib/ai/design-request.ts`, `src/lib/bots/fluid-prompts.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts` — 21 passed.
+- **Handoff:** Hard-refresh (`Ctrl+Shift+R`). The existing dashboard artifact does not need to be regenerated. If Sandpack still chokes, preview falls back to the local iframe with the real syntax error.
+
+### Entry 116 - Do not close className="" when the next line is `{expr}`
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Previous repair treated a following `{ternary}` line as the end of the attribute, producing `className=""` and `Unexpected token`. Mixed class + `{expr}` lines are now kept and turned into a template literal attribute.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "folds multiline|closes a className|does not collapse className"`
+- **Handoff:** Hard-refresh. Same orders table artifact should preview.
+
+### Entry 115 - Fold multiline className=" strings before Sandpack
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Model emitted `className="\n  border-b ...`. JS strings cannot contain raw newlines, so Sandpack threw `Unterminated string constant` and then crashed with `Cannot assign to read only property 'message'`. Those attribute strings are now folded onto one line (and closed if the ending quote is missing).
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "folds multiline|closes a className"`
+- **Handoff:** Hard-refresh. Same artifact should preview without regenerating.
+
+### Entry 114 - Sandpack no longer takes down the Next.js page
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Sandpack's ESM chunk threw `SyntaxError: Invalid or unexpected token` as a Next overlay. Force CJS + transpile `@codesandbox/sandpack-react`. If the Sandpack module fails to load or render, fall back to the local iframe preview so the workspace stays usable.
+- **Modified Files:** `next.config.js`, `src/components/ClaudeWorkspaceChat/sandbox/ReactPreviewIframe.tsx`, `src/lib/ai/design-request.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` if time; restart `pnpm dev` required for next.config.
+- **Handoff:** Restart `pnpm dev`, then hard-refresh. Page should not white-screen.
+
+### Entry 113 - React preview uses Sandpack again
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Homemade Babel/iframe preview was the wrong runtime. Restored `@codesandbox/sandpack-react` (already in package.json) with a SHA-256 `crypto.subtle.digest` polyfill. Source repair (lift invalid `const data = [{...}]`, `@wim/ui` rewrite) still runs before files are handed to Sandpack.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/SandpackPreviewFrame.tsx`, `ensureSubtleDigest.ts`, `ReactPreviewIframe.tsx`, `reactPreview.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` — 21 passed.
+- **Handoff:** Hard-refresh. React artifacts should open in Sandpack, not Preview.tsx / Babel.
+
+### Entry 112 - Preview no longer depends on JSX-context hoist for data arrays
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Same `expected "}"` at `{ time: '00:00' }` kept surviving context-aware hoist (unbalanced `className={`, raw JSX roots). All `const name = [{...}]` data literals are now lifted to the top of the file before Babel runs. Compile retries the lift on failure.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `src/components/ClaudeWorkspaceChat/sandbox/wimUiSource.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` — 20 passed.
+- **Handoff:** Hard-refresh (`Ctrl+Shift+R`). This existing artifact does not need to be regenerated.
+
+### Entry 111 - Design preview still failed on arrow-function JSX bodies
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Hoist only looked for `return (`, so `const Preview = () => (` and `return <div>` left `const data = [{ time: ... }]` inside JSX (`expected "}"`). Hoist now treats `=> (` / `return <` as JSX bodies, moves destructure/function decls, tracks multiline comments, and `import React, { useState }` no longer becomes `const React = React`.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts`
+- **Handoff:** Hard-refresh the workspace chat. The existing Culture Industry artifact should preview; if it still errors, switch to Code, copy the first 20 lines, and re-open Preview.
+
+### Entry 110 - Design preview "Missing semicolon" was Babel preset order
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Babel presets run last-to-first. React was parsing TSX type annotations (`): JSX.Element`) and reporting Missing semicolon. TypeScript now runs first.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `tests/chart-artifacts.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts --grep "rewrites sandbox"`
+- **Handoff:** Restart `pnpm dev`. Design preview should compile TSX screens.
+
+### Entry 109 - Design preview "Script error" fix
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Opaque iframe + Babel/Tailwind CDNs hid real failures as "Script error.". JSX/TS now compiles in the parent; the iframe only runs compiled JS + React UMD + Tailwind CSS (no Babel/Tailwind JS inside the sandbox).
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `src/components/ClaudeWorkspaceChat/sandbox/ReactPreviewIframe.tsx`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `tests/chart-artifacts.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` — 14 passed.
+- **Handoff:** Restart `pnpm dev`. Design preview should show the screen or a real compile error, not "Script error."
+
+### Entry 108 - Design preview no longer uses Sandpack crypto.subtle
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Sandpack crashed the live preview with `crypto.subtle.digest` (needs a secure context). React screens now render in a local srcdoc iframe with Babel + Tailwind + inlined `@wim/ui`.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `tests/chart-artifacts.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/chart-artifacts.spec.ts tests/extract-artifacts.spec.ts` — 14 passed.
+- **Handoff:** Restart `pnpm dev`. Ask for a dashboard again — the left preview should show the screen, not a crypto.subtle error.
+
+### Entry 107 - Design replies open a desktop preview stage
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** A UI/dashboard reply no longer stays as code in the 26rem chat. React/html artifacts auto-open as a live Sandpack stage to the left of chat. Extraction now promotes fenced/code React into a sandbox artifact and ensures a default export.
+- **Modified Files:** `src/lib/ai/design-request.ts`, `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`, `src/components/ClaudeWorkspaceChat/sandbox/wimUiSource.ts`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/lib/bots/fluid-prompts.ts`, `tests/extract-artifacts.spec.ts`, `tests/notebook-chat-bind.spec.ts`, `tests/chart-artifacts.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/extract-artifacts.spec.ts tests/notebook-chat-bind.spec.ts tests/chart-artifacts.spec.ts` — 17 passed.
+- **Handoff:** Restart `pnpm dev`. Ask for a dashboard — a large preview window should open beside chat, not just a code block.
+
+### Entry 106 - Design requests open sandbox, not Admin
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** "dashboard" no longer opens `/admin`. Design prompts get a trusted UI-build instruction, fluid prompt forbids admin redirects, and react/html artifacts auto-open in the sandbox.
+- **Modified Files:** `src/lib/ai/design-request.ts`, `src/lib/ai/chart-artifacts.ts`, `src/lib/bots/fluid-prompts.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `tests/notebook-chat-bind.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts tests/chart-artifacts.spec.ts` — 9 passed.
+- **Handoff:** Restart `pnpm dev`. Ask for a dashboard — should preview a built screen, not navigate to Admin.
+
+### Entry 105 - Notebook-bound chat editor
+- **Date:** 2026-08-14
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI now binds workspace chat to the open notebook (title/outline/selection + editor instruction). Desktop chat stays unbound. Apply last reply / insert events carry notebookId. Sandbox stays for UI artifacts, not the notebook document.
+- **Modified Files:** `src/lib/notebook-chat-bind.ts`, `src/notebook-app/scenes/notebooks/AskAI/*`, `src/notebook-app/App.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/components/ClaudeWorkspaceChat/types.ts`, `src/pages/api/chat.ts`, `src/lib/bots/fluid-prompts.ts`, `src/components/Desktop/index.tsx`, `tests/notebook-chat-bind.spec.ts`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts`
+- **Handoff:** Open Ask AI from a notebook — banner should say Notebook editor. Desktop chat should not show it.
 
 ### Entry 104 - Pace thinking playback
 - **Date:** 2026-08-14

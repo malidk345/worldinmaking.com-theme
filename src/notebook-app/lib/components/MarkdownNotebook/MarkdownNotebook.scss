@@ -29,7 +29,10 @@
     min-height: 100%;
 }
 
-[theme='dark'] .MarkdownNotebook {
+[theme='dark'] .MarkdownNotebook,
+.dark .MarkdownNotebook,
+html.dark .MarkdownNotebook,
+[data-notebook-host-theme='dark'] .MarkdownNotebook {
     --markdown-notebook-component-background: var(--color-bg-surface-tertiary);
     --markdown-notebook-component-border: var(--color-border-primary);
     --markdown-notebook-text-group-background: var(--markdown-notebook-component-background);
@@ -41,6 +44,7 @@
     --markdown-notebook-code-gutter: var(--data-color-10);
     --markdown-notebook-code-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
     --markdown-notebook-quote-gutter: var(--warning);
+    --bg-light: var(--color-bg-surface-secondary);
 }
 
 .MarkdownNotebook__debug-layout {

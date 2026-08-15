@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Artifact, ArtifactOrigin } from '../types';
+import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block';
 import { X, Eye, Copy, Download, Check, ChevronDown, FileInput, Maximize2, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
-import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
-import { normalizeSandboxReactSource, WIM_UI_SOURCE } from '../sandbox/wimUiSource';
+import { ReactPreviewIframe } from '../sandbox/ReactPreviewIframe';
 
 const BADGE_LABELS = new Set([
   'YENİ',
@@ -53,6 +54,8 @@ interface ArtifactsPanelProps {
   allArtifacts?: Artifact[];
   onSelectArtifact?: (artifact: Artifact) => void;
   onInsertToNotebook?: (content: string) => void;
+  onHealArtifact?: (artifact: Artifact, content: string) => void;
+  contained?: boolean;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -76,7 +79,7 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
           ref.current.innerHTML = svg;
         }
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Diyagram render edilemedi.');
+        if (!cancelled) setError(e?.message || 'Diagram could not be rendered.');
       }
     };
     render();
@@ -100,6 +103,8 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   allArtifacts = [],
   onSelectArtifact,
   onInsertToNotebook,
+  onHealArtifact,
+  contained = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
@@ -107,6 +112,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null)
   const [host, setHost] = useState({ width: 400, height: 720 })
+  const [viewport, setViewport] = useState({ width: 1280, height: 800 })
 
   useEffect(() => {
     const parent = frameRef.current?.parentElement
@@ -117,6 +123,17 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
     observer.observe(parent)
     return () => observer.disconnect()
   }, [artifact?.id])
+
+  useEffect(() => {
+    const update = () => setViewport({ width: window.innerWidth, height: window.innerHeight })
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  useEffect(() => {
+    if (artifact?.type === 'react' || artifact?.type === 'html') setActiveTab('preview')
+  }, [artifact?.id, artifact?.type])
 
   if (!artifact) return null;
 
@@ -176,46 +193,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
       return `<!DOCTYPE html><html><head><meta charset="utf-8"/>${tailwindScript}</head><body>${artifact.content}</body></html>`;
     }
     if (artifact.type === 'react') {
-      // Extract component name from `export default function X` or `function X` or `const X =`
-      const componentNameMatch =
-        artifact.content.match(/export\s+default\s+function\s+(\w+)/) ||
-        artifact.content.match(/export\s+default\s+(\w+)/) ||
-        artifact.content.match(/^(?:function|const)\s+(\w+)/m);
-      const componentName = componentNameMatch?.[1] || null;
-
-      // Build render call: try detected name → common names → render the default export inline
-      const renderCall = componentName
-        ? `ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(${componentName}));`
-        : `
-          const names = ['App', 'Component', 'Page', 'Demo', 'LocalStorageDemo', 'InteractiveCard'];
-          const found = names.find(n => typeof window[n] !== 'undefined');
-          if (found) {
-            ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(window[found]));
-          } else {
-            document.getElementById('root').innerHTML = '<p style="padding:16px;color:#6D6B67;font-family:sans-serif">The component loaded but could not render.</p>';
-          }
-        `;
-
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 16px; background: #fff; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    ${artifact.content}
-    ${renderCall}
-  </script>
-</body>
-</html>`;
+      return '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:16px">Loading preview…</body></html>';
     }
     return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`;
   };
@@ -241,23 +219,27 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   const initialFrame = origin
     ? { top: origin.top, left: origin.left, width: origin.width, height: origin.height }
     : { top: centerY - 32, left: targetLeft, width: targetWidth, height: 64 }
+  const isUi = artifact.type === 'react' || artifact.type === 'html'
+  const stage = Boolean(expanded && isUi)
+  const narrowStage = viewport.width < 900
+  const stageStyle = contained
+    ? { top: 8, left: 8, right: 8, bottom: 8, zIndex: 20 }
+    : narrowStage
+    ? { top: 8, left: 8, right: 8, bottom: 8, zIndex: 55 }
+    : { top: 8, left: 8, bottom: 56, right: 'max(8px, calc(min(26rem, 100vw - 1rem) + 16px))' }
 
-  return (
-    <>
-      <motion.button
-        type="button"
-        aria-label="Close artifact"
-        className="absolute inset-0 z-40 cursor-default bg-black/10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.18 }}
-        onClick={onClose}
-      />
+  const frame = (
       <motion.div
         ref={frameRef}
-        className="absolute z-50 flex flex-col overflow-hidden rounded-2xl border border-[#e6e6e6] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
-        initial={initialFrame}
-        animate={{ top: targetTop, left: targetLeft, width: targetWidth, height: targetHeight }}
+        data-wim-artifact-stage={stage ? 'true' : undefined}
+        className={
+          stage
+            ? `${contained ? 'absolute z-[20]' : 'fixed z-[45]'} flex flex-col overflow-hidden rounded-2xl border border-primary bg-white shadow-[0_18px_50px_rgba(0,0,0,0.22)]`
+            : 'absolute z-50 flex flex-col overflow-hidden rounded-2xl border border-[#e6e6e6] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]'
+        }
+        style={stage ? stageStyle : undefined}
+        initial={stage ? { opacity: 0, y: 12 } : initialFrame}
+        animate={stage ? { opacity: 1, y: 0 } : { top: targetTop, left: targetLeft, width: targetWidth, height: targetHeight }}
         transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.85 }}
       >
       <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#ececec] bg-white px-2 sm:gap-3 sm:px-3 font-claude-sans select-none">
@@ -336,12 +318,12 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             {onInsertToNotebook ? (
               <button
                 type="button"
-                onClick={() => onInsertToNotebook(artifact.content)}
+                onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
                 className="flex items-center gap-1.5 px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
-                title="Insert to notebook"
+                title="Add to notebook as a block"
               >
                 <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
-                <span>Insert to notebook</span>
+                <span>Add to notebook</span>
               </button>
             ) : (
               <button
@@ -448,53 +430,19 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             <MermaidDiagram chart={mermaidSource} />
           </div>
         ) : activeTab === 'preview' && artifact.type === 'react' ? (
-          <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-white p-2 sm:p-3">
-            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-primary bg-white shadow-2xs">
-              <SandpackProvider
-                template="react-ts"
-                theme="light"
-                files={{
-                  "/App.tsx": normalizeSandboxReactSource(artifact.content),
-                  "/wim-ui.tsx": WIM_UI_SOURCE,
-                  "/public/index.html": `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body { margin: 0; padding: 16px; font-family: system-ui, -apple-system, sans-serif; background: transparent; }
-      * { box-sizing: border-box; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>`
-                }}
-                customSetup={{
-                  dependencies: {
-                    "lucide-react": "^0.292.0",
-                    "recharts": "^2.10.3",
-                    "framer-motion": "^10.16.4",
-                    "tailwind-merge": "^2.2.0",
-                    "clsx": "^2.1.0"
-                  }
-                }}
-              >
-                <SandpackPreview
-                  showNavigator={false}
-                  showOpenInCodeSandbox={false}
-                  showRefreshButton={true}
-                  style={{ height: '100%', border: 'none' }}
-                />
-              </SandpackProvider>
+          <div className={`flex h-full min-h-0 w-full min-w-0 flex-col bg-white ${stage ? 'p-0' : 'p-2 sm:p-3'}`}>
+            <div className={`relative min-h-0 w-full flex-1 overflow-hidden bg-white ${stage ? '' : 'rounded-xl border border-primary shadow-2xs'}`}>
+              <ReactPreviewIframe
+                title={artifact.title}
+                source={artifact.content}
+                className="h-full w-full border-none bg-white"
+                onHealed={(content) => onHealArtifact?.(artifact, content)}
+              />
             </div>
           </div>
         ) : activeTab === 'preview' && (artifact.type === 'html' || artifact.type === 'svg') ? (
-          <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-white p-2 sm:p-3">
-            <div className="min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-primary bg-white shadow-2xs">
+          <div className={`flex h-full min-h-0 w-full min-w-0 flex-col bg-white ${stage ? 'p-0' : 'p-2 sm:p-3'}`}>
+            <div className={`min-h-0 w-full flex-1 overflow-hidden bg-white ${stage ? '' : 'rounded-xl border border-primary shadow-2xs'}`}>
               <iframe
                 title={artifact.title}
                 srcDoc={getIframeSrcDoc()}
@@ -605,6 +553,24 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
         )}
       </div>
       </motion.div>
+  )
+
+  if (stage && typeof document !== 'undefined') {
+    return createPortal(frame, document.body)
+  }
+
+  return (
+    <>
+      <motion.button
+        type="button"
+        aria-label="Close artifact"
+        className="absolute inset-0 z-40 cursor-default bg-black/10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.18 }}
+        onClick={onClose}
+      />
+      {frame}
     </>
   );
 };

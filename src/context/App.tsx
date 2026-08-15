@@ -25,6 +25,8 @@ import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
 import { installSqueakFetchGuard } from 'lib/squeak'
 import { isForumPath } from 'components/AppWindow/WindowRouter'
+import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
+import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
 
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
@@ -91,7 +93,7 @@ interface AppContextType {
     ) => { x: number; y: number }
     getDesktopCenterPosition: (size: { width: number; height: number }) => { x: number; y: number }
     openSearch: (initialFilter?: string) => void
-    handleSnapToSide: (side: 'left' | 'right') => void
+    handleSnapToSide: (side: 'left' | 'right', target?: AppWindow) => void
     constraintsRef: React.RefObject<HTMLDivElement>
     taskbarRef: React.RefObject<HTMLDivElement>
     expandWindow: (target?: AppWindow) => void
@@ -2359,8 +2361,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
             const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
-            const size = isMobileClient ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
-            const position = isMobileClient ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
+            const snappedSide = item.snapped === 'left' || item.snapped === 'right' ? item.snapped : false
+            const snapRect =
+                !isMobileClient && snappedSide ? getSnapDimensions(snappedSide) : null
+            const size = isMobileClient
+                ? { width: fullW, height: fullH }
+                : snapRect?.size || item.size || { width: 900, height: 650 }
+            const position = isMobileClient
+                ? { x: 0, y: 0 }
+                : snapRect?.position || item.position || getPositionDefaults(key, size, prev)
             const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
 
             const newWin: AppWindow = {
@@ -2382,7 +2391,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 minimized: false,
                 windowed: true,
                 expanded: isMobileClient || item.expanded,
-                snapped: false,
+                snapped: isMobileClient ? false : snappedSide,
                 fromOrigin: item.fromOrigin,
                 props: { path },
             }
@@ -2466,49 +2475,69 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setIsClaudeChatOpen(true)
     }
 
-    function getSnapDimensions(side: 'left' | 'right') {
-        const taskbarRect = isSSR ? null : document.querySelector('#taskbar')?.getBoundingClientRect()
-        const left = taskbarRect?.left ?? 0
-        const top = taskbarRect?.top ?? 0
-        const availableWidth = isSSR ? 0 : window.innerWidth - left * 2
-        const availableHeight = isSSR ? 0 : window.innerHeight - taskbarHeight - top
-        const finalWidth = availableWidth / 2
+    function getDesktopSize() {
+        const bounds = constraintsRef.current?.getBoundingClientRect()
+        if (bounds) return { width: bounds.width, height: bounds.height }
+        if (isSSR) return { width: 0, height: 0 }
         return {
-            size: { width: finalWidth, height: availableHeight },
-            position: { x: side === 'left' ? left : left + finalWidth, y: 0 },
+            width: Math.max(0, window.innerWidth - 16),
+            height: Math.max(0, window.innerHeight - taskbarHeight - 16),
         }
     }
 
-    const handleSnapToSide = (side: 'left' | 'right') => {
-        if (!constraintsRef.current || !focusedWindow) return
+    function getSnapDimensions(side: 'left' | 'right') {
+        // Windows live inside constraintsRef. Using #taskbar.left here treated a
+        // viewport inset as a desktop-local x, so the left half sat inward of the header
+        // while the right half clipped flush. Commit with pad 0 so both edges match the header.
+        const layout = snapLayout(side, getDesktopSize(), 0)
+        return {
+            size: { width: layout.width, height: layout.height },
+            position: { x: layout.x, y: layout.y },
+        }
+    }
+
+    const handleSnapToSide = (side: 'left' | 'right', target?: AppWindow) => {
+        const windowToSnap = target ?? focusedWindow
+        if (!constraintsRef.current || !windowToSnap) return
 
         const { size, position } = getSnapDimensions(side)
 
-        let prevSize = focusedWindow.size
-        let prevPos = focusedWindow.position
-        if (focusedWindow.expanded) {
+        let prevSize = windowToSnap.size
+        let prevPos = windowToSnap.position
+        if (windowToSnap.expanded) {
             const cr = constraintsRef.current.getBoundingClientRect()
             prevSize = { width: cr.width - 16, height: cr.height - 8 }
             prevPos = { x: 8, y: 0 }
         }
 
-        updateWindow(focusedWindow, {
+        updateWindow(windowToSnap, {
             position,
             size,
             previousSize: prevSize,
             previousPosition: prevPos,
             ...windowModeFlags(side === 'left' ? 'snapped-left' : 'snapped-right'),
         })
+
+        const slot = windowSlot(windowToSnap)
+        if (!slot) return
+        const mate =
+            slot === 'notebook' ? findAskAiWindow(windows) : findNotebookWindow(windows)
+        if (!mate || mate.key === windowToSnap.key) return
+        const otherSide = side === 'left' ? 'right' : 'left'
+        const other = getSnapDimensions(otherSide)
+        updateWindow(mate, {
+            minimized: false,
+            position: other.position,
+            size: other.size,
+            ...windowModeFlags(otherSide === 'left' ? 'snapped-left' : 'snapped-right'),
+        })
     }
 
     function getExpandedDimensions() {
-        const taskbarRect = isSSR ? null : document.querySelector('#taskbar')?.getBoundingClientRect()
+        const layout = snapLayout('maximize', getDesktopSize(), 0)
         return {
-            position: { x: taskbarRect?.left || 8, y: 0 },
-            size: {
-                width: isSSR ? 0 : window.innerWidth - (taskbarRect?.left || 8) * 2,
-                height: isSSR ? 0 : window.innerHeight - taskbarHeight - (taskbarRect?.top || 0),
-            },
+            position: { x: layout.x, y: layout.y },
+            size: { width: layout.width, height: layout.height },
         }
     }
 

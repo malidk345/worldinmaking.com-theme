@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
-import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,7 @@ interface ChatMessageProps {
   onFeedback?: (messageId: string, liked: boolean | null) => void;
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
+  onAddToNotebook?: (message: Message) => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
 
@@ -100,6 +101,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onRetry,
   onFeedback,
   onExecuteOSAction,
+  onAddToNotebook,
   typewriterSpeed = 'smooth',
 }) => {
   const isUser = message.role === 'user';
@@ -339,6 +341,18 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
+
+              {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
+                <button
+                  type="button"
+                  onClick={() => onAddToNotebook(message)}
+                  className="flex items-center gap-1 px-1 py-0.5 text-[12px] hover:text-primary transition-colors cursor-pointer"
+                  title="Add to notebook"
+                >
+                  <FileInput className="h-3.5 w-3.5" />
+                  <span>Add</span>
+                </button>
+              )}
 
               <button
                 onClick={handleSpeak}

@@ -14,7 +14,7 @@ export default function WorkspaceChatPage() {
         <div className="flex h-screen w-full items-center justify-center bg-bg-primary text-primary font-sans text-sm">
             <div className="flex items-center gap-3">
                 <div className="size-4 animate-spin rounded-full border-2 border-[#1E3A8A] border-t-transparent" />
-                <span>Yükleniyor...</span>
+                <span>Opening…</span>
             </div>
         </div>
     )

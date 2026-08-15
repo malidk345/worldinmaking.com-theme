@@ -21,6 +21,7 @@ import { ArchiveProvider } from 'context/ArchiveContext'
 import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
+import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
 
 export default function App({ Component, pageProps }: AppProps) {
     const router = useRouter()
@@ -49,6 +50,7 @@ export default function App({ Component, pageProps }: AppProps) {
     if ((Component as any).noLayout) {
         return (
             <ToastProvider>
+                <KeyboardInsetRoot />
                 <UserProvider>
                     <ArchiveProvider>
                         <Component {...pageProps} />
@@ -64,6 +66,7 @@ export default function App({ Component, pageProps }: AppProps) {
             suppressHydrationWarning
             className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
         >
+            <KeyboardInsetRoot />
             <ToastProvider>
                 <UserProvider>
                     <ArchiveProvider>

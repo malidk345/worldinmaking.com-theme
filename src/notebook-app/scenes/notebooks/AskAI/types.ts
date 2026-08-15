@@ -5,6 +5,8 @@
 export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string, mode?: 'append' | 'replace' | 'prepend') => void
     currentNotebookContent?: string
+    notebookId?: string
+    notebookTitle?: string
 }
 
 export interface ThinkingStageView {

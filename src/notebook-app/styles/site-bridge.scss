@@ -106,7 +106,9 @@
 }
 
 .notebook-app-scope.dark,
-.notebook-app-scope .dark {
+.notebook-app-scope .dark,
+html.dark .notebook-app-scope,
+[data-notebook-host-theme='dark'] .notebook-app-scope {
     --color-accent: #3b82f6;
     --color-accent-hover: #60a5fa;
     --color-accent-active: #2563eb;
@@ -139,6 +141,10 @@
     --color-border-primary: #3e424f;
     --color-border-secondary: #4a4e5c;
     --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
+    --bg-light: #232429;
+    --bg-3000: #141518;
+    --text-3000: #f1f5f9;
+    --color-text-primary: #fafafa;
 }
 
 /* Portaled dropdowns: force shell to brand surfaces (no pure-black Popover boxes) */

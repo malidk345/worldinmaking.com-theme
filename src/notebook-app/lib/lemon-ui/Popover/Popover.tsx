@@ -31,6 +31,7 @@ import { useFloatingContainer } from 'lib/hooks/useFloatingContainerContext'
 import { CLICK_OUTSIDE_BLOCK_CLASS } from 'lib/hooks/useOutsideClickHandler'
 
 import { LemonTableLoader } from '../LemonTable/LemonTableLoader'
+import { useSiteThemeSync } from '../../useSiteThemeSync'
 
 export interface PopoverProps {
     ref?: React.MutableRefObject<HTMLDivElement | null> | React.Ref<HTMLDivElement> | null
@@ -361,6 +362,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
     // x/y. Until then, rendering at the (0, 0) fallback would briefly flash the overlay at
     // the top-left of the viewport. Hide it until positioning resolves.
     const isPositionPending = isAttached && (x == null || y == null)
+    const hostTheme = useSiteThemeSync()
 
     return (
         <>
@@ -378,6 +380,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
                                 className={clsx(
                                     'Popover',
                                     'notebook-app-scope',
+                                    hostTheme === 'dark' && 'dark',
                                     padded && 'Popover--padded',
                                     maxContentWidth && 'Popover--max-content-width',
                                     !isAttached && 'Popover--top-centered',
@@ -385,6 +388,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
                                     isOpen && 'Popover--enter-active',
                                     className
                                 )}
+                                theme={hostTheme}
                                 data-placement={effectivePlacement}
                                 ref={floatingCallbackRef}
                                 // eslint-disable-next-line react/forbid-dom-props

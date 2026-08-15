@@ -372,12 +372,20 @@ export function App() {
 
   useEffect(() => {
     const handleInsertText = (e: Event) => {
-      const customEvent = e as CustomEvent<{ text: string; mode?: 'append' | 'replace' | 'prepend' }>
+      const customEvent = e as CustomEvent<{
+        text: string
+        mode?: 'append' | 'replace' | 'prepend'
+        notebookId?: string
+      }>
       const text = (customEvent.detail?.text || '').trim()
       const mode = customEvent.detail?.mode || 'append'
       if (!text) return
 
       let target = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
       if (routeRef.current.page !== 'editor' || !target) {
         const recent = getNotebooks().sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0]
         target = recent || target
@@ -454,6 +462,7 @@ export function App() {
       className={`App notebook-app-scope min-h-full h-auto bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)] ${
         hostTheme === 'dark' ? 'dark' : ''
       }`}
+      theme={hostTheme}
       data-lemon-scope
       data-host-theme={hostTheme}
     >
@@ -543,6 +552,8 @@ export function App() {
                     <AskAIDropdown
                       onInsertPromptBlock={handleInsertAIResponse}
                       currentNotebookContent={currentNotebook.content}
+                      notebookId={currentNotebook.id}
+                      notebookTitle={currentNotebook.title}
                     />
                     <NotebookMenu
                       notebookId={currentNotebook.id}

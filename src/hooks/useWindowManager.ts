@@ -1,8 +1,12 @@
-import { useCallback, type RefObject } from 'react'
+import { useCallback, useRef, type RefObject } from 'react'
 import type { PanInfo } from 'framer-motion'
 import type { AppWindow } from '../context/Window'
-
-const SNAP_THRESHOLD = -50
+import { windowModeFlags } from 'lib/windowState'
+import {
+    resolveSnapZone,
+    snapZoneFromPoint,
+    type SnapZone,
+} from '../components/AppWindow/SnapAssistOverlay'
 
 interface UseWindowManagerOptions {
     item: AppWindow
@@ -11,11 +15,27 @@ interface UseWindowManagerOptions {
     constraintsRef: RefObject<HTMLDivElement>
     windowRef: RefObject<HTMLDivElement>
     isDragging: boolean
-    snapIndicator: 'left' | 'right' | null
+    snapIndicator: SnapZone | null
     setDragging: (value: boolean) => void
-    setSnapIndicator: (value: 'left' | 'right' | null) => void
-    handleSnapToSide: (side: 'left' | 'right') => void
+    setSnapIndicator: (value: SnapZone | null) => void
+    handleSnapToSide: (side: 'left' | 'right', target?: AppWindow) => void
+    expandWindow: (target?: AppWindow) => void
     updateWindow: (window: AppWindow, updates: any) => void
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value))
+}
+
+function floatingSize(item: AppWindow, bounds: DOMRect) {
+    const prev = item.previousSize
+    const looksDocked =
+        !!prev && prev.width >= bounds.width - 24 && prev.height >= bounds.height - 24
+    if (prev && prev.width > 200 && prev.height > 160 && !looksDocked) return prev
+    return {
+        width: Math.min(900, Math.max(420, bounds.width * 0.48)),
+        height: Math.min(650, Math.max(360, bounds.height * 0.7)),
+    }
 }
 
 export function useWindowManager({
@@ -25,66 +45,104 @@ export function useWindowManager({
     constraintsRef,
     windowRef,
     isDragging,
-    snapIndicator,
     setDragging,
     setSnapIndicator,
     handleSnapToSide,
+    expandWindow,
     updateWindow,
 }: UseWindowManagerOptions) {
+    const snapZoneRef = useRef<SnapZone | null>(null)
+    const startZoneRef = useRef<SnapZone | null | undefined>(undefined)
+    const releasedLayoutRef = useRef(false)
+
+    const readZone = (info: PanInfo): SnapZone | null => {
+        if (!constraintsRef.current) return null
+        const bounds = constraintsRef.current.getBoundingClientRect()
+        if (startZoneRef.current === undefined) {
+            startZoneRef.current = snapZoneFromPoint(info.point.x, info.point.y, bounds)
+        }
+        const raw = snapZoneFromPoint(info.point.x, info.point.y, bounds)
+        if (startZoneRef.current && raw !== startZoneRef.current) {
+            startZoneRef.current = null
+        }
+        return resolveSnapZone(info.point.x, info.point.y, bounds, {
+            dragDistance: Math.hypot(info.offset.x, info.offset.y),
+            ignoreZone: startZoneRef.current ?? null,
+        })
+    }
+
+    const releaseDockedLayout = (info: PanInfo) => {
+        if (releasedLayoutRef.current) return
+        if (!item.snapped && !item.expanded) return
+        if (!constraintsRef.current || !windowRef.current) return
+
+        const bounds = constraintsRef.current.getBoundingClientRect()
+        const windowRect = windowRef.current.getBoundingClientRect()
+        const nextSize = floatingSize(item, bounds)
+        const ratioX = windowRect.width > 0 ? (info.point.x - windowRect.left) / windowRect.width : 0.3
+        const desiredX = info.point.x - bounds.left - ratioX * nextSize.width
+        const desiredY = info.point.y - bounds.top - 14
+        const nextPos = {
+            x: clamp(desiredX - info.offset.x, 0, Math.max(0, bounds.width - nextSize.width)),
+            y: clamp(desiredY - info.offset.y, 0, Math.max(0, bounds.height - nextSize.height)),
+        }
+
+        releasedLayoutRef.current = true
+        updateWindow(item, {
+            position: nextPos,
+            size: nextSize,
+            ...windowModeFlags('normal'),
+        })
+    }
+
     const handleDrag = useCallback(
         (_event: unknown, info: PanInfo) => {
             if (!isDragging) setDragging(true)
-            if (item.expanded && windowRef.current) {
-                const rect = windowRef.current.getBoundingClientRect()
-                const containerRect = constraintsRef.current?.getBoundingClientRect()
-                const measuredPos = {
-                    x: rect.left - (containerRect?.left ?? 0),
-                    y: rect.top - (containerRect?.top ?? 0),
-                }
-                const measuredSize = { width: rect.width, height: rect.height }
-                updateWindow(item, {
-                    position: measuredPos,
-                    size: measuredSize,
-                    previousSize: measuredSize,
-                    previousPosition: measuredPos,
-                    expanded: false,
-                    snapped: false,
-                })
-                return
-            }
             if (item.fixedSize || !constraintsRef.current) return
 
-            const bounds = constraintsRef.current.getBoundingClientRect()
-            const newX = position.x + info.offset.x
-            if (newX < SNAP_THRESHOLD) {
-                setSnapIndicator('left')
-            } else if (newX > bounds.width - size.width - SNAP_THRESHOLD) {
-                setSnapIndicator('right')
-            } else {
-                setSnapIndicator(null)
-            }
+            releaseDockedLayout(info)
+
+            const zone = readZone(info)
+            snapZoneRef.current = zone
+            setSnapIndicator(zone)
         },
-        [constraintsRef, isDragging, item, position.x, setDragging, setSnapIndicator, size.width, updateWindow, windowRef]
+        [constraintsRef, isDragging, item, setDragging, setSnapIndicator, updateWindow, windowRef]
     )
 
     const handleDragEnd = useCallback(
         (_event: unknown, info: PanInfo) => {
-            if (isDragging) setDragging(false)
-            if (!item.fixedSize && snapIndicator !== null) {
-                handleSnapToSide(snapIndicator)
-                setSnapIndicator(null)
+            // Commit only the zone the cursor is in *now*. A zone we merely
+            // passed through must not trap the drop.
+            const zone = readZone(info)
+            snapZoneRef.current = null
+            startZoneRef.current = undefined
+            releasedLayoutRef.current = false
+            setSnapIndicator(null)
+
+            if (!item.fixedSize && zone) {
+                if (zone === 'maximize') expandWindow(item)
+                else handleSnapToSide(zone, item)
+                setDragging(false)
                 return
             }
-            if (!constraintsRef.current) return
+
+            if (!constraintsRef.current) {
+                setDragging(false)
+                return
+            }
 
             const bounds = constraintsRef.current.getBoundingClientRect()
-            const newX = position.x + info.offset.x
-            const newY = position.y + info.offset.y
-            if (newX >= 0 && newY >= 0 && newX + size.width <= bounds.width && newY + size.height <= bounds.height) {
-                updateWindow(item, { position: { x: newX, y: newY } })
+            const visual = windowRef.current?.getBoundingClientRect()
+            const width = visual?.width ?? size.width
+            const height = visual?.height ?? size.height
+            const next = {
+                x: clamp((visual?.left ?? bounds.left) - bounds.left, 0, Math.max(0, bounds.width - width)),
+                y: clamp((visual?.top ?? bounds.top) - bounds.top, 0, Math.max(0, bounds.height - height)),
             }
+            updateWindow(item, { position: next, size: { width, height }, ...windowModeFlags('normal') })
+            setDragging(false)
         },
-        [constraintsRef, handleSnapToSide, isDragging, item, position, setDragging, setSnapIndicator, size, snapIndicator, updateWindow]
+        [constraintsRef, expandWindow, handleSnapToSide, item, setDragging, setSnapIndicator, size, updateWindow, windowRef]
     )
 
     const handleDragTransitionEnd = useCallback(() => {

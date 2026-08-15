@@ -3,7 +3,15 @@ const webpack = require('webpack')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    transpilePackages: ['ai', '@ai-sdk/openai', '@ai-sdk/google', '@ai-sdk/provider', '@ai-sdk/provider-utils'],
+    transpilePackages: [
+        'ai',
+        '@ai-sdk/openai',
+        '@ai-sdk/google',
+        '@ai-sdk/provider',
+        '@ai-sdk/provider-utils',
+        '@codesandbox/sandpack-react',
+        '@codesandbox/sandpack-client',
+    ],
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
     images: {
@@ -48,6 +56,10 @@ const nextConfig = {
             // cva is safe to alias globally (not used by posthog.com itself)
             cva: 'class-variance-authority',
             '@posthog/quill/styles.css': path.resolve(__dirname, 'src/notebook-app/styles/quill-shim.css'),
+            '@codesandbox/sandpack-react$': path.resolve(
+                __dirname,
+                'node_modules/@codesandbox/sandpack-react/dist/index.js'
+            ),
         }
 
         // ── NormalModuleReplacementPlugin ─────────────────────────────────────────

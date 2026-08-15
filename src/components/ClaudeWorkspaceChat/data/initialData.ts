@@ -192,33 +192,33 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 export const STYLE_PRESETS: StylePreset[] = [
   {
     id: 'default',
-    name: 'Dengeli & Doğal',
-    description: "default wim's ai bots tone: explanatory, friendly and logical.",
+    name: 'Balanced',
+    description: "Default WIM tone: explanatory, friendly, and logical.",
     promptSuffix: '',
   },
   {
     id: 'concise',
-    name: 'Özet & Net',
-    description: 'Giriş cümlelerini atla, doğrudan yanıta geç.',
-    promptSuffix: 'Lütfen yanıtı çok kısa, doğrudan ve maddeler halinde ver.',
+    name: 'Concise',
+    description: 'Skip preamble. Answer directly, preferably in bullets.',
+    promptSuffix: 'Keep the reply very short, direct, and bulleted.',
   },
   {
     id: 'explanatory',
-    name: 'Eğitici & Detaylı',
-    description: 'Temel kavramları ve nedenlerini detaylıca açıkla.',
-    promptSuffix: 'Lütfen bir öğretmen edasıyla, temel kavramları örneklerle detaylandırarak anlat.',
+    name: 'Explanatory',
+    description: 'Explain the concepts and the why, with examples.',
+    promptSuffix: 'Explain like a teacher. Cover the basics with concrete examples.',
   },
   {
     id: 'code-master',
-    name: 'Kod & Mimari Odaklı',
-    description: 'Temiz kod, tip güvenliği ve mimari prensipler.',
-    promptSuffix: 'Lütfen yazılımcı bakış açısıyla üretim kalitesinde, tip güvenliği olan kod üret.',
+    name: 'Code-first',
+    description: 'Clean code, type safety, and architecture.',
+    promptSuffix: 'Write production-quality, type-safe code from an engineer’s point of view.',
   },
   {
-    id: 'turkish-formal',
-    name: 'Resmi Türkçe',
-    description: 'Kurumsal, profesyonel Türkçe dil bilgisi.',
-    promptSuffix: 'Lütfen resmi ve son derece profesyonel bir Türkçe üslup kullan.',
+    id: 'formal',
+    name: 'Formal',
+    description: 'Corporate, precise English.',
+    promptSuffix: 'Use formal, precise professional English.',
   },
 ];
 

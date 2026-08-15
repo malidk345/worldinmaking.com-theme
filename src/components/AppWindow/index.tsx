@@ -21,6 +21,7 @@ import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
+import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -145,7 +146,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
         return { x: targetX, y: targetY, scale }
     }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height])
-    const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
+    const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
     const [history, setHistory] = useState<string[]>([])
     const [activeHistoryIndex, setActiveHistoryIndex] = useState(0)
@@ -175,6 +176,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         setDragging,
         setSnapIndicator,
         handleSnapToSide,
+        expandWindow,
         updateWindow,
     })
     // The open animation should only play once, on mount. `playOpenAnimation` is
@@ -490,6 +492,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
             navigate={navigate}
         >
             <WindowContainer closing={closing}>
+                {snapIndicator && constraintsRef.current ? (
+                    <SnapAssistOverlay
+                        zone={snapIndicator}
+                        bounds={constraintsRef.current.getBoundingClientRect()}
+                    />
+                ) : null}
                 {item.appSettings?.size?.fixed && (
                     <div
                         // Ignore scroll-end ghost clicks (common on mobile after touchmove)
@@ -534,13 +542,15 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
-                        item.expanded ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none' : 'rounded-lg shadow-md'
-                    } ${
-                        item.snapped === 'left'
-                            ? 'rounded-tl-none rounded-tr-none rounded-br-none'
-                            : item.snapped === 'right'
-                            ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                            : ''
+                        item.expanded
+                            ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none'
+                            : item.snapped
+                            ? `border-t-0 shadow-none ${
+                                  item.snapped === 'left'
+                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
+                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
+                              }`
+                            : 'rounded-lg shadow-md'
                     }`}
                     style={{
                         pointerEvents: 'auto',
@@ -622,11 +632,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     dragControls={controls}
                     dragListener={false}
                     dragMomentum={false}
+                    dragElastic={0}
                     dragConstraints={false}
                     onDrag={handleDrag}
                     onDragEnd={(e, info) => {
-                        resetPhysics()
                         handleDragEnd(e, info)
+                        resetPhysics()
                     }}
                     onAnimationStart={onAnimationStart}
                     onAnimationComplete={onAnimationComplete}
@@ -639,6 +650,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         onToggleExpanded={toggleExpanded}
                         onClose={handleClose}
                         onDoubleClick={handleDoubleClick}
+                        onDragHandlePointerDown={(event) => {
+                            if (item.fixedSize || isActiveWindowsPanelOpen) return
+                            controls.start(event)
+                        }}
                     />
                     <WindowContent item={item} chrome={chrome} hasToolbar={!!hasToolbar}>
                         <WindowRouter item={{ ...item, children: item.element }} />

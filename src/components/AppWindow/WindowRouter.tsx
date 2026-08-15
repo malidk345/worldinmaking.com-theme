@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import dynamic from 'next/dynamic'
 import IdeasHub from 'components/Ideas'
 import ProfileWrapper from 'components/Profile'
 import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
@@ -29,6 +30,9 @@ function AuthWindow() {
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
+import { isAskAiPath } from '../../lib/open-ask-ai-window'
+
+const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
@@ -41,6 +45,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/archive') {
         return <ArchiveWindow />
+    }
+
+    if (isAskAiPath(path)) {
+        return <AskAiWindow />
     }
 
     if (path === '/admin' || path === '/community/admin') {
@@ -151,17 +159,21 @@ export const isForumPath = (p: string): boolean =>
             !p.startsWith('/community/profiles') &&
             !p.startsWith('/community/achievements')))
 
+/** Blog listing or article — ReaderView chrome must stay window-tall, not post-tall. */
+export const isBlogPath = (p: string): boolean => typeof p === 'string' && /^\/(blog|posts)(\/|$)/.test(p)
+
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => {
     const path = props.item?.path || props.item?.props?.path || ''
-    const isForum = isForumPath(path)
-    // Forum needs fixed height; other pages grow with content (notebooks scroll).
+    const fillHeight = isForumPath(path) || isAskAiPath(path) || isBlogPath(path)
+    // Forum / Ask AI / blog: fill the window so chrome (sidebar pin, settings)
+    // stays on the pane. Notebooks still grow and scroll the window.
     return (
         <div
             data-scheme="primary"
             className={
-                isForum
+                fillHeight
                     ? 'text-primary h-full min-h-0 flex flex-col overflow-hidden'
                     : 'text-primary min-h-full h-auto flex flex-col'
             }

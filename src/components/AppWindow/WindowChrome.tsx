@@ -1,3 +1,4 @@
+import type { PointerEvent } from 'react'
 import { IconCollapse45Chevrons, IconMinus, IconSquare, IconX } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
@@ -12,6 +13,7 @@ interface WindowChromeProps {
     onToggleExpanded: () => void
     onClose: () => void
     onDoubleClick: () => void
+    onDragHandlePointerDown?: (event: PointerEvent<HTMLDivElement>) => void
 }
 
 export default function WindowChrome({
@@ -22,22 +24,36 @@ export default function WindowChrome({
     onToggleExpanded,
     onClose,
     onDoubleClick,
+    onDragHandlePointerDown,
 }: WindowChromeProps) {
+    const canDrag = !item.fixedSize
+
     return (
-        <div className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}>
+        <div
+            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
+            onPointerDown={hasToolbar && canDrag ? onDragHandlePointerDown : undefined}
+            onDoubleClick={onDoubleClick}
+        >
             {hasToolbar && (
                 <>
                     {!hideTitle && (
-                        <p className="text-primary text-left text-sm font-semibold ml-1.5 my-0 line-clamp-1">
-                            {item.meta?.title?.replace(/ - PostHog$/, '')}
+                        <p className="text-primary text-left text-sm font-semibold ml-1.5 my-0 line-clamp-1 pointer-events-none">
+                            {(item.meta?.title || item.title || '').replace(/ - PostHog$/, '')}
                         </p>
                     )}
                     <div className="flex-1" />
                 </>
             )}
+            {!hasToolbar && canDrag && (
+                <div
+                    aria-hidden
+                    className="absolute inset-x-0 top-0 z-10 h-2 cursor-grab active:cursor-grabbing"
+                    onPointerDown={onDragHandlePointerDown}
+                />
+            )}
             <div
                 data-scheme="tertiary"
-                onDoubleClick={onDoubleClick}
+                onPointerDown={(event) => event.stopPropagation()}
                 className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
                     hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
                 }`}
