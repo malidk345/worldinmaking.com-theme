@@ -115,7 +115,7 @@ const Achievement = ({ date, title, points, onItemClick, onDismiss }: Achievemen
 }
 
 export default function NotificationsPanel() {
-    const { notifications, setNotifications } = useUser()
+    const { notifications, setNotifications, fetchUser, user } = useUser()
     const { isNotificationsPanelOpen, setIsNotificationsPanelOpen, taskbarHeight, taskbarRef } = useApp()
     const panelRef = useRef<HTMLDivElement>(null)
 
@@ -151,6 +151,12 @@ export default function NotificationsPanel() {
         const newNotifications = notifications.filter((notification: NotificationItem) => notification.id !== id)
         setNotifications(newNotifications)
     }
+
+    useEffect(() => {
+        if (isNotificationsPanelOpen && user) {
+            void fetchUser()
+        }
+    }, [isNotificationsPanelOpen, user?.id])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

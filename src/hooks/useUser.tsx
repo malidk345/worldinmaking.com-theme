@@ -19,6 +19,12 @@ import {
     setPostLike,
     setReplyVote,
 } from 'lib/wim-user-data'
+import {
+    dismissUserNotification,
+    fetchUserNotifications,
+    isThreadSubscribed,
+    setThreadSubscription,
+} from 'lib/wim-notifications'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
 
 // Sentinel value used by posthog-js for cookieless tracking mode
@@ -258,6 +264,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
     }, [])
 
+    useEffect(() => {
+        if (!user) return
+        const tick = async () => {
+            const notes = await fetchUserNotifications()
+            setNotifications(notes)
+        }
+        const timer = window.setInterval(tick, 45_000)
+        const onFocus = () => {
+            void tick()
+        }
+        window.addEventListener('focus', onFocus)
+        return () => {
+            window.clearInterval(timer)
+            window.removeEventListener('focus', onFocus)
+        }
+    }, [user?.id])
+
     const getJwt = async () => {
         const token = await getSessionAccessToken()
         if (token) {
@@ -365,6 +388,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         localStorage.removeItem('wim_auth_user_id')
         setUser(null)
         setJwt(null)
+        setNotifications([])
     }
 
     const logout = async (): Promise<void> => {
@@ -436,7 +460,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             }
             // Enrich with bookmarks + post likes from Supabase
             const uid = String(meData.id)
-            const [bookmarks, postLikes] = await Promise.all([fetchUserBookmarks(uid), fetchUserPostLikes(uid)])
+            const [bookmarks, postLikes, notes] = await Promise.all([
+                fetchUserBookmarks(uid),
+                fetchUserPostLikes(uid),
+                fetchUserNotifications(),
+            ])
             const enriched: User = {
                 ...meData,
                 profile: {
@@ -446,7 +474,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 },
             }
             setUser(enriched)
-            setNotifications([])
+            setNotifications(notes)
             try {
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('wim_auth_user_id', String(meData.id))
@@ -473,18 +501,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
     }
 
-    const isSubscribed = async (_contentType: 'topic' | 'question', _id: number | string) => {
-        // Subscriptions: Supabase tables exist; UI wiring TBD. Safe default.
-        return false
+    const isSubscribed = async (contentType: 'topic' | 'question', id: number | string) => {
+        if (contentType !== 'question') return false
+        return isThreadSubscribed(id)
     }
 
-    const setSubscription = async (_args: {
+    const setSubscription = async (args: {
         contentType: 'topic' | 'question'
         id: number | string
         subscribe: boolean
         user?: User
     }): Promise<void> => {
-        /* Topic subscriptions table not yet wired */
+        if (args.contentType !== 'question') return
+        const result = await setThreadSubscription(args.id, args.subscribe)
+        if (!result.ok) {
+            addToast({ description: result.error || 'Could not update notifications', error: true })
+        }
     }
 
     const likePost = async (id: number, unlike = false, slug = '') => {
@@ -518,7 +550,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     const updateNotifications = async (next: any) => {
-        setNotifications(next)
+        const incoming = Array.isArray(next) ? next : []
+        const removed = notifications
+            .map((item: { id?: number }) => item?.id)
+            .filter((id: number | undefined) => id != null && !incoming.some((item: { id?: number }) => item?.id === id))
+        setNotifications(incoming)
+        if (removed.length > 0) {
+            await Promise.all(removed.map((id: number) => dismissUserNotification(id)))
+        }
     }
 
     const voteReply = async (id: number, vote: 'up' | 'down', _user?: User) => {

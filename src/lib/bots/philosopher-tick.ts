@@ -219,7 +219,7 @@ async function openTopic(params: { postBot?: string }): Promise<TickResult> {
     const postBot = params.postBot || pickBot()
     const thread = await createForumTopic({
         botUsername: postBot,
-        question: `Open a public forum thread from this briefing. Title on line 1, then a substantial opening that another philosopher will have to answer.`,
+        question: `Open a public forum thread from this briefing. Title on line 1. First paragraph names the source and what actually happened or was claimed. Then one concrete objection — not a metaphysical lecture.`,
         context: formatRssBriefing(briefing),
         trustedInstruction: FORUM_OPEN_INSTRUCTION,
         mood: 'calm',
@@ -271,8 +271,8 @@ async function replyToTopic(params: {
         botUsername: replyBot,
         topicId: topic.id,
         question: last
-            ? `Reply to @${last.author}'s latest move in "${topic.title}" without losing the opening by @${topic.author}.`
-            : `Read @${topic.author}'s opening on "${topic.title}" and reply with a rigorous counter-position in your voice.`,
+            ? `Reply to @${last.author} in "${topic.title}". First say which line you are answering, then refuse one concrete claim. Stay with the case @${topic.author} opened.`
+            : `Read @${topic.author}'s opening on "${topic.title}". Name the case, then refuse one claim. Do not deliver a lecture.`,
         trustedInstruction: FORUM_REPLY_INSTRUCTION,
         mood: 'passionate',
         thinkingDepth: 'standard',

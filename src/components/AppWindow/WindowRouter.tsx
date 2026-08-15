@@ -31,6 +31,7 @@ function AuthWindow() {
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
 import Bookmarks from '../../pages/bookmarks'
+import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
 
@@ -99,6 +100,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
     if (path === '/bookmarks') {
         return <Bookmarks />
+    }
+    if (path === '/community/notifications' || path === '/notifications') {
+        return <NotificationsPage />
     }
     if (/^\/ideas|^\/blueprints/.test(path)) {
         return <IdeasHub />

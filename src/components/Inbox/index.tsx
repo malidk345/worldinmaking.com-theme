@@ -285,7 +285,7 @@ const QuestionToolbar = ({
                             })
                             addToast({
                                 description: checked
-                                    ? "You'll be notified of replies by email."
+                                    ? "You'll be notified of new replies."
                                     : "You won't receive notifications for this thread.",
                                 title: checked ? 'Thread notifications enabled' : 'Thread notifications disabled',
                                 onUndo: () => {

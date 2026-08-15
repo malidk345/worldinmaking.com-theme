@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import Layout from 'components/Layout'
 import { communityMenu } from '../../navs'
 import React, { useEffect } from 'react'
@@ -79,35 +79,44 @@ const Question = ({ id, subject, activeAt, permalink, replies, date }) => {
 }
 
 export default function Notifications() {
-    const { fetchUser, notifications } = useUser()
+    const router = useRouter()
+    const { fetchUser, notifications, user, isValidating } = useUser()
 
     useEffect(() => {
         fetchUser()
-            .then((user) => {
-                if (!user) {
-                    router.push('/community')
+            .then((next) => {
+                if (!next) {
+                    router.push('/login')
                 }
             })
-            .catch(() => router.push('/community'))
+            .catch(() => router.push('/login'))
     }, [])
 
     return (
         <Layout parent={communityMenu}>
-            <SEO title="Notifications - PostHog" />
+            <SEO title="Notifications - WorldInMaking" />
             <section className="py-12 mb-12 px-5 max-w-screen-mdlg mx-auto">
                 <h1>Notifications</h1>
-                {notifications?.length > 0 ? (
+                {isValidating && !user ? (
+                    <p className="text-sm text-secondary">Loading…</p>
+                ) : notifications?.length > 0 ? (
                     <ul className="list-none m-0 p-0 space-y-4 mt-6">
                         {notifications.map((notification, i) => {
                             if (notification.question) {
-                                return <Question key={i} {...notification.question} date={notification.date} />
+                                return (
+                                    <Question
+                                        key={notification.id || i}
+                                        {...notification.question}
+                                        date={notification.date}
+                                    />
+                                )
                             }
                             return null
                         })}
                     </ul>
                 ) : (
                     <div className="p-4 bg-accent rounded-md border border-input">
-                        <h5 className="m-0">New notifications will appear here</h5>
+                        <h5 className="m-0">New replies to threads you follow will appear here</h5>
                     </div>
                 )}
             </section>

@@ -6,6 +6,8 @@ import {
     pickBot,
     titlesFromRssXml,
 } from '../src/lib/bots/philosopher-tick'
+import { FORUM_OPEN_INSTRUCTION, FORUM_REPLY_INSTRUCTION } from '../src/lib/bots/forum-thread'
+import { buildPersonaHeader, extractPersona } from '../src/lib/persona-engine'
 import { formatRssBriefing, itemsFromFeedXml } from '../src/lib/bots/forum-rss'
 import { formatForumTranscript, shouldContinueThread } from '../src/lib/bots/forum-thread'
 
@@ -122,6 +124,22 @@ test.describe('philosopher hourly tick helpers', () => {
         ])
     })
 
+    test('forum instructions demand a named case and ban pulpit jargon', () => {
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/name the case/i)
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/source, headline/)
+        expect(FORUM_OPEN_INSTRUCTION).not.toMatch(/Do not summarize the article/)
+        expect(FORUM_REPLY_INSTRUCTION).toMatch(/whose line/)
+        expect(FORUM_REPLY_INSTRUCTION).toMatch(/trademark jargon/)
+        expect(FORUM_REPLY_INSTRUCTION).toMatch(/many-sided/)
+
+        const header = buildPersonaHeader(extractPersona('', 'Nietzsche'), 'passionate', 'community_reply')
+        expect(header).toMatch(/slogan/)
+        expect(header).toMatch(/will to power/)
+        expect(header).toMatch(/Do not use these trademark phrases/)
+        expect(header).not.toMatch(/available move/)
+        expect(header.toLowerCase()).not.toContain('indict the reader')
+    })
+
     test('formatRssBriefing and thread transcript give the model usable context', () => {
         const briefing = formatRssBriefing({
             primary: {
@@ -136,6 +154,7 @@ test.describe('philosopher hourly tick helpers', () => {
             usedFallback: false,
         })
         expect(briefing).toContain('Headline: Why machines cannot want anything real')
+        expect(briefing).toContain('name the source and headline')
         expect(briefing).toContain('Desire is not a loss function.')
         expect(briefing).toContain('[noemamag.com] The iron cage, updated')
 

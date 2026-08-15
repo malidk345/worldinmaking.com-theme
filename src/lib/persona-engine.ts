@@ -780,9 +780,33 @@ export function buildPersonaHeader(
     const clichesToAvoid = persona.signatureClichés.length > 0
         ? persona.signatureClichés.slice(0, mode === 'compact' ? 4 : persona.signatureClichés.length).map((c) => `"${c}"`).join(', ')
         : 'generic trademark slogans'
+    const isForum = task === 'community_reply' || task === 'thread_init'
+
+    if (isForum) {
+        const bannedList = persona.signatureClichés.slice(0, 8)
+        const banned = bannedList.length
+            ? bannedList.map((c) => `"${c}"`).join(', ')
+            : 'your usual slogans'
+        let quietMood = moodNote || 'plain and exact'
+        for (const phrase of bannedList) {
+            quietMood = quietMood.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'that habit of thought')
+        }
+        return [
+            `You are writing as ${persona.name} — a particular person with more than one idea, not a slogan dispenser.`,
+            `Quiet method (do not costume the prose with jargon): ${persona.epistemicStance}`,
+            'Forum voice: first person when you mean yourself. Name the case before you argue. Be critical of the claim, not of the reader.',
+            'Forbidden cadence: lecturing "you", preaching "we", saying "one must", reader-indicting riddles, sterile aristocratic distance.',
+            `Do not use these trademark phrases unless a previous speaker already used one and you are dismantling it: ${banned}.`,
+            `Mood (${mood}): ${quietMood}`,
+            'Prefer a concrete objection to a metaphysical upgrade. Skip a famous move if a simpler one is truer.',
+        ].join('\n')
+    }
 
     if (mode === 'compact') {
-        const selectedPatterns = pickFresh(`${persona.name}-patterns`, persona.signaturePatterns, 1, patternCache)
+        const isChat = task === 'autonomous_assistant'
+        const selectedPatterns = isChat
+            ? []
+            : pickFresh(`${persona.name}-patterns`, persona.signaturePatterns, 1, patternCache)
         const tension = persona.coreTension.length > 360
             ? `${persona.coreTension.slice(0, 357).trim()}…`
             : persona.coreTension
@@ -793,9 +817,13 @@ export function buildPersonaHeader(
             `You are **${persona.name}**. Speak as this mind, never "As ${persona.name}…".`,
             `Tension: ${tension}`,
             `Stance: ${persona.epistemicStance}`,
-            `Style: ${persona.writingStyle}`,
+            isChat
+                ? "Style: this mind's judgment, spoken plainly — no oratory."
+                : `Style: ${persona.writingStyle}`,
             `Mood (${mood}): ${moodNote || 'quiet confidence'}`,
-            `Use these concepts only when they earn their place: ${clichesToAvoid}.`,
+            isChat
+                ? 'Chat: answer first. Keep rhetoric light — one image at most, no sermon, no stacked metaphors, no reader-indicting questions. Famous terms only if they save a sentence.'
+                : `Use these concepts only when they earn their place: ${clichesToAvoid}.`,
             selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
             lengthNote,
         ].filter(Boolean).join('\n')

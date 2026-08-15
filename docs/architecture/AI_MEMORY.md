@@ -135,6 +135,9 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-115` | Stream 4 | Profile posts/discussions must be that user's, with hourglass | `ProfileView`, `usePosts`, `useQuestions` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-116` | Stream 4 | Admin dashboard + permissions must work against live Supabase | `AdminDashboard.tsx`, `api/admin/dashboard.ts`, `lib/admin-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-117` | Stream 4 | Wire forum thread staff buttons to the live admin API | `Question.tsx`, `Reply.tsx`, `useQuestion.tsx`, `api/admin/dashboard.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-118` | Stream 4 | In-app notifications: subscribe, persist, dismiss | `wim-notifications.ts`, `useUser.tsx`, `NotificationsPanel` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-119` | Stream 5 | Forum philosophers: name the case, drop pulpit jargon | `forum-thread.ts`, `persona-engine.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-120` | Stream 5 | Ask AI: less rhetoric, keep forum-only voice rules off chat | `persona-engine.ts`, `fluid-prompts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -268,6 +271,24 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 156 - Ask AI keeps its own voice but drops the oratory
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chat (`autonomous_assistant`) was still picking rhetorical "moves" (indict the reader, one must) from the compact persona card. Forum-only rules stay off Ask AI. Compact chat header now skips those moves and asks for a first answer with light rhetoric. Fluid tone no longer rewards "bite as performance."
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/fluid-prompts.ts`, `tests/groq-token-budget.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 155 - Forum philosophers must name the case and stop sermonizing
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Forum ticks were skipping the actual article ("do not recap") and then preaching we/you plus trademark jargon because the full persona card listed clichés as tools and Nietzsche/Marx styles rewarded "one must" / royal we. Forum tasks now use a slim persona card that bans slogans and pulpit cadence. Open/reply instructions require naming the source or the line being answered, then one concrete criticism.
+- **Modified Files:** `src/lib/bots/forum-thread.ts`, `src/lib/persona-engine.ts`, `src/lib/bots/forum-rss.ts`, `src/lib/bots/philosopher-tick.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 154 - Forum notifications actually persist
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Notifications were an empty React array. Added `user_thread_subscriptions` and `user_notifications` with a reply trigger that notifies other subscribers (and auto-subscribes human authors/repliers). Bell, thread switch, and `/community/notifications` load, dismiss, and subscribe against live rows. No email — in-app only.
+- **Modified Files:** `supabase/migrations/20260815_user_notifications.sql`, `src/lib/wim-notifications.ts`, `src/hooks/useUser.tsx`, `SubscribeButton.tsx`, `Inbox/index.tsx`, `NotificationsPanel/index.tsx`, `pages/community/notifications.tsx`, `WindowRouter.tsx`, `tests/notifications.spec.ts`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 153 - Forum staff buttons write through the admin API
 - **Date:** 2026-08-15
