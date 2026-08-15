@@ -8,14 +8,18 @@ import {
     formatSupabaseCommunityToStrapi,
 } from 'lib/supabaseCommunity'
 import { setReplyVote } from 'lib/wim-user-data'
+import { getSessionAccessToken } from 'lib/wim-auth'
+import { runAdminAction } from 'lib/admin-client'
 import { useState, useEffect, useCallback } from 'react'
 
 type UseQuestionOptions = {
     data?: StrapiRecord<QuestionData>
 }
 
-function mapReplies(replies: any[]) {
-    return replies.map((r) => {
+function mapReplies(replies: any[], includeHidden: boolean) {
+    return replies
+        .filter((r) => includeHidden || !r.is_hidden)
+        .map((r) => {
         const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
         return {
             id: r.id,
@@ -23,7 +27,7 @@ function mapReplies(replies: any[]) {
                 id: r.id,
                 body: r.content,
                 createdAt: r.created_at,
-                publishedAt: r.created_at,
+                publishedAt: r.is_hidden ? null : r.created_at,
                 profile: {
                     data: {
                         id: pObj?.id || r.author_id || 'community',
@@ -68,8 +72,9 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
                 const formatted = formatSupabaseCommunityToStrapi(found as any)
                 const replies = await fetchSupabaseCommunityReplies(found.id)
                 if (replies?.length) {
-                    formatted.attributes.replies.data = mapReplies(replies) as any
-                    formatted.attributes.numReplies = replies.length
+                    const includeHidden = user?.role?.type === 'moderator'
+                    formatted.attributes.replies.data = mapReplies(replies, includeHidden) as any
+                    formatted.attributes.numReplies = replies.filter((r) => includeHidden || !r.is_hidden).length
                 }
                 setQuestionData(formatted as any)
             } else if (options?.data) {
@@ -83,7 +88,7 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
         } finally {
             setIsLoading(false)
         }
-    }, [id, options?.data])
+    }, [id, options?.data, user?.role?.type])
 
     useEffect(() => {
         void load()
@@ -160,16 +165,40 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
         await load()
     }
 
-    const handlePublishReply = async (_published: boolean, _replyId: number) => {
-        /* moderation: no Squeak publish state on WIM */
+    const handlePublishReply = async (published: boolean, replyId: number) => {
+        await runAdminAction('hide_forum_reply', { id: replyId, hidden: published })
+        await load()
     }
 
-    const handleResolve = async (_resolved: boolean, _replyId?: number | null) => {
-        /* resolve flag not on community_posts yet */
+    const handleResolve = async (resolved: boolean, replyId?: number | null) => {
+        const token = await getSessionAccessToken()
+        if (!token) throw new Error('Sign in to mark a solution')
+        const res = await fetch('/api/forum/resolve', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                postId: questionID,
+                replyId: resolved ? replyId ?? null : null,
+            }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.error || 'Failed to update solution')
+        await load()
     }
 
-    const handleReplyDelete = async (_id: number) => {
-        /* delete via supabase later */
+    const handleReplyDelete = async (replyId: number) => {
+        await runAdminAction('delete_forum_reply', { id: replyId })
+        await load()
+    }
+
+    const archive = async (nextArchived: boolean) => {
+        await runAdminAction('archive_forum_post', { id: questionID, archived: nextArchived })
+        await load()
+    }
+
+    const pinThread = async (nextPinned: boolean) => {
+        await runAdminAction('pin_forum_post', { id: questionID, pinned: nextPinned })
+        await load()
     }
 
     const handleTopicChange = async (_topic: any) => {
@@ -185,6 +214,8 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
         handlePublishReply,
         handleResolve,
         handleReplyDelete,
+        archive,
+        pinThread,
         mutate,
         voteReply,
         handleTopicChange,

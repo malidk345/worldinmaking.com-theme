@@ -10,6 +10,9 @@ export interface SupabaseCommunityPost {
     created_at: string
     view_count?: number
     author_id?: string
+    is_pinned?: boolean
+    is_archived?: boolean
+    resolved_reply_id?: number | string | null
     profiles?: {
         id: string
         username: string
@@ -23,6 +26,7 @@ export interface SupabaseCommunityReply {
     content: string
     created_at: string
     author_id?: string
+    is_hidden?: boolean
     profiles?: {
         id: string
         username: string
@@ -35,7 +39,7 @@ export async function fetchSupabaseCommunityPosts(
     postId?: number | string,
     options?: { authorId?: string; limit?: number }
 ): Promise<SupabaseCommunityPost[]> {
-    let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
+    let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,is_pinned,is_archived,resolved_reply_id,profiles(id,username,avatar_url)&order=created_at.desc`
     if (postId || (slug && !isNaN(Number(slug)))) {
         const idToUse = postId || slug
         url += `&id=eq.${idToUse}`
@@ -55,7 +59,7 @@ export async function fetchSupabaseCommunityPosts(
 }
 
 export async function fetchSupabaseCommunityReplies(postId: number | string): Promise<SupabaseCommunityReply[]> {
-    const url = `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,profiles(id,username,avatar_url)&order=created_at.asc`
+    const url = `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,is_hidden,profiles(id,username,avatar_url)&order=created_at.asc`
     return fetchWithCache(url)
 }
 
@@ -86,6 +90,10 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
             activeAt: post.created_at,
             viewCount: post.view_count || 0,
             numReplies: 0,
+            pinned: !!post.is_pinned,
+            archived: !!post.is_archived,
+            resolved: post.resolved_reply_id != null,
+            resolvedBy: post.resolved_reply_id != null ? { data: { id: post.resolved_reply_id } } : { data: null },
             profile: {
                 data: {
                     id: profileObj?.id || post.author_id || '1',

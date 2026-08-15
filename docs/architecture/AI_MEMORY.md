@@ -133,6 +133,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-113` | Stream 4 | Profile clicks open the wrong person / login shows own profile | `Profile`, `WindowRouter`, `useProfileData` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-114` | Stream 3 | Remove reputation and pineapple-on-pizza from profile edit | `profile/edit.tsx`, `ProfileView.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-115` | Stream 4 | Profile posts/discussions must be that user's, with hourglass | `ProfileView`, `usePosts`, `useQuestions` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-116` | Stream 4 | Admin dashboard + permissions must work against live Supabase | `AdminDashboard.tsx`, `api/admin/dashboard.ts`, `lib/admin-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-117` | Stream 4 | Wire forum thread staff buttons to the live admin API | `Question.tsx`, `Reply.tsx`, `useQuestion.tsx`, `api/admin/dashboard.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -266,6 +268,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 153 - Forum staff buttons write through the admin API
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Thread pin/archive/delete and reply hide/delete/resolve were leftover Squeak no-ops (or PostHog/Strapi/Zendesk chrome). They now call `/api/admin/dashboard` against live columns: `is_pinned`, `is_archived`, `resolved_reply_id`, `is_hidden`. Inbox lists pinned threads from `is_pinned`. Dead PostHog topic picker / escalate / Strapi links removed from the thread header.
+- **Modified Files:** `Question.tsx`, `Reply.tsx`, `useQuestion.tsx`, `useQuestions.tsx`, `Inbox/index.tsx`, `supabaseCommunity.ts`, `api/admin/dashboard.ts`, `supabase/migrations/20260815_forum_moderation.sql`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 152 - Admin Run Cron uses the same topic-then-reply path as GitHub Actions
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The admin "Run Bot Cron" button was fire-and-forget `phase: full` behind `waitUntil` on Cloudflare, so the UI said accepted while the isolate still tried two LLM writes (the failure mode the hourly cron was split to avoid). The admin API now runs one phase per POST. The button POSTs topic, then reply with the returned thread id, and toasts the real skip/persist/error.
+- **Modified Files:** `src/pages/api/admin/philosopher-bots.ts`, `src/lib/admin-client.ts`, `src/components/Admin/AdminDashboard.tsx`, `tests/admin-dashboard.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 151 - Admin dashboard talks to live Supabase through a staff API
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The admin panel no longer writes through anon RLS or talks to phantom columns. A service-role `/api/admin/dashboard` lists and mutates the live tables (blog `posts`, forum threads/replies, notebooks, `agent_metadata` bots, RSS feeds, relationships, debates, writer applications, contact messages, saved posts, likes, chats, action logs). Staff (admin/moderator/staff or `NEXT_PUBLIC_ADMIN_EMAIL`) can open it; only administrators can change roles. Added live `community_posts.is_pinned` and `contact_messages.is_read` so pin/read actually persist.
+- **Modified Files:** `src/components/Admin/AdminDashboard.tsx`, `src/pages/api/admin/dashboard.ts`, `src/lib/admin-client.ts`, `lib/admin-auth.ts`, `supabase/migrations/20260815_admin_moderation.sql`, `tests/admin-dashboard.spec.ts`, `tests/smoke.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/admin-dashboard.spec.ts` — 3 passed. Unauthenticated `GET /api/admin/dashboard` returns 401.
 
 ### Entry 150 - Profile posts and discussions are that author's, with the hourglass
 - **Date:** 2026-08-15

@@ -111,6 +111,9 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         const chats = await request.get('/api/chats')
         expect(chats.status()).toBe(401)
 
+        const admin = await request.get('/api/admin/dashboard?resource=overview')
+        expect(admin.status()).toBe(401)
+
         const share = await request.get('/api/share/not-a-real-share-token')
         expect([404, 503]).toContain(share.status())
     })

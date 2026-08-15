@@ -300,7 +300,13 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
 
         // Set timeout to actually delete after toast expires
         deleteTimeoutRef.current = setTimeout(async () => {
-            await handleReplyDelete(id)
+            try {
+                await handleReplyDelete(id)
+            } catch (error: any) {
+                setPendingDelete(false)
+                addToast({ description: error.message || 'Failed to delete reply', error: true })
+                return
+            }
             setPendingDelete(false)
 
             // Remove the toast once deletion is complete
@@ -435,7 +441,13 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         </span>
                         {(isAuthor || isModerator) && (
                             <button
-                                onClick={() => handleResolve(false, null)}
+                                onClick={async () => {
+                                    try {
+                                        await handleResolve(false, null)
+                                    } catch (error: any) {
+                                        addToast({ description: error.message || 'Failed to undo solution', error: true })
+                                    }
+                                }}
                                 className="text-sm font-semibold text-red dark:text-yellow"
                             >
                                 Undo
@@ -453,7 +465,13 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                                     {publishedAt ? 'Unpublish' : 'Publish'}
                                 </>
                             }
-                            onClick={() => handlePublishReply(!!publishedAt, id)}
+                            onClick={async () => {
+                                try {
+                                    await handlePublishReply(!!publishedAt, id)
+                                } catch (error: any) {
+                                    addToast({ description: error.message || 'Failed to update reply', error: true })
+                                }
+                            }}
                             icon={<IconArchive />}
                         />
                     )}
@@ -540,6 +558,8 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                                         setResolving(true)
                                         try {
                                             await handleResolve(true, id)
+                                        } catch (error: any) {
+                                            addToast({ description: error.message || 'Failed to mark as solution', error: true })
                                         } finally {
                                             setResolving(false)
                                         }

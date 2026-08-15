@@ -1,9 +1,8 @@
 import { useRouter } from 'next/router'
-import CloudinaryImage from 'components/CloudinaryImage'
-import React, { useState, createContext, useEffect, useContext, useRef } from 'react'
+import React, { useState, createContext, useEffect } from 'react'
 import { Replies } from './Replies'
 import { Profile } from './Profile'
-import { QuestionData, StrapiData, StrapiRecord, TopicData } from 'lib/strapi'
+import { QuestionData, StrapiRecord, TopicData } from 'lib/strapi'
 import LevelBadge from './LevelBadge'
 import Days from './Days'
 import Markdown from './Markdown'
@@ -13,33 +12,13 @@ import QuestionSkeleton from './QuestionSkeleton'
 import SubscribeButton from './SubscribeButton'
 import Link from 'components/Link'
 import { useUser } from 'hooks/useUser'
-import {
-    IconArchive,
-    IconPencil,
-    IconPin,
-    IconTrash,
-    IconUndo,
-    IconExpand,
-    IconShieldLock,
-} from '@posthog/icons'
-import Tooltip from 'components/RadixUI/Tooltip'
-import { Listbox } from '@headlessui/react'
-import { fetchTopicGroups, topicGroupsSorted } from '../util/topicGroups'
-import { Check2, Close } from 'components/Icons'
-import Modal from 'components/Modal'
-import Checkbox from 'components/Checkbox'
-import { CallToAction } from 'components/CallToAction'
-import dynamic from 'next/dynamic'
-const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null }) as any
+import { IconArchive, IconPencil, IconPin, IconTrash, IconUndo, IconShieldLock } from '@posthog/icons'
 import EditWrapper from './EditWrapper'
 import ReportSpamButton from './ReportSpamButton'
 import OSButton from 'components/OSButton'
-import ScrollArea from 'components/RadixUI/ScrollArea'
-import ZendeskTicket from 'components/ZendeskTicket'
-import { TopicSelector } from './TopicSelector'
-import { XIcon } from 'lucide-react'
 import { useToast } from '../../../context/Toast'
 import { useWindow } from '../../../context/Window'
+import { runAdminAction } from 'lib/admin-client'
 
 type QuestionProps = {
     id?: number | string
@@ -57,225 +36,32 @@ type QuestionProps = {
 
 export const CurrentQuestionContext = createContext<any>({})
 
-const TopicSelect = (props: {
-    selectedTopics: StrapiData<TopicData[]>
-    onPinTopics?: (topics: StrapiRecord<TopicData>[]) => void
-}) => {
-    const { pinTopics } = useContext(CurrentQuestionContext)
-    const [topicGroups, setTopicGroups] = useState([])
-    const [selectedTopics, setSelectedTopics] = useState<StrapiRecord<TopicData>[]>([])
-    const { addToast } = useToast()
-
-    const handleChange = async (topics: StrapiRecord<TopicData>[]) => {
-        if (typeof pinTopics === 'function') {
-            await pinTopics(topics.map((topic) => topic.id))
-        }
-        props.onPinTopics?.(topics)
-        const topicsAdded = topics.length - selectedTopics.length
-        const action = topicsAdded > 0 ? 'pinned' : 'unpinned'
-        addToast({
-            title: `Topic ${action}`,
-            description: `The topic has been ${action} successfully.`,
-        })
-    }
-
-    useEffect(() => {
-        fetchTopicGroups().then((topicGroups) => {
-            setTopicGroups(topicGroups || [])
-            const selectedTopics: StrapiRecord<TopicData>[] = []
-            const selectedTopicList = Array.isArray(props.selectedTopics)
-                ? props.selectedTopics
-                : Array.isArray(props.selectedTopics?.data)
-                ? props.selectedTopics.data
-                : []
-
-            ;(topicGroups || []).forEach(({ attributes: { topics } }: any) => {
-                topics?.data?.forEach((topic: any) => {
-                    if (selectedTopicList.some((selectedTopic: any) => selectedTopic?.id === topic?.id)) {
-                        selectedTopics.push(topic)
-                    }
-                })
-            })
-            setSelectedTopics(selectedTopics)
-        })
-    }, [props.selectedTopics])
-
-    return (
-        <div className="relative [&>*]:inline-flex [&>*]:items-center">
-            <Listbox value={selectedTopics} onChange={handleChange} multiple>
-                <Listbox.Button as={React.Fragment}>
-                    <OSButton
-                        hover="border"
-                        icon={<IconPin />}
-                        tooltip={
-                            <>
-                                <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" /> Pin
-                                thread
-                            </>
-                        }
-                        size="md"
-                    >
-                        <IconExpand className="size-4 inline-block" />
-                    </OSButton>
-                </Listbox.Button>
-                {topicGroups?.length > 0 && (
-                    <Listbox.Options
-                        data-scheme="primary"
-                        className={`list-none p-0 m-0 absolute z-20 max-h-[500px] divide-y divide-primary mt-2 bg-primary shadow-xl border border-primary rounded min-w-52`}
-                    >
-                        <div className="relative w-full">
-                            <ScrollArea className="min-h-0 h-[500px] max-h-[500px]">
-                                {topicGroups
-                                    .sort(
-                                        (a, b) =>
-                                            topicGroupsSorted.indexOf(a?.attributes?.label) -
-                                            topicGroupsSorted.indexOf(b?.attributes?.label)
-                                    )
-                                    .map(({ attributes: { label, topics } }) => {
-                                        return (
-                                            <div key={label}>
-                                                <div className="py-1 px-2 text-[13px] border-b border-primary whitespace-nowrap text-secondary">
-                                                    {label}
-                                                </div>
-                                                {topics?.data?.map((topic) => {
-                                                    const active = selectedTopics.some(
-                                                        (selectedTopic) => selectedTopic.id === topic.id
-                                                    )
-                                                    return (
-                                                        <Listbox.Option key={topic.id} value={topic}>
-                                                            <div
-                                                                data-scheme="primary"
-                                                                className={`${
-                                                                    active ? 'font-semibold' : ''
-                                                                } prose-invert py-1 px-2 text-sm cursor-pointer transition-all whitespace-nowrap flex items-center space-x-2 text-primary hover:bg-accent bg-primary`}
-                                                            >
-                                                                <span className="flex-shrink-0 w-3">
-                                                                    {active && <Check2 />}
-                                                                </span>
-
-                                                                <span>{topic.attributes.label}</span>
-                                                            </div>
-                                                        </Listbox.Option>
-                                                    )
-                                                })}
-                                            </div>
-                                        )
-                                    })}
-                            </ScrollArea>
-                        </div>
-                    </Listbox.Options>
-                )}
-            </Listbox>
-        </div>
-    )
-}
-
-const EscalateButton = ({ escalate, escalated }) => {
-    const [modalOpen, setModalOpen] = useState(false)
-    const [showResponse, setShowResponse] = useState(false)
-    const [response, setResponse] = useState(
-        "Howdy! We've escalated your question to our support desk. An engineer will be in touch soon."
-    )
-
-    const handleConfirm = () => {
-        escalate(showResponse && response)
-        setModalOpen(false)
-    }
-
-    return (
-        <>
-            <Modal open={modalOpen} setOpen={setModalOpen}>
-                <div className="border-input border absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent max-w-lg w-full rounded-md">
-                    <button onClick={() => setModalOpen(false)} className="absolute top-3 right-3">
-                        <Close className="w-4 h-4" />
-                    </button>
-
-                    <div className="p-4 pb-0">
-                        <h3 className="mb-2 mt-0">Escalate thread</h3>
-                        <p className="text-base mt-2 mb-4">
-                            Please confirm that you'd like to escalate this thread to Zendesk
-                        </p>
-                        <Checkbox
-                            className="!text-base"
-                            value="Notify subscribers"
-                            checked={showResponse}
-                            onChange={(e) => setShowResponse(e.target.checked)}
-                        />
-                        {showResponse && (
-                            <>
-                                <p className="text-sm p-2 mt-4 mb-3 border border-primary dark:border-primary text-center rounded-md bg-light dark:bg-dark font-semibold">
-                                    Response will come from Max, the support hog
-                                </p>
-                                <div className="flex space-x-2 items-start mb-6">
-                                    <CloudinaryImage
-                                        src="https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Squeak/images/max.png"
-                                        width={40}
-                                        height={40}
-                                        className="rounded-full flex-shrink-0 bg-light dark:bg-dark border border-input"
-                                    />
-                                    <textarea
-                                        rows={5}
-                                        placeholder="Message from Max"
-                                        className="w-full p-2 rounded-md border border-input text-black bg-white"
-                                        value={response}
-                                        onChange={(e) => setResponse(e.target.value)}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <div className="p-4 mt-4 border-t border-input flex justify-end">
-                        <CallToAction onClick={handleConfirm} size="sm" type="outline">
-                            {showResponse ? 'Escalate and notify' : 'Escalate'}
-                        </CallToAction>
-                    </div>
-                </div>
-            </Modal>
-        </>
-    )
-}
-
-const DeleteButton = ({ questionID }: { questionID: number }) => {
-    const { getJwt } = useUser()
+const DeleteButton = ({ questionID, onDeleted }: { questionID: number | string; onDeleted?: () => void }) => {
     const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            let target = to
-            if (target.includes('[permalink]')) {
-                const permalinkVal = String(router.query.permalink || options?.permalink || '')
-                target = permalinkVal ? target.replace('[permalink]', permalinkVal) : '/questions'
-            }
-            if (options?.replace) {
-                router.replace(target)
-            } else {
-                router.push(target)
-            }
-        }
-    }
+    const { addToast } = useToast()
+    const [busy, setBusy] = useState(false)
+
     const handleClick = async () => {
-        if (confirm('Are you sure you want to delete this thread?')) {
-            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
-            if (!host) {
-                // WIM: soft-delete not wired to Supabase yet
-                console.warn('[wim] thread delete requires Supabase soft-delete — not available')
-                return
-            }
-            await fetch(`${host}/api/questions/${questionID}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${await getJwt()}`,
-                },
-                body: JSON.stringify({ data: { publishedAt: null } }),
-            })
-            navigate('/questions')
+        if (!confirm('Are you sure you want to delete this thread and its replies?')) return
+        setBusy(true)
+        try {
+            await runAdminAction('delete_forum_post', { id: questionID })
+            addToast({ description: 'Thread deleted' })
+            onDeleted?.()
+            router.push('/questions')
+        } catch (error: any) {
+            addToast({ description: error.message || 'Failed to delete thread', error: true })
+        } finally {
+            setBusy(false)
         }
     }
+
     return (
         <OSButton
             onClick={handleClick}
             icon={<IconTrash />}
             size="md"
+            disabled={busy}
             tooltip={
                 <>
                     <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" /> Delete thread
@@ -290,6 +76,7 @@ export function Question(props: QuestionProps) {
     const [expanded, setExpanded] = useState(props.expanded || false)
     const [isEditingQuestion, setIsEditingQuestion] = useState(false)
     const { user, notifications, setNotifications, isModerator } = useUser()
+    const { addToast } = useToast()
     const { appWindow } = useWindow()
     const [maxQuestions, setMaxQuestions] = useState(
         appWindow?.location?.state?.askMax ? [{ manual: false, withContext: false }] : []
@@ -321,10 +108,8 @@ export function Question(props: QuestionProps) {
         handleReplyDelete,
         voteReply,
         archive,
-        pinTopics,
-        escalate,
+        pinThread,
         mutate,
-        removeTopic,
     } = useQuestion(id, { data: question })
 
     useEffect(() => {
@@ -351,9 +136,9 @@ export function Question(props: QuestionProps) {
         }
     }
 
-    const archived = questionData?.attributes.archived
+    const archived = !!questionData?.attributes.archived
+    const pinned = !!questionData?.attributes.pinned
     const slugs = questionData?.attributes?.slugs
-    const escalated = questionData?.attributes.escalated
     const isQuestionAuthor = questionData?.attributes.profile?.data?.id === user?.profile?.id
     const publishedAt = questionData?.attributes?.publishedAt
 
@@ -365,7 +150,6 @@ export function Question(props: QuestionProps) {
                 handleResolve,
                 handleReplyDelete,
                 voteReply,
-                pinTopics,
                 mutate,
             }}
         >
@@ -404,41 +188,46 @@ export function Question(props: QuestionProps) {
                             edits={questionData.attributes.edits}
                         />
                         <div className="!ml-auto flex items-center space-x-px [&>*]:inline-flex shrink-0">
-                            {user?.role?.type === 'moderator' && showActions && (
+                            {isModerator && showActions && (
                                 <>
-                                    {!archived && (
-                                        <TopicSelect
-                                            onPinTopics={onPinTopics}
-                                            selectedTopics={questionData.attributes.pinnedTopics}
-                                        />
-                                    )}
-                                    <EscalateButton escalate={escalate} escalated={escalated} />
-                                    {!archived ? (
-                                        <OSButton
-                                            onClick={() => archive(!archived)}
-                                            icon={<IconArchive />}
-                                            size="md"
-                                            tooltip={
-                                                <>
-                                                    <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" />{' '}
-                                                    Archive thread
-                                                </>
+                                    <OSButton
+                                        onClick={async () => {
+                                            try {
+                                                await pinThread(!pinned)
+                                                onPinTopics?.([] as any)
+                                                addToast({ description: pinned ? 'Thread unpinned' : 'Thread pinned' })
+                                            } catch (error: any) {
+                                                addToast({ description: error.message || 'Failed to pin thread', error: true })
                                             }
-                                        />
-                                    ) : (
-                                        <OSButton
-                                            onClick={() => archive(!archived)}
-                                            icon={<IconUndo />}
-                                            size="md"
-                                            tooltip={
-                                                <>
-                                                    <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" />{' '}
-                                                    Restore thread
-                                                </>
+                                        }}
+                                        icon={<IconPin />}
+                                        size="md"
+                                        tooltip={
+                                            <>
+                                                <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" />{' '}
+                                                {pinned ? 'Unpin thread' : 'Pin thread'}
+                                            </>
+                                        }
+                                    />
+                                    <OSButton
+                                        onClick={async () => {
+                                            try {
+                                                await archive(!archived)
+                                                addToast({ description: archived ? 'Thread restored' : 'Thread archived' })
+                                            } catch (error: any) {
+                                                addToast({ description: error.message || 'Failed to archive thread', error: true })
                                             }
-                                        />
-                                    )}
-                                    <DeleteButton questionID={questionData.id} />
+                                        }}
+                                        icon={archived ? <IconUndo /> : <IconArchive />}
+                                        size="md"
+                                        tooltip={
+                                            <>
+                                                <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" />{' '}
+                                                {archived ? 'Restore thread' : 'Archive thread'}
+                                            </>
+                                        }
+                                    />
+                                    <DeleteButton questionID={questionData.id} onDeleted={() => onPinTopics?.([] as any)} />
                                 </>
                             )}
                             {!isQuestionAuthor && <ReportSpamButton type="question" id={questionData.id} />}
@@ -513,89 +302,6 @@ export function Question(props: QuestionProps) {
                             isInForum={isInForum}
                         />
                     </div>
-                    {isModerator && isInForum && (
-                        <div className="p-4 pb-0">
-                            <div className="bg-accent rounded-md p-6 text-primary border border-border">
-                                <h4 className="text-xs opacity-70 mb-2 -mt-2 p-0 font-semibold uppercase">
-                                    Moderator tools
-                                </h4>
-                                <div className="grid grid-cols-2">
-                                    <div>
-                                        <Link href={`/profile/${encodeURIComponent(String(questionData?.attributes?.profile?.data?.attributes?.username || questionData?.attributes?.profile?.data?.id || ''))}`}
-                                            className="text-yellow font-bold"
-                                        >
-                                            {questionData?.attributes?.profile?.data?.attributes?.firstName
-                                                ? `${questionData?.attributes?.profile?.data?.attributes?.firstName} ${questionData?.attributes?.profile?.data?.attributes?.lastName}`
-                                                : 'Anonymous'}
-                                        </Link>
-                                        <input
-                                            className="w-full m-0 font-normal text-sm text-primary border-none p-0 bg-transparent focus:ring-0"
-                                            type="text"
-                                            value={
-                                                questionData?.attributes?.profile?.data?.attributes?.user?.data
-                                                    ?.attributes?.email
-                                            }
-                                            readOnly
-                                            onFocus={(e) => e.target.select()}
-                                        />
-                                    </div>
-                                    <div className="w-full relative">
-                                        <p className="!text-sm pt-0.5 pb-0 mb-0 flex flex-col items-end space-y-1.5">
-                                            <Link
-                                                className="font-bold"
-                                                to={questionData.attributes.permalink}
-                                                externalNoIcon
-                                            >
-                                                View in PostHog
-                                            </Link>
-                                            <Link href={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/api::question.question/${questionData.id}`}
-                                                externalNoIcon
-                                                className="font-bold"
-                                            >
-                                                View in Strapi
-                                            </Link>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div
-                                    className={`grid gap-x-4 mt-4 border-t divide-x divide-border border-border ${
-                                        questionData.attributes.zendeskTicketID ? 'grid-cols-2' : ''
-                                    }`}
-                                >
-                                    <ZendeskTicket question={questionData} questionID={questionData.id} />
-                                    <div className={`pt-4 ${questionData.attributes.zendeskTicketID ? 'pl-4' : ''}`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="text-xs text-primary opacity-70 p-0 m-0 font-semibold uppercase">
-                                                Forum topics
-                                            </h4>
-                                            <TopicSelector
-                                                questionId={questionData.id}
-                                                permalink={questionData.attributes.permalink}
-                                            />
-                                        </div>
-                                        <ul className="flex items-center list-none p-0 flex-wrap">
-                                            {questionData.attributes?.topics?.data.map((topic) => (
-                                                <li
-                                                    key={topic.id}
-                                                    className="bg-white dark:bg-white/10 py-0.5 px-2 rounded-sm whitespace-nowrap mr-2 my-2 inline-flex items-center space-x-1.5"
-                                                >
-                                                    <Link href={`/questions/topic/${topic.attributes.slug}`}
-                                                        className="text-yellow text-sm"
-                                                    >
-                                                        {topic.attributes.label}
-                                                    </Link>
-
-                                                    <button onClick={() => removeTopic(topic)}>
-                                                        <XIcon className="h-4 w-4 text-primary" />
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </CurrentQuestionContext.Provider>

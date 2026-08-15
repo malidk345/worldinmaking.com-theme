@@ -777,7 +777,7 @@ export default function Inbox(props) {
                                             {flattenStrapiResponse(questions.data)
                                                 ?.filter(
                                                     (question) =>
-                                                        !question?.pinnedTopics?.[0] &&
+                                                        !question?.pinned &&
                                                         threadMatchesTopic(question, selectedTopic)
                                                 )
                                                 ?.map((question, index, list) => (
@@ -799,7 +799,7 @@ export default function Inbox(props) {
                                                     ) ||
                                                     flattenStrapiResponse(questions.data)?.some(
                                                         (question) =>
-                                                            !question?.pinnedTopics?.[0] &&
+                                                            !question?.pinned &&
                                                             threadMatchesTopic(question, selectedTopic)
                                                     )
                                                 ) && (

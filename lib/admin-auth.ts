@@ -1,17 +1,33 @@
 import { supabaseAdmin } from './supabase-admin';
 import { envFrom, getRuntimeEnv } from '../src/lib/bots/runtime-env';
 
-export type AdminAuthResult =
-    | { ok: true; userId: string }
-    | { ok: false; status: number; error: string };
+const STAFF_ROLES = new Set(['admin', 'moderator', 'staff']);
+const ASSIGNABLE_ROLES = new Set(['member', 'user', 'writer', 'moderator', 'staff', 'admin']);
+
+export type AdminAuthOk = {
+    ok: true;
+    userId: string;
+    email: string | null;
+    role: string;
+    isAdmin: boolean;
+    isStaff: boolean;
+};
+
+export type AdminAuthResult = AdminAuthOk | { ok: false; status: number; error: string };
+
+export function isAssignableRole(role: string): boolean {
+    return ASSIGNABLE_ROLES.has(role.trim().toLowerCase());
+}
 
 /**
  * Verifies that an incoming request carries a valid Supabase session belonging
- * to an admin user. Mirrors the client-side isAdmin check in AuthContext.tsx
- * (profiles.role === 'admin' OR email in NEXT_PUBLIC_ADMIN_EMAIL allowlist),
- * but re-validates server-side using the service role client so it can't be spoofed.
+ * to staff. Mirrors the client isModerator check (admin / moderator / staff)
+ * plus NEXT_PUBLIC_ADMIN_EMAIL, but re-validates with the service-role client.
  */
-export async function verifyAdminRequest(request: Request): Promise<AdminAuthResult> {
+export async function verifyAdminRequest(
+    request: Request,
+    opts?: { adminOnly?: boolean }
+): Promise<AdminAuthResult> {
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
@@ -36,12 +52,24 @@ export async function verifyAdminRequest(request: Request): Promise<AdminAuthRes
         .eq('id', user.id)
         .maybeSingle();
 
-    const isRoleAdmin = (profile?.role || '').toLowerCase() === 'admin';
+    const role = String(profile?.role || 'member').toLowerCase();
     const isEmailAdmin = !!user.email && adminEmailAllowlist.includes(user.email.toLowerCase());
+    const isAdmin = role === 'admin' || isEmailAdmin;
+    const isStaff = STAFF_ROLES.has(role) || isEmailAdmin;
 
-    if (!isRoleAdmin && !isEmailAdmin) {
+    if (!isStaff) {
         return { ok: false, status: 403, error: 'Admin access required' };
     }
+    if (opts?.adminOnly && !isAdmin) {
+        return { ok: false, status: 403, error: 'Administrator role required' };
+    }
 
-    return { ok: true, userId: user.id };
+    return {
+        ok: true,
+        userId: user.id,
+        email: user.email || null,
+        role,
+        isAdmin,
+        isStaff,
+    };
 }

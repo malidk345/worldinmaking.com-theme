@@ -32,7 +32,7 @@ async function formatCommunityPost(post: any) {
                         id: r.id,
                         body: r.content,
                         createdAt: r.created_at,
-                        publishedAt: r.created_at,
+                        publishedAt: r.is_hidden ? null : r.created_at,
                         profile: {
                             data: {
                                 id: pObj?.id || r.author_id || 'community',
@@ -133,6 +133,6 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
         refresh: () => {
             void load()
         },
-        pinnedQuestions: undefined,
+        pinnedQuestions: questions.data.filter((q: any) => q?.attributes?.pinned),
     }
 }

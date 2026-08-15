@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useUser } from 'hooks/useUser'
-import { supabase } from 'lib/supabase'
 import SEO from 'components/seo'
 import OSButton from 'components/OSButton'
 import OSTabs from 'components/OSTabs'
 import { Fieldset } from 'components/OSFieldset'
 import OSInput from 'components/OSForm/input'
+import HourglassLoader from 'components/HourglassLoader'
 import { useToast } from 'context/Toast'
 import {
     IconSparkles,
@@ -21,370 +21,343 @@ import {
 } from '@posthog/icons'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import {
+    fetchAdminResource,
+    runAdminAction,
+    runAdminPhilosopherPhase,
+    type AdminOverview,
+    type AdminPermissions,
+} from 'lib/admin-client'
 
 dayjs.extend(relativeTime)
 
-interface SystemStats {
-    totalUsers: number
-    totalPosts: number
-    totalNotebooks: number
-    totalBots: number
-    totalMessages: number
-    totalDebates: number
-}
+type TabId =
+    | 'overview'
+    | 'blog'
+    | 'forum'
+    | 'notebooks'
+    | 'bots'
+    | 'users'
+    | 'debates'
+    | 'applications'
+    | 'messages'
+    | 'saved'
+    | 'chats'
+    | 'logs'
 
-interface UserRow {
-    id: string
-    username: string | null
-    role: string | null
-    created_at: string | null
-    avatar_url: string | null
-    bio: string | null
-    email?: string | null
-}
-
-interface PostRow {
-    id: number | string
-    title: string
-    content: string
-    created_at: string
-    username?: string
-    is_pinned?: boolean
-    is_locked?: boolean
-}
-
-interface NotebookRow {
-    id: string
-    short_id: string
-    title: string
-    content: string
-    updated_at: string
-    is_published: boolean
-    is_template: boolean
-    owner_key: string
-}
-
-interface ContactMessageRow {
-    id: number | string
-    name?: string
-    email?: string
-    message: string
-    created_at: string
-    is_read?: boolean
-}
-
-interface WriterAppRow {
-    id: string | number
-    user_id: string
-    username: string
-    reason: string
-    status: 'pending' | 'approved' | 'rejected'
-    created_at: string
-}
-
-interface AgentLog {
-    id: string | number
-    agent_name: string
-    action: string
-    details: string
-    timestamp: string
-}
-
-const INITIAL_PHILOSOPHER_BOTS = [
-    { id: 'nietzsche', name: 'Nietzsche', era: '19th Century', stance: 'Will to Power & Existential Affirmation', avatar: '⚡', prompt: 'You are Friedrich Nietzsche. Speak with profound philosophical passion, challenging weak assumptions.' },
-    { id: 'marx', name: 'Marx', era: '19th Century', stance: 'Historical Materialism & Class Critique', avatar: '🛠️', prompt: 'You are Karl Marx. Analyze socio-economic conditions, material realities, and systemic structures.' },
-    { id: 'kant', name: 'Kant', era: '18th Century', stance: 'Categorical Imperative & Enlightenment Duty', avatar: '🏛️', prompt: 'You are Immanuel Kant. Systematically evaluate duty, moral law, and rational limits.' },
-    { id: 'confucius', name: 'Confucius', era: 'Ancient China', stance: 'Ren, Ritual Propriety & Harmony', avatar: '☯️', prompt: 'You are Confucius (Kong Fuzi). Emphasize virtue, familial devotion, and social harmony.' },
-    { id: 'socrates', name: 'Socrates', era: 'Ancient Greece', stance: 'Socratic Dialogue & Unexamined Life', avatar: '🦉', prompt: 'You are Socrates. Question assumptions ruthlessly using dialectic inquiry.' },
+const TABS: { value: TabId; label: string }[] = [
+    { value: 'overview', label: 'Overview' },
+    { value: 'blog', label: 'Blog' },
+    { value: 'forum', label: 'Forum' },
+    { value: 'notebooks', label: 'Notebooks' },
+    { value: 'bots', label: 'Bots & RSS' },
+    { value: 'users', label: 'Users' },
+    { value: 'debates', label: 'Debates' },
+    { value: 'applications', label: 'Applications' },
+    { value: 'messages', label: 'Messages' },
+    { value: 'saved', label: 'Saved & Likes' },
+    { value: 'chats', label: 'Chats' },
+    { value: 'logs', label: 'Audit Logs' },
 ]
+
+function adminEmailAllowlist(): string[] {
+    return String(process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
+        .split(',')
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+}
+
+function canOpenAdmin(user: { email?: string | null; isModerator?: boolean } | null): boolean {
+    if (!user) return false
+    if (user.isModerator) return true
+    const email = (user.email || '').toLowerCase()
+    return !!email && adminEmailAllowlist().includes(email)
+}
+
+function Badge({ children, tone = 'default' }: { children: React.ReactNode; tone?: 'default' | 'green' | 'yellow' | 'red' | 'blue' }) {
+    const tones = {
+        default: 'bg-primary text-secondary border-primary',
+        green: 'bg-green/10 text-green border-green/20',
+        yellow: 'bg-yellow/10 text-yellow border-yellow/20',
+        red: 'bg-red/10 text-red border-red/20',
+        blue: 'bg-blue/10 text-primary border-primary',
+    }
+    return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${tones[tone]}`}>{children}</span>
+}
+
+function StatCard({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ReactNode }) {
+    return (
+        <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
+                <span>{label}</span>
+                {icon}
+            </div>
+            <div className="text-2xl font-extrabold">{value}</div>
+        </div>
+    )
+}
+
+function EmptyState({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary">
+            {children}
+        </div>
+    )
+}
+
+function TableShell({ headers, children }: { headers: string[]; children: React.ReactNode }) {
+    return (
+        <div className="bg-accent/40 border border-primary rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs min-w-[640px]">
+                <thead>
+                    <tr className="bg-accent/80 border-b border-primary font-bold text-secondary">
+                        {headers.map((header) => (
+                            <th key={header} className={`p-3 ${header === 'Actions' ? 'text-right' : ''}`}>
+                                {header}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-primary">{children}</tbody>
+            </table>
+        </div>
+    )
+}
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+    return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-primary border border-primary rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between border-b border-primary pb-3">
+                    <h3 className="text-lg font-bold m-0">{title}</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-accent rounded-lg text-secondary">
+                        <IconX className="w-5 h-5" />
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    )
+}
 
 export default function AdminDashboard() {
     const { user, isModerator } = useUser()
     const { addToast } = useToast()
-    const [activeTab, setActiveTab] = useState<string>('overview')
-
-    const [stats, setStats] = useState<SystemStats>({
-        totalUsers: 0,
-        totalPosts: 0,
-        totalNotebooks: 0,
-        totalBots: INITIAL_PHILOSOPHER_BOTS.length,
-        totalMessages: 0,
-        totalDebates: 0,
-    })
+    const [activeTab, setActiveTab] = useState<TabId>('overview')
+    const [me, setMe] = useState<AdminPermissions | null>(null)
+    const [stats, setStats] = useState<AdminOverview | null>(null)
     const [statsLoading, setStatsLoading] = useState(true)
-
-    // Data lists
-    const [posts, setPosts] = useState<PostRow[]>([])
-    const [postsSearch, setPostsSearch] = useState('')
-    const [postsLoading, setPostsLoading] = useState(false)
-    const [selectedPost, setSelectedPost] = useState<PostRow | null>(null)
-
-    const [notebooks, setNotebooks] = useState<NotebookRow[]>([])
-    const [notebooksSearch, setNotebooksSearch] = useState('')
-    const [notebooksLoading, setNotebooksLoading] = useState(false)
-    const [selectedNotebook, setSelectedNotebook] = useState<NotebookRow | null>(null)
-
-    const [users, setUsers] = useState<UserRow[]>([])
-    const [userSearch, setUserSearch] = useState('')
-    const [userRoleFilter, setUserRoleFilter] = useState<string>('all')
-    const [usersLoading, setUsersLoading] = useState(false)
-
-    const [applications, setApplications] = useState<WriterAppRow[]>([])
-    const [appsLoading, setAppsLoading] = useState(false)
-
-    const [messages, setMessages] = useState<ContactMessageRow[]>([])
-    const [messagesLoading, setMessagesLoading] = useState(false)
-    const [selectedMessage, setSelectedMessage] = useState<ContactMessageRow | null>(null)
-
-    const [logs, setLogs] = useState<AgentLog[]>([])
-    const [logsLoading, setLogsLoading] = useState(false)
-
+    const [items, setItems] = useState<any[]>([])
+    const [total, setTotal] = useState(0)
+    const [listLoading, setListLoading] = useState(false)
+    const [search, setSearch] = useState('')
+    const [roleFilter, setRoleFilter] = useState('all')
+    const [userKind, setUserKind] = useState('humans')
+    const [detail, setDetail] = useState<any | null>(null)
+    const [replies, setReplies] = useState<any[]>([])
+    const [feeds, setFeeds] = useState<any[]>([])
+    const [likes, setLikes] = useState<any[]>([])
+    const [relationships, setRelationships] = useState<any[]>([])
     const [cronTriggering, setCronTriggering] = useState(false)
-
-    // Bot prompt test modal state
     const [testBot, setTestBot] = useState<any | null>(null)
     const [testQuestion, setTestQuestion] = useState('')
     const [testReply, setTestReply] = useState('')
     const [testLoading, setTestLoading] = useState(false)
+    const [busyId, setBusyId] = useState<string | number | null>(null)
 
-    // Fetch initial Overview Stats
-    const fetchOverviewStats = async () => {
+    const allowed = canOpenAdmin({ email: user?.email, isModerator: isModerator || user?.isModerator })
+
+    const toastOk = (message: string) =>
+        addToast({
+            description: (
+                <>
+                    <IconCheck className="text-green size-4 inline mr-1" />
+                    {message}
+                </>
+            ),
+            duration: 3000,
+        })
+    const toastErr = (message: string) => addToast({ description: message, error: true })
+
+    const loadOverview = useCallback(async () => {
         setStatsLoading(true)
         try {
-            const [usersRes, postsRes, notebooksRes, messagesRes, debatesRes] = await Promise.all([
-                supabase.from('profiles').select('id', { count: 'exact', head: true }),
-                supabase.from('community_posts').select('id', { count: 'exact', head: true }),
-                supabase.from('wim_notebooks').select('id', { count: 'exact', head: true }),
-                supabase.from('contact_messages').select('id', { count: 'exact', head: true }),
-                supabase.from('debates').select('id', { count: 'exact', head: true }),
-            ])
-            setStats({
-                totalUsers: usersRes.count || 0,
-                totalPosts: postsRes.count || 0,
-                totalNotebooks: notebooksRes.count || 0,
-                totalBots: INITIAL_PHILOSOPHER_BOTS.length,
-                totalMessages: messagesRes.count || 0,
-                totalDebates: debatesRes.count || 0,
-            })
-        } catch (e) {
-            console.error('[AdminDashboard] Stats error', e)
+            const data = await fetchAdminResource<{ stats: AdminOverview; me: AdminPermissions }>('overview')
+            setStats(data.stats)
+            setMe(data.me)
+        } catch (error: any) {
+            toastErr(error.message || 'Failed to load overview')
         } finally {
             setStatsLoading(false)
         }
-    }
-
-    // Fetch Posts
-    const fetchPosts = async () => {
-        setPostsLoading(true)
-        try {
-            const { data } = await supabase.from('community_posts').select('*').order('created_at', { ascending: false }).limit(60)
-            setPosts((data || []) as PostRow[])
-        } catch {
-            setPosts([])
-        } finally {
-            setPostsLoading(false)
-        }
-    }
-
-    // Fetch Notebooks
-    const fetchNotebooks = async () => {
-        setNotebooksLoading(true)
-        try {
-            const { data } = await supabase.from('wim_notebooks').select('*').order('updated_at', { ascending: false }).limit(60)
-            setNotebooks((data || []) as NotebookRow[])
-        } catch {
-            setNotebooks([])
-        } finally {
-            setNotebooksLoading(false)
-        }
-    }
-
-    // Fetch Users List
-    const fetchUsers = async () => {
-        setUsersLoading(true)
-        try {
-            const { data } = await supabase.from('profiles').select('id, username, role, created_at, avatar_url, bio').order('created_at', { ascending: false }).limit(100)
-            setUsers((data || []) as UserRow[])
-        } catch {
-            setUsers([])
-        } finally {
-            setUsersLoading(false)
-        }
-    }
-
-    // Fetch Applications
-    const fetchApplications = async () => {
-        setAppsLoading(true)
-        try {
-            const { data } = await supabase.from('writer_applications').select('*').order('created_at', { ascending: false }).limit(40)
-            setApplications((data || []) as WriterAppRow[])
-        } catch {
-            setApplications([])
-        } finally {
-            setAppsLoading(false)
-        }
-    }
-
-    // Fetch Messages
-    const fetchMessages = async () => {
-        setMessagesLoading(true)
-        try {
-            const { data } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(40)
-            setMessages((data || []) as ContactMessageRow[])
-        } catch {
-            setMessages([])
-        } finally {
-            setMessagesLoading(false)
-        }
-    }
-
-    // Fetch Audit Logs
-    const fetchLogs = async () => {
-        setLogsLoading(true)
-        try {
-            const { data } = await supabase.from('agent_action_log').select('*').order('timestamp', { ascending: false }).limit(50)
-            setLogs((data || []) as AgentLog[])
-        } catch {
-            setLogs([])
-        } finally {
-            setLogsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchOverviewStats()
     }, [])
 
+    const loadTab = useCallback(
+        async (tab: TabId, query = search) => {
+            if (tab === 'overview') {
+                await loadOverview()
+                return
+            }
+            setListLoading(true)
+            try {
+                if (tab === 'bots') {
+                    const [bots, rss, rels] = await Promise.all([
+                        fetchAdminResource<{ items: any[]; total: number; me: AdminPermissions }>('bots'),
+                        fetchAdminResource<{ items: any[]; me: AdminPermissions }>('feeds'),
+                        fetchAdminResource<{ items: any[]; me: AdminPermissions }>('relationships', { limit: 20 }),
+                    ])
+                    setItems(bots.items)
+                    setTotal(bots.total)
+                    setFeeds(rss.items)
+                    setRelationships(rels.items)
+                    setMe(bots.me)
+                    return
+                }
+                if (tab === 'saved') {
+                    const [saved, liked] = await Promise.all([
+                        fetchAdminResource<{ items: any[]; total: number; me: AdminPermissions }>('saved'),
+                        fetchAdminResource<{ items: any[]; me: AdminPermissions }>('likes'),
+                    ])
+                    setItems(saved.items)
+                    setTotal(saved.total)
+                    setLikes(liked.items)
+                    setMe(saved.me)
+                    return
+                }
+                const resource =
+                    tab === 'blog'
+                        ? 'blog'
+                        : tab === 'forum'
+                          ? 'forum'
+                          : tab === 'notebooks'
+                            ? 'notebooks'
+                            : tab === 'users'
+                              ? 'users'
+                              : tab === 'debates'
+                                ? 'debates'
+                                : tab === 'applications'
+                                  ? 'applications'
+                                  : tab === 'messages'
+                                    ? 'messages'
+                                    : tab === 'chats'
+                                      ? 'chats'
+                                      : 'logs'
+                const extra: Record<string, string> = { q: query, limit: '50' }
+                if (tab === 'users') {
+                    extra.role = roleFilter
+                    extra.kind = userKind
+                }
+                const data = await fetchAdminResource<{ items: any[]; total: number; me: AdminPermissions }>(resource, extra)
+                setItems(data.items)
+                setTotal(data.total)
+                setMe(data.me)
+            } catch (error: any) {
+                setItems([])
+                setTotal(0)
+                toastErr(error.message || 'Failed to load records')
+            } finally {
+                setListLoading(false)
+            }
+        },
+        [loadOverview, roleFilter, search, userKind]
+    )
+
     useEffect(() => {
-        if (activeTab === 'posts') fetchPosts()
-        if (activeTab === 'notebooks') fetchNotebooks()
-        if (activeTab === 'users') fetchUsers()
-        if (activeTab === 'applications') fetchApplications()
-        if (activeTab === 'messages') fetchMessages()
-        if (activeTab === 'logs') fetchLogs()
-    }, [activeTab])
+        if (!allowed) return
+        loadTab(activeTab)
+    }, [activeTab, allowed, roleFilter, userKind])
 
-    // Role Handler
-    const handleRoleUpdate = async (userId: string, newRole: string) => {
+    const act = async (action: string, payload: Record<string, unknown>, success: string) => {
+        setBusyId((payload.id as string | number) || (payload.userId as string) || action)
         try {
-            const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
-            if (error) throw error
-            addToast({
-                description: (
-                    <>
-                        <IconCheck className="text-green size-4 inline mr-1" />
-                        Role updated to "{newRole}"
-                    </>
-                ),
-                duration: 3000,
-            })
-            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)))
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to update role', error: true })
+            await runAdminAction(action, payload)
+            toastOk(success)
+            await loadTab(activeTab)
+            if (detail && payload.id && String(detail.id) === String(payload.id) && action.startsWith('delete')) {
+                setDetail(null)
+            }
+        } catch (error: any) {
+            toastErr(error.message || 'Action failed')
+        } finally {
+            setBusyId(null)
         }
     }
 
-    // Post Handlers
-    const handleDeletePost = async (postId: number | string) => {
-        if (!confirm('Are you sure you want to delete this community post?')) return
+    const openForumPost = async (row: any) => {
         try {
-            const { error } = await supabase.from('community_posts').delete().eq('id', postId)
-            if (error) throw error
-            addToast({ description: 'Post deleted successfully' })
-            setPosts((prev) => prev.filter((p) => p.id !== postId))
-            if (selectedPost?.id === postId) setSelectedPost(null)
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to delete post', error: true })
+            const [post, replyData] = await Promise.all([
+                fetchAdminResource<{ item: any }>('forum', { id: row.id }),
+                fetchAdminResource<{ items: any[] }>('replies', { postId: row.id, limit: 80 }),
+            ])
+            setDetail(post.item)
+            setReplies(replyData.items)
+        } catch (error: any) {
+            toastErr(error.message || 'Failed to open thread')
         }
     }
 
-    const handleTogglePinPost = async (postId: number | string, currentPinned?: boolean) => {
+    const openBlogPost = async (row: any) => {
         try {
-            const { error } = await supabase.from('community_posts').update({ is_pinned: !currentPinned }).eq('id', postId)
-            if (error) throw error
-            addToast({ description: !currentPinned ? 'Post pinned to top' : 'Post unpinned' })
-            setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, is_pinned: !currentPinned } : p)))
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to pin post', error: true })
+            const data = await fetchAdminResource<{ item: any }>('blog', { id: row.id })
+            setDetail(data.item)
+        } catch (error: any) {
+            toastErr(error.message || 'Failed to open post')
         }
     }
 
-    // Notebook Handlers
-    const handleToggleTemplate = async (notebookId: string, currentVal: boolean) => {
+    const openNotebook = async (row: any) => {
         try {
-            const { error } = await supabase.from('wim_notebooks').update({ is_template: !currentVal }).eq('id', notebookId)
-            if (error) throw error
-            addToast({ description: !currentVal ? 'Set as template' : 'Template flag removed' })
-            setNotebooks((prev) => prev.map((n) => (n.id === notebookId ? { ...n, is_template: !currentVal } : n)))
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to update notebook', error: true })
+            const data = await fetchAdminResource<{ item: any }>('notebooks', { id: row.id })
+            setDetail(data.item)
+        } catch (error: any) {
+            toastErr(error.message || 'Failed to open notebook')
         }
     }
 
-    const handleDeleteNotebook = async (notebookId: string) => {
-        if (!confirm('Are you sure you want to delete this notebook?')) return
-        try {
-            const { error } = await supabase.from('wim_notebooks').delete().eq('id', notebookId)
-            if (error) throw error
-            addToast({ description: 'Notebook deleted successfully' })
-            setNotebooks((prev) => prev.filter((n) => n.id !== notebookId))
-            if (selectedNotebook?.id === notebookId) setSelectedNotebook(null)
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to delete notebook', error: true })
-        }
-    }
-
-    // Contact Message Handlers
-    const handleDeleteMessage = async (messageId: number | string) => {
-        if (!confirm('Are you sure you want to delete this contact message?')) return
-        try {
-            const { error } = await supabase.from('contact_messages').delete().eq('id', messageId)
-            if (error) throw error
-            addToast({ description: 'Message deleted' })
-            setMessages((prev) => prev.filter((m) => m.id !== messageId))
-            if (selectedMessage?.id === messageId) setSelectedMessage(null)
-        } catch (err: any) {
-            addToast({ description: err.message || 'Failed to delete message', error: true })
-        }
-    }
-
-    // Cron Trigger Handler
     const handleTriggerCron = async () => {
         setCronTriggering(true)
         try {
-            const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-            if (sessionError || !sessionData.session?.access_token) {
-                throw new Error('Admin session required to trigger philosopher bots')
+            const topic = await runAdminPhilosopherPhase({ phase: 'topic' })
+            if (!topic.data.success) {
+                throw new Error(topic.data.error || 'Topic phase failed')
             }
-            const res = await fetch('/api/admin/philosopher-bots', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${sessionData.session.access_token}`,
-                },
+            if (topic.data.skipped && topic.data.reason === 'already_ticked') {
+                toastOk(topic.data.message || 'This hour already posted to the forum')
+                loadOverview()
+                return
+            }
+            if (!topic.data.topic?.id) {
+                throw new Error('Topic phase returned no thread id')
+            }
+
+            const reply = await runAdminPhilosopherPhase({
+                phase: 'reply',
+                topicId: topic.data.topic.id,
+                topicTitle: topic.data.topic.title || '',
+                postBot: topic.data.topic.author || '',
             })
-            const data = await res.json()
-            if (res.ok && data.success) {
-                addToast({
-                    description: (
-                        <>
-                            <IconSparkles className="text-yellow size-4 inline mr-1" />
-                            Philosopher Bot Cron Executed Successfully!
-                        </>
-                    ),
-                    duration: 4000,
-                })
-                fetchOverviewStats()
-            } else {
-                addToast({ description: data.error || 'Cron execution failed', error: true })
+            if (!reply.data.success) {
+                throw new Error(reply.data.error || 'Reply phase failed')
             }
-        } catch (err: any) {
-            addToast({ description: err.message || 'Network error triggering cron', error: true })
+            if (reply.data.skipped) {
+                toastOk(reply.data.message || 'Reply phase skipped')
+            } else if (reply.data.reply?.persisted) {
+                toastOk(
+                    `Posted ${topic.data.topic.author || 'a philosopher'} and ${
+                        reply.data.reply.author || 'a reply'
+                    } to the forum`
+                )
+            } else {
+                throw new Error(reply.data.message || 'Reply was not persisted')
+            }
+            loadOverview()
+        } catch (error: any) {
+            toastErr(error.message || 'Network error triggering cron')
         } finally {
             setCronTriggering(false)
         }
     }
 
-    // Test Bot Handler
     const handleTestBot = async () => {
         if (!testQuestion.trim() || !testBot) return
         setTestLoading(true)
@@ -394,46 +367,21 @@ export default function AdminDashboard() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    philosopher: testBot.name,
+                    philosopher: testBot.username || testBot.name,
                     question: testQuestion,
                     mood: 'calm',
                 }),
             })
             const data = await res.json()
-            if (data.success && data.reply) {
-                setTestReply(data.reply)
-            } else {
-                setTestReply(`Error: ${data.error || 'Bot failed to respond'}`)
-            }
-        } catch (err: any) {
-            setTestReply(`Network Error: ${err.message}`)
+            setTestReply(data.success && data.reply ? data.reply : `Error: ${data.error || 'Bot failed to respond'}`)
+        } catch (error: any) {
+            setTestReply(`Network Error: ${error.message}`)
         } finally {
             setTestLoading(false)
         }
     }
 
-    // Filtered lists
-    const filteredPosts = useMemo(() => {
-        if (!postsSearch.trim()) return posts
-        const q = postsSearch.toLowerCase()
-        return posts.filter((p) => p.title.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q) || String(p.content).toLowerCase().includes(q))
-    }, [posts, postsSearch])
-
-    const filteredNotebooks = useMemo(() => {
-        if (!notebooksSearch.trim()) return notebooks
-        const q = notebooksSearch.toLowerCase()
-        return notebooks.filter((n) => n.title.toLowerCase().includes(q) || n.short_id.toLowerCase().includes(q))
-    }, [notebooks, notebooksSearch])
-
-    const filteredUsers = useMemo(() => {
-        return users.filter((u) => {
-            const matchesSearch = !userSearch.trim() || u.username?.toLowerCase().includes(userSearch.toLowerCase()) || u.id.includes(userSearch)
-            const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter
-            return matchesSearch && matchesRole
-        })
-    }, [users, userSearch, userRoleFilter])
-
-    if (!user || !isModerator) {
+    if (!user || !allowed) {
         return (
             <div className="h-full bg-primary text-primary flex items-center justify-center p-8">
                 <SEO title="Admin Dashboard - WorldInMaking" />
@@ -441,548 +389,584 @@ export default function AdminDashboard() {
                     <IconShield className="w-12 h-12 mx-auto text-red mb-4 opacity-80" />
                     <h1 className="text-xl font-bold mb-2">Access Restricted</h1>
                     <p className="text-sm text-secondary mb-6">
-                        You need Moderator or Administrator permissions to access the WorldInMaking Admin OS Panel.
+                        You need staff permissions (admin, moderator, or staff) to open the WorldInMaking Admin panel.
                     </p>
                 </div>
             </div>
         )
     }
 
-    const tabConfig = [
-        { value: 'overview', label: 'Overview', content: null },
-        { value: 'posts', label: 'Posts & Forum', content: null },
-        { value: 'notebooks', label: 'Notebooks', content: null },
-        { value: 'bots', label: 'Philosopher Bots', content: null },
-        { value: 'users', label: 'Users', content: null },
-        { value: 'applications', label: 'Applications', content: null },
-        { value: 'messages', label: 'Messages', content: null },
-        { value: 'logs', label: 'Audit Logs', content: null },
-    ]
-
     return (
         <div data-scheme="primary" className="h-full bg-primary text-primary flex flex-col overflow-hidden select-none">
-            <SEO title="Enterprise Admin OS Dashboard - WorldInMaking" />
+            <SEO title="Admin OS Dashboard - WorldInMaking" />
 
-            {/* Header */}
             <div className="p-4 border-b border-primary bg-accent/40 backdrop-blur-md flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-red/10 dark:bg-yellow/10 border border-red/20 dark:border-yellow/20 flex items-center justify-center text-red dark:text-yellow">
                         <IconShield className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold m-0 leading-tight">WorldInMaking Enterprise Admin OS</h1>
-                        <p className="text-xs text-secondary m-0">Full System Moderation, Bots, Notebooks & Content Oversight</p>
+                        <h1 className="text-base font-bold m-0 leading-tight">WorldInMaking Admin OS</h1>
+                        <p className="text-xs text-secondary m-0">
+                            Live Supabase moderation{me ? ` · signed in as ${me.role}` : ''}
+                        </p>
                     </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                     <OSButton variant="secondary" size="sm" onClick={handleTriggerCron} disabled={cronTriggering}>
                         <IconSparkles className={`w-4 h-4 mr-1.5 ${cronTriggering ? 'animate-spin' : ''}`} />
                         {cronTriggering ? 'Running Cron...' : 'Run Bot Cron'}
                     </OSButton>
-                    <OSButton variant="secondary" size="sm" onClick={fetchOverviewStats}>
+                    <OSButton variant="secondary" size="sm" onClick={() => loadTab(activeTab)}>
                         <IconRefresh className="w-4 h-4" />
                     </OSButton>
                 </div>
             </div>
 
-            {/* OSTabs Bar */}
             <div className="px-4 pt-2 border-b border-primary bg-accent/20 overflow-x-auto">
                 <OSTabs
-                    tabs={tabConfig}
+                    tabs={TABS.map((tab) => ({ ...tab, content: null }))}
                     value={activeTab}
-                    onValueChange={(val) => setActiveTab(val)}
+                    onValueChange={(val) => {
+                        setSearch('')
+                        setDetail(null)
+                        setActiveTab(val as TabId)
+                    }}
                 />
             </div>
 
-            {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
-                {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>MEMBERS</span>
-                                    <IconUser className="w-4 h-4 text-red dark:text-yellow" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{statsLoading ? '...' : stats.totalUsers}</div>
-                            </div>
-
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>BOTS</span>
-                                    <IconSparkles className="w-4 h-4 text-yellow" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{stats.totalBots}</div>
-                            </div>
-
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>NOTEBOOKS</span>
-                                    <IconBook className="w-4 h-4 text-green" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{statsLoading ? '...' : stats.totalNotebooks}</div>
-                            </div>
-
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>COMMUNITY POSTS</span>
-                                    <IconMessage className="w-4 h-4 text-blue-500" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{statsLoading ? '...' : stats.totalPosts}</div>
-                            </div>
-
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>MESSAGES</span>
-                                    <IconMessage className="w-4 h-4 text-purple-400" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{statsLoading ? '...' : stats.totalMessages}</div>
-                            </div>
-
-                            <div className="bg-accent/60 border border-primary p-4 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-secondary mb-1 text-xs font-semibold">
-                                    <span>BOT DEBATES</span>
-                                    <IconActivity className="w-4 h-4 text-orange-400" />
-                                </div>
-                                <div className="text-2xl font-extrabold">{statsLoading ? '...' : stats.totalDebates}</div>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <StatCard label="HUMANS" value={statsLoading ? '...' : stats?.humans ?? 0} icon={<IconUser className="w-4 h-4 text-red dark:text-yellow" />} />
+                            <StatCard label="BOTS" value={statsLoading ? '...' : stats?.bots ?? 0} icon={<IconSparkles className="w-4 h-4 text-yellow" />} />
+                            <StatCard label="BLOG POSTS" value={statsLoading ? '...' : stats?.blogPosts ?? 0} icon={<IconBook className="w-4 h-4 text-green" />} />
+                            <StatCard label="FORUM THREADS" value={statsLoading ? '...' : stats?.forumPosts ?? 0} icon={<IconMessage className="w-4 h-4 text-blue-500" />} />
+                            <StatCard label="FORUM REPLIES" value={statsLoading ? '...' : stats?.forumReplies ?? 0} icon={<IconMessage className="w-4 h-4 text-purple-400" />} />
+                            <StatCard label="NOTEBOOKS" value={statsLoading ? '...' : stats?.notebooks ?? 0} icon={<IconBook className="w-4 h-4 text-green" />} />
+                            <StatCard label="DEBATES" value={statsLoading ? '...' : stats?.debates ?? 0} icon={<IconActivity className="w-4 h-4 text-orange-400" />} />
+                            <StatCard label="CHATS" value={statsLoading ? '...' : stats?.chats ?? 0} icon={<IconMessage className="w-4 h-4 text-secondary" />} />
+                            <StatCard label="SAVED POSTS" value={statsLoading ? '...' : stats?.savedPosts ?? 0} icon={<IconBook className="w-4 h-4 text-secondary" />} />
+                            <StatCard label="LIKES" value={statsLoading ? '...' : stats?.likes ?? 0} icon={<IconCheck className="w-4 h-4 text-green" />} />
+                            <StatCard
+                                label="MESSAGES"
+                                value={statsLoading ? '...' : `${stats?.unreadMessages ?? 0}/${stats?.messages ?? 0}`}
+                                icon={<IconMessage className="w-4 h-4 text-yellow" />}
+                            />
+                            <StatCard label="RSS FEEDS" value={statsLoading ? '...' : stats?.rssFeeds ?? 0} icon={<IconActivity className="w-4 h-4 text-blue-500" />} />
                         </div>
-
-                        {/* System Health */}
-                        <Fieldset legend="Infrastructure & Cloud Health">
+                        <Fieldset legend="Infrastructure">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                                 <div className="p-3 bg-primary rounded-xl border border-primary flex justify-between items-center">
-                                    <span className="font-semibold text-secondary">PostgreSQL Storage</span>
-                                    <span className="text-green font-bold flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-green animate-pulse" /> Supabase Managed
-                                    </span>
+                                    <span className="font-semibold text-secondary">PostgreSQL</span>
+                                    <span className="text-green font-bold">Supabase live tables</span>
                                 </div>
                                 <div className="p-3 bg-primary rounded-xl border border-primary flex justify-between items-center">
-                                    <span className="font-semibold text-secondary">Auth Identity Service</span>
-                                    <span className="text-green font-bold">Supabase GoTrue (PKCE Enabled)</span>
+                                    <span className="font-semibold text-secondary">Admin writes</span>
+                                    <span className="text-green font-bold">Service role API</span>
                                 </div>
                                 <div className="p-3 bg-primary rounded-xl border border-primary flex justify-between items-center">
-                                    <span className="font-semibold text-secondary">Edge Cron Engine</span>
-                                    <span className="text-blue-500 font-bold">GitHub Actions Hourly Workflow</span>
+                                    <span className="font-semibold text-secondary">Hourly bots</span>
+                                    <span className="text-blue-500 font-bold">GitHub Actions cron</span>
                                 </div>
                             </div>
                         </Fieldset>
                     </div>
                 )}
 
-                {/* POSTS MODERATION TAB */}
-                {activeTab === 'posts' && (
+                {activeTab === 'blog' && (
                     <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-lg font-bold">Community & Forum Moderation</h2>
-                                <p className="text-xs text-secondary">Inspect essays, filter, pin topics, or delete inappropriate content.</p>
+                                <h2 className="text-lg font-bold">Blog posts</h2>
+                                <p className="text-xs text-secondary">Approve, publish, or delete rows from the live `posts` table. {total} total.</p>
                             </div>
                             <div className="w-full sm:w-72">
                                 <OSInput
                                     label=""
-                                    placeholder="Search posts by title or author..."
-                                    value={postsSearch}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPostsSearch(e.target.value)}
+                                    placeholder="Search title, author, slug..."
+                                    value={search}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                        if (e.key === 'Enter') loadTab('blog', search)
+                                    }}
                                 />
                             </div>
                         </div>
-
-                        {postsLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading posts...</div>
-                        ) : filteredPosts.length === 0 ? (
-                            <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary">
-                                No matching community posts found in database.
-                            </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading posts..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No blog posts match this query.</EmptyState>
                         ) : (
-                            <div className="bg-accent/40 border border-primary rounded-2xl overflow-hidden shadow-sm">
-                                <table className="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr className="bg-accent/80 border-b border-primary font-bold text-secondary">
-                                            <th className="p-3">Title</th>
-                                            <th className="p-3">Author</th>
-                                            <th className="p-3">Pinned</th>
-                                            <th className="p-3">Date</th>
-                                            <th className="p-3 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-primary">
-                                        {filteredPosts.map((p) => (
-                                            <tr key={p.id} className="hover:bg-accent/30 transition-colors">
-                                                <td className="p-3 font-semibold text-primary max-w-xs truncate cursor-pointer hover:underline" onClick={() => setSelectedPost(p)}>
-                                                    {p.title}
-                                                </td>
-                                                <td className="p-3 text-secondary">{p.username || 'Author'}</td>
-                                                <td className="p-3">
-                                                    {p.is_pinned ? (
-                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow/10 text-yellow border border-yellow/20">PINNED</span>
-                                                    ) : (
-                                                        <span className="text-muted text-[11px]">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="p-3 text-muted">{dayjs(p.created_at).fromNow()}</td>
-                                                <td className="p-3 text-right space-x-1">
-                                                    <button
-                                                        onClick={() => handleTogglePinPost(p.id, p.is_pinned)}
-                                                        className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors ${p.is_pinned ? 'bg-yellow/20 text-yellow' : 'bg-primary hover:bg-accent text-secondary'}`}
-                                                    >
-                                                        {p.is_pinned ? 'Unpin' : 'Pin'}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePost(p.id)}
-                                                        className="px-2 py-1 bg-red/10 hover:bg-red/20 text-red rounded-md text-[11px] font-semibold transition-colors"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-
-                        {/* Selected Post Detail Modal */}
-                        {selectedPost && (
-                            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                                <div className="bg-primary border border-primary rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
-                                    <div className="flex items-center justify-between border-b border-primary pb-3">
-                                        <h3 className="text-lg font-bold m-0">{selectedPost.title}</h3>
-                                        <button onClick={() => setSelectedPost(null)} className="p-1 hover:bg-accent rounded-lg text-secondary">
-                                            <IconX className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto text-xs text-secondary leading-relaxed bg-accent/40 p-4 rounded-xl border border-primary whitespace-pre-wrap">
-                                        {selectedPost.content}
-                                    </div>
-                                    <div className="flex items-center justify-between pt-2 border-t border-primary text-xs">
-                                        <span className="text-muted">Author: {selectedPost.username || 'Unknown'}</span>
-                                        <div className="space-x-2">
-                                            <OSButton variant="secondary" size="sm" onClick={() => setSelectedPost(null)}>Close</OSButton>
-                                            <button onClick={() => handleDeletePost(selectedPost.id)} className="px-3 py-1.5 bg-red text-white font-bold rounded-lg hover:bg-red/80 transition-colors">
-                                                Delete Post
+                            <TableShell headers={['Title', 'Author', 'Status', 'Views', 'Date', 'Actions']}>
+                                {items.map((post) => (
+                                    <tr key={post.id} className="hover:bg-accent/30 transition-colors">
+                                        <td className="p-3 font-semibold max-w-xs truncate cursor-pointer hover:underline" onClick={() => openBlogPost(post)}>
+                                            {post.title}
+                                        </td>
+                                        <td className="p-3 text-secondary">{post.author || '—'}</td>
+                                        <td className="p-3 space-x-1">
+                                            <Badge tone={post.published ? 'green' : 'default'}>{post.published ? 'PUBLISHED' : 'DRAFT'}</Badge>
+                                            <Badge tone={post.is_approved ? 'green' : 'yellow'}>{post.is_approved ? 'APPROVED' : 'PENDING'}</Badge>
+                                        </td>
+                                        <td className="p-3 text-muted">{post.view_count ?? 0}</td>
+                                        <td className="p-3 text-muted">{dayjs(post.created_at).fromNow()}</td>
+                                        <td className="p-3 text-right space-x-1">
+                                            <button
+                                                disabled={busyId === post.id}
+                                                onClick={() =>
+                                                    act('set_blog_approved', { id: post.id, approved: !post.is_approved }, post.is_approved ? 'Unapproved' : 'Approved')
+                                                }
+                                                className="px-2 py-1 rounded-md text-[11px] font-semibold bg-primary hover:bg-accent text-secondary"
+                                            >
+                                                {post.is_approved ? 'Unapprove' : 'Approve'}
                                             </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                            <button
+                                                disabled={busyId === post.id}
+                                                onClick={() =>
+                                                    act('set_blog_published', { id: post.id, published: !post.published }, post.published ? 'Unpublished' : 'Published')
+                                                }
+                                                className="px-2 py-1 rounded-md text-[11px] font-semibold bg-primary hover:bg-accent text-secondary"
+                                            >
+                                                {post.published ? 'Unpublish' : 'Publish'}
+                                            </button>
+                                            <button
+                                                disabled={busyId === post.id}
+                                                onClick={() => {
+                                                    if (confirm('Delete this blog post?')) act('delete_blog_post', { id: post.id }, 'Blog post deleted')
+                                                }}
+                                                className="px-2 py-1 bg-red/10 hover:bg-red/20 text-red rounded-md text-[11px] font-semibold"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
                         )}
                     </div>
                 )}
 
-                {/* NOTEBOOKS TAB */}
+                {activeTab === 'forum' && (
+                    <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-bold">Forum threads</h2>
+                                <p className="text-xs text-secondary">community_posts + community_replies. Pin uses the live is_pinned column. {total} threads.</p>
+                            </div>
+                            <div className="w-full sm:w-72">
+                                <OSInput
+                                    label=""
+                                    placeholder="Search threads..."
+                                    value={search}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                        if (e.key === 'Enter') loadTab('forum', search)
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading threads..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No matching community posts.</EmptyState>
+                        ) : (
+                            <TableShell headers={['Title', 'Author', 'Pinned', 'Views', 'Date', 'Actions']}>
+                                {items.map((post) => (
+                                    <tr key={post.id} className="hover:bg-accent/30 transition-colors">
+                                        <td className="p-3 font-semibold max-w-xs truncate cursor-pointer hover:underline" onClick={() => openForumPost(post)}>
+                                            {post.title}
+                                        </td>
+                                        <td className="p-3 text-secondary">{post.username || 'Author'}</td>
+                                        <td className="p-3">{post.is_pinned ? <Badge tone="yellow">PINNED</Badge> : <span className="text-muted">-</span>}</td>
+                                        <td className="p-3 text-muted">{post.view_count ?? 0}</td>
+                                        <td className="p-3 text-muted">{dayjs(post.created_at).fromNow()}</td>
+                                        <td className="p-3 text-right space-x-1">
+                                            <button
+                                                onClick={() =>
+                                                    act('pin_forum_post', { id: post.id, pinned: !post.is_pinned }, post.is_pinned ? 'Unpinned' : 'Pinned')
+                                                }
+                                                className={`px-2 py-1 rounded-md text-[11px] font-semibold ${post.is_pinned ? 'bg-yellow/20 text-yellow' : 'bg-primary hover:bg-accent text-secondary'}`}
+                                            >
+                                                {post.is_pinned ? 'Unpin' : 'Pin'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Delete this thread and its replies?')) act('delete_forum_post', { id: post.id }, 'Thread deleted')
+                                                }}
+                                                className="px-2 py-1 bg-red/10 hover:bg-red/20 text-red rounded-md text-[11px] font-semibold"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'notebooks' && (
                     <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-lg font-bold">SaaS Notebooks Oversight</h2>
-                                <p className="text-xs text-secondary">Inspect documents created across the workspace and flag official templates.</p>
+                                <h2 className="text-lg font-bold">Notebooks</h2>
+                                <p className="text-xs text-secondary">wim_notebooks. Publish or mark templates. {total} total.</p>
                             </div>
                             <div className="w-full sm:w-72">
                                 <OSInput
                                     label=""
-                                    placeholder="Search notebooks by title or ID..."
-                                    value={notebooksSearch}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotebooksSearch(e.target.value)}
+                                    placeholder="Search notebooks..."
+                                    value={search}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                        if (e.key === 'Enter') loadTab('notebooks', search)
+                                    }}
                                 />
                             </div>
                         </div>
-
-                        {notebooksLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading notebooks...</div>
-                        ) : filteredNotebooks.length === 0 ? (
-                            <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary">
-                                No matching notebooks found in database.
-                            </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading notebooks..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No notebooks in the database yet.</EmptyState>
                         ) : (
-                            <div className="bg-accent/40 border border-primary rounded-2xl overflow-hidden shadow-sm">
-                                <table className="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr className="bg-accent/80 border-b border-primary font-bold text-secondary">
-                                            <th className="p-3">Title</th>
-                                            <th className="p-3">Short ID</th>
-                                            <th className="p-3">Status</th>
-                                            <th className="p-3">Last Modified</th>
-                                            <th className="p-3 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-primary">
-                                        {filteredNotebooks.map((nb) => (
-                                            <tr key={nb.id} className="hover:bg-accent/30 transition-colors">
-                                                <td className="p-3 font-semibold text-primary cursor-pointer hover:underline" onClick={() => setSelectedNotebook(nb)}>
-                                                    {nb.title || 'Untitled Notebook'}
-                                                </td>
-                                                <td className="p-3 font-mono text-muted">{nb.short_id}</td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${nb.is_published ? 'bg-green/10 text-green border border-green/20' : 'bg-primary text-secondary'}`}>
-                                                        {nb.is_published ? 'PUBLIC' : 'PRIVATE'}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3 text-muted">{dayjs(nb.updated_at).fromNow()}</td>
-                                                <td className="p-3 text-right space-x-1">
-                                                    <button
-                                                        onClick={() => handleToggleTemplate(nb.id, nb.is_template)}
-                                                        className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors ${nb.is_template ? 'bg-yellow/20 text-yellow' : 'bg-primary hover:bg-accent text-secondary'}`}
-                                                    >
-                                                        {nb.is_template ? 'Remove Template' : 'Make Template'}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteNotebook(nb.id)}
-                                                        className="px-2 py-1 bg-red/10 hover:bg-red/20 text-red rounded-md text-[11px] font-semibold transition-colors"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-
-                        {/* Selected Notebook Modal */}
-                        {selectedNotebook && (
-                            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                                <div className="bg-primary border border-primary rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
-                                    <div className="flex items-center justify-between border-b border-primary pb-3">
-                                        <h3 className="text-lg font-bold m-0">{selectedNotebook.title}</h3>
-                                        <button onClick={() => setSelectedNotebook(null)} className="p-1 hover:bg-accent rounded-lg text-secondary">
-                                            <IconX className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto text-xs text-secondary leading-relaxed bg-accent/40 p-4 rounded-xl border border-primary whitespace-pre-wrap font-mono">
-                                        {selectedNotebook.content || '(Empty notebook document)'}
-                                    </div>
-                                    <div className="flex items-center justify-between pt-2 border-t border-primary text-xs">
-                                        <span className="text-muted">Short ID: {selectedNotebook.short_id}</span>
-                                        <OSButton variant="secondary" size="sm" onClick={() => setSelectedNotebook(null)}>Close</OSButton>
-                                    </div>
-                                </div>
-                            </div>
+                            <TableShell headers={['Title', 'Short ID', 'Status', 'Updated', 'Actions']}>
+                                {items.map((nb) => (
+                                    <tr key={nb.id} className="hover:bg-accent/30 transition-colors">
+                                        <td className="p-3 font-semibold cursor-pointer hover:underline" onClick={() => openNotebook(nb)}>
+                                            {nb.title || 'Untitled Notebook'}
+                                        </td>
+                                        <td className="p-3 font-mono text-muted">{nb.short_id}</td>
+                                        <td className="p-3 space-x-1">
+                                            <Badge tone={nb.is_published ? 'green' : 'default'}>{nb.is_published ? 'PUBLIC' : 'PRIVATE'}</Badge>
+                                            {nb.is_template ? <Badge tone="yellow">TEMPLATE</Badge> : null}
+                                        </td>
+                                        <td className="p-3 text-muted">{dayjs(nb.updated_at).fromNow()}</td>
+                                        <td className="p-3 text-right space-x-1">
+                                            <button
+                                                onClick={() =>
+                                                    act('set_notebook_template', { id: nb.id, is_template: !nb.is_template }, nb.is_template ? 'Template removed' : 'Set as template')
+                                                }
+                                                className="px-2 py-1 rounded-md text-[11px] font-semibold bg-primary hover:bg-accent text-secondary"
+                                            >
+                                                {nb.is_template ? 'Remove template' : 'Make template'}
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    act('set_notebook_published', { id: nb.id, is_published: !nb.is_published }, nb.is_published ? 'Unpublished' : 'Published')
+                                                }
+                                                className="px-2 py-1 rounded-md text-[11px] font-semibold bg-primary hover:bg-accent text-secondary"
+                                            >
+                                                {nb.is_published ? 'Unpublish' : 'Publish'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Delete this notebook?')) act('delete_notebook', { id: nb.id }, 'Notebook deleted')
+                                                }}
+                                                className="px-2 py-1 bg-red/10 hover:bg-red/20 text-red rounded-md text-[11px] font-semibold"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
                         )}
                     </div>
                 )}
 
-                {/* BOT MANAGEMENT TAB */}
                 {activeTab === 'bots' && (
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-bold">Philosopher Bot Fleet</h2>
-                                <p className="text-xs text-secondary">Manage autonomous AI personas, test prompts live, and trigger cron cycles.</p>
+                                <h2 className="text-lg font-bold">Philosopher fleet</h2>
+                                <p className="text-xs text-secondary">Live `agent_metadata` (16) plus `forum_rss_feeds`. `bot_profiles` is empty on production.</p>
                             </div>
                             <OSButton variant="primary" size="sm" onClick={handleTriggerCron} disabled={cronTriggering}>
                                 <IconSparkles className="w-4 h-4 mr-1.5" />
-                                Run Hourly Bot Cycle
+                                Run hourly cycle
                             </OSButton>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {INITIAL_PHILOSOPHER_BOTS.map((bot) => (
-                                <div key={bot.name} className="p-5 bg-accent/60 border border-primary rounded-2xl shadow-sm hover:border-accent transition-all flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <span className="text-2xl">{bot.avatar}</span>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading bots..." />
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {items.map((bot) => (
+                                    <div key={bot.agent_id} className="p-5 bg-accent/60 border border-primary rounded-2xl shadow-sm flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
                                                 <div>
-                                                    <h3 className="text-base font-bold m-0">{bot.name}</h3>
-                                                    <span className="text-xs text-muted">{bot.era}</span>
+                                                    <h3 className="text-base font-bold m-0">{bot.username || 'Unknown agent'}</h3>
+                                                    <span className="text-xs text-muted">{bot.current_mood || '—'}</span>
                                                 </div>
+                                                <Badge tone="green">LIVE</Badge>
                                             </div>
-                                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green/10 text-green border border-green/20">
-                                                ACTIVE
-                                            </span>
+                                            <p className="text-xs text-secondary leading-relaxed bg-primary p-3 rounded-xl border border-primary mb-3">
+                                                {bot.current_focus || 'No current focus'}
+                                            </p>
+                                            <div className="text-[11px] text-muted">
+                                                Last action {bot.last_action_at ? dayjs(bot.last_action_at).fromNow() : 'never'}
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-secondary leading-relaxed bg-primary p-3 rounded-xl border border-primary mb-3">
-                                            "{bot.stance}"
-                                        </p>
-                                        <div className="text-[11px] font-mono text-muted bg-accent p-2.5 rounded-lg border border-primary">
-                                            <span className="text-yellow font-bold">Prompt:</span> {bot.prompt}
+                                        <div className="pt-3 mt-3 border-t border-primary flex items-center justify-between text-xs">
+                                            <span className="text-muted">Energy {bot.energy_level ?? 0}</span>
+                                            <button
+                                                onClick={() => {
+                                                    setTestBot(bot)
+                                                    setTestQuestion('')
+                                                    setTestReply('')
+                                                }}
+                                                className="px-2 py-1 bg-yellow/10 hover:bg-yellow/20 text-yellow font-bold rounded-md text-[11px]"
+                                            >
+                                                Test prompt
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="pt-3 mt-3 border-t border-primary flex items-center justify-between text-xs">
-                                        <span className="text-muted">Status: Autonomous</span>
-                                        <button
-                                            onClick={() => { setTestBot(bot); setTestQuestion(''); setTestReply(''); }}
-                                            className="px-2 py-1 bg-yellow/10 hover:bg-yellow/20 text-yellow font-bold rounded-md text-[11px] transition-colors"
-                                        >
-                                            Test Prompt Live
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Test Bot Modal */}
-                        {testBot && (
-                            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                                <div className="bg-primary border border-primary rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-                                    <div className="flex items-center justify-between border-b border-primary pb-3">
-                                        <h3 className="text-base font-bold m-0 flex items-center gap-2">
-                                            <span>{testBot.avatar}</span> Test Prompt: {testBot.name}
-                                        </h3>
-                                        <button onClick={() => setTestBot(null)} className="p-1 hover:bg-accent rounded-lg text-secondary">
-                                            <IconX className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-bold text-secondary">Ask {testBot.name} a question:</label>
-                                        <OSInput
-                                            label=""
-                                            placeholder="What is the nature of power and ethics?"
-                                            value={testQuestion}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestQuestion(e.target.value)}
-                                        />
-                                        <OSButton variant="primary" size="sm" width="full" onClick={handleTestBot} disabled={testLoading || !testQuestion.trim()}>
-                                            {testLoading ? 'Philosopher Thinking...' : 'Submit Question'}
-                                        </OSButton>
-                                    </div>
-
-                                    {testReply && (
-                                        <div className="p-4 bg-accent rounded-xl border border-primary text-xs leading-relaxed text-secondary max-h-48 overflow-y-auto">
-                                            <div className="font-bold text-yellow mb-1">{testBot.name}'s Reply:</div>
-                                            {testReply}
-                                        </div>
-                                    )}
-                                </div>
+                                ))}
                             </div>
                         )}
+                        <div>
+                            <h3 className="text-sm font-bold mb-3">Agent relationships</h3>
+                            {relationships.length === 0 ? (
+                                <EmptyState>No agent_relationships rows.</EmptyState>
+                            ) : (
+                                <TableShell headers={['From', 'To', 'Affinity']}>
+                                    {relationships.map((row) => (
+                                        <tr key={`${row.source_agent_id}-${row.target_agent_id}`} className="hover:bg-accent/30">
+                                            <td className="p-3 font-semibold">{row.source_username || String(row.source_agent_id).slice(0, 8)}</td>
+                                            <td className="p-3 text-secondary">{row.target_username || String(row.target_agent_id).slice(0, 8)}</td>
+                                            <td className="p-3 text-muted">{Number(row.affinity_score ?? 0).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </TableShell>
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold mb-3">RSS feeds</h3>
+                            {feeds.length === 0 ? (
+                                <EmptyState>No RSS feeds in forum_rss_feeds.</EmptyState>
+                            ) : (
+                                <TableShell headers={['Feed', 'Category', 'Active', 'Actions']}>
+                                    {feeds.map((feed) => (
+                                        <tr key={feed.id} className="hover:bg-accent/30">
+                                            <td className="p-3">
+                                                <div className="font-semibold">{feed.title}</div>
+                                                <div className="text-[10px] text-muted break-all">{feed.url}</div>
+                                            </td>
+                                            <td className="p-3 text-secondary">{feed.category || '—'}</td>
+                                            <td className="p-3">
+                                                <Badge tone={feed.is_active ? 'green' : 'default'}>{feed.is_active ? 'ON' : 'OFF'}</Badge>
+                                            </td>
+                                            <td className="p-3 text-right">
+                                                <button
+                                                    onClick={() =>
+                                                        act('toggle_rss', { id: feed.id, is_active: !feed.is_active }, feed.is_active ? 'Feed paused' : 'Feed enabled')
+                                                    }
+                                                    className="px-2 py-1 rounded-md text-[11px] font-semibold bg-primary hover:bg-accent text-secondary"
+                                                >
+                                                    {feed.is_active ? 'Pause' : 'Enable'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </TableShell>
+                            )}
+                        </div>
                     </div>
                 )}
 
-                {/* USER DIRECTORY TAB */}
                 {activeTab === 'users' && (
                     <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-lg font-bold">User Directory & Roles</h2>
-                                <p className="text-xs text-secondary">Search registered members and modify permissions (Admin, Moderator, Member).</p>
+                                <h2 className="text-lg font-bold">Users & roles</h2>
+                                <p className="text-xs text-secondary">
+                                    Role changes go through the service-role API. Only administrators can assign roles. {total} matching.
+                                </p>
                             </div>
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <select
-                                    value={userRoleFilter}
-                                    onChange={(e) => setUserRoleFilter(e.target.value)}
+                                    value={userKind}
+                                    onChange={(e) => setUserKind(e.target.value)}
                                     className="bg-accent border border-primary rounded-xl px-3 py-2 text-xs font-semibold text-primary outline-none"
                                 >
-                                    <option value="all">All Roles</option>
-                                    <option value="admin">Admin / Staff</option>
+                                    <option value="humans">Humans</option>
+                                    <option value="bots">Bots</option>
+                                    <option value="all">All</option>
+                                </select>
+                                <select
+                                    value={roleFilter}
+                                    onChange={(e) => setRoleFilter(e.target.value)}
+                                    className="bg-accent border border-primary rounded-xl px-3 py-2 text-xs font-semibold text-primary outline-none"
+                                >
+                                    <option value="all">All roles</option>
+                                    <option value="admin">Admin</option>
                                     <option value="moderator">Moderator</option>
+                                    <option value="staff">Staff</option>
                                     <option value="writer">Writer</option>
                                     <option value="member">Member</option>
+                                    <option value="user">User</option>
                                 </select>
-                                <div className="w-64">
+                                <div className="w-56">
                                     <OSInput
                                         label=""
                                         placeholder="Search user..."
-                                        value={userSearch}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserSearch(e.target.value)}
+                                        value={search}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                            if (e.key === 'Enter') loadTab('users', search)
+                                        }}
                                     />
                                 </div>
                             </div>
                         </div>
-
-                        {usersLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading directory...</div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading directory..." />
                         ) : (
-                            <div className="bg-accent/40 border border-primary rounded-2xl overflow-hidden shadow-sm">
-                                <table className="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr className="bg-accent/80 border-b border-primary font-bold text-secondary">
-                                            <th className="p-3">User</th>
-                                            <th className="p-3">Role</th>
-                                            <th className="p-3">Joined</th>
-                                            <th className="p-3 text-right">Set Role</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-primary">
-                                        {filteredUsers.map((u) => (
-                                            <tr key={u.id} className="hover:bg-accent/30 transition-colors">
-                                                <td className="p-3 font-semibold">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center font-bold border border-primary text-xs">
-                                                            {(u.username || 'U').charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-bold text-primary">{u.username || 'Anonymous User'}</div>
-                                                            <div className="text-[10px] text-muted font-mono">{u.id.slice(0, 18)}...</div>
-                                                        </div>
+                            <TableShell headers={['User', 'Role', 'Joined', 'Set role']}>
+                                {items.map((row) => (
+                                    <tr key={row.id} className="hover:bg-accent/30">
+                                        <td className="p-3 font-semibold">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center font-bold border border-primary text-xs overflow-hidden">
+                                                    {row.avatar_url ? (
+                                                        <img src={row.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        (row.username || 'U').charAt(0).toUpperCase()
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-primary">
+                                                        {row.username || 'Anonymous'}
+                                                        {row.is_bot ? <span className="ml-2"><Badge>BOT</Badge></span> : null}
                                                     </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                                        u.role === 'admin' || u.role === 'staff'
-                                                            ? 'bg-red/10 text-red border border-red/20'
-                                                            : u.role === 'moderator'
-                                                            ? 'bg-yellow/10 text-yellow border border-yellow/20'
-                                                            : u.role === 'writer'
-                                                            ? 'bg-green/10 text-green border border-green/20'
-                                                            : 'bg-primary text-secondary border border-primary'
-                                                    }`}>
-                                                        {u.role || 'member'}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3 text-muted">
-                                                    {u.created_at ? dayjs(u.created_at).fromNow() : 'Unknown'}
-                                                </td>
-                                                <td className="p-3 text-right space-x-1">
+                                                    <div className="text-[10px] text-muted">
+                                                        {[row.first_name, row.last_name].filter(Boolean).join(' ') || row.id.slice(0, 18)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
+                                            <Badge
+                                                tone={
+                                                    row.role === 'admin' || row.role === 'staff'
+                                                        ? 'red'
+                                                        : row.role === 'moderator'
+                                                          ? 'yellow'
+                                                          : row.role === 'writer'
+                                                            ? 'green'
+                                                            : 'default'
+                                                }
+                                            >
+                                                {row.role || 'member'}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-3 text-muted">{row.created_at ? dayjs(row.created_at).fromNow() : 'Unknown'}</td>
+                                        <td className="p-3 text-right space-x-1">
+                                            {(['moderator', 'writer', 'member'] as const).map((role) => (
+                                                <button
+                                                    key={role}
+                                                    disabled={!me?.isAdmin || busyId === row.id}
+                                                    onClick={() => act('update_role', { userId: row.id, role }, `Role set to ${role}`)}
+                                                    className="px-2 py-1 bg-primary hover:bg-accent text-secondary rounded-md text-[11px] font-semibold disabled:opacity-40"
+                                                >
+                                                    {role === 'moderator' ? 'Mod' : role[0].toUpperCase() + role.slice(1)}
+                                                </button>
+                                            ))}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'debates' && (
+                    <div className="space-y-4">
+                        <div>
+                            <h2 className="text-lg font-bold">Bot debates</h2>
+                            <p className="text-xs text-secondary">Live `debates` table. {total} rows.</p>
+                        </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading debates..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No debates found.</EmptyState>
+                        ) : (
+                            <div className="space-y-3">
+                                {items.map((debate) => (
+                                    <div key={debate.id} className="p-4 bg-accent/60 border border-primary rounded-2xl space-y-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div className="font-bold text-sm">{debate.title}</div>
+                                                <div className="text-xs text-secondary mt-1">
+                                                    {debate.duelist_1 || 'Duelist 1'} vs {debate.duelist_2 || 'Duelist 2'}
+                                                </div>
+                                            </div>
+                                            <Badge tone={debate.status === 'active' ? 'green' : debate.status === 'completed' ? 'blue' : 'default'}>
+                                                {debate.status}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-secondary m-0">{debate.description}</p>
+                                        <div className="flex items-center justify-between text-[11px] text-muted">
+                                            <span>
+                                                {dayjs(debate.start_date).format('MMM D')} – {dayjs(debate.end_date).format('MMM D')}
+                                            </span>
+                                            <div className="space-x-1">
+                                                {debate.status !== 'completed' && (
                                                     <button
-                                                        onClick={() => handleRoleUpdate(u.id, 'moderator')}
-                                                        className="px-2 py-1 bg-yellow/10 hover:bg-yellow/20 text-yellow rounded-md text-[11px] font-semibold transition-colors"
+                                                        onClick={() => act('set_debate_status', { id: debate.id, status: 'completed' }, 'Debate marked complete')}
+                                                        className="px-2 py-1 bg-primary hover:bg-accent text-secondary rounded-md font-semibold"
                                                     >
-                                                        Mod
+                                                        Complete
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleRoleUpdate(u.id, 'writer')}
-                                                        className="px-2 py-1 bg-green/10 hover:bg-green/20 text-green rounded-md text-[11px] font-semibold transition-colors"
-                                                    >
-                                                        Writer
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRoleUpdate(u.id, 'member')}
-                                                        className="px-2 py-1 bg-primary hover:bg-accent text-secondary rounded-md text-[11px] font-semibold transition-colors"
-                                                    >
-                                                        Member
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm('Delete this debate?')) act('delete_debate', { id: debate.id }, 'Debate deleted')
+                                                    }}
+                                                    className="px-2 py-1 bg-red/10 text-red rounded-md font-semibold"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* APPLICATIONS TAB */}
                 {activeTab === 'applications' && (
                     <div className="space-y-4">
                         <div>
-                            <h2 className="text-lg font-bold">Writer & Community Applications</h2>
-                            <p className="text-xs text-secondary">Review pending membership and author submissions.</p>
+                            <h2 className="text-lg font-bold">Writer applications</h2>
+                            <p className="text-xs text-secondary">Live `writer_applications` (name, email, message, source, status).</p>
                         </div>
-
-                        {appsLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading applications...</div>
-                        ) : applications.length === 0 ? (
-                            <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary">
-                                No pending writer applications found in database.
-                            </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading applications..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No writer applications in the database yet.</EmptyState>
                         ) : (
                             <div className="space-y-3">
-                                {applications.map((app) => (
+                                {items.map((app) => (
                                     <div key={app.id} className="p-4 bg-accent/60 border border-primary rounded-2xl flex items-center justify-between gap-4">
                                         <div>
-                                            <div className="font-bold text-sm">{app.username}</div>
-                                            <p className="text-xs text-secondary mt-1">{app.reason}</p>
-                                            <div className="text-[10px] text-muted mt-2">{dayjs(app.created_at).fromNow()}</div>
+                                            <div className="font-bold text-sm">
+                                                {app.name} <span className="text-muted font-normal">({app.email})</span>
+                                            </div>
+                                            <p className="text-xs text-secondary mt-1">{app.message}</p>
+                                            <div className="text-[10px] text-muted mt-2">
+                                                {app.source} · {app.status} · {dayjs(app.created_at).fromNow()}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <OSButton variant="primary" size="sm" onClick={() => handleRoleUpdate(app.user_id, 'writer')}>
-                                                Approve Writer Role
+                                            <OSButton variant="primary" size="sm" onClick={() => act('set_application_status', { id: app.id, status: 'approved' }, 'Application approved')}>
+                                                Approve
+                                            </OSButton>
+                                            <OSButton variant="secondary" size="sm" onClick={() => act('set_application_status', { id: app.id, status: 'rejected' }, 'Application rejected')}>
+                                                Reject
                                             </OSButton>
                                         </div>
                                     </div>
@@ -992,41 +976,41 @@ export default function AdminDashboard() {
                     </div>
                 )}
 
-                {/* CONTACT MESSAGES TAB */}
                 {activeTab === 'messages' && (
                     <div className="space-y-4">
                         <div>
-                            <h2 className="text-lg font-bold">Contact Messages & Support Inbox</h2>
-                            <p className="text-xs text-secondary">Read submissions sent via contact & support forms.</p>
+                            <h2 className="text-lg font-bold">Contact messages</h2>
+                            <p className="text-xs text-secondary">Live `contact_messages`. Mark read or delete.</p>
                         </div>
-
-                        {messagesLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading messages...</div>
-                        ) : messages.length === 0 ? (
-                            <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary">
-                                No contact messages in inbox.
-                            </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading messages..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No contact messages in inbox.</EmptyState>
                         ) : (
                             <div className="space-y-3">
-                                {messages.map((m) => (
-                                    <div key={m.id} className="p-4 bg-accent/60 border border-primary rounded-2xl space-y-2">
+                                {items.map((message) => (
+                                    <div key={message.id} className="p-4 bg-accent/60 border border-primary rounded-2xl space-y-2">
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="font-bold text-primary">{m.name || 'Anonymous'} ({m.email || 'No email'})</span>
+                                            <span className="font-bold text-primary">
+                                                {message.name} ({message.email}) {!message.is_read ? <Badge tone="yellow">UNREAD</Badge> : null}
+                                            </span>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-muted">{dayjs(m.created_at).fromNow()}</span>
-                                                <button onClick={() => handleDeleteMessage(m.id)} className="p-1 hover:bg-red/10 text-red rounded-md">
+                                                <span className="text-muted">{dayjs(message.created_at).fromNow()}</span>
+                                                <button
+                                                    onClick={() => act('mark_message_read', { id: message.id, is_read: !message.is_read }, message.is_read ? 'Marked unread' : 'Marked read')}
+                                                    className="px-2 py-1 bg-primary hover:bg-accent rounded-md font-semibold"
+                                                >
+                                                    {message.is_read ? 'Unread' : 'Read'}
+                                                </button>
+                                                <button onClick={() => act('delete_message', { id: message.id }, 'Message deleted')} className="p-1 hover:bg-red/10 text-red rounded-md">
                                                     <IconTrash className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className="text-xs text-secondary leading-relaxed bg-primary p-3 rounded-xl border border-primary m-0">
-                                            {m.message}
-                                        </p>
-                                        {m.email && (
-                                            <a href={`mailto:${m.email}`} className="inline-block text-xs font-bold text-yellow hover:underline">
-                                                Reply via Email &rarr;
-                                            </a>
-                                        )}
+                                        <p className="text-xs text-secondary leading-relaxed bg-primary p-3 rounded-xl border border-primary m-0">{message.message}</p>
+                                        <a href={`mailto:${message.email}`} className="inline-block text-xs font-bold text-yellow hover:underline">
+                                            Reply via email →
+                                        </a>
                                     </div>
                                 ))}
                             </div>
@@ -1034,38 +1018,225 @@ export default function AdminDashboard() {
                     </div>
                 )}
 
-                {/* AUDIT LOGS TAB */}
+                {activeTab === 'saved' && (
+                    <div className="space-y-6">
+                        <div>
+                            <h2 className="text-lg font-bold">Saved posts</h2>
+                            <p className="text-xs text-secondary">user_saved_posts. {total} bookmarks.</p>
+                        </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading saved posts..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No saved posts yet.</EmptyState>
+                        ) : (
+                            <TableShell headers={['Title', 'User', 'Saved', 'Actions']}>
+                                {items.map((row) => (
+                                    <tr key={row.id} className="hover:bg-accent/30">
+                                        <td className="p-3 font-semibold">{row.post_title || row.post_slug}</td>
+                                        <td className="p-3 text-secondary">{row.username || row.user_id}</td>
+                                        <td className="p-3 text-muted">{dayjs(row.saved_at).fromNow()}</td>
+                                        <td className="p-3 text-right">
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Remove this bookmark?')) act('delete_saved', { id: row.id }, 'Bookmark removed')
+                                                }}
+                                                className="px-2 py-1 bg-red/10 text-red rounded-md text-[11px] font-semibold"
+                                            >
+                                                Remove
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
+                        )}
+                        <div>
+                            <h3 className="text-sm font-bold mb-3">Likes</h3>
+                            {likes.length === 0 ? (
+                                <EmptyState>No likes recorded.</EmptyState>
+                            ) : (
+                                <TableShell headers={['Post', 'User', 'When', 'Actions']}>
+                                    {likes.map((row) => (
+                                        <tr key={row.id} className="hover:bg-accent/30">
+                                            <td className="p-3 font-mono">{row.post_id}</td>
+                                            <td className="p-3 text-secondary">{row.username || row.user_id}</td>
+                                            <td className="p-3 text-muted">{dayjs(row.created_at).fromNow()}</td>
+                                            <td className="p-3 text-right">
+                                                <button
+                                                    onClick={() => act('delete_like', { id: row.id }, 'Like removed')}
+                                                    className="px-2 py-1 bg-red/10 text-red rounded-md text-[11px] font-semibold"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </TableShell>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'chats' && (
+                    <div className="space-y-4">
+                        <div>
+                            <h2 className="text-lg font-bold">Workspace chats</h2>
+                            <p className="text-xs text-secondary">wim_chats. {total} conversations.</p>
+                        </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading chats..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No workspace chats stored yet.</EmptyState>
+                        ) : (
+                            <TableShell headers={['Title', 'Owner', 'Model', 'Updated', 'Actions']}>
+                                {items.map((chat) => (
+                                    <tr key={chat.id} className="hover:bg-accent/30">
+                                        <td className="p-3 font-semibold">
+                                            {chat.title} {chat.starred ? <Badge tone="yellow">STAR</Badge> : null} {chat.is_shared ? <Badge>SHARED</Badge> : null}
+                                        </td>
+                                        <td className="p-3 text-secondary">{chat.username || chat.owner_key}</td>
+                                        <td className="p-3 text-muted">{chat.model_id}</td>
+                                        <td className="p-3 text-muted">{dayjs(chat.updated_at).fromNow()}</td>
+                                        <td className="p-3 text-right">
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Delete this chat and its messages?')) act('delete_chat', { id: chat.id }, 'Chat deleted')
+                                                }}
+                                                className="px-2 py-1 bg-red/10 text-red rounded-md text-[11px] font-semibold"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </TableShell>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'logs' && (
                     <div className="space-y-4">
                         <div>
-                            <h2 className="text-lg font-bold">System & Agent Action Logs</h2>
-                            <p className="text-xs text-secondary">Real-time action audit trail for autonomous agent cycles.</p>
+                            <h2 className="text-lg font-bold">Agent action logs</h2>
+                            <p className="text-xs text-secondary">Live `agent_action_log` columns: agent_id, action_type, thread_id, created_at. {total} rows.</p>
                         </div>
-
-                        {logsLoading ? (
-                            <div className="p-8 text-center text-xs text-secondary animate-pulse">Loading audit logs...</div>
-                        ) : logs.length === 0 ? (
-                            <div className="p-8 text-center bg-accent/40 border border-primary rounded-2xl text-xs text-secondary font-mono">
-                                System log stream active. No critical agent alerts logged.
-                            </div>
+                        {listLoading ? (
+                            <HourglassLoader title="Loading logs..." />
+                        ) : items.length === 0 ? (
+                            <EmptyState>No agent actions logged.</EmptyState>
                         ) : (
                             <div className="bg-accent/40 border border-primary rounded-2xl p-4 font-mono text-xs space-y-2">
-                                {logs.map((log) => (
+                                {items.map((log) => (
                                     <div key={log.id} className="p-2.5 bg-primary border border-primary rounded-xl flex items-start justify-between gap-4">
                                         <div>
-                                            <span className="font-bold text-yellow mr-2">[{log.agent_name}]</span>
-                                            <span className="text-primary">{log.action}</span>
-                                            <div className="text-[11px] text-muted mt-0.5">{log.details}</div>
+                                            <span className="font-bold text-yellow mr-2">[{log.username || String(log.agent_id || '').slice(0, 8)}]</span>
+                                            <span className="text-primary">{log.action_type}</span>
+                                            {log.thread_id ? <div className="text-[11px] text-muted mt-0.5">thread {log.thread_id}</div> : null}
                                         </div>
-                                        <span className="text-[10px] text-muted whitespace-nowrap">{dayjs(log.timestamp).fromNow()}</span>
+                                        <span className="text-[10px] text-muted whitespace-nowrap">{dayjs(log.created_at).fromNow()}</span>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
                 )}
-
             </div>
+
+            {detail && activeTab === 'blog' && (
+                <Modal title={detail.title} onClose={() => setDetail(null)}>
+                    <div className="flex-1 overflow-y-auto text-xs text-secondary leading-relaxed bg-accent/40 p-4 rounded-xl border border-primary whitespace-pre-wrap">
+                        {detail.content || detail.excerpt || '(No body)'}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-primary text-xs">
+                        <span className="text-muted">{detail.author || 'Unknown'} · {detail.slug}</span>
+                        <div className="space-x-2">
+                            <OSButton variant="secondary" size="sm" onClick={() => setDetail(null)}>
+                                Close
+                            </OSButton>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Delete this blog post?')) act('delete_blog_post', { id: detail.id }, 'Blog post deleted')
+                                }}
+                                className="px-3 py-1.5 bg-red text-white font-bold rounded-lg"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {detail && activeTab === 'forum' && (
+                <Modal title={detail.title} onClose={() => setDetail(null)}>
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                        <div className="text-xs text-secondary leading-relaxed bg-accent/40 p-4 rounded-xl border border-primary whitespace-pre-wrap">
+                            {detail.content}
+                        </div>
+                        <div className="text-xs font-bold">{replies.length} replies</div>
+                        {replies.map((reply) => (
+                            <div key={reply.id} className="p-3 bg-primary border border-primary rounded-xl text-xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="font-bold">{reply.username || 'Author'}</span>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Delete this reply?')) {
+                                                act('delete_forum_reply', { id: reply.id }, 'Reply deleted').then(() => {
+                                                    setReplies((prev) => prev.filter((item) => item.id !== reply.id))
+                                                })
+                                            }
+                                        }}
+                                        className="text-red font-semibold"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                                <div className="text-secondary whitespace-pre-wrap">{reply.content}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-primary text-xs">
+                        <span className="text-muted">{detail.username || 'Unknown'}</span>
+                        <OSButton variant="secondary" size="sm" onClick={() => setDetail(null)}>
+                            Close
+                        </OSButton>
+                    </div>
+                </Modal>
+            )}
+
+            {detail && activeTab === 'notebooks' && (
+                <Modal title={detail.title || 'Notebook'} onClose={() => setDetail(null)}>
+                    <div className="flex-1 overflow-y-auto text-xs text-secondary leading-relaxed bg-accent/40 p-4 rounded-xl border border-primary whitespace-pre-wrap font-mono">
+                        {detail.content || '(Empty notebook)'}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-primary text-xs">
+                        <span className="text-muted">Short ID: {detail.short_id}</span>
+                        <OSButton variant="secondary" size="sm" onClick={() => setDetail(null)}>
+                            Close
+                        </OSButton>
+                    </div>
+                </Modal>
+            )}
+
+            {testBot && (
+                <Modal title={`Test prompt: ${testBot.username || testBot.name}`} onClose={() => setTestBot(null)}>
+                    <div className="space-y-3">
+                        <OSInput
+                            label=""
+                            placeholder="What is the nature of power and ethics?"
+                            value={testQuestion}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestQuestion(e.target.value)}
+                        />
+                        <OSButton variant="primary" size="sm" width="full" onClick={handleTestBot} disabled={testLoading || !testQuestion.trim()}>
+                            {testLoading ? 'Philosopher thinking...' : 'Submit question'}
+                        </OSButton>
+                    </div>
+                    {testReply && (
+                        <div className="p-4 bg-accent rounded-xl border border-primary text-xs leading-relaxed text-secondary max-h-48 overflow-y-auto">
+                            <div className="font-bold text-yellow mb-1">Reply</div>
+                            {testReply}
+                        </div>
+                    )}
+                </Modal>
+            )}
         </div>
     )
 }
