@@ -13,6 +13,18 @@ import postsClassicIcon from '../../images/icons/posts-classic.png'
 import postsModernIcon from '../../images/icons/posts-modern.png'
 import signInClassicIcon from '../../images/icons/signin-classic.png'
 import signInModernIcon from '../../images/icons/signin-modern.png'
+import homeClassicIcon from '../../images/icons/home-classic.png'
+import homeModernIcon from '../../images/icons/home-modern.png'
+import bangClassicIcon from '../../images/icons/bang-classic.png'
+import bangModernIcon from '../../images/icons/bang-modern.png'
+import bangBlackClassicIcon from '../../images/icons/bang-black-classic.png'
+import bangBlackModernIcon from '../../images/icons/bang-black-modern.png'
+import bangLightClassicIcon from '../../images/icons/bang-light-classic.png'
+import bangLightModernIcon from '../../images/icons/bang-light-modern.png'
+import bangLightSharpClassicIcon from '../../images/icons/bang-light-sharp-classic.png'
+import bangLightSharpModernIcon from '../../images/icons/bang-light-sharp-modern.png'
+import bangLightCutClassicIcon from '../../images/icons/bang-light-cut-classic.png'
+import bangLightCutModernIcon from '../../images/icons/bang-light-cut-modern.png'
 
 // Next/webpack PNG imports are `{ src }` objects, not URL strings
 const importedSrc = (mod: unknown): string => {
@@ -231,6 +243,30 @@ const PRODUCT_ICON_MAP = {
     signIn: {
         classic: importedSrc(signInClassicIcon),
         default: importedSrc(signInModernIcon),
+    },
+    home: {
+        classic: importedSrc(homeClassicIcon),
+        default: importedSrc(homeModernIcon),
+    },
+    bang: {
+        classic: importedSrc(bangClassicIcon),
+        default: importedSrc(bangModernIcon),
+    },
+    bangBlack: {
+        classic: importedSrc(bangBlackClassicIcon),
+        default: importedSrc(bangBlackModernIcon),
+    },
+    bangLight: {
+        classic: importedSrc(bangLightClassicIcon),
+        default: importedSrc(bangLightModernIcon),
+    },
+    bangLightSharp: {
+        classic: importedSrc(bangLightSharpClassicIcon),
+        default: importedSrc(bangLightSharpModernIcon),
+    },
+    bangLightCut: {
+        classic: importedSrc(bangLightCutClassicIcon),
+        default: importedSrc(bangLightCutModernIcon),
     },
 } as const satisfies Record<string, AppIconVariants>
 

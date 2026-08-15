@@ -330,7 +330,7 @@ function TaskBarMenu() {
                                 className="flex items-center p-1.5 rounded hover:bg-primary/10 transition-colors"
                                 aria-label="worldinmaking home"
                             >
-                                <WimLogo className="size-5 text-primary transition-transform hover:scale-105" />
+                                <WimLogo className="size-6 transition-transform hover:scale-105" />
                             </Link>
                         </div>
                         <aside data-scheme="secondary" className="flex items-center gap-0.5 py-1">

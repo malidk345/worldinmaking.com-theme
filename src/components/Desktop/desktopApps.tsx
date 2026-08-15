@@ -52,6 +52,12 @@ export const useProductLinks = () => {
     return React.useMemo(
         () => [
             {
+                label: 'Home',
+                Icon: <AppIcon name="home" />,
+                url: '/home',
+                source: 'desktop',
+            },
+            {
                 label: 'Community',
                 Icon: <AppIcon name="forums" />,
                 url: '/community',

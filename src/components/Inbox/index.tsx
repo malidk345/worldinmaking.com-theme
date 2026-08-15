@@ -401,9 +401,6 @@ const ForumSidebar = ({
                 />
             </div>
             <ScrollArea className="hidden @2xl:block flex-1 min-h-0 p-2">
-                <p className="px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-secondary">
-                    Topics
-                </p>
                 <div className="flex flex-col gap-px">
                     {FORUM_TOPICS.map((topic) => (
                         <OSButton

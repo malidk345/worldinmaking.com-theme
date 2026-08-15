@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import SEO from 'components/seo'
 import OSButton from 'components/OSButton'
+import WimLogo from 'components/WimLogo'
 import { updatePassword } from 'lib/wim-auth'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
 
@@ -61,6 +62,12 @@ export default function ResetPasswordPage() {
         <div className="min-h-screen bg-primary text-primary flex items-center justify-center p-6">
             <SEO title="Set password" noindex />
             <div className="w-full max-w-md bg-primary border border-primary rounded-xl p-6 shadow-2xl">
+                <div className="flex items-center gap-2 mb-4">
+                    <WimLogo className="size-7" />
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-muted">
+                        WorldInMaking
+                    </span>
+                </div>
                 <h1 className="text-lg font-bold m-0 mb-2">Set a password</h1>
                 <p className="text-sm text-secondary m-0 mb-5">
                     Use this password next time instead of a magic link.

@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
+import { resolvePhilosopherAvatar } from './philosopher-avatar'
 
 export { supabase, fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY }
 
@@ -67,7 +68,7 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
     const profileObj = Array.isArray(post.profiles) ? (post.profiles as any)[0] : post.profiles
     const username = profileObj?.username || 'Community Member'
     const avatarUrl =
-        profileObj?.avatar_url ||
+        resolvePhilosopherAvatar(profileObj?.username, profileObj?.avatar_url) ||
         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
 
     const isComment = post.title?.startsWith('comment_')
@@ -243,7 +244,7 @@ export async function fetchSupabasePostBySlug(slug: string) {
                     const profileObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
                     const username = profileObj?.username || 'Philosopher / Community Member'
                     const avatarUrl =
-                        profileObj?.avatar_url ||
+                        resolvePhilosopherAvatar(profileObj?.username, profileObj?.avatar_url) ||
                         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
                     return {
                         id: r.id,

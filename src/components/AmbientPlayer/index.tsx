@@ -45,9 +45,10 @@ export default function AmbientPlayer() {
         const currentStation = STATIONS[stationIndex]
         const audio = new Audio()
         audio.volume = 0.6
+        audio.preload = 'none'
         audio.src = currentStation.url
 
-        const handleError = (e: any) => {
+        const handleError = (e: Event) => {
             console.warn('Audio stream error for station:', currentStation.name, e)
             if (stationIndex < STATIONS.length - 1) {
                 setStationIndex((prev) => prev + 1)
@@ -67,10 +68,11 @@ export default function AmbientPlayer() {
 
         const handlePause = () => {
             setIsPlaying(false)
+            setIsLoading(false)
         }
 
         const handleWaiting = () => {
-            setIsLoading(true)
+            if (!audio.paused) setIsLoading(true)
         }
 
         audio.addEventListener('error', handleError)
@@ -80,30 +82,45 @@ export default function AmbientPlayer() {
 
         audioRef.current = audio
 
-        if (shouldPlay) {
-            setIsLoading(true)
-            audio.play().catch((err) => {
-                console.warn('Playback blocked or failed:', err)
-                handleError(err)
-            })
-        }
-
         return () => {
             audio.removeEventListener('error', handleError)
             audio.removeEventListener('playing', handlePlaying)
             audio.removeEventListener('pause', handlePause)
             audio.removeEventListener('waiting', handleWaiting)
             audio.pause()
-            audio.src = ''
+            audio.removeAttribute('src')
+            audio.load()
+            audioRef.current = null
         }
-    }, [mounted, stationIndex, shouldPlay])
+    }, [mounted, stationIndex])
+
+    useEffect(() => {
+        const audio = audioRef.current
+        if (!audio) return
+
+        if (shouldPlay) {
+            setIsLoading(true)
+            audio.play().catch((err) => {
+                console.warn('Playback blocked or failed:', err)
+                setShouldPlay(false)
+                setIsPlaying(false)
+                setIsLoading(false)
+                setHasError(true)
+            })
+            return
+        }
+
+        audio.pause()
+        setIsPlaying(false)
+        setIsLoading(false)
+    }, [shouldPlay, stationIndex])
 
     const togglePlay = () => {
         if (shouldPlay) {
             setShouldPlay(false)
-            if (audioRef.current) {
-                audioRef.current.pause()
-            }
+            setIsPlaying(false)
+            setIsLoading(false)
+            audioRef.current?.pause()
         } else {
             setHasError(false)
             setIsLoading(true)

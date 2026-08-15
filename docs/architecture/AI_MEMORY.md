@@ -149,6 +149,10 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-129` | Stream 2 | Archive: move Restore all; add per-icon restore menu | `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-130` | Stream 3 | Desktop Sign In icon becomes profile photo after login | `desktopApps.tsx`, `AppIcon.tsx`, `src/images/icons/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-131` | Stream 4 | Password auth + Google OAuth (modal, callback, reset) | `wim-auth.ts`, `AuthModal.tsx`, `useUser.tsx`, `pages/auth/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-132` | Stream 3 | Desktop Home icon (content later) | `src/images/icons/home-*.png`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-133` | Stream 3 | Home window landing page in site chrome | `src/components/Home/HomeWindow.tsx`, `WindowRouter.tsx` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-134` | Stream 3 | Pixel-art navy bang mark (taskbar experiment) | `src/components/WimLogo/index.tsx`, `src/components/TaskBarMenu/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-135` | Stream 3 | Desktop-style painted bang icon (keep pixel header) | `src/images/icons/bang-*.png`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -282,6 +286,175 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 205 - Pixel busts on philosopher profiles
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Rand locked to image 52. Sprites served at `/philosophers/{id}.png`. Profile/forum/mentions/Ask AI resolve those paths. Live Supabase `profiles.avatar_url` updated for all 16 bots (Shannon Vance left alone).
+- **Modified Files:** `src/lib/philosopher-avatar.ts`, `src/lib/philosopher-pixels.ts`, `useProfileData.ts`, `useQuestions.tsx`, `useCommunityProfiles.ts`, `supabaseCommunity.ts`, `forum-mentions.ts`, `Avatar.tsx`, `api/philosopher-bots.ts`, `notebook-app/lib/philosophers.ts`, `public/philosophers/*`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 204 - All 16 philosopher pixel busts
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Full roster in Marx #32 SNES-bust style (64-grid). Files `src/images/philosophers/*-pixel.png`. Chat picker uses them via `philosopher-pixels.ts`.
+- **Modified Files:** `src/images/philosophers/*`, `src/lib/philosopher-pixels.ts`, `src/components/ClaudeWorkspaceChat/data/initialData.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 203 - Marx pixel portrait
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** First philosopher sprite: Karl Marx bust (gray hair, full beard, black coat, red bow). 64-grid pixel art at `src/images/philosophers/marx-pixel-64.png` and nearest-up `marx-pixel.png`. Not wired to chat/forum yet.
+- **Modified Files:** `src/images/philosophers/marx-pixel.png`, `src/images/philosophers/marx-pixel-64.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 202 - Simpler Home: roof + body + line door
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Home icon is front-on: small coral roof, cream body, door as outline only, no window. Two fills.
+- **Modified Files:** `src/images/icons/home-classic.png`, `src/images/icons/home-modern.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 201 - Front-facing navy Home icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the green/cream house. New Home icon is dead-on front: navy roof, sky walls, navy door, one window. Same `home-classic` / `home-modern` slots.
+- **Modified Files:** `src/images/icons/home-classic.png`, `src/images/icons/home-modern.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 200 - Official mark rolled out
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Faceted light-navy bang (white top) is the brand. `WimLogo` now renders that PNG. Placed on taskbar, Home, desktop landing, Auth modal, signup, reset-password, auth callback. Favicon + `defaultImage` + `/brand/wim-mark.png`.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `TaskBarMenu/index.tsx`, `Home/HomeWindow.tsx` (via WimLogo), `pages/desktop.tsx` (via WimLogo), `Auth/AuthModal.tsx`, `pages/signup.tsx`, `pages/reset-password.tsx`, `pages/auth/callback.tsx`, `pages/_document.tsx`, `components/seo.tsx`, `static/brand/wim-mark.*`, `public/brand/wim-mark.*`, `src/images/icons/wim-mark.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 199 - Header tries image-22 faceted bang
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Image 22 (cut-facet light navy `!`) saved as `bang-light-cut-*.png` / `AppIcon` `bangLightCut`. Taskbar now uses that. Rounded `bangLight` and box `bangLightSharp` left intact.
+- **Modified Files:** `src/images/icons/bang-light-cut-*.png`, `src/components/OSIcons/AppIcon.tsx`, `src/components/TaskBarMenu/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 198 - Sharp-corner light-navy bang
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** New faceted-block `!` (hard 90° corners, cube dot) in the light-navy palette. Existing rounded bang / black / light files and the header `bangLight` were not changed. `AppIcon` name: `bangLightSharp`.
+- **Modified Files:** `src/images/icons/bang-light-sharp-*.png`, `src/components/OSIcons/AppIcon.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 197 - Black and lighter-navy bang variants
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Same painted `!` remapped to black (gray side plane) and one-notch lighter navy. Header still uses `bang`. New `AppIcon` names: `bangBlack`, `bangLight`.
+- **Modified Files:** `src/images/icons/bang-black-*.png`, `src/images/icons/bang-light-*.png`, `src/components/OSIcons/AppIcon.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 196 - Painted bang in the header
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Taskbar home mark uses `AppIcon` `bang` (desktop-style painted `!`) at `size-5`. Pixel `WimLogo` left in the component; Home window still uses the vector/pixel mark as before.
+- **Modified Files:** `src/components/TaskBarMenu/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 195 - Desktop-style painted bang icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Header pixel bang stays. New 3/4 cartoon `!` (thick black outline, navy + sky side, cream spec) as `AppIcon` `bang`, classic/modern 128 PNGs. Desktop shows it as **WIM** (opens `/home`) next to the house Home icon.
+- **Modified Files:** `src/images/icons/bang-classic.png`, `src/images/icons/bang-modern.png`, `src/components/OSIcons/AppIcon.tsx`, `src/components/Desktop/desktopApps.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 194 - Pixel mark is the brand bang, sampled
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dropped the font-style `!`. Pixel variant is a 16×16 sample of the leaning navy bang (same silhouette, `#1D4ED8` + right-side `#93C5FD`). Taskbar still on `pixel` for comparison.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 193 - Real 16×16 pixel-art `!`
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the 8×8 brick with a 16×16 capsule bang: rounded stem, gap, round dot, top-left highlight `#93C5FD`, body `#1D4ED8`, bottom-right shade `#1E40AF`. No black outline. One-cell italic only.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 192 - Pixel bang is a `!` again, slight left lean
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Recumbent sprite misread. Pixel mark is a standing bang again; stem sits one cell left of the dot (hafif sola). Same navy/light, no black stroke.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 191 - Pixel bang lies horizontal
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Pixel mark is recumbent: thick stem left, taper right, highlight on the top edge, square dot on the right. Same navy/light palette, no black stroke.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 190 - Pixel-art bang on the taskbar
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added `WimLogo` `variant="pixel"` — 8×8 navy/light sprite of the tapered leaning bang, no black stroke. Taskbar uses it so it can be compared; Home still uses the even vector bang.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `src/components/TaskBarMenu/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual — header mark only. `bang` / `taper` left intact.
+
+### Entry 189 - WIM mark is a navy bang
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dropped the world/page mark. Logo is a leaning navy exclamation (`#1D4ED8` + `#93C5FD` side), no black stroke. SVG in `WimLogo` / `static/brand/wim-mark.svg`; painted PNG at `src/images/icons/wim-mark.png`.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `static/brand/wim-mark.svg`, `src/images/icons/wim-mark.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 188 - WIM SVG mark file
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Authored a 32-viewBox SVG lockup (`static/brand/wim-mark.svg`) and pointed `WimLogo` at the same paths. Stroke-only, `currentColor`.
+- **Modified Files:** `static/brand/wim-mark.svg`, `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 187 - WIM mark as one silhouette
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The open-ring + tiny window read as two UI icons glued together. Mark is now a single silhouette: unfinished world closed by a dog-eared page. Still `currentColor`, still `WimLogo`.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 186 - WIM mark is no longer a wire globe
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the equator/reticle globe. New mark is an open ring (world still being drawn) with a small titled page at the gap. Same `WimLogo` slot — taskbar, Home, desktop page.
+- **Modified Files:** `src/components/WimLogo/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 185 - Header music icon resets when stopped
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** AmbientPlayer kept `isPlaying`/`isLoading` after pause because the audio effect remounted on `shouldPlay` and dropped the pause listener. Stop now clears both flags and the icon returns to headphones.
+- **Modified Files:** `src/components/AmbientPlayer/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 184 - Home live tour opens real windows
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Home’s primary demo is live: “Open notebook + AI” snaps the real notebook and Ask AI; the right pane loads the latest community thread from Supabase. Scripted walkthrough is folded under a details map.
+- **Modified Files:** `src/components/Home/LiveTour.tsx`, `src/components/Home/HomeWindow.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 183 - Guided WIM product demo on Home
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Home is a three-scene demo (desk → notebook+AI insert → hourly seminar you can reply to) inside fake window chrome, with Play walkthrough and links to the real apps.
+- **Modified Files:** `src/components/Home/HomeWindow.tsx`, `src/components/Home/WimDeskDemo.tsx`, `src/components/Home/demo/*`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 182 - Home is an interactive desk demo
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Home now leads with a live markdown notebook (write/preview, insert chips) and a tap-to-speak philosopher seminar (Nietzsche / Arendt / Marx / Rand). CTA to real notebooks, WIM AI, and the forum.
+- **Modified Files:** `src/components/Home/HomeWindow.tsx`, `src/components/Home/NotebookDemo.tsx`, `src/components/Home/SeminarDemo.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 181 - Home landing inside the window
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `/home` is a glass landing: WIM pitch, Sign in / notebook / forum actions, four desk app tiles (Posts, Notebooks, Community, WIM AI), and a short three-step house explainer. No emoji marketing dump.
+- **Modified Files:** `src/components/Home/HomeWindow.tsx`, `src/pages/home.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 180 - Home icon simplified
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Home is now triangle roof + square body + one door. No chimney, windows, or porch. Same cream/green.
+- **Modified Files:** `src/images/icons/home-modern.png`, `src/images/icons/home-classic.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 179 - Home icon redrawn
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the lilac 3/4 cube house. New Home is a front-facing cottage, cream walls, site-green roof and chimney. Same AppIcon `home` slot.
+- **Modified Files:** `src/images/icons/home-modern.png`, `src/images/icons/home-classic.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 178 - Desktop Home icon
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added a cream house with lilac roof as Home on the left desktop. Opens `/home` with a stub pane; content still TBD with the user.
+- **Modified Files:** `src/images/icons/home-modern.png`, `src/images/icons/home-classic.png`, `src/components/OSIcons/AppIcon.tsx`, `src/components/Desktop/desktopApps.tsx`, `src/components/Archive/ArchiveWindow.tsx`, `src/context/App.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 177 - Google OAuth credentials applied on Supabase
 - **Date:** 2026-08-15

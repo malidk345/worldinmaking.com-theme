@@ -7,6 +7,7 @@
 export const runtime = 'edge'
 
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
+import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
 
 function json(body: Record<string, unknown>, status = 200, cache?: string) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -64,7 +65,7 @@ export default async function handler(req: Request) {
                 return {
                     id: row.id as string,
                     username,
-                    avatar_url: '',
+                    avatar_url: resolvePhilosopherAvatar(username, ''),
                 }
             })
             .filter(Boolean)
@@ -83,7 +84,11 @@ function mapLegacyBots(raw: unknown) {
             const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
             const username = String(profile?.username || '').trim()
             if (!username || username.toLowerCase() === 'wimbot') return null
-            return { id: row.id as string, username, avatar_url: String(profile?.avatar_url || '') }
+            return {
+                id: row.id as string,
+                username,
+                avatar_url: resolvePhilosopherAvatar(username, profile?.avatar_url),
+            }
         })
         .filter(Boolean)
 }

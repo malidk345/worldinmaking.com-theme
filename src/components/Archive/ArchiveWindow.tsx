@@ -16,7 +16,8 @@ dayjs.extend(relativeTime)
 const PINNED_APPS_KEY = 'wim_os_desktop_pinned_items'
 
 const FALLBACK_APPS: Record<string, AppItem> = {
-    '/': { label: 'Home', Icon: <AppIcon name="doc" />, url: '/' },
+    '/': { label: 'Home', Icon: <AppIcon name="home" />, url: '/home' },
+    '/home': { label: 'Home', Icon: <AppIcon name="home" />, url: '/home' },
     '/editor': { label: 'Editor', Icon: <AppIcon name="typewriter" />, url: '/editor' },
     '/community/new': { label: 'Write Post', Icon: <AppIcon name="notebook" />, url: '/community/new' },
     '/customers': { label: 'Customers', Icon: <AppIcon name="spreadsheet" />, url: '/customers' },

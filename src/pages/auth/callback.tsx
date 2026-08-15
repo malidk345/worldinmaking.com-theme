@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
+import WimLogo from 'components/WimLogo'
 
 export default function AuthCallbackPage() {
     const router = useRouter()
@@ -34,7 +35,10 @@ export default function AuthCallbackPage() {
 
     return (
         <div className="min-h-screen bg-primary text-primary flex items-center justify-center p-6">
-            <p className="text-sm text-secondary m-0">{error || 'Signing you in…'}</p>
+            <div className="flex flex-col items-center gap-3">
+                <WimLogo className="size-9" />
+                <p className="text-sm text-secondary m-0">{error || 'Signing you in…'}</p>
+            </div>
         </div>
     )
 }

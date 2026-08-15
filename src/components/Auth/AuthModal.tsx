@@ -5,6 +5,7 @@ import { useUser, type User } from 'hooks/useUser'
 import { requestPasswordReset } from 'lib/wim-auth'
 import { supabase } from 'lib/supabase'
 import OSButton from 'components/OSButton'
+import WimLogo from 'components/WimLogo'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 
 type AuthView = 'sign-in' | 'sign-up' | 'forgot-password'
@@ -192,6 +193,12 @@ export default function AuthModal({
 
                     {/* Banner / Header */}
                     <div className="bg-[#FFF7E9] dark:bg-accent/40 border border-primary rounded mb-5 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <WimLogo className="size-7" />
+                            <span className="text-[11px] font-bold tracking-widest uppercase text-muted">
+                                WorldInMaking
+                            </span>
+                        </div>
                         <h4 className="m-0 text-base font-bold pb-1 text-primary">
                             {mode === 'sign-in' && 'Sign in to WorldInMaking'}
                             {mode === 'sign-up' && 'Create your account'}

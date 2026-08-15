@@ -62,6 +62,8 @@ export default function Document() {
                     name="viewport"
                     content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual"
                 />
+                <link rel="icon" href="/brand/wim-mark.png" type="image/png" />
+                <link rel="apple-touch-icon" href="/brand/wim-mark.png" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
             <body data-scheme="primary" data-skin="modern" data-wallpaper="hogzilla" suppressHydrationWarning>

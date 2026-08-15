@@ -34,7 +34,7 @@ const SITE_METADATA = {
     titleTemplate: '%s | WorldInMaking',
     defaultDescription: 'We make your product self-driving',
     siteUrl: 'https://posthog.com',
-    defaultImage: '',
+    defaultImage: '/brand/wim-mark.png',
     twitterUsername: '@posthog',
 }
 

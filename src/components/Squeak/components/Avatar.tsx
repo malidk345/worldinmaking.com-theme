@@ -2,8 +2,14 @@ import Link from 'components/Link'
 import React from 'react'
 
 const Image = ({ src, className = '' }: { src: string | null | undefined; className?: '' }) => {
+    const isPixel = typeof src === 'string' && src.includes('/philosophers/')
     return src ? (
-        <img className={`block object-cover rounded-full ${className}`} src={src} alt="" />
+        <img
+            className={`block rounded-full ${isPixel ? 'object-contain' : 'object-cover'} ${className}`}
+            src={src}
+            alt=""
+            style={isPixel ? { imageRendering: 'pixelated' } : undefined}
+        />
     ) : (
         <svg
             className={`bg-accent rounded-full ${className}`}

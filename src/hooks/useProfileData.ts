@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import { ProfileData, StrapiRecord } from 'lib/strapi'
 import { useUser } from 'hooks/useUser'
 import { supabase } from 'lib/supabase'
+import { resolvePhilosopherAvatar } from 'lib/philosopher-avatar'
 
 function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
     const username = dbProfile.username || 'user'
@@ -29,14 +30,17 @@ function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
             publishedAt: dbProfile.created_at || null,
             questionSubscriptions: { data: [] } as any,
             topicSubscriptions: { data: [] } as any,
-            avatar: dbProfile.avatar_url
-                ? ({
-                      data: {
-                          id: 0,
-                          attributes: { url: dbProfile.avatar_url },
-                      },
-                  } as any)
-                : undefined,
+            avatar: (() => {
+                const url = resolvePhilosopherAvatar(username, dbProfile.avatar_url)
+                return url
+                    ? ({
+                          data: {
+                              id: 0,
+                              attributes: { url },
+                          },
+                      } as any)
+                    : undefined
+            })(),
             achievements: [] as any,
             teams: { data: [] } as any,
         } as any,

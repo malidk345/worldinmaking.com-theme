@@ -30,6 +30,7 @@ function AuthWindow() {
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
+import HomeWindow from 'components/Home/HomeWindow'
 import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
@@ -48,6 +49,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/archive') {
         return <ArchiveWindow />
+    }
+
+    if (path === '/home') {
+        return <HomeWindow />
     }
 
     if (isAskAiPath(path)) {
