@@ -1178,9 +1178,10 @@ export async function generateWithGateway(params: {
     const runtimeEnv = params.env ?? getRuntimeEnv()
     const taskType = params.taskType ?? 'community_reply'
     const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
-    const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
+        const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
     const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
-
+    // @ts-ignore
+    const familyParams = { ...params, systemPrompt, userPrompt, deadline }
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
