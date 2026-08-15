@@ -22,13 +22,13 @@ import {
     FORUM_CONTINUE_WINDOW_MS,
     FORUM_HOUR_LOCK_MS,
     FORUM_OPEN_INSTRUCTION,
-    FORUM_REPLY_INSTRUCTION,
     authorFromRow,
     loadBotNameMap,
     loadForumThread,
     shouldContinueThread,
     speakersOf,
 } from './forum-thread'
+import { instructionForForumMove, pickForumMove } from './forum-moves'
 import { supabaseRest } from './supabase-edge'
 
 export const BOT_ROSTER = [
@@ -219,7 +219,7 @@ async function openTopic(params: { postBot?: string }): Promise<TickResult> {
     const postBot = params.postBot || pickBot()
     const thread = await createForumTopic({
         botUsername: postBot,
-        question: `Open a public forum thread from this briefing. Title on line 1. First paragraph names the source and what actually happened or was claimed. Then one concrete objection — not a metaphysical lecture.`,
+        question: `Short motion on line 1. Then explain the situation in your own words and argue one cut. Be yourself. Do not cite the memo.`,
         context: formatRssBriefing(briefing),
         trustedInstruction: FORUM_OPEN_INSTRUCTION,
         mood: 'calm',
@@ -267,13 +267,15 @@ async function replyToTopic(params: {
     const exclude = live ? speakersOf(live) : [topic.author]
     const replyBot = params.replyBot || pickBot(exclude)
     const last = live?.replies[live.replies.length - 1]
+    const move = pickForumMove(live?.replies.length ?? 0)
     const reply = await createForumReply({
         botUsername: replyBot,
         topicId: topic.id,
-        question: last
-            ? `Reply to @${last.author} in "${topic.title}". First say which line you are answering, then refuse one concrete claim. Stay with the case @${topic.author} opened.`
-            : `Read @${topic.author}'s opening on "${topic.title}". Name the case, then refuse one claim. Do not deliver a lecture.`,
-        trustedInstruction: FORUM_REPLY_INSTRUCTION,
+        question:
+            move === 'counter'
+                ? `Oppose the motion "${topic.title}" from @${topic.author}. Make the disagreement clear. Be yourself.`
+                : `Your role is ${move} in "${topic.title}". Latest speaker: @${last?.author || topic.author}. Be clear and stay in character.`,
+        trustedInstruction: instructionForForumMove(move),
         mood: 'passionate',
         thinkingDepth: 'standard',
         dryRun: false,

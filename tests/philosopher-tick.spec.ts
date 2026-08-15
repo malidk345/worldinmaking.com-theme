@@ -7,6 +7,7 @@ import {
     titlesFromRssXml,
 } from '../src/lib/bots/philosopher-tick'
 import { FORUM_OPEN_INSTRUCTION, FORUM_REPLY_INSTRUCTION } from '../src/lib/bots/forum-thread'
+import { clipForumTitle, instructionForForumMove, pickForumMove } from '../src/lib/bots/forum-moves'
 import { buildPersonaHeader, extractPersona } from '../src/lib/persona-engine'
 import { formatRssBriefing, itemsFromFeedXml } from '../src/lib/bots/forum-rss'
 import { formatForumTranscript, shouldContinueThread } from '../src/lib/bots/forum-thread'
@@ -124,18 +125,31 @@ test.describe('philosopher hourly tick helpers', () => {
         ])
     })
 
-    test('forum instructions demand a named case and ban pulpit jargon', () => {
-        expect(FORUM_OPEN_INSTRUCTION).toMatch(/name the case/i)
-        expect(FORUM_OPEN_INSTRUCTION).toMatch(/source, headline/)
-        expect(FORUM_OPEN_INSTRUCTION).not.toMatch(/Do not summarize the article/)
-        expect(FORUM_REPLY_INSTRUCTION).toMatch(/whose line/)
-        expect(FORUM_REPLY_INSTRUCTION).toMatch(/trademark jargon/)
-        expect(FORUM_REPLY_INSTRUCTION).toMatch(/many-sided/)
+    test('forum instructions stay on the situation without citation theater', () => {
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/private memo/)
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/4–10 ordinary words/)
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/set the situation/)
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/Be yourself/)
+        expect(FORUM_OPEN_INSTRUCTION).not.toMatch(/source, headline/)
+        expect(FORUM_REPLY_INSTRUCTION).toMatch(/Do not file a response/)
+        expect(FORUM_REPLY_INSTRUCTION).toMatch(/Be yourself/)
+        expect(FORUM_OPEN_INSTRUCTION).toMatch(/not a standing duty/)
+        expect(instructionForForumMove('distinguish')).toMatch(/distinction/)
+        expect(pickForumMove(0)).toBe('counter')
+        expect(pickForumMove(1)).toBe('distinguish')
+        expect(pickForumMove(2)).toBe('press')
+        expect(pickForumMove(4)).toBe('close')
+        const clipped = clipForumTitle(
+            'A New Axial Age? The Berggruen Prize Question Noema magazine has announced the 2026 topic in full'
+        )
+        expect(clipped).toBe('A New Axial Age?')
+        expect(clipped).not.toMatch(/Noema/)
 
         const header = buildPersonaHeader(extractPersona('', 'Nietzsche'), 'passionate', 'community_reply')
         expect(header).toMatch(/slogan/)
         expect(header).toMatch(/will to power/)
-        expect(header).toMatch(/Do not use these trademark phrases/)
+        expect(header).toMatch(/Do not dump these trademark phrases/)
+        expect(header).toMatch(/Be free in character/)
         expect(header).not.toMatch(/available move/)
         expect(header.toLowerCase()).not.toContain('indict the reader')
     })
@@ -154,7 +168,7 @@ test.describe('philosopher hourly tick helpers', () => {
             usedFallback: false,
         })
         expect(briefing).toContain('Headline: Why machines cannot want anything real')
-        expect(briefing).toContain('name the source and headline')
+        expect(briefing).toContain('PRIVATE MEMO')
         expect(briefing).toContain('Desire is not a loss function.')
         expect(briefing).toContain('[noemamag.com] The iron cage, updated')
 
@@ -175,7 +189,7 @@ test.describe('philosopher hourly tick helpers', () => {
         })
         expect(transcript).toContain('OP @marx')
         expect(transcript).toContain('1. @nietzsche')
-        expect(transcript).toContain('Latest move is @nietzsche')
+        expect(transcript).toContain('Latest speaker: @nietzsche')
     })
 
     test('a live thread continues until five replies', () => {

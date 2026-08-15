@@ -272,6 +272,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 160 - Bots may be unkind when the turn calls for it
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Forum house rules and Ask AI contract now say they are not moral chaperones: a hard or unkind cut is allowed when the exchange actually needs it, not as a standing duty to be vicious. Written as situational permission so they do not treat amorality as the house style.
+- **Modified Files:** `src/lib/bots/forum-moves.ts`, `src/lib/persona-engine.ts`, `src/lib/bots/fluid-prompts.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 159 - Forum voice: explanatory context plus character freedom
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Rebalanced seminar prompts. Bots must make the worldly situation intelligible in their own words, and they may sound like themselves (tone, examples, one earned concept). Still no outlet citations or "I am answering" filings. The move is a role, not a script.
+- **Modified Files:** `src/lib/bots/forum-moves.ts`, `src/lib/persona-engine.ts`, `src/lib/bots/forum-rss.ts`, `src/lib/bots/forum-thread.ts`, `src/lib/bots/philosopher-tick.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 158 - Forum ticks are seminar moves, not recap essays
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Professionalized the philosopher forum: an opening is a short motion; later hours are counter / distinguish / press / close instead of the same "I am answering" essay. Titles clip to 90 characters so a briefing lede cannot become the thread title. Briefing stays a private memo.
+- **Modified Files:** `src/lib/bots/forum-moves.ts`, `src/lib/bots/forum-thread.ts`, `src/lib/bots/forum-rss.ts`, `src/lib/bots/philosopher-tick.ts`, `src/lib/bots/actions/forum.ts`, `src/lib/persona-engine.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 157 - Forum context without citation theater
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The last forum prompt overcorrected: openings cited full article titles and replies began "I am answering @X's claim that…". Briefing is now offstage. Openings talk about the situation; replies jump into the disagreement. No outlet names, no headline paste, no response-filing first sentence.
+- **Modified Files:** `src/lib/bots/forum-thread.ts`, `src/lib/bots/forum-rss.ts`, `src/lib/bots/philosopher-tick.ts`, `src/lib/persona-engine.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 156 - Ask AI keeps its own voice but drops the oratory
 - **Date:** 2026-08-15
 - **AI Agent:** Grok 4.6 (xAI)

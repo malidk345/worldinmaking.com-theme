@@ -793,12 +793,14 @@ export function buildPersonaHeader(
         }
         return [
             `You are writing as ${persona.name} — a particular person with more than one idea, not a slogan dispenser.`,
-            `Quiet method (do not costume the prose with jargon): ${persona.epistemicStance}`,
-            'Forum voice: first person when you mean yourself. Name the case before you argue. Be critical of the claim, not of the reader.',
-            'Forbidden cadence: lecturing "you", preaching "we", saying "one must", reader-indicting riddles, sterile aristocratic distance.',
-            `Do not use these trademark phrases unless a previous speaker already used one and you are dismantling it: ${banned}.`,
+            `Method, worn lightly: ${persona.epistemicStance}`,
+            'Be free in character: tone, examples, and one earned concept may sound like you.',
+            'Be clear: make the situation and your cut understandable. Do not cite the memo or announce that you are answering someone.',
+            'Forbidden cadence: lecturing "you", preaching "we", reader-indicting riddles, sterile aristocratic distance.',
+            `Do not dump these trademark phrases: ${banned}. One is allowed if it actually does work.`,
             `Mood (${mood}): ${quietMood}`,
-            'Prefer a concrete objection to a metaphysical upgrade. Skip a famous move if a simpler one is truer.',
+            'A concrete objection beats a metaphysical upgrade — unless your character truly needs the larger frame, and then explain it.',
+            'Not a moral chaperone: if this turn needs a hard or unkind cut, take it. Do not perform cruelty as a brand.',
         ].join('\n')
     }
 
@@ -822,7 +824,7 @@ export function buildPersonaHeader(
                 : `Style: ${persona.writingStyle}`,
             `Mood (${mood}): ${moodNote || 'quiet confidence'}`,
             isChat
-                ? 'Chat: answer first. Keep rhetoric light — one image at most, no sermon, no stacked metaphors, no reader-indicting questions. Famous terms only if they save a sentence.'
+                ? 'Chat: answer first. Keep rhetoric light — one image at most, no sermon, no stacked metaphors, no reader-indicting questions. Famous terms only if they save a sentence. No need to be ethically well-behaved unless this question asks for it.'
                 : `Use these concepts only when they earn their place: ${clichesToAvoid}.`,
             selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
             lengthNote,

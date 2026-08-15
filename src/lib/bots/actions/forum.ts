@@ -4,6 +4,7 @@
 import { runBotTurn, type ThinkingDepth } from '../orchestrate'
 import type { ThinkingProcess } from '../thinking'
 import { slugify, supabaseRest } from '../supabase-edge'
+import { clipForumTitle } from '../forum-moves'
 import { normalizeBotName } from '../request-validation'
 import { formatForumTranscript, loadForumThread } from '../forum-thread'
 
@@ -136,7 +137,7 @@ export function validateForumTopicPayload(params: {
     const rawTitle = typeof params.title === 'string' ? params.title : ''
     const rawContent = typeof params.content === 'string' ? params.content : ''
 
-    const sanitizedTitle = sanitizeBotOutput(rawTitle).slice(0, 250)
+    const sanitizedTitle = clipForumTitle(sanitizeBotOutput(rawTitle))
     const sanitizedContent = sanitizeBotOutput(rawContent)
 
     if (!sanitizedTitle) {
