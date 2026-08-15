@@ -22,7 +22,7 @@ export default function AuthModal({
     initialView = 'sign-in',
     onSuccess,
 }: AuthModalProps) {
-    const { login, signUp } = useUser()
+    const { login, signUp, loginWithGoogle } = useUser()
     const [mode, setMode] = useState<AuthView>(initialView)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -68,6 +68,10 @@ export default function AuthModal({
                     setErrorMsg('First name is required')
                     return
                 }
+                if (password.length < 6) {
+                    setErrorMsg('Password must be at least 6 characters')
+                    return
+                }
                 const result = await signUp({ email, password, firstName, lastName })
                 if (!result) {
                     setErrorMsg('Sign up failed. Please try again.')
@@ -111,6 +115,20 @@ export default function AuthModal({
             }
         } catch (err: any) {
             setErrorMsg(err.message || 'Failed to send magic link.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleGoogle = async () => {
+        setErrorMsg(null)
+        setSuccessMsg(null)
+        setLoading(true)
+        try {
+            const res = await loginWithGoogle()
+            if (res.error) setErrorMsg(res.error)
+        } catch (err: any) {
+            setErrorMsg(err?.message || 'Google sign-in failed')
         } finally {
             setLoading(false)
         }
@@ -241,6 +259,20 @@ export default function AuthModal({
                         </form>
                     ) : (
                         <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <OSButton
+                                width="full"
+                                variant="secondary"
+                                type="button"
+                                onClick={handleGoogle}
+                                disabled={loading}
+                            >
+                                Continue with Google
+                            </OSButton>
+                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-secondary">
+                                <span className="flex-1 h-px bg-border" />
+                                or use email
+                                <span className="flex-1 h-px bg-border" />
+                            </div>
                             {mode === 'sign-up' && (
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>

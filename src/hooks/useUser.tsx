@@ -10,6 +10,8 @@ import {
     signInWithPassword,
     signOutWim,
     signUpWithPassword,
+    signInWithGoogle,
+    updatePassword as updateWimPassword,
 } from 'lib/wim-auth'
 import {
     addUserBookmark,
@@ -93,6 +95,8 @@ type UserContextValue = {
     fetchUser: (token?: string | null) => Promise<User | null>
     getJwt: () => Promise<string | null>
     login: (args: { email: string; password: string }) => Promise<User | null | { error: string }>
+    loginWithGoogle: () => Promise<{ error?: string }>
+    updatePassword: (password: string) => Promise<{ error?: string }>
     loginWithProvider: (args: {
         provider: 'posthog'
         accessToken: string
@@ -150,6 +154,8 @@ export const UserContext = createContext<UserContextValue>({
     fetchUser: async () => null,
     getJwt: async () => null,
     login: async () => null,
+    loginWithGoogle: async () => ({}),
+    updatePassword: async () => ({}),
     loginWithProvider: async () => null,
     createWithProvider: async () => null,
     linkExisting: async () => null,
@@ -351,6 +357,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const loginWithGoogle = async (): Promise<{ error?: string }> => {
+        posthog?.capture('wim google login start')
+        return signInWithGoogle()
+    }
+
+    const updatePassword = async (password: string): Promise<{ error?: string }> => {
+        return updateWimPassword(password)
     }
 
     const loginWithProvider = async (_args: {
@@ -624,6 +639,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         isLoading,
         getJwt,
         login,
+        loginWithGoogle,
+        updatePassword,
         loginWithProvider,
         createWithProvider,
         linkExisting,

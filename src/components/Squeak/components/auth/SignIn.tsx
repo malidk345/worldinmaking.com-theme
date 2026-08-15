@@ -15,7 +15,7 @@ const errorMessages: Record<string, string> = {
 }
 
 export const SignIn: React.FC<SignInProps> = ({ buttonText = 'Login', onSubmit, setMessage }) => {
-    const { login } = useUser()
+    const { login, loginWithGoogle } = useUser()
 
     const handleSubmit = async (values: any) => {
         const user = await login({
@@ -54,6 +54,17 @@ export const SignIn: React.FC<SignInProps> = ({ buttonText = 'Login', onSubmit, 
             {({ isValid, isSubmitting }) => {
                 return (
                     <Form className="m-0">
+                        <Button
+                            type="button"
+                            width="full"
+                            onClick={async () => {
+                                const res = await loginWithGoogle()
+                                if (res.error) setMessage?.(res.error)
+                            }}
+                        >
+                            Continue with Google
+                        </Button>
+                        <p className="text-center text-xs opacity-60 my-3">or use email and password</p>
                         <label className={labelClasses} htmlFor="email">
                             Email address
                         </label>

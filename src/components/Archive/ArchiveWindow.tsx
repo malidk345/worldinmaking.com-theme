@@ -24,6 +24,7 @@ const FALLBACK_APPS: Record<string, AppItem> = {
     '/workspace-chat': { label: 'WIM AI', Icon: <AppIcon name="wimAi" />, url: '/workspace-chat' },
     '/posts': { label: 'Posts', Icon: <AppIcon name="posts" />, url: '/posts' },
     '/blog': { label: 'Posts', Icon: <AppIcon name="posts" />, url: '/posts' },
+    '/login': { label: 'Sign In', Icon: <AppIcon name="signIn" />, url: '/login' },
 }
 
 function loadPinnedApps(): AppItem[] {

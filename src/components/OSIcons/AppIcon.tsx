@@ -11,6 +11,8 @@ import wimAiClassicIcon from '../../images/icons/wim-ai-monitor-classic.png'
 import wimAiModernIcon from '../../images/icons/wim-ai-monitor-modern.png'
 import postsClassicIcon from '../../images/icons/posts-classic.png'
 import postsModernIcon from '../../images/icons/posts-modern.png'
+import signInClassicIcon from '../../images/icons/signin-classic.png'
+import signInModernIcon from '../../images/icons/signin-modern.png'
 
 // Next/webpack PNG imports are `{ src }` objects, not URL strings
 const importedSrc = (mod: unknown): string => {
@@ -225,6 +227,10 @@ const PRODUCT_ICON_MAP = {
     posts: {
         classic: importedSrc(postsClassicIcon),
         default: importedSrc(postsModernIcon),
+    },
+    signIn: {
+        classic: importedSrc(signInClassicIcon),
+        default: importedSrc(signInModernIcon),
     },
 } as const satisfies Record<string, AppIconVariants>
 

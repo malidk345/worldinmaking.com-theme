@@ -2321,6 +2321,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         const key = item.key || item.path
         const path = item.path || '/'
+        if (path === '/login' || path.startsWith('/login')) {
+            setAuthModalView('sign-in')
+            setIsAuthModalOpen(true)
+            return
+        }
+        if (path === '/signup' || path.startsWith('/signup')) {
+            setAuthModalView('sign-up')
+            setIsAuthModalOpen(true)
+            return
+        }
 
         setWindows((prev) => {
             if (isForumPath(path)) {
@@ -2375,7 +2385,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const newWin: AppWindow = {
                 key,
                 path,
-                title: item.title || (path === '/archive' ? 'Archive' : path === '/workspace-chat' || path.startsWith('/workspace-chat/') ? 'WIM AI' : path === '/posts' || path === '/blog' ? 'Posts' : path.startsWith('/notebooks') ? 'Notebooks' : path.split('/').pop() || 'Window'),
+                title: item.title || (path === '/archive' ? 'Archive' : path === '/workspace-chat' || path.startsWith('/workspace-chat/') ? 'WIM AI' : path === '/posts' || path === '/blog' ? 'Posts' : path === '/login' || path === '/signup' ? 'Sign In' : path.startsWith('/profile') ? 'Profile' : path.startsWith('/notebooks') ? 'Notebooks' : path.split('/').pop() || 'Window'),
                 size,
                 position,
                 previousSize: item.size || { width: 900, height: 650 },

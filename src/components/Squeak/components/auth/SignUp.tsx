@@ -11,7 +11,7 @@ type SignUpProps = {
 }
 
 export const SignUp: React.FC<SignUpProps> = ({ buttonText = 'Sign up', onSubmit, setMessage }) => {
-    const { signUp } = useUser()
+    const { signUp, loginWithGoogle } = useUser()
 
     const handleSubmit = async (values: any) => {
         const user = await signUp(values)
@@ -52,6 +52,17 @@ export const SignUp: React.FC<SignUpProps> = ({ buttonText = 'Sign up', onSubmit
             {({ isValid, isSubmitting }) => {
                 return (
                     <Form className="m-0">
+                        <Button
+                            type="button"
+                            width="full"
+                            onClick={async () => {
+                                const res = await loginWithGoogle()
+                                if (res.error) setMessage?.(res.error)
+                            }}
+                        >
+                            Continue with Google
+                        </Button>
+                        <p className="text-center text-xs opacity-60 my-3">or use email and password</p>
                         <span>
                             <label className={labelClasses} htmlFor="firstName">
                                 First name

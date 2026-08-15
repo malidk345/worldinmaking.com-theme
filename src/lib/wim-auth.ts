@@ -285,6 +285,34 @@ export async function requestPasswordReset(email: string): Promise<{ error?: str
     return {}
 }
 
+export function authRedirectUrl(path: string): string | undefined {
+    if (typeof window === 'undefined') return undefined
+    return `${window.location.origin}${path}`
+}
+
+export async function signInWithGoogle(): Promise<{ error?: string }> {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured' }
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: authRedirectUrl('/auth/callback'),
+            queryParams: { access_type: 'offline', prompt: 'select_account' },
+        },
+    })
+    if (error) return { error: error.message }
+    return {}
+}
+
+export async function updatePassword(password: string): Promise<{ error?: string }> {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured' }
+    if (!password || password.length < 6) {
+        return { error: 'Password must be at least 6 characters' }
+    }
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) return { error: error.message }
+    return {}
+}
+
 export async function updateWimProfile(
     userId: string,
     patch: Partial<

@@ -147,6 +147,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-127` | Stream 3 | Posts desktop icon to /posts in a new site color | `src/images/icons/`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-128` | Stream 3 | Desktop-to-Archive drag should carry the real icon | `DesktopIcon.tsx`, `AppIcon.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-129` | Stream 2 | Archive: move Restore all; add per-icon restore menu | `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-130` | Stream 3 | Desktop Sign In icon becomes profile photo after login | `desktopApps.tsx`, `AppIcon.tsx`, `src/images/icons/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-131` | Stream 4 | Password auth + Google OAuth (modal, callback, reset) | `wim-auth.ts`, `AuthModal.tsx`, `useUser.tsx`, `pages/auth/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -280,6 +282,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 177 - Google OAuth credentials applied on Supabase
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Patched project auth via Management API: `external_google_enabled`, real client id, secret set. Credentials live only in gitignored `.env.local`. Site already has Continue with Google + `/auth/callback`.
+- **Modified Files:** `docs/architecture/AI_MEMORY.md` (env/local only for secrets)
+
+### Entry 176 - Password auth + Google button
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Auth modal is password-first with Continue with Google. Added `/auth/callback` and a real set-password page. Supabase email+password stays on; redirect allow-list includes localhost and LAN. Google is enabled on the project but still has a placeholder client and no secret — needs a real Google Cloud OAuth client.
+- **Modified Files:** `src/lib/wim-auth.ts`, `src/hooks/useUser.tsx`, `src/components/Auth/AuthModal.tsx`, `src/pages/auth/callback.tsx`, `src/pages/reset-password.tsx`, `src/components/Squeak/components/auth/SignIn.tsx`, `src/components/Squeak/components/auth/SignUp.tsx`, `scripts/configure-google-auth.mjs`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 175 - Sign in / sign up open the auth modal
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Desktop Sign In no longer opens a `/login` window. It calls `openSignIn()` so AuthModal appears. `addWindow` also redirects `/login` and `/signup` to that modal.
+- **Modified Files:** `src/components/Desktop/desktopApps.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 174 - Desktop Sign In becomes the user's face
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Left desktop has a pink Sign In person icon that opens `/login`. After auth it swaps to the profile photo (or initial) and opens `/profile/:handle`.
+- **Modified Files:** `src/components/Desktop/desktopApps.tsx`, `src/components/OSIcons/AppIcon.tsx`, `src/images/icons/signin-*.png`, `src/components/Archive/ArchiveWindow.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 173 - Archive ⋮ menu Slot crash
 - **Date:** 2026-08-15
