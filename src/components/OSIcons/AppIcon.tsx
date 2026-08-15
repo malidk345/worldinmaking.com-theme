@@ -5,6 +5,8 @@ import { useRef } from 'react'
 import useTheme from '../../hooks/useTheme'
 import { useAppSettings } from '../../context/App'
 import usePostHog from 'hooks/usePostHog'
+import archiveClassicIcon from '../../images/icons/archive-classic.png'
+import archiveModernIcon from '../../images/icons/archive-modern.png'
 
 // App icon mapping for different skins
 type AppIconVariants = {
@@ -199,8 +201,8 @@ const PRODUCT_ICON_MAP = {
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/switch_modern_5aa70666d1.png',
     },
     archive: {
-        classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/Data_In_Classic_b58bd17dbf.png',
-        default: 'https://res.cloudinary.com/dmukukwp6/image/upload/Data_In_Modern_cf968580e4.png',
+        classic: archiveClassicIcon as unknown as string,
+        default: archiveModernIcon as unknown as string,
     },
 } as const satisfies Record<string, AppIconVariants>
 
@@ -299,6 +301,14 @@ export interface AppItem {
     orientation?: 'row' | 'column'
     source?: string
     external?: boolean
+    customMenuItems?: Array<{
+        type: 'item' | 'separator'
+        label?: string
+        onClick?: () => void
+        disabled?: boolean
+        children?: React.ReactNode
+        shortcut?: string[]
+    }>
 }
 
 export const AppLink = ({
@@ -316,6 +326,7 @@ export const AppLink = ({
     orientation = 'column',
     source,
     external,
+    customMenuItems,
 }: AppItem) => {
     const posthog = usePostHog()
     const { posthogInstance } = useAppSettings()
@@ -456,6 +467,7 @@ export const AppLink = ({
                 <Link
                     to={url}
                     {...(external ? { externalNoIcon: true } : { state: { newWindow: true } })}
+                    customMenuItems={customMenuItems}
                     className={`${commonClassName} ${orientationClassName} ${shadowClassName}`}
                     onClick={(e) => {
                         if (hasDragged) {

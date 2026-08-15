@@ -1,183 +1,179 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useArchive } from 'context/ArchiveContext'
-import Link from 'components/Link'
 import SEO from 'components/seo'
-import OSTable from 'components/OSTable'
-import { AppIcon } from 'components/OSIcons/AppIcon'
-import { IconRefresh, IconExternal, IconSearch } from '@posthog/icons'
+import HeaderBar from 'components/OSChrome/HeaderBar'
+import OSInput from 'components/OSForm/input'
+import OSButton from 'components/OSButton'
+import ScrollArea from 'components/RadixUI/ScrollArea'
+import { AppIcon, AppLink, AppItem } from 'components/OSIcons/AppIcon'
+import { apps, useProductLinks } from 'components/Desktop/desktopApps'
+import { IconArchive } from '@posthog/icons'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
 dayjs.extend(relativeTime)
 
-interface DesktopAppMeta {
-    url: string
-    label: string
-    iconName: string
+const PINNED_APPS_KEY = 'wim_os_desktop_pinned_items'
+
+const FALLBACK_APPS: Record<string, AppItem> = {
+    '/': { label: 'Home', Icon: <AppIcon name="doc" />, url: '/' },
+    '/editor': { label: 'Editor', Icon: <AppIcon name="typewriter" />, url: '/editor' },
+    '/community/new': { label: 'Write Post', Icon: <AppIcon name="notebook" />, url: '/community/new' },
+    '/customers': { label: 'Customers', Icon: <AppIcon name="spreadsheet" />, url: '/customers' },
+    '/admin': { label: 'Admin', Icon: <AppIcon name="bookmark" />, url: '/admin' },
 }
 
-const KNOWN_DESKTOP_APPS: Record<string, DesktopAppMeta> = {
-    '/': { url: '/', label: 'home.mdx', iconName: 'doc' },
-    '/editor': { url: '/editor', label: 'Editor', iconName: 'typewriter' },
-    '/community/new': { url: '/community/new', label: 'Write Post', iconName: 'notebook' },
-    '/community': { url: '/community', label: 'Community', iconName: 'forums' },
-    '/notebooks': { url: '/notebooks', label: 'Notebooks', iconName: 'notebook' },
-    '/customers': { url: '/customers', label: 'customers.mdx', iconName: 'spreadsheet' },
-    '/contact': { url: '/contact', label: 'Contact', iconName: 'envelope' },
-    '/display-options': { url: '/display-options', label: 'Display Options', iconName: 'page' },
-    '/trash': { url: '/trash', label: 'Trash', iconName: 'trash' },
-    '/admin': { url: '/admin', label: 'Admin OS Dashboard', iconName: 'bookmark' },
+function loadPinnedApps(): AppItem[] {
+    if (typeof window === 'undefined') return []
+    try {
+        const existing = JSON.parse(localStorage.getItem(PINNED_APPS_KEY) || '[]')
+        if (!Array.isArray(existing)) return []
+        return existing.map((item: { label?: string; notebookId?: string }) => ({
+            label: item.label || 'Notebook',
+            Icon: <AppIcon name="doc" />,
+            url: item.notebookId ? `/notebooks?id=${item.notebookId}` : undefined,
+        }))
+    } catch {
+        return []
+    }
+}
+
+function resolveAppItem(url: string, label: string, catalog: Record<string, AppItem>): AppItem {
+    const known = catalog[url]
+    if (known) {
+        return { ...known, label: known.label || label, url }
+    }
+    return {
+        label: label || url.replace(/^\//, '') || 'App',
+        Icon: <AppIcon name="doc" />,
+        url,
+    }
 }
 
 export default function ArchiveWindow() {
-    const { archivedItems, unarchiveApp, clearArchive } = useArchive()
+    const { archivedItems, archiveApp, unarchiveApp, clearArchive } = useArchive()
     const [searchQuery, setSearchQuery] = useState('')
+    const [isDragOver, setIsDragOver] = useState(false)
+    const productLinks = useProductLinks()
 
-    const enrichedItems = useMemo(() => {
-        return (archivedItems || []).map((item) => {
-            const known = KNOWN_DESKTOP_APPS[item.url]
-            return {
-                ...item,
-                label: known?.label || item.label || item.url.replace('/', ''),
-                iconName: known?.iconName || 'doc',
-            }
-        })
-    }, [archivedItems])
+    const catalog = useMemo(() => {
+        const map: Record<string, AppItem> = { ...FALLBACK_APPS }
+        for (const item of [...productLinks, ...apps, ...loadPinnedApps()]) {
+            if (item.url) map[item.url] = item
+        }
+        return map
+    }, [productLinks])
 
     const filteredItems = useMemo(() => {
-        if (!searchQuery.trim()) return enrichedItems
+        const items = archivedItems || []
+        if (!searchQuery.trim()) return items
         const q = searchQuery.toLowerCase()
-        return enrichedItems.filter(
+        return items.filter(
             (item) => item.label.toLowerCase().includes(q) || item.url.toLowerCase().includes(q)
         )
-    }, [enrichedItems, searchQuery])
+    }, [archivedItems, searchQuery])
 
-    // Exact Column Definition from customers/index.tsx
-    const columns = [
-        { name: '#', width: '50px', align: 'center' as const },
-        { name: 'Resource / App', width: 'minmax(200px, 1fr)', align: 'left' as const },
-        { name: 'Date archived', width: 'minmax(140px, 180px)', align: 'left' as const },
-        { name: 'Actions', width: 'minmax(120px, 160px)', align: 'right' as const },
-    ]
+    const armDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setIsDragOver(true)
+    }
 
-    const tableRows = useMemo(() => {
-        return filteredItems.map((item, index) => {
-            return {
-                key: item.url,
-                cells: [
-                    // Cell 1: Index Number
-                    { content: <span className="font-mono text-muted text-xs">{index + 1}</span> },
+    const handleDragLeave = (e: React.DragEvent) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
+        setIsDragOver(false)
+    }
 
-                    // Cell 2: Icon + App/Resource Name & URL
-                    {
-                        content: (
-                            <div className="flex h-10 items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-accent border border-primary flex items-center justify-center p-1 shrink-0">
-                                    <AppIcon name={item.iconName as any} className="size-6 object-contain" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="font-bold text-primary text-xs truncate">{item.label}</div>
-                                    <div className="text-[10px] font-mono text-muted truncate">{item.url}</div>
-                                </div>
-                            </div>
-                        ),
-                        className: '!p-3',
-                    },
-
-                    // Cell 3: Date Archived
-                    {
-                        content: (
-                            <span className="text-xs text-muted font-medium">
-                                {dayjs(item.archivedAt).fromNow()}
-                            </span>
-                        ),
-                        className: 'text-xs',
-                    },
-
-                    // Cell 4: Actions (Icon buttons for individual restore)
-                    {
-                        content: (
-                            <div className="flex items-center justify-end gap-2">
-                                <button
-                                    onClick={() => unarchiveApp(item.url, item.label)}
-                                    title="Restore to Desktop"
-                                    className="p-1.5 rounded-lg bg-yellow/10 hover:bg-yellow/20 text-yellow border border-yellow/30 transition-colors inline-flex items-center gap-1 text-xs font-bold"
-                                >
-                                    <IconRefresh className="size-3.5" />
-                                    <span>Restore</span>
-                                </button>
-
-                                <Link
-                                    href={item.url}
-                                    state={{ newWindow: true }}
-                                    title="Open application"
-                                    className="p-1.5 rounded-lg bg-primary hover:bg-accent text-secondary border border-primary transition-colors inline-flex items-center gap-1 text-xs font-bold"
-                                >
-                                    <IconExternal className="size-3.5" />
-                                </Link>
-                            </div>
-                        ),
-                    },
-                ],
-            }
-        })
-    }, [filteredItems, unarchiveApp])
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragOver(false)
+        const url = e.dataTransfer.getData('text/plain')
+        const label = e.dataTransfer.getData('text/label')
+        if (url && url !== '/archive') {
+            archiveApp(url, label)
+        }
+    }
 
     return (
-        <div data-scheme="primary" className="h-full bg-primary text-primary flex flex-col overflow-hidden select-none p-6 space-y-4">
+        <div
+            data-scheme="primary"
+            className={`@container bg-transparent text-primary h-full flex flex-col min-h-0 transition-colors ${
+                isDragOver ? 'ring-2 ring-inset ring-blue/50 bg-blue/5' : ''
+            }`}
+            onDragOver={armDrop}
+            onDragEnter={armDrop}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             <SEO title="Archive – WorldInMaking OS" />
-
-            <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col min-h-0 space-y-4">
-                {/* Header matching customers/index.tsx title format */}
-                <div className="flex items-start justify-between border-b border-primary pb-3">
-                    <div>
-                        <h1 className="text-2xl font-bold m-0">Archive</h1>
-                        <p className="!mt-1 text-xs text-secondary m-0">
-                            Archived desktop items, notebook links, and saved resources. Restore any item back to your desktop at any time.
-                        </p>
+            <HeaderBar
+                className="!bg-transparent"
+                showCustomLeft={
+                    <div className="w-[min(16rem,70vw)]">
+                        <OSInput
+                            label="Search archive"
+                            showLabel={false}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search archive"
+                            size="sm"
+                        />
                     </div>
-
-                    {archivedItems && archivedItems.length > 0 && (
-                        <button
-                            onClick={clearArchive}
-                            className="px-3 py-1.5 bg-primary hover:bg-accent text-secondary border border-primary rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
-                        >
-                            <IconRefresh className="size-3.5" />
-                            <span>Restore All</span>
-                        </button>
-                    )}
-                </div>
-
-                {/* Search Box */}
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Search archived resources, links & notebooks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-accent border border-primary rounded-xl pl-9 pr-3.5 py-2 text-xs text-primary placeholder-muted outline-none focus:border-accent transition-colors"
-                    />
-                    <IconSearch className="size-4 text-muted absolute left-3 top-2.5 pointer-events-none" />
-                </div>
-
-                {/* Exact Customers Page OSTable Implementation */}
-                <div className="flex-1 overflow-y-auto min-h-0">
+                }
+                rightActionButtons={
+                    archivedItems && archivedItems.length > 0 ? (
+                        <OSButton size="sm" onClick={clearArchive}>
+                            Restore all
+                        </OSButton>
+                    ) : null
+                }
+            />
+            <ScrollArea className="flex-1 min-h-0">
+                <div className="p-4">
                     {filteredItems.length === 0 ? (
-                        <div className="h-48 flex items-center justify-center text-center p-6 bg-accent/30 border border-primary rounded-xl">
-                            <p className="text-xs text-secondary m-0">
-                                {searchQuery ? 'No archived items match your search query.' : 'No archived items. Drag any desktop icon here to save it.'}
+                        <div className="text-center py-12">
+                            <IconArchive className="size-12 mx-auto mb-2 text-muted" />
+                            <h3 className="text-lg font-semibold m-0">
+                                {searchQuery ? 'No matches' : 'Archive is empty'}
+                            </h3>
+                            <p className="text-muted m-0">
+                                {searchQuery
+                                    ? 'No archived apps match that search.'
+                                    : 'Drag a desktop app here, or onto the Archive icon.'}
                             </p>
                         </div>
                     ) : (
-                        <OSTable
-                            className="mt-2"
-                            columns={columns}
-                            width="full"
-                            rows={tableRows}
-                        />
+                        <ul className="list-none m-0 p-0 flex flex-row flex-wrap">
+                            {filteredItems.map((item) => {
+                                const app = resolveAppItem(item.url, item.label, catalog)
+                                return (
+                                    <li
+                                        key={item.url}
+                                        className="w-28 min-h-[84px] flex justify-center items-start"
+                                    >
+                                        <div className="flex flex-col items-center">
+                                            <AppLink
+                                                {...app}
+                                                source={undefined}
+                                                customMenuItems={[
+                                                    {
+                                                        type: 'item',
+                                                        label: 'Restore to Desktop',
+                                                        onClick: () => unarchiveApp(item.url, app.label),
+                                                    },
+                                                ]}
+                                            />
+                                            <span className="text-[10px] text-muted mt-0.5 leading-tight">
+                                                {dayjs(item.archivedAt).fromNow()}
+                                            </span>
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ul>
                     )}
                 </div>
-            </div>
+            </ScrollArea>
         </div>
     )
 }

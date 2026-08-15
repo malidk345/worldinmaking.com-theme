@@ -64,8 +64,8 @@ export const ArchiveProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return updated
         })
         addToast({
-            description: `Moved "${label || url}" to Archive Vault`,
-            duration: 3500,
+            description: `Moved "${label || url}" to Archive`,
+            duration: 2500,
         })
     }
 
@@ -77,7 +77,7 @@ export const ArchiveProvider: React.FC<{ children: React.ReactNode }> = ({ child
         })
         addToast({
             description: `Restored "${label || url}" to Desktop`,
-            duration: 3500,
+            duration: 2500,
         })
     }
 
@@ -98,7 +98,7 @@ export const ArchiveProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const clearArchive = () => {
         setArchivedItems([])
         saveToStorage([])
-        addToast({ description: 'Archive Vault cleared. All items restored to Desktop.' })
+        addToast({ description: 'Archive cleared. Items restored to Desktop.' })
     }
 
     return (

@@ -138,6 +138,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-118` | Stream 4 | In-app notifications: subscribe, persist, dismiss | `wim-notifications.ts`, `useUser.tsx`, `NotificationsPanel` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-119` | Stream 5 | Forum philosophers: name the case, drop pulpit jargon | `forum-thread.ts`, `persona-engine.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-120` | Stream 5 | Ask AI: less rhetoric, keep forum-only voice rules off chat | `persona-engine.ts`, `fluid-prompts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-121` | Stream 3 | Archive interior + desktop drag match site chrome | `ArchiveWindow.tsx`, `DesktopIcon.tsx`, `ArchiveContext.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
+| `TSK-122` | Stream 3 | Desktop Archive icon should match the other OS app icons | `src/components/OSIcons/AppIcon.tsx`, `public/images/icons/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -271,6 +273,28 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 165 - Desktop Archive icon matches the OS set
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Archive on the desktop was reusing the Data In (database + arrows) asset. Replaced it with a cardboard archive-box icon in the same thick-outline, 3/4 cartoon style as Trash / Folder / Envelope, with transparent 128px classic + modern skins.
+- **Modified Files:** `src/components/OSIcons/AppIcon.tsx`, `src/images/icons/archive-modern.png`, `src/images/icons/archive-classic.png`, `docs/architecture/AI_MEMORY.md`
+- **Test/Verification:** Visual asset swap only; `AppIcon name="archive"` imports tracked PNGs from `src/images/icons/` (`public/` is gitignored).
+- **Next steps:** User review on `/desktop` (modern + classic skins). Push if the box sits with the other icons.
+
+### Entry 164 - Archive sits on window glass
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Archive no longer paints an opaque `bg-primary` pane (or HeaderBar fill). Content is transparent so `WINDOW_BG` frosted glass shows through. Search field and buttons keep their own chrome.
+- **Modified Files:** `src/components/Archive/ArchiveWindow.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 163 - Archive matches desktop / bookmarks chrome
+- **Date:** 2026-08-15
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Archive was a yellow customers-style OSTable + "Vault" drag pulse. Interior is now HeaderBar + OSInput + the same AppLink icon grid as the desktop. Drop highlight is a quiet site-blue ring (icon and open window). Toasts say Archive, not Vault. Right-click Restore to Desktop.
+- **Modified Files:** `src/components/Archive/ArchiveWindow.tsx`, `src/components/Desktop/DesktopIcon.tsx`, `src/components/Desktop/desktopApps.tsx`, `src/components/Desktop/index.tsx`, `src/components/OSIcons/AppIcon.tsx`, `src/context/ArchiveContext.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Test/Verification:** Visual restyle; no yellow Vault classes remain. Shared desktop app catalog extracted so Archive and Desktop resolve the same icons.
+- **Next steps:** User review on `/desktop` — drag an icon onto Archive, open the folder, restore via context menu. Push if it looks right.
 
 ### Entry 162 - Cron was opening a new thread every tick
 - **Date:** 2026-08-15

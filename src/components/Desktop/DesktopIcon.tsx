@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import ZoomHover from 'components/ZoomHover'
 import { useArchive } from 'context/ArchiveContext'
-import { IconArchive } from '@posthog/icons'
 
 interface DesktopIconProps {
     app: AppItem
@@ -16,7 +15,6 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
     const appUrl = app.url || ''
     const isArchiveIcon = appUrl === '/archive'
 
-    // If item is archived and context is hydrated, hide it from desktop grid
     if (isHydrated && isArchived(appUrl)) {
         return null
     }
@@ -39,8 +37,9 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
         setIsDragOver(true)
     }
 
-    const handleDragLeave = () => {
+    const handleDragLeave = (e: React.DragEvent) => {
         if (!isArchiveIcon) return
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
         setIsDragOver(false)
     }
 
@@ -58,8 +57,8 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
     return (
         <li
             data-icon-label={app.label}
-            className={`w-28 min-h-[84px] flex justify-center items-start transition-all duration-200 relative ${
-                isDraggingSelf ? 'opacity-40 scale-95' : 'opacity-100'
+            className={`w-28 min-h-[84px] flex justify-center items-start transition-opacity duration-150 relative ${
+                isDraggingSelf ? 'opacity-40' : 'opacity-100'
             }`}
             draggable={!isArchiveIcon}
             onDragStart={handleDragStart}
@@ -70,18 +69,11 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
         >
             <ZoomHover>
                 <div
-                    className={`relative w-full flex flex-col items-center rounded-2xl transition-all duration-300 ${
-                        isArchiveIcon && isDragOver
-                            ? 'scale-110 z-30 ring-4 ring-yellow/80 bg-yellow/20 backdrop-blur-md shadow-2xl p-1 animate-pulse'
-                            : ''
+                    className={`relative w-full flex flex-col items-center rounded-xl transition-colors duration-150 ${
+                        isArchiveIcon && isDragOver ? 'ring-2 ring-blue/50 bg-blue/10 p-1' : ''
                     }`}
                 >
                     <AppLink {...app} />
-                    {isArchiveIcon && isDragOver && (
-                        <div className="absolute -top-4 bg-yellow text-dark text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xl animate-bounce flex items-center gap-1 border border-yellow/40">
-                            <IconArchive className="w-3 h-3" /> Drop to Archive Vault
-                        </div>
-                    )}
                 </div>
             </ZoomHover>
         </li>
