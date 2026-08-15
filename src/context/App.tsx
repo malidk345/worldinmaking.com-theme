@@ -20,6 +20,8 @@ import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { IconDay, IconLaptop, IconNight } from '@posthog/icons'
 import { themeOptions } from '../hooks/useTheme'
+// @ts-ignore
+// @ts-ignore
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
