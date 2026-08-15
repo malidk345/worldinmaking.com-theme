@@ -19,18 +19,18 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 }
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
-    'template-introduction': 'Learn how to use PostHog Notebooks with this interactive guide covering all key features.',
-    'template-feature-release': 'Coordinate feature flag rollouts, define metrics, and track rollout progress.',
-    'template-root-cause': 'Document incident investigations with session replays, timelines, and action items.',
-    'template-sql-report': 'Run HogQL queries, explore data, and build interactive analytics reports.',
-    'template-session-replay': 'Investigate user behavior with session recordings, error tracking, and replay analysis.',
-    'template-ab-test': 'Plan and analyze A/B tests with experiment configuration, metrics, and results.',
-    'template-retention': 'Deep dive into user retention with cohort analysis, lifecycle, and engagement metrics.',
-    'template-feature-flag': 'Track feature flag usage, rollout strategies, and code examples.',
+    'template-introduction': 'A short guide to writing, publishing, and talking with philosophers in a notebook.',
+    'template-feature-release': 'Plan a release: claim, audience, risks, and what to write next.',
+    'template-root-cause': 'Document an investigation with a timeline, evidence, and next actions.',
+    'template-sql-report': 'Scratchpad for notes, tables, and follow-up questions.',
+    'template-session-replay': 'Walk through a case with quotes, context, and a short verdict.',
+    'template-ab-test': 'Compare two positions: hypothesis, evidence, and what would change your mind.',
+    'template-retention': 'Keep a running log of ideas you want to return to.',
+    'template-feature-flag': 'Track a decision: options, trade-offs, and the call you made.',
 }
 
 function getTemplateDescription(id: string): string {
-    return TEMPLATE_DESCRIPTIONS[id] || 'A PostHog notebook template to jumpstart your investigation.'
+    return TEMPLATE_DESCRIPTIONS[id] || 'A starter structure for research and writing.'
 }
 
 function getTemplateIcon(id: string): React.ReactNode {
@@ -80,7 +80,7 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
                         </div>
 
                         <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
-                            <span className="text-[11px] text-muted">by PostHog</span>
+                            <span className="text-[11px] text-muted">by WIM</span>
                             <LemonButton
                                 type="primary"
                                 size="small"

@@ -35,4 +35,20 @@ export const WIM_HIDDEN_INSERT_COMMAND_KEYS: string[] = [
     // Scene extras that re-introduce analytics
     'query-saved-insight',
     'product-cohort',
+    // Leftover PostHog product nodes (still render if pasted; never offer in slash)
+    'component-FeatureFlag',
+    'component-FeatureFlagCodeExample',
+    'component-Survey',
+    'component-Experiment',
+    'component-EarlyAccessFeature',
+    'component-Backlink',
+    'component-ReplayTimestamp',
+    'component-TaskCreate',
+    'component-LLMTrace',
+    'component-Issues',
+    'component-UsageMetrics',
+    'component-ZendeskTickets',
+    'component-RelatedGroups',
+    'component-CustomerJourney',
+    'component-SupportTickets',
 ]

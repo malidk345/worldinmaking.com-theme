@@ -154,6 +154,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-134` | Stream 3 | Pixel-art navy bang mark (taskbar experiment) | `src/components/WimLogo/index.tsx`, `src/components/TaskBarMenu/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-135` | Stream 3 | Desktop-style painted bang icon (keep pixel header) | `src/images/icons/bang-*.png`, `AppIcon.tsx`, `desktopApps.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-15 |
 | `TSK-136` | Stream 4 | Public contact email on user profiles | `profiles.contact_email`, ProfileView, edit.tsx, wim-auth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-137` | Stream 2 / 5 | Notebook frontend cleanup: PostHog chrome, sync, public view | `src/notebook-app/scenes/notebooks/*`, `App.tsx`, `notebookStorage.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-138` | Stream 2 / 4 | Notebook share: private send + public profile notes | `NotebookShareModal`, `ProfileView`, `/api/notebooks` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -287,6 +289,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 210 - Notebook share: private send + public profile notes
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** One Share modal: Send privately (copy / paper / email, does not list) and Publish on WIM (real draft vs publish). Profiles get a Notebooks tab with note cards (not post cards). `GET /api/notebooks?username=&public=1` lists published cards. Public page hides Edit for strangers.
+- **Modified Files:** `NotebookShareModal.tsx`, `NotebookMenu.tsx`, `SidebarContextPanelMenu.tsx`, `NotebookPublishModal.tsx`, `App.tsx`, `notebookStorage.ts`, `lib/notebooks-repo.ts`, `api/notebooks/index.ts`, `ProfileView.tsx`, `ProfileNotebookGrid.tsx`, `NotebookPublicView.tsx`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 209 - Notebook frontend cleanup (PostHog chrome, sync, public view)
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** List filters are WIM content (published/drafts/headings/AI/images); hours timeAgo fixed; Desktop pin is honest (no fake download alert); hydrate remounts the list; palette + AI writer are WIM (writer calls `/api/bots/act`); slash no longer offers PostHog nodes; leftover blocks say unsupported; actor backfill + visible sync fail/offline; public share falls back to remote; confirm/delete use LemonModal.
+- **Modified Files:** `notebookStorage.ts`, `NotebooksListScene.tsx`, `CommandPaletteModal.tsx`, `NotebookAIWriterModal.tsx`, `hiddenInsertCommands.ts`, `markdownNotebookRegistry.tsx`, `dataNodeShell.tsx`, `aiIntegration.ts`, `App.tsx`, `NotebookPublicView.tsx`, `NotebookMeta.tsx`, `NotebookHistory.tsx`, `NotebookConfirmDialog.tsx`, `InsertMenu.tsx`, `TemplatesGallery.tsx`, `CollaboratorsBanner.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/notebook-chat-bind.spec.ts` — 13 passed
+
+### Entry 208 - Notebook edited-by uses Supabase profiles
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Header "Edited … by" uses last_modified_by / created_by from the signed-in Supabase profile (name + avatar). Fake Lottie/Michael activity removed. Sync tag stays Saved unless the doc actually changed.
+- **Modified Files:** `src/lib/notebook-actor.ts`, `notebookStorage.ts`, `CollaboratorsBanner.tsx`, `App.tsx`, `NotebooksListScene.tsx`, `ProfilePicture.tsx`, `lib/notebooks-repo.ts`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 207 - Notebook context was capped too small
 - **Date:** 2026-08-16

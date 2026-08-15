@@ -14,9 +14,9 @@ import {
     IconPlus,
     IconTrash,
     IconCopy,
-    IconNotebook,
     IconExport,
 } from '@posthog/icons'
+import { useToast } from '../../../context/Toast'
 import {
     StoredNotebook,
     getNotebooks,
@@ -25,45 +25,57 @@ import {
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
     importNotebookFromJSON,
+    WIM_NOTEBOOKS_CHANGED_EVENT,
+    WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
 import { NotebookSelectButton } from './NotebookSelectButton/NotebookSelectButton'
+import { useNotebookConfirm } from './NotebookConfirmDialog'
 
 interface NotebooksListSceneProps {
     onSelectNotebook: (id: string) => void
     onCreateNew: () => void
-    onOpenCanvas?: () => void
-    onSelectTemplate?: (template: StoredNotebook) => void
 }
 
 function timeAgo(dateStr: string): string {
     if (!dateStr) return '—'
     const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-    if (seconds < 60) return 'just now'
+    if (!Number.isFinite(seconds) || seconds < 60) return 'just now'
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-    if (seconds < 86400) return `${Math.floor(seconds / 86400)}d ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
     return new Date(dateStr).toLocaleDateString()
 }
 
 const CONTAINING_OPTIONS = [
     { value: 'all', label: 'Any content' },
-    { value: 'query', label: 'Queries' },
-    { value: 'recording', label: 'Session recordings' },
-    { value: 'feature-flag', label: 'Feature flags' },
-    { value: 'cohort', label: 'Cohorts' },
-    { value: 'experiment', label: 'Experiments' },
+    { value: 'published', label: 'Published' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'heading', label: 'Headings' },
+    { value: 'ai', label: 'AI prompts' },
+    { value: 'image', label: 'Images' },
 ]
+
+function matchesContainsFilter(nb: StoredNotebook, filter: string): boolean {
+    if (filter === 'all') return true
+    const content = nb.content || ''
+    if (filter === 'published') return Boolean(nb.isPublished)
+    if (filter === 'draft') return !nb.isPublished
+    if (filter === 'heading') return /(^|\n)#\s+\S/.test(content)
+    if (filter === 'ai') return /<ph-prompt|ask ai|philosopher/i.test(content)
+    if (filter === 'image') return /!\[[^\]]*\]\(|<ph-image/i.test(content)
+    return true
+}
 
 export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
-    onOpenCanvas,
-    onSelectTemplate,
 }: NotebooksListSceneProps): JSX.Element {
     const [searchQuery, setSearchQuery] = useState('')
     const [containsFilter, setContainsFilter] = useState('all')
     const [createdByFilter, setCreatedByFilter] = useState('all')
     const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
+    const { addToast } = useToast()
+    const { confirm, dialog: confirmDialog } = useNotebookConfirm()
 
     const reloadNotebooks = useCallback(() => {
         setNotebooks(getNotebooks())
@@ -71,13 +83,24 @@ export function NotebooksListScene({
 
     useEffect(() => {
         reloadNotebooks()
+        window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadNotebooks)
+        window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadNotebooks)
+        return () => {
+            window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadNotebooks)
+            window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadNotebooks)
+        }
     }, [reloadNotebooks])
 
-    const handleDelete = (id: string, title: string) => {
-        if (confirm(`Are you sure you want to delete "${title}"?`)) {
-            deleteNotebook(id)
-            reloadNotebooks()
-        }
+    const handleDelete = async (id: string, title: string) => {
+        const ok = await confirm({
+            title: `Delete “${title}”?`,
+            description: 'This removes the notebook from this device and from cloud sync.',
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        deleteNotebook(id)
+        reloadNotebooks()
     }
 
     const handleDuplicate = (id: string) => {
@@ -120,7 +143,7 @@ export function NotebooksListScene({
                 reloadNotebooks()
                 onSelectNotebook(nb.id)
             } catch (e) {
-                alert('Invalid notebook JSON file')
+                addToast({ description: 'That file is not a valid notebook JSON export.', error: true })
             }
         }
         input.click()
@@ -131,11 +154,8 @@ export function NotebooksListScene({
         if (searchQuery && !nb.title.toLowerCase().includes(searchQuery.toLowerCase())) {
             return false
         }
-        if (containsFilter !== 'all') {
-            const tag = `<ph-${containsFilter}`
-            if (!nb.content.toLowerCase().includes(tag)) {
-                return false
-            }
+        if (!matchesContainsFilter(nb, containsFilter)) {
+            return false
         }
         if (createdByFilter === 'templates' && !nb.isTemplate) {
             return false
@@ -146,34 +166,33 @@ export function NotebooksListScene({
         return true
     })
 
-    const handleExportToDesktop = (notebook: StoredNotebook) => {
+    const handlePinToDesktop = (notebook: StoredNotebook) => {
         try {
             const customAppsKey = 'wim_os_desktop_pinned_items'
             const existing = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
-            const docUrl = `#/notebook/${notebook.id}`
-            const docTitle = `${notebook.title || 'Untitled'}.md`
+            const docTitle = notebook.title || 'Untitled'
 
             const newItem = {
                 id: notebook.id,
                 label: docTitle,
-                url: docUrl,
+                url: `/notebooks?id=${notebook.id}`,
                 notebookId: notebook.id,
                 iconType: 'document',
                 pinnedAt: new Date().toISOString(),
             }
 
-            if (!existing.some((item: any) => item.id === notebook.id)) {
-                existing.push(newItem)
-                localStorage.setItem(customAppsKey, JSON.stringify(existing))
-                window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
+            if (existing.some((item: { id?: string }) => item.id === notebook.id)) {
+                addToast({ description: `“${docTitle}” is already on your Desktop.` })
+                return
             }
 
-            // Also trigger standard markdown download as document export
-            handleExportMd(notebook)
-            alert(`"${docTitle}" exported to your Desktop & downloaded successfully!`)
+            existing.push(newItem)
+            localStorage.setItem(customAppsKey, JSON.stringify(existing))
+            window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
+            addToast({ description: `“${docTitle}” added to your Desktop.` })
         } catch (e) {
-            console.error('Failed to export notebook to desktop:', e)
-            handleExportMd(notebook)
+            console.error('Failed to pin notebook to desktop:', e)
+            addToast({ description: 'Could not add this notebook to the Desktop.', error: true })
         }
     }
 
@@ -206,28 +225,9 @@ export function NotebooksListScene({
             title: 'Created by',
             key: 'created_by',
             render: function RenderCreatedBy(_: any, notebook: StoredNotebook) {
-                let displayName = 'You'
-                if (notebook.isTemplate) {
-                    displayName = 'WIM'
-                } else if (typeof window !== 'undefined') {
-                    try {
-                        const savedUser = localStorage.getItem('user')
-                        if (savedUser) {
-                            const parsed = JSON.parse(savedUser)
-                            if (parsed?.profile?.firstName) {
-                                displayName = parsed.profile.firstName
-                            } else if (parsed?.username) {
-                                displayName = parsed.username
-                            }
-                        }
-                    } catch {
-                        /* ignore */
-                    }
-                }
-
                 const user = notebook.isTemplate
                     ? { first_name: 'WIM' }
-                    : { first_name: displayName }
+                    : notebook.created_by || { first_name: 'You' }
 
                 return (
                     <div className="flex flex-row items-center flex-nowrap">
@@ -283,9 +283,9 @@ export function NotebooksListScene({
                     <LemonMenu
                         items={[
                             {
-                                label: 'Export to Desktop (.md)',
+                                label: 'Add to Desktop',
                                 icon: <IconExport />,
-                                onClick: () => handleExportToDesktop(notebook),
+                                onClick: () => handlePinToDesktop(notebook),
                             },
                             {
                                 label: 'Duplicate',
@@ -364,18 +364,14 @@ export function NotebooksListScene({
                     <LemonButton size="small" type="secondary" onClick={handleLoadFromJSON}>
                         Import JSON
                     </LemonButton>
-                    {onOpenCanvas && (
-                        <LemonButton size="small" type="secondary" onClick={onOpenCanvas}>
-                            Canvas
-                        </LemonButton>
-                    )}
                     <LemonButton size="small" type="primary" icon={<IconPlus />} onClick={onCreateNew}>
                         New notebook
                     </LemonButton>
                 </div>
             </div>
 
-            {/* Table matching PostHog LemonTable with horizontal scroll for mobile */}
+            {confirmDialog}
+
             <div className="overflow-x-auto max-w-full -mx-3 sm:mx-0 px-3 sm:px-0">
                 <LemonTable
                     data-attr="notebooks-table"

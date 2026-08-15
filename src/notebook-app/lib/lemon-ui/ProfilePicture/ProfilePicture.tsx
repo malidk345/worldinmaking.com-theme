@@ -91,7 +91,16 @@ export function ProfilePicture({
                 <img
                     src={avatarUrl}
                     alt={displayName}
-                    className="w-full h-full rounded-full object-cover"
+                    className={`w-full h-full rounded-full ${
+                        /philosophers|mustafa-pixel|pixel\.png/.test(avatarUrl)
+                            ? 'object-contain'
+                            : 'object-cover'
+                    }`}
+                    style={
+                        /philosophers|mustafa-pixel|pixel\.png/.test(avatarUrl)
+                            ? { imageRendering: 'pixelated' }
+                            : undefined
+                    }
                     loading="lazy"
                     referrerPolicy="no-referrer"
                     onError={(e) => {

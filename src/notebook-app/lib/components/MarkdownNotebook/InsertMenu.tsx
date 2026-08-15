@@ -289,7 +289,7 @@ export function buildInsertCommands(
                   label: 'Ask AI',
                   category: commonCategory,
                   description: 'Ask AI to write or edit this notebook',
-                  aliases: ['ai', 'ask', 'posthog ai'],
+                  aliases: ['ai', 'ask', 'wim ai', 'philosopher'],
                   icon: <IconSparkles />,
                   closeOnRun: false,
                   disabled: isAskAIDisabled,

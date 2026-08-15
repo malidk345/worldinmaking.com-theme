@@ -1,19 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { LemonModal, LemonButton, LemonTag, LemonSelect } from '~nb-lib/lemon-ui/index'
-import {
-    IconSparkles,
-    IconTerminal,
-    IconRocket,
-    IconFlask,
-    IconPlay,
-    IconArrowRight,
-    IconRobot,
-    IconLogomark,
-    IconBook,
-    IconCode,
-    IconFlag,
-    IconSearch,
-} from '@posthog/icons'
+import { IconSparkles, IconArrowRight, IconBook, IconPencil, IconSearch, IconChat } from '@posthog/icons'
+import { PHILOSOPHER_BOTS } from '../../lib/philosophers'
 
 export interface NotebookAIWriterModalProps {
     isOpen: boolean
@@ -21,25 +9,16 @@ export interface NotebookAIWriterModalProps {
     onInsertContent: (generatedMarkdown: string) => void
 }
 
-const PRODUCT_CAPABILITY_BADGES = [
-    { key: 'analytics', label: 'Analytics', icon: <IconTerminal className="w-3 h-3 text-[#1d4ed8]" /> },
-    { key: 'replays', label: 'Replays', icon: <IconPlay className="w-3 h-3 text-[#5925dc]" /> },
-    { key: 'flags', label: 'Flags', icon: <IconFlag className="w-3 h-3 text-[#12b76a]" /> },
-    { key: 'experiments', label: 'Experiments', icon: <IconFlask className="w-3 h-3 text-[#f79009]" /> },
-    { key: 'learn', label: 'Learn', icon: <IconBook className="w-3 h-3 text-[#0891b2]" /> },
-    { key: 'code', label: 'Code', icon: <IconCode className="w-3 h-3 text-[#c026d3]" />, beta: true },
-]
-
-const AGENT_MODE_OPTIONS = [
+const WRITER_MODES = [
     {
-        title: 'General',
+        title: 'Mode',
         options: [
             {
-                value: 'auto',
+                value: 'write',
                 label: (
                     <span className="flex items-center gap-1.5 text-xs">
-                        <IconRobot className="w-3.5 h-3.5 text-orange-500" />
-                        <span>Auto (General)</span>
+                        <IconPencil className="w-3.5 h-3.5" />
+                        <span>Write</span>
                     </span>
                 ),
             },
@@ -47,50 +26,26 @@ const AGENT_MODE_OPTIONS = [
                 value: 'research',
                 label: (
                     <span className="flex items-center gap-1.5 text-xs">
-                        <IconSearch className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Research Mode</span>
-                        <LemonTag type="warning" size="small" className="ml-auto text-[8px] px-1 py-0">BETA</LemonTag>
-                    </span>
-                ),
-            },
-        ],
-    },
-    {
-        title: 'Specialized Agents',
-        options: [
-            {
-                value: 'analytics',
-                label: (
-                    <span className="flex items-center gap-1.5 text-xs">
-                        <IconTerminal className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Analytics Agent</span>
+                        <IconSearch className="w-3.5 h-3.5" />
+                        <span>Research</span>
                     </span>
                 ),
             },
             {
-                value: 'replays',
+                value: 'debate',
                 label: (
                     <span className="flex items-center gap-1.5 text-xs">
-                        <IconPlay className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Session Replays Agent</span>
+                        <IconChat className="w-3.5 h-3.5" />
+                        <span>Debate</span>
                     </span>
                 ),
             },
             {
-                value: 'flags',
+                value: 'summarize',
                 label: (
                     <span className="flex items-center gap-1.5 text-xs">
-                        <IconFlag className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Feature Flags Agent</span>
-                    </span>
-                ),
-            },
-            {
-                value: 'experiments',
-                label: (
-                    <span className="flex items-center gap-1.5 text-xs">
-                        <IconFlask className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Experimentation Agent</span>
+                        <IconBook className="w-3.5 h-3.5" />
+                        <span>Summarize</span>
                     </span>
                 ),
             },
@@ -98,144 +53,169 @@ const AGENT_MODE_OPTIONS = [
     },
 ]
 
+const MODE_PREFIX: Record<string, string> = {
+    write: 'Write a clear notebook section about:',
+    research: 'Research this topic and write structured notes with headings:',
+    debate: 'Lay out the strongest arguments and counter-arguments for:',
+    summarize: 'Summarize this as concise notebook notes:',
+}
+
 export function NotebookAIWriterModal({
     isOpen,
     onClose,
     onInsertContent,
 }: NotebookAIWriterModalProps): JSX.Element | null {
     const [prompt, setPrompt] = useState('')
-    const [selectedCapability, setSelectedCapability] = useState<string>('analytics')
-    const [selectedAgentMode, setSelectedAgentMode] = useState<string>('auto')
+    const [mode, setMode] = useState('write')
+    const [botId, setBotId] = useState(PHILOSOPHER_BOTS[0]?.id || 'nietzsche')
+    const [busy, setBusy] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
 
     useEffect(() => {
         if (isOpen) {
+            setError(null)
             setTimeout(() => textAreaRef.current?.focus(), 100)
         }
     }, [isOpen])
 
     if (!isOpen) return null
 
-    const handleGenerate = (customPrompt?: string) => {
-        const text = customPrompt || prompt
-        if (!text.trim()) return
+    const handleGenerate = async () => {
+        const text = prompt.trim()
+        if (!text || busy) return
+        setBusy(true)
+        setError(null)
+        const question = `${MODE_PREFIX[mode] || MODE_PREFIX.write} ${text}`
 
-        // Insert ONLY the Chatbot AI Prompt Block into the notebook canvas!
-        const escapedPrompt = text.trim().replace(/"/g, '&quot;')
-        onInsertContent(`\n<ph-prompt question="${escapedPrompt}" />\n`)
-        setPrompt('')
-        onClose()
+        try {
+            let res = await fetch('/api/bots/act', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'chat',
+                    bot: botId,
+                    question,
+                    mood: mode === 'debate' ? 'fiery' : 'calm',
+                    taskType: 'community_reply',
+                    thinkingDepth: mode === 'research' ? 'extended' : 'standard',
+                }),
+            })
+
+            if (res.status === 404 || res.status === 405) {
+                res = await fetch('/api/philosopher-bot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        philosopher: botId,
+                        question,
+                        mood: mode === 'debate' ? 'fiery' : 'calm',
+                        taskType: 'community_reply',
+                        thinkingDepth: mode === 'research' ? 'extended' : 'standard',
+                    }),
+                })
+            }
+
+            let data: { reply?: string; error?: string } | null = null
+            try {
+                data = await res.json()
+            } catch {
+                data = null
+            }
+
+            const reply =
+                (typeof data?.reply === 'string' && data.reply.trim()) ||
+                (typeof data?.error === 'string' && data.error) ||
+                null
+
+            if (!reply) {
+                setError(res.ok ? 'No reply returned. Try again.' : `Request failed (${res.status}).`)
+                return
+            }
+
+            onInsertContent(reply)
+            setPrompt('')
+            onClose()
+        } catch {
+            setError('The philosopher network is unreachable right now.')
+        } finally {
+            setBusy(false)
+        }
     }
 
     return (
-        <LemonModal
-            isOpen={isOpen}
-            onClose={onClose}
-            width={680}
-            className="PostHogAIModal"
-        >
-            <div className="flex flex-col gap-3 text-slate-200">
-                {/* Compact Minimal Header */}
-                <div className="flex items-center justify-between border-b border-[#2c2d38] pb-2">
+        <LemonModal isOpen={isOpen} onClose={onClose} width={640}>
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-border pb-2">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow">
-                            <IconRobot className="w-4 h-4" />
+                        <div className="w-6 h-6 rounded-md bg-[#1D4ED8] flex items-center justify-center text-white">
+                            <IconSparkles className="w-4 h-4" />
                         </div>
-                        <div className="flex items-center gap-1.5 font-bold text-white text-sm">
-                            <IconLogomark className="w-4 h-4 text-orange-500" />
-                            <span>PostHog AI</span>
-                        </div>
-                        <LemonTag type="highlight" size="small" className="text-[10px] px-1.5 py-0">CHAT BLOCK INSERT</LemonTag>
+                        <span className="font-bold text-sm">Ask WIM</span>
+                        <LemonTag type="highlight" size="small" className="text-[10px] px-1.5 py-0">
+                            Inserts into notebook
+                        </LemonTag>
                     </div>
+                    <LemonSelect
+                        value={botId}
+                        onChange={(val) => setBotId(val || botId)}
+                        options={PHILOSOPHER_BOTS.map((bot) => ({
+                            value: bot.id,
+                            label: bot.displayName,
+                        }))}
+                        size="xsmall"
+                    />
+                </div>
 
-                    {/* Compact Horizontal Capability Badges */}
-                    <div className="flex items-center gap-1">
-                        {PRODUCT_CAPABILITY_BADGES.map((badge) => (
+                <label
+                    htmlFor="wim-ai-question-input"
+                    className="input-like flex flex-col cursor-text border border-border focus-within:border-primary bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#ffffff))] rounded-xl p-3"
+                >
+                    <textarea
+                        id="wim-ai-question-input"
+                        ref={textAreaRef}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="What should we write, research, or debate?"
+                        rows={6}
+                        disabled={busy}
+                        className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[120px]"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                e.preventDefault()
+                                void handleGenerate()
+                            }
+                        }}
+                    />
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border text-[11px]">
+                        <LemonSelect
+                            value={mode}
+                            onChange={(val) => setMode(val || 'write')}
+                            options={WRITER_MODES}
+                            size="xsmall"
+                            type="tertiary"
+                            dropdownPlacement="top-start"
+                            dropdownMatchSelectWidth={false}
+                        />
+
+                        <div className="flex items-center gap-2">
+                            {error ? <span className="text-danger text-[11px] max-w-[16rem] truncate">{error}</span> : null}
+                            <span className="text-muted text-[10px] hidden sm:inline font-mono">Ctrl + Enter</span>
                             <LemonButton
-                                key={badge.key}
-                                size="xsmall"
-                                type={selectedCapability === badge.key ? 'primary' : 'tertiary'}
-                                icon={badge.icon}
-                                className="!py-0.5 !px-1.5 text-[11px]"
-                                onClick={() => {
-                                    setSelectedCapability(badge.key)
-                                    if (badge.key === 'analytics') {
-                                        setPrompt('What is the retention in the last two weeks?')
-                                    } else if (badge.key === 'replays') {
-                                        setPrompt('Summarize recent session replays for checkout drop-off.')
-                                    } else if (badge.key === 'flags') {
-                                        setPrompt('How do I create a feature flag for rollout?')
-                                    } else if (badge.key === 'experiments') {
-                                        setPrompt('Help me set up an A/B experiment evaluation plan.')
-                                    } else if (badge.key === 'learn') {
-                                        setPrompt('How can I capture custom telemetry events?')
-                                    } else if (badge.key === 'code') {
-                                        setPrompt('Write a HogQL SQL query to count total pageviews per user.')
-                                    }
-                                }}
+                                type="primary"
+                                size="small"
+                                icon={<IconArrowRight />}
+                                onClick={() => void handleGenerate()}
+                                disabled={!prompt.trim() || busy}
+                                loading={busy}
+                                tooltip="Insert a philosopher reply into the notebook"
                             >
-                                {badge.label}
+                                {busy ? 'Thinking…' : 'Insert'}
                             </LemonButton>
-                        ))}
+                        </div>
                     </div>
-                </div>
-
-                {/* EXPANDED & MINIMAL CHATBOT TEXTAREA CANVAS */}
-                <div className="relative w-full flex flex-col">
-                    <label
-                        htmlFor="posthog-ai-question-input"
-                        className="input-like flex flex-col cursor-text border border-border focus-within:border-primary bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#ffffff))] rounded-xl p-3 shadow-xl transition-all"
-                    >
-                        <div className="relative w-full">
-                            <textarea
-                                id="posthog-ai-question-input"
-                                ref={textAreaRef}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Type a prompt to insert as an AI Chatbot block..."
-                                rows={6}
-                                className="w-full bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed min-h-[120px]"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                                        e.preventDefault()
-                                        handleGenerate()
-                                    }
-                                }}
-                            />
-                        </div>
-
-                        {/* Minimal Bottom Bar */}
-                        <div className="flex items-center justify-between pt-2 border-t border-[#2c2d38]/80 text-[11px]">
-                            {/* Minimal ModeSelector */}
-                            <LemonSelect
-                                value={selectedAgentMode}
-                                onChange={(val) => setSelectedAgentMode(val || 'auto')}
-                                options={AGENT_MODE_OPTIONS}
-                                size="xsmall"
-                                type="tertiary"
-                                dropdownPlacement="top-start"
-                                dropdownMatchSelectWidth={false}
-                                className="border border-border bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#ffffff))] !py-0.5"
-                            />
-
-                            {/* Minimal Controls */}
-                            <div className="flex items-center gap-2">
-                                <span className="text-slate-500 text-[10px] hidden sm:inline font-mono">
-                                    Cmd + Enter
-                                </span>
-
-                                <LemonButton
-                                    type="primary"
-                                    size="small"
-                                    icon={<IconArrowRight />}
-                                    onClick={() => handleGenerate()}
-                                    disabled={!prompt.trim()}
-                                    tooltip="Insert Chatbot Block into Notebook (Cmd + Enter)"
-                                />
-                            </div>
-                        </div>
-                    </label>
-                </div>
+                </label>
             </div>
         </LemonModal>
     )

@@ -122,7 +122,7 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
                     {icon && <span className="w-4 h-4 text-secondary flex items-center justify-center">{icon}</span>}
                     <span className="font-semibold text-sm">{tagName}</span>
                     <LemonTag type="default" size="small">
-                        PostHog Node
+                        Unsupported block
                     </LemonTag>
                 </div>
             </div>
@@ -139,7 +139,8 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
             )}
 
             <LemonBanner type="info" size="small">
-                Connect PostHog backend to view live dataset for <strong>{tagName}</strong>.
+                This block is leftover from an older template and is not live on WorldInMaking. You can delete it
+                or leave it as a placeholder for <strong>{tagName}</strong>.
             </LemonBanner>
         </div>
     )

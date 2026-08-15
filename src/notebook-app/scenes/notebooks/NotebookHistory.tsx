@@ -6,6 +6,7 @@ import {
     restoreNotebookVersion,
     type NotebookVersion,
 } from './notebookStorage'
+import { useNotebookConfirm } from './NotebookConfirmDialog'
 
 interface NotebookHistoryProps {
     notebookId: string
@@ -73,6 +74,7 @@ export function NotebookHistory({
     const [restoringVersion, setRestoringVersion] = useState<number | null>(null)
     const [snapshotBusy, setSnapshotBusy] = useState(false)
     const [flash, setFlash] = useState<string | null>(null)
+    const { confirm, dialog: confirmDialog } = useNotebookConfirm()
 
     const reload = useCallback(() => {
         setHistory(getNotebookHistoryNewestFirst(notebookId))
@@ -108,10 +110,13 @@ export function NotebookHistory({
         }
     }
 
-    const handleRestore = (version: NotebookVersion) => {
-        if (!confirm(`Restore version v${version.version}? Your current text will be kept as a new snapshot.`)) {
-            return
-        }
+    const handleRestore = async (version: NotebookVersion) => {
+        const ok = await confirm({
+            title: `Restore version v${version.version}?`,
+            description: 'Your current text will be kept as a new snapshot.',
+            confirmLabel: 'Restore',
+        })
+        if (!ok) return
         setRestoringVersion(version.version)
         try {
             const restored = restoreNotebookVersion(notebookId, version.version)
@@ -140,6 +145,7 @@ export function NotebookHistory({
 
     return (
         <>
+            {confirmDialog}
             {/* Backdrop (mobile-friendly close) */}
             <button
                 type="button"

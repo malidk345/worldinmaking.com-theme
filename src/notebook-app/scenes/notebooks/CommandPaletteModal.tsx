@@ -8,7 +8,6 @@ interface CommandPaletteModalProps {
     onClose: () => void
     onSelectNotebook: (id: string) => void
     onCreateNew: () => void
-    onOpenCanvas: () => void
     onOpenTemplates: () => void
     onOpenAI: () => void
 }
@@ -18,7 +17,6 @@ export function CommandPaletteModal({
     onClose,
     onSelectNotebook,
     onCreateNew,
-    onOpenCanvas,
     onOpenTemplates,
     onOpenAI,
 }: CommandPaletteModalProps) {
@@ -38,7 +36,7 @@ export function CommandPaletteModal({
     )
 
     return (
-        <LemonModal isOpen={isOpen} onClose={onClose} title="Quick Command Palette (Cmd + K)">
+        <LemonModal isOpen={isOpen} onClose={onClose} title="Command palette (Ctrl + K)">
             <div className="space-y-4 p-2">
                 <LemonInput
                     type="search"
@@ -52,7 +50,7 @@ export function CommandPaletteModal({
 
                 <div className="space-y-1 max-h-80 overflow-y-auto pt-2">
                     <div className="text-xs font-semibold text-muted px-2 py-1 uppercase tracking-wider">
-                        Quick Actions
+                        Quick actions
                     </div>
 
                     <LemonButton
@@ -65,7 +63,7 @@ export function CommandPaletteModal({
                         }}
                     >
                         <div className="flex justify-between items-center w-full">
-                            <span>Ask PostHog AI Writer</span>
+                            <span>Ask WIM</span>
                             <span className="text-xs text-muted">/ask-ai</span>
                         </div>
                     </LemonButton>
@@ -79,19 +77,7 @@ export function CommandPaletteModal({
                             onCreateNew()
                         }}
                     >
-                        Create New Notebook
-                    </LemonButton>
-
-                    <LemonButton
-                        type="stealth"
-                        fullWidth
-                        icon={<IconNotebook />}
-                        onClick={() => {
-                            onClose()
-                            onOpenCanvas()
-                        }}
-                    >
-                        Open Freeform Canvas
+                        Create new notebook
                     </LemonButton>
 
                     <LemonButton
@@ -103,7 +89,7 @@ export function CommandPaletteModal({
                             onOpenTemplates()
                         }}
                     >
-                        Browse PostHog Templates
+                        Browse templates
                     </LemonButton>
 
                     {filteredNotebooks.length > 0 && (

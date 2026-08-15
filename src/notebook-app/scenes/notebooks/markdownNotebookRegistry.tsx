@@ -280,7 +280,8 @@ export const NOTEBOOK_MARKDOWN_REGISTRY: NotebookComponentRegistry = createMarkd
             ViewComponent: DataNodeShell,
             EditComponent: definition.EditComponent ?? DataNodeShell,
             exclusiveEditPanel: definition.exclusiveEditPanel,
-            insertCommand: definition.insertCommand ?? {},
+            // Only explicit insert commands appear in `/`. Empty `{}` used to leak PostHog nodes.
+            insertCommand: definition.insertCommand,
             getTitle: (node: NotebookComponentBlockNode) =>
                 getMarkdownNotebookNodeTitle(node, nodeType, label),
         }

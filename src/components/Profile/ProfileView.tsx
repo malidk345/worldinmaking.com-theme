@@ -37,6 +37,7 @@ import { IconNoEntry, IconStrapi } from 'components/OSIcons'
 import HourglassLoader from 'components/HourglassLoader'
 import { ageFromBirthDate, isValidProfileUsername } from 'lib/profile-path'
 import ProfileDocumentGrid from 'components/Profile/ProfileDocumentGrid'
+import ProfileNotebookGrid, { type ProfileNotebookCard } from 'components/Profile/ProfileNotebookGrid'
 
 import { useWindow } from 'context/Window'
 
@@ -631,8 +632,48 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
     const { appWindow } = useWindow()
     const { user } = useUser()
     const [sort, setSort] = useState(sortOptions[0].label)
+    const [notebooks, setNotebooks] = useState<ProfileNotebookCard[]>([])
+    const [notebooksLoading, setNotebooksLoading] = useState(true)
     const authorId = id ? String(id) : undefined
     const authorName = username || profile?.username || firstName
+
+    useEffect(() => {
+        const handle = String(authorName || '').replace(/^@/, '').trim()
+        if (!handle) {
+            setNotebooks([])
+            setNotebooksLoading(false)
+            return
+        }
+        let cancelled = false
+        setNotebooksLoading(true)
+        fetch(`/api/notebooks?username=${encodeURIComponent(handle)}&public=1`, { cache: 'no-store' })
+            .then((res) => (res.ok ? res.json() : { notebooks: [] }))
+            .then((body) => {
+                if (cancelled) return
+                const rows = Array.isArray(body?.notebooks) ? body.notebooks : []
+                setNotebooks(
+                    rows.map((row: any) => ({
+                        id: row.id,
+                        short_id: row.short_id,
+                        title: row.title || 'Untitled notebook',
+                        excerpt: row.excerpt || '',
+                        category: row.category,
+                        coverUrl: row.coverUrl,
+                        updatedAt: row.updatedAt || row.updated_at,
+                    }))
+                )
+                setNotebooksLoading(false)
+            })
+            .catch(() => {
+                if (cancelled) return
+                setNotebooks([])
+                setNotebooksLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [authorName])
+
     const posts = usePosts({
         authorId,
         author: authorName,
@@ -692,6 +733,24 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
                             )}
                         </div>
                     )}
+                </>
+            ),
+        },
+        {
+            value: 'notebooks',
+            label: 'Notebooks',
+            content: (
+                <>
+                    <h4 className="text-lg font-bold m-0 mb-4">Notebooks</h4>
+                    <ProfileNotebookGrid
+                        loading={notebooksLoading}
+                        items={notebooks}
+                        empty={
+                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
+                                {firstName} hasn&apos;t published any notebooks yet
+                            </p>
+                        }
+                    />
                 </>
             ),
         },

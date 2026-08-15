@@ -1,6 +1,7 @@
 /**
  * GET  /api/notebooks?owner_key=...          → list owner's notebooks
  * GET  /api/notebooks?short_id=...&public=1  → published notebook by short_id
+ * GET  /api/notebooks?username=ali&public=1  → published cards for a profile
  * POST /api/notebooks                        → upsert one or many notebooks
  *
  * Authz (TSK-19):
@@ -14,6 +15,7 @@ export const runtime = 'edge'
 
 import {
     listNotebooksByOwner,
+    listPublishedNotebooksByAuthor,
     getNotebookByIdOrShort,
     upsertNotebook,
     upsertNotebooks,
@@ -37,12 +39,18 @@ export default async function handler(req: Request) {
         if (req.method === 'GET') {
             const claimedOwner = url.searchParams.get('owner_key') || ''
             const shortId = url.searchParams.get('short_id') || ''
+            const username = url.searchParams.get('username') || url.searchParams.get('author') || ''
             const asPublic = url.searchParams.get('public') === '1' || url.searchParams.get('public') === 'true'
 
             if (shortId && asPublic) {
                 const nb = await getNotebookByIdOrShort(shortId, { publishedOnly: true })
                 if (!nb) return json({ error: 'Not found' }, 404)
                 return json({ notebook: nb })
+            }
+
+            if (username && asPublic) {
+                const notebooks = await listPublishedNotebooksByAuthor(username)
+                return json({ notebooks })
             }
 
             const auth = await resolveNotebookOwner(req, claimedOwner)

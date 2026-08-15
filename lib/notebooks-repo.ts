@@ -26,8 +26,8 @@ export type StoredNotebookRow = {
     version: number
     owner_key: string
     auth_user_id: string | null
-    created_by: { first_name: string; email: string } | null
-    last_modified_by: { first_name: string; email: string } | null
+    created_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
+    last_modified_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
 }
 
 export type NotebookHistoryRow = {
@@ -54,8 +54,8 @@ export type StoredNotebookDTO = {
     publish?: NotebookPublishMeta
     version: number
     auth_user_id?: string
-    created_by?: { first_name: string; email: string }
-    last_modified_by?: { first_name: string; email: string }
+    created_by?: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string }
+    last_modified_by?: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string }
 }
 
 export type NotebookVersionDTO = {
@@ -103,6 +103,72 @@ export function dtoToRow(nb: StoredNotebookDTO, ownerKey: string): Omit<StoredNo
         created_by: nb.created_by ?? null,
         last_modified_by: nb.last_modified_by ?? null,
     }
+}
+
+export type PublicNotebookCard = {
+    id: string
+    short_id: string
+    title: string
+    excerpt: string
+    category?: string
+    coverUrl?: string
+    updatedAt: string
+    created_by?: StoredNotebookDTO['created_by']
+}
+
+function excerptFromNotebook(row: StoredNotebookRow): string {
+    const subtitle = row.publish?.subtitle?.trim()
+    if (subtitle) return subtitle.slice(0, 240)
+    const stripped = String(row.content || '')
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/[#>*_`~\-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    return stripped.slice(0, 240)
+}
+
+/** Published notebooks for a profile page. No full body. */
+export async function listPublishedNotebooksByAuthor(username: string): Promise<PublicNotebookCard[]> {
+    const handle = String(username || '')
+        .replace(/^@/, '')
+        .trim()
+    if (!handle || handle.length > 64) return []
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, username')
+        .ilike('username', handle)
+        .maybeSingle()
+
+    if (profileError) throw profileError
+
+    let query = supabaseAdmin
+        .from('wim_notebooks')
+        .select('id, short_id, title, content, publish, updated_at, created_by, auth_user_id, is_published')
+        .eq('is_published', true)
+        .order('updated_at', { ascending: false })
+        .limit(40)
+
+    if (profile?.id) {
+        query = query.eq('auth_user_id', profile.id)
+    } else {
+        query = query.contains('created_by', { username: handle })
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+
+    return ((data as StoredNotebookRow[] | null) ?? []).map((row) => ({
+        id: row.id,
+        short_id: row.short_id,
+        title: row.publish?.publicTitle || row.title,
+        excerpt: excerptFromNotebook(row),
+        category: row.publish?.category,
+        coverUrl: row.publish?.coverUrl,
+        updatedAt: row.updated_at,
+        created_by: row.created_by ?? undefined,
+    }))
 }
 
 export async function listNotebooksByOwner(ownerKey: string): Promise<StoredNotebookDTO[]> {

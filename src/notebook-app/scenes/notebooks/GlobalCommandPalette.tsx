@@ -49,8 +49,8 @@ export function GlobalCommandPalette({
         },
         {
             id: 'action-templates',
-            title: 'Browse SaaS Templates Gallery',
-            description: 'Insert pre-built Craft & Notion docs.',
+            title: 'Browse templates',
+            description: 'Start from a WIM writing structure.',
             icon: <LayoutTemplate className="w-4 h-4 text-blue-400" />,
             onRun: onOpenTemplates,
         },

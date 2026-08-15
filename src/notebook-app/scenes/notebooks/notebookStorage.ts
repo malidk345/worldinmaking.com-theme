@@ -1,11 +1,27 @@
 import { uuid } from '../../lib/utils/dom'
 import {
     deleteNotebookRemote,
+    isNotebookRemoteKnownAvailable,
     mergeNotebookLists,
     pullNotebooksFromRemote,
     pushAllNotebooksToRemote,
     pushNotebookToRemote,
 } from './notebookRemote'
+import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
+
+export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
+export const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
+export const WIM_NOTEBOOK_SYNC_EVENT = 'wimNotebookSync'
+
+export type NotebookSyncEventDetail = {
+    status: 'ok' | 'error' | 'offline'
+    message?: string
+}
+
+function emitWindowEvent(name: string, detail?: unknown): void {
+    if (typeof window === 'undefined') return
+    window.dispatchEvent(detail !== undefined ? new CustomEvent(name, { detail }) : new Event(name))
+}
 
 export interface NotebookPublishMeta {
     publicTitle?: string
@@ -28,8 +44,8 @@ export interface StoredNotebook {
     isPublished?: boolean
     publish?: NotebookPublishMeta
     version: number
-    created_by?: { first_name: string; email: string }
-    last_modified_by?: { first_name: string; email: string }
+    created_by?: NotebookPerson
+    last_modified_by?: NotebookPerson
 }
 
 export interface NotebookVersion {
@@ -48,11 +64,28 @@ const MAX_HISTORY = 50
 /** Min ms between automatic history snapshots while typing */
 const SNAPSHOT_MIN_INTERVAL_MS = 20_000
 
-/** Fire-and-forget remote sync — never throws into UI paths */
+/** Fire-and-forget remote sync — never throws into UI paths. Emits sync status for the chrome. */
 function queueRemote(promise: Promise<unknown>): void {
-    promise.catch(() => {
-        /* localStorage remains authoritative */
-    })
+    promise
+        .then((result) => {
+            if (result === false) {
+                const offline = isNotebookRemoteKnownAvailable() === false
+                emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
+                    status: offline ? 'offline' : 'error',
+                    message: offline
+                        ? 'Offline. Notebook is saved on this device.'
+                        : 'Cloud sync failed. Notebook is still saved on this device.',
+                } satisfies NotebookSyncEventDetail)
+                return
+            }
+            emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, { status: 'ok' } satisfies NotebookSyncEventDetail)
+        })
+        .catch(() => {
+            emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
+                status: 'error',
+                message: 'Cloud sync failed. Notebook is still saved on this device.',
+            } satisfies NotebookSyncEventDetail)
+        })
 }
 
 function schedulePushNotebook(notebook: StoredNotebook): void {
@@ -83,18 +116,21 @@ function ensureRemoteHydrate(): void {
             if (!remote) {
                 // Table missing or offline: still try to push local when API becomes ready later
                 schedulePushAll()
+                emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
             const local = readLocalNotebooks()
             if (!remote.length) {
                 // First remote session: upload local cache
                 if (local.length) schedulePushAll()
+                emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
             const merged = mergeNotebookLists(local, remote)
             writeAll(merged)
             // Push any local-only or newer local rows
             schedulePushAll()
+            emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
         })()
     )
 }
@@ -148,6 +184,53 @@ function seedDefaults(): StoredNotebook[] {
 
 function writeAll(notebooks: StoredNotebook[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notebooks))
+    emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
+}
+
+function isWeakPerson(person?: NotebookPerson): boolean {
+    if (!person) return true
+    return person.first_name === 'You' && !person.username && !person.email && !person.avatar_url
+}
+
+/** Fill missing or placeholder actors from the signed-in profile (old local rows). */
+export function backfillNotebookActors(): boolean {
+    if (typeof window === 'undefined') return false
+    const actor = getNotebookActor()
+    const actorIsWeak = isWeakPerson(actor)
+    const notebooks = readLocalNotebooks()
+    let changed = false
+    const next = notebooks.map((nb) => {
+        let created_by = nb.created_by
+        let last_modified_by = nb.last_modified_by
+
+        if (!created_by) {
+            created_by = actor
+            changed = true
+        } else if (!actorIsWeak && isWeakPerson(created_by)) {
+            created_by = actor
+            changed = true
+        }
+
+        if (!last_modified_by) {
+            last_modified_by = actor
+            changed = true
+        } else if (!actorIsWeak && isWeakPerson(last_modified_by)) {
+            last_modified_by = actor
+            changed = true
+        }
+
+        if (created_by === nb.created_by && last_modified_by === nb.last_modified_by) return nb
+        return { ...nb, created_by, last_modified_by }
+    })
+    if (!changed) return false
+    writeAll(next)
+    schedulePushAll()
+    return true
+}
+
+/** Retry a background push of every local notebook. */
+export function retryNotebookRemoteSync(): void {
+    schedulePushAll()
 }
 
 function writeHistory(id: string, history: NotebookVersion[]): void {
@@ -224,6 +307,7 @@ export function saveNotebook(
     const next: StoredNotebook = {
         ...notebook,
         updatedAt: now,
+        last_modified_by: getNotebookActor(),
     }
 
     const contentChanged =
@@ -282,7 +366,7 @@ export function publishNotebook(
 
     const published: StoredNotebook = {
         ...notebook,
-        isPublished: meta.isPublished !== false,
+        isPublished: meta.isPublished === true,
         title: meta.publicTitle?.trim() || notebook.title,
         publish: {
             publicTitle: meta.publicTitle?.trim() || notebook.title,
@@ -293,7 +377,10 @@ export function publishNotebook(
         },
     }
 
-    return saveNotebook(published, { snapshot: true, snapshotLabel: 'Published' })
+    return saveNotebook(published, {
+        snapshot: true,
+        snapshotLabel: meta.isPublished === true ? 'Published' : 'Saved draft',
+    })
 }
 
 export function unpublishNotebook(id: string): StoredNotebook | undefined {
@@ -319,23 +406,7 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
     const id = uuid()
     const now = new Date().toISOString()
 
-    let createdByObj: { first_name: string; email?: string } = { first_name: 'You' }
-    if (typeof window !== 'undefined') {
-        try {
-            const savedUser = localStorage.getItem('user')
-            if (savedUser) {
-                const parsed = JSON.parse(savedUser)
-                if (parsed?.profile?.firstName || parsed?.username) {
-                    createdByObj = {
-                        first_name: parsed.profile?.firstName || parsed.username,
-                        email: parsed.email,
-                    }
-                }
-            }
-        } catch {
-            /* ignore */
-        }
-    }
+    const actor = getNotebookActor()
 
     const notebook: StoredNotebook = {
         id,
@@ -346,7 +417,8 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
         updatedAt: now,
         version: 1,
         isPublished: false,
-        created_by: createdByObj,
+        created_by: actor,
+        last_modified_by: actor,
     }
 
     const notebooks = getNotebooks()

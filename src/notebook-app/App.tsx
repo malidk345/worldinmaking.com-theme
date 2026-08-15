@@ -12,7 +12,6 @@ import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
 import { PHILOSOPHER_BOTS } from './lib/philosophers'
 import {
     StoredNotebook,
-    DEFAULT_NOTEBOOKS,
     getNotebooks,
     getNotebook,
     saveNotebook,
@@ -20,23 +19,30 @@ import {
     deleteNotebook,
     duplicateNotebook,
     publishNotebook,
+    backfillNotebookActors,
+    retryNotebookRemoteSync,
+    WIM_NOTEBOOKS_HYDRATED_EVENT,
+    WIM_NOTEBOOK_SYNC_EVENT,
+    type NotebookSyncEventDetail,
 } from './scenes/notebooks/notebookStorage'
-import { NotebookPublicView } from './scenes/notebooks/NotebookPublicView'
+import { useNotebookConfirm } from './scenes/notebooks/NotebookConfirmDialog'
+import { NotebookPublicRoute } from './scenes/notebooks/NotebookPublicView'
 import { NotebooksListScene } from './scenes/notebooks/NotebooksListScene'
 import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
 import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
-import { NotebookShareModal } from './scenes/notebooks/NotebookShareModal'
+import { NotebookShareModal, type NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
 import { NotebookHistory } from './scenes/notebooks/NotebookHistory'
 import { NotebookSyncInfo, NotebookExpandButton } from './scenes/notebooks/NotebookMeta'
 import { NotebookAIWriterModal } from './scenes/notebooks/NotebookAIWriterModal'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
-import { NotebookPublishModal } from './scenes/notebooks/NotebookPublishModal'
 import { AskAIDropdown } from './scenes/notebooks/AskAI'
 import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
+import { useUser } from '../hooks/useUser'
+import { setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
 import { useAppActions } from '../context/App'
 
@@ -142,13 +148,14 @@ export function App() {
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
-  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local'>('local')
+  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
+  const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [isExpanded, setIsExpanded] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [shareTab, setShareTab] = useState<NotebookShareTab>('private')
   const [showAIModal, setShowAIModal] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
-  const [showPublishModal, setShowPublishModal] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
   const editorContainerRef = useRef<HTMLDivElement | null>(null)
@@ -165,6 +172,28 @@ export function App() {
   }, [])
 
   const appActions = useAppActions()
+  const { user } = useUser()
+  const { confirm, dialog: confirmDialog } = useNotebookConfirm()
+
+  useEffect(() => {
+    setNotebookActor(userToNotebookActor(user))
+    backfillNotebookActors()
+  }, [user])
+
+  useEffect(() => {
+    const onSync = (event: Event) => {
+      const detail = (event as CustomEvent<NotebookSyncEventDetail>).detail
+      if (!detail) return
+      setCloudMessage(detail.message)
+      if (detail.status === 'ok') {
+        setSyncStatus((prev) => (prev === 'edited' ? prev : 'saved'))
+        return
+      }
+      setSyncStatus((prev) => (prev === 'edited' ? prev : detail.status))
+    }
+    window.addEventListener(WIM_NOTEBOOK_SYNC_EVENT, onSync)
+    return () => window.removeEventListener(WIM_NOTEBOOK_SYNC_EVENT, onSync)
+  }, [])
 
   useEffect(() => {
     const handleOpenChat = (e: Event) => {
@@ -250,27 +279,42 @@ export function App() {
     }
   }, [])
 
-  // Load notebook when route changes to editor
+  // Load notebook when route changes to editor. Never fall back to another notebook.
   useEffect(() => {
-    if (route.page === 'editor') {
-      const nbs = getNotebooks()
-      const nb = getNotebook(route.notebookId) || nbs[0] || DEFAULT_NOTEBOOKS[0]
-      if (nb) {
-        setCurrentNotebook(nb)
-        setMarkdown(nb.content)
-        setTitle(nb.title)
-        setSyncStatus('saved')
-        setShowHistory(false)
-        setShowAIModal(false)
-      } else {
-        setCurrentNotebook(null)
-      }
+    if (route.page !== 'editor') return
+
+    const apply = (nb: StoredNotebook) => {
+      setCurrentNotebook(nb)
+      setMarkdown(nb.content)
+      setTitle(nb.title)
+      setSyncStatus('saved')
+      setShowHistory(false)
+      setShowAIModal(false)
     }
+
+    const nb = getNotebook(route.notebookId)
+    if (nb) {
+      apply(nb)
+      return
+    }
+    setCurrentNotebook(null)
+
+    const onHydrated = () => {
+      const remote = getNotebook(route.notebookId)
+      if (remote) apply(remote)
+    }
+    window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
+    return () => window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
   }, [route])
 
   // Auto-save with debounce (snapshots throttled inside saveNotebook)
   useEffect(() => {
     if (!currentNotebook || route.page !== 'editor') return
+    const dirty = markdown !== currentNotebook.content || title !== currentNotebook.title
+    if (!dirty) {
+      setSyncStatus('saved')
+      return
+    }
     setSyncStatus('edited')
     const timer = setTimeout(() => {
       const saved = saveNotebook({ ...currentNotebook, title, content: markdown })
@@ -302,7 +346,7 @@ export function App() {
         coverUrl: meta.coverImage,
         category: meta.category,
         tags,
-        isPublished: meta.isPublished !== false,
+        isPublished: Boolean(meta.isPublished),
       })
       if (saved) {
         setCurrentNotebook(saved)
@@ -333,12 +377,17 @@ export function App() {
     if (dup) navigate({ page: 'editor', notebookId: dup.id })
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!currentNotebook) return
-    if (confirm(`Delete "${currentNotebook.title}"?`)) {
-      deleteNotebook(currentNotebook.id)
-      navigate({ page: 'list' })
-    }
+    const ok = await confirm({
+      title: `Delete “${currentNotebook.title}”?`,
+      description: 'This removes the notebook from this device and from cloud sync.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    deleteNotebook(currentNotebook.id)
+    navigate({ page: 'list' })
   }
 
   const handleInsertAIResponse = useCallback((aiContent?: string, mode: 'append' | 'replace' | 'prepend' = 'append') => {
@@ -471,34 +520,19 @@ export function App() {
       <main className="p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
         <ErrorBoundary>
           {/* ---------- Public notebook (read-only share link) ---------- */}
-          {route.page === 'public' && (() => {
-            const pub = getNotebook(route.notebookId)
-            if (!pub) {
-              return (
-                <div className="p-12 text-center text-muted space-y-4">
-                  <p className="text-lg">Published notebook not found ({route.notebookId})</p>
-                  <LemonButton type="primary" onClick={() => navigate({ page: 'list' })}>
-                    Back to notebooks
-                  </LemonButton>
-                </div>
-              )
-            }
-            return (
-              <NotebookPublicView
-                notebook={pub}
-                onBack={() => navigate({ page: 'list' })}
-                onOpenEditor={() => navigate({ page: 'editor', notebookId: pub.id })}
-              />
-            )
-          })()}
+          {route.page === 'public' && (
+            <NotebookPublicRoute
+              notebookId={route.notebookId}
+              onBack={() => navigate({ page: 'list' })}
+              onOpenEditor={(id) => navigate({ page: 'editor', notebookId: id })}
+            />
+          )}
 
           {/* ---------- Notebooks List (Default Entry Scene) ---------- */}
           {route.page === 'list' && (
             <NotebooksListScene
               onSelectNotebook={handleSelectNotebook}
               onCreateNew={handleCreateNew}
-              onOpenCanvas={() => navigate({ page: 'canvas' })}
-              onSelectTemplate={handleSelectTemplate}
             />
           )}
 
@@ -541,10 +575,23 @@ export function App() {
                       tooltip="Back to notebooks"
                     />
                     {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
-                    <CollaboratorsBanner editedByText={currentNotebook.created_by?.first_name || 'You'} />
+                    <CollaboratorsBanner
+                      person={
+                        currentNotebook.last_modified_by ||
+                        currentNotebook.created_by ||
+                        userToNotebookActor(user)
+                      }
+                      updatedAt={currentNotebook.updatedAt}
+                      syncStatus={syncStatus}
+                      notebookId={currentNotebook.id}
+                    />
                     <span className="text-muted opacity-30 hidden sm:inline">•</span>
                     <div className="hidden sm:block">
-                      <NotebookSyncInfo syncStatus={syncStatus} />
+                      <NotebookSyncInfo
+                        syncStatus={syncStatus}
+                        message={cloudMessage}
+                        onRetry={retryNotebookRemoteSync}
+                      />
                     </div>
                   </div>
 
@@ -560,18 +607,20 @@ export function App() {
                       onDuplicate={handleDuplicate}
                       onDelete={handleDelete}
                       onShowHistory={() => setShowHistory(!showHistory)}
-                      onShare={() => setShowShareModal(true)}
-                      onOpenPublishModal={() => setShowPublishModal(true)}
+                      onShare={(tab) => {
+                        setShareTab(tab || 'private')
+                        setShowShareModal(true)
+                      }}
                     />
                     <NotebookExpandButton
                       isExpanded={isExpanded}
                       onToggleExpand={() => setIsExpanded(!isExpanded)}
                     />
                     <SidebarContextPanelMenu
-                      notebookTitle={currentNotebook.title}
-                      onOpenAI={() => setShowAIModal(true)}
-                      onCreateNew={handleCreateNew}
-                      onPublish={handlePublish}
+                      onOpenShare={(tab) => {
+                        setShareTab(tab || 'publish')
+                        setShowShareModal(true)
+                      }}
                     />
                   </div>
                 </div>
@@ -621,21 +670,14 @@ export function App() {
                   onClose={() => setShowShareModal(false)}
                   notebookId={currentNotebook.id}
                   notebookTitle={currentNotebook.title}
+                  initialTab={shareTab}
+                  onPublish={handlePublish}
                 />
 
-                {/* PostHog AI Assistant Modal */}
                 <NotebookAIWriterModal
                   isOpen={showAIModal}
                   onClose={() => setShowAIModal(false)}
                   onInsertContent={handleInsertAIResponse}
-                />
-
-                {/* Publish & Cover Meta Details Modal */}
-                <NotebookPublishModal
-                  isOpen={showPublishModal}
-                  onClose={() => setShowPublishModal(false)}
-                  notebookTitle={currentNotebook.title}
-                  onPublishSuccess={handlePublish}
                 />
               </div>
             ) : (
@@ -655,10 +697,10 @@ export function App() {
           onClose={() => setShowCommandPalette(false)}
           onSelectNotebook={handleSelectNotebook}
           onCreateNew={handleCreateNew}
-          onOpenCanvas={() => navigate({ page: 'canvas' })}
           onOpenTemplates={() => navigate({ page: 'templates' })}
           onOpenAI={() => setShowAIModal(true)}
         />
+        {confirmDialog}
       </main>
     </div>
   )

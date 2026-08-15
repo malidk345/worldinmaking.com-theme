@@ -15,8 +15,7 @@ interface NotebookMenuProps {
     onDuplicate?: () => void
     onDelete?: () => void
     onShowHistory?: () => void
-    onShare?: () => void
-    onOpenPublishModal?: () => void
+    onShare?: (tab?: 'private' | 'publish') => void
 }
 
 export function NotebookMenu({
@@ -25,7 +24,6 @@ export function NotebookMenu({
     onDelete,
     onShowHistory,
     onShare,
-    onOpenPublishModal,
 }: NotebookMenuProps) {
     const [copied, setCopied] = useState<'md' | 'paper' | null>(null)
 
@@ -126,12 +124,12 @@ export function NotebookMenu({
                 {
                     label: 'Share',
                     icon: <IconShare />,
-                    onClick: onShare,
+                    onClick: () => onShare?.('private'),
                 },
                 {
-                    label: 'Publish & cover',
+                    label: 'Publish on WIM',
                     icon: <IconShare />,
-                    onClick: onOpenPublishModal,
+                    onClick: () => onShare?.('publish'),
                 },
                 {
                     separator: true,

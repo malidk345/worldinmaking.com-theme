@@ -1,6 +1,24 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 
-import { useResizeObserver } from 'lib/hooks/useResizeObserver'
+/** Local observer — `use-resize-observer` is webpack-shimmed to a mock in this app. */
+function useObservedWidth(ref: React.RefObject<HTMLElement | null>): number {
+    const [width, setWidth] = useState(0)
+
+    useLayoutEffect(() => {
+        const el = ref.current
+        if (!el) return
+
+        const read = () => setWidth(el.offsetWidth)
+        read()
+
+        if (typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver(read)
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [ref])
+
+    return width
+}
 
 /**
  * Dynamic slider positioning for horizontal single-choice components such as LemonSegmentedButton or LemonTabs.
@@ -21,7 +39,7 @@ export function useSliderPositioning<C extends HTMLElement, S extends HTMLElemen
     const selectionRef = useRef<S>(null)
     const [[selectionWidth, selectionOffset], setSelectionWidthAndOffset] = useState<[number, number]>([0, 0])
     const [transitioning, setTransitioning] = useState(false)
-    const { width: containerWidth = 0 } = useResizeObserver({ ref: containerRef })
+    const containerWidth = useObservedWidth(containerRef)
 
     useLayoutEffect(() => {
         if (selectionRef.current) {
