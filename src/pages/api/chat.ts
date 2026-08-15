@@ -36,7 +36,7 @@ const MAX_SYSTEM_PROMPT_LENGTH = 5000
 const MAX_STYLE_LENGTH = 2000
 const MAX_ATTACHMENT_CONTEXT_LENGTH = 6000
 const MAX_HISTORY_LENGTH = 8000
-const MAX_NOTEBOOK_CONTEXT_LENGTH = 3500
+const MAX_NOTEBOOK_CONTEXT_LENGTH = 24000
 
 function json(body: Record<string, unknown>, status = 200, headers?: HeadersInit) {
     return new Response(JSON.stringify(body), {
@@ -52,12 +52,17 @@ function jsonError(message: string, status: number, headers?: HeadersInit) {
 function readOptionalBoundedString(
     value: unknown,
     maxLength: number,
-    field: string
+    field: string,
+    opts?: { truncate?: boolean }
 ): { ok: true; value: string } | { ok: false; error: string } {
     if (value === undefined || value === null) return { ok: true, value: '' }
     if (typeof value !== 'string') return { ok: false, error: `${field} must be a string` }
-    if (value.length > maxLength) return { ok: false, error: `${field} too long (max ${maxLength} characters)` }
-    return { ok: true, value: value.trim() }
+    const trimmed = value.trim()
+    if (trimmed.length > maxLength) {
+        if (opts?.truncate) return { ok: true, value: trimmed.slice(0, maxLength) }
+        return { ok: false, error: `${field} too long (max ${maxLength} characters)` }
+    }
+    return { ok: true, value: trimmed }
 }
 
 export default async function handler(req: Request) {
@@ -88,7 +93,8 @@ export default async function handler(req: Request) {
     const notebookContext = readOptionalBoundedString(
         body.notebookContext,
         MAX_NOTEBOOK_CONTEXT_LENGTH,
-        'notebookContext'
+        'notebookContext',
+        { truncate: true }
     )
     if (!systemPrompt.ok) return jsonError(systemPrompt.error, 400)
     if (!styleSuffix.ok) return jsonError(styleSuffix.error, 400)

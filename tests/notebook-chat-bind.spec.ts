@@ -10,6 +10,17 @@ test.describe('notebook chat bind context', () => {
         ).toEqual(['# Agora', '## Forum'])
     })
 
+    test('sends a large notebook instead of only the first page', () => {
+        const longBody = `${'alpha '.repeat(2000)}\n\n## Later\n${'omega '.repeat(800)}`
+        const context = buildNotebookAgentContext({
+            title: 'Long notes',
+            content: `# Start\n\n${longBody}`,
+        })
+        expect(context).toContain('Notebook length:')
+        expect(context).toContain('omega')
+        expect(context.length).toBeGreaterThan(8000)
+    })
+
     test('prefers selection over dumping the whole notebook first', () => {
         const context = buildNotebookAgentContext({
             title: 'Agora notes',

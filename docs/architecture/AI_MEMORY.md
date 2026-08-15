@@ -288,6 +288,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 207 - Notebook context was capped too small
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chat rejected `notebookContext` over 3500 chars, so large notebooks never reached the model. Client now packs ~20k (head+tail); API accepts 24k and truncates instead of 400.
+- **Modified Files:** `src/lib/notebook-chat-bind.ts`, `src/pages/api/chat.ts`, `tests/notebook-chat-bind.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm exec playwright test tests/notebook-chat-bind.spec.ts` — 11 passed
+
 ### Entry 206 - Public contact email on profiles
 - **Date:** 2026-08-16
 - **AI Agent:** Grok 4.6 (xAI)
