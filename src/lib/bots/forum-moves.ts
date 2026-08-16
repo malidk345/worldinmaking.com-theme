@@ -20,9 +20,9 @@ export type ForumMove = 'open' | 'counter' | 'distinguish' | 'press' | 'close'
 
 export function pickForumMove(replyCount: number): ForumMove {
     if (replyCount <= 0) return 'counter'
-    if (replyCount === 1) return 'distinguish'
-    if (replyCount === 2) return 'press'
-    return 'close'
+    if (replyCount >= 30) return 'close'
+    const cycle: ForumMove[] = ['distinguish', 'press', 'counter']
+    return cycle[(replyCount - 1) % cycle.length] || 'press'
 }
 
 export function instructionForForumMove(move: ForumMove): string {

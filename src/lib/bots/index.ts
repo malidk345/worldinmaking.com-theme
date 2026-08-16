@@ -16,6 +16,7 @@ export { resolveBotProfile, createForumTopic, createForumReply } from './actions
 export { runPhilosopherBotTick, parseTickRequest, fetchRSSTopic, pickBot } from './philosopher-tick'
 export { fetchRssBriefing, formatRssBriefing, itemsFromFeedXml } from './forum-rss'
 export { formatForumTranscript, shouldContinueThread } from './forum-thread'
+export { shouldReactToHuman, pickRespondent } from './forum-react'
 export { runPaperStep } from './actions/paper'
 export type { PaperStepKind } from './actions/paper'
 export { supabaseRest, getSupabaseConfig, slugify } from './supabase-edge'

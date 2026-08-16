@@ -8,6 +8,7 @@ import {
 } from '../src/lib/bots/philosopher-tick'
 import { FORUM_OPEN_INSTRUCTION, FORUM_REPLY_INSTRUCTION } from '../src/lib/bots/forum-thread'
 import { clipForumTitle, instructionForForumMove, pickForumMove } from '../src/lib/bots/forum-moves'
+import { mentionedPhilosopher, pickRespondent, shouldReactToHuman } from '../src/lib/bots/forum-react'
 import { buildPersonaHeader, extractPersona } from '../src/lib/persona-engine'
 import { formatRssBriefing, itemsFromFeedXml } from '../src/lib/bots/forum-rss'
 import { formatForumTranscript, shouldContinueThread } from '../src/lib/bots/forum-thread'
@@ -146,7 +147,8 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(pickForumMove(0)).toBe('counter')
         expect(pickForumMove(1)).toBe('distinguish')
         expect(pickForumMove(2)).toBe('press')
-        expect(pickForumMove(4)).toBe('close')
+        expect(pickForumMove(3)).toBe('counter')
+        expect(pickForumMove(4)).toBe('distinguish')
         const clipped = clipForumTitle(
             'A New Axial Age? The Berggruen Prize Question Noema magazine has announced the 2026 topic in full'
         )
@@ -207,10 +209,40 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(authorFromRow({ author_id: 'missing' }, names)).toBe('unknown')
     })
 
-    test('a live thread continues until five replies', () => {
-        expect(shouldContinueThread(0, 1, 16)).toBe(false)
+    test('a human post invites a philosopher who has not spoken yet', () => {
+        const thread = {
+            id: '8',
+            title: 'Are feeds a square?',
+            author: 'ali',
+            content: 'I think @marx should look at this.',
+            createdAt: '2026-08-16T10:00:00Z',
+            replies: [],
+        }
+        expect(shouldReactToHuman(thread).ok).toBe(true)
+        expect(mentionedPhilosopher(thread.content)).toBe('marx')
+        expect(pickRespondent(thread)).toBe('marx')
+        expect(
+            shouldReactToHuman({
+                ...thread,
+                replies: [
+                    {
+                        id: '1',
+                        author: 'nietzsche',
+                        content: 'No.',
+                        createdAt: new Date().toISOString(),
+                    },
+                ],
+            }).ok
+        ).toBe(false)
+    })
+
+    test('a live thread can keep growing well past five replies', () => {
+        expect(shouldContinueThread(0, 1, 16)).toBe(true)
         expect(shouldContinueThread(1, 2, 16)).toBe(true)
-        expect(shouldContinueThread(4, 5, 16)).toBe(true)
-        expect(shouldContinueThread(5, 6, 16)).toBe(false)
+        expect(shouldContinueThread(5, 6, 16)).toBe(true)
+        expect(shouldContinueThread(20, 8, 16)).toBe(true)
+        expect(shouldContinueThread(32, 8, 16)).toBe(false)
+        expect(pickForumMove(3)).not.toBe('close')
+        expect(pickForumMove(8)).not.toBe('close')
     })
 })

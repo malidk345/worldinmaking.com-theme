@@ -34,7 +34,6 @@ import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
 import { NotebookShareModal, type NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
 import { NotebookHistory } from './scenes/notebooks/NotebookHistory'
 import { NotebookSyncInfo, NotebookExpandButton } from './scenes/notebooks/NotebookMeta'
-import { NotebookAIWriterModal } from './scenes/notebooks/NotebookAIWriterModal'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
@@ -44,7 +43,9 @@ import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
-import { useAppActions } from '../context/App'
+import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
+import { bindNotebookChat } from '../lib/notebook-chat-bind'
+import { openAskAiWindow } from '../lib/open-ask-ai-window'
 
 // ---- Error Boundary ----
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -154,7 +155,6 @@ export function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareTab, setShareTab] = useState<NotebookShareTab>('private')
-  const [showAIModal, setShowAIModal] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
@@ -172,6 +172,23 @@ export function App() {
   }, [])
 
   const appActions = useAppActions()
+  const { windows } = useAppWindows()
+  const { isMobile } = useAppSettings()
+
+  const openAskAi = useCallback(() => {
+    if (currentNotebook) {
+      bindNotebookChat({ notebookId: currentNotebook.id, title: currentNotebook.title })
+    }
+    openAskAiWindow({
+      notebookId: currentNotebook?.id,
+      notebookTitle: currentNotebook?.title,
+      windows,
+      isMobile,
+      addWindow: appActions.addWindow,
+      updateWindow: appActions.updateWindow,
+      snapWindow: appActions.handleSnapToSide,
+    })
+  }, [appActions, currentNotebook, isMobile, windows])
   const { user } = useUser()
   const { confirm, dialog: confirmDialog } = useNotebookConfirm()
 
@@ -493,13 +510,7 @@ export function App() {
 
   const extraCommands = useCallback(
     (api?: any) =>
-      buildExtraInsertCommands({
-        ...api,
-        openAIPrompt: () => {
-          setShowAIModal(true)
-          setAiPromptRequest((n) => (n ?? 0) + 1)
-        },
-      }),
+      buildExtraInsertCommands(api),
     []
   )
 
@@ -680,11 +691,6 @@ export function App() {
                   onPublish={handlePublish}
                 />
 
-                <NotebookAIWriterModal
-                  isOpen={showAIModal}
-                  onClose={() => setShowAIModal(false)}
-                  onInsertContent={handleInsertAIResponse}
-                />
               </div>
             ) : (
               <div className="p-12 text-center text-muted space-y-4">
@@ -704,7 +710,7 @@ export function App() {
           onSelectNotebook={handleSelectNotebook}
           onCreateNew={handleCreateNew}
           onOpenTemplates={() => navigate({ page: 'templates' })}
-          onOpenAI={() => setShowAIModal(true)}
+          onOpenAI={openAskAi}
         />
         {confirmDialog}
       </main>

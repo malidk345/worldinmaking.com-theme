@@ -30,6 +30,7 @@ async function postPhase(phase, payload, attempt = 1) {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${CRON_SECRET}`,
+                'x-cron-secret': CRON_SECRET,
                 'Content-Type': 'application/json',
                 'User-Agent': 'WorldInMakingCron/1.0',
             },
@@ -112,9 +113,11 @@ async function fetchBriefing() {
 
 async function main() {
     if (!CRON_SECRET) {
-        throw new Error('CRON_SECRET is required')
+        throw new Error(
+            'CRON_SECRET is empty. Add it as a GitHub Actions repository secret (Settings → Secrets and variables → Actions). Use the same value as Cloudflare Pages CRON_SECRET / .env.local. Do not put Groq or Supabase keys here.'
+        )
     }
-    console.log(`site=${SITE_URL}`)
+    console.log(`site=${SITE_URL} secret_len=${CRON_SECRET.length}`)
 
     const plan = await postPhase('plan', { phase: 'plan' })
     if (plan.success !== true) {

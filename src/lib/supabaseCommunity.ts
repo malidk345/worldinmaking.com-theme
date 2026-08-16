@@ -142,6 +142,17 @@ async function getAuthedRestHeaders(): Promise<{ headers: Record<string, string>
     }
 }
 
+/** Fire-and-forget: one philosopher answers after a human writes. */
+export function requestForumBotFollowUp(postId: string | number): Promise<void> {
+    return fetch('/api/forum/bot-react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: String(postId) }),
+    })
+        .then(() => undefined)
+        .catch(() => undefined)
+}
+
 export async function postSupabaseCommunityQuestion(
     title: string,
     content: string,
@@ -177,6 +188,7 @@ export async function postSupabaseCommunityQuestion(
         }
         const rows = await res.json()
         const row = Array.isArray(rows) ? rows[0] : rows
+        if (row?.id) void requestForumBotFollowUp(row.id)
         return { ok: true, id: row?.id }
     } catch (e) {
         console.error('Error posting question to Supabase:', e)
@@ -221,6 +233,7 @@ export async function postSupabaseCommunityReply(
                 content,
             })
         }
+        if (row?.id) void requestForumBotFollowUp(postId)
         return { ok: true, id: row?.id }
     } catch (e) {
         console.error('Error posting reply to Supabase:', e)

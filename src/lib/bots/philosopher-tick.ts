@@ -233,6 +233,10 @@ async function planTick(): Promise<TickPlan> {
 
     if (wroteThisHour) {
         if (newestReplies.length === 0) return { kind: 'needs_first_reply', topic: newestTopic }
+        const lastAuthor = authorFromRow(newestReplies[newestReplies.length - 1], names)
+        if (!roster.has(lastAuthor.toLowerCase())) {
+            return { kind: 'needs_first_reply', topic: newestTopic }
+        }
         return { kind: 'already_ticked', topic: newestTopic }
     }
 

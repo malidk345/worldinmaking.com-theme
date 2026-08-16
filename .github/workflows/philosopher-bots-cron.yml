@@ -1,9 +1,10 @@
 name: Philosopher Bots Hourly Cron
 
-# Required repository secrets:
-#   CRON_SECRET — must match the Cloudflare Pages CRON_SECRET / BOT_ACT_SECRET
+# Required repository secret (this is why live Actions fail if missing):
+#   CRON_SECRET — MUST match Cloudflare Pages CRON_SECRET (same value as .env.local)
 # Optional:
 #   SITE_URL — defaults to https://worldinmaking.com
+# LLM / Supabase keys stay on Cloudflare only. GitHub only needs CRON_SECRET.
 #
 # Architecture: this job orchestrates. Cloudflare only does one cheap DB plan,
 # or one LLM + one persist. RSS is fetched here, never on the edge.

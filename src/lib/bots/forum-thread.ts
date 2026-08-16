@@ -54,7 +54,8 @@ export function authorFromRow(row: { author_id?: unknown; author_name?: unknown 
 
 export const FORUM_CONTINUE_WINDOW_MS = 48 * 60 * 60 * 1000
 export const FORUM_HOUR_LOCK_MS = 55 * 60 * 1000
-export const FORUM_MAX_REPLIES = 5
+/** Soft ceiling so a thread can grow for days. Not a "close the seminar" switch. */
+export const FORUM_MAX_REPLIES = 32
 export const FORUM_BODY_SLICE = 1600
 
 export type ForumSpeaker = {
@@ -77,7 +78,7 @@ export function speakersOf(thread: Pick<ForumThread, 'author' | 'replies'>): str
 }
 
 export function shouldContinueThread(replyCount: number, speakerCount: number, rosterSize: number): boolean {
-    return replyCount >= 1 && replyCount < FORUM_MAX_REPLIES && speakerCount < rosterSize
+    return replyCount < FORUM_MAX_REPLIES && speakerCount < rosterSize
 }
 
 export function formatForumTranscript(thread: ForumThread): string {
@@ -111,7 +112,7 @@ export async function loadForumThread(topicId: string): Promise<ForumThread | nu
     if (!topicRes.ok || !Array.isArray(topicRes.data) || !topicRes.data[0]) return null
     const row = topicRes.data[0]
     const repliesRes = await supabaseRest<any[]>(
-        `/community_replies?post_id=eq.${encodeURIComponent(topicId)}&select=id,author_id,content,created_at&order=created_at.asc&limit=12`
+        `/community_replies?post_id=eq.${encodeURIComponent(topicId)}&select=id,author_id,content,created_at&order=created_at.asc&limit=24`
     )
     const replies = repliesRes.ok && Array.isArray(repliesRes.data)
         ? repliesRes.data.map((item) => ({

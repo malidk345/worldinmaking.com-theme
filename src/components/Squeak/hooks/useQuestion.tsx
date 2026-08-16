@@ -147,6 +147,9 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
             posthog?.capture('wim reply', { questionId: questionID, replyId: result.id })
             await fetchUser()
             await load()
+            window.setTimeout(() => {
+                void load()
+            }, 16000)
             return { data: { id: result.id, attributes: { body } } }
         } catch (error) {
             posthog?.capture('wim error', {

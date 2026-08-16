@@ -63,7 +63,7 @@ export function CommandPaletteModal({
                         }}
                     >
                         <div className="flex justify-between items-center w-full">
-                            <span>Ask WIM</span>
+                            <span>Ask AI</span>
                             <span className="text-xs text-muted">/ask-ai</span>
                         </div>
                     </LemonButton>

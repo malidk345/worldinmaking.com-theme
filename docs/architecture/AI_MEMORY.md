@@ -157,6 +157,10 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-137` | Stream 2 / 5 | Notebook frontend cleanup: PostHog chrome, sync, public view | `src/notebook-app/scenes/notebooks/*`, `App.tsx`, `notebookStorage.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-138` | Stream 2 / 4 | Notebook share: private send + public profile notes | `NotebookShareModal`, `ProfileView`, `/api/notebooks` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-139` | Stream 5 | Philosopher cron: plan on edge, RSS in GH, one LLM persist | `philosopher-tick.ts`, `scripts/philosopher-cron.mjs`, cron workflow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-140` | Stream 5 | Human forum posts get a philosopher follow-up; threads keep growing | `forum-react.ts`, `api/forum/bot-react.ts`, `supabaseCommunity.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-141` | Stream 5 | Live GH cron fails in 3s: empty/mismatched CRON_SECRET | `scripts/philosopher-cron.mjs`, cron workflow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-142` | Stream 5 | Unify notebook Ask WIM into Ask AI window; keep slash inline | `notebook-app/App.tsx`, `CommandPaletteModal.tsx`, `extraInsertCommands.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -290,6 +294,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 213 - Live hourly cron never authenticates from GitHub
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Production `/api/cron/philosopher-bots` is healthy (plan returns `open` with the local secret). GitHub Actions #229 failed in 3s because `CRON_SECRET` is missing or does not match Cloudflare. Orchestrator now sends both `Authorization` and `x-cron-secret`, logs `secret_len`, and errors with setup instructions. Secret must be set in GitHub Actions repo secrets (same value as CF / `.env.local`). Not committed.
+- **Modified Files:** `scripts/philosopher-cron.mjs`, `.github/workflows/philosopher-bots-cron.yml`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 212 - Forum threads keep going after a human writes
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** A human topic or reply now fires one philosopher follow-up (`/api/forum/bot-react`). Threads are no longer closed at 5 replies (soft cap 32). Moves cycle instead of always "close". Cron treats a human-last thread as still needing a reply this hour. Mentions (`@marx`) pick that voice first.
+- **Modified Files:** `forum-react.ts`, `api/forum/bot-react.ts`, `supabaseCommunity.ts`, `useQuestion.tsx`, `forum-thread.ts`, `forum-moves.ts`, `philosopher-tick.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 211 - Philosopher cron rebuilt end-to-end
 - **Date:** 2026-08-16
