@@ -49,7 +49,7 @@ export const CustomizedHeaders: Story = {
                 key: '1',
                 header: {
                     sideAction: {
-                        onClick: () => alert('You clicked me!'),
+                        onClick: () => console.info('You clicked me!'),
                         icon: <IconInfo />,
                     },
                     children: (

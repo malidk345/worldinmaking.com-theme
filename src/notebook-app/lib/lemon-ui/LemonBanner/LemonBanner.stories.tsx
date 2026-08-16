@@ -88,7 +88,7 @@ export const Closable: Story = {
     args: {
         type: 'info',
         children: 'This is a one-time message. Acknowledge it and move on with your life.',
-        onClose: () => alert('👋'),
+        onClose: () => console.info('👋'),
     },
     parameters: wideParameters,
 }
@@ -99,7 +99,7 @@ export const Dismissable: Story = {
         type: 'info',
         children: 'If you dismiss this message, it will be gone forever. (Clear the localstorage key to get it back)',
         dismissKey: 'storybook-banner',
-        onClose: () => alert('👋'),
+        onClose: () => console.info('👋'),
     },
     parameters: wideParameters,
 }
@@ -128,7 +128,7 @@ export const WarningWithAction: Story = {
         ),
         action: {
             children: 'Remove unsupported filters',
-            onClick: () => alert('Filters removed'),
+            onClick: () => console.info('Filters removed'),
         },
     },
     parameters: wideParameters,
@@ -139,10 +139,10 @@ export const NarrowWithButtons: Story = {
     args: {
         type: 'info',
         children: 'This is a one-time message. Acknowledge it and move on with your life.',
-        onClose: () => alert('👋'),
+        onClose: () => console.info('👋'),
         action: {
             children: 'Acknowledge',
-            onClick: () => alert('👋'),
+            onClick: () => console.info('👋'),
         },
     },
     parameters: wideParameters,

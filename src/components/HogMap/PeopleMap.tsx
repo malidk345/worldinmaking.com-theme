@@ -212,7 +212,7 @@ export default function PeopleMap({ members: membersProp }: { members?: any[] })
                 acc[team.name] = team.miniCrest.data.attributes.url
             }
             return acc
-        }, {})
+        }, {} as Record<string, string>)
     }, [allSqueakTeam])
 
     useEffect(() => {

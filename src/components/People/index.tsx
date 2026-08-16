@@ -292,7 +292,7 @@ export default function People() {
     const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
         acc[team.name] = team.crest?.data?.attributes?.url
         return acc
-    }, {})
+    }, {} as Record<string, string>)
 
     const availableFilters = useMemo(
         () => [
