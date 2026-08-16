@@ -14,9 +14,10 @@ import {
     RSS_BUDGET_MS,
     RSS_FEEDS,
     fetchRSSTopic,
-    fetchRssBriefing,
     formatRssBriefing,
+    makeFallbackBriefing,
     titlesFromRssXml,
+    type RssBriefing,
 } from './forum-rss'
 import {
     FORUM_CONTINUE_WINDOW_MS,
@@ -52,7 +53,8 @@ export const BOT_ROSTER = [
 
 export { FALLBACK_TOPICS, RSS_BUDGET_MS, RSS_FEEDS, fetchRSSTopic, titlesFromRssXml }
 
-export type TickPhase = 'full' | 'topic' | 'reply'
+export type TickPhase = 'full' | 'plan' | 'topic' | 'reply'
+export type TickAction = 'skip' | 'open' | 'reply'
 
 export type TickRequest = {
     phase: TickPhase
@@ -60,6 +62,8 @@ export type TickRequest = {
     topicTitle?: string
     postBot?: string
     replyBot?: string
+    /** Optional briefing from the orchestrator. Edge never fetches RSS itself. */
+    briefing?: RssBriefing
 }
 
 export type TickTopic = {
@@ -76,6 +80,7 @@ export type TickResult =
           reason?: string
           message: string
           phase: TickPhase
+          action?: TickAction
           topic?: TickTopic
           reply?: {
               id?: string
@@ -113,11 +118,42 @@ export function pickBot(exclude?: string | string[]): string {
     return rest[Math.floor(Math.random() * rest.length)] || 'nietzsche'
 }
 
+function parseBriefing(raw: unknown): RssBriefing | undefined {
+    if (!raw || typeof raw !== 'object') return undefined
+    const value = raw as Record<string, any>
+    const primary = value.primary && typeof value.primary === 'object' ? value.primary : value
+    const title = String(primary.title || '').trim()
+    if (!title) return undefined
+    const related = Array.isArray(value.related)
+        ? value.related
+              .map((item: any) => ({
+                  title: String(item?.title || '').trim(),
+                  source: String(item?.source || 'feed'),
+                  excerpt: String(item?.excerpt || ''),
+                  link: item?.link ? String(item.link) : undefined,
+              }))
+              .filter((item: { title: string }) => item.title)
+        : []
+    return {
+        primary: {
+            title,
+            source: String(primary.source || 'worldinmaking.fallback'),
+            excerpt: String(primary.excerpt || ''),
+            link: primary.link ? String(primary.link) : undefined,
+        },
+        related,
+        feedHits: Number(value.feedHits) || 0,
+        itemCount: Number(value.itemCount) || 1,
+        usedFallback: value.usedFallback !== false && related.length === 0,
+    }
+}
+
 export function parseTickRequest(body: unknown, url?: URL): TickRequest {
     const raw = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
     const fromQuery = url?.searchParams.get('phase')
     const phaseRaw = String(raw.phase || fromQuery || 'full').toLowerCase()
-    const phase: TickPhase = phaseRaw === 'topic' || phaseRaw === 'reply' ? phaseRaw : 'full'
+    const phase: TickPhase =
+        phaseRaw === 'topic' || phaseRaw === 'reply' || phaseRaw === 'plan' ? phaseRaw : 'full'
     const topicId = String(raw.topicId || raw.topic_id || url?.searchParams.get('topicId') || '').trim()
     const topicTitle = String(raw.topicTitle || raw.topic_title || '').trim()
     const postBot = String(raw.postBot || raw.post_bot || '').trim().toLowerCase()
@@ -128,6 +164,7 @@ export function parseTickRequest(body: unknown, url?: URL): TickRequest {
         topicTitle: topicTitle || undefined,
         postBot: postBot || undefined,
         replyBot: replyBot || undefined,
+        briefing: parseBriefing(raw.briefing),
     }
 }
 
@@ -214,8 +251,9 @@ async function planTick(): Promise<TickPlan> {
     return { kind: 'fresh' }
 }
 
-async function openTopic(params: { postBot?: string }): Promise<TickResult> {
-    const briefing = await fetchRssBriefing()
+async function openTopic(params: { postBot?: string; briefing?: RssBriefing }): Promise<TickResult> {
+    // Edge must not fan out RSS (24 feeds → CF 502). Orchestrator may pass a briefing.
+    const briefing = params.briefing || makeFallbackBriefing()
     const postBot = params.postBot || pickBot()
     const thread = await createForumTopic({
         botUsername: postBot,
@@ -239,7 +277,8 @@ async function openTopic(params: { postBot?: string }): Promise<TickResult> {
 
     return {
         success: true,
-        message: 'Philosopher topic created from RSS briefing',
+        action: 'open',
+        message: 'Philosopher topic created',
         phase: 'topic',
         topic: {
             id: String((thread as any).topic.id),
@@ -277,7 +316,7 @@ async function replyToTopic(params: {
                 : `Your role is ${move} in "${topic.title}". Latest speaker: @${last?.author || topic.author}. Be clear and stay in character.`,
         trustedInstruction: instructionForForumMove(move),
         mood: 'passionate',
-        thinkingDepth: 'standard',
+        thinkingDepth: 'brief',
         dryRun: false,
     })
 
@@ -293,6 +332,7 @@ async function replyToTopic(params: {
 
     return {
         success: true,
+        action: 'reply',
         message: 'Philosopher reply persisted against the live transcript',
         phase: 'reply',
         topic,
@@ -316,6 +356,7 @@ export async function runPhilosopherBotTick(opts: TickRequest = { phase: 'full' 
             return {
                 success: true,
                 skipped: true,
+                action: 'skip',
                 reason: 'already_ticked',
                 message: 'This hour already added to the forum',
                 phase,
@@ -324,11 +365,35 @@ export async function runPhilosopherBotTick(opts: TickRequest = { phase: 'full' 
             }
         }
 
+        if (phase === 'plan') {
+            if (plan.kind === 'needs_first_reply' || plan.kind === 'continue') {
+                return {
+                    success: true,
+                    action: 'reply',
+                    reason: plan.kind,
+                    message:
+                        plan.kind === 'continue'
+                            ? 'Continue a live thread this hour'
+                            : 'Topic already open; reply next',
+                    phase: 'plan',
+                    topic: plan.topic,
+                }
+            }
+            return {
+                success: true,
+                action: 'open',
+                reason: 'fresh',
+                message: 'No live philosopher thread. Open a topic next.',
+                phase: 'plan',
+            }
+        }
+
         if (phase === 'topic') {
             if (plan.kind === 'needs_first_reply' || plan.kind === 'continue') {
                 return {
                     success: true,
                     skipped: true,
+                    action: 'reply',
                     reason: plan.kind === 'continue' ? 'continue_thread' : 'topic_already_open',
                     message:
                         plan.kind === 'continue'
@@ -338,7 +403,7 @@ export async function runPhilosopherBotTick(opts: TickRequest = { phase: 'full' 
                     topic: plan.topic,
                 }
             }
-            return openTopic({ postBot: opts.postBot })
+            return openTopic({ postBot: opts.postBot, briefing: opts.briefing })
         }
 
         if (phase === 'reply') {

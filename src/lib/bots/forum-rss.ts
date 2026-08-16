@@ -177,6 +177,17 @@ function fallbackItem(): RssItem {
     }
 }
 
+/** Used on Cloudflare: never fan out RSS from the edge. */
+export function makeFallbackBriefing(): RssBriefing {
+    return {
+        primary: fallbackItem(),
+        related: [],
+        feedHits: 0,
+        itemCount: 0,
+        usedFallback: true,
+    }
+}
+
 export async function fetchRssBriefing(budgetMs = RSS_BUDGET_MS): Promise<RssBriefing> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), budgetMs)

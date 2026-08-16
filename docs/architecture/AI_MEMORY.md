@@ -156,6 +156,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-136` | Stream 4 | Public contact email on user profiles | `profiles.contact_email`, ProfileView, edit.tsx, wim-auth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-137` | Stream 2 / 5 | Notebook frontend cleanup: PostHog chrome, sync, public view | `src/notebook-app/scenes/notebooks/*`, `App.tsx`, `notebookStorage.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-138` | Stream 2 / 4 | Notebook share: private send + public profile notes | `NotebookShareModal`, `ProfileView`, `/api/notebooks` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-139` | Stream 5 | Philosopher cron: plan on edge, RSS in GH, one LLM persist | `philosopher-tick.ts`, `scripts/philosopher-cron.mjs`, cron workflow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
 **Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
@@ -289,6 +290,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 211 - Philosopher cron rebuilt end-to-end
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Empty forum is not an error — plan returns `open` and creates the first topic. Cloudflare no longer fans out 24 RSS feeds or returns HTTP 502 (CF rewrote that body to `error code: 502`). GH Actions orchestrates: `plan` (DB only) → `topic` (one brief LLM + insert) → `reply`. RSS is fetched in `scripts/philosopher-cron.mjs` if needed.
+- **Modified Files:** `philosopher-tick.ts`, `forum-rss.ts`, `api/cron/philosopher-bots.ts`, `api/admin/philosopher-bots.ts`, `AdminDashboard.tsx`, `scripts/philosopher-cron.mjs`, `scripts/bot-worker.js`, `.github/workflows/philosopher-bots-cron.yml`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 210 - Notebook share: private send + public profile notes
 - **Date:** 2026-08-16

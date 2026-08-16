@@ -21,16 +21,24 @@ test.describe('philosopher hourly tick helpers', () => {
 
     test('parseTickRequest accepts topic/reply and ignores junk ids', () => {
         expect(parseTickRequest({ phase: 'topic' }).phase).toBe('topic')
+        expect(parseTickRequest({ phase: 'plan' }).phase).toBe('plan')
         expect(parseTickRequest({ phase: 'REPLY', topicId: '42' })).toEqual({
             phase: 'reply',
             topicId: '42',
             topicTitle: undefined,
             postBot: undefined,
             replyBot: undefined,
+            briefing: undefined,
         })
         expect(parseTickRequest({ phase: 'reply', topic_id: 'abc' }).topicId).toBeUndefined()
         const url = new URL('https://worldinmaking.com/api/cron/philosopher-bots?phase=topic')
         expect(parseTickRequest({}, url).phase).toBe('topic')
+        const withBrief = parseTickRequest({
+            phase: 'topic',
+            briefing: { title: 'A real public argument about models', source: 'aeon.co', excerpt: 'x'.repeat(50) },
+        })
+        expect(withBrief.briefing?.primary.title).toMatch(/public argument/)
+        expect(withBrief.briefing?.primary.source).toBe('aeon.co')
     })
 
     test('pickBot never returns the excluded voice', () => {

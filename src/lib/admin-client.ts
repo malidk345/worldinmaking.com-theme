@@ -67,6 +67,7 @@ export type AdminTickResult = {
     message?: string
     error?: string
     phase?: string
+    action?: 'skip' | 'open' | 'reply'
     topic?: { id?: string; title?: string; author?: string }
     reply?: { id?: string; author?: string; persisted?: boolean }
 }

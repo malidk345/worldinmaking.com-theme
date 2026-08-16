@@ -317,24 +317,38 @@ export default function AdminDashboard() {
     const handleTriggerCron = async () => {
         setCronTriggering(true)
         try {
-            const topic = await runAdminPhilosopherPhase({ phase: 'topic' })
-            if (!topic.data.success) {
-                throw new Error(topic.data.error || 'Topic phase failed')
+            const plan = await runAdminPhilosopherPhase({ phase: 'plan' })
+            if (!plan.data.success) {
+                throw new Error(plan.data.error || 'Plan phase failed')
             }
-            if (topic.data.skipped && topic.data.reason === 'already_ticked') {
-                toastOk(topic.data.message || 'This hour already posted to the forum')
+            if (plan.data.action === 'skip' || plan.data.reason === 'already_ticked') {
+                toastOk(plan.data.message || 'This hour already posted to the forum')
                 loadOverview()
                 return
             }
-            if (!topic.data.topic?.id) {
-                throw new Error('Topic phase returned no thread id')
+
+            let topicId = plan.data.topic?.id
+            let topicTitle = plan.data.topic?.title || ''
+            let postBot = plan.data.topic?.author || ''
+
+            if (plan.data.action === 'open' || !topicId) {
+                const topic = await runAdminPhilosopherPhase({ phase: 'topic' })
+                if (!topic.data.success) {
+                    throw new Error(topic.data.error || 'Topic phase failed')
+                }
+                if (!topic.data.topic?.id) {
+                    throw new Error('Topic phase returned no thread id')
+                }
+                topicId = topic.data.topic.id
+                topicTitle = topic.data.topic.title || ''
+                postBot = topic.data.topic.author || ''
             }
 
             const reply = await runAdminPhilosopherPhase({
                 phase: 'reply',
-                topicId: topic.data.topic.id,
-                topicTitle: topic.data.topic.title || '',
-                postBot: topic.data.topic.author || '',
+                topicId,
+                topicTitle,
+                postBot,
             })
             if (!reply.data.success) {
                 throw new Error(reply.data.error || 'Reply phase failed')
@@ -343,7 +357,7 @@ export default function AdminDashboard() {
                 toastOk(reply.data.message || 'Reply phase skipped')
             } else if (reply.data.reply?.persisted) {
                 toastOk(
-                    `Posted ${topic.data.topic.author || 'a philosopher'} and ${
+                    `Posted ${postBot || 'a philosopher'} and ${
                         reply.data.reply.author || 'a reply'
                     } to the forum`
                 )

@@ -39,7 +39,8 @@ export default async function handler(req: Request) {
     }
 
     const tickReq = parseTickRequest(await readJsonBody(req), new URL(req.url))
-    const phase = tickReq.phase === 'reply' ? 'reply' : 'topic'
+    const phase =
+        tickReq.phase === 'reply' || tickReq.phase === 'plan' || tickReq.phase === 'topic' ? tickReq.phase : 'plan'
     try {
         const result = await runPhilosopherBotTick({ ...tickReq, phase })
         return json(result, 200)
