@@ -114,36 +114,7 @@ export async function invokeWithKeyRotation(params: {
         }
     }
 
-    // Step 4: Try OpenRouter (if key exists)
-    const openRouterKey = envFrom(env, 'OPENROUTER_API_KEY', 'OPENROUTER_KEY');
-    if (openRouterKey && messagesInput) {
-        try {
-            const orMessages = messagesInput.map(m => ({ role: m[0], content: m[1] }));
-            const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${openRouterKey}`,
-                    'HTTP-Referer': 'http://localhost:3000',
-                },
-                body: JSON.stringify({
-                    model: 'qwen/qwen-2.5-72b-instruct',
-                    messages: orMessages,
-                    temperature: params.temperature ?? 0.6,
-                })
-            });
-            if (orRes.ok) {
-                const data = await orRes.json();
-                if (data.choices?.[0]?.message?.content) {
-                    return { reply: data.choices[0].message.content, usedKeyIndex: 0, provider: 'openrouter:qwen-2.5-72b' };
-                }
-            }
-        } catch (err) {
-            console.warn('[KeyRotation] OpenRouter failed:', err);
-        }
-    }
-
-    throw new Error('All LLM API keys and model fallbacks exhausted.');
+    throw new Error('All Groq and Gemini keys failed or rate limited.');
 }
 
 /**
@@ -230,63 +201,7 @@ export async function invokeStreamWithKeyRotation(params: {
         }
     }
 
-    // Step 4: Try OpenRouter (if key exists) - Bypasses Groq's strict 8000 TPM limit!
-    const openRouterKey = envFrom(env, 'OPENROUTER_API_KEY', 'OPENROUTER_KEY');
-    if (openRouterKey) {
-        try {
-            // Convert messagesInput to OpenAI format
-            const orMessages = messagesInput.map(m => ({ role: m[0], content: m[1] }));
-            
-            const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${openRouterKey}`,
-                    'HTTP-Referer': 'http://localhost:3000',
-                },
-                body: JSON.stringify({
-                    model: 'qwen/qwen-2.5-72b-instruct',
-                    messages: orMessages,
-                    stream: true,
-                    temperature: params.temperature ?? 0.6,
-                    max_tokens: 4000
-                })
-            });
-
-            if (orRes.ok && orRes.body) {
-                const stream = async function* () {
-                    const reader = orRes.body!.getReader();
-                    const decoder = new TextDecoder();
-                    let buffer = '';
-                    while (true) {
-                        const { value, done } = await reader.read();
-                        if (done) break;
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() || '';
-                        for (const line of lines) {
-                            const trimmed = line.trim();
-                            if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
-                                try {
-                                    const parsed = JSON.parse(trimmed.slice(6));
-                                    if (parsed.choices?.[0]?.delta?.content) {
-                                        yield parsed.choices[0].delta.content;
-                                    }
-                                } catch (e) {}
-                            }
-                        }
-                    }
-                }();
-                return { stream, provider: 'openrouter:qwen-2.5-72b' };
-            } else {
-                console.warn('[KeyRotation] OpenRouter returned error status:', orRes.status);
-            }
-        } catch (err: any) {
-            console.warn('[KeyRotation] OpenRouter failed:', err?.message || err);
-        }
-    }
-
-    throw new Error('All Groq, Gemini and OpenRouter keys failed or rate limited');
+    throw new Error('All Groq and Gemini keys failed or rate limited');
 }
 
 /**

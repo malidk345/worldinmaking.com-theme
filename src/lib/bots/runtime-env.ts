@@ -103,7 +103,6 @@ export function getWaitUntil(): ((promise: Promise<unknown>) => void) | null {
 export function getProviderKeyFlags(store: EnvStore) {
     return {
         groq: !!(envFrom(store, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')),
-        openrouter: !!envFrom(store, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY'),
         openai: !!envFrom(store, 'OPENAI_API_KEY', 'OPENAI_KEY'),
         gemini: !!envFrom(
             store,
@@ -116,7 +115,6 @@ export function getProviderKeyFlags(store: EnvStore) {
             'GOOGLE_AI_API_KEY',
             'GOOGLE_GEMINI_API_KEY',
         ),
-        huggingface: !!envFrom(store, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN'),
         cfContext: hasCloudflareContext(),
         envSource: hasCloudflareContext() ? ('cloudflare+process' as const) : ('process-only' as const),
     }

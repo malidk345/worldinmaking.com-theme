@@ -15,7 +15,7 @@ import { validateAndReturn } from './quality-gate';
  * @deprecated Kept only for type-compatibility with old callers — provider selection no
  * longer reads from this list. See `src/lib/bots/ai-gateway.ts` for the real provider set.
  */
-export type AIProvider = 'gemini' | 'grok' | 'groq' | 'openrouter' | 'huggingface';
+export type AIProvider = 'gemini' | 'grok' | 'groq';
 
 /**
  * @deprecated Use buildPersonaPrompt() from persona-engine.ts instead.

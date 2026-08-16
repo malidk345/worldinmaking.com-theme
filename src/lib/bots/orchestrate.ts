@@ -181,12 +181,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
             depth: input.thinkingDepth || 'standard',
             source: 'none',
         }
-        const anyConfigured =
-            gen.configured.groq ||
-            gen.configured.openrouter ||
-            gen.configured.openai ||
-            gen.configured.gemini ||
-            gen.configured.huggingface
+        const anyConfigured = gen.configured.groq || gen.configured.openai || gen.configured.gemini
 
         recordAiTurn({
             ok: false,
@@ -408,7 +403,7 @@ export function getBotSystemStatus(envOverride?: EnvStore) {
             depths: ['brief', 'standard', 'deep'],
         },
         paperSteps: ['thesis', 'antithesis', 'cross_examine', 'third_voice', 'synthesis'],
-        ready: configured.openrouter || configured.groq || configured.gemini || configured.openai || configured.huggingface,
+        ready: configured.groq || configured.gemini || configured.openai,
         notes: {
             forum_reply: 'Requires payload.topicId; persists to community_replies',
             thread_init: 'Creates community_posts as bot author',

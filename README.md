@@ -44,7 +44,7 @@ Notebook CSS is rebuilt on `predev` / `prebuild`. First `pnpm dev` may take long
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key |
    | `SUPABASE_SERVICE_ROLE_KEY` | Server-only (notebooks, forum, bots) — never expose as `NEXT_PUBLIC_*` |
 
-3. Optional: AI keys (`GROQ_*`, `OPENROUTER_*`, `OPENAI_*`, `GEMINI_*`), `CRON_SECRET` / `BOT_ACT_SECRET`.
+3. Optional: AI keys (`GROQ_*`, `GEMINI_*`, `OPENAI_*`), `CRON_SECRET` / `BOT_ACT_SECRET`.
 
 Hourly philosopher posts are scheduled by [`.github/workflows/philosopher-bots-cron.yml`](.github/workflows/philosopher-bots-cron.yml) (not Vercel — production is Cloudflare Pages). The workflow POSTs `topic` then `reply` to `/api/cron/philosopher-bots`. Set the same `CRON_SECRET` on **both** Cloudflare Pages and the GitHub repo secrets, and enable scheduled Actions if this is a fork.
 

@@ -140,8 +140,8 @@ test.describe('thinking stream routing', () => {
 
     test('alternates Groq and Gemini as the lead family, then keeps failover', () => {
         resetProviderCooldowns()
-        expect(getFamilyOrder([], 0)).toEqual(['groq', 'gemini', 'huggingface', 'openrouter'])
-        expect(getFamilyOrder([], 1)).toEqual(['gemini', 'groq', 'huggingface', 'openrouter'])
+        expect(getFamilyOrder([], 0)).toEqual(['groq', 'gemini'])
+        expect(getFamilyOrder([], 1)).toEqual(['gemini', 'groq'])
         markFamilyCooling('groq')
         expect(getFamilyOrder([], 0)[0]).toBe('gemini')
         expect(getFamilyOrder([], 0)[getFamilyOrder([], 0).length - 1]).toBe('groq')

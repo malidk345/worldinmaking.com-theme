@@ -156,12 +156,25 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(clipped).not.toMatch(/Noema/)
 
         const header = buildPersonaHeader(extractPersona('', 'Nietzsche'), 'passionate', 'community_reply')
-        expect(header).toMatch(/slogan/)
-        expect(header).toMatch(/will to power/)
-        expect(header).toMatch(/Do not dump these trademark phrases/)
-        expect(header).toMatch(/Be free in character/)
-        expect(header).not.toMatch(/available move/)
-        expect(header.toLowerCase()).not.toContain('indict the reader')
+        expect(header).toContain('Nietzsche')
+        expect(header).toMatch(/This turn is public/)
+        expect(header).not.toMatch(/Do not dump these trademark phrases/)
+    })
+
+    test('Marx is one mind on chat, forum, and paper', () => {
+        const persona = extractPersona('', 'Marx')
+        const chat = buildPersonaHeader(persona, 'calm', 'autonomous_assistant', 'compact')
+        const forum = buildPersonaHeader(persona, 'calm', 'community_reply')
+        const paper = buildPersonaHeader(persona, 'calm', 'paper_section', 'full')
+        for (const header of [chat, forum, paper]) {
+            expect(header).toMatch(/method, not a costume/)
+            expect(header).toMatch(/Stage first/)
+            expect(header).not.toMatch(/class analysis as the lens for every/)
+            expect(header).not.toMatch(/Do not dump these trademark phrases/)
+            expect(header).not.toMatch(/surplus value/)
+        }
+        expect(forum).toMatch(/This turn is public/)
+        expect(chat).toMatch(/Answer first/)
     })
 
     test('formatRssBriefing and thread transcript give the model usable context', () => {

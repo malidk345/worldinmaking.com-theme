@@ -9,7 +9,6 @@ import {
     envFrom,
     getProviderKeyFlags,
     getRuntimeEnv,
-    splitKeys,
 } from './runtime-env'
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor } from './groq-key-cursor'
@@ -27,10 +26,7 @@ export type GatewayProvider =
     | 'groq'
     | 'groq:qwen'
     | 'groq:llama'
-    | 'openrouter'
-    | `openrouter:${string}`
     | `gemini-fetch:${string}`
-    | 'huggingface'
     | 'openai-sdk'
     | 'none'
 
@@ -108,36 +104,10 @@ export interface GenerateFailure {
     latencyMs: number
 }
 
-const OPENROUTER_MODELS = [
-    'meta-llama/llama-3.3-70b-instruct',
-    'meta-llama/llama-3.1-8b-instruct',
-    'openai/gpt-4o-mini',
-    'openrouter/auto',
-]
-
 const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']
 
-// Hugging Face Inference Router (OpenAI-compatible /v1/chat/completions) — real,
-// configured fallback provider (HUGGINGFACE_API_KEY is bound on Cloudflare Pages).
-// NOTE: xAI's "Grok" model is intentionally NOT included here — no GROK_API_KEY /
-// XAI_API_KEY secret exists on Cloudflare, so it would only ever fail. If Grok keys
-// are added later, bind GROK_API_KEYS (comma-separated) and wire a family for it here.
-const HUGGINGFACE_MODEL = 'meta-llama/Meta-Llama-3-8B-Instruct'
-
-/** Task → preferred OpenRouter model (when OPENROUTER_MODEL not set). */
-const TASK_OPENROUTER: Partial<Record<TaskType, string>> = {
-    synthesis: 'meta-llama/llama-3.3-70b-instruct',
-    paper_section: 'meta-llama/llama-3.3-70b-instruct',
-    third_voice: 'meta-llama/llama-3.3-70b-instruct',
-    dialectic_challenge: 'meta-llama/llama-3.3-70b-instruct',
-    cross_examine: 'meta-llama/llama-3.3-70b-instruct',
-    fact_critique: 'meta-llama/llama-3.1-8b-instruct',
-    community_reply: 'meta-llama/llama-3.1-8b-instruct',
-    thread_init: 'meta-llama/llama-3.1-8b-instruct',
-}
-
 /**
- * Provider-family cooldown registry. When a family (groq/openrouter/gemini/huggingface)
+ * Provider-family cooldown registry. When a family (groq/gemini)
  * returns a 429/rate-limit/quota error across all of its keys, it's marked "cooling" for
  * 60s and pushed to the end of the rotation (still tried as a last resort, never dropped).
  * Resets when the Cloudflare isolate recycles — acceptable, same limitation as rate-limit.ts.
@@ -455,17 +425,15 @@ function isAuthDetail(detail: string): boolean {
 }
 
 const PRIMARY_FAMILIES = ['groq', 'gemini'] as const
-const SECONDARY_FAMILIES = ['huggingface', 'openrouter'] as const
-const PROVIDER_FAMILY_ORDER = [...PRIMARY_FAMILIES, ...SECONDARY_FAMILIES] as const
-export type ProviderFamily = (typeof PROVIDER_FAMILY_ORDER)[number]
+export type ProviderFamily = (typeof PRIMARY_FAMILIES)[number]
 
 /** Alternate Groq/Gemini as the lead. Key rotation inside each family is separate. */
 export function getFamilyOrder(skipFamilies: ProviderFamily[] = [], start = 0): ProviderFamily[] {
     const skip = new Set(skipFamilies)
-    const primaries = rotateKeys([...PRIMARY_FAMILIES], ((start % PRIMARY_FAMILIES.length) + PRIMARY_FAMILIES.length) % PRIMARY_FAMILIES.length)
-    const ordered = [...primaries, ...SECONDARY_FAMILIES].filter(
-        (family): family is ProviderFamily => !skip.has(family as ProviderFamily)
-    )
+    const ordered = rotateKeys(
+        [...PRIMARY_FAMILIES],
+        ((start % PRIMARY_FAMILIES.length) + PRIMARY_FAMILIES.length) % PRIMARY_FAMILIES.length,
+    ).filter((family): family is ProviderFamily => !skip.has(family))
     const active = ordered.filter((family) => !isFamilyCooling(family))
     const cooling = ordered.filter((family) => isFamilyCooling(family))
     return [...active, ...cooling]
@@ -1033,50 +1001,6 @@ async function tryGroqFamily(
     return null
 }
 
-/** OpenRouter — skip remaining models immediately on 402 (no credits). */
-async function tryOpenRouterFamily(
-    openRouterKey: string,
-    taskType: TaskType,
-    runtimeEnv: EnvStore,
-    params: FamilyParams,
-    attempts: string[]
-): Promise<FamilySuccess | null> {
-    if (!openRouterKey) return null
-    const preferred = envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[taskType] || ''
-    const models = [preferred, ...OPENROUTER_MODELS].filter(Boolean)
-    const seen = new Set<string>()
-    let creditsDepleted = false
-    let sawRateLimit = false
-    for (const model of models) {
-        if (Date.now() >= params.deadline) return null
-        if (seen.has(model)) continue
-        seen.add(model)
-        if (creditsDepleted) { attempts.push(`openrouter(${model}): skipped-no-credits`); continue }
-        const r = await withRetry(() => chatCompletions(
-            'https://openrouter.ai/api/v1/chat/completions',
-            openRouterKey,
-            model,
-            params.systemPrompt,
-            params.userPrompt,
-            params.temperature,
-            {
-                'HTTP-Referer':
-                    envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
-                'X-Title': 'WorldInMaking Philosopher Bots',
-            },
-            params.deadline,
-            params.history,
-            params.thinkingDepth,
-        ), params.deadline)
-        if (r.ok) return { ok: true, text: r.text, provider: `openrouter:${model}` }
-        if (r.detail.startsWith('402')) creditsDepleted = true
-        if (isRateLimitDetail(r.detail)) sawRateLimit = true
-        attempts.push(`openrouter(${model}): ${r.detail.slice(0, 100)}`)
-    }
-    if (sawRateLimit) markFamilyCooling('openrouter')
-    return null
-}
-
 /** Gemini — rotate through all keys × all models, first success wins. */
 async function tryGeminiFamily(
     geminiKeys: string[],
@@ -1129,39 +1053,10 @@ async function tryGeminiFamily(
     return null
 }
 
-/** Hugging Face Inference Router — OpenAI-compatible endpoint, rotate through all keys. */
-async function tryHuggingFaceFamily(
-    hfKeys: string[],
-    params: FamilyParams,
-    attempts: string[]
-): Promise<FamilySuccess | null> {
-    let sawRateLimit = false
-    for (const key of hfKeys) {
-        if (Date.now() >= params.deadline) return null
-        const r = await withRetry(() => chatCompletions(
-            'https://router.huggingface.co/v1/chat/completions',
-            key,
-            HUGGINGFACE_MODEL,
-            params.systemPrompt,
-            params.userPrompt,
-            params.temperature,
-            {},
-            params.deadline,
-            params.history,
-            params.thinkingDepth,
-        ), params.deadline)
-        if (r.ok) return { ok: true, text: r.text, provider: 'huggingface' }
-        if (isRateLimitDetail(r.detail)) sawRateLimit = true
-        attempts.push(`huggingface[${hfKeys.indexOf(key) + 1}/${hfKeys.length}]: ${r.detail}`)
-    }
-    if (hfKeys.length > 0 && sawRateLimit) markFamilyCooling('huggingface')
-    return null
-}
-
 /**
  * Run system+user prompts through available providers.
- * Family order is Groq → Gemini → HuggingFace → OpenRouter for every philosopher.
- * Cooling families move to the end. OpenAI SDK remains an optional last resort.
+ * Family order is Groq ↔ Gemini. Cooling families move to the end.
+ * OpenAI SDK remains an optional last resort.
  */
 export async function generateWithGateway(params: {
     systemPrompt: string
@@ -1177,7 +1072,6 @@ export async function generateWithGateway(params: {
 }): Promise<GenerateResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
-    const taskType = params.taskType ?? 'community_reply'
     const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
     const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
     const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
@@ -1187,17 +1081,8 @@ export async function generateWithGateway(params: {
 
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
-    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
-    const huggingFaceRaw = envFrom(
-        runtimeEnv,
-        'HUGGINGFACE_API_KEYS',
-        'HUGGINGFACE_API_KEY',   // CF Dashboard exact name
-        'HF_API_KEY',
-        'HF_TOKEN',
-    )
-    const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
     for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
         if (Date.now() >= deadline) {
@@ -1207,10 +1092,9 @@ export async function generateWithGateway(params: {
         let result: FamilySuccess | null = null
         if (family === 'groq') {
             result = await tryGroqFamily(groqKeys, groqModel, familyParams, attempts)
+        } else if (family === 'gemini') {
+            result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
         }
-        else if (family === 'openrouter') result = await tryOpenRouterFamily(openRouterKey, taskType, runtimeEnv, familyParams, attempts)
-        else if (family === 'gemini') result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
-        else if (family === 'huggingface') result = await tryHuggingFaceFamily(huggingFaceKeys, familyParams, attempts)
 
         if (result) {
             return {
@@ -1251,8 +1135,7 @@ export async function generateWithGateway(params: {
         }
     }
 
-    const anyConfigured =
-        configured.groq || configured.openrouter || configured.openai || configured.gemini || configured.huggingface
+    const anyConfigured = configured.groq || configured.openai || configured.gemini
 
     return {
         ok: false,
@@ -1261,7 +1144,7 @@ export async function generateWithGateway(params: {
         configured,
         error: anyConfigured
             ? 'All AI providers failed. Check attempts[] and Cloudflare Function logs.'
-            : 'No AI keys visible to this Function. Bind GROQ_API_KEYS, OPENROUTER_API_KEY, GEMINI_API_KEYS, and/or HUGGINGFACE_API_KEY on Cloudflare Pages Production.',
+            : 'No AI keys visible to this Function. Bind GROQ_API_KEYS and/or GEMINI_API_KEYS on Cloudflare Pages Production.',
         latencyMs: Date.now() - started,
     }
 }
@@ -1288,21 +1171,7 @@ export async function streamWithGateway(params: {
 
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
-    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
-    const hfRaw = envFrom(runtimeEnv, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN')
-    const hfKeys = splitKeys(hfRaw)
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
-    const openRouterModel =
-        envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[params.taskType || 'community_reply'] || OPENROUTER_MODELS[0]
-
-    const familyParams: FamilyParams = {
-        systemPrompt,
-        userPrompt,
-        history: params.history,
-        temperature: params.temperature,
-        deadline,
-        thinkingDepth: params.thinkingDepth,
-    }
 
     for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
         if (Date.now() >= deadline) {
@@ -1394,55 +1263,6 @@ export async function streamWithGateway(params: {
             if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
                 markFamilyCooling('gemini')
             }
-            continue
-        }
-
-        if (family === 'huggingface' && hfKeys.length > 0) {
-            let sawRateLimit = false
-            for (const key of hfKeys) {
-                if (Date.now() >= deadline) break
-                const r = await chatCompletionsStream(
-                    'https://router.huggingface.co/v1/chat/completions',
-                    key,
-                    HUGGINGFACE_MODEL,
-                    systemPrompt,
-                    userPrompt,
-                    params.temperature,
-                    {},
-                    deadline,
-                    params.history,
-                    params.thinkingDepth,
-                )
-                if (r.ok) return { ok: true, provider: 'huggingface', stream: r.stream, attempts, configured }
-                if (isRateLimitDetail(r.detail)) sawRateLimit = true
-                attempts.push(`huggingface: ${r.detail}`)
-            }
-            if (sawRateLimit) markFamilyCooling('huggingface')
-            continue
-        }
-
-        if (family === 'openrouter' && openRouterKey) {
-            let sawRateLimit = false
-            const r = await chatCompletionsStream(
-                'https://openrouter.ai/api/v1/chat/completions',
-                openRouterKey,
-                openRouterModel,
-                systemPrompt,
-                userPrompt,
-                params.temperature,
-                {
-                    'HTTP-Referer':
-                        envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
-                    'X-Title': 'WorldInMaking Philosopher Bots',
-                },
-                deadline,
-                params.history,
-                params.thinkingDepth,
-            )
-            if (r.ok) return { ok: true, provider: 'openrouter', stream: r.stream, attempts, configured }
-            if (isRateLimitDetail(r.detail)) sawRateLimit = true
-            attempts.push(`openrouter: ${r.detail}`)
-            if (sawRateLimit) markFamilyCooling('openrouter')
         }
     }
 

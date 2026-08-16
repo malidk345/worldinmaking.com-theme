@@ -160,6 +160,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-140` | Stream 5 | Human forum posts get a philosopher follow-up; threads keep growing | `forum-react.ts`, `api/forum/bot-react.ts`, `supabaseCommunity.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-141` | Stream 5 | Live GH cron fails in 3s: empty/mismatched CRON_SECRET | `scripts/philosopher-cron.mjs`, cron workflow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-142` | Stream 5 | Unify notebook Ask WIM into Ask AI window; keep slash inline | `notebook-app/App.tsx`, `CommandPaletteModal.tsx`, `extraInsertCommands.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-143` | Stream 5 | Drop OpenRouter and Hugging Face from the AI gateway | `ai-gateway.ts`, `langchain-pipeline.ts`, `runtime-env.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-144` | Stream 5 | Marx is one mind everywhere: method card, not a forum costume | `persona-engine.ts`, `tests/philosopher-tick.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -294,6 +296,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 215 - Marx persona is a method, used on every surface
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Marx now carries one `thinkingMethod` (stage first, two unblended voices, concepts only if they open the case, irony toward the -ism). Chat, forum, and paper all receive it. The forum-only slogan-ban header is gone; task overlays only add format (public English, answer first).
+- **Modified Files:** `src/lib/persona-engine.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 214 - Remove OpenRouter and Hugging Face providers
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Gateway and LangChain fallbacks are Groq ↔ Gemini only (optional OpenAI SDK last resort). OpenRouter and Hugging Face families, keys, and env docs are gone.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/runtime-env.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/chat-bots/langchain-pipeline.ts`, `lib/ai-provider.ts`, `tests/thinking-tags.spec.ts`, `.env.example`, `README.md`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 213 - Live hourly cron never authenticates from GitHub
 - **Date:** 2026-08-16
