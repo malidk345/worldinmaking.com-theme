@@ -1,5 +1,5 @@
-import Image from "next/image"
 import { useRouter } from 'next/navigation'
+import SafeImage from 'components/SafeImage'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import OSButton from 'components/OSButton'
@@ -31,8 +31,6 @@ const MDXRenderer = ({ children }: any) => {
 }
 const getImage = (img: any) => img?.publicURL || img?.url || img
 
-const NEXT_IMAGE_HOSTS = /^(res\.cloudinary\.com|user-images\.githubusercontent\.com|raw\.githubusercontent\.com|(?:[\w-]+\.)?posthog\.com)$/i
-
 function resolveImageSrc(img: unknown): string {
     if (typeof img === 'string') return img.trim()
     if (img && typeof img === 'object') {
@@ -40,15 +38,6 @@ function resolveImageSrc(img: unknown): string {
         return String(record.publicURL || record.url || record.src || '').trim()
     }
     return ''
-}
-
-function canOptimizeRemoteImage(src: string): boolean {
-    try {
-        const host = new URL(src, 'https://worldinmaking.com').hostname
-        return NEXT_IMAGE_HOSTS.test(host)
-    } catch {
-        return false
-    }
 }
 
 function RemoteImage({
@@ -68,30 +57,15 @@ function RemoteImage({
     height?: number
     style?: React.CSSProperties
 }) {
-    if (!src) return null
-    if (canOptimizeRemoteImage(src)) {
-        return (
-            <Image
-                src={src}
-                alt={alt}
-                className={className}
-                fill={fill}
-                width={fill ? undefined : width}
-                height={fill ? undefined : height}
-                style={style}
-            />
-        )
-    }
     return (
-        <img
+        <SafeImage
             src={src}
             alt={alt}
             className={className}
-            style={
-                fill
-                    ? { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: style?.objectFit || 'contain', ...style }
-                    : style
-            }
+            fill={fill}
+            width={width}
+            height={height}
+            style={style}
         />
     )
 }

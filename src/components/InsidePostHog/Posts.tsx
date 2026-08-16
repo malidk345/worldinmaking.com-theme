@@ -2,7 +2,7 @@ import { CallToAction } from 'components/CallToAction'
 import { usePosts } from 'components/Edition/hooks/usePosts'
 import { tagsHideFromIndex } from 'components/Edition/Posts'
 import Link from 'components/Link'
-import Image from 'next/image'
+import SafeImage from 'components/SafeImage'
 import React from 'react'
 
 const PostPreviewSkeleton = () => {
@@ -17,7 +17,7 @@ const FeaturedPost = ({ attributes: { featuredImage, title, excerpt, post_catego
     return (
         <Link className="prose font-normal" to={slug}>
             {featuredImage?.url && (
-                <Image
+                <SafeImage
                     className="w-full mb-0 rounded-md object-cover"
                     src={featuredImage.url}
                     alt={title || 'Featured post'}
@@ -42,7 +42,7 @@ const PostPreview = ({ attributes: { featuredImage, title, excerpt, post_categor
         >
             <div className="@lg:order-2">
                 {featuredImage?.url && (
-                    <Image
+                    <SafeImage
                         className="w-full rounded-md object-cover"
                         src={featuredImage.url}
                         alt={title || 'Post preview'}

@@ -22,6 +22,8 @@ const nextConfig = {
             { protocol: 'https', hostname: 'raw.githubusercontent.com' },
             { protocol: 'https', hostname: 'posthog.com' },
             { protocol: 'https', hostname: '*.posthog.com' },
+            { protocol: 'https', hostname: '*.supabase.co' },
+            { protocol: 'https', hostname: '*.supabase.in' },
         ],
     },
     trailingSlash: false,

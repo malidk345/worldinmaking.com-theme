@@ -1,5 +1,5 @@
 import cntl from 'cntl'
-import Image from 'next/image'
+import SafeImage from 'components/SafeImage'
 import React from 'react'
 import { Structure } from '../../Structure'
 import BlogAuthor from '../BlogAuthor'
@@ -22,7 +22,7 @@ export function FeaturedImageStandard({ pageTitle, featuredImage, blogDate, blog
         <>
             <Structure.Section width="3xl -mt-6 md:-mt-2">
                 {typeof featuredImage === 'string' ? (
-                    <Image src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle || 'Featured image'} width={1200} height={630} />
+                    <SafeImage src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle || 'Featured image'} width={1200} height={630} />
                 ) : (
                     <img src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle || 'Featured image'} />
                 )}
@@ -42,7 +42,7 @@ export function FeaturedImageFull({ pageTitle, featuredImage, blogDate, blogUpda
         <div className="md:mx-8 md:rounded-lg md:overflow-hidden">
             <div className={`w-full h-full relative flex items-center justify-center md:pt-1/2 ${bgGradient}`}>
                 {typeof featuredImage === 'string' ? (
-                    <Image className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} alt={pageTitle || 'Featured image'} fill />
+                    <SafeImage className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} alt={pageTitle || 'Featured image'} fill style={{ objectFit: 'cover' }} />
                 ) : (
                     <img className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} alt={pageTitle || 'Featured image'} />
                 )}

@@ -1,5 +1,5 @@
 import CloudinaryImage from 'components/CloudinaryImage'
-import Image from 'next/image'
+import SafeImage from 'components/SafeImage'
 import React from 'react'
 
 export default function Avatar({ image, url }) {
@@ -9,7 +9,7 @@ export default function Avatar({ image, url }) {
                 url ? (
                     <CloudinaryImage width={60} src={url} />
                 ) : (
-                    <Image className="w-[30px] h-[30px]" src={image?.publicURL || image?.url || image || ''} width={30} height={30} alt="Avatar" />
+                    <SafeImage className="w-[30px] h-[30px]" src={image?.publicURL || image?.url || image || ''} width={30} height={30} alt="Avatar" />
                 )
             ) : (
                 <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">

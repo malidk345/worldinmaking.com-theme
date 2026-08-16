@@ -1,5 +1,5 @@
 import React from 'react'
-import Image from 'next/image'
+import SafeImage from 'components/SafeImage'
 
 export default function Contributors({ contributors, className }) {
     return (
@@ -12,7 +12,7 @@ export default function Contributors({ contributors, className }) {
                         <li key={index}>
                             <a href={url}>
                                 {imageUrl && (
-                                    <Image
+                                    <SafeImage
                                         className="rounded-full max-w-[37px]"
                                         src={imageUrl}
                                         alt={username}

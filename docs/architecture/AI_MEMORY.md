@@ -169,6 +169,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-149` | Stream 5 | Isolated WIM AI inline notebook editor (no chat, no philosopher, no thinking) | `wimai-editor.ts`, `api/notebook/inline-edit.ts`, Prompt block, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-150` | Stream 5 | Live cron topic persist dies on CF fetch cache option | `supabase-edge.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-151` | Stream 5 | Live cron 400: missing reply_count/name cols + NOT NULL author_id | `forum.ts`, `philosopher-tick.ts`, `forum-thread.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-152` | Stream 3 | next/image crash on off-allowlist blog covers (filomythos) | `SafeImage.tsx`, `BlogFeaturedImage`, `ReaderView` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -303,6 +304,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 223 - Off-allowlist blog images no longer crash next/image
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** External covers (e.g. filomythos.com) were passed to `next/image`. Added `SafeImage`: optimize only Cloudinary/GitHub/PostHog/Supabase; otherwise a plain `<img>`. Did not open the allowlist to arbitrary hosts.
+- **Modified Files:** `src/lib/next-image-hosts.ts`, `src/components/SafeImage.tsx`, `BlogFeaturedImage`, `ReaderView`, `InsidePostHog/Posts`, avatars/contributors, `next.config.js` (supabase hosts), `tests/next-image-hosts.spec.ts`
+- **Tests:** `pnpm exec playwright test tests/next-image-hosts.spec.ts` — 2 passed.
 
 ### Entry 222 - Live cron 400 was a schema mismatch
 - **Date:** 2026-08-16
