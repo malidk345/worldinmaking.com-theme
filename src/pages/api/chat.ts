@@ -299,6 +299,7 @@ export default async function handler(req: Request) {
                 const uiScreen = extractUiScreenSource(result.reply)
                 if (uiScreen) {
                     chartArtifacts.push({
+                        ...({} as any),
                         id: `art-${Date.now()}-ui`,
                         title: uiScreen.title,
                         type: 'react' as const,
