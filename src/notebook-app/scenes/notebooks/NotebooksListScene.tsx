@@ -24,7 +24,6 @@ import {
     duplicateNotebook,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
-    importNotebookFromJSON,
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
@@ -46,32 +45,11 @@ function timeAgo(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString()
 }
 
-const CONTAINING_OPTIONS = [
-    { value: 'all', label: 'Any content' },
-    { value: 'published', label: 'Published' },
-    { value: 'draft', label: 'Drafts' },
-    { value: 'heading', label: 'Headings' },
-    { value: 'ai', label: 'AI prompts' },
-    { value: 'image', label: 'Images' },
-]
-
-function matchesContainsFilter(nb: StoredNotebook, filter: string): boolean {
-    if (filter === 'all') return true
-    const content = nb.content || ''
-    if (filter === 'published') return Boolean(nb.isPublished)
-    if (filter === 'draft') return !nb.isPublished
-    if (filter === 'heading') return /(^|\n)#\s+\S/.test(content)
-    if (filter === 'ai') return /<ph-prompt|ask ai|philosopher/i.test(content)
-    if (filter === 'image') return /!\[[^\]]*\]\(|<ph-image/i.test(content)
-    return true
-}
-
 export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
 }: NotebooksListSceneProps): JSX.Element {
     const [searchQuery, setSearchQuery] = useState('')
-    const [containsFilter, setContainsFilter] = useState('all')
     const [createdByFilter, setCreatedByFilter] = useState('all')
     const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
     const { addToast } = useToast()
@@ -130,31 +108,9 @@ export function NotebooksListScene({
         URL.revokeObjectURL(url)
     }
 
-    const handleLoadFromJSON = () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = '.json'
-        input.onchange = async () => {
-            const file = input.files?.[0]
-            if (!file) return
-            const text = await file.text()
-            try {
-                const nb = importNotebookFromJSON(text)
-                reloadNotebooks()
-                onSelectNotebook(nb.id)
-            } catch (e) {
-                addToast({ description: 'That file is not a valid notebook JSON export.', error: true })
-            }
-        }
-        input.click()
-    }
-
     // Filter notebooks list
     const filteredNotebooks = notebooks.filter((nb) => {
         if (searchQuery && !nb.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-            return false
-        }
-        if (!matchesContainsFilter(nb, containsFilter)) {
             return false
         }
         if (createdByFilter === 'templates' && !nb.isTemplate) {
@@ -340,15 +296,6 @@ export function NotebooksListScene({
 
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                     <div className="flex items-center gap-2 text-xs text-secondary">
-                        <span className="font-medium">Containing:</span>
-                        <LemonSelect
-                            size="small"
-                            value={containsFilter}
-                            onChange={(val) => setContainsFilter(val || 'all')}
-                            options={CONTAINING_OPTIONS}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-secondary">
                         <span className="font-medium">Created by:</span>
                         <LemonSelect
                             size="small"
@@ -361,9 +308,6 @@ export function NotebooksListScene({
                             ]}
                         />
                     </div>
-                    <LemonButton size="small" type="secondary" onClick={handleLoadFromJSON}>
-                        Import JSON
-                    </LemonButton>
                     <LemonButton size="small" type="primary" icon={<IconPlus />} onClick={onCreateNew}>
                         New notebook
                     </LemonButton>

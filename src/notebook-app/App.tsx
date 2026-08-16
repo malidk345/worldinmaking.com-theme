@@ -508,16 +508,22 @@ export function App() {
   // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
   return (
     <div
-      className={`App notebook-app-scope min-h-full h-auto bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)] ${
-        hostTheme === 'dark' ? 'dark' : ''
-      }`}
+      className={`App notebook-app-scope min-h-full h-auto text-[var(--text-3000,#1d1f27)] ${
+        route.page === 'public' ? 'bg-transparent' : 'bg-[var(--bg-3000,#f3f4f5)]'
+      } ${hostTheme === 'dark' ? 'dark' : ''}`}
       theme={hostTheme}
       data-lemon-scope
       data-host-theme={hostTheme}
     >
       {/* ===== Main Content Area matching PostHog Notebook SceneContent ===== */}
       {/* pb so last lines aren't clipped under window edge when scrolling */}
-      <main className="p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
+      <main
+        className={
+          route.page === 'public'
+            ? 'p-3 sm:p-6 lg:p-8 pb-16 max-w-[1400px] mx-auto bg-transparent'
+            : 'p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
+        }
+      >
         <ErrorBoundary>
           {/* ---------- Public notebook (read-only share link) ---------- */}
           {route.page === 'public' && (
