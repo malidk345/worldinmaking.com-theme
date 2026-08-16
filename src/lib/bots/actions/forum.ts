@@ -234,6 +234,7 @@ export async function createForumTopic(params: {
             action: 'thread_init' as const,
             phase: 'validation_failed' as const,
             persisted: false,
+            error: validation.errors.join('; ') || 'Topic validation failed',
             validationErrors: validation.errors,
         }
     }

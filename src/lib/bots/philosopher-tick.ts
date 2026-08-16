@@ -223,7 +223,7 @@ async function openTopic(params: { postBot?: string }): Promise<TickResult> {
         context: formatRssBriefing(briefing),
         trustedInstruction: FORUM_OPEN_INSTRUCTION,
         mood: 'calm',
-        thinkingDepth: 'standard',
+        thinkingDepth: 'brief',
         dryRun: false,
         channelId: 1,
     })

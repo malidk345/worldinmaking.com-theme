@@ -62,8 +62,21 @@ export default async function handler(req: Request) {
 
     const url = new URL(req.url)
     const tickReq = parseTickRequest(await readJsonBody(req), url)
-    const result = await runPhilosopherBotTick(tickReq)
-    return json(result, result.success ? 200 : 502)
+    try {
+        const result = await runPhilosopherBotTick(tickReq)
+        // Always 200 for tick outcomes. Cloudflare Pages rewrites HTTP 502
+        // bodies to the literal text "error code: 502", which breaks the cron.
+        return json(result, 200)
+    } catch (err: any) {
+        return json(
+            {
+                success: false,
+                phase: tickReq.phase || 'full',
+                error: err?.message || 'cron failed',
+            },
+            200
+        )
+    }
 }
 
 export { runPhilosopherBotTick } from 'lib/bots/philosopher-tick'

@@ -40,6 +40,10 @@ export default async function handler(req: Request) {
 
     const tickReq = parseTickRequest(await readJsonBody(req), new URL(req.url))
     const phase = tickReq.phase === 'reply' ? 'reply' : 'topic'
-    const result = await runPhilosopherBotTick({ ...tickReq, phase })
-    return json(result, result.success ? 200 : 502)
+    try {
+        const result = await runPhilosopherBotTick({ ...tickReq, phase })
+        return json(result, 200)
+    } catch (err: any) {
+        return json({ success: false, phase, error: err?.message || 'cron failed' }, 200)
+    }
 }

@@ -44,42 +44,75 @@ jobs:
             local phase="$1"
             local payload="$2"
             local attempt=1
-            local body=""
+            local tmp=""
+            local http=0
             local code=0
+            local body=""
             while [ "$attempt" -le 3 ]; do
               echo "POST phase=${phase} attempt=${attempt}"
+              tmp="$(mktemp)"
               set +e
-              body=$(curl -sS -X POST "${TARGET_URL}/api/cron/philosopher-bots" \
+              http=$(curl -sS -o "$tmp" -w '%{http_code}' -X POST "${TARGET_URL}/api/cron/philosopher-bots" \
                 -H "Authorization: Bearer ${CRON_SECRET}" \
                 -H "Content-Type: application/json" \
                 -H "User-Agent: WorldInMakingCron/1.0" \
                 --connect-timeout 10 \
-                --max-time 55 \
+                --max-time 75 \
                 --data "${payload}")
               code=$?
               set -e
-              if [ "$code" -eq 0 ] && [ -n "${body}" ]; then
-                printf '%s\n' "${body}"
-                PHASE_JSON="${body}"
-                return 0
+              body="$(cat "$tmp" 2>/dev/null || true)"
+              rm -f "$tmp"
+              echo "http=${http} curl=${code} bytes=${#body}"
+
+              if [ "$code" -eq 0 ] && [ "$http" = "200" ] && [ -n "${body}" ]; then
+                case "$body" in
+                  \{*)
+                    printf '%s\n' "${body}"
+                    PHASE_JSON="${body}"
+                    return 0
+                    ;;
+                esac
               fi
-              echo "curl exit=${code}; retrying in 8s"
+
+              echo "phase=${phase} not ok; body_head=$(printf '%s' "${body}" | head -c 280)"
               attempt=$((attempt + 1))
               sleep 8
             done
-            echo "Failed to reach cron endpoint for phase=${phase}"
+            echo "Failed to reach cron endpoint for phase=${phase} last_http=${http} last_curl=${code}"
             exit 1
           }
 
+          parse_json() {
+            printf '%s' "$1" | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                const raw = input.trim();
+                if (!raw.startsWith("{") && !raw.startsWith("[")) {
+                  console.error("Non-JSON cron body:", raw.slice(0, 200));
+                  process.exit(2);
+                }
+                let result;
+                try { result = JSON.parse(raw); }
+                catch (err) {
+                  console.error("JSON parse failed:", err.message, raw.slice(0, 200));
+                  process.exit(2);
+                }
+                process.stdout.write(JSON.stringify(result));
+              });
+            '
+          }
+
           post_phase topic '{"phase":"topic"}'
-          TOPIC_JSON="${PHASE_JSON}"
+          TOPIC_JSON="$(parse_json "${PHASE_JSON}")"
           printf '%s' "${TOPIC_JSON}" | node -e '
             let input = "";
             process.stdin.on("data", (chunk) => { input += chunk; });
             process.stdin.on("end", () => {
               const result = JSON.parse(input);
               if (result.success !== true) {
-                console.error("Topic phase failed:", result.error || result);
+                console.error("Topic phase failed:", result.error || result.phase || result);
                 process.exit(1);
               }
               if (!result.topic || !result.topic.id) {
@@ -105,14 +138,14 @@ jobs:
           ')
 
           post_phase reply "${REPLY_PAYLOAD}"
-          REPLY_JSON="${PHASE_JSON}"
+          REPLY_JSON="$(parse_json "${PHASE_JSON}")"
           printf '%s' "${REPLY_JSON}" | node -e '
             let input = "";
             process.stdin.on("data", (chunk) => { input += chunk; });
             process.stdin.on("end", () => {
               const result = JSON.parse(input);
               if (result.success !== true) {
-                console.error("Reply phase failed:", result.error || result);
+                console.error("Reply phase failed:", result.error || result.phase || result);
                 process.exit(1);
               }
               if (result.skipped !== true && result.reply && result.reply.persisted !== true) {
