@@ -25,7 +25,7 @@ This enables intuitive preview of the component, along with snapshotting, but in
     },
     args: {
         items: [
-            { label: 'Alert', onClick: () => alert('Hello there.') },
+            { label: 'Alert', onClick: () => console.info('Hello there.') },
             { label: 'Do nothing' },
             { label: 'Do nothing, with a highlight', active: true },
         ] as LemonMenuItems,
@@ -51,22 +51,22 @@ export const SectionedItems: Story = {
             {
                 title: 'Reptiles',
                 items: [
-                    { label: 'Cobra', onClick: () => alert('Sssss') },
-                    { label: 'Boa', onClick: () => alert('Rrrrr') },
+                    { label: 'Cobra', onClick: () => console.info('Sssss') },
+                    { label: 'Boa', onClick: () => console.info('Rrrrr') },
                 ],
             },
             {
                 title: 'Mammals',
                 items: [
-                    { label: 'Dog', onClick: () => alert('Woof') },
-                    { label: 'Cat', onClick: () => alert('Meow') },
+                    { label: 'Dog', onClick: () => console.info('Woof') },
+                    { label: 'Cat', onClick: () => console.info('Meow') },
                 ],
             },
             {
                 title: 'Birds',
                 items: [
-                    { label: 'Eagle', onClick: () => alert('Screech') },
-                    { label: 'Owl', onClick: () => alert('Hoot') },
+                    { label: 'Eagle', onClick: () => console.info('Screech') },
+                    { label: 'Owl', onClick: () => console.info('Hoot') },
                 ],
             },
         ] as LemonMenuSection[],
@@ -111,7 +111,7 @@ export const NestedMenu: Story = {
                 items: [
                     {
                         label: 'Detonate charges',
-                        onClick: () => alert('Twrmzlzktdzuntqniuqpmodxmokjwolbbf'),
+                        onClick: () => console.info('Twrmzlzktdzuntqniuqpmodxmokjwolbbf'),
                         status: 'danger',
                     },
                 ],

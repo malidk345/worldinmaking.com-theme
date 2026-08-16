@@ -497,7 +497,7 @@ export default function Team({
     const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
         acc[team.name] = team.crest?.data?.attributes?.url
         return acc
-    }, {})
+    }, {} as Record<string, string>)
 
     // Filter jobs that are assigned to this team
     const teamJobs = (allAshbyJobPosting?.nodes || []).filter((job: any) => {

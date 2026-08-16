@@ -228,7 +228,7 @@ export function TextOnlyNotebookApp({
               size="small"
               type="secondary"
               sideIcon={<IconOpenSidebar />}
-              onClick={() => alert('Opening context panel...')}
+              onClick={() => console.info('Opening context panel...')}
             >
               Open in context panel
             </LemonButton>

@@ -21,7 +21,7 @@ export const Default: Story = {
                 colorTokens={colorTokens}
                 selectedColorToken={colorTokens[3]}
                 onSelectColorToken={(colorToken) => {
-                    alert(colorToken)
+                    console.info(colorToken)
                 }}
             />
         )
@@ -34,7 +34,7 @@ export const CustomColors: Story = {
             colors={['#ff0000', '#00ff00', '#0000ff']}
             selectedColor="#00ff00"
             onSelectColor={(color) => {
-                alert(color)
+                console.info(color)
             }}
         />
     ),
@@ -47,7 +47,7 @@ export const CustomTheme: Story = {
             selectedColorToken={colorTokens[3]}
             themeId={2}
             onSelectColorToken={(colorToken) => {
-                alert(colorToken)
+                console.info(colorToken)
             }}
         />
     ),

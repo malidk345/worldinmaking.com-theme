@@ -28,13 +28,13 @@ export const Pill: Story = {
         return (
             <div className="flex flex-row deprecated-space-x-2">
                 <LemonSnack type="pill">Pill</LemonSnack>
-                <LemonSnack type="pill" onClick={() => alert('onClick')}>
+                <LemonSnack type="pill" onClick={() => console.info('onClick')}>
                     Clickable
                 </LemonSnack>
-                <LemonSnack type="pill" onClose={() => alert('onClose')}>
+                <LemonSnack type="pill" onClose={() => console.info('onClose')}>
                     Closeable
                 </LemonSnack>
-                <LemonSnack type="pill" onClick={() => alert('onClick')} onClose={() => alert('onClose')}>
+                <LemonSnack type="pill" onClick={() => console.info('onClick')} onClose={() => console.info('onClose')}>
                     Click- and Closeable
                 </LemonSnack>
             </div>
@@ -55,7 +55,7 @@ export const ComplexContent: Story = {
                 </span>
             </span>
         ),
-        onClose: () => alert('Close clicked!'),
+        onClose: () => console.info('Close clicked!'),
     },
 }
 

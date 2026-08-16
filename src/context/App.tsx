@@ -19,6 +19,7 @@ import useSourcesNav from '../navs/useSourcesNav'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
+// @ts-ignore
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
@@ -2536,7 +2537,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const otherSide = side === 'left' ? 'right' : 'left'
         const other = getSnapDimensions(otherSide)
         updateWindow(mate, {
-            minimized: false,
             position: other.position,
             size: other.size,
             ...windowModeFlags(otherSide === 'left' ? 'snapped-left' : 'snapped-right'),

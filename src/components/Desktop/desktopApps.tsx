@@ -36,7 +36,7 @@ function accountDesktopApp(user: ReturnType<typeof useUser>['user'], openSignIn:
     const handle = user.username || user.profile?.username || ''
     const href = profileHref(handle) || '/profile'
     const avatar =
-        getAvatarURL(user.profile) || (user.profile as { avatar_url?: string } | undefined)?.avatar_url || ''
+        getAvatarURL(user.profile as any) || (user.profile as { avatar_url?: string } | undefined)?.avatar_url || ''
     return {
         label: handle || 'Profile',
         Icon: <ProfilePhotoIcon src={avatar} name={handle || user.email || 'U'} />,

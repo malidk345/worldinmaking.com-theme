@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/router'
-import { SharedChatView } from '../components/Share/SharedChatView'
+import { SharedChatView } from '../../components/Share/SharedChatView'
 
 function tokenFromRouter(asPath: string, queryToken: string | string[] | undefined): string {
     if (typeof queryToken === 'string' && queryToken) return queryToken

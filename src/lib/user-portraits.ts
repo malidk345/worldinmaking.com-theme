@@ -1,4 +1,4 @@
-import aliPortrait from '../images/portraits/mustafa-pixel.png'
+const aliPortrait = '/images/portraits/mustafa-pixel.png'
 import { normalizePhilosopherKey, resolvePhilosopherAvatar } from './philosopher-avatar'
 
 const importedSrc = (mod: unknown): string => {

@@ -73,7 +73,7 @@ export type ForumThread = {
 
 export function speakersOf(thread: Pick<ForumThread, 'author' | 'replies'>): string[] {
     const names = [thread.author, ...thread.replies.map((r) => r.author)]
-    return [...new Set(names.map((n) => n.trim()).filter(Boolean))]
+    return Array.from(new Set(names.map((n) => n.trim()).filter(Boolean)))
 }
 
 export function shouldContinueThread(replyCount: number, speakerCount: number, rosterSize: number): boolean {
