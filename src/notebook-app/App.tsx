@@ -9,7 +9,8 @@ import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import { WIM_HIDDEN_INSERT_COMMAND_KEYS } from './scenes/notebooks/hiddenInsertCommands'
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
-import { PHILOSOPHER_BOTS } from './lib/philosophers'
+import { playInlineEditorMarkdown } from './lib/wimai-typewriter'
+import { notebookExcerptForEditor } from '../lib/bots/wimai-editor'
 import {
     StoredNotebook,
     getNotebooks,
@@ -223,13 +224,12 @@ export function App() {
     return () => window.removeEventListener('wimOpenGlobalChat', handleOpenChat)
   }, [appActions])
 
-  /** Inline / selection AI: fills Thinking… placeholder via philosopher bots. */
+  /** Slash / rewrite: isolated WIM AI editor. Never opens chat or a philosopher. */
   const handleNotebookAskAI = useCallback(async (request: MarkdownNotebookAskAIRequest) => {
     const requestId = ++askAIAbortRef.current
     setIsAskAIBusy(true)
-    const defaultBot = PHILOSOPHER_BOTS[0]?.id || 'socrates'
 
-    const applyReply = (reply: string) => {
+    const applyStatic = (reply: string) => {
       if (requestId !== askAIAbortRef.current) return
       try {
         const result = replaceNotebookAIResponseMarkdown(
@@ -239,41 +239,24 @@ export function App() {
           1
         )
         setMarkdown(result.markdown)
-        setMarkdownVersion((v) => v + 1)
       } catch (err) {
-        console.warn('[notebook AI] failed to apply reply', err)
+        console.warn('[notebook editor] failed to apply reply', err)
       }
     }
 
     try {
-      let res = await fetch('/api/bots/act', {
+      const instruction = (request.instruction || request.query || '').trim()
+      const res = await fetch('/api/notebook/inline-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'chat',
-          bot: defaultBot,
-          question: request.query,
-          mood: 'calm',
-           taskType: 'community_reply',
-          thinkingDepth: 'standard',
+          instruction,
+          selection: request.selectedMarkdown || '',
+          notebook: notebookExcerptForEditor(request.markdownWithResponse, request.responseMarker),
         }),
       })
 
-      if (res.status === 404 || res.status === 405) {
-        res = await fetch('/api/philosopher-bot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            philosopher: defaultBot,
-            question: request.query,
-            mood: 'calm',
-             taskType: 'community_reply',
-            thinkingDepth: 'standard',
-          }),
-        })
-      }
-
-      let data: any = null
+      let data: { ok?: boolean; markdown?: string; error?: string } | null = null
       try {
         data = await res.json()
       } catch {
@@ -281,14 +264,30 @@ export function App() {
       }
 
       const reply =
-        (typeof data?.reply === 'string' && data.reply.trim()) ||
+        (typeof data?.markdown === 'string' && data.markdown.trim()) ||
         (typeof data?.error === 'string' && data.error) ||
-        (res.ok ? 'No reply returned. Try again.' : `Request failed (${res.status}).`)
+        (res.ok ? 'No edit returned. Try again.' : `Request failed (${res.status}).`)
 
-      applyReply(reply)
+      if (requestId !== askAIAbortRef.current) return
+
+      if (!data?.ok || !data.markdown?.trim()) {
+        applyStatic(reply)
+        return
+      }
+
+      await playInlineEditorMarkdown({
+        baseMarkdown: request.markdownWithResponse,
+        responseNodeIndex: request.responseNodeIndex,
+        fullText: data.markdown,
+        isCancelled: () => requestId !== askAIAbortRef.current,
+        onFrame: (nextMarkdown) => {
+          if (requestId !== askAIAbortRef.current) return
+          setMarkdown(nextMarkdown)
+        },
+      })
     } catch (error) {
-      console.warn('[notebook AI] request failed', error)
-      applyReply('The philosopher network is unreachable right now. Please try again.')
+      console.warn('[notebook editor] request failed', error)
+      applyStatic('The editor is unreachable right now. Please try again.')
     } finally {
       if (requestId === askAIAbortRef.current) {
         setIsAskAIBusy(false)
@@ -306,7 +305,6 @@ export function App() {
       setTitle(nb.title)
       setSyncStatus('saved')
       setShowHistory(false)
-      setShowAIModal(false)
     }
 
     const nb = getNotebook(route.notebookId)

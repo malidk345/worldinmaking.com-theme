@@ -286,10 +286,10 @@ export function buildInsertCommands(
         ? [
               {
                   key: 'ai-ask',
-                  label: 'Ask AI',
+                  label: 'WIM AI',
                   category: commonCategory,
-                  description: 'Ask AI to write or edit this notebook',
-                  aliases: ['ai', 'ask', 'wim ai', 'philosopher'],
+                  description: 'Follow an instruction and write into the notebook',
+                  aliases: ['ai', 'ask', 'wim', 'wimai', 'edit', 'rewrite', 'editor'],
                   icon: <IconSparkles />,
                   closeOnRun: false,
                   disabled: isAskAIDisabled,

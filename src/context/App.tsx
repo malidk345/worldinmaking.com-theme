@@ -2536,7 +2536,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const otherSide = side === 'left' ? 'right' : 'left'
         const other = getSnapDimensions(otherSide)
         updateWindow(mate, {
-            minimized: false,
             position: other.position,
             size: other.size,
             ...windowModeFlags(otherSide === 'left' ? 'snapped-left' : 'snapped-right'),

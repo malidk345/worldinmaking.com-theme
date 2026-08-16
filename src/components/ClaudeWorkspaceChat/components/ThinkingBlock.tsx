@@ -37,15 +37,23 @@ function isDoneTitle(title?: string): boolean {
   return String(title || '').trim().toLowerCase() === 'done';
 }
 
+function isPlaceholderStep(step: ThinkingStep): boolean {
+  const title = String(step.title || '').trim()
+  const detail = String(step.detail || '').trim()
+  if (step.source === 'system_event' && /^(thinking|thought|think)$/i.test(title)) return true
+  if (/^[.…]+$/.test(detail) && /^(thinking|thought|think|analyzing)$/i.test(title)) return true
+  return false
+}
+
 function flattenThoughtStream(steps: ThinkingStep[]): ThoughtSegment[] {
   const segments: ThoughtSegment[] = [];
 
   steps.forEach((step, index) => {
-    if (isDoneTitle(step.title)) return;
+    if (isDoneTitle(step.title) || isPlaceholderStep(step)) return;
 
     const title = String(step.title || '').trim();
     const detail = String(step.detail || '').trim();
-    const genericTitle = /^(thinking|thought|think|native reasoning)$/i.test(title);
+    const genericTitle = /^(thinking|thought|think|native reasoning|analyzing)$/i.test(title);
 
     if (title && !genericTitle) {
       segments.push({
@@ -55,7 +63,7 @@ function flattenThoughtStream(steps: ThinkingStep[]): ThoughtSegment[] {
       });
     }
 
-    if (detail && detail !== title) {
+    if (detail && detail !== title && !/^[.…]+$/.test(detail)) {
       segments.push({
         id: `${step.id || index}-prose`,
         kind: 'prose',
@@ -179,7 +187,7 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
 };
 
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(isLive);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
 
@@ -190,12 +198,12 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
 
   const activeStage = [...rawSteps]
     .reverse()
-    .find((step) => !isDoneTitle(step.title) && String(step.title || '').trim())
+    .find((step) => !isDoneTitle(step.title) && !isPlaceholderStep(step) && String(step.title || '').trim())
     ?.title;
 
   useEffect(() => {
-    if (isLive || hasThoughtText) setIsOpen(true);
-  }, [isLive, hasThoughtText]);
+    setIsOpen(!!isLive);
+  }, [isLive, isLive ? segments.length : 0]);
 
   const handleScroll = () => {
     const el = scrollRef.current;

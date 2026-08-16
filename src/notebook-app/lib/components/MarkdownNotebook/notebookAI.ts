@@ -2,7 +2,7 @@ import { parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
 import type { NotebookBlockNode } from './types'
 import { getNodeFingerprint, getNodeSignature, getNodeText } from './utils'
 
-export const NOTEBOOK_AI_WRITING_PLACEHOLDER = 'Thinking...'
+export const NOTEBOOK_AI_WRITING_PLACEHOLDER = 'Writing…'
 
 export type NotebookAIResponseMarkdownResult = {
     markdown: string

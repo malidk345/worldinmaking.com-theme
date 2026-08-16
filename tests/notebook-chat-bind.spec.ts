@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { extractUiScreenSource, isAdminNavigationRequest, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../src/lib/ai/design-request'
 import { artifactToNotebookMarkdown, messageToNotebookMarkdown } from '../src/lib/notebook-artifact-block'
-import { buildNotebookAgentContext, extractNotebookOutline } from '../src/lib/notebook-chat-bind'
+import { buildNotebookAgentContext, extractNotebookOutline, isNotebookTask } from '../src/lib/notebook-chat-bind'
 
 test.describe('notebook chat bind context', () => {
     test('extracts a short outline from markdown headings', () => {
@@ -19,6 +19,15 @@ test.describe('notebook chat bind context', () => {
         expect(context).toContain('Notebook length:')
         expect(context).toContain('omega')
         expect(context.length).toBeGreaterThan(8000)
+    })
+
+    test('ordinary chat is not a notebook task even if a notebook is open', () => {
+        expect(isNotebookTask('özgürlük nedir')).toBe(false)
+        expect(isNotebookTask('marx ne düşünür')).toBe(false)
+        expect(isNotebookTask('what is freedom')).toBe(false)
+        expect(isNotebookTask('bu paragrafı düzelt')).toBe(true)
+        expect(isNotebookTask('notebooka bunu ekle')).toBe(true)
+        expect(isNotebookTask('rewrite the selection')).toBe(true)
     })
 
     test('prefers selection over dumping the whole notebook first', () => {

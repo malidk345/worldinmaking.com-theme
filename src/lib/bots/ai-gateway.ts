@@ -44,9 +44,16 @@ type PromptCaps = {
 
 const DEFAULT_PROMPT_CAPS: PromptCaps = {
     system: 8_000,
-    user: 4_000,
-    turns: 6,
-    turnChars: 1_200,
+    user: 12_000,
+    turns: 12,
+    turnChars: 2_000,
+}
+
+const GEMINI_PROMPT_CAPS: PromptCaps = {
+    system: 8_000,
+    user: 20_000,
+    turns: 16,
+    turnChars: 2_500,
 }
 
 function buildCompletionMessages(
@@ -57,7 +64,7 @@ function buildCompletionMessages(
 ): GatewayMessage[] {
     const messages: GatewayMessage[] = [{
         role: 'system',
-        content: systemPrompt.slice(0, caps.system),
+        content: trimSystemKeepThinking(systemPrompt, caps.system),
     }]
     if (history?.length) {
         for (const item of history.slice(-caps.turns)) {
@@ -117,10 +124,8 @@ const COOLDOWN_MS = 60_000
 const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
 const GATEWAY_TOTAL_TIMEOUT_MS = 45_000
 const MAX_SYSTEM_PROMPT_CHARS = 8_000
-const MAX_USER_PROMPT_CHARS = 4_000
+const MAX_USER_PROMPT_CHARS = 24_000
 const DEFAULT_MAX_TOKENS = 2048
-const GROQ_HISTORY_TURNS = 6
-const GROQ_HISTORY_CHARS = 1200
 /** Groq on_demand qwen/qwen3.6-27b: 8K TPM. Request size = input + max_tokens. */
 export const GROQ_TPM_LIMIT = 8_000
 const GROQ_TPM_SAFETY = 500
@@ -142,8 +147,8 @@ function isGemini25(model: string): boolean {
     return /gemini-2\.5|gemini-3|gemini-flash-latest|gemini-pro-latest/i.test(model)
 }
 
-export function usesGeminiNativeThinking(model: string, depth?: ThinkingDepth): boolean {
-    return isGemini25(model) && (depth === 'standard' || depth === 'deep')
+export function usesGeminiNativeThinking(_model: string, _depth?: ThinkingDepth): boolean {
+    return false
 }
 
 function isGroqEndpoint(url: string): boolean {
@@ -160,22 +165,44 @@ export function estimateMessagesTokens(messages: GatewayMessage[]): number {
     return messages.reduce((sum, message) => sum + estimateTokensFromText(message.content) + 8, 16)
 }
 
-function groqPromptCaps(thinking: boolean, compact: boolean): PromptCaps {
+function groqPromptCaps(_thinking: boolean, compact: boolean): PromptCaps {
     if (compact) {
-        return { system: 3_200, user: 1_400, turns: 3, turnChars: 400 }
+        return { system: 3_200, user: 2_400, turns: 4, turnChars: 500 }
     }
-    if (thinking) {
-        return { system: 4_200, user: 1_800, turns: 4, turnChars: 600 }
-    }
-    return { system: 5_500, user: 2_400, turns: 5, turnChars: 800 }
+    return { system: 3_600, user: 3_200, turns: 5, turnChars: 700 }
 }
 
-function wantedGroqMaxTokens(model: string, thinking: boolean, compact: boolean): number {
-    if (isQwen36(model)) {
-        if (thinking) return compact ? 1_536 : 3_072
-        return compact ? 1_024 : 2_048
-    }
-    return compact ? 768 : DEFAULT_MAX_TOKENS
+function wantedGroqMaxTokens(_model: string, _thinking: boolean, compact: boolean): number {
+    return compact ? 768 : 1_024
+}
+
+function trimKeepEnds(text: string, budget: number): string {
+    if (text.length <= budget) return text
+    const head = Math.max(400, Math.floor(budget * 0.72))
+    const tail = Math.max(120, budget - head - 40)
+    return `${text.slice(0, head)}\n…\n${text.slice(-tail)}`
+}
+
+/** Keep the thinking-process block; shrink the earlier system text. */
+export function trimSystemKeepThinking(text: string, budget: number): string {
+    if (text.length <= budget) return text
+    const mark = 'THINKING PROCESS'
+    const at = text.lastIndexOf(mark)
+    if (at < 0) return trimKeepEnds(text, budget)
+    const thinking = text.slice(at)
+    const headBudget = Math.max(500, budget - thinking.length - 8)
+    return `${trimKeepEnds(text.slice(0, at).trim(), headBudget)}\n\n${thinking}`
+}
+
+/** Keep the live question; shrink only the context block above it. */
+export function trimUserKeepQuery(text: string, budget: number): string {
+    if (text.length <= budget) return text
+    const marker = 'Query / Prompt:'
+    const at = text.lastIndexOf(marker)
+    if (at < 0) return trimKeepEnds(text, budget)
+    const query = text.slice(at)
+    const contextBudget = Math.max(200, budget - query.length)
+    return `${trimKeepEnds(text.slice(0, at).trim(), contextBudget)}\n\n${query}`
 }
 
 function shrinkMessagesForTpm(messages: GatewayMessage[], neededCompletion: number): GatewayMessage[] {
@@ -190,13 +217,13 @@ function shrinkMessagesForTpm(messages: GatewayMessage[], neededCompletion: numb
             continue
         }
         const system = fitted[0]
-        if (system && system.content.length > 1_600) {
-            system.content = system.content.slice(0, Math.floor(system.content.length * 0.75))
+        if (system && system.content.length > 1_800) {
+            system.content = trimSystemKeepThinking(system.content, Math.floor(system.content.length * 0.8))
             continue
         }
         const user = fitted[fitted.length - 1]
-        if (user && user.content.length > 700) {
-            user.content = user.content.slice(0, Math.floor(user.content.length * 0.75))
+        if (user && user.content.length > 900) {
+            user.content = trimUserKeepQuery(user.content, Math.floor(user.content.length * 0.8))
             continue
         }
         break
@@ -433,7 +460,7 @@ export function getFamilyOrder(skipFamilies: ProviderFamily[] = [], start = 0): 
     const ordered = rotateKeys(
         [...PRIMARY_FAMILIES],
         ((start % PRIMARY_FAMILIES.length) + PRIMARY_FAMILIES.length) % PRIMARY_FAMILIES.length,
-    ).filter((family): family is ProviderFamily => !skip.has(family))
+    ).filter((family): family is ProviderFamily => !skip.has(family as ProviderFamily))
     const active = ordered.filter((family) => !isFamilyCooling(family))
     const cooling = ordered.filter((family) => isFamilyCooling(family))
     return [...active, ...cooling]
@@ -593,7 +620,7 @@ function resolveChatPayload(
         })
     }
     return {
-        messages: buildCompletionMessages(systemPrompt, userPrompt, history),
+        messages: buildCompletionMessages(systemPrompt, userPrompt, history, GEMINI_PROMPT_CAPS),
         maxTokens: resolveMaxTokens(model, thinkingDepth),
         skip: false,
     }
@@ -891,7 +918,7 @@ async function geminiGenerateStream(
         if (!fetchRes.body) return { ok: false, detail: 'empty stream' }
 
         const reader = fetchRes.body.getReader()
-        async function* streamGenerator(): AsyncIterableIterator<string> {
+        const streamGenerator = async function* (): AsyncIterableIterator<string> {
             const decoder = new TextDecoder()
             const wrapState: ReasoningWrapState = { opened: false, closed: false }
             let buffer = ''

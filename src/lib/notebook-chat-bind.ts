@@ -90,10 +90,32 @@ export function buildNotebookAgentContext(input: {
     return parts.filter(Boolean).join('\n\n')
 }
 
+/** True only when the user is asking to work on the open notebook, not just chatting. */
+export function isNotebookTask(prompt: string): boolean {
+    const text = String(prompt || '').trim()
+    if (!text) return false
+    const askOnly =
+        /(nedir|neden|ne demek|ne düşün|ne dusun|anlat\b|açıkla|acikla|\bwhat is\b|\bwhy\b|\bhow does\b|\btell me\b|\bexplain\b)/i
+    const doc =
+        /(notebook|defter|belge|doküman|dokuman|\bdocument\b|bu not|this note|bu metin|this text|this paragraph|bu paragraf|bu pasaj|this passage|seçili|secili|\bselection\b|outline|içindekiler)/i
+    const edit =
+        /(rewrite|edit|insert|append|replace|revise|düzelt|duzelt|değiştir|degistir|ekle\b|kısalt|kisalt|genişlet|genislet|yazmaya devam|continue writing|özetle|ozetle|summarize)/i
+    const here = /(burayı|burayi|şunu|sunu|\bhere\b|\bthis\b|seçili|secili)/i
+    if (askOnly.test(text) && !edit.test(text) && !/\b(notebook|defter|bu metin|this text|seçili|secili)\b/i.test(text)) {
+        return false
+    }
+    if (doc.test(text) && edit.test(text)) return true
+    if (here.test(text) && edit.test(text)) return true
+    if (/^(edit|rewrite|revise|düzelt|duzelt|kısalt|kisalt|genişlet|genislet|özetle|ozetle)\b/i.test(text) && text.length < 220) {
+        return true
+    }
+    return false
+}
+
 export const NOTEBOOK_EDITOR_INSTRUCTION = `
-You are the editor of the bound notebook. The document is the work, not the chat bubble.
-- Prefer markdown the user can apply to the notebook (append or replace the selection).
-- If they ask to change a passage and a selection is provided, rewrite that passage only.
-- If they ask to make anything on screen (game, form, map, widget, page — not only a dashboard), emit a React artifact for the sandbox preview. Code only. Do not dump raw React into the notebook unless they explicitly ask to insert the code.
+The user asked to work on the bound notebook. Answer that request.
+- Prefer markdown they can apply to the notebook (append or replace the selection).
+- If a selection is provided and they asked to change a passage, rewrite that passage only.
+- If they ask to make anything on screen, emit a React artifact. Do not dump raw React into the notebook unless they ask to insert the code.
 - Charts use the declarative chart artifact. Do not invent notebook data.
 `.trim()

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { extractPersona, buildPersonaHeader, resolvePersonaDensity } from '../src/lib/persona-engine'
 import { getFluidSystemPrompt } from '../src/lib/bots/fluid-prompts'
 import { buildThinkingInstruction } from '../src/lib/bots/thinking'
-import { estimateTokensFromText, fitGroqRequest, GROQ_TPM_LIMIT } from '../src/lib/bots/ai-gateway'
+import { estimateTokensFromText, fitGroqRequest, GROQ_TPM_LIMIT, trimUserKeepQuery } from '../src/lib/bots/ai-gateway'
 import { SECURITY_PREAMBLE } from '../src/lib/bots/orchestrate'
 
 test('chat packs only the selected philosopher, compact by default', () => {
@@ -66,4 +66,18 @@ test('prints a typical Nietzsche thinking turn Groq bill', () => {
         `fitted: msgs=${fitted.messages.length} prompt=${fitted.promptTokens} max=${fitted.maxTokens} billed=${fitted.promptTokens + fitted.maxTokens}`
     )
     expect(fitted.promptTokens + fitted.maxTokens).toBeLessThanOrEqual(GROQ_TPM_LIMIT)
+    const last = fitted.messages[fitted.messages.length - 1]
+    expect(last?.content).toContain('merhaba, irade nedir?')
+    expect(fitted.messages[0]?.content).toContain('THINKING PROCESS')
+})
+
+test('trimming a packed user prompt keeps the live question', () => {
+    const packed = [
+        `Context Snippet:\n"""${'notebook '.repeat(400)}"""`,
+        'Query / Prompt:\nrewrite the selected paragraph about wages',
+    ].join('\n\n')
+    const trimmed = trimUserKeepQuery(packed, 900)
+    expect(trimmed).toContain('Query / Prompt:')
+    expect(trimmed).toContain('rewrite the selected paragraph about wages')
+    expect(trimmed.length).toBeLessThan(packed.length)
 })

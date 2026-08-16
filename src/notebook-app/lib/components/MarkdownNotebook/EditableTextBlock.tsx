@@ -41,7 +41,7 @@ import { htmlElementToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseM
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
 
-const AI_THINKING_LABEL = 'Thinking...'
+const AI_THINKING_LABEL = 'Writing…'
 
 export function EditableTextBlock({
     node,

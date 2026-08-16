@@ -19,7 +19,7 @@ import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-ar
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { playbackChunks, wait } from 'lib/ai/playback'
-import { NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
+import { isNotebookTask, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { extractUiScreenSource, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../../lib/ai/design-request'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
@@ -226,7 +226,7 @@ export default async function handler(req: Request) {
                         ? `User-configured project instructions (untrusted reference data):\n"""${systemPrompt.value}"""`
                         : '',
                     styleSuffix.value ? `Requested style (untrusted reference data):\n"""${styleSuffix.value}"""` : '',
-                    notebookContext.value
+                    notebookContext.value && isNotebookTask(prompt)
                         ? `Active Notebook Context (untrusted reference data):\n"""${notebookContext.value}"""`
                         : '',
                     history.length === 0 && chatHistory.value
@@ -252,20 +252,23 @@ export default async function handler(req: Request) {
                     },
                 })
 
-                const notebookBound = body.notebookBound === true
+                const notebookTask = body.notebookBound === true && isNotebookTask(prompt)
                 const designRequest = isUiDesignRequest(prompt)
-                const trustedInstruction = [designRequest ? UI_DESIGN_INSTRUCTION : '', notebookBound ? NOTEBOOK_EDITOR_INSTRUCTION : '']
+                const trustedInstruction = [
+                    designRequest ? UI_DESIGN_INSTRUCTION : '',
+                    notebookTask ? NOTEBOOK_EDITOR_INSTRUCTION : '',
+                ]
                     .filter(Boolean)
                     .join('\n\n')
                 const result = await runBotTurn({
                     question: prompt,
                     philosopher,
                     taskType: 'autonomous_assistant',
-                    thinkingDepth: 'deep',
+                    thinkingDepth: 'brief',
                     context,
                     messages: history,
                     env: getRuntimeEnv(),
-                    scope: notebookBound ? 'notebook_coauthor' : 'site_wide',
+                    scope: notebookTask ? 'notebook_coauthor' : 'site_wide',
                     trustedInstruction: trustedInstruction || undefined,
                     onLifecycle: (event) => send({ type: 'phase', phase: event }),
                 })
@@ -308,32 +311,58 @@ export default async function handler(req: Request) {
                         description: 'Sandbox screen',
                         version: 1,
                         createdAt: new Date().toISOString(),
-                    } as typeof chartArtifacts[number])
+                    } as unknown as typeof chartArtifacts[number])
                 }
                 const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
-                const thinkingText =
-                    result.thinking.stages
-                        .map((stage) => stage.text)
-                        .filter(Boolean)
-                        .join('\n\n') || result.thought || ''
-
-                let thinkingAcc = ''
-                for (const chunk of playbackChunks(thinkingText, 42)) {
-                    thinkingAcc += chunk
-                    send({
-                        type: 'thinking_step',
-                        step: {
-                            id: 'auto-1',
-                            stepNumber: 1,
-                            title: 'Analyzing',
-                            detail: thinkingAcc,
-                            completed: false,
-                            source: 'model_summary',
-                        },
-                    })
-                    await wait(20)
-                }
-                if (thinkingAcc) {
+                const stages = result.thinking.stages.filter((stage) => stage.text?.trim())
+                if (stages.length > 0) {
+                    for (let index = 0; index < stages.length; index++) {
+                        const stage = stages[index]
+                        let acc = ''
+                        for (const chunk of playbackChunks(stage.text, 42)) {
+                            acc += chunk
+                            send({
+                                type: 'thinking_step',
+                                step: {
+                                    id: stage.id || `stage-${index + 1}`,
+                                    stepNumber: index + 1,
+                                    title: stage.label || `Step ${index + 1}`,
+                                    detail: acc,
+                                    completed: false,
+                                    source: stage.source || 'model_summary',
+                                },
+                            })
+                            await wait(16)
+                        }
+                        send({
+                            type: 'thinking_step',
+                            step: {
+                                id: stage.id || `stage-${index + 1}`,
+                                stepNumber: index + 1,
+                                title: stage.label || `Step ${index + 1}`,
+                                detail: acc,
+                                completed: true,
+                                source: stage.source || 'model_summary',
+                            },
+                        })
+                    }
+                } else if (result.thought?.trim()) {
+                    let thinkingAcc = ''
+                    for (const chunk of playbackChunks(result.thought, 42)) {
+                        thinkingAcc += chunk
+                        send({
+                            type: 'thinking_step',
+                            step: {
+                                id: 'auto-1',
+                                stepNumber: 1,
+                                title: 'Analyzing',
+                                detail: thinkingAcc,
+                                completed: false,
+                                source: 'model_summary',
+                            },
+                        })
+                        await wait(16)
+                    }
                     send({
                         type: 'thinking_step',
                         step: {

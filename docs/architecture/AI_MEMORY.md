@@ -162,6 +162,11 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-142` | Stream 5 | Unify notebook Ask WIM into Ask AI window; keep slash inline | `notebook-app/App.tsx`, `CommandPaletteModal.tsx`, `extraInsertCommands.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-143` | Stream 5 | Drop OpenRouter and Hugging Face from the AI gateway | `ai-gateway.ts`, `langchain-pipeline.ts`, `runtime-env.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-144` | Stream 5 | Marx is one mind everywhere: method card, not a forum costume | `persona-engine.ts`, `tests/philosopher-tick.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-145` | Stream 5 | Groq 8k TPM: drop native thinking, pack context last-mile | `ai-gateway.ts`, `thinking.ts`, `fluid-prompts.ts`, `forum-thread.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-146` | Stream 5 | Per-philosopher thinking stages (3 jobs, not slogan tags) | `thinking-schemas.ts`, `thinking.ts`, `thinking-tags.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-147` | Stream 5 | Public reply must match the user's language even when thinking is off | `fluid-prompts.ts`, `orchestrate.ts`, `thinking.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-148` | Stream 5 | Fill persona thinking tags and show them as a process in chat | `thinking.ts`, `api/chat.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-149` | Stream 5 | Isolated WIM AI inline notebook editor (no chat, no philosopher, no thinking) | `wimai-editor.ts`, `api/notebook/inline-edit.ts`, Prompt block, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -296,6 +301,38 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 220 - Isolated WIM AI inline editor for slash / rewrite
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Slash and selection rewrite no longer open the chatbot or a philosopher. A new `wimai` editor follows the user's instruction only (no thinking, no persona) via `/api/notebook/inline-edit`. The Prompt block is a simple navy inline editor; results type into the notebook. Chat / thinking / orchestrate were not changed.
+- **Modified Files:** `src/lib/bots/wimai-editor.ts`, `src/pages/api/notebook/inline-edit.ts`, `EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `App.tsx`, `InsertMenu.tsx`, `notebookAI.ts`, `tests/wimai-editor.spec.ts`, notebook styles, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/wimai-editor.spec.ts tests/notebook-chat-bind.spec.ts` — 20 passed (after the two assertion fixes).
+- **Next:** Header Ask AI / Cmd+K still open the existing chatbot by design.
+
+### Entry 219 - Persona thinking stages actually fill and play back as a process
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Stopped putting hints inside example tags (the model was echoing them). Chat now plays each stage as its own ticker step (The case / What is taken / The side) instead of one "Analyzing" blob. Hint-echoes are dropped; free prose is mapped onto the three stages. Groq packing keeps the THINKING PROCESS block.
+- **Modified Files:** `thinking.ts`, `api/chat.ts`, `ai-gateway.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 218 - Reply in the user's language even when thinking is off
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the conflicting "Answer in English only" contract. Public replies follow the user's last message language whether thinking is staged or off. Forum public threads stay English.
+- **Modified Files:** `fluid-prompts.ts`, `orchestrate.ts`, `thinking.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 217 - Each philosopher thinks in three of their own stages
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced generic perceive/frame/tension/move with a 3-stage method per mind (Marx: case / what is taken / side; Nietzsche: kind of life / what it protects / what to affirm; etc.). Outer wrapper stays `<thinking>`. Stages are jobs, not trademark concepts.
+- **Modified Files:** `thinking-schemas.ts`, `thinking.ts`, `thinking-tags.ts`, `orchestrate.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 216 - Spend Groq's 8k TPM on the case, not native thinking
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Native Qwen/Gemini reasoning is off. Each philosopher still writes a short prompted `<thinking>` with a per-mind cue. Groq packing keeps the live question and trims history/context first. Site-wide fluid no longer ships UI/chart rules. Forum transcripts keep the last six replies in full.
+- **Modified Files:** `thinking.ts`, `ai-gateway.ts`, `orchestrate.ts`, `fluid-prompts.ts`, `forum-thread.ts`, `actions/forum.ts`, `api/chat.ts`, tests, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 215 - Marx persona is a method, used on every surface
 - **Date:** 2026-08-16

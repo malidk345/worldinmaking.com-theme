@@ -208,7 +208,7 @@ export async function createForumTopic(params: {
         philosopher: params.botUsername,
         mood: params.mood || 'calm',
         taskType: 'thread_init',
-        thinkingDepth: params.thinkingDepth || 'standard',
+        thinkingDepth: params.thinkingDepth || 'brief',
         context: params.context,
         trustedInstruction: params.trustedInstruction,
     })
@@ -353,7 +353,7 @@ export async function createForumReply(params: {
         philosopher: params.botUsername,
         mood: params.mood || 'calm',
         taskType: 'community_reply',
-        thinkingDepth: params.thinkingDepth || 'standard',
+        thinkingDepth: params.thinkingDepth || 'brief',
         context,
         trustedInstruction: params.trustedInstruction,
     })

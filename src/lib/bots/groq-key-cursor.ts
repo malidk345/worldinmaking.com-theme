@@ -90,7 +90,7 @@ export function resetFamilyKeyCursor(family?: string): void {
         writeFsCursor(family, 0)
         return
     }
-    const families = new Set(['groq', 'gemini', 'primary', ...memoryCursors.keys()])
+    const families = Array.from(new Set(['groq', 'gemini', 'primary', ...Array.from(memoryCursors.keys())]))
     for (const name of families) {
         memoryCursors.set(name, 0)
         writeFsCursor(name, 0)

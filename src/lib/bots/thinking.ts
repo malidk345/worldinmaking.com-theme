@@ -1,24 +1,22 @@
 /**
  * Bot thinking process — structured internal reasoning before public reply.
  *
- * Models are instructed to emit:
- *   <thinking>
- *     <perceive>...</perceive>
- *     <frame>...</frame>
- *     <tension>...</tension>
- *     <move>...</move>
- *   </thinking>
- *   public reply outside tags
- *
- * Fallback: legacy <thought>...</thought> or free text.
+ * Models emit <thinking> with three persona-specific stage tags
+ * (see thinking-schemas.ts), then the public reply outside.
  */
 import type { TaskType } from 'lib/persona-engine'
 import { stripThinkingBlocks, THINKING_TAG_NAMES } from './thinking-tags'
+import {
+    allThinkingStageIds,
+    stageDefById,
+    thinkingSchemaFor,
+    type PersonaThinkingSchema,
+} from './thinking-schemas'
 
 export type ThinkingDepth = 'brief' | 'standard' | 'deep'
 
 export interface ThinkingStage {
-    id: 'perceive' | 'frame' | 'tension' | 'move' | 'raw'
+    id: string
     label: string
     text: string
     source?: 'model_summary' | 'provider_trace' | 'system_event'
@@ -80,75 +78,202 @@ function depthForTask(taskType: TaskType, override?: ThinkingDepth): ThinkingDep
     }
 }
 
-export function usesNativeQwenReasoning(depth?: ThinkingDepth): boolean {
-    return depth === 'standard' || depth === 'deep'
+/** Native provider reasoning is off — it burns Groq's 8k TPM. We prompt a short tag instead. */
+export function usesNativeQwenReasoning(_depth?: ThinkingDepth): boolean {
+    return false
 }
 
-export function shouldPromptThinkingTags(depth?: ThinkingDepth): boolean {
-    return !usesNativeQwenReasoning(depth)
+export function shouldPromptThinkingTags(_depth?: ThinkingDepth): boolean {
+    return true
+}
+
+export function thinkingCueFor(name?: string): string {
+    const schema = thinkingSchemaFor(name)
+    if (!schema) return 'Decide the one cut this mind would take on this case.'
+    return schema.stages.map((stage) => stage.hint).join(' ')
+}
+
+function normalizeClause(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9çğıöşü]+/gi, ' ').replace(/\s+/g, ' ').trim()
+}
+
+const PERSONA_NAMES =
+    'marx|nietzsche|hegel|sartre|heidegger|deleuze|spinoza|baudrillard|althusser|derrida|weber|adorno|zizek|zizek|lenin|arendt|rand'
+const MODEL_ID_RE = /\b(qwen\/[\w.-]+|groq\/[\w.-]+|gemini-[\w.-]+|gpt-oss[\w.-]*|llama-[\w.-]+|qwen3(?:\.6)?-27b)\b/gi
+
+/** Keep only the clause. Drop model ids, "as Marx", leftover markup. */
+export function cleanStageText(text: string): string {
+    let value = String(text || '')
+        .replace(/<\/?[^>]+>/g, ' ')
+        .replace(MODEL_ID_RE, ' ')
+        .replace(/^\s*(as|you are|speaking as|writing as)\s+[a-z][a-z .'-]{1,40}\s*[:—,-]\s*/i, '')
+        .replace(new RegExp(`^\\s*(?:${PERSONA_NAMES})\\s*[:—,-]\\s*`, 'i'), '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    if (/^[.…]+$/.test(value)) return ''
+    if (value.length < 8 && new RegExp(`^(?:${PERSONA_NAMES})$`, 'i').test(value)) return ''
+    return value
+}
+
+export function isJunkThought(text: string): boolean {
+    const value = cleanStageText(text)
+    if (!value) return true
+    if (value.length < 8) return true
+    const clause = normalizeClause(value)
+    if (/^(thinking|thought|analyzing|native reasoning)$/.test(clause)) return true
+    if (new RegExp(`^(?:${PERSONA_NAMES})(?:\\s+\\S+){0,2}$`, 'i').test(clause)) return true
+    return false
+}
+
+function isHintEcho(text: string, hint: string): boolean {
+    const a = normalizeClause(text)
+    const b = normalizeClause(hint)
+    if (!a) return true
+    if (a === b) return true
+    const head = b.slice(0, 28)
+    return head.length >= 16 && a.startsWith(head)
 }
 
 /**
- * System prompt block for private reasoning + public reply.
- * Native Qwen already emits <think>; do not also demand a short <thinking> essay.
+ * Short prompted <thinking> with this mind's three stages.
+ * Outer tag is always <thinking> so the live ticker still works.
  */
-export function buildThinkingInstruction(taskType: TaskType, depth?: ThinkingDepth): string {
-    const d = depthForTask(taskType, depth)
-    // Public style lives once in getFluidSystemPrompt — do not repeat it here.
-
-    if (usesNativeQwenReasoning(d)) {
-        return [
-            'After any private reasoning, close the thinking tag and write a complete public reply the user can read.',
-            'Never put the user-visible answer inside thinking tags. Never stop after reasoning.',
-            'If you have no separate reasoning channel, write 40-80 words inside <thinking>...</thinking>, close the tag, then write the full public reply.',
-        ].join('\n')
-    }
-
+export function buildThinkingInstruction(
+    _taskType: TaskType,
+    depth?: ThinkingDepth,
+    philosopher?: string,
+): string {
+    const schema = thinkingSchemaFor(philosopher)
+    const words = depth === 'deep' ? 90 : 70
+    const jobs = schema
+        ? schema.stages.map((stage, index) => `${index + 1}. ${stage.label} (${stage.id}): ${stage.hint}`).join('\n')
+        : thinkingCueFor(philosopher)
+    const template = schema
+        ? ['<thinking>', ...schema.stages.map((stage) => `<${stage.id}>…</${stage.id}>`), '</thinking>'].join('\n')
+        : '<thinking>…</thinking>'
     return [
-        'THINKING PROCESS (mandatory, keep it short):',
-        'Write at most 80 words inside <thinking>...</thinking>, then you MUST close the tag.',
-        'After </thinking> write the full public reply. Never end inside the thinking tag. Never put the answer inside the tag.',
+        'THINKING PROCESS (mandatory). Your first characters MUST be <thinking>.',
+        `Fill every tag with a concrete clause about THIS user message (6–16 words). Never leave … in a tag. Never copy the job text.`,
+        jobs,
+        `Exact shape:\n${template}`,
+        `Stay under ${words} words across the three tags, then close </thinking>.`,
+        'Then write the public reply in the same language as the user. Tag names stay English.',
     ].join('\n')
 }
 
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function extractTag(block: string, tag: string): string {
-    const closed = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, 'i')
+    const closed = new RegExp(`<${escapeRegExp(tag)}>([\\s\\S]*?)<\\/${escapeRegExp(tag)}>`, 'i')
     const m = block.match(closed)
-    if (m) return cleanAIOutput(m[1].trim())
+    if (m) return cleanAIOutput(m[1].replace(/^[.…\s]+|[.…\s]+$/g, '').trim())
     return ''
 }
 
-const STAGE_ORDER = [
+function extractLabeledLine(block: string, stage: { id: string; label: string; hint: string }): string {
+    const names = [stage.id, stage.label].filter(Boolean)
+    for (const name of names) {
+        const re = new RegExp(
+            `(?:^|\\n)\\s*(?:\\d+[.)]\\s*)?(?:<${escapeRegExp(name)}>|${escapeRegExp(name)})\\s*(?:—|-|:)?\\s*([^\\n<]+)`,
+            'i',
+        )
+        const m = block.match(re)
+        const text = cleanAIOutput((m?.[1] || '').replace(/^[.…\s]+|[.…\s]+$/g, '').trim())
+        if (text && !isHintEcho(text, stage.hint) && !/^the case$|^what is taken$|^the side$/i.test(text)) {
+            return text
+        }
+    }
+    return ''
+}
+
+const LEGACY_STAGE_ORDER = [
     ['perceive', 'Perceive'],
     ['frame', 'Frame'],
     ['tension', 'Tension'],
     ['move', 'Move'],
 ] as const
 
-/**
- * Parse stage tags even when the model omits closing tags:
- *   <perceive>…\n<frame>…\n<tension>…\n<move>…
- */
-function extractStagesLoose(block: string): ThinkingStage[] {
+function extractSchemaStages(block: string, schema: PersonaThinkingSchema): ThinkingStage[] {
     const stages: ThinkingStage[] = []
-    for (let i = 0; i < STAGE_ORDER.length; i++) {
-        const [id, label] = STAGE_ORDER[i]
-        const nextId = STAGE_ORDER[i + 1]?.[0]
-        const closed = extractTag(block, id)
-        if (closed) {
-            stages.push({ id, label, text: closed })
-            continue
-        }
-        // open tag until next stage open tag or end
+    for (let i = 0; i < schema.stages.length; i++) {
+        const stage = schema.stages[i]
+        const nextId = schema.stages[i + 1]?.id
+        const closed = extractTag(block, stage.id)
+        const labeled = !closed ? extractLabeledLine(block, stage) : ''
         const openRe = nextId
-            ? new RegExp(`<${id}>\\s*([\\s\\S]*?)(?=<${nextId}>|<\\/thinking>|<\\/thought>|$)`, 'i')
-            : new RegExp(`<${id}>\\s*([\\s\\S]*?)(?=<\\/thinking>|<\\/thought>|$)`, 'i')
-        const m = block.match(openRe)
-        if (m?.[1]?.trim()) {
-            stages.push({ id, label, text: cleanAIOutput(m[1].trim()) })
-        }
+            ? new RegExp(`<${escapeRegExp(stage.id)}>\\s*([\\s\\S]*?)(?=<${escapeRegExp(nextId)}>|<\\/thinking>|<\\/thought>|$)`, 'i')
+            : new RegExp(`<${escapeRegExp(stage.id)}>\\s*([\\s\\S]*?)(?=<\\/thinking>|<\\/thought>|$)`, 'i')
+        const open = !closed && !labeled ? block.match(openRe)?.[1]?.trim() || '' : ''
+        const text = cleanStageText(closed || labeled || open)
+        if (!text || isJunkThought(text) || isHintEcho(text, stage.hint)) continue
+        stages.push({ id: stage.id, label: stage.label, text })
     }
     return stages
+}
+
+function fillSchemaFromProse(inner: string, schema: PersonaThinkingSchema): ThinkingStage[] {
+    const tagPattern = new RegExp(`</?(?:${THINKING_TAG_NAMES.join('|')})(?:\\s[^>]*)?>`, 'gi')
+    const raw = cleanAIOutput(inner.replace(tagPattern, '').trim())
+    if (!raw) return []
+    const parts = raw
+        .split(/(?<=[.!?])\s+|\n+/)
+        .map((part) => part.trim())
+        .filter((part) => part.length > 6 && !isJunkThought(part))
+        .filter((part) => {
+            if (schema.stages.some((stage) => isHintEcho(part, stage.hint))) return false
+            const clause = normalizeClause(part)
+            return !schema.stages.some((stage) => {
+                const hint = normalizeClause(stage.hint)
+                return clause.length >= 8 && hint.includes(clause)
+            })
+        })
+        .map((part) => cleanStageText(part))
+        .filter(Boolean)
+    if (parts.length === 0) return []
+    return schema.stages
+        .map((stage, index) => ({
+            id: stage.id,
+            label: stage.label,
+            text: parts[index] || (index === 0 ? raw : ''),
+        }))
+        .filter((stage) => stage.text)
+}
+
+function extractAnyKnownStages(block: string): ThinkingStage[] {
+    const found: ThinkingStage[] = []
+    for (const id of allThinkingStageIds()) {
+        const text = extractTag(block, id)
+        if (!text) continue
+        const def = stageDefById(id)
+        if (def && isHintEcho(text, def.hint)) continue
+        found.push({ id, label: def?.label || id, text })
+    }
+    if (found.length) return found
+    const stages: ThinkingStage[] = []
+    for (const [id, label] of LEGACY_STAGE_ORDER) {
+        const text = extractTag(block, id)
+        if (text) stages.push({ id, label, text })
+    }
+    return stages
+}
+
+function stagesFromInner(inner: string, philosopher?: string): ThinkingStage[] {
+    const schema = thinkingSchemaFor(philosopher)
+    if (schema) {
+        const staged = extractSchemaStages(inner, schema)
+        if (staged.length >= 2) return staged
+        const filled = fillSchemaFromProse(inner, schema)
+        if (filled.length) {
+            const byId = new Map(staged.map((stage) => [stage.id, stage]))
+            return filled.map((stage) => byId.get(stage.id) || stage)
+        }
+        if (staged.length) return staged
+    }
+    const any = extractAnyKnownStages(inner)
+    if (any.length) return any
+    return stagesFromBlock(inner)
 }
 
 function stagesFromBlock(inner: string): ThinkingStage[] {
@@ -202,7 +327,7 @@ export function parseThinkingAndReply(
     rawText: string,
     taskType: TaskType = 'community_reply',
     depth?: ThinkingDepth,
-    options?: { providerTrace?: string }
+    options?: { providerTrace?: string; philosopher?: string }
 ): { thinking: ThinkingProcess; reply: string } {
     const d = depthForTask(taskType, depth)
     const text = rawText || ''
@@ -222,7 +347,7 @@ export function parseThinkingAndReply(
     const openBeforeClose = new RegExp(`<(${wrapperNames.join('|')})(?:\\s[^>]*)?>`, 'i')
     const stray = strayClosePattern.exec(reply)
     if (stray && !openBeforeClose.test(stray[1])) {
-        if (stray[1].trim()) stages.push(...stagesFromBlock(stray[1].trim()))
+        if (stray[1].trim()) stages.push(...stagesFromInner(stray[1].trim(), options?.philosopher))
         reply = stray[3]
     }
 
@@ -232,7 +357,7 @@ export function parseThinkingAndReply(
     )
     let match: RegExpExecArray | null
     while ((match = closedPattern.exec(reply)) !== null) {
-        stages.push(...stagesFromBlock(match[2]))
+        stages.push(...stagesFromInner(match[2], options?.philosopher))
     }
     reply = reply.replace(closedPattern, '')
 
@@ -241,21 +366,15 @@ export function parseThinkingAndReply(
     if (unclosed) {
         // An unclosed think block is all private. Do not promote its last
         // paragraph into the public reply — that is how thinking leaked.
-        stages.push(...stagesFromBlock(unclosed[2].trim()))
+        stages.push(...stagesFromInner(unclosed[2].trim(), options?.philosopher))
         reply = reply.slice(0, unclosed.index).trim()
     }
 
-    // 4. Loose philosophical tags without a wrapping block
-    if (/<perceive>/i.test(reply) || /<frame>/i.test(reply)) {
-        const looseStages = extractStagesLoose(reply)
-        if (looseStages.length > 0) {
-            stages.push(...looseStages)
-            for (const [id] of STAGE_ORDER) {
-                reply = reply
-                    .replace(new RegExp(`<${id}>[\\s\\S]*?(?:<\\/${id}>|$)`, 'gi'), '')
-                    // In case they are adjacent and unclosed
-                    .replace(new RegExp(`<${id}>[\\s\\S]*?(?=<perceive>|<frame>|<tension>|<move>|$)`, 'gi'), '')
-            }
+    const loose = extractAnyKnownStages(reply)
+    if (loose.length > 0) {
+        stages.push(...loose)
+        for (const stage of loose) {
+            reply = reply.replace(new RegExp(`<${stage.id}>[\\s\\S]*?(?:<\\/${stage.id}>|$)`, 'gi'), '')
         }
     }
 

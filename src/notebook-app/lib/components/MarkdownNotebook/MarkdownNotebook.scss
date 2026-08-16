@@ -850,6 +850,96 @@ html.dark .MarkdownNotebook,
     outline: none;
 }
 
+.WimInlineEditor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+    padding: 0.7rem 0.8rem 0.6rem;
+    color: var(--color-text-primary);
+    background: var(--color-bg-surface-primary);
+    border: 1px solid color-mix(in sRGB, var(--color-accent, #1d4ed8) 26%, var(--color-border-primary));
+    border-radius: 0.375rem;
+}
+
+.WimInlineEditor--busy {
+    border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, var(--color-border-primary));
+}
+
+.WimInlineEditor__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 1.25rem;
+}
+
+.WimInlineEditor__mark {
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    color: var(--color-accent, #1d4ed8);
+    text-transform: uppercase;
+}
+
+.WimInlineEditor__target {
+    display: -webkit-box;
+    max-height: 4.35rem;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    border-left: 2px solid var(--color-accent, #1d4ed8);
+    padding-left: 0.55rem;
+}
+
+.WimInlineEditor__input {
+    width: 100%;
+    min-height: 2.6rem;
+    padding: 0;
+    font: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: inherit;
+    resize: none;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    outline: none;
+}
+
+.WimInlineEditor__input::placeholder {
+    color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+
+.WimInlineEditor__input:disabled {
+    opacity: 0.65;
+}
+
+.WimInlineEditor__actions {
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.WimInlineEditor__hint {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.6875rem;
+    color: var(--color-text-secondary);
+    opacity: 0.75;
+}
+
+.WimInlineEditor__status {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+
 .MarkdownNotebook__text-block:focus {
     background: var(--bg-light);
 }

@@ -1,6 +1,6 @@
 /**
- * Selection → Ask AI presets for the floating format toolbar.
- * Prompts ask for replacement markdown only (fills the Thinking… placeholder).
+ * Selection → WIM AI editor presets for the floating format toolbar.
+ * Each prompt is a direct edit instruction. No chatbot, no philosopher.
  */
 
 export type SelectionAIActionId = 'rewrite' | 'challenge' | 'expand' | 'counter'

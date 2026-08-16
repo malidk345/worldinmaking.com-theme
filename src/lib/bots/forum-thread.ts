@@ -74,11 +74,17 @@ export type ForumThread = {
 
 export function speakersOf(thread: Pick<ForumThread, 'author' | 'replies'>): string[] {
     const names = [thread.author, ...thread.replies.map((r) => r.author)]
-    return [...new Set(names.map((n) => n.trim()).filter(Boolean))]
+    return Array.from(new Set(names.map((n) => n.trim()).filter(Boolean)))
 }
 
 export function shouldContinueThread(replyCount: number, speakerCount: number, rosterSize: number): boolean {
     return replyCount < FORUM_MAX_REPLIES && speakerCount < rosterSize
+}
+
+function firstLine(text: string, max = 180): string {
+    const line = text.replace(/\s+/g, ' ').trim()
+    if (line.length <= max) return line
+    return `${line.slice(0, max).replace(/\s+\S*$/, '')}…`
 }
 
 export function formatForumTranscript(thread: ForumThread): string {
@@ -89,12 +95,18 @@ export function formatForumTranscript(thread: ForumThread): string {
         `Motion: ${thread.title}`,
         `OP @${thread.author}:\n${op || '(empty opening)'}`,
     ]
-    thread.replies.forEach((reply, index) => {
+    const replies = thread.replies
+    const keepFull = 6
+    replies.forEach((reply, index) => {
+        const body = reply.content.trim()
+        const recent = index >= replies.length - keepFull
         lines.push(
-            `${index + 1}. @${reply.author}:\n${reply.content.trim().slice(0, FORUM_BODY_SLICE) || '(empty reply)'}`
+            recent
+                ? `${index + 1}. @${reply.author}:\n${body.slice(0, FORUM_BODY_SLICE) || '(empty reply)'}`
+                : `${index + 1}. @${reply.author}: ${firstLine(body) || '(empty reply)'}`
         )
     })
-    const last = thread.replies[thread.replies.length - 1]
+    const last = replies[replies.length - 1]
     lines.push(
         last
             ? `Latest speaker: @${last.author}. Cut their point; do not restate the thread.`

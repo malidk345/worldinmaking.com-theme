@@ -6,7 +6,7 @@ export type MarkdownNotebookInsertMenuApi = {
     openAIPrompt?: () => void
 }
 
-/** Slash already ships Ask AI (inline). No second entry. */
+/** Slash already ships WIM AI (inline editor). No second entry. */
 export function buildExtraInsertCommands(_api?: MarkdownNotebookInsertMenuApi): InsertCommand[] {
     return []
 }

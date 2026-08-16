@@ -78,7 +78,7 @@ async function countExact(table: string, filter?: (q: any) => any): Promise<numb
 }
 
 async function profileMap(ids: Array<string | null | undefined>) {
-    const unique = [...new Set(ids.filter((id): id is string => !!id))]
+    const unique = Array.from(new Set(ids.filter((id): id is string => !!id)))
     if (unique.length === 0) return {} as Record<string, { username: string | null; avatar_url: string | null; is_bot: boolean }>
     const { data } = await supabaseAdmin
         .from('profiles')

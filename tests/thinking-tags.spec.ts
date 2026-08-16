@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction } from '../src/lib/bots/thinking'
+import { parseThinkingAndReply, usesNativeQwenReasoning, shouldPromptThinkingTags, buildThinkingInstruction, cleanStageText, isJunkThought } from '../src/lib/bots/thinking'
 import {
     collectGeminiKeys,
     collectGroqKeys,
@@ -126,16 +126,68 @@ test.describe('thinking stream routing', () => {
         expect(publicText.join('').trim()).toBe('Four')
     })
 
-    test('native Qwen reasoning is on for medium and extended', () => {
+    test('native provider reasoning is off; each mind gets a short prompted cue', () => {
         expect(usesNativeQwenReasoning(undefined)).toBe(false)
         expect(usesNativeQwenReasoning('brief')).toBe(false)
-        expect(usesNativeQwenReasoning('standard')).toBe(true)
-        expect(usesNativeQwenReasoning('deep')).toBe(true)
+        expect(usesNativeQwenReasoning('standard')).toBe(false)
+        expect(usesNativeQwenReasoning('deep')).toBe(false)
         expect(shouldPromptThinkingTags('brief')).toBe(true)
-        expect(shouldPromptThinkingTags('standard')).toBe(false)
-        expect(shouldPromptThinkingTags('deep')).toBe(false)
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard')).toMatch(/40-80 words/)
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief')).toContain('<thinking>')
+        expect(shouldPromptThinkingTags('standard')).toBe(true)
+        expect(shouldPromptThinkingTags('deep')).toBe(true)
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('<thinking>')
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('<case>')
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).not.toMatch(/<case>[^<]{8,}<\/case>/)
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toMatch(/particular arrangement/)
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('<fear>')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toMatch(/fear or exhaustion/)
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Marx')).toMatch(/same language as the user/)
+    })
+
+    test('stage text drops model names and keeps the clause', () => {
+        expect(cleanStageText('As Marx: a night warehouse unpaid wait')).toMatch(/warehouse/i)
+        expect(cleanStageText('qwen/qwen3.6-27b')).toBe('')
+        expect(isJunkThought('Marx')).toBe(true)
+        expect(isJunkThought('A night warehouse unpaid wait')).toBe(false)
+    })
+
+    test('Marx thinking stages parse as case / extraction / side', () => {
+        const parsed = parseThinkingAndReply(
+            [
+                '<thinking>',
+                '<case>A night-shift warehouse clocking unpaid waiting time.</case>',
+                '<extraction>The wait is sold as flexibility.</extraction>',
+                '<side>Refuse that story.</side>',
+                '</thinking>',
+                'The clock is the argument.',
+            ].join('\n'),
+            'community_reply',
+            'brief',
+            { philosopher: 'Marx' },
+        )
+        expect(parsed.thinking.stages.map((stage) => stage.id)).toEqual(['case', 'extraction', 'side'])
+        expect(parsed.thinking.stages.map((stage) => stage.label)).toEqual(['The case', 'What is taken', 'The side'])
+        expect(parsed.reply).toContain('The clock is the argument.')
+        expect(parsed.reply).not.toContain('<case>')
+    })
+
+    test('hint echoes are ignored and free prose still fills the three Marx stages', () => {
+        const echoed = parseThinkingAndReply(
+            [
+                '<thinking>',
+                '<case>Name the particular arrangement — a desk, a wage, a contract. Not a school.</case>',
+                '<extraction>What this arrangement takes, or must keep invisible.</extraction>',
+                '<side>Take a side. A both-sides close is a fault.</side>',
+                'A warehouse clock. Unpaid waiting. Refuse flexibility.</thinking>',
+                'Public.',
+            ].join('\n'),
+            'community_reply',
+            'brief',
+            { philosopher: 'Marx' },
+        )
+        expect(echoed.thinking.stages.map((stage) => stage.id)).toEqual(['case', 'extraction', 'side'])
+        expect(echoed.thinking.stages[0]?.text).toMatch(/warehouse/i)
+        expect(echoed.thinking.stages[1]?.text).toMatch(/waiting/i)
+        expect(echoed.thinking.stages[2]?.text).toMatch(/flexibility/i)
     })
 
     test('alternates Groq and Gemini as the lead family, then keeps failover', () => {
@@ -293,8 +345,8 @@ test.describe('thinking stream routing', () => {
     })
 
     test('Gemini thought parts become tagged thinking, not public text', () => {
-        expect(usesGeminiNativeThinking('gemini-2.5-flash', 'deep')).toBe(true)
-        expect(usesGeminiNativeThinking('gemini-flash-latest', 'deep')).toBe(true)
+        expect(usesGeminiNativeThinking('gemini-2.5-flash', 'deep')).toBe(false)
+        expect(usesGeminiNativeThinking('gemini-flash-latest', 'deep')).toBe(false)
         expect(usesGeminiNativeThinking('gemini-2.0-flash', 'deep')).toBe(false)
         expect(usesGeminiNativeThinking('gemini-2.5-flash', 'brief')).toBe(false)
 

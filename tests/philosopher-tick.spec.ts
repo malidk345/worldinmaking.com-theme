@@ -249,6 +249,27 @@ test.describe('philosopher hourly tick helpers', () => {
         ).toBe(false)
     })
 
+    test('long forum transcripts keep the latest replies in full', () => {
+        const replies = Array.from({ length: 10 }, (_, i) => ({
+            id: String(i + 1),
+            author: `bot${i}`,
+            content: `Full paragraph ${i + 1}. ${'word '.repeat(40)}`,
+            createdAt: '2026-08-16T10:00:00Z',
+        }))
+        const text = formatForumTranscript({
+            id: '9',
+            title: 'Are feeds a square?',
+            author: 'marx',
+            content: 'Opening case.',
+            createdAt: '2026-08-16T09:00:00Z',
+            replies,
+        })
+        expect(text).toMatch(/1\. @bot0: Full paragraph 1\./)
+        expect(text).not.toMatch(/1\. @bot0:\nFull paragraph 1/)
+        expect(text).toMatch(/10\. @bot9:\nFull paragraph 10/)
+        expect(text).toMatch(/Latest speaker: @bot9/)
+    })
+
     test('a live thread can keep growing well past five replies', () => {
         expect(shouldContinueThread(0, 1, 16)).toBe(true)
         expect(shouldContinueThread(1, 2, 16)).toBe(true)

@@ -47,8 +47,6 @@ import {
     MarkdownNotebookTextSurface,
     areNotebookDocumentsEqual,
     ensureEditableNotebookDocument,
-    getAskAIInlineNotebookQuery,
-    getAskAISelectionQuery,
     getClipboardMarkdown,
     getHistoryRestoreSelection,
     getInlineInsertMenuQuery,
@@ -287,6 +285,8 @@ export type MarkdownNotebookProps = {
 
 export type MarkdownNotebookAskAIRequest = {
     conversationId: string
+    /** Raw user directive. The inline editor follows this exactly. */
+    instruction: string
     query: string
     source: 'slash' | 'selection'
     responseNodeId: string
@@ -2787,51 +2787,59 @@ function MarkdownNotebookEditor({
     const openAIPrompt = useCallback(
         (
             nodeId: string,
-            options?: { source?: 'slash' | 'selection'; selectedMarkdown?: string; selectedRefId?: string }
+            options?: {
+                source?: 'slash' | 'selection'
+                selectedMarkdown?: string
+                selectedRefId?: string
+                question?: string
+                autoRun?: boolean
+            }
         ): void => {
             onInteractionStateChange?.(true)
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+            const promptId =
+                options?.source === 'selection' ? makeEmptyParagraph(`wimai-${nodeId}`).id : nodeId
+            const promptProps: NotebookComponentProps = {
+                question: options?.question ?? '',
+            }
+            if (options?.source === 'selection') {
+                promptProps.source = 'selection'
+                promptProps.selectedMarkdown = options.selectedMarkdown ?? ''
+                if (options.selectedRefId) {
+                    promptProps.ref = options.selectedRefId
+                }
+            }
+            if (options?.autoRun) {
+                promptProps.autoRun = true
+            }
+            const promptNode: NotebookComponentBlockNode = {
+                id: promptId,
+                type: 'component',
+                tagName: 'Prompt',
+                props: promptProps,
+            }
             let didUpdate = false
             const nextNodes = nodes.flatMap((currentNode): NotebookBlockNode[] => {
                 if (didUpdate || currentNode.id !== nodeId) {
                     return [currentNode]
                 }
                 didUpdate = true
+                if (options?.source === 'selection') {
+                    return [currentNode, promptNode]
+                }
                 if (!isTextBlockNode(currentNode) && currentNode.type !== 'component') {
                     return [currentNode]
                 }
-                const promptProps: NotebookComponentProps = { question: '' }
-                if (options?.source === 'selection') {
-                    promptProps.source = 'selection'
-                    promptProps.selectedMarkdown = options.selectedMarkdown ?? ''
-                    if (options.selectedRefId) {
-                        promptProps.ref = options.selectedRefId
-                    }
-                }
-                return [
-                    {
-                        id: currentNode.id,
-                        type: 'component',
-                        tagName: 'Prompt',
-                        props: promptProps,
-                    },
-                ]
+                return [promptNode]
             })
-            if (didUpdate) {
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nextNodes,
-                })
-            } else {
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nextNodes,
-                })
-            }
+            commitDocument({
+                ...currentDocument,
+                nodes: didUpdate ? nextNodes : [...nextNodes, promptNode],
+            })
             setInsertMenu({
-                nodeId,
-                query: '',
+                nodeId: promptId,
+                query: options?.question ?? '',
                 selectedIndex: 0,
                 mode: 'ai',
                 source: options?.source ?? 'slash',
@@ -3774,11 +3782,21 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const prompt = presetQuery 
-            ? `${presetQuery}:\n\n"${selectedMarkdown}"\n` 
-            : `Regarding this text from my notebook:\n\n"${selectedMarkdown}"\n\n`
-        
-        window.dispatchEvent(new CustomEvent('wimOpenGlobalChat', { detail: { prompt } }))
+        const firstSelectedNodeId =
+            floatingToolbar.textRanges[0]?.node.id ??
+            floatingToolbar.codeRanges[0]?.node.id ??
+            floatingToolbar.listItemRanges[0]?.node.id
+        if (!firstSelectedNodeId) {
+            return
+        }
+
+        openAIPrompt(firstSelectedNodeId, {
+            source: 'selection',
+            selectedMarkdown,
+            question: presetQuery ?? '',
+            autoRun: Boolean(presetQuery?.trim()),
+        })
+        setFloatingToolbar(null)
     }
 
     // Comments need at least one anchorable range: an inline `<ref>` mark for text and list
@@ -5308,16 +5326,8 @@ function MarkdownNotebookEditor({
         const selectedRefId = activeAIPromptMenu?.selectedRefId ?? getNotebookStringProp(currentPromptNode?.props.ref)
         onAskAI({
             conversationId,
-            query:
-                source === 'selection' && selectedMarkdown
-                    ? getAskAISelectionQuery(
-                          selectedMarkdown,
-                          query,
-                          responseMarker,
-                          selectedRefId,
-                          markdownWithResponse
-                      )
-                    : getAskAIInlineNotebookQuery(query, responseMarker, markdownWithResponse),
+            instruction: query,
+            query,
             source,
             responseNodeId: nodeId,
             responseNodeIndex,

@@ -8,7 +8,9 @@ export {
     thinkingDepthForTask,
     usesNativeQwenReasoning,
     shouldPromptThinkingTags,
+    thinkingCueFor,
 } from './thinking'
+export { thinkingSchemaFor, PERSONA_THINKING } from './thinking-schemas'
 export type { ThinkingProcess, ThinkingStage, ThinkingDepth } from './thinking'
 export { runBotTurn, getBotSystemStatus } from './orchestrate'
 export type { BotRunInput, BotRunResult, BotRunSuccess, BotRunFailure, BotAction } from './orchestrate'

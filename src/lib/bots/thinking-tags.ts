@@ -3,6 +3,8 @@
  * parser. This module routes existing thinking content; it does not rewrite
  * or summarize the thinking experience.
  */
+import { allThinkingStageIds } from './thinking-schemas'
+
 export const THINKING_TAG_NAMES = [
     'analysis_summary',
     'thinking',
@@ -20,19 +22,7 @@ export const THINKING_TAG_NAMES = [
     'frame',
     'tension',
     'move',
-    'structure',
-    'genealogy',
-    'deconstruction',
-    'overcoming',
-    'materialist_basis',
-    'dialectical_tension',
-    'praxis',
-    'substance_analysis',
-    'affect_mapping',
-    'rational_intuition',
-    'negative_dialectics',
-    'immanent_critique',
-    'resolution',
+    ...allThinkingStageIds(),
 ] as const
 
 const TAG_NAMES = THINKING_TAG_NAMES.join('|')

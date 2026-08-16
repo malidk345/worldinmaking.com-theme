@@ -366,8 +366,8 @@ export function FormattingToolbar({
                     <LemonButton
                         size="xsmall"
                         icon={<IconSparkles />}
-                        tooltip="Ask AI about selection"
-                        aria-label="Ask AI"
+                        tooltip="Edit with WIM AI"
+                        aria-label="Edit with WIM AI"
                         disabled={isAskAIDisabled}
                         disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
                         onClick={() => askAIAboutSelection()}
