@@ -13,9 +13,6 @@
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
 
-## 2024-11-20 - Avoid array-as-object de-optimization in reduce
-**Learning:** Initializing a `.reduce()` loop with an empty array `[]` and assigning non-numeric string keys to it (`acc[type] = ...`) forces the JavaScript engine (like V8) to de-optimize the array into 'dictionary mode'. This was occurring in `Tabbed.tsx` for `analyticsSliders`.
-**Action:** Initialize the `reduce` loop with an empty object `{}` instead when building an object dynamically.
 
 ## 2024-11-20 - Avoid array-as-object de-optimization in reduce
 **Learning:** Initializing a `.reduce()` loop with an empty array `[]` and assigning non-numeric string keys to it (`acc[type] = ...`) forces the JavaScript engine (like V8) to de-optimize the array into 'dictionary mode'. This was occurring in `Tabbed.tsx` for `analyticsSliders`.
