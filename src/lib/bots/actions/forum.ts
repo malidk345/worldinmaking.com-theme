@@ -5,7 +5,6 @@ import { runBotTurn, type ThinkingDepth } from '../orchestrate'
 import type { ThinkingProcess } from '../thinking'
 import { slugify, supabaseRest } from '../supabase-edge'
 import { clipForumTitle } from '../forum-moves'
-import { normalizeBotName } from '../request-validation'
 import { formatForumTranscript, loadForumThread } from '../forum-thread'
 
 export interface BotProfileRow {
@@ -25,19 +24,21 @@ export async function resolveBotProfile(username: string): Promise<
     const key = username.trim().toLowerCase()
     if (!key) return { ok: false, error: 'bot username required' }
 
-    // Current schema stores the bot name directly on bot_profiles.
-    const current = await supabaseRest<any[]>(
-        `/bot_profiles?select=id,name,is_active&is_active=eq.true&name=ilike.${encodeURIComponent(key)}`
+    const fromProfiles = await supabaseRest<any[]>(
+        `/profiles?select=id,username,avatar_url,is_bot&is_bot=eq.true&username=not.is.null&limit=80`
     )
-    if (current.ok && Array.isArray(current.data) && current.data.length > 0) {
-        const row = current.data[0]
-        return {
-            ok: true,
-            bot: {
-                id: String(row.id),
-                username: String(row.name || key),
-                is_active: row.is_active !== false,
-            },
+    if (fromProfiles.ok && Array.isArray(fromProfiles.data)) {
+        const match = fromProfiles.data.find((row) => namesMatch(row.username, key))
+        if (match && isUuid(String(match.id || ''))) {
+            return {
+                ok: true,
+                bot: {
+                    id: String(match.id),
+                    username: String(match.username || key),
+                    avatar_url: match.avatar_url ? String(match.avatar_url) : undefined,
+                    is_active: true,
+                },
+            }
         }
     }
 
@@ -65,10 +66,6 @@ export async function resolveBotProfile(username: string): Promise<
         `/bot_profiles?select=id,is_active,profiles(username,avatar_url)&is_active=eq.true`
     )
     if (!all.ok) {
-        const canonical = normalizeBotName(username)
-        if (canonical) {
-            return { ok: true, bot: { id: canonical.toLowerCase(), username: canonical, is_active: true } }
-        }
         return { ok: false, error: all.detail || all.error }
     }
 
@@ -91,11 +88,15 @@ export async function resolveBotProfile(username: string): Promise<
         }
     }
 
-    const canonical = normalizeBotName(username)
-    if (canonical) {
-        return { ok: true, bot: { id: canonical.toLowerCase(), username: canonical, is_active: true } }
-    }
-    return { ok: false, error: `No active bot_profiles row for "${username}"` }
+    return { ok: false, error: `No live bot profile for "${username}"` }
+}
+
+function namesMatch(left: unknown, right: string): boolean {
+    const a = String(left || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+    const b = right.toLowerCase().replace(/[^a-z0-9]/g, '')
+    return !!a && a === b
 }
 
 export interface ForumTopicValidation {
@@ -266,13 +267,23 @@ export async function createForumTopic(params: {
     }
 
     const postSlug = slugify(`${profile.bot.username}-${title}`)
-    const authorId = isUuid(profile.bot.id) ? profile.bot.id : undefined
+    const authorId = isUuid(profile.bot.id) ? profile.bot.id : ''
+    if (!authorId) {
+        return {
+            ...llm,
+            action: 'thread_init' as const,
+            phase: 'persist_failed' as const,
+            persisted: false,
+            persistError: `Bot "${profile.bot.username}" has no UUID author_id`,
+            topicPreview: { title, content, author_id: profile.bot.id },
+        }
+    }
     const insert = await supabaseRest<any[]>('/community_posts', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
             channel_id: params.channelId ?? 1,
-            ...(authorId ? { author_id: authorId } : {}),
+            author_id: authorId,
             title,
             content,
             post_slug: postSlug,
@@ -401,13 +412,22 @@ export async function createForumReply(params: {
         }
     }
 
-    const authorId = isUuid(profile.bot.id) ? profile.bot.id : undefined
+    const authorId = isUuid(profile.bot.id) ? profile.bot.id : ''
+    if (!authorId) {
+        return {
+            ...llm,
+            action: 'forum_reply' as const,
+            phase: 'persist_failed' as const,
+            persisted: false,
+            persistError: `Bot "${profile.bot.username}" has no UUID author_id`,
+        }
+    }
     const insert = await supabaseRest<any[]>('/community_replies', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
             post_id: thread.id,
-            ...(authorId ? { author_id: authorId } : {}),
+            author_id: authorId,
             content: replyContent,
             inner_thoughts: innerThoughts,
             created_at: new Date().toISOString(),

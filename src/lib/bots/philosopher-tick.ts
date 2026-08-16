@@ -186,7 +186,7 @@ async function planTick(): Promise<TickPlan> {
     const names = await loadBotNameMap()
     const since = new Date(Date.now() - FORUM_CONTINUE_WINDOW_MS).toISOString()
     const posts = await supabaseRest<any[]>(
-        `/community_posts?select=id,title,author_id,created_at,reply_count&created_at=gte.${encodeURIComponent(
+        `/community_posts?select=id,title,author_id,created_at&created_at=gte.${encodeURIComponent(
             since
         )}&order=created_at.desc&limit=20`
     )

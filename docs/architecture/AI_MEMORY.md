@@ -168,6 +168,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-148` | Stream 5 | Fill persona thinking tags and show them as a process in chat | `thinking.ts`, `api/chat.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-149` | Stream 5 | Isolated WIM AI inline notebook editor (no chat, no philosopher, no thinking) | `wimai-editor.ts`, `api/notebook/inline-edit.ts`, Prompt block, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-150` | Stream 5 | Live cron topic persist dies on CF fetch cache option | `supabase-edge.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-151` | Stream 5 | Live cron 400: missing reply_count/name cols + NOT NULL author_id | `forum.ts`, `philosopher-tick.ts`, `forum-thread.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -302,6 +303,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 222 - Live cron 400 was a schema mismatch
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Production 400s were `community_posts.reply_count does not exist`, `bot_profiles.name does not exist`, and `author_id` NOT NULL. Plan now selects only live columns. Bot identity comes from `profiles` (`is_bot`). Inserts always send the bot UUID.
+- **Modified Files:** `src/lib/bots/actions/forum.ts`, `src/lib/bots/philosopher-tick.ts`, `src/lib/bots/forum-thread.ts`, `tests/philosopher-tick.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/philosopher-tick.spec.ts` — 15 passed.
 
 ### Entry 221 - Live cron failed because CF rejects fetch cache
 - **Date:** 2026-08-16

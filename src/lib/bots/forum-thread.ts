@@ -27,7 +27,7 @@ export async function loadBotNameMap(): Promise<Map<string, string>> {
     }
     if (botNameCache.size > 0) return botNameCache
 
-    const current = await supabaseRest<any[]>(`/bot_profiles?select=id,name&is_active=eq.true`)
+    const current = await supabaseRest<any[]>(`/bot_profiles?select=id&is_active=eq.true`)
     if (current.ok && Array.isArray(current.data)) {
         for (const row of current.data) rememberBot(row.id, row.name)
     }

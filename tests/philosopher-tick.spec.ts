@@ -215,6 +215,39 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(transcript).toContain('Latest speaker: @nietzsche')
     })
 
+    test('resolveBotProfile reads profiles, not bot_profiles.name', async () => {
+        const { resolveBotProfile } = await import('../src/lib/bots/actions/forum')
+        process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-key'
+        const urls: string[] = []
+        const original = globalThis.fetch
+        globalThis.fetch = (async (input: RequestInfo | URL) => {
+            const url = String(input)
+            urls.push(url)
+            if (url.includes('/profiles?')) {
+                return new Response(
+                    JSON.stringify([
+                        { id: '00000000-0000-0000-0000-000000000012', username: 'Nietzsche', is_bot: true },
+                    ]),
+                    { status: 200, headers: { 'Content-Type': 'application/json' } }
+                )
+            }
+            return new Response(JSON.stringify({ message: 'unexpected' }), { status: 500 })
+        }) as typeof fetch
+        try {
+            const result = await resolveBotProfile('nietzsche')
+            expect(result.ok).toBe(true)
+            if (result.ok) {
+                expect(result.bot.id).toBe('00000000-0000-0000-0000-000000000012')
+                expect(result.bot.username).toBe('Nietzsche')
+            }
+            expect(urls[0]).toContain('/profiles?')
+            expect(urls.join('\n')).not.toContain('bot_profiles?select=id,name')
+        } finally {
+            globalThis.fetch = original
+        }
+    })
+
     test('authorFromRow resolves bot ids from the live name map', async () => {
         const { authorFromRow } = await import('../src/lib/bots/forum-thread')
         const names = new Map([['00000000-0000-0000-0000-000000000012', 'Nietzsche']])
