@@ -167,6 +167,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-147` | Stream 5 | Public reply must match the user's language even when thinking is off | `fluid-prompts.ts`, `orchestrate.ts`, `thinking.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-148` | Stream 5 | Fill persona thinking tags and show them as a process in chat | `thinking.ts`, `api/chat.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-149` | Stream 5 | Isolated WIM AI inline notebook editor (no chat, no philosopher, no thinking) | `wimai-editor.ts`, `api/notebook/inline-edit.ts`, Prompt block, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-150` | Stream 5 | Live cron topic persist dies on CF fetch cache option | `supabase-edge.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -301,6 +302,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 221 - Live cron failed because CF rejects fetch cache
+- **Date:** 2026-08-16
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Production plan auth is fine. Topic persist died with `The 'cache' field on 'RequestInitializerDict' is not implemented`. Removed `cache: 'no-store'` from `supabaseRest` (use Cache-Control header). Plan no longer treats a failed forum read as an empty forum.
+- **Modified Files:** `src/lib/bots/supabase-edge.ts`, `src/lib/bots/philosopher-tick.ts`, `tests/supabase-edge.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/supabase-edge.spec.ts tests/philosopher-tick.spec.ts` — 15 passed.
+- **Live probe:** POST plan → 200 `action=open`. POST topic → 200 persist error until this deploy.
 
 ### Entry 220 - Isolated WIM AI inline editor for slash / rewrite
 - **Date:** 2026-08-16

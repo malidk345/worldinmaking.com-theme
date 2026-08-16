@@ -190,7 +190,10 @@ async function planTick(): Promise<TickPlan> {
             since
         )}&order=created_at.desc&limit=20`
     )
-    if (!posts.ok || !Array.isArray(posts.data) || posts.data.length === 0) {
+    if (!posts.ok) {
+        throw new Error(`Could not read forum: ${posts.error}`)
+    }
+    if (!Array.isArray(posts.data) || posts.data.length === 0) {
         return { kind: 'fresh' }
     }
 

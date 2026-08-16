@@ -28,16 +28,19 @@ export async function supabaseRest<T = unknown>(
 
     const path = pathAndQuery.startsWith('/') ? pathAndQuery : `/${pathAndQuery}`
     try {
+        // Cloudflare workerd throws if RequestInit.cache is set
+        // ("The 'cache' field on 'RequestInitializerDict' is not implemented").
+        const { env: _env, cache: _cache, ...rest } = init
         const res = await fetch(`${url}/rest/v1${path}`, {
-            ...init,
+            ...rest,
             headers: {
                 apikey: key,
                 Authorization: `Bearer ${key}`,
                 Accept: 'application/json',
+                'Cache-Control': 'no-store',
                 ...(init.body ? { 'Content-Type': 'application/json' } : {}),
                 ...(init.headers || {}),
             },
-            cache: 'no-store',
         })
         const text = await res.text()
         let data: any = null
