@@ -141,7 +141,7 @@ export function allThinkingStageIds(): string[] {
     for (const schema of Object.values(PERSONA_THINKING)) {
         for (const stage of schema.stages) ids.add(stage.id)
     }
-    return [...ids]
+    return Array.from(ids)
 }
 
 export function stageDefById(id: string): ThinkingStageDef | null {

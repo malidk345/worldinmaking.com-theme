@@ -143,9 +143,6 @@ function isQwen36(model: string): boolean {
     return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
 }
 
-function isGemini25(model: string): boolean {
-    return /gemini-2\.5|gemini-3|gemini-flash-latest|gemini-pro-latest/i.test(model)
-}
 
 export function usesGeminiNativeThinking(_model: string, _depth?: ThinkingDepth): boolean {
     return false

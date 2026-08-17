@@ -18,17 +18,17 @@ const meta: Meta<LemonDialogProps> = {
 
         primaryButton: {
             children: 'Primary',
-            onClick: () => alert('Primary Clicked!'),
+            onClick: () => console.log('Primary Clicked!'),
         },
 
         secondaryButton: {
             children: 'Secondary',
-            onClick: () => alert('Secondary Clicked!'),
+            onClick: () => console.log('Secondary Clicked!'),
         },
 
         tertiaryButton: {
             children: 'Tertiary',
-            onClick: () => alert('Tertiary Clicked!'),
+            onClick: () => console.log('Tertiary Clicked!'),
         },
     },
     parameters: {
@@ -87,18 +87,18 @@ export const Customised: Story = {
         primaryButton: {
             children: 'Delete organization',
             status: 'danger',
-            onClick: () => alert('Organization Deleted!'),
+            onClick: () => console.log('Organization Deleted!'),
         },
 
         secondaryButton: {
             children: 'Cancel',
-            onClick: () => alert('Cancelled!'),
+            onClick: () => console.log('Cancelled!'),
         },
 
         tertiaryButton: {
             children: 'Delete organization and all corresponding events',
             status: 'danger',
-            onClick: () => alert('Organization and all events deleted!'),
+            onClick: () => console.log('Organization and all events deleted!'),
         },
     },
 }

@@ -62,7 +62,7 @@ export const CloseOnClick: Story = {
                     <LemonTagComponent
                         icon={<IconFlag />}
                         closeOnClick
-                        onClose={() => alert('Tag closed!')}
+                        onClose={() => console.log('Tag closed!')}
                         type="primary"
                     >
                         Primary tag with icon
@@ -70,7 +70,7 @@ export const CloseOnClick: Story = {
                     <LemonTagComponent
                         icon={<IconInfo />}
                         closeOnClick
-                        onClose={() => alert('Info tag closed!')}
+                        onClose={() => console.log('Info tag closed!')}
                         type="highlight"
                     >
                         Info tag
@@ -78,7 +78,7 @@ export const CloseOnClick: Story = {
                     <LemonTagComponent
                         icon={<IconFlag />}
                         closeOnClick
-                        onClose={() => alert('Warning tag closed!')}
+                        onClose={() => console.log('Warning tag closed!')}
                         type="warning"
                         size="small"
                     >
@@ -92,12 +92,12 @@ export const CloseOnClick: Story = {
                     <LemonTagComponent
                         icon={<IconFlag />}
                         closable
-                        onClose={() => alert('Regular tag closed!')}
+                        onClose={() => console.log('Regular tag closed!')}
                         type="primary"
                     >
                         Regular closable
                     </LemonTagComponent>
-                    <LemonTagComponent closable onClose={() => alert('No icon tag closed!')} type="highlight">
+                    <LemonTagComponent closable onClose={() => console.log('No icon tag closed!')} type="highlight">
                         No icon closable
                     </LemonTagComponent>
                 </div>

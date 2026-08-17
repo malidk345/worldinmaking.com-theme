@@ -76,7 +76,7 @@ function RenderCombobox(): JSX.Element {
                     </ButtonGroupPrimitive>
                 </Combobox.Group>
 
-                <Combobox.Item asChild onClick={() => alert('clicked')}>
+                <Combobox.Item asChild onClick={() => console.log('clicked')}>
                     <ButtonPrimitive menuItem className="shrink-0">
                         <IconPlusSmall className="text-tertiary" />
                         Static: Add item

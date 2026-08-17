@@ -388,11 +388,11 @@ export const WithCellActions: Story = {
                                     fullWidth
                                     size="small"
                                     icon={<IconLink />}
-                                    onClick={() => alert(`Viewing profile for ${value}`)}
+                                    onClick={() => console.log(`Viewing profile for ${value}`)}
                                 >
                                     View profile
                                 </LemonButton>
-                                <LemonButton fullWidth size="small" onClick={() => alert(`Copying ${value}`)}>
+                                <LemonButton fullWidth size="small" onClick={() => console.log(`Copying ${value}`)}>
                                     Copy name
                                 </LemonButton>
                             </>
@@ -403,7 +403,7 @@ export const WithCellActions: Story = {
                         dataIndex: 'occupation',
                         cellActions: (value, record) => (
                             <>
-                                <LemonButton fullWidth size="small" onClick={() => alert(`Filtering to ${value}`)}>
+                                <LemonButton fullWidth size="small" onClick={() => console.log(`Filtering to ${value}`)}>
                                     Filter to {value}
                                 </LemonButton>
                                 <LemonDivider />
@@ -412,7 +412,7 @@ export const WithCellActions: Story = {
                                     size="small"
                                     status="danger"
                                     icon={<IconTrash />}
-                                    onClick={() => alert(`Removing ${record.name}`)}
+                                    onClick={() => console.log(`Removing ${record.name}`)}
                                 >
                                     Remove person
                                 </LemonButton>
@@ -458,11 +458,11 @@ export const WithRowActions: Story = {
                                     fullWidth
                                     size="small"
                                     icon={<IconLink />}
-                                    onClick={() => alert(`Viewing ${record.name}'s profile`)}
+                                    onClick={() => console.log(`Viewing ${record.name}'s profile`)}
                                 >
                                     View profile
                                 </LemonButton>
-                                <LemonButton fullWidth size="small" onClick={() => alert(`Editing ${record.name}`)}>
+                                <LemonButton fullWidth size="small" onClick={() => console.log(`Editing ${record.name}`)}>
                                     Edit
                                 </LemonButton>
                                 <LemonDivider />
@@ -471,7 +471,7 @@ export const WithRowActions: Story = {
                                     size="small"
                                     status="danger"
                                     icon={<IconTrash />}
-                                    onClick={() => alert(`Deleting ${record.name}`)}
+                                    onClick={() => console.log(`Deleting ${record.name}`)}
                                 >
                                     Delete
                                 </LemonButton>
@@ -539,7 +539,7 @@ function BulkSelectionTable({ initialSelected }: { initialSelected: string[] }):
                         <LemonButton
                             type="secondary"
                             size="small"
-                            onClick={() => alert(`Editing ${ctx.selectedCount} person(s)`)}
+                            onClick={() => console.log(`Editing ${ctx.selectedCount} person(s)`)}
                         >
                             Edit selected
                         </LemonButton>
@@ -548,7 +548,7 @@ function BulkSelectionTable({ initialSelected }: { initialSelected: string[] }):
                             status="danger"
                             size="small"
                             icon={<IconTrash />}
-                            onClick={() => alert(`Deleting ${ctx.selectedKeys.join(', ')}`)}
+                            onClick={() => console.log(`Deleting ${ctx.selectedKeys.join(', ')}`)}
                         >
                             Delete selected
                         </LemonButton>
