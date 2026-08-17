@@ -204,7 +204,7 @@ test.describe('thinking stream routing', () => {
     })
 
     test('each request flips the Groq/Gemini lead without touching key order helpers', () => {
-        process.env.WIM_PRIMARY_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-primary-cursor-test`
+        process.env.WIM_PRIMARY_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-primary-cursor-test-${Date.now()}-${Math.random()}`
         resetProviderCooldowns()
         expect(nextPrimaryFamilyStart()).toBe(0)
         expect(nextPrimaryFamilyStart()).toBe(1)
@@ -229,7 +229,7 @@ test.describe('thinking stream routing', () => {
     })
 
     test('each request advances to the next Groq key in order', () => {
-        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test`
+        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test-${Date.now()}-${Math.random()}`
         resetProviderCooldowns()
         expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('a')
         expect(takeGroqKeyOrder(['a', 'b', 'c'])[0]).toBe('b')
@@ -240,8 +240,8 @@ test.describe('thinking stream routing', () => {
     })
 
     test('rotates Gemini keys independently of Groq and merges env aliases', () => {
-        process.env.WIM_GEMINI_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-gemini-cursor-test`
-        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test-gemini`
+        process.env.WIM_GEMINI_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-gemini-cursor-test-${Date.now()}-${Math.random()}`
+        process.env.WIM_GROQ_CURSOR_FILE = `${process.env.TEMP || process.env.TMPDIR || '/tmp'}/wim-groq-cursor-test-gemini-${Date.now()}-${Math.random()}`
         resetProviderCooldowns()
         expect(collectGeminiKeys({
             GEMINI_API_KEYS: 'AIza_aaa, AIza_bbb',

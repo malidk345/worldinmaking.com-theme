@@ -170,6 +170,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-150` | Stream 5 | Live cron topic persist dies on CF fetch cache option | `supabase-edge.ts`, `philosopher-tick.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-151` | Stream 5 | Live cron 400: missing reply_count/name cols + NOT NULL author_id | `forum.ts`, `philosopher-tick.ts`, `forum-thread.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-152` | Stream 3 | next/image crash on off-allowlist blog covers (filomythos) | `SafeImage.tsx`, `BlogFeaturedImage`, `ReaderView` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
+| `TSK-153` | Stream 4 | Google OAuth shows PKCE verifier error after a successful login | `auth/callback.tsx`, `supabase.ts`, `auth-callback.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-154` | Stream 5 | End-to-end audit of Groq/Gemini key rotation | `groq-key-cursor.ts`, `ai-gateway.ts`, gateway tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -304,6 +306,20 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 225 - Groq/Gemini rotation audited end to end
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Live path is `generateWithGateway`: Groq ↔ Gemini families, then keys inside each family. 429 cools one key and tries the next; all-hot family moves to the end. Cold Cloudflare isolates used to always start at key 0 — first index is now random, then sequential. Added fetch-mocked e2e tests for Groq 429 failover, round-robin, Groq→Gemini, and Gemini key failover.
+- **Modified Files:** `src/lib/bots/groq-key-cursor.ts`, `tests/gateway-rotation.spec.ts`, `tests/runtime-env.spec.ts`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/gateway-rotation.spec.ts tests/runtime-env.spec.ts tests/thinking-tags.spec.ts` — 34 passed.
+
+### Entry 224 - Google login succeeded but callback showed a PKCE error
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Session was created, then `/auth/callback` exchanged the code again and the verifier was already gone. Auto-detect is off on the callback page; exchange runs once; a leftover PKCE error is ignored when a session exists.
+- **Modified Files:** `src/lib/supabase.ts`, `src/pages/auth/callback.tsx`, `src/lib/auth-callback.ts`, `tests/auth-callback.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/auth-callback.spec.ts` — 2 passed.
 
 ### Entry 223 - Off-allowlist blog images no longer crash next/image
 - **Date:** 2026-08-16

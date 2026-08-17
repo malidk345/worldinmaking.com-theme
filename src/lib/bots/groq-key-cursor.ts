@@ -76,7 +76,16 @@ function writeFsCursor(family: string, value: number): void {
 export function nextFamilyKeyStart(family: string, keyCount: number): number {
     if (keyCount <= 1) return 0
     const stored = readFsCursor(family)
-    const current = stored === null ? memoryCursors.get(family) || 0 : stored
+    let current: number
+    if (stored !== null) {
+        current = stored
+    } else if (memoryCursors.has(family)) {
+        current = memoryCursors.get(family) || 0
+    } else {
+        // Cloudflare isolates have no shared fs. A random first index stops
+        // every cold isolate from dumping TPM onto key 0.
+        current = Math.floor(Math.random() * keyCount)
+    }
     const start = ((current % keyCount) + keyCount) % keyCount
     const next = (start + 1) % keyCount
     memoryCursors.set(family, next)

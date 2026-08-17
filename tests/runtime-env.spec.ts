@@ -61,6 +61,18 @@ test.describe('edge-safe runtime env', () => {
         delete process.env.WIM_GROQ_CURSOR_FILE
     })
 
+    test('a cold cursor picks a valid start then advances', () => {
+        const family = `seed-${Date.now()}-${Math.random()}`
+        process.env.WIM_SEED_CURSOR_FILE = join(tmpdir(), `wim-${family}`)
+        const first = nextFamilyKeyStart(family, 4)
+        const second = nextFamilyKeyStart(family, 4)
+        expect(first).toBeGreaterThanOrEqual(0)
+        expect(first).toBeLessThan(4)
+        expect(second).toBe((first + 1) % 4)
+        resetFamilyKeyCursor(family)
+        delete process.env.WIM_SEED_CURSOR_FILE
+    })
+
     test('gemini key cursor round-robins independently of groq', () => {
         process.env.WIM_GEMINI_CURSOR_FILE = join(tmpdir(), `wim-gemini-cursor-runtime-${Date.now()}`)
         process.env.WIM_GROQ_CURSOR_FILE = join(tmpdir(), `wim-groq-cursor-runtime-gemini-${Date.now()}`)
