@@ -84,7 +84,12 @@ export function mapSupabaseToUser(
     const { firstName, lastName } = fromProfile.firstName || fromProfile.lastName
         ? fromProfile
         : splitName(meta, null)
-    const avatarUrl = profile?.avatar_url || (meta.avatar_url as string) || null
+    const avatarUrl =
+        profile?.avatar_url ||
+        (meta.avatar_url as string) ||
+        (meta.picture as string) ||
+        (meta.avatar as string) ||
+        null
     const createdAt = profile?.created_at || authUser.created_at || new Date().toISOString()
 
     const profileData: ProfileData & { id: string } = {
@@ -191,7 +196,7 @@ export async function ensureWimProfile(
         id: authUser.id,
         username: baseUsername,
         role: 'member',
-        avatar_url: (meta.avatar_url as string) || null,
+        avatar_url: (meta.avatar_url as string) || (meta.picture as string) || (meta.avatar as string) || null,
         bio: null,
         first_name: extras?.firstName || (meta.first_name as string) || (meta.firstName as string) || null,
         last_name: extras?.lastName || (meta.last_name as string) || (meta.lastName as string) || null,

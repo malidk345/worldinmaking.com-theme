@@ -127,7 +127,12 @@ export function useProfileData(identifier?: string | number) {
                     github: user.profile?.github || null,
                     linkedin: user.profile?.linkedin || null,
                     avatar: (() => {
-                        const url = resolveUserOrPhilosopherAvatar(username, undefined)
+                        const existing =
+                            (user.profile as { avatar?: { data?: { attributes?: { url?: string } }; url?: string } } | undefined)
+                                ?.avatar?.data?.attributes?.url ||
+                            (user.profile as { avatar?: { url?: string } } | undefined)?.avatar?.url ||
+                            (user.profile as { avatar_url?: string } | undefined)?.avatar_url
+                        const url = resolveUserOrPhilosopherAvatar(username, existing)
                         if (url) {
                             return {
                                 data: { id: 0, attributes: { url } },

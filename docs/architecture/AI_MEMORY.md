@@ -185,6 +185,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-165` | Stream 5 | Restore original send button, slightly larger icons, centered empty composer | `ClaudeWorkspaceChat/components/ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-166` | Stream 5 | Chat composer icons: site family + send size match | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-167` | Stream 5 | Composer plus/send same glyph weight from @posthog/icons (no paper-plane) | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-168` | Stream 4 | Ali admin profile photo missing (broken USER_PORTRAITS override) | `user-portraits.ts`, `useProfileData.ts`, `wim-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 
 
@@ -323,6 +324,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 234 - Ali profile photo was overridden by a missing file
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Username `ali` always resolved to `/images/portraits/mustafa-pixel.png`, which is not in the repo. Stored `avatar_url` (and Google `picture`) now wins. Session profile fallback also reads the real avatar.
+- **Modified Files:** `src/lib/user-portraits.ts`, `src/hooks/useProfileData.ts`, `src/lib/wim-auth.ts`, `tests/user-portraits.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/user-portraits.spec.ts` — 3 passed.
+- **Notes / Handoff:** If `profiles.avatar_url` itself is the deleted portrait path, re-upload the photo once.
 
 ### Entry 233 - Keep send arrow; shrink only the square
 - **Date:** 2026-08-17
