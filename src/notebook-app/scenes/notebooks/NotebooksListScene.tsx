@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     LemonButton,
     LemonInput,
@@ -29,7 +29,6 @@ import {
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
 import { NotebookSelectButton } from './NotebookSelectButton/NotebookSelectButton'
-import { useNotebookConfirm } from './NotebookConfirmDialog'
 
 interface NotebooksListSceneProps {
     onSelectNotebook: (id: string) => void
@@ -53,11 +52,17 @@ export function NotebooksListScene({
     const [searchQuery, setSearchQuery] = useState('')
     const [createdByFilter, setCreatedByFilter] = useState('all')
     const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
+    const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
+    const leavingIdsRef = useRef<Set<string>>(new Set())
     const { addToast } = useToast()
-    const { confirm, dialog: confirmDialog } = useNotebookConfirm()
 
     const reloadNotebooks = useCallback(() => {
-        setNotebooks(getNotebooks())
+        const live = getNotebooks()
+        const liveIds = new Set(live.map((nb) => nb.id))
+        setNotebooks((current) => {
+            const extras = current.filter((nb) => leavingIdsRef.current.has(nb.id) && !liveIds.has(nb.id))
+            return extras.length ? [...live, ...extras] : live
+        })
     }, [])
 
     useEffect(() => {
@@ -70,16 +75,16 @@ export function NotebooksListScene({
         }
     }, [reloadNotebooks])
 
-    const handleDelete = async (id: string, title: string) => {
-        const ok = await confirm({
-            title: `Delete “${title}”?`,
-            description: 'This removes the notebook from this device and from cloud sync.',
-            confirmLabel: 'Delete',
-            danger: true,
-        })
-        if (!ok) return
+    const handleDelete = (id: string, title: string) => {
+        leavingIdsRef.current = new Set(leavingIdsRef.current).add(id)
+        setLeavingIds(new Set(leavingIdsRef.current))
         deleteNotebook(id)
-        reloadNotebooks()
+        window.setTimeout(() => {
+            leavingIdsRef.current.delete(id)
+            setLeavingIds(new Set(leavingIdsRef.current))
+            setNotebooks(getNotebooks())
+            addToast({ description: `“${title}” deleted` })
+        }, 240)
     }
 
     const handleDuplicate = (id: string) => {
@@ -335,14 +340,17 @@ export function NotebooksListScene({
                 </span>
             </div>
 
-            {confirmDialog}
-
             <div className="overflow-x-auto max-w-full -mx-3 sm:mx-0 px-3 sm:px-0">
                 <LemonTable
                     data-attr="notebooks-table"
                     dataSource={filteredNotebooks}
                     columns={columns}
                     rowKey="id"
+                    rowClassName={(notebook) =>
+                        leavingIds.has(notebook.id)
+                            ? 'opacity-0 -translate-y-1 transition duration-200 ease-out pointer-events-none'
+                            : 'transition duration-200 ease-out'
+                    }
                     loading={false}
                     defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
                     emptyState={

@@ -3,11 +3,15 @@ import {
     deleteNotebookRemote,
     isNotebookRemoteKnownAvailable,
     mergeNotebookLists,
+    pickNewerNotebook,
     pullNotebooksFromRemote,
     pushAllNotebooksToRemote,
     pushNotebookToRemote,
     rememberDeletedNotebookId,
     readLocalDeletedNotebookIds,
+    resetNotebookPullThrottle,
+    startNotebookPolling,
+    subscribeToWorkspaceNotebooks,
 } from './notebookRemote'
 import { claimDeviceAccountOnLogin } from '../../../lib/chat-remote'
 import {
@@ -82,9 +86,19 @@ function queueRemote(promise: Promise<unknown>): void {
     promise
         .then((result: any) => {
             if (result && typeof result === 'object' && result.conflict) {
+                if (result.notebook?.id) {
+                    const localList = readLocalNotebooks()
+                    const idx = localList.findIndex((nb) => nb.id === result.notebook.id)
+                    if (idx >= 0) {
+                        localList[idx] = pickNewerNotebook(localList[idx], result.notebook)
+                    } else {
+                        localList.unshift(result.notebook)
+                    }
+                    writeAll(localList)
+                }
                 emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
                     status: 'error',
-                    message: 'Version conflict: Notebook was modified on another device.',
+                    message: 'Updated from another device.',
                 } satisfies NotebookSyncEventDetail)
                 return
             }
@@ -140,6 +154,45 @@ function schedulePushAll(): void {
 
 /** Background pull + merge into localStorage (no React state — next read/remount sees data) */
 let hydrateStarted = false
+let liveSyncStarted = false
+let stopLiveSync: (() => void) | null = null
+let livePullTimer: number | undefined
+
+function mergeRemoteIntoLocal(
+    remote: { notebooks: StoredNotebook[]; deletedIds: string[] },
+    options: { pushMissing?: boolean } = {}
+): void {
+    const local = readLocalNotebooks()
+    const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
+    const merged = mergeNotebookLists(local, remote.notebooks, deletedIds)
+    writeAll(merged)
+    const remoteById = new Map(remote.notebooks.map((nb) => [nb.id, nb]))
+    const outgoing = merged.filter((nb) => {
+        if (deletedIds.includes(nb.id) || deletedIds.includes(nb.short_id)) return false
+        const remoteNb = remoteById.get(nb.id)
+        if (!remoteNb) return Boolean(options.pushMissing)
+        return pickNewerNotebook(nb, remoteNb) === nb && nb !== remoteNb && (nb.version || 0) > (remoteNb.version || 0)
+    })
+    if (outgoing.length) {
+        const history: Record<string, NotebookVersion[]> = {}
+        for (const nb of outgoing) history[nb.id] = getNotebookHistory(nb.id)
+        queueRemote(pushAllNotebooksToRemote(outgoing, history))
+    }
+}
+
+function refreshNotebooksFromRemote(claim = false): void {
+    queueRemote(
+        (async () => {
+            if (claim) await claimDeviceAccountOnLogin()
+            const remote = await pullNotebooksFromRemote({ force: true })
+            if (!remote) return false
+            mergeRemoteIntoLocal(remote, { pushMissing: false })
+            emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
+            return true
+        })()
+    )
+}
+
 function ensureRemoteHydrate(): void {
     if (typeof window === 'undefined' || hydrateStarted) return
     hydrateStarted = true
@@ -156,20 +209,42 @@ function ensureRemoteHydrate(): void {
             const local = readLocalNotebooks()
             const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
             if (!remote.notebooks.length) {
-                // First remote session: upload local cache
                 const kept = mergeNotebookLists(local, [], deletedIds)
                 if (kept.length !== local.length) writeAll(kept)
-                if (kept.length) schedulePushAll()
+                const fresh = kept.filter((nb) => !deletedIds.includes(nb.id) && !deletedIds.includes(nb.short_id))
+                if (fresh.length) {
+                    const history: Record<string, NotebookVersion[]> = {}
+                    for (const nb of fresh) history[nb.id] = getNotebookHistory(nb.id)
+                    queueRemote(pushAllNotebooksToRemote(fresh, history))
+                }
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
-            const merged = mergeNotebookLists(local, remote.notebooks, deletedIds)
-            writeAll(merged)
-            // Push any local-only or newer local rows
-            schedulePushAll()
+            mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
         })()
     )
+}
+
+function ensureLiveNotebookSync(): void {
+    if (typeof window === 'undefined') return
+    if (liveSyncStarted) {
+        ensureRemoteHydrate()
+        return
+    }
+    liveSyncStarted = true
+    const schedulePull = () => {
+        window.clearTimeout(livePullTimer)
+        livePullTimer = window.setTimeout(() => refreshNotebooksFromRemote(false), 350)
+    }
+    const stopRealtime = subscribeToWorkspaceNotebooks(schedulePull)
+    const stopPolling = startNotebookPolling(schedulePull, 20_000)
+    stopLiveSync = () => {
+        window.clearTimeout(livePullTimer)
+        stopRealtime()
+        stopPolling()
+    }
+    ensureRemoteHydrate()
 }
 
 const WELCOME_CONTENT = `# Welcome to WIM
@@ -203,6 +278,11 @@ export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
 ]
 
 function seedDefaults(): StoredNotebook[] {
+    const deleted = readLocalDeletedNotebookIds()
+    if (deleted.includes('welcome-notebook') || deleted.includes('welcome')) {
+        localStorage.setItem(storageKey(), '[]')
+        return []
+    }
     const seed = DEFAULT_NOTEBOOKS.map((n) => ({
         ...n,
         createdAt: new Date().toISOString(),
@@ -305,13 +385,16 @@ function readLocalNotebooks(): StoredNotebook[] {
 }
 
 export function getNotebooks(): StoredNotebook[] {
-    ensureRemoteHydrate()
+    ensureLiveNotebookSync()
     return readLocalNotebooks()
 }
 
 export function rehydrateNotebooksForIdentity(): void {
     hydrateStarted = false
-    ensureRemoteHydrate()
+    resetNotebookPullThrottle()
+    stopLiveSync?.()
+    liveSyncStarted = false
+    ensureLiveNotebookSync()
     emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
 }
 
@@ -319,6 +402,7 @@ if (typeof window !== 'undefined') {
     window.addEventListener(WIM_IDENTITY_EVENT, () => {
         rehydrateNotebooksForIdentity()
     })
+    ensureLiveNotebookSync()
 }
 
 export function getNotebook(id: string): StoredNotebook | undefined {

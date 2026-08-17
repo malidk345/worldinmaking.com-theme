@@ -3,6 +3,8 @@ import {
     MarkdownNotebook,
     type MarkdownNotebookAskAIRequest,
 } from './lib/components/MarkdownNotebook/MarkdownNotebook'
+import { planOpenNotebookRemoteApply } from './scenes/notebooks/notebookRemote'
+import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
@@ -25,11 +27,12 @@ import {
     publishNotebook,
     backfillNotebookActors,
     retryNotebookRemoteSync,
+    WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
     WIM_NOTEBOOK_SYNC_EVENT,
     type NotebookSyncEventDetail,
 } from './scenes/notebooks/notebookStorage'
-import { useNotebookConfirm } from './scenes/notebooks/NotebookConfirmDialog'
+
 import { NotebookPublicRoute } from './scenes/notebooks/NotebookPublicView'
 import { NotebooksListScene } from './scenes/notebooks/NotebooksListScene'
 import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
@@ -45,7 +48,9 @@ import { AskAIDropdown } from './scenes/notebooks/AskAI'
 import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
-import { setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
+import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
+import { isNotebookImageFile, uploadNotebookImage } from '../lib/notebook-upload'
+import { uuid } from './lib/utils/dom'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
 import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
@@ -152,6 +157,7 @@ export function App() {
   // Editor state
   const [currentNotebook, setCurrentNotebook] = useState<StoredNotebook | null>(null)
   const [markdown, setMarkdown] = useState('')
+  const [remoteMarkdown, setRemoteMarkdown] = useState('')
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
@@ -196,7 +202,12 @@ export function App() {
     })
   }, [appActions, currentNotebook, isMobile, windows])
   const { user } = useUser()
-  const { confirm, dialog: confirmDialog } = useNotebookConfirm()
+  const presence = useNotebookPresence({
+    notebookId: route.page === 'editor' ? currentNotebook?.id : undefined,
+    version: currentNotebook?.version,
+    actor: userToNotebookActor(user) || getNotebookActor(),
+  })
+
 
   useEffect(() => {
     setNotebookActor(userToNotebookActor(user))
@@ -323,6 +334,7 @@ export function App() {
     const apply = (nb: StoredNotebook) => {
       setCurrentNotebook(nb)
       setMarkdown(nb.content)
+      setRemoteMarkdown(nb.content)
       setTitle(nb.title)
       setSyncStatus('saved')
       setShowHistory(false)
@@ -342,6 +354,34 @@ export function App() {
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
     return () => window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
   }, [route])
+
+  useEffect(() => {
+    if (route.page !== 'editor' || !currentNotebook) return
+    const applyRemoteIfNewer = () => {
+      const latest = getNotebook(currentNotebook.id)
+      if (!latest) {
+        return
+      }
+      const plan = planOpenNotebookRemoteApply({
+        current: currentNotebook,
+        latest,
+        draftContent: markdown,
+        draftTitle: title,
+      })
+      if (!plan.adopt) return
+      setCurrentNotebook(latest)
+      setRemoteMarkdown(latest.content)
+      if (plan.applyContent) setMarkdown(latest.content)
+      if (plan.applyTitle) setTitle(latest.title)
+      if (plan.applyContent && plan.applyTitle) setSyncStatus('saved')
+    }
+    window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, applyRemoteIfNewer)
+    window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, applyRemoteIfNewer)
+    return () => {
+      window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, applyRemoteIfNewer)
+      window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, applyRemoteIfNewer)
+    }
+  }, [route.page, currentNotebook, markdown, title])
 
   // Auto-save with debounce (snapshots throttled inside saveNotebook)
   useEffect(() => {
@@ -413,15 +453,8 @@ export function App() {
     if (dup) navigate({ page: 'editor', notebookId: dup.id })
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!currentNotebook) return
-    const ok = await confirm({
-      title: `Delete “${currentNotebook.title}”?`,
-      description: 'This removes the notebook from this device and from cloud sync.',
-      confirmLabel: 'Delete',
-      danger: true,
-    })
-    if (!ok) return
     deleteNotebook(currentNotebook.id)
     navigate({ page: 'list' })
   }
@@ -533,6 +566,26 @@ export function App() {
     []
   )
 
+  const convertExternalDataTransferToNodes = useCallback(async (dataTransfer: DataTransfer) => {
+    const files = Array.from(dataTransfer.files || []).filter(isNotebookImageFile)
+    if (!files.length) return null
+    const nodes = []
+    for (const file of files) {
+      try {
+        const uploaded = await uploadNotebookImage(file)
+        nodes.push({
+          id: uuid(),
+          type: 'component' as const,
+          tagName: 'Image',
+          props: { src: uploaded.url, alt: file.name.replace(/\.[^.]+$/, '') },
+        })
+      } catch {
+        /* skip failed files */
+      }
+    }
+    return nodes.length ? nodes : null
+  }, [])
+
   // Shell matches standalone posthog-notebook-app.
   // `notebook-app-scope` on THIS root only (never body) so site OS chrome is not affected.
   // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
@@ -621,6 +674,7 @@ export function App() {
                       updatedAt={currentNotebook.updatedAt}
                       syncStatus={syncStatus}
                       notebookId={currentNotebook.id}
+                      livePeople={presence.people}
                     />
                     <span className="text-muted opacity-30 hidden sm:inline">•</span>
                     <div className="hidden sm:block">
@@ -695,11 +749,17 @@ export function App() {
                     <MarkdownNotebook
                       key={`${currentNotebook.id}-${markdownVersion}`}
                       value={markdown}
+                      remoteValue={remoteMarkdown}
+                      remoteVersion={currentNotebook.version}
+                      remoteCarets={presence.carets}
+                      onCaretChange={presence.publishCaret}
+                      clientId={presence.clientId}
                       focusAIPromptRequest={aiPromptRequest}
                       onChange={(val) => setMarkdown(val)}
                       onAskAI={handleNotebookAskAI}
                       isAskAIDisabled={isAskAIBusy}
                       extraInsertCommands={extraCommands}
+                      convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
                       hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
@@ -755,7 +815,6 @@ export function App() {
           onOpenTemplates={() => navigate({ page: 'templates' })}
           onOpenAI={openAskAi}
         />
-        {confirmDialog}
       </main>
     </div>
   )

@@ -23,8 +23,48 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
 
+/** Next.js Pages Router rejects the previous render when a new one starts.
+ *  That is expected (window focus, hash, overlapping safePush) — not a crash. */
+function isCancelledRouteError(reason: unknown): boolean {
+    const message =
+        typeof reason === 'string'
+            ? reason
+            : reason instanceof Error
+              ? reason.message
+              : typeof reason === 'object' && reason && 'message' in reason
+                ? String((reason as { message?: unknown }).message)
+                : ''
+    return message.includes('Cancel rendering route')
+}
+
 export default function App({ Component, pageProps }: AppProps) {
     const router = useRouter()
+
+    React.useEffect(() => {
+        const onRejection = (event: PromiseRejectionEvent) => {
+            if (isCancelledRouteError(event.reason)) {
+                event.preventDefault()
+            }
+        }
+        const onError = (event: ErrorEvent) => {
+            if (isCancelledRouteError(event.error) || isCancelledRouteError(event.message)) {
+                event.preventDefault()
+            }
+        }
+        const onRouteError = (err: { cancelled?: boolean; message?: string }) => {
+            if (err?.cancelled || isCancelledRouteError(err)) {
+                return
+            }
+        }
+        window.addEventListener('unhandledrejection', onRejection)
+        window.addEventListener('error', onError)
+        router.events.on('routeChangeError', onRouteError)
+        return () => {
+            window.removeEventListener('unhandledrejection', onRejection)
+            window.removeEventListener('error', onError)
+            router.events.off('routeChangeError', onRouteError)
+        }
+    }, [router.events])
     const [location, setLocation] = React.useState(() => {
         const asPath = router?.asPath || ''
         const pathname = asPath.split('?')[0].split('#')[0] || '/'

@@ -1638,6 +1638,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const safePush = useCallback(
         (url: string, opts?: any) => {
             try {
+                if (typeof window !== 'undefined') {
+                    const next = new URL(url, window.location.origin)
+                    if (next.pathname === window.location.pathname && next.search === window.location.search) {
+                        return
+                    }
+                }
                 const r = routerRef.current
                 if (r && typeof r.push === 'function') {
                     r.push(url, undefined, opts)

@@ -354,7 +354,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
             /* ignore */
         }
         if (item.path.startsWith('/')) {
-            router.push(`${item.path}${item.location?.search || ''}`)
+            const next = `${item.path}${item.location?.search || ''}`
+            const current = `${router.asPath.split('#')[0]}`
+            if (current !== next) {
+                void router.push(next)
+            } else {
+                bringToFront(item)
+            }
         } else {
             bringToFront(item)
         }

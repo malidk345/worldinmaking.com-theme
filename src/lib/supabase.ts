@@ -51,7 +51,13 @@ const mockClient = {
     }),
     channel: () => ({
         on: function () { return this },
-        subscribe: function () { return this },
+        subscribe: function (cb?: (status: string) => void) {
+            cb?.('SUBSCRIBED')
+            return this
+        },
+        track: async function () { return 'ok' },
+        untrack: async function () { return 'ok' },
+        presenceState: function () { return {} },
     }),
     removeChannel: () => {},
     auth: {

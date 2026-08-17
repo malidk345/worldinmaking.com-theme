@@ -37,11 +37,11 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[READY FOR PHASE 4.1 EXECUTION]`
-- **Last Model Action:** Phase 3.1 (Relational Database Tables) completed by Jules. Built typed column database table blocks (Text, Select, Date, Checkbox, Formula) & Kanban views.
+- **Current Status:** `[PACKAGE B COMPLETE — READY FOR PACKAGE C]`
+- **Last Model Action:** Package B writing blocks shipped by Grok 4.6. Callout, Toggle, Database, Page, and image upload are in the markdown editor. No Yjs rewrite.
 - **Instruction for Next AI Agent:**
-  > **Next Task (Phase 4.1 - Realtime WebSockets & Inline Comments):**
-  > Implement Supabase Realtime CRDT sync for blocks and inline text selection commenting. Ensure robust merging without data loss.
+  > **Next Task (Package C — philosopher co-author, TSK-29):**
+  > Invite a philosopher onto a selection as a discussion comment, not a chat takeover. Keep the inline WIM AI editor persona-free.
 
 ---
 
@@ -55,7 +55,7 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 | **Phase 2.1** | Sub-pages & Craft Card Layouts | `[COMPLETED]` | Antigravity | Built `SubPageCardBlock.tsx` for Craft visual cards & sub-documents |
 | **Phase 2.2** | Sidebar Tree & Global Search (`⌘K`) | `[COMPLETED]` | Antigravity | Built `SidebarPageTree.tsx` & `GlobalCommandPalette.tsx` for workspace tree & ⌘K search |
 | **Phase 3.1** | Relational Database Tables | `[COMPLETED]` | Jules | Built `DatabaseTable.tsx`, `TableView.tsx` and `KanbanView.tsx` with typed columns |
-| **Phase 4.1** | Realtime WebSockets & Inline Comments | `[PENDING]` | - | Supabase Realtime CRDT sync & text selection commenting |
+| **Phase 4.1** | Realtime WebSockets & Inline Comments | `[COMPLETED]` | Grok 4.6 | Markdown three-way merge + Realtime/poll + presence carets + discussion threads. Not Yjs. |
 
 ---
 
@@ -186,6 +186,8 @@ Standart static tablolar yerine Craft & Notion seviyesinde esnek veritabanı tab
 | `2026-08-07` | Antigravity (Gemini 3.6 Flash) | Multi-Agent Handoff Protocol & Roadmap Init | `docs/NOTEBOOK_SAAS_ROADMAP.md` | PASS |
 | `2026-08-07` | Jules | Block Data Model & Core Types | `src/notebook-app/types/blocks.ts`, `docs/NOTEBOOK_SAAS_ROADMAP.md` | PASS |
 | `2026-08-08` | Jules | Relational Database Tables | `src/notebook-app/components/blocks/DatabaseTable/*`, `src/notebook-app/types/blocks.ts`, `docs/NOTEBOOK_SAAS_ROADMAP.md` | PASS |
+| `2026-08-18` | Grok 4.6 (xAI) | Phase 4.1 live writing (Realtime + comments) | `notebookRemote.ts`, `notebookStorage.ts`, `notebookPresence.ts`, `DiscussionCommentBlock.tsx`, `App.tsx`, migration | PASS |
+| `2026-08-18` | Grok 4.6 (xAI) | Package B writing blocks | `registry.tsx`, `WimWritingBlocks.tsx`, `writingBlockModel.ts`, upload API, extraInsertCommands | PASS |
 
 ---
 

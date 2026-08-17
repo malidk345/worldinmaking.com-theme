@@ -54,6 +54,8 @@ import {
   claimDeviceAccountOnLogin,
   deleteChatOnRemote,
   getChatStorageKey,
+  startWorkspaceChatPolling,
+  subscribeToWorkspaceChats,
   mergeChats,
   pullChatsFromRemote,
   pushChatToRemote,
@@ -395,8 +397,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   useEffect(() => {
     let cancelled = false
-    const syncFromRemote = async () => {
-      await claimDeviceAccountOnLogin()
+    const syncFromRemote = async (claim = false) => {
+      if (claim) await claimDeviceAccountOnLogin()
       if (cancelled) return
       const remote = await pullChatsFromRemote()
       if (cancelled || !remote) return
@@ -411,17 +413,29 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         return merged
       })
     }
-    void syncFromRemote()
+    void syncFromRemote(true)
+    let pullTimer: number | undefined
+    const schedulePull = () => {
+      window.clearTimeout(pullTimer)
+      pullTimer = window.setTimeout(() => {
+        void syncFromRemote(false)
+      }, 350)
+    }
     const onIdentity = () => {
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       setChats(Array.isArray(stored) ? stored : [])
-      void syncFromRemote()
+      void syncFromRemote(true)
     }
     window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
+    const stopRealtime = subscribeToWorkspaceChats(schedulePull)
+    const stopPolling = startWorkspaceChatPolling(schedulePull)
     return () => {
       cancelled = true
+      window.clearTimeout(pullTimer)
       window.removeEventListener(WIM_IDENTITY_EVENT, onIdentity)
+      stopRealtime()
+      stopPolling()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

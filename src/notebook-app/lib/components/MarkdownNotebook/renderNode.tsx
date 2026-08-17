@@ -1,6 +1,7 @@
 import { MutableRefObject } from 'react'
 
 import { CommentBlock } from './CommentBlock'
+import { DiscussionCommentBlock } from './DiscussionCommentBlock'
 import { ComponentPanel, ComponentPanelVisibility } from './componentPanels'
 import { DividerBlock } from './DividerBlock'
 import {
@@ -8,6 +9,7 @@ import {
     isDiscussionCommentNode,
     isDividerComponentNode,
     isPromptComponentNode,
+    SlashToken,
 } from './documentModel'
 import { EditableCodeBlock } from './EditableCodeBlock'
 import { EditableListBlock } from './EditableListBlock'
@@ -24,7 +26,7 @@ import {
 import { MemoizedNotebookComponentShell } from './NotebookComponentShell'
 import { isMermaidCodeBlock, NotebookMermaidBlock } from './NotebookMermaidBlock'
 import { isNotebookLiveCodeBlock, NotebookWimCodeBlock } from './NotebookWimBlocks'
-import { NotebookBlockNode, NotebookComponentRegistry, NotebookMode } from './types'
+import { NotebookBlockNode, NotebookComponentRegistry, NotebookInlineNode, NotebookMode } from './types'
 
 export function renderNode({
     node,
@@ -55,6 +57,7 @@ export function renderNode({
     deleteNodeBefore,
     moveFocusToAdjacentNode,
     openInsertMenu,
+    openSlashMenuAtToken,
     openDetachedInsertMenu,
     updateAIPromptQuery,
     closeInsertMenu,
@@ -105,6 +108,7 @@ export function renderNode({
     deleteNodeBefore: (nodeId: string, options?: { requireSameTextStyle?: boolean }) => boolean
     moveFocusToAdjacentNode: (nodeId: string, direction: InsertMenuSelectionDirection, offset: number) => boolean
     openInsertMenu: (query?: string) => void
+    openSlashMenuAtToken?: (token: SlashToken, children: NotebookInlineNode[]) => boolean
     openDetachedInsertMenu: () => boolean
     updateAIPromptQuery: (query: string) => void
     closeInsertMenu: () => void
@@ -143,9 +147,24 @@ export function renderNode({
             )
         }
 
-        // Discussion comments (ref/replies) render through the registry shell; only the
-        // authorial note flavor uses the inline chip.
-        if (isCommentComponentNode(node) && !isDiscussionCommentNode(node)) {
+        if (isDiscussionCommentNode(node)) {
+            return (
+                <DiscussionCommentBlock
+                    node={node}
+                    mode={mode}
+                    isSelected={isSelected}
+                    setBlockRef={setBlockRef}
+                    updateNode={updateNode}
+                    deleteNode={deleteNode}
+                    deleteSelectedNotebookBlocks={deleteSelectedNotebookBlocks}
+                    insertParagraphAfterNode={insertParagraphAfterNode}
+                    moveFocusToAdjacentNode={moveFocusToAdjacentNode}
+                />
+            )
+        }
+
+        // Authorial note flavor uses the inline chip.
+        if (isCommentComponentNode(node)) {
             return (
                 <CommentBlock
                     node={node}
@@ -270,6 +289,7 @@ export function renderNode({
             deleteNodeBefore={deleteNodeBefore}
             moveFocusToAdjacentNode={moveFocusToAdjacentNode}
             openInsertMenu={openInsertMenu}
+            openSlashMenuAtToken={openSlashMenuAtToken}
             openDetachedInsertMenu={openDetachedInsertMenu}
             closeInsertMenu={closeInsertMenu}
             moveInsertMenuSelection={moveInsertMenuSelection}

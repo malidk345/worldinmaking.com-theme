@@ -5,6 +5,7 @@ import { IconClock } from '@posthog/icons'
 import type { NotebookPerson } from '../../../lib/notebook-actor'
 import { formatEditedAgo } from '../../../lib/notebook-actor'
 import { getNotebookHistory } from './notebookStorage'
+import type { NotebookPresencePerson } from './notebookPresence'
 import type { NotebookChromeSyncStatus } from './NotebookMeta'
 
 interface CollaboratorsBannerProps {
@@ -12,6 +13,7 @@ interface CollaboratorsBannerProps {
     updatedAt?: string
     syncStatus?: NotebookChromeSyncStatus
     notebookId?: string
+    livePeople?: NotebookPresencePerson[]
 }
 
 export function CollaboratorsBanner({
@@ -19,6 +21,7 @@ export function CollaboratorsBanner({
     updatedAt,
     syncStatus = 'saved',
     notebookId,
+    livePeople = [],
 }: CollaboratorsBannerProps) {
     const [isOpen, setIsOpen] = useState(false)
     const displayName = [person?.first_name, person?.last_name].filter(Boolean).join(' ') || person?.username || 'You'
@@ -96,6 +99,18 @@ export function CollaboratorsBanner({
             >
                 <span>Edited {when} by</span>
                 <ProfilePicture user={person || { first_name: displayName }} showName size="md" />
+                {livePeople.length ? (
+                    <span className="flex items-center -space-x-1.5 ml-1" aria-label="People editing now">
+                        {livePeople.slice(0, 4).map((peer) => (
+                            <span key={peer.clientId} title={peer.name} className="inline-flex">
+                                <ProfilePicture
+                                    user={{ first_name: peer.name, avatar_url: peer.avatarUrl }}
+                                    size="sm"
+                                />
+                            </span>
+                        ))}
+                    </span>
+                ) : null}
             </button>
         </LemonDropdown>
     )

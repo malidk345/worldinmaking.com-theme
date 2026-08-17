@@ -18,10 +18,11 @@ import {
     NotebookDocument,
     NotebookInlineNode,
     NotebookListBlockNode,
+    NotebookListItem,
     NotebookPropValue,
     NotebookTextBlockNode,
 } from './types'
-import { cloneNotebookNode, ensureUniqueNodeIds, getInlineText } from './utils'
+import { cloneNotebookNode, ensureUniqueNodeIds, getInlineText, normalizeInlineNodes } from './utils'
 
 export function getNotebookObjectProp(
     value: NotebookPropValue | undefined
@@ -399,8 +400,20 @@ export function getSlashCommandQuery(text: string): string | null {
     return text.startsWith('/') ? text.slice(1) : null
 }
 
+export type SlashToken = { start: number; query: string }
+
+/** Filter string for the insert menu: strip a leading `/` if the whole line is a slash command. */
+export function getInsertMenuFilterQuery(text: string): string {
+    return getSlashCommandQuery(text) ?? text
+}
+
+/** Text put back when the slash menu closes without inserting. */
+export function slashMenuRestoreText(query: string): string {
+    return `/${query}`
+}
+
 /** `/query` immediately before the caret. Null if the token has whitespace or looks like a URL. */
-export function getSlashTokenAt(text: string, caret: number = text.length): { start: number; query: string } | null {
+export function getSlashTokenAt(text: string, caret: number = text.length): SlashToken | null {
     const index = Math.max(0, Math.min(caret, text.length))
     const head = text.slice(0, index)
     const slashIndex = head.lastIndexOf('/')
@@ -422,6 +435,139 @@ export function getSlashTokenAt(text: string, caret: number = text.length): { st
     }
 
     return { start: slashIndex, query }
+}
+
+export function splitTextBlockAtSlashToken(
+    node: NotebookTextBlockNode,
+    children: NotebookInlineNode[],
+    token: SlashToken
+): {
+    before: NotebookTextBlockNode | null
+    command: NotebookTextBlockNode
+    after: NotebookTextBlockNode | null
+} {
+    const [beforeNodes] = splitInlineNodesAt(children, token.start)
+    const [, afterNodes] = splitInlineNodesAt(children, token.start + 1 + token.query.length)
+    const command = makeEmptyParagraph(`slash-command-${node.id}`)
+    command.children = token.query ? [{ type: 'text', text: token.query }] : []
+    const beforeText = getInlineText(beforeNodes)
+    const afterText = getInlineText(afterNodes)
+
+    return {
+        before: beforeText.length ? { ...node, children: normalizeInlineNodes(beforeNodes) } : null,
+        command,
+        after: afterText.length
+            ? {
+                  ...node,
+                  id: makeEmptyParagraph(`after-slash-command-${node.id}`).id,
+                  children: normalizeInlineNodes(afterNodes),
+              }
+            : null,
+    }
+}
+
+export function collectSlashSplitNodes(parts: {
+    before: NotebookTextBlockNode | null
+    command: NotebookTextBlockNode
+    after: NotebookTextBlockNode | null
+}): NotebookBlockNode[] {
+    return [parts.before, parts.command, parts.after].filter((node): node is NotebookTextBlockNode => node !== null)
+}
+
+export function splitListItemAtSlashToken(
+    node: NotebookListBlockNode,
+    itemIndex: number,
+    children: NotebookInlineNode[],
+    token: SlashToken
+): { replacementNodes: NotebookBlockNode[]; commandNodeId: string } {
+    const item = node.items[itemIndex]
+    const [beforeNodes] = splitInlineNodesAt(children, token.start)
+    const [, afterNodes] = splitInlineNodesAt(children, token.start + 1 + token.query.length)
+    const command = makeEmptyParagraph(`slash-command-${node.id}`)
+    command.children = token.query ? [{ type: 'text', text: token.query }] : []
+
+    const beforeItems: NotebookListItem[] = node.items.slice(0, itemIndex)
+    if (item && getInlineText(beforeNodes).length > 0) {
+        beforeItems.push({ ...item, children: normalizeInlineNodes(beforeNodes) })
+    }
+
+    const afterItems: NotebookListItem[] = []
+    if (item && getInlineText(afterNodes).length > 0) {
+        afterItems.push({
+            ...item,
+            id: makeListItemId(`after-slash-${item.id ?? String(itemIndex)}`),
+            children: normalizeInlineNodes(afterNodes),
+        })
+    }
+    afterItems.push(...node.items.slice(itemIndex + 1))
+
+    const replacementNodes: NotebookBlockNode[] = []
+    if (beforeItems.length) {
+        replacementNodes.push({ ...node, items: beforeItems })
+    }
+    replacementNodes.push(command)
+    if (afterItems.length) {
+        replacementNodes.push({
+            ...node,
+            id: makeEmptyParagraph(`after-slash-list-${node.id}`).id,
+            items: afterItems,
+        })
+    }
+
+    return { replacementNodes, commandNodeId: command.id }
+}
+
+export function mergeDetachedSlashMenuBack(
+    nodes: NotebookBlockNode[],
+    menuNodeId: string,
+    query: string
+): { nodes: NotebookBlockNode[]; focus: { nodeId: string; offset: number } } | null {
+    const index = nodes.findIndex((node) => node.id === menuNodeId)
+    if (index === -1) {
+        return null
+    }
+
+    const node = nodes[index]
+    if (!isTextBlockNode(node)) {
+        return null
+    }
+
+    const restored: NotebookInlineNode[] = [{ type: 'text', text: slashMenuRestoreText(query) }]
+    const prev = nodes[index - 1]
+    const next = nodes[index + 1]
+    const canMergePrev =
+        !!prev && isTextBlockNode(prev) && textBlocksShareContinuationStyle(prev, node)
+    const canMergeNext =
+        !!next && isTextBlockNode(next) && textBlocksShareContinuationStyle(node, next)
+
+    if (canMergePrev && isTextBlockNode(prev)) {
+        const merged = normalizeInlineNodes([
+            ...prev.children,
+            ...restored,
+            ...(canMergeNext && isTextBlockNode(next) ? next.children : []),
+        ])
+        const nextNodes = nodes.filter((_, nodeIndex) => nodeIndex !== index && !(canMergeNext && nodeIndex === index + 1))
+        const prevIndex = nextNodes.findIndex((candidate) => candidate.id === prev.id)
+        nextNodes[prevIndex] = { ...prev, children: merged }
+        return {
+            nodes: nextNodes,
+            focus: { nodeId: prev.id, offset: getInlineText(prev.children).length + 1 + query.length },
+        }
+    }
+
+    if (canMergeNext && isTextBlockNode(next)) {
+        const merged = normalizeInlineNodes([...restored, ...next.children])
+        const nextNodes = nodes.filter((_, nodeIndex) => nodeIndex !== index + 1)
+        nextNodes[index] = { ...node, children: merged }
+        return { nodes: nextNodes, focus: { nodeId: node.id, offset: 1 + query.length } }
+    }
+
+    return {
+        nodes: nodes.map((candidate) =>
+            candidate.id === node.id ? { ...node, children: restored } : candidate
+        ),
+        focus: { nodeId: node.id, offset: 1 + query.length },
+    }
 }
 
 export function getTitlePasteParts(markdown: string): {

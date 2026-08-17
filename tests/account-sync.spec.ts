@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mergeChats } from '../src/lib/chat-remote'
+import { mergeChats, mergeMessages } from '../src/lib/chat-merge'
 import { mergeNotebookLists } from '../src/notebook-app/scenes/notebooks/notebookRemote'
 import { isSafeOwnerKey } from '../src/lib/account-claim'
 
@@ -35,6 +35,26 @@ test.describe('account sync merge', () => {
         const merged = mergeNotebookLists(local as any, remote as any, ['n2'])
         expect(merged).toHaveLength(1)
         expect(merged[0].id).toBe('n1')
+    })
+
+    test('messages from both devices are kept', () => {
+        const local = [chat('a', '2026-08-17T12:00:00.000Z')]
+        local[0].messages = [
+            { id: 'm1', role: 'user', content: 'hi', timestamp: '12:00' },
+            { id: 'm2', role: 'assistant', content: 'hello', timestamp: '12:01' },
+        ] as any
+        const remote = [chat('a', '2026-08-17T12:02:00.000Z')]
+        remote[0].messages = [
+            { id: 'm1', role: 'user', content: 'hi', timestamp: '12:00' },
+            { id: 'm3', role: 'user', content: 'and this', timestamp: '12:02' },
+        ] as any
+        const merged = mergeChats(local, remote)
+        expect(merged[0].messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3'])
+        expect(mergeMessages(local[0].messages, remote[0].messages).map((message) => message.id)).toEqual([
+            'm1',
+            'm2',
+            'm3',
+        ])
     })
 
     test('claim keys reject junk', () => {

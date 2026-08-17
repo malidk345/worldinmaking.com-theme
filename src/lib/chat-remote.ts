@@ -3,6 +3,8 @@
  * Failures are silent: localStorage remains the offline cache.
  */
 import type { Chat } from '../components/ClaudeWorkspaceChat/types'
+import { supabase, isSupabaseConfigured } from './supabase'
+import { mergeChats } from './chat-merge'
 import {
     DEVICE_CHAT_OWNER_KEY,
     DEVICE_NOTEBOOK_OWNER_KEY,
@@ -11,6 +13,8 @@ import {
     getDeviceOwnerKey,
     namespacedStorageKey,
 } from './wim-identity'
+
+export { mergeChats, mergeMessages } from './chat-merge'
 
 const CHAT_CACHE_BASE = 'claude_workspace_chats_v7'
 const CHAT_DELETED_BASE = 'wim_chat_deleted_ids'
@@ -99,6 +103,23 @@ export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()):
     return headers
 }
 
+export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatOwnerKey()): Promise<HeadersInit> {
+    const headers = { ...(chatAuthHeaders(jsonBody, ownerKey) as Record<string, string>) }
+    try {
+        if (isSupabaseConfigured) {
+            const { data } = await supabase.auth.getSession()
+            const token = data.session?.access_token
+            if (token) {
+                headers.Authorization = `Bearer ${token}`
+                localStorage.setItem('jwt', token)
+            }
+        }
+    } catch {
+        /* keep cached jwt */
+    }
+    return headers
+}
+
 async function parseJson<T>(res: Response): Promise<T | null> {
     try {
         return (await res.json()) as T
@@ -118,7 +139,7 @@ export async function claimDeviceAccountOnLogin(): Promise<boolean> {
             keys.map(async (deviceKey) => {
                 const res = await fetch('/api/account/claim', {
                     method: 'POST',
-                    headers: chatAuthHeaders(true, deviceKey),
+                    headers: await chatAuthHeadersFresh(true, deviceKey),
                     body: JSON.stringify({ previous_owner_key: deviceKey }),
                 })
                 return res.ok
@@ -136,7 +157,7 @@ export async function pullChatsFromRemote(): Promise<{ chats: Chat[]; deletedIds
     try {
         const res = await fetch(`/api/chats?owner_key=${encodeURIComponent(ownerKey)}`, {
             method: 'GET',
-            headers: chatAuthHeaders(),
+            headers: await chatAuthHeadersFresh(),
         })
         if (res.status === 503) return null
         if (!res.ok) return null
@@ -155,7 +176,7 @@ export async function pushChatToRemote(chat: Chat): Promise<Chat | null> {
     try {
         const res = await fetch('/api/chats', {
             method: 'POST',
-            headers: chatAuthHeaders(true),
+            headers: await chatAuthHeadersFresh(true),
             body: JSON.stringify({ owner_key: getChatOwnerKey(), chat }),
         })
         if (res.status === 410) {
@@ -175,7 +196,7 @@ export async function deleteChatOnRemote(chatId: string): Promise<boolean> {
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}?owner_key=${encodeURIComponent(getChatOwnerKey())}`, {
             method: 'DELETE',
-            headers: chatAuthHeaders(),
+            headers: await chatAuthHeadersFresh(),
         })
         return res.ok
     } catch {
@@ -188,7 +209,7 @@ export async function setRemoteChatShare(chatId: string, enabled: boolean): Prom
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, {
             method: 'PATCH',
-            headers: chatAuthHeaders(true),
+            headers: await chatAuthHeadersFresh(true),
             body: JSON.stringify({ owner_key: getChatOwnerKey(), share: enabled }),
         })
         if (!res.ok) return null
@@ -204,7 +225,7 @@ export async function setRemoteMessageLiked(chatId: string, messageId: string, l
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, {
             method: 'PATCH',
-            headers: chatAuthHeaders(true),
+            headers: await chatAuthHeadersFresh(true),
             body: JSON.stringify({
                 owner_key: getChatOwnerKey(),
                 messageFeedback: { messageId, liked },
@@ -216,35 +237,33 @@ export async function setRemoteMessageLiked(chatId: string, messageId: string, l
     }
 }
 
-export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] = []): Chat[] {
-    const dead = new Set(deletedIds)
-    const byId = new Map<string, Chat>()
-    for (const chat of local) {
-        if (!dead.has(chat.id)) byId.set(chat.id, chat)
+export function subscribeToWorkspaceChats(onChange: () => void): () => void {
+    if (typeof window === 'undefined' || !isSupabaseConfigured || !getAuthUserId()) {
+        return () => {}
     }
-    for (const chat of remote) {
-        if (dead.has(chat.id)) continue
-        const existing = byId.get(chat.id)
-        if (!existing) {
-            byId.set(chat.id, chat)
-            continue
-        }
-        const remoteTime = Date.parse(chat.updatedAt) || 0
-        const localTime = Date.parse(existing.updatedAt) || 0
-        const remoteCount = chat.messages?.length || 0
-        const localCount = existing.messages?.length || 0
-        if (remoteTime > localTime || (remoteTime === localTime && remoteCount >= localCount)) {
-            byId.set(chat.id, {
-                ...chat,
-                messages: remoteCount > 0 ? chat.messages : existing.messages,
-            })
-        } else {
-            byId.set(chat.id, {
-                ...existing,
-                shareToken: existing.shareToken || chat.shareToken,
-                isShared: existing.isShared || chat.isShared,
-            })
-        }
+    const channel = supabase
+        .channel(`wim-chats-live-${getAuthUserId()}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats' }, () => onChange())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chat_messages' }, () => onChange())
+        .subscribe()
+    return () => {
+        void supabase.removeChannel(channel)
     }
-    return Array.from(byId.values()).sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+}
+
+export function startWorkspaceChatPolling(onTick: () => void, intervalMs = 12000): () => void {
+    if (typeof window === 'undefined') return () => {}
+    let timer = window.setInterval(() => {
+        if (document.visibilityState === 'visible') onTick()
+    }, intervalMs)
+    const onVisible = () => {
+        if (document.visibilityState === 'visible') onTick()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+        window.clearInterval(timer)
+        document.removeEventListener('visibilitychange', onVisible)
+        window.removeEventListener('focus', onVisible)
+    }
 }

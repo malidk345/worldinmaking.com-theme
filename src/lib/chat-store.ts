@@ -5,6 +5,7 @@
 import { supabaseAdmin } from '../../lib/supabase-admin'
 import type { Artifact, Chat, FileAttachment, Message, ThinkingBudget, WebCitation } from '../components/ClaudeWorkspaceChat/types'
 
+
 const MAX_CHATS = 80
 const MAX_MESSAGES = 200
 const MAX_CONTENT = 50_000
@@ -303,13 +304,24 @@ export async function upsertChatWithMessages(
         .filter((message) => message.role === 'user' || (message.content || '').trim().length > 0)
         .slice(0, MAX_MESSAGES)
 
-    const { error: deleteError } = await supabaseAdmin.from('wim_chat_messages').delete().eq('chat_id', chatId)
-    if (deleteError) throw deleteError
+    const existingMessages = await listMessages(chatId)
+    const existingIds = new Set(existingMessages.map((message) => message.id))
+    const incomingRows = persistable.map((message, index) => messageToRow(chatId, message, index))
+    const inserts = incomingRows.filter((row) => !existingIds.has(row.id))
+    const updates = incomingRows.filter((row) => existingIds.has(row.id))
 
-    if (persistable.length > 0) {
-        const rows = persistable.map((message, index) => messageToRow(chatId, message, index))
-        const { error: insertError } = await supabaseAdmin.from('wim_chat_messages').insert(rows)
+    if (inserts.length > 0) {
+        const { error: insertError } = await supabaseAdmin.from('wim_chat_messages').insert(inserts)
         if (insertError) throw insertError
+    }
+    for (const row of updates) {
+        const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
+        const { error: updateError } = await supabaseAdmin
+            .from('wim_chat_messages')
+            .update(patch)
+            .eq('id', row.id)
+            .eq('chat_id', chatId)
+        if (updateError) throw updateError
     }
 
     return getChatForOwner(chatId, ownerKey) as Promise<Chat>

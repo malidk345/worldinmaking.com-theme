@@ -199,21 +199,27 @@ export async function listDeletedNotebookIds(ownerKey: string, userId?: string):
 
 export async function getNotebookByIdOrShort(
     idOrShort: string,
-    options?: { ownerKey?: string; publishedOnly?: boolean }
+    options?: { ownerKey?: string; userId?: string; publishedOnly?: boolean }
 ): Promise<StoredNotebookDTO | null> {
-    let q = supabaseAdmin.from('wim_notebooks').select('*').or(`id.eq.${idOrShort},short_id.eq.${idOrShort}`).limit(1)
-
-    q = q.is('deleted_at', null)
-    if (options?.publishedOnly) {
-        q = q.eq('is_published', true)
-    } else if (options?.ownerKey) {
-        q = q.eq('owner_key', options.ownerKey)
-    }
+    const q = supabaseAdmin
+        .from('wim_notebooks')
+        .select('*')
+        .or(`id.eq.${idOrShort},short_id.eq.${idOrShort}`)
+        .is('deleted_at', null)
+        .limit(1)
 
     const { data, error } = await q.maybeSingle()
     if (error) throw error
     if (!data) return null
-    return rowToDTO(data as StoredNotebookRow)
+    const row = data as StoredNotebookRow
+    if (options?.publishedOnly && !row.is_published) return null
+    if (options?.ownerKey) {
+        const allowed =
+            row.owner_key === options.ownerKey ||
+            Boolean(options.userId && row.auth_user_id === options.userId)
+        if (!allowed) return null
+    }
+    return rowToDTO(row)
 }
 
 /**
@@ -362,16 +368,24 @@ export async function replaceHistoryForOwner(
     await replaceHistory(existing.id, entries)
 }
 
-export async function deleteNotebook(idOrShort: string, ownerKey: string): Promise<boolean> {
-    // Resolve id first (delete by short_id or id)
-    const existing = await getNotebookByIdOrShort(idOrShort, { ownerKey })
+export async function deleteNotebook(idOrShort: string, ownerKey: string, userId?: string): Promise<boolean> {
+    const { data: existing, error: findError } = await supabaseAdmin
+        .from('wim_notebooks')
+        .select('id, owner_key, auth_user_id, deleted_at')
+        .or(`id.eq.${idOrShort},short_id.eq.${idOrShort}`)
+        .limit(1)
+        .maybeSingle()
+    if (findError) throw findError
     if (!existing) return false
+    const row = existing as { id: string; owner_key: string; auth_user_id: string | null; deleted_at: string | null }
+    if (row.deleted_at) return true
+    const allowed = row.owner_key === ownerKey || Boolean(userId && row.auth_user_id === userId)
+    if (!allowed) return false
 
     const { data, error } = await supabaseAdmin
         .from('wim_notebooks')
         .update({ deleted_at: new Date().toISOString(), is_published: false })
-        .eq('id', existing.id)
-        .eq('owner_key', ownerKey)
+        .eq('id', row.id)
         .is('deleted_at', null)
         .select('id')
 

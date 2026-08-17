@@ -51,10 +51,16 @@ import {
     getHistoryRestoreSelection,
     getInlineInsertMenuQuery,
     getSlashTokenAt,
+    getInsertMenuFilterQuery,
     getMarkdownNotebookVisualGroups,
     getNotebookStringProp,
     getPromptSource,
     getSlashCommandQuery,
+    collectSlashSplitNodes,
+    mergeDetachedSlashMenuBack,
+    slashMenuRestoreText,
+    splitListItemAtSlashToken,
+    splitTextBlockAtSlashToken,
     getTaskItemShortcut,
     getTextBlockShortcutReplacement,
     hasNotebookContent,
@@ -2190,7 +2196,14 @@ function MarkdownNotebookEditor({
                     end: query.length,
                 }
                 onInteractionStateChange?.(true)
-                setInsertMenu({ nodeId: commandNodeId, query, selectedIndex: 0, mode: 'tools', detached: true })
+                setInsertMenu({
+                    nodeId: commandNodeId,
+                    query,
+                    selectedIndex: 0,
+                    mode: 'tools',
+                    detached: true,
+                    source: 'slash',
+                })
                 commitDocument({
                     ...currentDocument,
                     nodes: nodes.flatMap((currentNode) =>
@@ -2198,6 +2211,10 @@ function MarkdownNotebookEditor({
                     ),
                 })
                 return true
+            }
+
+            if (nodeIndex === 0) {
+                return false
             }
 
             if (isListItem && node.type === 'list') {
@@ -2274,9 +2291,7 @@ function MarkdownNotebookEditor({
             commandNode.children = query ? [{ type: 'text', text: query }] : []
             const replacementNodes: NotebookBlockNode[] = []
 
-            if (nodeIndex === 0) {
-                replacementNodes.push({ ...node, type: 'heading', level: 1, children: normalizeInlineNodes(before) })
-            } else if (getInlineText(before).length > 0) {
+            if (getInlineText(before).length > 0) {
                 replacementNodes.push({ ...node, children: normalizeInlineNodes(before) })
             }
 
@@ -2284,15 +2299,11 @@ function MarkdownNotebookEditor({
 
             if (getInlineText(after).length > 0) {
                 const afterNodeId = makeEmptyParagraph(`after-slash-command-${node.id}`).id
-                const afterNode =
-                    nodeIndex === 0
-                        ? { id: afterNodeId, type: 'paragraph' as const, children: normalizeInlineNodes(after) }
-                        : {
-                              ...node,
-                              id: afterNodeId,
-                              children: normalizeInlineNodes(after),
-                          }
-                replacementNodes.push(afterNode)
+                replacementNodes.push({
+                    ...node,
+                    id: afterNodeId,
+                    children: normalizeInlineNodes(after),
+                })
             }
 
             return openDetachedMenu(replacementNodes, commandNode.id)
@@ -4170,13 +4181,37 @@ function MarkdownNotebookEditor({
 
     const openInsertMenu = (nodeId: string, query: string = ''): void => {
         onInteractionStateChange?.(true)
+        setInsertMenu((currentMenu) => {
+            const sameNode = currentMenu?.nodeId === nodeId
+            return {
+                nodeId,
+                query,
+                selectedIndex: sameNode && currentMenu.query === query ? currentMenu.selectedIndex : 0,
+                mode: sameNode && currentMenu.mode === 'ai' ? 'ai' : 'tools',
+                detached: sameNode ? currentMenu.detached : undefined,
+                removeNodeOnClose: sameNode ? currentMenu.removeNodeOnClose : undefined,
+                rejoinNodeIdOnClose: sameNode ? currentMenu.rejoinNodeIdOnClose : undefined,
+                source: sameNode ? currentMenu.source : undefined,
+            }
+        })
+    }
+
+    const beginSlashInsertMenu = (
+        nodeId: string,
+        query: string,
+        options?: { detached?: boolean }
+    ): void => {
+        onInteractionStateChange?.(true)
+        restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
         setInsertMenu((currentMenu) => ({
             nodeId,
             query,
             selectedIndex: 0,
-            mode: 'ai',
-            detached: currentMenu?.nodeId === nodeId ? currentMenu.detached : undefined,
+            mode: 'tools',
+            detached: options?.detached ?? (currentMenu?.nodeId === nodeId ? currentMenu.detached : undefined),
             removeNodeOnClose: currentMenu?.nodeId === nodeId ? currentMenu.removeNodeOnClose : undefined,
+            rejoinNodeIdOnClose: currentMenu?.nodeId === nodeId ? currentMenu.rejoinNodeIdOnClose : undefined,
+            source: 'slash',
         }))
     }
 
@@ -4190,14 +4225,29 @@ function MarkdownNotebookEditor({
                 return false
             }
 
+            if (!getInlineText(node.children).trim()) {
+                restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
+                onInteractionStateChange?.(true)
+                setInsertMenu({ nodeId, query, selectedIndex: 0, mode: 'tools' })
+                return true
+            }
+
             const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
             commandNode.children = query ? [{ type: 'text', text: query }] : []
+            commandNode.startsGroup = true
             restoreSelectionRef.current = { nodeId: commandNode.id, start: query.length, end: query.length }
             onInteractionStateChange?.(true)
-            setInsertMenu({ nodeId: commandNode.id, query, selectedIndex: 0, mode: 'tools', detached: true })
+            setInsertMenu({
+                nodeId: commandNode.id,
+                query,
+                selectedIndex: 0,
+                mode: 'tools',
+                detached: true,
+                removeNodeOnClose: true,
+            })
             commitDocument({
                 ...currentDocument,
-                nodes: nodes.map((currentNode) => (currentNode.id === node.id ? commandNode : currentNode)),
+                nodes: [...nodes.slice(0, nodeIndex + 1), commandNode, ...nodes.slice(nodeIndex + 1)],
             })
             return true
         },
@@ -4238,9 +4288,57 @@ function MarkdownNotebookEditor({
     )
 
     const dismissInsertMenu = useCallback((): void => {
-        removeTemporaryInsertMenuNode(insertMenu)
+        if (insertMenu?.removeNodeOnClose) {
+            removeTemporaryInsertMenuNode(insertMenu)
+            setInsertMenu(null)
+            return
+        }
+
+        if (insertMenu?.source === 'slash' && (insertMenu.mode === undefined || insertMenu.mode === 'tools')) {
+            const currentDocument = documentRef.current
+            if (insertMenu.detached) {
+                const restored = mergeDetachedSlashMenuBack(
+                    currentDocument.nodes,
+                    insertMenu.nodeId,
+                    insertMenu.query
+                )
+                if (restored) {
+                    delete blockRefs.current[insertMenu.nodeId]
+                    restoreSelectionRef.current = {
+                        nodeId: restored.focus.nodeId,
+                        start: restored.focus.offset,
+                        end: restored.focus.offset,
+                    }
+                    commitDocument({ ...currentDocument, nodes: restored.nodes }, { addToHistory: false })
+                    setInsertMenu(null)
+                    return
+                }
+            }
+
+            const node = currentDocument.nodes.find((candidate) => candidate.id === insertMenu.nodeId)
+            if (node && isTextBlockNode(node)) {
+                const restoredText = slashMenuRestoreText(insertMenu.query)
+                commitDocument(
+                    {
+                        ...currentDocument,
+                        nodes: currentDocument.nodes.map((candidate) =>
+                            candidate.id === node.id
+                                ? { ...node, children: [{ type: 'text', text: restoredText }] }
+                                : candidate
+                        ),
+                    },
+                    { addToHistory: false }
+                )
+                restoreSelectionRef.current = {
+                    nodeId: node.id,
+                    start: restoredText.length,
+                    end: restoredText.length,
+                }
+            }
+        }
+
         setInsertMenu(null)
-    }, [insertMenu, removeTemporaryInsertMenuNode])
+    }, [commitDocument, insertMenu, removeTemporaryInsertMenuNode])
 
     const updateInsertMenuPosition = useCallback((): void => {
         if (!insertMenu) {
@@ -5262,11 +5360,11 @@ function MarkdownNotebookEditor({
                     return
                 }
             }
-            if (node && isTextBlockNode(node) && insertMenu?.nodeId !== nodeId) {
+            if (node && isTextBlockNode(node) && insertMenu?.nodeId !== nodeId && nodeIndex > 0) {
                 const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
                 const slashToken = getSlashTokenAt(nextText, caret)
                 if (slashToken) {
-                    if (slashToken.start === 0 && nodeIndex > 0 && slashQuery !== null) {
+                    if (slashToken.start === 0 && slashQuery !== null) {
                         const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
                         const nextHtml = inlineNodesToHtml(queryChildren)
                         rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
@@ -5284,51 +5382,13 @@ function MarkdownNotebookEditor({
                             }
                             return { ...currentNode, children: queryChildren }
                         })
-                        openInsertMenu(nodeId, slashQuery)
+                        beginSlashInsertMenu(nodeId, slashQuery)
                         return
                     }
 
-                    const [before] = splitInlineNodesAt(nextChildren, slashToken.start)
-                    const [, after] = splitInlineNodesAt(
-                        nextChildren,
-                        slashToken.start + 1 + slashToken.query.length
-                    )
-                    const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
-                    commandNode.children = slashToken.query ? [{ type: 'text', text: slashToken.query }] : []
-                    const replacementNodes: NotebookBlockNode[] = []
-                    if (nodeIndex === 0) {
-                        replacementNodes.push({
-                            ...node,
-                            type: 'heading',
-                            level: 1,
-                            children: normalizeInlineNodes(before),
-                        })
-                    } else if (getInlineText(before).length > 0) {
-                        replacementNodes.push({ ...node, children: normalizeInlineNodes(before) })
-                    }
-                    replacementNodes.push(commandNode)
-                    if (getInlineText(after).length > 0) {
-                        const afterNodeId = makeEmptyParagraph(`after-slash-command-${node.id}`).id
-                        replacementNodes.push(
-                            nodeIndex === 0
-                                ? { id: afterNodeId, type: 'paragraph', children: normalizeInlineNodes(after) }
-                                : { ...node, id: afterNodeId, children: normalizeInlineNodes(after) }
-                        )
-                    }
-                    restoreSelectionRef.current = {
-                        nodeId: commandNode.id,
-                        start: slashToken.query.length,
-                        end: slashToken.query.length,
-                    }
-                    onInteractionStateChange?.(true)
-                    setInsertMenu({
-                        nodeId: commandNode.id,
-                        query: slashToken.query,
-                        selectedIndex: 0,
-                        mode: 'tools',
-                        detached: true,
-                    })
-                    replaceNodeWithNodes(nodeId, replacementNodes)
+                    const parts = splitTextBlockAtSlashToken(node, nextChildren, slashToken)
+                    beginSlashInsertMenu(parts.command.id, slashToken.query, { detached: true })
+                    replaceNodeWithNodes(nodeId, collectSlashSplitNodes(parts))
                     return
                 }
             }
@@ -5356,6 +5416,24 @@ function MarkdownNotebookEditor({
             }
 
             const listNode = nodes.find((node) => node.id === nodeId)
+            if (listNode?.type === 'list' && insertMenu?.nodeId !== nodeId) {
+                const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
+                const slashToken = getSlashTokenAt(nextText, caret)
+                if (slashToken) {
+                    const targetItemIndex = getListItemIndex(listNode.items, itemIndex, itemId)
+                    if (listNode.items[targetItemIndex]) {
+                        const { replacementNodes, commandNodeId } = splitListItemAtSlashToken(
+                            listNode,
+                            targetItemIndex,
+                            nextChildren,
+                            slashToken
+                        )
+                        beginSlashInsertMenu(commandNodeId, slashToken.query, { detached: true })
+                        replaceNodeWithNodes(nodeId, replacementNodes)
+                        return
+                    }
+                }
+            }
             let taskShortcut: ReturnType<typeof getTaskItemShortcut> = null
             if (listNode?.type === 'list') {
                 const item = listNode.items[getListItemIndex(listNode.items, itemIndex, itemId)]
@@ -5636,8 +5714,7 @@ function MarkdownNotebookEditor({
         }
 
         if (insertMenu.mode === undefined || insertMenu.mode === 'tools') {
-            const slashQuery = getSlashCommandQuery(inputText)
-            return submitInsertMenuSelectionForNode(nodeId, slashQuery ?? inputText)
+            return submitInsertMenuSelectionForNode(nodeId, getInsertMenuFilterQuery(inputText))
         }
 
         return false
@@ -5678,6 +5755,13 @@ function MarkdownNotebookEditor({
         // Events from native editable elements (e.g. the AI prompt textarea) are excluded, because the DOM
         // selection can still point at a previously focused block.
         if (event.target instanceof HTMLElement && isNativeEditableElement(event.target)) {
+            return
+        }
+
+        if (mode === 'edit' && event.key === 'Escape' && insertMenu) {
+            event.preventDefault()
+            event.stopPropagation()
+            dismissInsertMenu()
             return
         }
 
@@ -6116,6 +6200,32 @@ function MarkdownNotebookEditor({
                     deleteNodeBefore,
                     moveFocusToAdjacentNode,
                     openInsertMenu: (query = '') => openInsertMenu(node.id, query),
+                    openSlashMenuAtToken: (token, children) => {
+                        if (index === 0 || !isTextBlockNode(node)) {
+                            return false
+                        }
+                        if (token.start === 0) {
+                            const queryChildren = token.query ? [{ type: 'text' as const, text: token.query }] : []
+                            const element = blockRefs.current[node.id]
+                            const nextHtml = inlineNodesToHtml(queryChildren)
+                            rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
+                            if (element && element.innerHTML !== nextHtml) {
+                                element.innerHTML = nextHtml
+                            }
+                            updateNode(node.id, (currentNode) => {
+                                if (!isTextBlockNode(currentNode)) {
+                                    return currentNode
+                                }
+                                return { ...currentNode, children: queryChildren }
+                            })
+                            beginSlashInsertMenu(node.id, token.query)
+                            return true
+                        }
+                        const parts = splitTextBlockAtSlashToken(node, children, token)
+                        beginSlashInsertMenu(parts.command.id, token.query, { detached: true })
+                        replaceNodeWithNodes(node.id, collectSlashSplitNodes(parts))
+                        return true
+                    },
                     openDetachedInsertMenu: () => openDetachedInsertMenuFromNode(node.id),
                     updateAIPromptQuery: (query) => updateAIPromptQuery(node.id, query),
                     closeInsertMenu: clearInsertMenu,

@@ -54,7 +54,7 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
 
-            const nb = await getNotebookByIdOrShort(id, { ownerKey: auth.ownerKey })
+            const nb = await getNotebookByIdOrShort(id, { ownerKey: auth.ownerKey, userId: auth.userId })
             if (!nb) return json({ error: 'Not found' }, 404)
 
             const includeHistory =
@@ -93,7 +93,7 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, claimed)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
 
-            const ok = await deleteNotebook(id, auth.ownerKey)
+            const ok = await deleteNotebook(id, auth.ownerKey, auth.userId)
             if (!ok) return json({ error: 'Not found' }, 404)
             return json({ ok: true, auth: { via: auth.via } })
         }

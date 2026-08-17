@@ -180,7 +180,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-160` | Stream 3 / 5 | Selection Floating Anchor, Icon-Only Accept/Reject Review Mode, Direct Slash WIM AI Activation & Outline Removal | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-161` | Stream 3 / 5 | Notebook Micro-Interactions & Spring Animations (Entrance spring scale, AI pulse glow, button active micro-scaling) | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-162` | Stream 3 | Notebook UI/UX micro-polish (list empty states, title→editor, slash/palette, quieter chrome) | `src/notebook-app/scenes/notebooks/*`, `App.tsx`, `InsertMenu.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
-| `TSK-163` | Stream 3 | Slash menu anywhere + compact mobile format toolbar | `MarkdownNotebook.tsx`, `InsertMenu.tsx`, `FormattingToolbar.tsx`, `documentModel.ts` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-163` | Stream 3 | Slash menu anywhere + compact mobile format toolbar | `MarkdownNotebook.tsx`, `InsertMenu.tsx`, `FormattingToolbar.tsx`, `documentModel.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-164` | Stream 5 | Compact Ask AI composer vertically; keep writing UX stable (no layout shift) | `ClaudeWorkspaceChat/components/ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-165` | Stream 5 | Restore original send button, slightly larger icons, centered empty composer | `ClaudeWorkspaceChat/components/ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-166` | Stream 5 | Chat composer icons: site family + send size match | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
@@ -188,6 +188,11 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-168` | Stream 4 | Ali admin profile photo missing (broken USER_PORTRAITS override) | `user-portraits.ts`, `useProfileData.ts`, `wim-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-169` | Stream 5 | Selection rewrite: replace in place + working Accept/Reject | `EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `App.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-170` | Stream 4 | Chat/notebook account sync: claim, tombstones, identity switch | `chat-store`, `notebooks-repo`, `chat-remote`, `notebookRemote`, `useUser` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-171` | Stream 4 | Live chat sync: merge-by-id, realtime+poll, fresh JWT | `chat-store`, `chat-merge`, `chat-remote`, `ClaudeWorkspaceChat` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-172` | Stream 4 / 3 | Notebook: real delete, no push-all resurrection, two-device version merge | `notebooks-repo`, `notebookStorage`, `notebookRemote`, `App.tsx`, list | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-173` | Stream 4 / 3 | Notebook live writing: Realtime + presence/carets + discussion comments | `notebookRemote`, `notebookStorage`, `App.tsx`, MarkdownNotebook comments | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-174` | Stream 3 / 4 | Notebook Package B: callout/toggle, image upload, database + sub-page in slash | `registry.tsx`, Wim writing blocks, `/api/notebooks/upload` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-175` | Stream 2 | Fix `/` 404 + Next “Cancel rendering route” overlay | `pages/index.tsx`, `_app.tsx`, AppWindow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -326,6 +331,53 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 242 - Cancel rendering route on `/`
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `/` had no page, so local open 404’d and Next cancelled the overlapping render. Added `pages/index.tsx` (desktop), ignore “Cancel rendering route” rejections, and skip `router.push` when the URL is already current.
+- **Modified Files:** `src/pages/index.tsx`, `src/pages/_app.tsx`, `src/context/App.tsx`, `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** not run (dev overlay / routing). Reload `http://localhost:3000`.
+- **Notes / Handoff:** Hard-refresh the tab. The overlay should be gone; `/` is the desktop.
+
+### Entry 241 - Notebook writing blocks (Package B)
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Slash now inserts Callout, Toggle, and Database (typed table + board view). Page creates a real child notebook and links it as a card. Image blocks upload PNG/JPEG/WebP/GIF via `/api/notebooks/upload` (or still accept a URL); drop/paste of an image file becomes an Image block.
+- **Modified Files:** `registry.tsx`, `WimWritingBlocks.tsx`, `writingBlockModel.ts`, `extraInsertCommands.tsx`, `App.tsx`, `MarkdownNotebook.scss`, `src/lib/notebook-upload.ts`, `src/lib/notebook-upload-shared.ts`, `src/pages/api/notebooks/upload.ts`, `supabase/migrations/20260818_notebook_media.sql`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/account-sync.spec.ts` — 17 passed. `pnpm run build:notebook-styles` — ok.
+- **Notes / Handoff:** Apply `20260818_notebook_media.sql` on live Supabase or image upload returns 503 and the URL field still works. Next: Package C — invite a philosopher to comment on a selection (TSK-29).
+
+### Entry 240 - Notebook live writing (Package A)
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Notebooks now follow the chat live-sync pattern. Authenticated clients subscribe to `wim_notebooks` Realtime and still poll every 20s / on focus. An open editor passes `remoteValue` into MarkdownNotebook so two devices three-way-merge instead of overwriting local typing. Presence broadcasts carets and live avatars. Selection and block comments now render a real thread (replies + composer) instead of the generic component shell.
+- **Modified Files:** `notebookRemote.ts`, `notebookStorage.ts`, `notebookPresence.ts`, `App.tsx`, `DiscussionCommentBlock.tsx`, `discussionComments.ts`, `renderNode.tsx`, `CollaboratorsBanner.tsx`, `supabase.ts`, `supabase/migrations/20260818_notebook_realtime_rls.sql`, `tests/notebook-frontend.spec.ts`, `docs/NOTEBOOK_SAAS_ROADMAP.md`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/account-sync.spec.ts` — 15 passed.
+- **Notes / Handoff:** Apply `20260818_notebook_realtime_rls.sql` on live Supabase if not already. Guests still poll (no Realtime without `auth.uid()`). Next: Package B — callout/toggle, image upload, wire DatabaseTable / SubPageCard into the slash menu. Do not start a Yjs rewrite.
+
+### Entry 239 - Finish slash insert menu
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `/` now opens the real InsertMenu from anywhere in a body paragraph or list item (not the title, not WIM AI). Escape / outside-click restores `/query` and does not leave a leftover command row. Plus on a filled line inserts a new empty row instead of eating the paragraph. Dead Lucide `SlashCommandMenu.tsx` removed. Mobile format toolbar is one compact scrollable row.
+- **Modified Files:** `documentModel.ts`, `MarkdownNotebook.tsx`, `EditableTextBlock.tsx`, `renderNode.tsx`, `MarkdownNotebook.scss`, `SlashCommandMenu.tsx` (deleted), `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts`
+- **Notes / Handoff:** WIM AI stays an item inside InsertMenu. Title `/` is plain text.
+
+### Entry 238 - Notebook delete and two-device sync
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Lemon-table delete can now soft-delete by owner_key or auth_user_id (it used to 404 and then hydrate brought the row back). Hydrate no longer push-all. Merge prefers higher version. 409 pulls the other device’s copy into the editor.
+- **Modified Files:** `lib/notebooks-repo.ts`, `api/notebooks/[id].ts`, `notebookRemote.ts`, `notebookStorage.ts`, `App.tsx`, `NotebooksListScene.tsx`, tests
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/account-sync.spec.ts` — 11 passed.
+
+### Entry 237 - Live sync: keep both devices’ messages
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chat upsert no longer wipes messages. Local/remote lists merge by message id. Open chat window polls and listens on Supabase Realtime. JWT is refreshed from the live session. Notebooks re-pull on focus and every 20s.
+- **Modified Files:** `chat-store.ts`, `chat-merge.ts`, `chat-remote.ts`, `ClaudeWorkspaceChat/index.tsx`, `notebookRemote.ts`, `notebookStorage.ts`, `supabase/migrations/20260818_chat_realtime_rls.sql`, `tests/account-sync.spec.ts`
+- **Tests:** `pnpm exec playwright test tests/account-sync.spec.ts` — 4 passed.
+- **Notes / Handoff:** Live RLS + realtime publication applied. Guest (unsigned) tabs still poll; they cannot subscribe without auth.uid().
 
 ### Entry 236 - Account sync: claim, soft-delete, identity switch
 - **Date:** 2026-08-17

@@ -14,7 +14,9 @@ import { IconX } from '@posthog/icons'
 import { LemonButton } from '@posthog/lemon-ui'
 
 import {
-    getSlashCommandQuery,
+    getInsertMenuFilterQuery,
+    getSlashTokenAt,
+    SlashToken,
     getTextBlockShortcutReplacement,
     getTitleChildrenFromMarkdownLine,
     getTitlePasteParts,
@@ -56,6 +58,7 @@ export function EditableTextBlock({
     deleteNodeBefore,
     moveFocusToAdjacentNode,
     openInsertMenu,
+    openSlashMenuAtToken,
     openDetachedInsertMenu,
     closeInsertMenu,
     moveInsertMenuSelection,
@@ -86,6 +89,7 @@ export function EditableTextBlock({
     deleteNodeBefore: (nodeId: string, options?: { requireSameTextStyle?: boolean }) => boolean
     moveFocusToAdjacentNode: (nodeId: string, direction: InsertMenuSelectionDirection, offset: number) => boolean
     openInsertMenu: (query?: string) => void
+    openSlashMenuAtToken?: (token: SlashToken, children: NotebookInlineNode[]) => boolean
     openDetachedInsertMenu: () => boolean
     closeInsertMenu: () => void
     moveInsertMenuSelection: (direction: InsertMenuSelectionDirection) => void
@@ -335,10 +339,16 @@ export function EditableTextBlock({
             return
         }
 
-        const slashQuery = getSlashCommandQuery(elementText)
-        if (!isTitleBlock && slashQuery !== null) {
-            const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
-            openInsertMenu(slashQuery)
+        const caret = getCollapsedSelectionRange(element, node.id)?.end ?? elementText.length
+        const slashToken = !isTitleBlock && !isToolInsertMenuOpen ? getSlashTokenAt(elementText, caret) : null
+        if (slashToken && openSlashMenuAtToken?.(slashToken, elementChildren)) {
+            return
+        }
+        if (!isTitleBlock && slashToken && slashToken.start === 0) {
+            const queryChildren: NotebookInlineNode[] = slashToken.query
+                ? [{ type: 'text', text: slashToken.query }]
+                : []
+            openInsertMenu(slashToken.query)
             updateElementAndChildren(element, queryChildren)
             return
         }
@@ -413,6 +423,13 @@ export function EditableTextBlock({
             return
         }
 
+        if (isInsertMenuOpen && event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            toggleInsertMenu()
+            return
+        }
+
         if (isToolInsertMenuOpen && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
             event.preventDefault()
             event.stopPropagation()
@@ -440,8 +457,7 @@ export function EditableTextBlock({
 
         if (event.key === 'Enter' && !event.shiftKey) {
             const inputText = event.currentTarget.textContent ?? ''
-            const slashQuery = getSlashCommandQuery(inputText)
-            const insertMenuQuery = slashQuery ?? (isToolInsertMenuOpen ? inputText : undefined)
+            const insertMenuQuery = isToolInsertMenuOpen ? getInsertMenuFilterQuery(inputText) : undefined
 
             if (submitInsertMenuSelection(insertMenuQuery)) {
                 event.preventDefault()
