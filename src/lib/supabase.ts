@@ -13,8 +13,10 @@ if (supabaseUrl && supabaseKey) {
 
         client = createClient(trimmedUrl, trimmedKey, {
             auth: {
-                // true so magic-link / recovery redirects establish a session
-                detectSessionInUrl: true,
+                // Auto-detect on normal pages (magic link / recovery). Off on
+                // /auth/callback so we exchange the Google PKCE code once.
+                detectSessionInUrl:
+                    typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/callback'),
                 flowType: 'pkce',
                 autoRefreshToken: true,
                 persistSession: true,

@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
+import { safeAuthNextPath, shouldIgnorePkceExchangeError } from 'lib/auth-callback'
 import WimLogo from 'components/WimLogo'
 
 export default function AuthCallbackPage() {
     const router = useRouter()
     const [error, setError] = useState<string | null>(null)
+    const ran = useRef(false)
 
     useEffect(() => {
-        if (!router.isReady) return
+        if (!router.isReady || ran.current) return
+        ran.current = true
 
         const finish = async () => {
             if (!isSupabaseConfigured) {
@@ -17,17 +20,21 @@ export default function AuthCallbackPage() {
             }
 
             const code = typeof router.query.code === 'string' ? router.query.code : null
-            const next = typeof router.query.next === 'string' ? router.query.next : '/desktop'
+            const next = safeAuthNextPath(router.query.next)
 
-            if (code) {
+            const existing = await supabase.auth.getSession()
+            if (!existing.data.session && code) {
                 const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
                 if (exchangeError) {
-                    setError(exchangeError.message)
-                    return
+                    const after = await supabase.auth.getSession()
+                    if (!shouldIgnorePkceExchangeError(exchangeError.message, !!after.data.session)) {
+                        setError(exchangeError.message)
+                        return
+                    }
                 }
             }
 
-            router.replace(next.startsWith('/') ? next : '/desktop')
+            router.replace(next)
         }
 
         void finish()
