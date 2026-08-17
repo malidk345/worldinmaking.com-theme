@@ -94,10 +94,16 @@ export const isURL = (s: string): boolean => {
     }
 }
 
-// Never hand an unresolved Next.js route pattern to Link/router. These values
-// can arrive from indexed content and cause Next to throw before navigation.
-export const sanitizeNavigationUrl = (url?: string, fallback = '/'): string =>
-    url && !/\[[^\]]+\]/.test(url) ? url : fallback
+// Never hand an unresolved Next.js route pattern or undefined param to Link/router. These values
+// can arrive from indexed content or unhydrated state and cause Next to throw before navigation.
+export const sanitizeNavigationUrl = (url?: string, fallback = '/'): string => {
+    if (!url || typeof url !== 'string') return fallback
+    if (/\[[^\]]+\]/.test(url) || /\/(undefined|null)(?:\/|$)/i.test(url)) {
+        return fallback
+    }
+    return url
+}
+
 
 // Guard for `navigate()` targets that arrive from cross-window postMessage. Only
 // same-origin absolute paths like "/docs/foo" are allowed. This blocks "javascript:"

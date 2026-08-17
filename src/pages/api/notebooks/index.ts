@@ -128,7 +128,9 @@ export default async function handler(req: Request) {
             )
         }
         if (status === 403) return json({ error: message }, 403)
+        if (status === 409) return json({ error: message, code: err?.code || 'VERSION_CONFLICT' }, 409)
         console.error('[api/notebooks]', err)
         return json({ error: message }, status >= 400 && status < 600 ? status : 500)
     }
 }
+

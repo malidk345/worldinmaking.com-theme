@@ -173,6 +173,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-153` | Stream 4 | Google OAuth shows PKCE verifier error after a successful login | `auth/callback.tsx`, `supabase.ts`, `auth-callback.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-154` | Stream 5 | End-to-end audit of Groq/Gemini key rotation | `groq-key-cursor.ts`, `ai-gateway.ts`, gateway tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-155` | Stream 5 | After two Groq misses, switch to Gemini and stay there next turn | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-156` | Stream 5 / 4 | Notebook & AI Phase 1 Optimization (Groq TPM pre-flight trim, AI Gateway consolidation, Notebook optimistic versioning) | `ai-gateway.ts`, `ai-provider.ts`, `notebooks-repo.ts`, `api/notebooks/index.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-157` | Stream 5 | Notebook & AI Phase 2 Architecture (Async bot task queue, persistent key cursor telemetry, edge timeout safety) | `bot-worker.js`, `api/cron/philosopher-bots.ts`, `groq-key-cursor.ts`, `ai-gateway.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-158` | Stream 5 | Notebook & AI Phase 3 Features (Notebook RAG search helper, Ask AI persona integration, clean inline editor) | `src/lib/bots/notebook-rag.ts`, `src/pages/api/chat.ts`, `ClaudeWorkspaceChat` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-159` | Stream 3 / 5 | Inline Editor UX Overhaul (Preset action pills, smart viewport flip, target mode selector, Accept/Discard diff bar) | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-160` | Stream 3 / 5 | Selection Floating Anchor, Icon-Only Accept/Reject Review Mode, Direct Slash WIM AI Activation & Outline Removal | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+
+
+
+
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 

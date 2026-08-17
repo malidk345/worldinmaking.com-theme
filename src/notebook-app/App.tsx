@@ -640,7 +640,7 @@ export function App() {
                   </div>
                 </div>
 
-                {/* Main editor + outline */}
+                {/* Main editor */}
                 <div className="w-full min-h-[600px] pt-4 sm:pt-6 mt-4 sm:mt-6 flex gap-6 items-start">
                   <div className="flex-1 min-w-0" ref={editorContainerRef}>
                     <LemonInput
@@ -662,8 +662,6 @@ export function App() {
                       selectionAIActions={SELECTION_AI_ACTIONS}
                     />
                   </div>
-
-                  <NotebookOutline markdown={markdown} containerRef={editorContainerRef} />
                 </div>
 
                 {/* History Drawer Panel */}

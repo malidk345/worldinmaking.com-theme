@@ -147,10 +147,6 @@ function isQwen36(model: string): boolean {
     return /qwen3\.6|qwen\/qwen3\.6/i.test(model)
 }
 
-function isGemini25(model: string): boolean {
-    return /gemini-2\.5|gemini-3|gemini-flash-latest|gemini-pro-latest/i.test(model)
-}
-
 export function usesGeminiNativeThinking(_model: string, _depth?: ThinkingDepth): boolean {
     return false
 }
@@ -248,8 +244,22 @@ export function fitGroqRequest(options: {
     const compact = !!options.compact
     const wanted = wantedGroqMaxTokens(options.model, thinking, compact)
     const caps = groqPromptCaps(thinking, compact)
-    let messages = buildCompletionMessages(options.systemPrompt, options.userPrompt, options.history, caps)
-    messages = shrinkMessagesForTpm(messages, Math.min(wanted, 768))
+    const rawMessages = buildCompletionMessages(options.systemPrompt, options.userPrompt, options.history, caps)
+    const rawPromptTokens = estimateMessagesTokens(rawMessages)
+
+    // Pre-flight check: If raw prompt alone exceeds 6,500 tokens (~22k chars),
+    // Groq's 8k TPM cap cannot fit the prompt + completion without severe context destruction.
+    // Skip Groq cleanly so Gemini takes over with its 1M+ context window.
+    if (rawPromptTokens > 6_500) {
+        return {
+            messages: rawMessages,
+            maxTokens: wanted,
+            promptTokens: rawPromptTokens,
+            skip: true,
+        }
+    }
+
+    let messages = shrinkMessagesForTpm(rawMessages, Math.min(wanted, 768))
     const promptTokens = estimateMessagesTokens(messages)
     const room = GROQ_TPM_LIMIT - GROQ_TPM_SAFETY - promptTokens
     const maxTokens = Math.max(MIN_GROQ_COMPLETION_TOKENS, Math.min(wanted, room))
@@ -260,6 +270,7 @@ export function fitGroqRequest(options: {
         skip: room < MIN_GROQ_COMPLETION_TOKENS,
     }
 }
+
 
 /**
  * Qwen 3.6 native reasoning is the live ThinkingBlock source.

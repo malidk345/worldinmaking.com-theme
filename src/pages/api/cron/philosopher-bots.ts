@@ -61,7 +61,20 @@ export default async function handler(req: Request) {
     }
 
     const url = new URL(req.url)
-    const tickReq = parseTickRequest(await readJsonBody(req), url)
+    const body = await readJsonBody(req)
+    const tickReq = parseTickRequest(body, url)
+
+    const isAsync =
+        url.searchParams.get('async') === '1' ||
+        url.searchParams.get('async') === 'true' ||
+        req.headers.get('x-wim-async') === '1'
+
+    if (isAsync) {
+        const { enqueueBotTask } = await import('lib/bots/bot-queue')
+        const taskId = await enqueueBotTask('philosopher_tick', { tickReq })
+        return json({ success: true, queued: true, taskId, phase: tickReq.phase || 'full' }, 202)
+    }
+
     try {
         const result = await runPhilosopherBotTick(tickReq)
         // Always 200 for tick outcomes. Cloudflare Pages rewrites HTTP 502
@@ -78,5 +91,6 @@ export default async function handler(req: Request) {
         )
     }
 }
+
 
 export { runPhilosopherBotTick } from 'lib/bots/philosopher-tick'

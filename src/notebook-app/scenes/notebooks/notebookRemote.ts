@@ -105,8 +105,8 @@ export async function pullNotebooksFromRemote(): Promise<StoredNotebook[] | null
 export async function pushNotebookToRemote(
     notebook: StoredNotebook,
     historyEntries?: NotebookVersion[]
-): Promise<boolean> {
-    if (typeof window === 'undefined') return false
+): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean }> {
+    if (typeof window === 'undefined') return { ok: false }
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch('/api/notebooks', {
@@ -120,15 +120,20 @@ export async function pushNotebookToRemote(
         })
         if (res.status === 503) {
             remoteAvailable = false
-            return false
+            return { ok: false }
         }
-        if (!res.ok) return false
+        if (res.status === 409) {
+            return { ok: false, conflict: true }
+        }
+        if (!res.ok) return { ok: false }
         remoteAvailable = true
-        return true
+        const data = await parseJson<OneResponse>(res)
+        return { ok: true, notebook: data?.notebook || undefined }
     } catch {
-        return false
+        return { ok: false }
     }
 }
+
 
 export async function pushAllNotebooksToRemote(
     notebooks: StoredNotebook[],

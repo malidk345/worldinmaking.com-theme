@@ -67,8 +67,16 @@ const SNAPSHOT_MIN_INTERVAL_MS = 20_000
 /** Fire-and-forget remote sync — never throws into UI paths. Emits sync status for the chrome. */
 function queueRemote(promise: Promise<unknown>): void {
     promise
-        .then((result) => {
-            if (result === false) {
+        .then((result: any) => {
+            if (result && typeof result === 'object' && result.conflict) {
+                emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
+                    status: 'error',
+                    message: 'Version conflict: Notebook was modified on another device.',
+                } satisfies NotebookSyncEventDetail)
+                return
+            }
+
+            if (result === false || (result && typeof result === 'object' && result.ok === false)) {
                 const offline = isNotebookRemoteKnownAvailable() === false
                 emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
                     status: offline ? 'offline' : 'error',
@@ -78,6 +86,17 @@ function queueRemote(promise: Promise<unknown>): void {
                 } satisfies NotebookSyncEventDetail)
                 return
             }
+
+            if (result && typeof result === 'object' && result.ok && result.notebook?.id) {
+                // Sync version back to local storage if returned by remote API
+                const localList = readLocalNotebooks()
+                const idx = localList.findIndex((nb) => nb.id === result.notebook.id)
+                if (idx >= 0 && localList[idx].version !== result.notebook.version) {
+                    localList[idx].version = result.notebook.version
+                    writeLocalNotebooks(localList)
+                }
+            }
+
             emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, { status: 'ok' } satisfies NotebookSyncEventDetail)
         })
         .catch(() => {
@@ -93,6 +112,7 @@ function schedulePushNotebook(notebook: StoredNotebook): void {
     const history = getNotebookHistory(notebook.id)
     queueRemote(pushNotebookToRemote(notebook, history))
 }
+
 
 function schedulePushAll(): void {
     if (typeof window === 'undefined') return

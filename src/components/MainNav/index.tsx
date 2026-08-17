@@ -28,6 +28,8 @@ import HoverTooltip from 'components/Tooltip'
 import dayjs from 'dayjs'
 import usePostHog from 'hooks/usePostHog'
 import { useUser } from 'hooks/useUser'
+import { profileHref } from 'lib/profile-path'
+
 import React, { useEffect, useRef, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { usePopper } from 'react-popper'
@@ -572,8 +574,9 @@ export const Main = () => {
                                                 <li className="px-1">
                                                     <Link
                                                         className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark"
-                                                        to={`/profile/${user?.username || user?.profile?.id}`}
+                                                        to={profileHref(user?.username || user?.profile?.id) || '/profile'}
                                                     >
+
                                                         <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75 mr-2" />
                                                         My profile
                                                     </Link>

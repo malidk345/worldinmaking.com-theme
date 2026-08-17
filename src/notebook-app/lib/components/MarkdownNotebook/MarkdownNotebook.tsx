@@ -4009,7 +4009,7 @@ function MarkdownNotebookEditor({
             nodeId,
             query,
             selectedIndex: 0,
-            mode: 'tools',
+            mode: 'ai',
             detached: currentMenu?.nodeId === nodeId ? currentMenu.detached : undefined,
             removeNodeOnClose: currentMenu?.nodeId === nodeId ? currentMenu.removeNodeOnClose : undefined,
         }))

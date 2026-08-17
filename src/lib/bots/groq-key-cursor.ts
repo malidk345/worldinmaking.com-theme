@@ -120,3 +120,20 @@ export function nextGroqKeyStart(keyCount: number): number {
 export function resetGroqKeyCursor(): void {
     resetFamilyKeyCursor('groq')
 }
+
+const familyCooldownMap = new Map<string, number>()
+
+export function setProviderCooldownState(family: string, durationMs = 60_000): void {
+    familyCooldownMap.set(family, Date.now() + durationMs)
+}
+
+export function isProviderCooling(family: string): boolean {
+    const until = familyCooldownMap.get(family)
+    if (!until) return false
+    if (Date.now() >= until) {
+        familyCooldownMap.delete(family)
+        return false
+    }
+    return true
+}
+

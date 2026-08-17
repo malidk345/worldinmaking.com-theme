@@ -226,11 +226,40 @@ export async function assertNotebookWriteAccess(
 }
 
 export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): Promise<StoredNotebookDTO> {
-    const access = await assertNotebookWriteAccess(nb.id, ownerKey)
-    if (!access.ok) {
-        const err = new Error(access.error) as Error & { status?: number }
-        err.status = access.status
-        throw err
+    const { data: existing, error: findErr } = await supabaseAdmin
+        .from('wim_notebooks')
+        .select('id, owner_key, version')
+        .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
+        .limit(1)
+        .maybeSingle()
+
+    if (findErr) throw findErr
+
+    if (existing) {
+        if ((existing as { owner_key: string }).owner_key !== ownerKey) {
+            const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
+            err.status = 403
+            throw err
+        }
+
+        const currentDbVersion = Number((existing as { version?: number }).version || 1)
+        const incomingVersion = Number(nb.version || 0)
+
+        // Optimistic version locking: reject updates with outdated client versions
+        if (incomingVersion > 0 && incomingVersion < currentDbVersion) {
+            const err = new Error(`Conflict: Notebook version mismatch (current version is ${currentDbVersion})`) as Error & {
+                status?: number
+                code?: string
+            }
+            err.status = 409
+            err.code = 'VERSION_CONFLICT'
+            throw err
+        }
+
+        // Auto-increment version for successful updates
+        nb.version = currentDbVersion + 1
+    } else {
+        nb.version = Math.max(1, Number(nb.version || 1))
     }
 
     const row = dtoToRow(nb, ownerKey)
@@ -246,22 +275,49 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): P
 
 export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: string): Promise<number> {
     if (!notebooks.length) return 0
+    const updatedRows: Omit<StoredNotebookRow, never>[] = []
+
     for (const nb of notebooks) {
-        const access = await assertNotebookWriteAccess(nb.id, ownerKey)
-        if (!access.ok) {
-            const err = new Error(access.error) as Error & { status?: number }
-            err.status = access.status
-            throw err
+        const { data: existing } = await supabaseAdmin
+            .from('wim_notebooks')
+            .select('id, owner_key, version')
+            .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
+            .limit(1)
+            .maybeSingle()
+
+        if (existing) {
+            if ((existing as { owner_key: string }).owner_key !== ownerKey) {
+                const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
+                err.status = 403
+                throw err
+            }
+            const currentDbVersion = Number((existing as { version?: number }).version || 1)
+            const incomingVersion = Number(nb.version || 0)
+
+            if (incomingVersion > 0 && incomingVersion < currentDbVersion) {
+                const err = new Error(`Conflict: Notebook version mismatch on ${nb.id} (current version is ${currentDbVersion})`) as Error & {
+                    status?: number
+                    code?: string
+                }
+                err.status = 409
+                err.code = 'VERSION_CONFLICT'
+                throw err
+            }
+            nb.version = currentDbVersion + 1
+        } else {
+            nb.version = Math.max(1, Number(nb.version || 1))
         }
+        updatedRows.push(dtoToRow(nb, ownerKey))
     }
-    const rows = notebooks.map((nb) => dtoToRow(nb, ownerKey))
-    const { error, count } = await supabaseAdmin.from('wim_notebooks').upsert(rows, {
+
+    const { error, count } = await supabaseAdmin.from('wim_notebooks').upsert(updatedRows, {
         onConflict: 'id',
         count: 'exact',
     })
     if (error) throw error
-    return count ?? rows.length
+    return count ?? updatedRows.length
 }
+
 
 /** Replace history only after ownership check (prevents cross-tenant history wipe). */
 export async function replaceHistoryForOwner(

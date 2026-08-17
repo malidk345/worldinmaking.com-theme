@@ -12,7 +12,12 @@ const PLACEHOLDER_HANDLES = new Set([
     'anonymous',
     '1',
     'user',
+    'undefined',
+    'null',
+    '[username]',
+    'username',
 ])
+
 
 export function normalizeProfileHandle(handle?: string | number | null): string {
     return String(handle ?? '')
