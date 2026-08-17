@@ -3,7 +3,10 @@ import {
     MarkdownNotebook,
     type MarkdownNotebookAskAIRequest,
 } from './lib/components/MarkdownNotebook/MarkdownNotebook'
-import { replaceNotebookAIResponseMarkdown } from './lib/components/MarkdownNotebook/notebookAI'
+import {
+    replaceInlineRangeInMarkdown,
+    replaceNotebookAIResponseMarkdown,
+} from './lib/components/MarkdownNotebook/notebookAI'
 import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
@@ -60,10 +63,12 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   override render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '2rem', background: '#ffeef0', color: '#900', fontFamily: 'monospace' }}>
-          <h2>Runtime Component Error:</h2>
-          <pre>{this.state.error?.toString()}</pre>
-          <pre style={{ marginTop: '1rem', color: '#666' }}>{(this.state.error as any)?.stack}</pre>
+        <div className="p-8 max-w-xl mx-auto text-center space-y-3">
+          <h2 className="m-0 text-lg font-semibold">This notebook view hit an error</h2>
+          <p className="m-0 text-sm text-muted">The rest of the desktop is fine. Reload the window to try again.</p>
+          <pre className="m-0 text-left text-xs overflow-auto p-3 rounded-lg bg-surface-secondary text-secondary">
+            {this.state.error?.toString()}
+          </pre>
         </div>
       )
     }
@@ -232,6 +237,21 @@ export function App() {
     const applyStatic = (reply: string) => {
       if (requestId !== askAIAbortRef.current) return
       try {
+        if (request.apply === 'inline') {
+          const start = request.selectionStart ?? 0
+          const end = request.selectionEnd ?? start + (request.selectedMarkdown?.length ?? 0)
+          setMarkdown(
+            replaceInlineRangeInMarkdown(
+              request.markdownWithResponse,
+              request.responseNodeIndex,
+              start,
+              end,
+              reply.trim(),
+              request.listItemIndex
+            )
+          )
+          return
+        }
         const result = replaceNotebookAIResponseMarkdown(
           request.markdownWithResponse,
           request.responseNodeIndex,
@@ -270,9 +290,9 @@ export function App() {
 
       if (requestId !== askAIAbortRef.current) return
 
-      if (!data?.ok || !data.markdown?.trim()) {
+      if (!data?.ok || !data.markdown?.trim() || request.apply === 'inline') {
         applyStatic(reply)
-        return
+        return reply
       }
 
       await playInlineEditorMarkdown({
@@ -285,6 +305,7 @@ export function App() {
           setMarkdown(nextMarkdown)
         },
       })
+      return reply
     } catch (error) {
       console.warn('[notebook editor] request failed', error)
       applyStatic('The editor is unreachable right now. Please try again.')
@@ -580,14 +601,15 @@ export function App() {
                 )}
 
                 {/* Top Action Bar matching PostHog's NotebookScene.tsx */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-10">
-                  <div className="flex gap-3 items-center">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-5">
+                  <div className="flex gap-2 sm:gap-3 items-center min-w-0">
                     <LemonButton
                       type="stealth"
                       size="small"
                       icon={<ArrowLeft className="w-4 h-4" />}
                       onClick={() => navigate({ page: 'list' })}
                       tooltip="Back to notebooks"
+                      aria-label="Back to notebooks"
                     />
                     {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
                     <CollaboratorsBanner
@@ -641,14 +663,34 @@ export function App() {
                 </div>
 
                 {/* Main editor */}
-                <div className="w-full min-h-[600px] pt-4 sm:pt-6 mt-4 sm:mt-6 flex gap-6 items-start">
+                <div className="w-full min-h-[600px] pt-2 sm:pt-3 mt-1 sm:mt-2 flex gap-6 items-start">
                   <div className="flex-1 min-w-0" ref={editorContainerRef}>
                     <LemonInput
                       value={title}
                       onChange={setTitle}
-                      className="text-2xl sm:text-3xl font-bold border-none shadow-none focus:outline-none p-0 mb-8 sm:mb-10 bg-transparent w-full"
-                      placeholder="Untitled Notebook..."
+                      transparentBackground
+                      aria-label="Notebook title"
+                      autoFocus={!title || title === 'Untitled Notebook'}
+                      className="text-2xl sm:text-3xl font-bold border-none shadow-none focus:outline-none p-0 mb-2 bg-transparent w-full"
+                      placeholder="Untitled"
+                      onPressEnter={(event) => {
+                        event.preventDefault()
+                        const root = editorContainerRef.current
+                        const firstBlock = root?.querySelector(
+                          '.MarkdownNotebook__text-block, [data-markdown-notebook-editor]'
+                        ) as HTMLElement | null
+                        firstBlock?.focus()
+                      }}
                     />
+                    {!markdown.trim() ? (
+                      <p className="m-0 mb-5 sm:mb-6 text-[11px] text-muted select-none">
+                        <span className="font-medium text-secondary">Enter</span> to write ·{' '}
+                        <span className="font-medium text-secondary">/</span> insert a block ·{' '}
+                        <span className="font-medium text-secondary">⌘K</span> jump
+                      </p>
+                    ) : (
+                      <div className="mb-5 sm:mb-6" />
+                    )}
 
                     <MarkdownNotebook
                       key={`${currentNotebook.id}-${markdownVersion}`}
@@ -660,6 +702,8 @@ export function App() {
                       extraInsertCommands={extraCommands}
                       hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
                       selectionAIActions={SELECTION_AI_ACTIONS}
+                      placeholder="Type / to insert a block, or just start writing…"
+                      autoFocus={Boolean(title && title !== 'Untitled Notebook')}
                     />
                   </div>
                 </div>
@@ -689,9 +733,12 @@ export function App() {
 
               </div>
             ) : (
-              <div className="p-12 text-center text-muted space-y-4">
-                <p className="text-lg">Notebook not found ({route.notebookId})</p>
-                <LemonButton type="primary" onClick={() => navigate({ page: 'list' })}>
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                <p className="m-0 text-lg font-semibold text-primary">This notebook isn’t here</p>
+                <p className="m-0 text-sm text-muted max-w-sm">
+                  It may have been deleted on this device, or the link is stale.
+                </p>
+                <LemonButton type="primary" size="small" onClick={() => navigate({ page: 'list' })}>
                   Back to notebooks
                 </LemonButton>
               </div>

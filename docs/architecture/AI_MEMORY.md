@@ -186,6 +186,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-166` | Stream 5 | Chat composer icons: site family + send size match | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-167` | Stream 5 | Composer plus/send same glyph weight from @posthog/icons (no paper-plane) | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-168` | Stream 4 | Ali admin profile photo missing (broken USER_PORTRAITS override) | `user-portraits.ts`, `useProfileData.ts`, `wim-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-169` | Stream 5 | Selection rewrite: replace in place + working Accept/Reject | `EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `App.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 
 
@@ -324,6 +325,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 235 - Selection rewrite accept/reject actually works
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Highlighted text is rewritten in place. After WIM AI finishes, ✓ keeps the new wording and ✕ restores the original. The prompt bar stays mounted (it used to become a “Writing…” paragraph, so the buttons never did anything). Clicks use preventDefault so the editor doesn’t swallow them.
+- **Modified Files:** `EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `renderNode.tsx`, `notebookAI.ts`, `App.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts`, `tests/wimai-editor.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/wimai-editor.spec.ts` — 9 passed.
+- **Notes / Handoff:** Slash “write a new block” still uses the old placeholder paragraph path.
 
 ### Entry 234 - Ali profile photo was overridden by a missing file
 - **Date:** 2026-08-17

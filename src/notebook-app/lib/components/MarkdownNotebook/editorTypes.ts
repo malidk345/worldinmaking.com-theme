@@ -141,17 +141,19 @@ export type TableCellPosition = {
 
 export const FLOATING_TOOLBAR_ESTIMATED_HEIGHT = 36
 
-export const INSERT_MENU_GAP = 12
+export const FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW = 76
 
-export const INSERT_MENU_MAX_HEIGHT = 448
+export const INSERT_MENU_GAP = 6
 
-export const INSERT_MENU_MIN_HEIGHT = 120
+export const INSERT_MENU_MAX_HEIGHT = 280
 
-export const INSERT_MENU_PLACEHOLDER = 'Search for a tool'
+export const INSERT_MENU_MIN_HEIGHT = 96
 
-export const INSERT_MENU_WIDTH = 384
+export const INSERT_MENU_PLACEHOLDER = 'Filter…'
 
-export const INSERT_MENU_VIEWPORT_PADDING = 12
+export const INSERT_MENU_WIDTH = 228
+
+export const INSERT_MENU_VIEWPORT_PADDING = 8
 
 export const MAX_UNDO_HISTORY_ENTRIES = 100
 

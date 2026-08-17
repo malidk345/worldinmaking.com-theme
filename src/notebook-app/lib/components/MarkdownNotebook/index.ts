@@ -25,6 +25,7 @@ export type { TextChange } from './collaboration'
 export {
     NOTEBOOK_AI_WRITING_PLACEHOLDER,
     insertNotebookAIFollowUpPromptAfterResponse,
+    replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './notebookAI'
 export type { MarkdownNotebookCaretPosition, RemoteNotebookCaret } from './remoteCarets'

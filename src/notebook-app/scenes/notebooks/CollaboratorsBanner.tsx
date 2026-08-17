@@ -57,7 +57,7 @@ export function CollaboratorsBanner({
                     {syncStatus === 'saved'
                         ? 'Saved'
                         : syncStatus === 'edited'
-                          ? 'Unsaved'
+                          ? 'Saving…'
                           : syncStatus === 'error'
                             ? 'Sync failed'
                             : syncStatus === 'offline'

@@ -9,6 +9,7 @@ import {
 } from '~nb-lib/lemon-ui/index'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
+import { notebookMatchesQuery } from './notebookPreview'
 import {
     IconEllipsis,
     IconPlus,
@@ -108,9 +109,8 @@ export function NotebooksListScene({
         URL.revokeObjectURL(url)
     }
 
-    // Filter notebooks list
     const filteredNotebooks = notebooks.filter((nb) => {
-        if (searchQuery && !nb.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+        if (!notebookMatchesQuery(nb, searchQuery)) {
             return false
         }
         if (createdByFilter === 'templates' && !nb.isTemplate) {
@@ -163,15 +163,20 @@ export function NotebooksListScene({
                 return (
                     <a
                         data-attr="notebook-title"
-                        className="Link font-semibold flex items-center gap-2 cursor-pointer no-underline text-primary hover:underline text-sm"
+                        className="Link font-semibold flex flex-wrap items-center gap-2 cursor-pointer no-underline text-primary hover:underline text-sm"
                         onClick={(e) => {
                             e.preventDefault()
                             onSelectNotebook(notebook.id)
                         }}
                         href={`#/notebook/${notebook.id}`}
                     >
-                        <span>{notebook.title || 'Untitled'}</span>
+                        <span className="whitespace-normal break-words">{notebook.title || 'Untitled'}</span>
                         {notebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
+                        {notebook.isPublished && !notebook.isTemplate && (
+                            <LemonTag type="completion" size="small">
+                                Live
+                            </LemonTag>
+                        )}
                     </a>
                 )
             },
@@ -271,10 +276,12 @@ export function NotebooksListScene({
         },
     ]
 
+    const emptyLibrary = notebooks.length === 0
+    const searchActive = Boolean(searchQuery.trim())
+
     return (
         <div className="space-y-4 sm:space-y-6">
-            {/* Top Bar with Notebooks button & Search box side-by-side + Filters */}
-            <div className="flex flex-col sm:flex-row justify-between gap-4 items-stretch sm:items-center mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row justify-between gap-4 items-stretch sm:items-center mb-2 sm:mb-4">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
                     <NotebookSelectButton
                         onSelectNotebook={onSelectNotebook}
@@ -285,7 +292,7 @@ export function NotebooksListScene({
                     />
                     <LemonInput
                         type="search"
-                        placeholder="Search for notebooks"
+                        placeholder="Search titles or content"
                         onChange={setSearchQuery}
                         value={searchQuery}
                         data-attr="notebooks-search"
@@ -314,6 +321,20 @@ export function NotebooksListScene({
                 </div>
             </div>
 
+            <div className="flex items-center justify-between gap-3 text-[11px] text-muted px-0.5">
+                <span>
+                    {filteredNotebooks.length === notebooks.length
+                        ? `${notebooks.length} ${notebooks.length === 1 ? 'notebook' : 'notebooks'}`
+                        : `${filteredNotebooks.length} of ${notebooks.length}`}
+                </span>
+                <span className="hidden sm:inline select-none">
+                    <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-surface-secondary font-medium">
+                        ⌘K
+                    </kbd>{' '}
+                    to jump
+                </span>
+            </div>
+
             {confirmDialog}
 
             <div className="overflow-x-auto max-w-full -mx-3 sm:mx-0 px-3 sm:px-0">
@@ -323,7 +344,32 @@ export function NotebooksListScene({
                     columns={columns}
                     rowKey="id"
                     loading={false}
-                    emptyState="No notebooks matching your filters!"
+                    defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
+                    emptyState={
+                        emptyLibrary ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                                <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
+                                <p className="m-0 text-xs text-muted max-w-sm">
+                                    Start a page. Inside the editor, type <span className="font-semibold">/</span> to
+                                    insert a block.
+                                </p>
+                                <LemonButton type="primary" size="small" icon={<IconPlus />} onClick={onCreateNew}>
+                                    New notebook
+                                </LemonButton>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
+                                <p className="m-0 text-sm font-medium text-primary">
+                                    {searchActive
+                                        ? `No notebooks match “${searchQuery.trim()}”`
+                                        : 'No notebooks matching your filters'}
+                                </p>
+                                <p className="m-0 text-xs text-muted">
+                                    Try another title, a word from the page, or clear the filter.
+                                </p>
+                            </div>
+                        )
+                    }
                     nouns={['notebook', 'notebooks']}
                     useURLForSorting={false}
                 />

@@ -18,19 +18,15 @@ export function NotebookFloatingToolbar({
 
     return (
         <div className="sticky top-2 z-30 flex items-center justify-center w-full my-2 pointer-events-none">
-            <div className="pointer-events-auto flex items-center gap-1 px-3 py-1.5 bg-[var(--color-bg-surface-primary,#ffffff)]/95 backdrop-blur-md border border-border rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:border-accent/40">
-                <span className="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 border-r border-border mr-1">
-                    Quick Tools
-                </span>
-
+            <div className="pointer-events-auto flex items-center gap-0.5 px-2 py-1 bg-[var(--color-bg-surface-primary,#ffffff)]/92 backdrop-blur-md border border-border rounded-full shadow-md transition-shadow duration-200 hover:shadow-lg">
                 <LemonButton
                     size="small"
-                    type="secondary"
+                    type="tertiary"
                     icon={<IconPlus className="w-3.5 h-3.5" />}
                     onClick={() => onInsertCommand('text-paragraph')}
-                    tooltip="Add text block or press '/'"
+                    tooltip="Add a block, or press /"
                 >
-                    <span className="text-xs">Add block</span>
+                    <span className="text-xs">Add</span>
                 </LemonButton>
 
                 <LemonButton

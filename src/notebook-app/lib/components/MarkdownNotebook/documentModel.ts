@@ -399,6 +399,31 @@ export function getSlashCommandQuery(text: string): string | null {
     return text.startsWith('/') ? text.slice(1) : null
 }
 
+/** `/query` immediately before the caret. Null if the token has whitespace or looks like a URL. */
+export function getSlashTokenAt(text: string, caret: number = text.length): { start: number; query: string } | null {
+    const index = Math.max(0, Math.min(caret, text.length))
+    const head = text.slice(0, index)
+    const slashIndex = head.lastIndexOf('/')
+    if (slashIndex === -1) {
+        return null
+    }
+
+    const query = head.slice(slashIndex + 1)
+    if (/\s/.test(query)) {
+        return null
+    }
+
+    const before = text.slice(0, slashIndex)
+    if (/https?:$/i.test(before) || before.endsWith('/')) {
+        return null
+    }
+    if (before.length > 0 && !/\s$/.test(before)) {
+        return null
+    }
+
+    return { start: slashIndex, query }
+}
+
 export function getTitlePasteParts(markdown: string): {
     titleMarkdown: string
     bodyMarkdown: string

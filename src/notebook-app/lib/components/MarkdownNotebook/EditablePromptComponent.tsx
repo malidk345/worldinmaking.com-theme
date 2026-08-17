@@ -20,6 +20,8 @@ export function EditablePromptComponent({
     setBlockRef,
     updateNode,
     deleteNodeAndFocusAdjacent,
+    acceptAISelection,
+    rejectAISelection,
     updateAIPromptQuery,
     submitAIPrompt,
     isAIPromptSubmitDisabled,
@@ -32,6 +34,8 @@ export function EditablePromptComponent({
     setBlockRef: (element: HTMLElement | null) => void
     updateNode: (nodeId: string, updater: (node: NotebookBlockNode) => NotebookBlockNode | null) => void
     deleteNodeAndFocusAdjacent: () => void
+    acceptAISelection: () => void
+    rejectAISelection: () => void
     updateAIPromptQuery: (query: string) => void
     submitAIPrompt: (queryOverride?: string) => boolean
     isAIPromptSubmitDisabled: boolean
@@ -143,13 +147,11 @@ export function EditablePromptComponent({
     }
 
     const handleAccept = (): void => {
-        // Accept AI edits: keep new text, remove prompt bar
-        deleteNodeAndFocusAdjacent()
+        acceptAISelection()
     }
 
     const handleReject = (): void => {
-        // Reject AI edits: restore original text if available & remove prompt bar
-        deleteNodeAndFocusAdjacent()
+        rejectAISelection()
     }
 
     const deletePrompt = (): void => {
@@ -179,7 +181,7 @@ export function EditablePromptComponent({
 
     void restoreSelectionRef
 
-    if (autoRun && !isReviewing) {
+    if ((autoRun || isAIPromptSubmitDisabled) && !isReviewing) {
         return (
             <div className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt">
                 <div className="WimInlinePill WimInlinePill--busy" contentEditable={false} data-markdown-notebook-node-id={node.id}>
@@ -207,6 +209,7 @@ export function EditablePromptComponent({
                     <button
                         type="button"
                         className="WimInlinePill__acceptBtn"
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={handleAccept}
                         title="Accept AI changes (✓)"
                     >
@@ -217,6 +220,7 @@ export function EditablePromptComponent({
                     <button
                         type="button"
                         className="WimInlinePill__rejectBtn"
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={handleReject}
                         title="Reject AI changes (✕)"
                     >

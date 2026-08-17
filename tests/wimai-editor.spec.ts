@@ -77,6 +77,19 @@ test.describe('WIM AI typewriter apply', () => {
     })
 })
 
+test.describe('selection rewrite replaces only the highlighted range', () => {
+    test('keeps the rest of the paragraph and the prompt node', async () => {
+        const { replaceInlineRangeInMarkdown } = await import(
+            '../src/notebook-app/lib/components/MarkdownNotebook/notebookAI'
+        )
+        const markdown = 'Hello world today.\n\n<Prompt question="fix this" selectedMarkdown="world" />'
+        const next = replaceInlineRangeInMarkdown(markdown, 0, 6, 11, 'Earth')
+        expect(next).toContain('Hello Earth today.')
+        expect(next).toContain('<Prompt')
+        expect(next).toContain('world')
+    })
+})
+
 test.describe('inline editor stays off the chatbot', () => {
     test('selection rewrite does not dispatch the global chat event', () => {
         const src = readFileSync('src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx', 'utf8')

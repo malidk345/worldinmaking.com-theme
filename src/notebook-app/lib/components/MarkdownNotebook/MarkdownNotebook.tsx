@@ -50,6 +50,7 @@ import {
     getClipboardMarkdown,
     getHistoryRestoreSelection,
     getInlineInsertMenuQuery,
+    getSlashTokenAt,
     getMarkdownNotebookVisualGroups,
     getNotebookStringProp,
     getPromptSource,
@@ -113,6 +114,7 @@ import {
 } from './domSelection'
 import {
     FLOATING_TOOLBAR_ESTIMATED_HEIGHT,
+    FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW,
     FLOATING_TOOLBAR_GAP,
     FLOATING_TOOLBAR_REVEAL_DELAY_MS,
     FloatingToolbarListItemRange,
@@ -237,7 +239,7 @@ import { cloneNotebookNode, getInlineText, getNodeFingerprint, normalizeInlineNo
 export type MarkdownNotebookProps = {
     value: string
     onChange?: (value: string) => void
-    onAskAI?: (request: MarkdownNotebookAskAIRequest) => void
+    onAskAI?: (request: MarkdownNotebookAskAIRequest) => void | Promise<string | void>
     isAskAIDisabled?: boolean
     createAIConversationId?: () => string
     mode?: NotebookMode
@@ -289,6 +291,8 @@ export type MarkdownNotebookAskAIRequest = {
     instruction: string
     query: string
     source: 'slash' | 'selection'
+    /** `inline` replaces the highlighted range; `block` replaces the Writing… node. */
+    apply?: 'block' | 'inline'
     responseNodeId: string
     responseNodeIndex: number
     responseMarker: string
@@ -296,6 +300,9 @@ export type MarkdownNotebookAskAIRequest = {
     markdownWithResponse: string
     selectedMarkdown?: string
     selectedRefId?: string
+    selectionStart?: number
+    selectionEnd?: number
+    listItemIndex?: number
 }
 
 type CommitDocumentOptions = {
@@ -586,7 +593,7 @@ function MarkdownNotebookEditor({
     focusAIPromptRequest,
     aiWritingNodeIndexes,
     allowViewModeFilters = false,
-    placeholder = 'Start writing...',
+    placeholder = 'Type / to insert a block, or just start writing…',
     className,
     autoFocus = false,
     showDebug = false,
@@ -641,6 +648,61 @@ function MarkdownNotebookEditor({
     const floatingToolbarPositionLockRef = useRef<FloatingToolbarPosition | null>(null)
     const focusNodeRef = useRef<string | null>(null)
     const restoreSelectionRef = useRef<RestoreSelectionRequest | null>(null)
+    const aiSelectionReviewRef = useRef<{
+        promptNodeId: string
+        targetNodeId: string
+        start: number
+        originalText: string
+        pendingText: string
+        listItemIndex?: number
+    } | null>(null)
+
+    const getNotebookNumberProp = (value: unknown): number | undefined => {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return value
+        }
+        if (typeof value === 'string' && value.trim() !== '') {
+            const parsed = Number(value)
+            return Number.isFinite(parsed) ? parsed : undefined
+        }
+        return undefined
+    }
+
+    const replaceInlineRangeInNode = (
+        targetNodeId: string,
+        start: number,
+        end: number,
+        replacement: string,
+        listItemIndex?: number
+    ): void => {
+        updateNode(targetNodeId, (currentNode) => {
+            if (isTextBlockNode(currentNode)) {
+                const [before, rest] = splitInlineNodesAt(currentNode.children, start)
+                const [, after] = splitInlineNodesAt(rest, Math.max(0, end - start))
+                return {
+                    ...currentNode,
+                    children: normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after]),
+                }
+            }
+            if (currentNode.type === 'list' && listItemIndex != null && currentNode.items[listItemIndex]) {
+                return {
+                    ...currentNode,
+                    items: currentNode.items.map((item, index) => {
+                        if (index !== listItemIndex) {
+                            return item
+                        }
+                        const [before, rest] = splitInlineNodesAt(item.children, start)
+                        const [, after] = splitInlineNodesAt(rest, Math.max(0, end - start))
+                        return {
+                            ...item,
+                            children: normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after]),
+                        }
+                    }),
+                }
+            }
+            return currentNode
+        })
+    }
     const notebookClipboardMarkdownRef = useRef<string | null>(null)
     const historyRef = useRef<NotebookHistoryState>({ undo: [], redo: [] })
     const lastSerializedValueRef = useRef(value)
@@ -2095,9 +2157,15 @@ function MarkdownNotebookEditor({
             const selection = window.getSelection()
             const inlineEditableElement = getInlineEditableElementForSelection(selection, notebookElement)
             if (
-                !inlineEditableElement?.classList.contains('MarkdownNotebook__text-block') ||
+                !inlineEditableElement ||
                 inlineEditableElement.classList.contains('MarkdownNotebook__text-block--ai-prompt')
             ) {
+                return false
+            }
+
+            const isTextBlock = inlineEditableElement.classList.contains('MarkdownNotebook__text-block')
+            const isListItem = inlineEditableElement.classList.contains('MarkdownNotebook__list-item-content')
+            if (!isTextBlock && !isListItem) {
                 return false
             }
 
@@ -2110,11 +2178,85 @@ function MarkdownNotebookEditor({
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
             const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
             const node = nodes[nodeIndex]
-            if (!node || !isTextBlockNode(node)) {
+            if (!node) {
                 return false
             }
 
             const expandedSelection = getSelectionRange(inlineEditableElement, node.id)
+            const openDetachedMenu = (replacementNodes: NotebookBlockNode[], commandNodeId: string): boolean => {
+                restoreSelectionRef.current = {
+                    nodeId: commandNodeId,
+                    start: query.length,
+                    end: query.length,
+                }
+                onInteractionStateChange?.(true)
+                setInsertMenu({ nodeId: commandNodeId, query, selectedIndex: 0, mode: 'tools', detached: true })
+                commitDocument({
+                    ...currentDocument,
+                    nodes: nodes.flatMap((currentNode) =>
+                        currentNode.id === node.id ? replacementNodes : [currentNode]
+                    ),
+                })
+                return true
+            }
+
+            if (isListItem && node.type === 'list') {
+                const itemId = inlineEditableElement.dataset.markdownNotebookListItemId
+                const rawIndex = Number(inlineEditableElement.dataset.markdownNotebookListItemIndex)
+                const itemIndex = getListItemIndex(node.items, rawIndex, itemId)
+                const item = node.items[itemIndex]
+                if (!item) {
+                    return false
+                }
+
+                const textLength = getInlineText(item.children).length
+                const selectionStart = expandedSelection
+                    ? Math.max(0, Math.min(Math.min(expandedSelection.start, expandedSelection.end), textLength))
+                    : textLength
+                const selectionEnd = expandedSelection
+                    ? Math.max(
+                          selectionStart,
+                          Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
+                      )
+                    : selectionStart
+                const [before, selectionAndAfter] = splitInlineNodesAt(item.children, selectionStart)
+                const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
+                const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
+                commandNode.children = query ? [{ type: 'text', text: query }] : []
+
+                const beforeItems = node.items.slice(0, itemIndex)
+                if (getInlineText(before).length > 0) {
+                    beforeItems.push({ ...item, children: normalizeInlineNodes(before) })
+                }
+                const afterItems: typeof node.items = []
+                if (getInlineText(after).length > 0) {
+                    afterItems.push({
+                        ...item,
+                        id: makeListItemId(`after-slash-${item.id ?? String(itemIndex)}`),
+                        children: normalizeInlineNodes(after),
+                    })
+                }
+                afterItems.push(...node.items.slice(itemIndex + 1))
+
+                const replacementNodes: NotebookBlockNode[] = []
+                if (beforeItems.length) {
+                    replacementNodes.push({ ...node, items: beforeItems })
+                }
+                replacementNodes.push(commandNode)
+                if (afterItems.length) {
+                    replacementNodes.push({
+                        ...node,
+                        id: makeEmptyParagraph(`after-slash-list-${node.id}`).id,
+                        items: afterItems,
+                    })
+                }
+                return openDetachedMenu(replacementNodes, commandNode.id)
+            }
+
+            if (!isTextBlockNode(node)) {
+                return false
+            }
+
             const textLength = getInlineText(node.children).length
             const selectionStart = expandedSelection
                 ? Math.max(0, Math.min(Math.min(expandedSelection.start, expandedSelection.end), textLength))
@@ -2125,9 +2267,6 @@ function MarkdownNotebookEditor({
                       Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
                   )
                 : selectionStart
-            if (selectionStart !== 0 || selectionEnd !== 0) {
-                return false
-            }
 
             const [before, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
             const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
@@ -2156,18 +2295,7 @@ function MarkdownNotebookEditor({
                 replacementNodes.push(afterNode)
             }
 
-            restoreSelectionRef.current = {
-                nodeId: commandNode.id,
-                start: query.length,
-                end: query.length,
-            }
-            onInteractionStateChange?.(true)
-            setInsertMenu({ nodeId: commandNode.id, query, selectedIndex: 0, mode: 'tools', detached: true })
-            commitDocument({
-                ...currentDocument,
-                nodes: nodes.flatMap((currentNode) => (currentNode.id === node.id ? replacementNodes : [currentNode])),
-            })
-            return true
+            return openDetachedMenu(replacementNodes, commandNode.id)
         },
         [commitDocument, onInteractionStateChange]
     )
@@ -2793,6 +2921,10 @@ function MarkdownNotebookEditor({
                 selectedRefId?: string
                 question?: string
                 autoRun?: boolean
+                selectionStart?: number
+                selectionEnd?: number
+                targetNodeId?: string
+                listItemIndex?: number
             }
         ): void => {
             onInteractionStateChange?.(true)
@@ -2806,6 +2938,16 @@ function MarkdownNotebookEditor({
             if (options?.source === 'selection') {
                 promptProps.source = 'selection'
                 promptProps.selectedMarkdown = options.selectedMarkdown ?? ''
+                promptProps.targetNodeId = options.targetNodeId ?? nodeId
+                if (options.selectionStart != null) {
+                    promptProps.selectionStart = options.selectionStart
+                }
+                if (options.selectionEnd != null) {
+                    promptProps.selectionEnd = options.selectionEnd
+                }
+                if (options.listItemIndex != null) {
+                    promptProps.listItemIndex = options.listItemIndex
+                }
                 if (options.selectedRefId) {
                     promptProps.ref = options.selectedRefId
                 }
@@ -3016,12 +3158,21 @@ function MarkdownNotebookEditor({
         const firstSelectedNodeId = textRanges[0]?.node.id ?? codeRanges[0]?.node.id ?? listItemRanges[0]?.node.id
         const firstSelectedElement = firstSelectedNodeId ? blockRefs.current[firstSelectedNodeId] : null
         const lineHeight = firstSelectedElement ? getElementLineHeight(firstSelectedElement) : 24
+        const vv = window.visualViewport
+        const viewLeft = vv?.offsetLeft ?? 0
+        const viewTop = vv?.offsetTop ?? 0
+        const viewWidth = vv?.width ?? window.innerWidth
+        const viewHeight = vv?.height ?? window.innerHeight
+        const viewRight = viewLeft + viewWidth
+        const viewBottom = viewTop + viewHeight
+        const isNarrow = viewWidth < 640
+        const estimatedHeight = isNarrow ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
         const shouldPlaceBelow = pointerAnchor
             ? pointerAnchor.placement === 'below'
-            : selectionRect.top < FLOATING_TOOLBAR_ESTIMATED_HEIGHT + lineHeight
+            : selectionRect.top - viewTop < estimatedHeight + lineHeight
         const pointerOverlapsSelection =
             pointerAnchor && pointerAnchor.y >= selectionRect.top && pointerAnchor.y <= selectionRect.bottom
-        const toolbarTop = pointerAnchor
+        const rawTop = pointerAnchor
             ? Math.round(
                   shouldPlaceBelow
                       ? pointerOverlapsSelection
@@ -3032,6 +3183,10 @@ function MarkdownNotebookEditor({
                         : pointerAnchor.y
               )
             : Math.round(shouldPlaceBelow ? selectionRect.bottom + lineHeight : selectionRect.top)
+        const toolbarTop = Math.min(
+            viewBottom - estimatedHeight - 8,
+            Math.max(viewTop + 8, rawTop)
+        )
         const toolbarLeft = pointerAnchor
             ? Math.round(pointerAnchor.x)
             : Math.round(selectionRect.left + selectionRect.width / 2)
@@ -3044,7 +3199,7 @@ function MarkdownNotebookEditor({
             selectedMarkdown,
             placement: lockedPosition?.placement ?? (shouldPlaceBelow ? 'below' : 'above'),
             top: lockedPosition?.top ?? toolbarTop,
-            left: lockedPosition?.left ?? Math.min(window.innerWidth - 16, Math.max(16, toolbarLeft)),
+            left: lockedPosition?.left ?? Math.min(viewRight - 16, Math.max(viewLeft + 16, toolbarLeft)),
         })
     }, [clearFloatingToolbarRevealTimeout, mode])
 
@@ -3135,6 +3290,8 @@ function MarkdownNotebookEditor({
         window.document.addEventListener('touchstart', handleDocumentPointerStart, true)
         window.addEventListener('resize', handleDocumentSelectionChange)
         window.addEventListener('scroll', handleDocumentSelectionChange, true)
+        window.visualViewport?.addEventListener('resize', handleDocumentSelectionChange)
+        window.visualViewport?.addEventListener('scroll', handleDocumentSelectionChange)
 
         return () => {
             window.document.removeEventListener('selectionchange', handleDocumentSelectionChange)
@@ -3144,6 +3301,8 @@ function MarkdownNotebookEditor({
             window.document.removeEventListener('touchstart', handleDocumentPointerStart, true)
             window.removeEventListener('resize', handleDocumentSelectionChange)
             window.removeEventListener('scroll', handleDocumentSelectionChange, true)
+            window.visualViewport?.removeEventListener('resize', handleDocumentSelectionChange)
+            window.visualViewport?.removeEventListener('scroll', handleDocumentSelectionChange)
         }
     }, [
         mode,
@@ -3790,11 +3949,17 @@ function MarkdownNotebookEditor({
             return
         }
 
+        const textRange = floatingToolbar.textRanges[0]
+        const listRange = floatingToolbar.listItemRanges[0]
         openAIPrompt(firstSelectedNodeId, {
             source: 'selection',
             selectedMarkdown,
             question: presetQuery ?? '',
             autoRun: Boolean(presetQuery?.trim()),
+            targetNodeId: firstSelectedNodeId,
+            selectionStart: textRange?.range.start ?? listRange?.range.start,
+            selectionEnd: textRange?.range.end ?? listRange?.range.end,
+            listItemIndex: listRange?.itemIndex,
         })
         setFloatingToolbar(null)
     }
@@ -4104,10 +4269,14 @@ function MarkdownNotebookEditor({
 
         window.addEventListener('resize', updateInsertMenuPosition)
         window.addEventListener('scroll', updateInsertMenuPosition, true)
+        window.visualViewport?.addEventListener('resize', updateInsertMenuPosition)
+        window.visualViewport?.addEventListener('scroll', updateInsertMenuPosition)
 
         return () => {
             window.removeEventListener('resize', updateInsertMenuPosition)
             window.removeEventListener('scroll', updateInsertMenuPosition, true)
+            window.visualViewport?.removeEventListener('resize', updateInsertMenuPosition)
+            window.visualViewport?.removeEventListener('scroll', updateInsertMenuPosition)
         }
     }, [insertMenu, updateInsertMenuPosition])
 
@@ -5093,26 +5262,75 @@ function MarkdownNotebookEditor({
                     return
                 }
             }
-            if (nodeIndex > 0 && node && isTextBlockNode(node) && slashQuery !== null) {
-                const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
-                const nextHtml = inlineNodesToHtml(queryChildren)
-                rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
-                if (inlineEditableElement.innerHTML !== nextHtml) {
-                    inlineEditableElement.innerHTML = nextHtml
-                }
-                restoreSelection(
-                    inlineEditableElement,
-                    getInlineText(queryChildren).length,
-                    getInlineText(queryChildren).length
-                )
-                updateNode(nodeId, (currentNode) => {
-                    if (!isTextBlockNode(currentNode)) {
-                        return currentNode
+            if (node && isTextBlockNode(node) && insertMenu?.nodeId !== nodeId) {
+                const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
+                const slashToken = getSlashTokenAt(nextText, caret)
+                if (slashToken) {
+                    if (slashToken.start === 0 && nodeIndex > 0 && slashQuery !== null) {
+                        const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
+                        const nextHtml = inlineNodesToHtml(queryChildren)
+                        rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
+                        if (inlineEditableElement.innerHTML !== nextHtml) {
+                            inlineEditableElement.innerHTML = nextHtml
+                        }
+                        restoreSelection(
+                            inlineEditableElement,
+                            getInlineText(queryChildren).length,
+                            getInlineText(queryChildren).length
+                        )
+                        updateNode(nodeId, (currentNode) => {
+                            if (!isTextBlockNode(currentNode)) {
+                                return currentNode
+                            }
+                            return { ...currentNode, children: queryChildren }
+                        })
+                        openInsertMenu(nodeId, slashQuery)
+                        return
                     }
-                    return { ...currentNode, children: queryChildren }
-                })
-                openInsertMenu(nodeId, slashQuery)
-                return
+
+                    const [before] = splitInlineNodesAt(nextChildren, slashToken.start)
+                    const [, after] = splitInlineNodesAt(
+                        nextChildren,
+                        slashToken.start + 1 + slashToken.query.length
+                    )
+                    const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
+                    commandNode.children = slashToken.query ? [{ type: 'text', text: slashToken.query }] : []
+                    const replacementNodes: NotebookBlockNode[] = []
+                    if (nodeIndex === 0) {
+                        replacementNodes.push({
+                            ...node,
+                            type: 'heading',
+                            level: 1,
+                            children: normalizeInlineNodes(before),
+                        })
+                    } else if (getInlineText(before).length > 0) {
+                        replacementNodes.push({ ...node, children: normalizeInlineNodes(before) })
+                    }
+                    replacementNodes.push(commandNode)
+                    if (getInlineText(after).length > 0) {
+                        const afterNodeId = makeEmptyParagraph(`after-slash-command-${node.id}`).id
+                        replacementNodes.push(
+                            nodeIndex === 0
+                                ? { id: afterNodeId, type: 'paragraph', children: normalizeInlineNodes(after) }
+                                : { ...node, id: afterNodeId, children: normalizeInlineNodes(after) }
+                        )
+                    }
+                    restoreSelectionRef.current = {
+                        nodeId: commandNode.id,
+                        start: slashToken.query.length,
+                        end: slashToken.query.length,
+                    }
+                    onInteractionStateChange?.(true)
+                    setInsertMenu({
+                        nodeId: commandNode.id,
+                        query: slashToken.query,
+                        selectedIndex: 0,
+                        mode: 'tools',
+                        detached: true,
+                    })
+                    replaceNodeWithNodes(nodeId, replacementNodes)
+                    return
+                }
             }
 
             rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren)
@@ -5297,7 +5515,67 @@ function MarkdownNotebookEditor({
             return false
         }
 
+        const source = activeAIPromptMenu?.source ?? getPromptSource(currentPromptNode?.props.source)
+        const selectedMarkdown =
+            activeAIPromptMenu?.selectedMarkdown ?? getNotebookStringProp(currentPromptNode?.props.selectedMarkdown)
+        const selectedRefId = activeAIPromptMenu?.selectedRefId ?? getNotebookStringProp(currentPromptNode?.props.ref)
+        const isInlineSelection = source === 'selection' && Boolean(selectedMarkdown?.trim())
+
         let responseNodeIndex = -1
+        let nextDocument: NotebookDocument
+        if (isInlineSelection && currentPromptNode) {
+            const targetNodeId =
+                getNotebookStringProp(currentPromptNode.props.targetNodeId) ||
+                nodes[nodes.findIndex((item) => item.id === nodeId) - 1]?.id ||
+                ''
+            const selectionStart = getNotebookNumberProp(currentPromptNode.props.selectionStart) ?? 0
+            const selectionEnd =
+                getNotebookNumberProp(currentPromptNode.props.selectionEnd) ??
+                selectionStart + (selectedMarkdown?.length ?? 0)
+            const listItemIndex = getNotebookNumberProp(currentPromptNode.props.listItemIndex)
+            responseNodeIndex = nodes.findIndex((item) => item.id === targetNodeId)
+            if (responseNodeIndex < 0) {
+                console.error('Selection target node not found for AI submission')
+                return false
+            }
+            nextDocument = currentDocument
+            aiSelectionReviewRef.current = {
+                promptNodeId: nodeId,
+                targetNodeId,
+                start: selectionStart,
+                originalText: selectedMarkdown || '',
+                pendingText: selectedMarkdown || '',
+                listItemIndex,
+            }
+            commitDocument(nextDocument)
+            clearInsertMenu()
+            const markdownWithResponse = serializeMarkdownNotebook(nextDocument)
+            const conversationId = createAIConversationId()
+            const request: MarkdownNotebookAskAIRequest = {
+                conversationId,
+                instruction: query,
+                query,
+                source,
+                apply: 'inline',
+                responseNodeId: targetNodeId,
+                responseNodeIndex,
+                responseMarker: selectedMarkdown || '',
+                markdown: markdownWithResponse,
+                markdownWithResponse,
+                selectedMarkdown,
+                selectedRefId,
+                selectionStart,
+                selectionEnd,
+                listItemIndex,
+            }
+            void Promise.resolve(onAskAI(request)).then((reply) => {
+                if (typeof reply === 'string' && aiSelectionReviewRef.current?.promptNodeId === nodeId) {
+                    aiSelectionReviewRef.current.pendingText = reply.trim()
+                }
+            })
+            return true
+        }
+
         const nodesWithResponse = nodes.map((currentNode, index): NotebookBlockNode => {
             if (currentNode.id !== nodeId || !isPromptComponentNode(currentNode)) {
                 return currentNode
@@ -5315,20 +5593,17 @@ function MarkdownNotebookEditor({
         }
 
         const conversationId = createAIConversationId()
-        const nextDocument: NotebookDocument = { ...currentDocument, nodes: nodesWithResponse }
+        nextDocument = { ...currentDocument, nodes: nodesWithResponse }
         commitDocument(nextDocument)
         clearInsertMenu()
         const markdownWithResponse = serializeMarkdownNotebook(nextDocument)
         const responseMarker = NOTEBOOK_AI_WRITING_PLACEHOLDER
-        const source = activeAIPromptMenu?.source ?? getPromptSource(currentPromptNode?.props.source)
-        const selectedMarkdown =
-            activeAIPromptMenu?.selectedMarkdown ?? getNotebookStringProp(currentPromptNode?.props.selectedMarkdown)
-        const selectedRefId = activeAIPromptMenu?.selectedRefId ?? getNotebookStringProp(currentPromptNode?.props.ref)
         onAskAI({
             conversationId,
             instruction: query,
             query,
             source,
+            apply: 'block',
             responseNodeId: nodeId,
             responseNodeIndex,
             responseMarker,
@@ -5812,6 +6087,26 @@ function MarkdownNotebookEditor({
                     replaceNodeWithNodes,
                     deleteNode: () => deleteNodeWithRefCleanup(node.id),
                     deleteNodeAndFocusAdjacent: () => {
+                        requestFocusAfterRemovingNode(node.id)
+                        deleteNodeWithRefCleanup(node.id)
+                    },
+                    acceptAISelection: () => {
+                        aiSelectionReviewRef.current = null
+                        requestFocusAfterRemovingNode(node.id)
+                        deleteNodeWithRefCleanup(node.id)
+                    },
+                    rejectAISelection: () => {
+                        const review = aiSelectionReviewRef.current
+                        if (review && review.promptNodeId === node.id) {
+                            replaceInlineRangeInNode(
+                                review.targetNodeId,
+                                review.start,
+                                review.start + review.pendingText.length,
+                                review.originalText,
+                                review.listItemIndex
+                            )
+                        }
+                        aiSelectionReviewRef.current = null
                         requestFocusAfterRemovingNode(node.id)
                         deleteNodeWithRefCleanup(node.id)
                     },

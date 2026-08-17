@@ -154,7 +154,9 @@ export function InsertMenu({
                     </div>
                 </div>
             ))}
-            {!filteredCommands.length ? <div className="MarkdownNotebook__empty-menu">No components found</div> : null}
+            {!filteredCommands.length ? (
+                <div className="MarkdownNotebook__empty-menu">No matching blocks</div>
+            ) : null}
         </div>
     )
 }
@@ -642,22 +644,30 @@ export function buildInsertCommands(
     ]
 }
 
+function getVisibleViewport(): { top: number; left: number; width: number; height: number; bottom: number; right: number } {
+    const vv = window.visualViewport
+    const left = vv?.offsetLeft ?? 0
+    const top = vv?.offsetTop ?? 0
+    const width = vv?.width ?? (window.innerWidth || document.documentElement.clientWidth)
+    const height = vv?.height ?? (window.innerHeight || document.documentElement.clientHeight)
+    return { top, left, width, height, bottom: top + height, right: left + width }
+}
+
 export function getInsertMenuPosition(anchorElement: HTMLElement): InsertMenuPosition {
     const anchorRect = anchorElement.getBoundingClientRect()
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-    const availableViewportWidth = Math.max(0, viewportWidth - INSERT_MENU_VIEWPORT_PADDING * 2)
+    const viewport = getVisibleViewport()
+    const availableViewportWidth = Math.max(0, viewport.width - INSERT_MENU_VIEWPORT_PADDING * 2)
     const width = Math.min(INSERT_MENU_WIDTH, availableViewportWidth)
-    const maxLeft = viewportWidth - INSERT_MENU_VIEWPORT_PADDING - width
+    const maxLeft = viewport.right - INSERT_MENU_VIEWPORT_PADDING - width
     const left = Math.min(
-        Math.max(INSERT_MENU_VIEWPORT_PADDING, anchorRect.left),
-        Math.max(INSERT_MENU_VIEWPORT_PADDING, maxLeft)
+        Math.max(viewport.left + INSERT_MENU_VIEWPORT_PADDING, anchorRect.left),
+        Math.max(viewport.left + INSERT_MENU_VIEWPORT_PADDING, maxLeft)
     )
     const availableBelow = Math.max(
         0,
-        viewportHeight - anchorRect.bottom - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING
+        viewport.bottom - anchorRect.bottom - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING
     )
-    const availableAbove = Math.max(0, anchorRect.top - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING)
+    const availableAbove = Math.max(0, anchorRect.top - viewport.top - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING)
     const placement = availableBelow >= INSERT_MENU_MIN_HEIGHT || availableBelow >= availableAbove ? 'below' : 'above'
     const availableHeight = placement === 'below' ? availableBelow : availableAbove
 
@@ -666,6 +676,6 @@ export function getInsertMenuPosition(anchorElement: HTMLElement): InsertMenuPos
         top: placement === 'below' ? anchorRect.bottom + INSERT_MENU_GAP : anchorRect.top - INSERT_MENU_GAP,
         left,
         width,
-        maxHeight: Math.min(INSERT_MENU_MAX_HEIGHT, availableHeight),
+        maxHeight: Math.min(INSERT_MENU_MAX_HEIGHT, Math.max(INSERT_MENU_MIN_HEIGHT, availableHeight)),
     }
 }

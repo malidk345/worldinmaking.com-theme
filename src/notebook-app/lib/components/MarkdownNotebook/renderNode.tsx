@@ -47,6 +47,8 @@ export function renderNode({
     replaceNodeWithNodes,
     deleteNode,
     deleteNodeAndFocusAdjacent,
+    acceptAISelection,
+    rejectAISelection,
     deleteNodeAndFocusPrevious,
     deleteSelectedNotebookBlocks,
     insertParagraphAfterNode,
@@ -95,6 +97,8 @@ export function renderNode({
     replaceNodeWithNodes: (nodeId: string, replacementNodes: NotebookBlockNode[]) => void
     deleteNode: () => void
     deleteNodeAndFocusAdjacent: () => void
+    acceptAISelection: () => void
+    rejectAISelection: () => void
     deleteNodeAndFocusPrevious: (nodeId: string) => boolean
     deleteSelectedNotebookBlocks: () => boolean
     insertParagraphAfterNode: () => void
@@ -165,6 +169,8 @@ export function renderNode({
                     setBlockRef={setBlockRef}
                     updateNode={updateNode}
                     deleteNodeAndFocusAdjacent={deleteNodeAndFocusAdjacent}
+                    acceptAISelection={acceptAISelection}
+                    rejectAISelection={rejectAISelection}
                     updateAIPromptQuery={updateAIPromptQuery}
                     submitAIPrompt={submitAIPrompt}
                     isAIPromptSubmitDisabled={isAIPromptSubmitDisabled}

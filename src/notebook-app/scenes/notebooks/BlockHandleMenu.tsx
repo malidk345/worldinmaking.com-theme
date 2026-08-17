@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { BlockType, NotebookBlock } from '../../types/blocks'
-import { GripVertical, Copy, Trash2, Palette, ArrowRightLeft } from 'lucide-react'
+import { GripVertical, Copy, Trash2, Palette } from 'lucide-react'
 
 interface BlockHandleMenuProps {
     block: NotebookBlock
@@ -10,8 +10,27 @@ interface BlockHandleMenuProps {
     onChangeColor?: (blockId: string, color: string) => void
 }
 
-export function BlockHandleMenu({ block, onDuplicate, onDelete, onChangeType, onChangeColor }: BlockHandleMenuProps) {
+export function BlockHandleMenu({ block, onDuplicate, onDelete, onChangeColor }: BlockHandleMenuProps) {
     const [isOpen, setIsOpen] = useState(false)
+    const menuRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!isOpen) return
+        const close = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsOpen(false)
+        }
+        document.addEventListener('mousedown', close)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('mousedown', close)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [isOpen])
 
     const colors = [
         { label: 'Default', bg: 'transparent' },
@@ -23,11 +42,13 @@ export function BlockHandleMenu({ block, onDuplicate, onDelete, onChangeType, on
     ]
 
     return (
-        <div className="relative inline-flex items-center group/handle">
-            {/* Hover Grip Handle Icon (⋮⋮) */}
+        <div className="relative inline-flex items-center group/handle" ref={menuRef}>
             <button
+                type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 title="Drag to reorder or click for block options"
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
                 className="p-1 rounded-lg hover:bg-accent text-muted hover:text-primary transition-colors cursor-grab active:cursor-grabbing"
             >
                 <GripVertical className="w-4 h-4" />

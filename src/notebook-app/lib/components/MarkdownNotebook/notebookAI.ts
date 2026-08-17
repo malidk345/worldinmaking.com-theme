@@ -1,6 +1,62 @@
+import { isTextBlockNode } from './documentModel'
+import { plainTextToInlineNodes, splitInlineNodesAt } from './inlineContent'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
-import type { NotebookBlockNode } from './types'
-import { getNodeFingerprint, getNodeSignature, getNodeText } from './utils'
+import type { NotebookBlockNode, NotebookInlineNode } from './types'
+import { getInlineText, getNodeFingerprint, getNodeSignature, getNodeText, normalizeInlineNodes } from './utils'
+
+function replaceChildrenRange(
+    children: NotebookInlineNode[],
+    start: number,
+    end: number,
+    replacement: string
+): NotebookInlineNode[] {
+    const textLength = getInlineText(children).length
+    const from = Math.max(0, Math.min(start, textLength))
+    const to = Math.max(from, Math.min(end, textLength))
+    const [before, rest] = splitInlineNodesAt(children, from)
+    const [, after] = splitInlineNodesAt(rest, to - from)
+    return normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after])
+}
+
+/** Replace a character range inside one block. Leaves every other node (including the Prompt) intact. */
+export function replaceInlineRangeInMarkdown(
+    markdown: string,
+    nodeIndex: number,
+    start: number,
+    end: number,
+    replacement: string,
+    listItemIndex?: number
+): string {
+    const document = parseMarkdownNotebook(markdown)
+    const node = document.nodes[nodeIndex]
+    if (!node) {
+        return markdown
+    }
+
+    const nextNodes = [...document.nodes]
+    if (isTextBlockNode(node)) {
+        nextNodes[nodeIndex] = {
+            ...node,
+            children: replaceChildrenRange(node.children, start, end, replacement),
+        }
+    } else if (node.type === 'list' && listItemIndex != null && node.items[listItemIndex]) {
+        nextNodes[nodeIndex] = {
+            ...node,
+            items: node.items.map((item, index) =>
+                index === listItemIndex
+                    ? { ...item, children: replaceChildrenRange(item.children, start, end, replacement) }
+                    : item
+            ),
+        }
+    } else {
+        return markdown
+    }
+
+    return serializeMarkdownNotebook({
+        ...document,
+        nodes: nextNodes,
+    })
+}
 
 export const NOTEBOOK_AI_WRITING_PLACEHOLDER = 'Writing…'
 

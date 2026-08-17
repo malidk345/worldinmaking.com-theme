@@ -21,7 +21,7 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
 
     const statusText: Record<NotebookChromeSyncStatus, string> = {
         saved: 'Saved',
-        edited: 'Unsaved',
+        edited: 'Saving…',
         local: 'Local',
         error: 'Sync failed',
         offline: 'Offline',
@@ -32,7 +32,7 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
         (syncStatus === 'saved'
             ? 'Saved on this device. Cloud sync is up to date.'
             : syncStatus === 'edited'
-              ? 'Unsaved local changes'
+              ? 'Saving on this device…'
               : syncStatus === 'error'
                 ? 'Cloud sync failed. Notebook is still saved on this device.'
                 : syncStatus === 'offline'

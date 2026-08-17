@@ -103,21 +103,26 @@ export function FormattingToolbar({
         }
 
         const margin = 8
+        const vv = window.visualViewport
+        const viewLeft = vv?.offsetLeft ?? 0
+        const viewTop = vv?.offsetTop ?? 0
+        const viewRight = viewLeft + (vv?.width ?? window.innerWidth)
+        const viewBottom = viewTop + (vv?.height ?? window.innerHeight)
         const baseLeft = rect.left - boundsShift.x
         const baseTop = rect.top - boundsShift.y
         let x = 0
-        if (baseLeft + rect.width > window.innerWidth - margin) {
-            x = window.innerWidth - margin - rect.width - baseLeft
+        if (baseLeft + rect.width > viewRight - margin) {
+            x = viewRight - margin - rect.width - baseLeft
         }
-        if (baseLeft + x < margin) {
-            x = margin - baseLeft
+        if (baseLeft + x < viewLeft + margin) {
+            x = viewLeft + margin - baseLeft
         }
         let y = 0
-        if (baseTop + rect.height > window.innerHeight - margin) {
-            y = window.innerHeight - margin - rect.height - baseTop
+        if (baseTop + rect.height > viewBottom - margin) {
+            y = viewBottom - margin - rect.height - baseTop
         }
-        if (baseTop + y < margin) {
-            y = margin - baseTop
+        if (baseTop + y < viewTop + margin) {
+            y = viewTop + margin - baseTop
         }
 
         x = Math.round(x)
@@ -358,6 +363,7 @@ export function FormattingToolbar({
                             aria-label={action.label}
                             disabled={isAskAIDisabled}
                             disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
+                            className="MarkdownNotebook__format-ai-action"
                             onClick={() => askAIAboutSelection(action.prompt)}
                         >
                             <span className="text-xs font-medium">{action.label}</span>

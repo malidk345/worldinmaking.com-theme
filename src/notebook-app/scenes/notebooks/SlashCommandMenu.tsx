@@ -135,8 +135,26 @@ export function SlashCommandMenu({ isOpen, onClose, onSelectBlockType, position 
     })
 
     useEffect(() => {
+        if (isOpen) {
+            setQuery('')
+            setSelectedIndex(0)
+        }
+    }, [isOpen])
+
+    useEffect(() => {
         setSelectedIndex(0)
     }, [query])
+
+    useEffect(() => {
+        if (!isOpen) return
+        const handlePointerDown = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                onClose()
+            }
+        }
+        document.addEventListener('mousedown', handlePointerDown)
+        return () => document.removeEventListener('mousedown', handlePointerDown)
+    }, [isOpen, onClose])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -171,21 +189,26 @@ export function SlashCommandMenu({ isOpen, onClose, onSelectBlockType, position 
             ref={menuRef}
             style={{ top: position.top, left: position.left }}
             className="fixed z-50 w-72 bg-primary border border-primary rounded-2xl shadow-2xl overflow-hidden p-2 text-primary backdrop-blur-md select-none animate-in fade-in zoom-in-95 duration-150"
+            role="listbox"
+            aria-label="Insert block"
         >
             <div className="px-2 py-1.5 border-b border-primary mb-1">
                 <input
                     type="text"
                     autoFocus
-                    placeholder="Type to filter blocks..."
+                    placeholder="Filter blocks…"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="w-full bg-accent border border-primary rounded-xl px-2.5 py-1 text-xs text-primary placeholder-muted outline-none focus:border-accent"
+                    aria-label="Filter blocks"
                 />
             </div>
 
             <div className="max-h-64 overflow-y-auto space-y-0.5">
                 {filteredOptions.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-muted">No matching block types</div>
+                    <div className="p-3 text-center text-xs text-muted">
+                        No match. Try heading, table, or list.
+                    </div>
                 ) : (
                     filteredOptions.map((option, idx) => {
                         const isSelected = idx === selectedIndex
@@ -212,6 +235,11 @@ export function SlashCommandMenu({ isOpen, onClose, onSelectBlockType, position 
                         )
                     })
                 )}
+            </div>
+            <div className="flex items-center justify-between gap-2 px-2 pt-1.5 mt-1 border-t border-primary text-[10px] text-muted">
+                <span>↑↓ move</span>
+                <span>↵ insert</span>
+                <span>esc close</span>
             </div>
         </div>
     )
