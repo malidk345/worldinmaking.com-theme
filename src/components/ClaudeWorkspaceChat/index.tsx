@@ -342,6 +342,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
+  const pinToBottomRef = useRef(true);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
   const pendingEditMessageIdRef = useRef<string | null>(null);
   const persistChatIdRef = useRef<string | null>(null);
@@ -431,14 +432,33 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
 
+  const readGap = () => {
+    const scroller = chatScrollRef.current
+    if (!scroller) return 0
+    return scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight)
+  }
+
   const updateAwayFromBottom = () => {
     const scroller = chatScrollRef.current
     if (!scroller) {
+      pinToBottomRef.current = true
       setIsAwayFromBottom(false)
       return
     }
-    const gap = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight)
-    setIsAwayFromBottom(gap > 96)
+    const away = readGap() > 96
+    pinToBottomRef.current = !away
+    setIsAwayFromBottom(away)
+  }
+
+  const keepPinnedIfNeeded = () => {
+    const scroller = chatScrollRef.current
+    if (!scroller) return
+    if (pinToBottomRef.current) {
+      scroller.scrollTop = scroller.scrollHeight
+      setIsAwayFromBottom(false)
+      return
+    }
+    setIsAwayFromBottom(readGap() > 96)
   }
 
   const scrollChatToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -449,6 +469,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     } else {
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' })
     }
+    pinToBottomRef.current = true
     setIsAwayFromBottom(false)
   }
 
@@ -461,7 +482,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!scroller) return
     updateAwayFromBottom()
     scroller.addEventListener('scroll', updateAwayFromBottom, { passive: true })
-    const observer = new ResizeObserver(updateAwayFromBottom)
+    const observer = new ResizeObserver(keepPinnedIfNeeded)
     observer.observe(scroller)
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
     return () => {
@@ -470,7 +491,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [activeChatId, activeChat?.messages.length, isStreaming])
 
-  // Auto scroll & auto open artifact
+  const lastStreamTick = (() => {
+    const last = activeChat?.messages[activeChat.messages.length - 1]
+    if (!last) return `${activeChatId}:empty`
+    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}`
+  })()
+
+  // Stay pinned to the latest line unless the user scrolled away
+  useEffect(() => {
+    if (!pinToBottomRef.current) return
+    scrollChatToBottom('auto')
+  }, [lastStreamTick])
+
+  // Auto-open artifact when switching chats
   useEffect(() => {
     scrollChatToBottom('auto');
 
@@ -600,6 +633,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     );
 
     setIsStreaming(true);
+    pinToBottomRef.current = true
+    setIsAwayFromBottom(false)
+    requestAnimationFrame(() => scrollChatToBottom('auto'))
     abortControllerRef.current = new AbortController();
 
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
@@ -1168,9 +1204,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         />
 
         {/* Chat Stream & Conversation Body */}
-        <main ref={chatScrollRef} className="flex-1 overflow-y-auto scroll-smooth relative">
+        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative">
           {!activeChat || activeChat.messages.length === 0 ? (
-            /* Centered Input Screen when empty (no landing text or chips) */
             <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
               <div className="mb-5 flex w-full flex-wrap justify-center gap-2">
                 {EMPTY_STARTERS.map((starter) => (
@@ -1184,12 +1219,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   </button>
                 ))}
               </div>
-              <motion.div
-                layout
-                layoutId="chat-input-container"
-                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                className="w-full pointer-events-auto"
-              >
+              <div className="w-full pointer-events-auto">
                 <ChatInput
                   onSendMessage={handleSendMessage}
                   onStopStreaming={handleStopStreaming}
@@ -1203,11 +1233,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onSelectModel={handleSelectModel}
                   draftPrompt={composerDraft}
                   draftNonce={composerDraftNonce}
+                  menuPlacement="bottom-start"
                 />
-              </motion.div>
+              </div>
             </div>
           ) : (
-            <div className="pt-4 pb-6 space-y-6">
+            <div className="pt-3 pb-4 space-y-5">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1231,31 +1262,32 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
-              <div ref={chatBottomRef} className="h-4" />
+              <div ref={chatBottomRef} className="h-3" />
             </div>
           )}
         </main>
 
         {activeChat && activeChat.messages.length > 0 && (
-          <div
-            data-writing-dock
-            className="relative z-20 shrink-0 bg-gradient-to-t from-primary via-primary/90 to-transparent pt-3 pb-3"
-          >
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              onStopStreaming={handleStopStreaming}
-              isStreaming={isStreaming}
-              selectedStylePreset={selectedStylePreset}
-              onChangeStylePreset={setSelectedStylePreset}
-              onScrollToBottom={scrollToBottom}
-              showScrollToBottom={isAwayFromBottom}
-              models={models}
-              selectedModelId={selectedModelId}
-              onSelectModel={handleSelectModel}
-              draftPrompt={composerDraft}
-              draftNonce={composerDraftNonce}
-            />
-          </div>
+        <div
+          data-writing-dock
+          className="relative z-20 shrink-0 bg-gradient-to-t from-primary via-primary/90 to-transparent pt-2 pb-2"
+        >
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            onStopStreaming={handleStopStreaming}
+            isStreaming={isStreaming}
+            selectedStylePreset={selectedStylePreset}
+            onChangeStylePreset={setSelectedStylePreset}
+            onScrollToBottom={scrollToBottom}
+            showScrollToBottom={isAwayFromBottom}
+            models={models}
+            selectedModelId={selectedModelId}
+            onSelectModel={handleSelectModel}
+            draftPrompt={composerDraft}
+            draftNonce={composerDraftNonce}
+            menuPlacement="top-start"
+          />
+        </div>
         )}
 
       {isSourcesOpen && activeSources && (

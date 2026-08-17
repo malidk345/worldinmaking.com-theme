@@ -179,6 +179,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-159` | Stream 3 / 5 | Inline Editor UX Overhaul (Preset action pills, smart viewport flip, target mode selector, Accept/Discard diff bar) | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-160` | Stream 3 / 5 | Selection Floating Anchor, Icon-Only Accept/Reject Review Mode, Direct Slash WIM AI Activation & Outline Removal | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-161` | Stream 3 / 5 | Notebook Micro-Interactions & Spring Animations (Entrance spring scale, AI pulse glow, button active micro-scaling) | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-162` | Stream 3 | Notebook UI/UX micro-polish (list empty states, title→editor, slash/palette, quieter chrome) | `src/notebook-app/scenes/notebooks/*`, `App.tsx`, `InsertMenu.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-163` | Stream 3 | Slash menu anywhere + compact mobile format toolbar | `MarkdownNotebook.tsx`, `InsertMenu.tsx`, `FormattingToolbar.tsx`, `documentModel.ts` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-164` | Stream 5 | Compact Ask AI composer vertically; keep writing UX stable (no layout shift) | `ClaudeWorkspaceChat/components/ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-165` | Stream 5 | Restore original send button, slightly larger icons, centered empty composer | `ClaudeWorkspaceChat/components/ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-166` | Stream 5 | Chat composer icons: site family + send size match | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-167` | Stream 5 | Composer plus/send same glyph weight from @posthog/icons (no paper-plane) | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 
 
@@ -317,6 +323,60 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 233 - Keep send arrow; shrink only the square
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Restored `IconArrowRight` (up). Send/stop frame `h-9` → `h-7`. Icon size unchanged (`size-4`).
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Visual.
+
+### Entry 232 - Size-only: IconSend smaller inside the square
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Plus/mic stay `size-4`. `IconSend` inside the 36px square is `size-3` so it doesn’t optically overpower the toolbar icons. Glyphs unchanged otherwise.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Visual.
+
+### Entry 231 - Plus and send share the same PostHog glyph
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dropped `IconSend` (paper plane). Plus is `IconPlus`, send is `IconArrowRight` rotated up — same Central/PostHog stroke, both `size-4` like the rest of the site.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Visual.
+- **Notes / Handoff:** No lucide in ChatInput toolbar.
+
+### Entry 230 - Composer icons now use @posthog/icons
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** ChatInput dropped lucide. Plus / mic / send / stop / chevron are `@posthog/icons` at the same 18px size (send no longer 20px). Attachment chips stay 14px.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Visual — composer toolbar icons share one family and size.
+- **Notes / Handoff:** Rest of ClaudeWorkspaceChat still uses lucide; only the question box was switched.
+
+### Entry 229 - Restore send button, icons, centered empty composer
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Send/stop back to `h-9 w-9 rounded-xl`. Toolbar icons ~18px. Empty first chat again centers the composer above the starters. Compact capsule and overlay slash/scroll kept. Local restarted after deleting `.next` and `node_modules/.cache`.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Dev server restart after cache wipe.
+- **Notes / Handoff:** Centered empty input remounts to the dock after the first send (same as before). No spring layoutId.
+
+### Entry 228 - Compact Ask AI composer, no layout jump
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Question capsule is shorter (padding, toolbar, 16px icons → 16/28px send), same width. One docked `ChatInput` so first send does not remount or bounce. Scroll-to-bottom and slash menu overlay the capsule instead of pushing it. Stream stays pinned to the bottom unless the user scrolls away.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Visual/layout pass on composer structure; no new Playwright coverage (existing chat tests are artifact/gateway only).
+- **Notes / Handoff:** Empty-state starters stay centered; the input is always in the bottom dock. Bot picker opens upward (`top-start`).
+
+### Entry 227 - Notebook UI/UX micro-polish
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Small notebook surface polish: list empty states + content search + excerpts, title Enter jumps into the editor, quieter chrome, slash/insert/palette keyboard hints, and a Saving… status while autosave is pending.
+- **Modified Files:** `src/notebook-app/App.tsx`, `NotebooksListScene.tsx`, `notebookPreview.ts`, `CommandPaletteModal.tsx`, `SlashCommandMenu.tsx`, `NotebookFloatingToolbar.tsx`, `NotebookMeta.tsx`, `BlockHandleMenu.tsx`, `NotebookCanvasScene.tsx`, `CollaboratorsBanner.tsx`, `InsertMenu.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `editorTypes.ts`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 5 passed. `pnpm run build:notebook-styles` — ok.
+- **Notes / Handoff:** Phase 4.1 (realtime CRDT + inline comments) is still the next roadmap milestone. This pass did not change storage or the markdown model.
 
 ### Entry 226 - Stop retrying the same Qwen model four times
 - **Date:** 2026-08-17

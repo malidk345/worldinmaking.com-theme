@@ -2,16 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
 import { StylePresetId, FileAttachment, ModelId, ModelOption } from '../types';
 import {
-  Plus,
-  Mic,
-  MicOff,
-  X,
-  FileText,
-  Image as ImageIcon,
-  ArrowDown,
-  ChevronDown,
-  ArrowUp,
-} from 'lucide-react';
+  IconPlus,
+  IconMicrophone,
+  IconX,
+  IconDocument,
+  IconImage,
+  IconChevronDown,
+  IconArrowRight,
+} from '@posthog/icons';
+
+const TOOLBAR_ICON = 'size-4 shrink-0'
+const CHIP_ICON = 'size-3.5 shrink-0'
 
 const SLASH_COMMANDS = [
   { id: 'table', label: '/table', hint: 'Comparison table', insert: 'Make a clear comparison table of ' },
@@ -32,6 +33,7 @@ interface ChatInputProps {
   onSelectModel?: (id: string) => void;
   draftPrompt?: string;
   draftNonce?: number;
+  menuPlacement?: 'top-start' | 'bottom-start';
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -45,6 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSelectModel,
   draftPrompt = '',
   draftNonce = 0,
+  menuPlacement = 'top-start',
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -63,11 +66,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [draftNonce, draftPrompt])
 
-  // Auto-resize textarea
+  // Auto-resize textarea without collapsing the first line
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+    const el = textareaRef.current
+    if (el) {
+      el.style.height = '24px'
+      el.style.height = `${Math.min(Math.max(el.scrollHeight, 24), 160)}px`
     }
     setSlashIndex(0)
   }, [prompt]);
@@ -118,7 +122,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setPrompt('');
     setAttachments([]);
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '24px';
     }
   };
 
@@ -204,16 +208,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
-      {/* Scroll to bottom button */}
-      {showScrollToBottom && (
-        <div className="flex justify-center mb-2 pointer-events-auto">
+    <div className="relative w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
+      {/* Overlay so the button never pushes the composer */}
+      {showScrollToBottom && slashMatches.length === 0 && (
+        <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)]">
           <button
+            type="button"
             onClick={onScrollToBottom}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-primary shadow-sm text-secondary hover:bg-bg-primary active:scale-95 transition-all cursor-pointer"
+            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-white border border-primary shadow-sm text-secondary hover:bg-bg-primary cursor-pointer"
             title="Scroll to bottom"
           >
-            <ArrowDown className="h-4 w-4" />
+            <IconChevronDown className={TOOLBAR_ICON} />
           </button>
         </div>
       )}
@@ -223,51 +228,50 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-[20px] border bg-white p-3 sm:p-3.5 shadow-xs transition-all duration-200 ${
+        className={`pointer-events-auto relative rounded-[18px] border bg-white px-2.5 py-1.5 shadow-xs transition-[border-color,box-shadow,background-color] duration-150 ${
           isDragging
-            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/30 bg-[#1E3A8A]/5 scale-[1.01]'
+            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/30 bg-[#1E3A8A]/5'
             : 'border-primary hover:border-primary focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A]'
         }`}
       >
-        {/* Attachment Previews */}
-        {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b border-primary">
-            {attachments.map((att) => (
-              <div
-                key={att.id}
-                className="flex items-center gap-2 rounded-xl border border-primary bg-bg-primary px-2.5 py-1 text-xs text-secondary"
-              >
-                {att.type === 'image' ? (
-                  <ImageIcon className="h-3.5 w-3.5 text-amber-700" />
-                ) : (
-                  <FileText className="h-3.5 w-3.5 text-secondary" />
-                )}
-                <span className="max-w-[140px] truncate font-medium">{att.name}</span>
-                <button
-                  onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                  className="text-muted hover:text-secondary"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
         {slashMatches.length > 0 && (
-          <div className="mb-2 overflow-hidden rounded-xl border border-[#ececec] bg-white py-1 shadow-sm">
+          <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded-lg border border-[#ececec] bg-white py-0.5 shadow-sm">
             {slashMatches.map((command, index) => (
               <button
                 key={command.id}
                 type="button"
                 onClick={() => applySlashCommand(command.insert)}
-                className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-[13px] cursor-pointer ${
+                className={`flex w-full items-center justify-between px-2.5 py-1 text-left text-[12px] cursor-pointer ${
                   index === slashIndex ? 'bg-[#f6f6f6]' : 'hover:bg-[#fafafa]'
                 }`}
               >
                 <span className="font-medium text-[#1a1a1a]">{command.label}</span>
                 <span className="text-[11px] text-[#8a8a8a]">{command.hint}</span>
               </button>
+            ))}
+          </div>
+        )}
+        {/* Attachment Previews */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-1.5 pb-1.5 border-b border-primary">
+            {attachments.map((att) => (
+              <div
+                key={att.id}
+                className="flex items-center gap-1.5 rounded-lg border border-primary bg-bg-primary px-2 py-0.5 text-[11px] text-secondary"
+              >
+                {att.type === 'image' ? (
+                  <IconImage className={`${CHIP_ICON} text-amber-700`} />
+                ) : (
+                  <IconDocument className={`${CHIP_ICON} text-secondary`} />
+                )}
+                <span className="max-w-[140px] truncate font-medium">{att.name}</span>
+                <button
+                  onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
+                  className="text-muted hover:text-secondary"
+                >
+                  <IconX className={CHIP_ICON} />
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -279,7 +283,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Write a message..."
           rows={1}
-          className="w-full resize-none border-none bg-transparent px-1 pt-0 text-base text-primary placeholder:text-muted focus:outline-none focus:ring-0 max-h-[160px] leading-relaxed font-sans"
+          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-base text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-[1.45] font-sans"
         />
 
         {/* Hidden File Input */}
@@ -291,10 +295,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className="hidden"
         />
 
-        {/* Bottom Toolbar Row (Exact Screenshot 1:1 Layout) */}
-        <div className="mt-2.5 flex items-center justify-between gap-2 pt-0.5">
+        {/* Bottom Toolbar Row */}
+        <div className="mt-0.5 flex items-center justify-between gap-2">
           {/* Left Side: + Icon & Bot Selector */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 overflow-hidden">
             {/* (+) Attachment Button */}
             <button
               type="button"
@@ -302,7 +306,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
               title="Add attachment"
             >
-              <Plus className="h-5 w-5 stroke-[1.8]" />
+              <IconPlus className={TOOLBAR_ICON} />
             </button>
             {/* Philosopher Bot Selector using Notebook LemonSelect */}
             <LemonSelect
@@ -316,8 +320,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               renderButtonContent={() => {
                 const activeModel = models.find((m) => m.id === selectedModelId) || models[0];
                 return (
-                  <span className="inline-flex items-center gap-1.5 text-[14px] sm:text-[15px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap min-w-0">
-                    <div className="size-4.5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap min-w-0">
+                    <div className="size-4 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                       {activeModel?.avatarUrl ? (
                         <img src={activeModel.avatarUrl} alt={activeModel.name} className="size-full object-cover" />
                       ) : (
@@ -327,7 +331,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       )}
                     </div>
                     <span className="font-semibold text-primary tracking-tight truncate max-w-[100px] xs:max-w-[160px] sm:max-w-none">{activeModel?.name}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-muted stroke-[2] ml-0.5 shrink-0" />
+                    <IconChevronDown className={`${CHIP_ICON} text-muted ml-0.5`} />
                   </span>
                 );
               }}
@@ -339,7 +343,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     value: opt.id,
                     label: (
                       <span className="flex items-center gap-2 font-medium text-xs">
-                        <div className="size-5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[9px]">
+                        <div className="size-4 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                           {opt.avatarUrl ? (
                             <img src={opt.avatarUrl} alt={opt.name} className="size-full object-cover" />
                           ) : (
@@ -354,17 +358,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   })),
                 },
               ]}
-              size="small"
+              size="xsmall"
               type="tertiary"
-              dropdownPlacement="bottom-start"
+              dropdownPlacement={menuPlacement}
               dropdownMatchSelectWidth={false}
-              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0 [&_.LemonButton\_\_side-icon]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:shrink-0 [&_svg]:max-w-[14px] [&_svg]:max-h-[14px]"
+              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0 [&_.LemonButton]:min-h-0 [&_.LemonButton]:h-9 [&_.LemonButton\_\_side-icon]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:shrink-0 [&_svg]:max-w-[14px] [&_svg]:max-h-[14px]"
             />
           </div>
 
-
-
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1">
             {/* Microphone Button */}
             <button
               type="button"
@@ -374,7 +376,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               }`}
               title="Voice Input"
             >
-              {isRecording ? <MicOff className="h-5 w-5 stroke-[1.8]" /> : <Mic className="h-5 w-5 stroke-[1.8]" />}
+              <IconMicrophone className={TOOLBAR_ICON} />
             </button>
 
             {/* Send / Stop Action Button */}
@@ -382,32 +384,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-white text-primary shadow-2xs hover:bg-accent active:scale-95 cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-xl border border-primary bg-white text-primary shadow-2xs hover:bg-accent cursor-pointer"
                 title="Stop"
               >
-                <div className="h-3.5 w-3.5 rounded-[2px] bg-stone-900" />
+                <div className="size-2.5 rounded-[2px] bg-stone-900" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={!prompt.trim() && attachments.length === 0}
-                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all shadow-2xs ${
+                className={`flex h-7 w-7 items-center justify-center rounded-xl shadow-2xs ${
                   prompt.trim() || attachments.length > 0
-                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white active:scale-95 cursor-pointer'
+                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Send"
               >
-                <ArrowUp className="h-5 w-5 stroke-[2.2]" />
+                <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Disclaimer Text below input capsule (Exact Screenshot match) */}
-      <p className="mt-2 text-center text-[11px] text-muted font-sans pointer-events-auto">
+      <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
         wim's ai bots can make mistakes. please double-check responses.
       </p>
     </div>
