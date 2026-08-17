@@ -93,6 +93,13 @@ export function nextFamilyKeyStart(family: string, keyCount: number): number {
     return start
 }
 
+/** Pin the next `nextFamilyKeyStart` result without consuming it. */
+export function setFamilyKeyStart(family: string, start: number): void {
+    const value = Number.isFinite(start) && start > 0 ? Math.floor(start) : 0
+    memoryCursors.set(family, value)
+    writeFsCursor(family, value)
+}
+
 export function resetFamilyKeyCursor(family?: string): void {
     if (family) {
         memoryCursors.set(family, 0)

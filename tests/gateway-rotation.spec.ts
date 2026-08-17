@@ -157,6 +157,84 @@ test.describe('Groq / Gemini rotation end to end', () => {
         }
     })
 
+    test('two Groq misses switch family instead of trying every Qwen key', async () => {
+        isolateCursors('two-strikes')
+        const groqHits: string[] = []
+        const original = globalThis.fetch
+        globalThis.fetch = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+            const url = String(_url)
+            if (url.includes('api.groq.com')) {
+                groqHits.push(authHeader(init))
+                return groqFail(429, '429 rate_limit')
+            }
+            if (url.includes('generativelanguage.googleapis.com')) {
+                return geminiOk('switched-to-gemini')
+            }
+            throw new Error(`unexpected url ${url}`)
+        }) as typeof fetch
+
+        try {
+            const result = await generateWithGateway({
+                systemPrompt: 'sys',
+                userPrompt: 'hello',
+                env: {
+                    GROQ_API_KEYS: 'gsk_a,gsk_b,gsk_c,gsk_d',
+                    GEMINI_API_KEYS: 'AIza_g1',
+                },
+                thinkingDepth: 'brief',
+            })
+            expect(result.ok).toBe(true)
+            if (result.ok) {
+                expect(result.text).toBe('switched-to-gemini')
+                expect(String(result.provider)).toContain('gemini')
+            }
+            expect(groqHits.length).toBe(2)
+        } finally {
+            globalThis.fetch = original
+        }
+    })
+
+    test('after Groq fails, the next user query starts on Gemini', async () => {
+        isolateCursors('sticky-fail')
+        const hosts: string[] = []
+        let turn = 0
+        const original = globalThis.fetch
+        globalThis.fetch = (async (_url: RequestInfo | URL) => {
+            const url = String(_url)
+            const host = url.includes('api.groq.com') ? 'groq' : url.includes('generativelanguage.googleapis.com') ? 'gemini' : 'other'
+            hosts.push(`${turn}:${host}`)
+            if (turn === 0 && host === 'groq') return groqFail(429, '429 rate_limit')
+            if (host === 'gemini') return geminiOk('gemini-now')
+            return groqOk('should-not-win-turn-2')
+        }) as typeof fetch
+
+        try {
+            const env = { GROQ_API_KEYS: 'gsk_a,gsk_b,gsk_c', GEMINI_API_KEYS: 'AIza_g1' }
+            const first = await generateWithGateway({
+                systemPrompt: 's',
+                userPrompt: 'u1',
+                env,
+                thinkingDepth: 'brief',
+            })
+            expect(first.ok).toBe(true)
+            if (first.ok) expect(String(first.provider)).toContain('gemini')
+
+            turn = 1
+            const second = await generateWithGateway({
+                systemPrompt: 's',
+                userPrompt: 'u2',
+                env,
+                thinkingDepth: 'brief',
+            })
+            expect(second.ok).toBe(true)
+            if (second.ok) expect(second.text).toBe('gemini-now')
+            const secondHosts = hosts.filter((h) => h.startsWith('1:')).map((h) => h.slice(2))
+            expect(secondHosts[0]).toBe('gemini')
+        } finally {
+            globalThis.fetch = original
+        }
+    })
+
     test('Gemini 429 on key 1 fails over to Gemini key 2', async () => {
         isolateCursors('gemini-key')
         const seen: string[] = []

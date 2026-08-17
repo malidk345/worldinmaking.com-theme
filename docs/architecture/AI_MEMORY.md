@@ -172,6 +172,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-152` | Stream 3 | next/image crash on off-allowlist blog covers (filomythos) | `SafeImage.tsx`, `BlogFeaturedImage`, `ReaderView` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-16 |
 | `TSK-153` | Stream 4 | Google OAuth shows PKCE verifier error after a successful login | `auth/callback.tsx`, `supabase.ts`, `auth-callback.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-154` | Stream 5 | End-to-end audit of Groq/Gemini key rotation | `groq-key-cursor.ts`, `ai-gateway.ts`, gateway tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-155` | Stream 5 | After two Groq misses, switch to Gemini and stay there next turn | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 # WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
 
@@ -306,6 +307,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 226 - Stop retrying the same Qwen model four times
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Four Groq keys of the same Qwen model were burning the 45s budget, so Gemini never ran. Two misses now switch family, 16s is reserved for failover, and a failed Groq turn pins the next user query to Gemini.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts`, `tests/gateway-rotation.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/gateway-rotation.spec.ts` — 6 passed.
 
 ### Entry 225 - Groq/Gemini rotation audited end to end
 - **Date:** 2026-08-17
