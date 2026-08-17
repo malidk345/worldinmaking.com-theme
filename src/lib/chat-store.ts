@@ -29,6 +29,7 @@ type ChatRow = {
     is_shared: boolean
     created_at: string
     updated_at: string
+    deleted_at?: string | null
 }
 
 type MessageRow = {
@@ -58,7 +59,8 @@ export function isChatStoreUnavailable(error: unknown): boolean {
         message.includes('wim_chat_usage') ||
         message.includes('increment_wim_chat_usage') ||
         message.includes('schema cache') ||
-        message.includes('does not exist')
+        message.includes('does not exist') ||
+        message.includes('deleted_at')
     )
 }
 
@@ -152,18 +154,35 @@ function messageToRow(chatId: string, message: Message, sortIndex: number): Mess
     }
 }
 
-export async function listChatsByOwner(ownerKey: string): Promise<ChatListItem[]> {
-    const chats = await listChatsWithMessages(ownerKey)
+function applyOwnerScope<T extends { or: Function; eq: Function }>(query: T, ownerKey: string, userId?: string): T {
+    if (userId && userId === ownerKey) {
+        return query.or(`owner_key.eq.${ownerKey},auth_user_id.eq.${userId}`)
+    }
+    return query.eq('owner_key', ownerKey)
+}
+
+export async function listChatsByOwner(ownerKey: string, userId?: string): Promise<ChatListItem[]> {
+    const chats = await listChatsWithMessages(ownerKey, userId)
     return chats.map((chat) => ({ ...chat, messageCount: chat.messages.length }))
 }
 
-export async function listChatsWithMessages(ownerKey: string): Promise<Chat[]> {
-    const { data, error } = await supabaseAdmin
+export async function listDeletedChatIds(ownerKey: string, userId?: string): Promise<string[]> {
+    let query = supabaseAdmin.from('wim_chats').select('id').not('deleted_at', 'is', null)
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query.limit(500)
+    if (error) throw error
+    return ((data as { id: string }[] | null) || []).map((row) => row.id)
+}
+
+export async function listChatsWithMessages(ownerKey: string, userId?: string): Promise<Chat[]> {
+    let query = supabaseAdmin
         .from('wim_chats')
         .select('*')
-        .eq('owner_key', ownerKey)
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false })
         .limit(MAX_CHATS)
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query
 
     if (error) throw error
     const rows = (data as ChatRow[] | null) || []
@@ -190,7 +209,13 @@ export async function listChatsWithMessages(ownerKey: string): Promise<Chat[]> {
 }
 
 export async function getChatForOwner(chatId: string, ownerKey: string): Promise<Chat | null> {
-    const { data, error } = await supabaseAdmin.from('wim_chats').select('*').eq('id', chatId).eq('owner_key', ownerKey).maybeSingle()
+    const { data, error } = await supabaseAdmin
+        .from('wim_chats')
+        .select('*')
+        .eq('id', chatId)
+        .eq('owner_key', ownerKey)
+        .is('deleted_at', null)
+        .maybeSingle()
     if (error) throw error
     if (!data) return null
     const messages = await listMessages(chatId)
@@ -205,6 +230,7 @@ export async function getSharedChatByToken(token: string): Promise<Chat | null> 
         .select('*')
         .eq('share_token', clean)
         .eq('is_shared', true)
+        .is('deleted_at', null)
         .maybeSingle()
     if (error) throw error
     if (!data) return null
@@ -250,12 +276,15 @@ export async function upsertChatWithMessages(
 
     const { data: existing, error: existingError } = await supabaseAdmin
         .from('wim_chats')
-        .select('id, owner_key, share_token, is_shared')
+        .select('id, owner_key, share_token, is_shared, deleted_at')
         .eq('id', chatId)
         .maybeSingle()
     if (existingError) throw existingError
     if (existing && (existing as ChatRow).owner_key !== ownerKey) {
         throw Object.assign(new Error('Forbidden'), { status: 403 })
+    }
+    if (existing && (existing as ChatRow).deleted_at) {
+        throw Object.assign(new Error('Chat was deleted'), { status: 410 })
     }
 
     if (existing) {
@@ -316,7 +345,13 @@ export async function setMessageLiked(chatId: string, ownerKey: string, messageI
 }
 
 export async function deleteChatForOwner(chatId: string, ownerKey: string): Promise<boolean> {
-    const { data, error } = await supabaseAdmin.from('wim_chats').delete().eq('id', chatId).eq('owner_key', ownerKey).select('id')
+    const { data, error } = await supabaseAdmin
+        .from('wim_chats')
+        .update({ deleted_at: new Date().toISOString(), is_shared: false })
+        .eq('id', chatId)
+        .eq('owner_key', ownerKey)
+        .is('deleted_at', null)
+        .select('id')
     if (error) throw error
     return Array.isArray(data) && data.length > 0
 }

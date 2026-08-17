@@ -28,6 +28,7 @@ export type StoredNotebookRow = {
     auth_user_id: string | null
     created_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
     last_modified_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
+    deleted_at?: string | null
 }
 
 export type NotebookHistoryRow = {
@@ -147,6 +148,7 @@ export async function listPublishedNotebooksByAuthor(username: string): Promise<
         .from('wim_notebooks')
         .select('id, short_id, title, content, publish, updated_at, created_by, auth_user_id, is_published')
         .eq('is_published', true)
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false })
         .limit(40)
 
@@ -171,15 +173,28 @@ export async function listPublishedNotebooksByAuthor(username: string): Promise<
     }))
 }
 
-export async function listNotebooksByOwner(ownerKey: string): Promise<StoredNotebookDTO[]> {
-    const { data, error } = await supabaseAdmin
-        .from('wim_notebooks')
-        .select('*')
-        .eq('owner_key', ownerKey)
-        .order('updated_at', { ascending: false })
+function applyOwnerScope<T extends { or: Function; eq: Function }>(query: T, ownerKey: string, userId?: string): T {
+    if (userId && userId === ownerKey) {
+        return query.or(`owner_key.eq.${ownerKey},auth_user_id.eq.${userId}`)
+    }
+    return query.eq('owner_key', ownerKey)
+}
+
+export async function listNotebooksByOwner(ownerKey: string, userId?: string): Promise<StoredNotebookDTO[]> {
+    let query = supabaseAdmin.from('wim_notebooks').select('*').is('deleted_at', null).order('updated_at', { ascending: false })
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query
 
     if (error) throw error
     return (data as StoredNotebookRow[] | null)?.map(rowToDTO) ?? []
+}
+
+export async function listDeletedNotebookIds(ownerKey: string, userId?: string): Promise<string[]> {
+    let query = supabaseAdmin.from('wim_notebooks').select('id').not('deleted_at', 'is', null)
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query.limit(500)
+    if (error) throw error
+    return ((data as { id: string }[] | null) || []).map((row) => row.id)
 }
 
 export async function getNotebookByIdOrShort(
@@ -188,6 +203,7 @@ export async function getNotebookByIdOrShort(
 ): Promise<StoredNotebookDTO | null> {
     let q = supabaseAdmin.from('wim_notebooks').select('*').or(`id.eq.${idOrShort},short_id.eq.${idOrShort}`).limit(1)
 
+    q = q.is('deleted_at', null)
     if (options?.publishedOnly) {
         q = q.eq('is_published', true)
     } else if (options?.ownerKey) {
@@ -228,7 +244,7 @@ export async function assertNotebookWriteAccess(
 export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): Promise<StoredNotebookDTO> {
     const { data: existing, error: findErr } = await supabaseAdmin
         .from('wim_notebooks')
-        .select('id, owner_key, version')
+        .select('id, owner_key, version, deleted_at')
         .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
         .limit(1)
         .maybeSingle()
@@ -239,6 +255,11 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): P
         if ((existing as { owner_key: string }).owner_key !== ownerKey) {
             const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
             err.status = 403
+            throw err
+        }
+        if ((existing as { deleted_at?: string | null }).deleted_at) {
+            const err = new Error('Notebook was deleted') as Error & { status?: number }
+            err.status = 410
             throw err
         }
 
@@ -280,7 +301,7 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
     for (const nb of notebooks) {
         const { data: existing } = await supabaseAdmin
             .from('wim_notebooks')
-            .select('id, owner_key, version')
+            .select('id, owner_key, version, deleted_at')
             .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
             .limit(1)
             .maybeSingle()
@@ -289,6 +310,11 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
             if ((existing as { owner_key: string }).owner_key !== ownerKey) {
                 const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
                 err.status = 403
+                throw err
+            }
+            if ((existing as { deleted_at?: string | null }).deleted_at) {
+                const err = new Error('Notebook was deleted') as Error & { status?: number }
+                err.status = 410
                 throw err
             }
             const currentDbVersion = Number((existing as { version?: number }).version || 1)
@@ -341,10 +367,16 @@ export async function deleteNotebook(idOrShort: string, ownerKey: string): Promi
     const existing = await getNotebookByIdOrShort(idOrShort, { ownerKey })
     if (!existing) return false
 
-    const { error } = await supabaseAdmin.from('wim_notebooks').delete().eq('id', existing.id).eq('owner_key', ownerKey)
+    const { data, error } = await supabaseAdmin
+        .from('wim_notebooks')
+        .update({ deleted_at: new Date().toISOString(), is_published: false })
+        .eq('id', existing.id)
+        .eq('owner_key', ownerKey)
+        .is('deleted_at', null)
+        .select('id')
 
     if (error) throw error
-    return true
+    return Array.isArray(data) && data.length > 0
 }
 
 export async function listHistory(notebookId: string): Promise<NotebookVersionDTO[]> {

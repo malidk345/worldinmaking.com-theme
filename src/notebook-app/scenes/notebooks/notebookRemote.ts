@@ -3,28 +3,36 @@
  * Never blocks the editor — failures are silent (localStorage remains source of truth).
  */
 import type { NotebookVersion, StoredNotebook } from './notebookStorage'
+import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from '../../../lib/wim-identity'
 
-const OWNER_KEY_STORAGE = 'wim_notebook_owner_key'
+const NOTEBOOK_DELETED_BASE = 'wim_notebook_deleted_ids'
 
 export function getOrCreateOwnerKey(): string {
-    if (typeof window === 'undefined') return 'server'
+    return getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)
+}
+
+export function getNotebookDeletedStorageKey(): string {
+    return namespacedStorageKey(NOTEBOOK_DELETED_BASE, getOrCreateOwnerKey())
+}
+
+export function readLocalDeletedNotebookIds(): string[] {
+    if (typeof window === 'undefined') return []
     try {
-        // Prefer authenticated Supabase user id when present (set by useUser / supabase session)
-        const authUserId = localStorage.getItem('wim_auth_user_id')
-        if (authUserId && authUserId.length >= 8) {
-            return authUserId
-        }
-        let key = localStorage.getItem(OWNER_KEY_STORAGE)
-        if (!key || key.length < 8) {
-            key =
-                typeof crypto !== 'undefined' && crypto.randomUUID
-                    ? crypto.randomUUID()
-                    : `owner_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-            localStorage.setItem(OWNER_KEY_STORAGE, key)
-        }
-        return key
+        const raw = window.localStorage.getItem(getNotebookDeletedStorageKey())
+        const parsed = raw ? JSON.parse(raw) : []
+        return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []
     } catch {
-        return `owner_fallback_${Date.now()}`
+        return []
+    }
+}
+
+export function rememberDeletedNotebookId(id: string): void {
+    if (typeof window === 'undefined' || !id) return
+    const next = Array.from(new Set([...readLocalDeletedNotebookIds(), id]))
+    try {
+        window.localStorage.setItem(getNotebookDeletedStorageKey(), JSON.stringify(next.slice(-400)))
+    } catch {
+        /* ignore */
     }
 }
 
@@ -46,7 +54,7 @@ function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
     return headers
 }
 
-type ListResponse = { notebooks: StoredNotebook[] }
+type ListResponse = { notebooks: StoredNotebook[]; deleted_ids?: string[] }
 type OneResponse = { notebook: StoredNotebook }
 type ErrorBody = { error?: string; code?: string }
 
@@ -66,7 +74,7 @@ async function parseJson<T>(res: Response): Promise<T | null> {
     }
 }
 
-export async function pullNotebooksFromRemote(): Promise<StoredNotebook[] | null> {
+export async function pullNotebooksFromRemote(): Promise<{ notebooks: StoredNotebook[]; deletedIds: string[] } | null> {
     if (typeof window === 'undefined') return null
     const now = Date.now()
     if (now - lastPullAt < PULL_MIN_INTERVAL_MS && remoteAvailable === false) {
@@ -95,7 +103,10 @@ export async function pullNotebooksFromRemote(): Promise<StoredNotebook[] | null
             return null
         }
         remoteAvailable = true
-        return body.notebooks
+        return {
+            notebooks: body.notebooks,
+            deletedIds: Array.isArray(body.deleted_ids) ? body.deleted_ids : [],
+        }
     } catch {
         remoteAvailable = false
         return null
@@ -124,6 +135,10 @@ export async function pushNotebookToRemote(
         }
         if (res.status === 409) {
             return { ok: false, conflict: true }
+        }
+        if (res.status === 410) {
+            rememberDeletedNotebookId(notebook.id)
+            return { ok: false }
         }
         if (!res.ok) return { ok: false }
         remoteAvailable = true
@@ -198,13 +213,19 @@ export async function pullPublishedNotebook(shortId: string): Promise<StoredNote
 }
 
 /** Last-write-wins merge by updatedAt (ISO strings). Local id wins on equal timestamps. */
-export function mergeNotebookLists(local: StoredNotebook[], remote: StoredNotebook[]): StoredNotebook[] {
+export function mergeNotebookLists(
+    local: StoredNotebook[],
+    remote: StoredNotebook[],
+    deletedIds: string[] = []
+): StoredNotebook[] {
+    const dead = new Set(deletedIds)
     const map = new Map<string, StoredNotebook>()
 
     for (const nb of local) {
-        map.set(nb.id, nb)
+        if (!dead.has(nb.id) && !dead.has(nb.short_id)) map.set(nb.id, nb)
     }
     for (const nb of remote) {
+        if (dead.has(nb.id) || dead.has(nb.short_id)) continue
         const existing = map.get(nb.id)
         if (!existing) {
             map.set(nb.id, nb)

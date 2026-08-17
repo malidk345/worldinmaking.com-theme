@@ -187,6 +187,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-167` | Stream 5 | Composer plus/send same glyph weight from @posthog/icons (no paper-plane) | `ClaudeWorkspaceChat/components/ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-168` | Stream 4 | Ali admin profile photo missing (broken USER_PORTRAITS override) | `user-portraits.ts`, `useProfileData.ts`, `wim-auth.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 | `TSK-169` | Stream 5 | Selection rewrite: replace in place + working Accept/Reject | `EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `App.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
+| `TSK-170` | Stream 4 | Chat/notebook account sync: claim, tombstones, identity switch | `chat-store`, `notebooks-repo`, `chat-remote`, `notebookRemote`, `useUser` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-17 |
 
 
 
@@ -325,6 +326,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 236 - Account sync: claim, soft-delete, identity switch
+- **Date:** 2026-08-17
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Login claims this device’s unsigned chats/notebooks onto the user id. Lists include `auth_user_id`. Deletes are soft (`deleted_at`) so other devices drop them instead of resurrecting. Local cache is namespaced per identity. Login/logout re-pulls. Live migration applied.
+- **Modified Files:** `supabase/migrations/20260817_account_sync_tombstones.sql`, `src/lib/wim-identity.ts`, `src/lib/account-claim.ts`, `chat-store.ts`, `notebooks-repo.ts`, `api/account/claim.ts`, `api/chats`, `api/notebooks`, `chat-remote.ts`, `notebookRemote.ts`, `notebookStorage.ts`, `ClaudeWorkspaceChat/index.tsx`, `useUser.tsx`, `tests/account-sync.spec.ts`
+- **Tests:** `pnpm exec playwright test tests/account-sync.spec.ts tests/notebook-frontend.spec.ts` — 9 passed.
+- **Notes / Handoff:** Existing device-only rows (`owner_1786…`) attach on next login from that same browser. Other browsers only see rows already under the user id until those devices log in once.
 
 ### Entry 235 - Selection rewrite accept/reject actually works
 - **Date:** 2026-08-17

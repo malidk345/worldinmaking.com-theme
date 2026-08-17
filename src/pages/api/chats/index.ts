@@ -7,7 +7,13 @@
 export const runtime = 'edge'
 
 import { resolveNotebookOwner } from '../../../../lib/api-authz'
-import { isChatStoreUnavailable, listChatsWithMessages, upsertChatWithMessages, type StoredChatDTO } from '../../../lib/chat-store'
+import {
+    isChatStoreUnavailable,
+    listChatsWithMessages,
+    listDeletedChatIds,
+    upsertChatWithMessages,
+    type StoredChatDTO,
+} from '../../../lib/chat-store'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -39,8 +45,11 @@ export default async function handler(req: Request) {
         if (req.method === 'GET') {
             const auth = await resolveNotebookOwner(req, url.searchParams.get('owner_key'))
             if (!auth.ok) return json({ error: auth.error }, auth.status)
-            const chats = await listChatsWithMessages(auth.ownerKey)
-            return json({ chats, auth: { via: auth.via } })
+            const [chats, deletedIds] = await Promise.all([
+                listChatsWithMessages(auth.ownerKey, auth.userId),
+                listDeletedChatIds(auth.ownerKey, auth.userId),
+            ])
+            return json({ chats, deleted_ids: deletedIds, auth: { via: auth.via } })
         }
 
         if (req.method === 'POST') {

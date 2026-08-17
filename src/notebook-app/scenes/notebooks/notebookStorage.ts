@@ -6,7 +6,16 @@ import {
     pullNotebooksFromRemote,
     pushAllNotebooksToRemote,
     pushNotebookToRemote,
+    rememberDeletedNotebookId,
+    readLocalDeletedNotebookIds,
 } from './notebookRemote'
+import { claimDeviceAccountOnLogin } from '../../../lib/chat-remote'
+import {
+    DEVICE_NOTEBOOK_OWNER_KEY,
+    WIM_IDENTITY_EVENT,
+    getActiveOwnerKey,
+    namespacedStorageKey,
+} from '../../../lib/wim-identity'
 import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
 
 export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
@@ -57,9 +66,13 @@ export interface NotebookVersion {
 }
 
 // Bump key when default seed content changes so old fake templates are not kept forever.
-const STORAGE_KEY = 'wim_notebooks_v3'
+const STORAGE_KEY_BASE = 'wim_notebooks_v3'
+
+function storageKey(): string {
+    return namespacedStorageKey(STORAGE_KEY_BASE, getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY))
+}
 const HISTORY_KEY_PREFIX = 'wim_notebook_history_'
-const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1', 'wim_notebooks_v2']
+const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1', 'wim_notebooks_v2', STORAGE_KEY_BASE]
 const MAX_HISTORY = 50
 /** Min ms between automatic history snapshots while typing */
 const SNAPSHOT_MIN_INTERVAL_MS = 20_000
@@ -132,6 +145,7 @@ function ensureRemoteHydrate(): void {
     hydrateStarted = true
     queueRemote(
         (async () => {
+            await claimDeviceAccountOnLogin()
             const remote = await pullNotebooksFromRemote()
             if (!remote) {
                 // Table missing or offline: still try to push local when API becomes ready later
@@ -140,13 +154,16 @@ function ensureRemoteHydrate(): void {
                 return
             }
             const local = readLocalNotebooks()
-            if (!remote.length) {
+            const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
+            if (!remote.notebooks.length) {
                 // First remote session: upload local cache
-                if (local.length) schedulePushAll()
+                const kept = mergeNotebookLists(local, [], deletedIds)
+                if (kept.length !== local.length) writeAll(kept)
+                if (kept.length) schedulePushAll()
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
-            const merged = mergeNotebookLists(local, remote)
+            const merged = mergeNotebookLists(local, remote.notebooks, deletedIds)
             writeAll(merged)
             // Push any local-only or newer local rows
             schedulePushAll()
@@ -191,7 +208,7 @@ function seedDefaults(): StoredNotebook[] {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed))
+    localStorage.setItem(storageKey(), JSON.stringify(seed))
     for (const key of LEGACY_STORAGE_KEYS) {
         try {
             localStorage.removeItem(key)
@@ -203,7 +220,7 @@ function seedDefaults(): StoredNotebook[] {
 }
 
 function writeAll(notebooks: StoredNotebook[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notebooks))
+    localStorage.setItem(storageKey(), JSON.stringify(notebooks))
     emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
 }
 
@@ -260,7 +277,7 @@ function writeHistory(id: string, history: NotebookVersion[]): void {
 /** Pure local read — no hydrate side effects (used by remote merge). */
 function readLocalNotebooks(): StoredNotebook[] {
     if (typeof window === 'undefined') return [...DEFAULT_NOTEBOOKS]
-    const data = localStorage.getItem(STORAGE_KEY)
+    const data = localStorage.getItem(storageKey()) || localStorage.getItem(STORAGE_KEY_BASE)
     if (!data) {
         const legacy = localStorage.getItem('wim_notebooks_v2')
         if (legacy) {
@@ -290,6 +307,18 @@ function readLocalNotebooks(): StoredNotebook[] {
 export function getNotebooks(): StoredNotebook[] {
     ensureRemoteHydrate()
     return readLocalNotebooks()
+}
+
+export function rehydrateNotebooksForIdentity(): void {
+    hydrateStarted = false
+    ensureRemoteHydrate()
+    emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener(WIM_IDENTITY_EVENT, () => {
+        rehydrateNotebooksForIdentity()
+    })
 }
 
 export function getNotebook(id: string): StoredNotebook | undefined {
@@ -411,6 +440,8 @@ export function unpublishNotebook(id: string): StoredNotebook | undefined {
 
 export function deleteNotebook(id: string): void {
     const target = getNotebook(id)
+    rememberDeletedNotebookId(id)
+    if (target) rememberDeletedNotebookId(target.id)
     const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
     writeAll(notebooks)
     localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`)

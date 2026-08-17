@@ -51,13 +51,20 @@ import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import {
   chatAuthHeaders,
+  claimDeviceAccountOnLogin,
   deleteChatOnRemote,
+  getChatStorageKey,
   mergeChats,
   pullChatsFromRemote,
   pushChatToRemote,
+  readLocalChats,
+  readLocalDeletedChatIds,
+  rememberDeletedChatId,
   setRemoteChatShare,
   setRemoteMessageLiked,
+  writeLocalChats,
 } from '../../lib/chat-remote';
+import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 
 const EMPTY_STARTERS = [
   { label: 'What’s at stake?', prompt: 'What’s actually at stake here? Give me the conflict in plain language, then one implication.' },
@@ -105,7 +112,7 @@ function sanitizePublicAssistantText(value: string): string {
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
-    const stored = readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS);
+    const stored = readLocalChats<unknown>(readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS));
     return Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
   });
 
@@ -355,10 +362,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }
   const [shareBusy, setShareBusy] = useState(false);
 
+  const persistOwnerRef = useRef(getChatStorageKey())
   // Save to LocalStorage
   useEffect(() => {
     try {
-      window.localStorage.setItem('claude_workspace_chats_v7', JSON.stringify(chats));
+      const key = getChatStorageKey()
+      if (key !== persistOwnerRef.current) {
+        persistOwnerRef.current = key
+        return
+      }
+      writeLocalChats(chats);
     } catch {
       // A full localStorage quota must not break an active conversation.
     }
@@ -382,20 +395,34 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   useEffect(() => {
     let cancelled = false
-    pullChatsFromRemote().then((remote) => {
+    const syncFromRemote = async () => {
+      await claimDeviceAccountOnLogin()
+      if (cancelled) return
+      const remote = await pullChatsFromRemote()
       if (cancelled || !remote) return
+      const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
+      for (const id of remote.deletedIds) rememberDeletedChatId(id)
       setChats((prev) => {
-        const merged = mergeChats(prev, remote)
+        const merged = mergeChats(prev, remote.chats, deletedIds)
         if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
           setActiveChatId(merged[0].id)
         }
+        if (merged.length === 0) setActiveChatId('')
         return merged
       })
-    })
+    }
+    void syncFromRemote()
+    const onIdentity = () => {
+      persistOwnerRef.current = getChatStorageKey()
+      const stored = readLocalChats<Chat[]>([])
+      setChats(Array.isArray(stored) ? stored : [])
+      void syncFromRemote()
+    }
+    window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
     return () => {
       cancelled = true
+      window.removeEventListener(WIM_IDENTITY_EVENT, onIdentity)
     }
-    // Hydrate once on mount; later edits persist incrementally.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -980,6 +1007,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
   const handleDeleteChat = (id: string) => {
+    rememberDeletedChatId(id)
     setChats((prev) => prev.filter((c) => c.id !== id));
     void deleteChatOnRemote(id);
     if (activeChatId === id) {

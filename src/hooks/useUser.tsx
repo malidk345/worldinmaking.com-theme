@@ -28,6 +28,7 @@ import {
     setThreadSubscription,
 } from 'lib/wim-notifications'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
+import { AUTH_USER_ID_KEY, emitIdentityChanged } from 'lib/wim-identity'
 
 // Sentinel value used by posthog-js for cookieless tracking mode
 const COOKIELESS_SENTINEL_VALUE = '$posthog_cookieless'
@@ -221,7 +222,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     const u = await fetchUser()
                     if (u) {
                         try {
-                            localStorage.setItem('wim_auth_user_id', String(u.id))
+                            localStorage.setItem(AUTH_USER_ID_KEY, String(u.id))
+                            emitIdentityChanged()
                         } catch {
                             /* ignore */
                         }
@@ -247,6 +249,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 setUser(null)
                 setJwt(null)
                 localStorage.removeItem('jwt')
+                localStorage.removeItem(AUTH_USER_ID_KEY)
+                emitIdentityChanged()
                 setIsValidating(false)
                 return
             }
@@ -304,7 +308,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             setJwt(token)
         }
         try {
-            localStorage.setItem('wim_auth_user_id', String(nextUser.id))
+            localStorage.setItem(AUTH_USER_ID_KEY, String(nextUser.id))
+            emitIdentityChanged()
         } catch {
             /* ignore */
         }
@@ -400,7 +405,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const clearUser = async (): Promise<void> => {
         localStorage.removeItem('jwt')
         localStorage.removeItem('user')
-        localStorage.removeItem('wim_auth_user_id')
+        localStorage.removeItem(AUTH_USER_ID_KEY)
+        emitIdentityChanged()
         setUser(null)
         setJwt(null)
         setNotifications([])
@@ -492,7 +498,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             setNotifications(notes)
             try {
                 if (typeof window !== 'undefined') {
-                    localStorage.setItem('wim_auth_user_id', String(meData.id))
+                    localStorage.setItem(AUTH_USER_ID_KEY, String(meData.id))
+                    emitIdentityChanged()
                     window.dispatchEvent(new Event('wimNotebooksSync'))
                 }
             } catch {

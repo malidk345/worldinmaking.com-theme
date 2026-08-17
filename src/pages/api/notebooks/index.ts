@@ -15,6 +15,7 @@ export const runtime = 'edge'
 
 import {
     listNotebooksByOwner,
+    listDeletedNotebookIds,
     listPublishedNotebooksByAuthor,
     getNotebookByIdOrShort,
     upsertNotebook,
@@ -56,8 +57,11 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
 
-            const notebooks = await listNotebooksByOwner(auth.ownerKey)
-            return json({ notebooks, auth: { via: auth.via } })
+            const [notebooks, deletedIds] = await Promise.all([
+                listNotebooksByOwner(auth.ownerKey, auth.userId),
+                listDeletedNotebookIds(auth.ownerKey, auth.userId),
+            ])
+            return json({ notebooks, deleted_ids: deletedIds, auth: { via: auth.via } })
         }
 
         if (req.method === 'POST') {
