@@ -60,7 +60,7 @@ export function Default(): JSX.Element {
             <ButtonGroupPrimitive size="base" groupVariant="outline">
                 <ButtonPrimitive
                     onClick={() => {
-                        alert('clicked')
+                        console.log('clicked')
                     }}
                     tooltip="Tooltip"
                 >

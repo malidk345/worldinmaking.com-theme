@@ -242,7 +242,7 @@ export const FullWidth: Story = {
                     sideAction={{
                         icon: <IconPlus />,
                         tooltip: 'Create new',
-                        onClick: () => alert('Side action!'),
+                        onClick: () => console.log('Side action!'),
                     }}
                 >
                     Full Width with side action
@@ -267,7 +267,7 @@ export const WithSideAction: Story = {
                                     sideAction={{
                                         icon: <IconPlus />,
                                         tooltip: 'Create new',
-                                        onClick: () => alert('Side action!'),
+                                        onClick: () => console.log('Side action!'),
                                     }}
                                     status={status}
                                 >
@@ -292,7 +292,7 @@ export const WithButtonWrapper: Story = {
                         sideAction={{
                             icon: <IconPlus />,
                             tooltip: 'No wrapper around side action',
-                            onClick: () => alert('Side action!'),
+                            onClick: () => console.log('Side action!'),
                         }}
                         active
                     >
@@ -303,7 +303,7 @@ export const WithButtonWrapper: Story = {
                         sideAction={{
                             icon: <IconPlus />,
                             tooltip: 'No wrapper around side action',
-                            onClick: () => alert('Side action!'),
+                            onClick: () => console.log('Side action!'),
                         }}
                     >
                         wrapped with opacity 20

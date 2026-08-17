@@ -54,7 +54,7 @@ const meta: Meta<ListBoxProps> = {
                             Option 1 (Link)
                         </Link>
                     </ListBox.Item>
-                    <ListBox.Item asChild onClick={() => alert('clicked')}>
+                    <ListBox.Item asChild onClick={() => console.log('clicked')}>
                         <ButtonPrimitive
                             menuItem
                             className="data-[focused=true]:bg-fill-button-tertiary-active aria-[current=true]:bg-fill-button-tertiary-active"
