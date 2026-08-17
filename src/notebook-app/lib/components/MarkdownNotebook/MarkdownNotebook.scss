@@ -2724,6 +2724,24 @@ button.MarkdownNotebook__component-title:focus-visible {
     justify-content: flex-end;
 }
 
+.MarkdownNotebook__discussion-comment-invite {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.MarkdownNotebook__discussion-comment-reply-text--pending {
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+
+.MarkdownNotebook__invite-menu {
+    display: flex;
+    flex-direction: column;
+    min-width: 8rem;
+    padding: 0.25rem;
+}
+
 .MarkdownNotebook__callout {
     display: flex;
     flex-direction: column;

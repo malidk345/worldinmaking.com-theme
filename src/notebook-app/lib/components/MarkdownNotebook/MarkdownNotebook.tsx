@@ -32,6 +32,9 @@ const LazyCodeEditor = lazyWithRetry(() =>
     import('lib/monaco/CodeEditor').then((module) => ({ default: module.CodeEditor }))
 )
 
+import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
+import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
+import { parseDiscussionReplies, repliesToPropValue, upsertDiscussionReply } from './discussionComments'
 import { mergeNotebookMarkdownChanges } from './collaboration'
 import {
     ComponentPanelCacheEntry,
@@ -3989,7 +3992,7 @@ function MarkdownNotebookEditor({
         )
     }
 
-    const startInlineCommentAtSelection = (): void => {
+    const startInlineCommentAtSelection = (inviteBotId?: string): void => {
         if (!floatingToolbar || !canStartInlineCommentAtSelection()) {
             return
         }
@@ -4018,11 +4021,29 @@ function MarkdownNotebookEditor({
         // naturally aligns with the top of the highlighted content. The title row is the
         // one exception: the `# ` heading always stays first, so a title comment goes
         // right below it instead.
+        const passage = floatingToolbar.selectedMarkdown || ''
+        const inviteBot = inviteBotId ? resolveInviteBot(inviteBotId) : null
+        const pendingId = inviteBot ? `pending-${inviteBot.id}` : ''
         const commentNode: NotebookComponentBlockNode = {
             id: makeEmptyParagraph(`comment-${nodes[firstSelectedIndex].id}`).id,
             type: 'component',
             tagName: 'Comment',
-            props: { ref: refId, replies: [] },
+            props: {
+                ref: refId,
+                passage,
+                replies: inviteBot
+                    ? [
+                          {
+                              id: pendingId,
+                              text: `${inviteBot.name} is reading…`,
+                              author: inviteBot.displayName,
+                              createdAt: new Date().toISOString(),
+                              botId: inviteBot.id,
+                              pending: true,
+                          },
+                      ]
+                    : [],
+            },
         }
         const nextNodes = nodes.flatMap((node, index): NotebookBlockNode[] => {
             let updatedNode = node
@@ -4055,6 +4076,60 @@ function MarkdownNotebookEditor({
         setFloatingToolbar(null)
         window.getSelection()?.removeAllRanges()
         commitDocument({ ...currentDocument, nodes: nextNodes })
+
+        if (inviteBot && passage.trim()) {
+            const commentId = commentNode.id
+            void requestPhilosopherComment({ botId: inviteBot.id, selection: passage })
+                .then((result) => {
+                    updateNode(commentId, (current) =>
+                        current.type === 'component'
+                            ? {
+                                  ...current,
+                                  props: {
+                                      ...current.props,
+                                      replies: repliesToPropValue(
+                                          upsertDiscussionReply(parseDiscussionReplies(current.props.replies), {
+                                              id: pendingId,
+                                              text: result.text,
+                                              author: result.author,
+                                              createdAt: new Date().toISOString(),
+                                              botId: result.botId,
+                                          })
+                                      ),
+                                  },
+                              }
+                            : current
+                    )
+                })
+                .catch((error) => {
+                    updateNode(commentId, (current) =>
+                        current.type === 'component'
+                            ? {
+                                  ...current,
+                                  props: {
+                                      ...current.props,
+                                      replies: repliesToPropValue(
+                                          upsertDiscussionReply(parseDiscussionReplies(current.props.replies), {
+                                              id: pendingId,
+                                              text:
+                                                  error instanceof Error
+                                                      ? error.message
+                                                      : 'Could not invite this philosopher.',
+                                              author: inviteBot.displayName,
+                                              createdAt: new Date().toISOString(),
+                                              botId: inviteBot.id,
+                                          })
+                                      ),
+                                  },
+                              }
+                            : current
+                    )
+                })
+        }
+    }
+
+    const invitePhilosopherToSelection = (botId: string): void => {
+        startInlineCommentAtSelection(botId)
     }
 
     // Clicking a `<ref>` highlight scrolls its comment thread into view and flashes it.
@@ -6456,7 +6531,10 @@ function MarkdownNotebookEditor({
                             selectionAIActions={onAskAI ? selectionAIActions : undefined}
                             isAskAIDisabled={isAIPromptSubmitDisabled}
                             startInlineCommentAtSelection={
-                                canStartInlineCommentAtSelection() ? startInlineCommentAtSelection : undefined
+                                canStartInlineCommentAtSelection() ? () => startInlineCommentAtSelection() : undefined
+                            }
+                            invitePhilosopherToSelection={
+                                canStartInlineCommentAtSelection() ? invitePhilosopherToSelection : undefined
                             }
                             lockPosition={lockFloatingToolbarPosition}
                             returnFocusToEditor={returnFocusFromFormattingToolbar}

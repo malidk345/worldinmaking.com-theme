@@ -193,6 +193,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-173` | Stream 4 / 3 | Notebook live writing: Realtime + presence/carets + discussion comments | `notebookRemote`, `notebookStorage`, `App.tsx`, MarkdownNotebook comments | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-174` | Stream 3 / 4 | Notebook Package B: callout/toggle, image upload, database + sub-page in slash | `registry.tsx`, Wim writing blocks, `/api/notebooks/upload` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-175` | Stream 2 | Fix `/` 404 + Next “Cancel rendering route” overlay | `pages/index.tsx`, `_app.tsx`, AppWindow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-176` | Stream 5 | Invite a philosopher onto a notebook selection as a discussion comment | `invite-comment.ts`, MarkdownNotebook, DiscussionCommentBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -331,6 +332,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 243 - Invite philosopher onto a selection
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Selection toolbar has Invite (Nietzsche / Marx / Arendt / Rand). That creates a discussion thread on the highlight and posts the philosopher’s comment there. The thread can invite again. Chat and the persona-free WIM AI editor are untouched.
+- **Modified Files:** `src/lib/bots/notebook-invite.ts`, `src/lib/notebook-invite-client.ts`, `src/pages/api/notebook/invite-comment.ts`, MarkdownNotebook, FormattingToolbar, DiscussionCommentBlock, discussionComments, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 14 passed.
+- **Notes / Handoff:** A/B/C of the notebook plan are in. Next optional: more invite bots, @mentions, or PDF export.
 
 ### Entry 242 - Cancel rendering route on `/`
 - **Date:** 2026-08-18

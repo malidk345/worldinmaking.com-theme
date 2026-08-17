@@ -8,7 +8,13 @@ import {
     appendDiscussionReply,
     parseDiscussionReplies,
     removeDiscussionReply,
+    upsertDiscussionReply,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/discussionComments'
+import {
+    cleanInviteCommentOutput,
+    isNotebookInviteBotId,
+    resolveInviteBot,
+} from '../src/lib/bots/notebook-invite'
 import { caretColorForClient, presenceStateToCarets } from '../src/notebook-app/scenes/notebooks/notebookPresence'
 import {
     makeDefaultDatabaseContent,
@@ -200,6 +206,22 @@ test.describe('notebook frontend helpers', () => {
         })
         expect(next.map((reply) => reply.id)).toEqual(['r1', 'r2'])
         expect(removeDiscussionReply(next, 'r1').map((reply) => reply.id)).toEqual(['r2'])
+        const withBot = upsertDiscussionReply(next, {
+            id: 'r2',
+            text: 'updated',
+            author: 'Karl Marx',
+            createdAt: '2026-08-18T12:02:00.000Z',
+            botId: 'marx',
+        })
+        expect(withBot[1]).toMatchObject({ id: 'r2', text: 'updated', botId: 'marx' })
+    })
+
+    test('only the four invite philosophers can be asked to comment', () => {
+        expect(isNotebookInviteBotId('nietzsche')).toBe(true)
+        expect(isNotebookInviteBotId('hegel')).toBe(false)
+        expect(resolveInviteBot('arendt')?.name).toBe('Arendt')
+        expect(resolveInviteBot('hegel')).toBeNull()
+        expect(cleanInviteCommentOutput('```\nA short comment.\n```')).toBe('A short comment.')
     })
 
     test('presence ignores this client and only draws carets with a node index', () => {
