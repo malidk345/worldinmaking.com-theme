@@ -178,6 +178,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-158` | Stream 5 | Notebook & AI Phase 3 Features (Notebook RAG search helper, Ask AI persona integration, clean inline editor) | `src/lib/bots/notebook-rag.ts`, `src/pages/api/chat.ts`, `ClaudeWorkspaceChat` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-159` | Stream 3 / 5 | Inline Editor UX Overhaul (Preset action pills, smart viewport flip, target mode selector, Accept/Discard diff bar) | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 | `TSK-160` | Stream 3 / 5 | Selection Floating Anchor, Icon-Only Accept/Reject Review Mode, Direct Slash WIM AI Activation & Outline Removal | `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
+| `TSK-161` | Stream 3 / 5 | Notebook Micro-Interactions & Spring Animations (Entrance spring scale, AI pulse glow, button active micro-scaling) | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-17 |
 
 
 
