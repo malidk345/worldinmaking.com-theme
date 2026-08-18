@@ -120,7 +120,17 @@ export function resolveAutonomousPlacement(
     const fromPhrase = findPhraseSpan(nodes, phrase, used)
     if (scope === 'block') {
         if (fromPhrase) return { kind: 'block', nodeId: fromPhrase.nodeId }
-        const fallback = nodes.find((node) => node.type !== 'component' && !used.some((span) => span.nodeId === node.id))
+        const titleIds = new Set(
+            collectCommentableRuns(nodes)
+                .filter((run) => run.skip)
+                .map((run) => run.nodeId)
+        )
+        const fallback = nodes.find(
+            (node) =>
+                node.type !== 'component' &&
+                !titleIds.has(node.id) &&
+                !used.some((span) => span.nodeId === node.id)
+        )
         return fallback ? { kind: 'block', nodeId: fallback.id } : { kind: 'piece' }
     }
     if (fromPhrase) return { kind: 'span', span: fromPhrase }

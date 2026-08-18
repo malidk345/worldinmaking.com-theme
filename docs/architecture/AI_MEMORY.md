@@ -209,6 +209,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-190` | Stream 3 / 5 | Fix slash WIM AI stuck (CSS stacking + keep paragraph) | MarkdownNotebook, InsertMenu, SCSS | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-191` | Stream 3 / 5 | Block-level comments for humans and AI | annotations, markdown, invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-192` | Stream 3 | Delete unused notebook debug / PostHog insert / gutter code | MarkdownNotebook, InsertMenu, registry | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-193` | Stream 1 / 3 | End-to-end verify notebook + smoke; fix title-block invite + `/` smoke | annotationPlacement, smoke.spec, notebook tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -347,6 +348,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 255 - End-to-end notebook verify
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Verified no leftover imports from deleted PostHog slash/debug. Invite `scope=block` without a phrase no longer lands on the title. Smoke `/` now expects 200 (index is desktop). Styles compile.
+- **Modified Files:** `annotationPlacement.ts`, `tests/notebook-frontend.spec.ts`, `tests/smoke.spec.ts`, docs
+- **Tests:** notebook-frontend + wimai-editor + notebook-chat-bind — 38 passed. smoke — 10 passed. `build:notebook-styles` — ok.
+- **Notes / Handoff:** These two small fixes are not pushed yet.
 
 ### Entry 254 - Delete unused notebook debug and PostHog slash leftovers
 - **Date:** 2026-08-18

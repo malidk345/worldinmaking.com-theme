@@ -56,6 +56,7 @@ import {
     slashMenuRestoreText,
     splitTextBlockAtSlashToken,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/documentModel'
+import { splitInlineNodesAt } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineContent'
 import { getInlineText } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import type { NotebookTextBlockNode } from '../src/notebook-app/lib/components/MarkdownNotebook/types'
 
@@ -99,6 +100,10 @@ test.describe('notebook frontend helpers', () => {
         expect(getInsertMenuFilterQuery('table')).toBe('table')
         expect(slashMenuRestoreText('tab')).toBe('/tab')
         expect(slashMenuRestoreText('')).toBe('/')
+        const slashLine = getSlashTokenAt('hello /wim', 10)
+        expect(slashLine).toEqual({ start: 6, query: 'wim' })
+        const remainder = splitInlineNodesAt([{ type: 'text', text: 'hello /wim' }], slashLine!.start)[0]
+        expect(getInlineText(remainder).trim()).toBe('hello')
     })
 
     test('slash token splits a paragraph and restores /query on cancel', () => {
@@ -378,6 +383,12 @@ test.describe('notebook frontend helpers', () => {
         expect(onBlock.kind).toBe('block')
         if (onBlock.kind === 'block') {
             expect(onBlock.nodeId).toBeTruthy()
+            expect(onBlock.nodeId).not.toBe(parsed.nodes[0]?.id)
+        }
+        const untitledBlock = resolveAutonomousPlacement(parsed.nodes, '', 'block', [])
+        expect(untitledBlock.kind).toBe('block')
+        if (untitledBlock.kind === 'block') {
+            expect(untitledBlock.nodeId).not.toBe(parsed.nodes[0]?.id)
         }
 
         const second = resolveAutonomousPlacement(afterFirst, 'historical form', 'span', used)
