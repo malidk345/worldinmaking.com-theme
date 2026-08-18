@@ -1,7 +1,7 @@
-import { IconCheck, IconTrash } from '@posthog/icons'
+import { IconCheck, IconTrash, IconX } from '@posthog/icons'
 import { LemonTextArea } from '@posthog/lemon-ui'
 
-import { formatNoteTime, noteIntentLabel } from './inlineNotes'
+import { formatNoteTime } from './inlineNotes'
 
 export function InlineNotePopover({
     name,
@@ -40,11 +40,10 @@ export function InlineNotePopover({
     onApply?: () => void
 }): JSX.Element {
     const time = formatNoteTime(createdAt)
-    const intentLabel = scope === 'piece' ? [noteIntentLabel(intent), 'On the piece'].filter(Boolean).join(' · ') : noteIntentLabel(intent)
     const showSuggestion = intent === 'edit' && Boolean(suggestion)
     return (
         <aside
-            className="MarkdownNotebook__inline-note-popover"
+            className="MarkdownNotebook__inline-note-popover MarkdownNotebook__inline-note-popover--fixed"
             style={{ top, left }}
             contentEditable={false}
         >
@@ -57,7 +56,7 @@ export function InlineNotePopover({
                     )}
                     <span className="MarkdownNotebook__inline-note-popover-meta">
                         <strong>{name}</strong>
-                        {intentLabel || time ? <em>{[intentLabel, time].filter(Boolean).join(' · ')}</em> : null}
+                        {time ? <em>{time}</em> : null}
                     </span>
                 </span>
             </div>
@@ -71,8 +70,13 @@ export function InlineNotePopover({
                         onChange={onChangeDraft}
                     />
                     <div className="MarkdownNotebook__inline-note-popover-actions">
-                        <button type="button" className="MarkdownNotebook__inline-note-popover-action" onClick={onClose}>
-                            Cancel
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
+                            aria-label="Cancel"
+                            onClick={onClose}
+                        >
+                            <IconX />
                         </button>
                         <button
                             type="button"
@@ -92,16 +96,22 @@ export function InlineNotePopover({
                         <p className="MarkdownNotebook__inline-note-popover-suggestion">{suggestion}</p>
                     ) : null}
                     <div className="MarkdownNotebook__inline-note-popover-actions">
-                        <button type="button" className="MarkdownNotebook__inline-note-popover-action" onClick={onClose}>
-                            Close
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
+                            aria-label="Close"
+                            onClick={onClose}
+                        >
+                            <IconX />
                         </button>
                         {onApply && showSuggestion ? (
                             <button
                                 type="button"
-                                className="MarkdownNotebook__inline-note-popover-action"
+                                className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
+                                aria-label="Apply"
                                 onClick={onApply}
                             >
-                                Apply
+                                <IconCheck />
                             </button>
                         ) : null}
                         <button

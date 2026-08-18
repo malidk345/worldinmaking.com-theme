@@ -2,6 +2,39 @@ import { useEffect } from 'react'
 
 const KEYBOARD_THRESHOLD = 80
 
+function scrollableParent(element: HTMLElement): HTMLElement | null {
+    let current: HTMLElement | null = element.parentElement
+    while (current) {
+        const style = window.getComputedStyle(current)
+        const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1
+        if (canScroll) return current
+        current = current.parentElement
+    }
+    return (document.scrollingElement as HTMLElement | null) || document.documentElement
+}
+
+/** Nudge the scroller so the caret stays above the keyboard — no page recenter. */
+function keepNotebookCaretInView(): void {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+    const range = selection.getRangeAt(0)
+    const node =
+        range.startContainer instanceof HTMLElement
+            ? range.startContainer
+            : range.startContainer.parentElement
+    if (!node?.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) return
+    const rect = range.getBoundingClientRect()
+    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const top = vv.offsetTop + 16
+    const bottom = vv.offsetTop + vv.height - 28
+    if (rect.top >= top && rect.bottom <= bottom) return
+    const delta = rect.bottom > bottom ? rect.bottom - bottom : rect.top - top
+    const scroller = scrollableParent(node)
+    if (scroller) scroller.scrollTop += delta
+}
+
 function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     if (!(target instanceof HTMLElement)) return false
     const tag = target.tagName
@@ -18,7 +51,7 @@ export function useKeyboardInset(): void {
     useEffect(() => {
         const root = document.documentElement
 
-        const apply = () => {
+        const apply = (keepCaret = false) => {
             const vv = window.visualViewport
             const layoutH = window.innerHeight
             const visibleH = vv?.height ?? layoutH
@@ -33,8 +66,12 @@ export function useKeyboardInset(): void {
             else root.removeAttribute('data-keyboard')
 
             const active = document.activeElement
-            if (active instanceof HTMLElement && active.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) {
+            const inNotebook =
+                active instanceof HTMLElement &&
+                Boolean(active.closest('.MarkdownNotebook, [data-markdown-notebook-editor]'))
+            if (inNotebook) {
                 root.setAttribute('data-keyboard-surface', 'notebook')
+                if (keepCaret && open) keepNotebookCaretInView()
             } else {
                 root.removeAttribute('data-keyboard-surface')
             }
@@ -58,16 +95,18 @@ export function useKeyboardInset(): void {
             }, 280)
         }
 
-        apply()
-        window.visualViewport?.addEventListener('resize', apply)
-        window.visualViewport?.addEventListener('scroll', apply)
-        window.addEventListener('resize', apply)
+        const applyVars = () => apply(false)
+        const applyAndKeepCaret = () => apply(true)
+        apply(false)
+        window.visualViewport?.addEventListener('resize', applyAndKeepCaret)
+        window.visualViewport?.addEventListener('scroll', applyVars)
+        window.addEventListener('resize', applyAndKeepCaret)
         document.addEventListener('focusin', onFocusIn)
 
         return () => {
-            window.visualViewport?.removeEventListener('resize', apply)
-            window.visualViewport?.removeEventListener('scroll', apply)
-            window.removeEventListener('resize', apply)
+            window.visualViewport?.removeEventListener('resize', applyAndKeepCaret)
+            window.visualViewport?.removeEventListener('scroll', applyVars)
+            window.removeEventListener('resize', applyAndKeepCaret)
             document.removeEventListener('focusin', onFocusIn)
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')

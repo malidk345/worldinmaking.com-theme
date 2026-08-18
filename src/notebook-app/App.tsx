@@ -9,7 +9,7 @@ import {
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
-import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
+import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import { WIM_HIDDEN_INSERT_COMMAND_KEYS } from './scenes/notebooks/hiddenInsertCommands'
@@ -604,7 +604,9 @@ export function App() {
         className={
           route.page === 'public'
             ? 'p-3 sm:p-6 lg:p-8 pb-16 max-w-[1400px] mx-auto bg-transparent'
-            : 'p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
+            : route.page === 'editor'
+              ? 'px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-3 sm:space-y-6'
+              : 'p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
         }
       >
         <ErrorBoundary>
@@ -719,33 +721,6 @@ export function App() {
                 {/* Main editor */}
                 <div className="w-full min-h-[600px] pt-2 sm:pt-3 mt-1 sm:mt-2 flex gap-6 items-start">
                   <div className="flex-1 min-w-0" ref={editorContainerRef}>
-                    <LemonInput
-                      value={title}
-                      onChange={setTitle}
-                      transparentBackground
-                      aria-label="Notebook title"
-                      autoFocus={!title || title === 'Untitled Notebook'}
-                      className="text-2xl sm:text-3xl font-bold border-none shadow-none focus:outline-none p-0 mb-2 bg-transparent w-full"
-                      placeholder="Untitled"
-                      onPressEnter={(event) => {
-                        event.preventDefault()
-                        const root = editorContainerRef.current
-                        const firstBlock = root?.querySelector(
-                          '.MarkdownNotebook__text-block, [data-markdown-notebook-editor]'
-                        ) as HTMLElement | null
-                        firstBlock?.focus()
-                      }}
-                    />
-                    {!markdown.trim() ? (
-                      <p className="m-0 mb-5 sm:mb-6 text-[11px] text-muted select-none">
-                        <span className="font-medium text-secondary">Enter</span> to write ·{' '}
-                        <span className="font-medium text-secondary">/</span> insert a block ·{' '}
-                        <span className="font-medium text-secondary">⌘K</span> jump
-                      </p>
-                    ) : (
-                      <div className="mb-5 sm:mb-6" />
-                    )}
-
                     <MarkdownNotebook
                       key={`${currentNotebook.id}-${markdownVersion}`}
                       value={markdown}
@@ -755,7 +730,11 @@ export function App() {
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}
                       focusAIPromptRequest={aiPromptRequest}
-                      onChange={(val) => setMarkdown(val)}
+                      onChange={(val) => {
+                        setMarkdown(val)
+                        const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
+                        if (heading) setTitle(heading)
+                      }}
                       onAskAI={handleNotebookAskAI}
                       isAskAIDisabled={isAskAIBusy}
                       extraInsertCommands={extraCommands}

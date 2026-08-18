@@ -380,11 +380,35 @@ export function editableHtmlMatches(element: HTMLElement, renderedHtml: string):
     return clone.innerHTML === renderedHtml
 }
 
+export function noteChipsAreCurrent(
+    element: HTMLElement,
+    annotations: NotebookAnnotationMap | undefined
+): boolean {
+    const hosts = element.querySelectorAll('[data-notebook-ref]')
+    for (const host of hosts) {
+        if (!(host instanceof HTMLElement)) continue
+        const id = host.getAttribute('data-notebook-ref') || ''
+        const notes = id ? annotations?.[id]?.notes || [] : []
+        const buttons = host.querySelectorAll('[data-note-by]')
+        if (notes.length !== buttons.length) return false
+        if (notes.length > 0 && !host.classList.contains('MarkdownNotebook__ref--note')) return false
+        for (let index = 0; index < notes.length; index++) {
+            const button = buttons[index]
+            if (!(button instanceof HTMLElement)) return false
+            if (button.getAttribute('data-note-by') !== notes[index].by) return false
+            const pending = button.classList.contains('MarkdownNotebook__inline-note--pending')
+            if (pending !== Boolean(notes[index].pending)) return false
+        }
+    }
+    return true
+}
+
 /** Chips are not part of the contenteditable source string — they are painted onto `<ref>` hosts. */
 export function syncInlineNoteChips(
     element: HTMLElement,
     annotations: NotebookAnnotationMap | undefined
 ): void {
+    if (noteChipsAreCurrent(element, annotations)) return
     element.querySelectorAll('[data-inline-note-chip]').forEach((node) => node.remove())
     element.querySelectorAll('[data-notebook-ref]').forEach((host) => {
         if (!(host instanceof HTMLElement)) return

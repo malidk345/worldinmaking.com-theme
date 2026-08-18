@@ -72,6 +72,21 @@ export function collectExistingRefSpans(nodes: NotebookBlockNode[]): NotebookTex
 
 export type AutonomousPlacement = { kind: 'span'; span: NotebookTextSpan } | { kind: 'piece' }
 
+export function clampOverlayPosition(
+    anchor: { top: number; bottom: number; left: number },
+    size: { width: number; height: number } = { width: 288, height: 220 }
+): { top: number; left: number } {
+    const padding = 8
+    const width = Math.min(size.width, Math.max(160, window.innerWidth - padding * 2))
+    const left = Math.min(Math.max(padding, anchor.left), Math.max(padding, window.innerWidth - width - padding))
+    const below = anchor.bottom + padding
+    const top =
+        below + size.height > window.innerHeight - padding
+            ? Math.max(padding, anchor.top - size.height - padding)
+            : below
+    return { top, left }
+}
+
 export function wordSpanAt(text: string, caret: number): { start: number; end: number } | null {
     if (!text.trim()) return null
     const isWord = (character: string): boolean => /[\p{L}\p{N}_'-]/u.test(character)

@@ -167,8 +167,20 @@ export function EditablePromptComponent({
             return
         }
 
+        if (event.key === 'ArrowUp' && !question.trim()) {
+            const draft = typeof window !== 'undefined' ? localStorage.getItem('wim_ai_draft_prompt') : null
+            if (draft) {
+                event.preventDefault()
+                updateQuestion(draft)
+                return
+            }
+        }
+
         if (event.key === 'Escape') {
             event.preventDefault()
+            if (question.trim() && typeof window !== 'undefined') {
+                localStorage.setItem('wim_ai_draft_prompt', question.trim())
+            }
             deletePrompt()
             return
         }
@@ -255,6 +267,13 @@ export function EditablePromptComponent({
                 >
                     <IconPlus className="size-3 text-[#999999]" />
                 </button>
+
+                {/* Selection Context Badge */}
+                {selectedMarkdown && (
+                    <span className="WimInlinePill__selectedTag" title={selectedMarkdown}>
+                        "{selectedMarkdown.slice(0, 16)}{selectedMarkdown.length > 16 ? '…' : ''}"
+                    </span>
+                )}
 
                 {/* Main Prompt Input */}
                 <input

@@ -39,7 +39,7 @@ import {
     TextSelectionPointerStartEvent,
 } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
-import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
+import { editableHtmlMatches, noteChipsAreCurrent, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
@@ -153,8 +153,10 @@ export function EditableTextBlock({
             !editableHtmlMatches(element, renderedHtml)
         ) {
             element.innerHTML = renderedHtml
+            syncInlineNoteChips(element, annotations)
+        } else if (!noteChipsAreCurrent(element, annotations)) {
+            syncInlineNoteChips(element, annotations)
         }
-        syncInlineNoteChips(element, annotations)
     }, [annotations, renderedHtml, TextTag, node.id, rootEditableInputHtmlByNodeIdRef])
 
     const updateChildren = (nextChildren: NotebookInlineNode[]): NotebookInlineNode[] => {

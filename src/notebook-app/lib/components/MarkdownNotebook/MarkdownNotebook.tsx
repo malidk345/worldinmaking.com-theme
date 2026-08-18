@@ -21,7 +21,7 @@ import {
     useState,
 } from 'react'
 
-import { IconCode, IconComment, IconDrag } from '@posthog/icons'
+import { IconCode, IconDrag } from '@posthog/icons'
 import { LemonButton } from '@posthog/lemon-ui'
 
 import { Spinner } from 'lib/lemon-ui/Spinner'
@@ -48,6 +48,7 @@ import {
     deleteNotebookAnnotation,
     notebookReadableText,
     replaceRefQuotedText,
+    clampOverlayPosition,
     resolveAutonomousPlacement,
     wordSpanAt,
 } from './annotationPlacement'
@@ -2890,8 +2891,8 @@ function MarkdownNotebookEditor({
         setInsertMenu(null)
 
         const block = blockRefs.current[nodeId]
-        const container = notebookRef.current?.getBoundingClientRect()
         const rect = block?.getBoundingClientRect()
+        const overlay = clampOverlayPosition(rect || { top: 40, bottom: 40, left: 16 })
         setInlineNotePopover({
             nodeId,
             refId,
@@ -2903,8 +2904,8 @@ function MarkdownNotebookEditor({
             draft: true,
             createdAt: note.createdAt,
             scope,
-            top: (rect?.bottom || 40) - (container?.top || 0) + 8,
-            left: (rect?.left || 0) - (container?.left || 0),
+            top: overlay.top,
+            left: overlay.left,
         })
     }
 
@@ -4154,6 +4155,11 @@ function MarkdownNotebookEditor({
         floatingToolbarPositionLockRef.current = null
         setFloatingToolbar(null)
         window.getSelection()?.removeAllRanges()
+        const overlay = clampOverlayPosition({
+            top: floatingToolbar.top,
+            bottom: floatingToolbar.top + 28,
+            left: floatingToolbar.left,
+        })
         setInlineNotePopover({
             nodeId: targetNodeId,
             refId,
@@ -4164,8 +4170,8 @@ function MarkdownNotebookEditor({
             kind: 'human',
             draft: true,
             createdAt: note.createdAt,
-            top: floatingToolbar.top + 28,
-            left: floatingToolbar.left,
+            top: overlay.top,
+            left: overlay.left,
         })
     }
 
@@ -4265,9 +4271,21 @@ function MarkdownNotebookEditor({
             })
     }
 
+    const returnFocusToEditor = (nodeId: string): void => {
+        window.setTimeout(() => {
+            const element = blockRefs.current[nodeId]
+            if (!(element instanceof HTMLElement)) return
+            element.focus({ preventScroll: true })
+            const length = (element.textContent || '').length
+            restoreSelection(element, length, length)
+        }, 0)
+    }
+
     const removeInlineNote = (refId: string, by?: string): void => {
+        const nodeId = inlineNotePopover?.nodeId
         commitDocument(deleteNotebookAnnotation(documentRef.current, refId, by))
         setInlineNotePopover(null)
+        if (nodeId) returnFocusToEditor(nodeId)
     }
 
     // Clicking a `<ref>` highlight scrolls its comment thread into view and flashes it.
@@ -4353,9 +4371,9 @@ function MarkdownNotebookEditor({
             const by = noteButton.getAttribute('data-note-by') || ''
             const note = notes.find((entry) => entry.by === by)
             const rect = noteButton.getBoundingClientRect()
-            const container = notebookRef.current?.getBoundingClientRect()
             const nodeId =
                 noteButton.closest<HTMLElement>('[data-markdown-notebook-node-id]')?.dataset.markdownNotebookNodeId || ''
+            const overlay = clampOverlayPosition(rect)
             setInlineNotePopover({
                 nodeId,
                 refId: hostRef,
@@ -4370,8 +4388,8 @@ function MarkdownNotebookEditor({
                 intent: note?.intent,
                 suggestion: note?.suggestion,
                 scope: documentRef.current.annotations?.[hostRef]?.scope,
-                top: rect.bottom - (container?.top || 0) + 8,
-                left: rect.left - (container?.left || 0),
+                top: overlay.top,
+                left: overlay.left,
             })
             return
         }
@@ -4383,10 +4401,10 @@ function MarkdownNotebookEditor({
                 const first = notes[0]
                 const host = event.target.closest<HTMLElement>('[data-notebook-ref]')
                 const rect = (host || event.target).getBoundingClientRect()
-                const container = notebookRef.current?.getBoundingClientRect()
                 const nodeId =
                     event.target.closest<HTMLElement>('[data-markdown-notebook-node-id]')?.dataset
                         .markdownNotebookNodeId || ''
+                const overlay = clampOverlayPosition(rect)
                 setInlineNotePopover({
                     nodeId,
                     refId,
@@ -4400,8 +4418,8 @@ function MarkdownNotebookEditor({
                     intent: first.intent,
                     suggestion: first.suggestion,
                     scope: documentRef.current.annotations?.[refId]?.scope,
-                    top: rect.bottom - (container?.top || 0) + 8,
-                    left: rect.left - (container?.left || 0),
+                    top: overlay.top,
+                    left: overlay.left,
                 })
                 return
             }
@@ -4427,8 +4445,8 @@ function MarkdownNotebookEditor({
             { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note]) }
         )
         const block = blockRefs.current[nodeId]
-        const container = notebookRef.current?.getBoundingClientRect()
         const rect = block?.getBoundingClientRect()
+        const overlay = clampOverlayPosition(rect || { top: 40, bottom: 40, left: 16 })
         setInlineNotePopover({
             nodeId,
             refId,
@@ -4439,8 +4457,8 @@ function MarkdownNotebookEditor({
             kind: 'human',
             draft: true,
             createdAt: note.createdAt,
-            top: (rect?.bottom || 40) - (container?.top || 0) + 8,
-            left: (rect?.left || 0) - (container?.left || 0),
+            top: overlay.top,
+            left: overlay.left,
         })
     }
 
@@ -6453,24 +6471,6 @@ function MarkdownNotebookEditor({
                         <IconDrag />
                     </div>
                 ) : null}
-                {isDraggableRow ? (
-                    <div
-                        className="MarkdownNotebook__block-comment-button"
-                        contentEditable={false}
-                        role="button"
-                        aria-label="Comment on block"
-                        title="Comment"
-                        data-attr="markdown-notebook-block-comment-button"
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onClick={(event) => {
-                            event.preventDefault()
-                            event.stopPropagation()
-                            startBlockCommentForNode(node.id)
-                        }}
-                    >
-                        <IconComment />
-                    </div>
-                ) : null}
                 {dropIndicatorTarget?.index === index ? (
                     <div
                         className={clsx(
@@ -6894,13 +6894,16 @@ function MarkdownNotebookEditor({
                                     })
                                 )
                                 setInlineNotePopover(null)
+                                returnFocusToEditor(next.nodeId)
                             }}
                             onClose={() => {
                                 if (inlineNotePopover.draft && !inlineNotePopover.text.trim()) {
                                     removeInlineNote(inlineNotePopover.refId)
                                     return
                                 }
+                                const nodeId = inlineNotePopover.nodeId
                                 setInlineNotePopover(null)
+                                returnFocusToEditor(nodeId)
                             }}
                             onDelete={() => removeInlineNote(inlineNotePopover.refId, inlineNotePopover.by)}
                             onApply={
