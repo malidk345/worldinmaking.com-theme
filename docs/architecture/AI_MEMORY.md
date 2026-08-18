@@ -201,6 +201,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-182` | Stream 3 / 5 | Saved-note card, reveal after invite, 1–2 guests, invite errors | InlineNotePopover, MarkdownNotebook, annotationPlacement | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-183` | Stream 5 / 3 | Invite notes match page language; Close/Delete same chrome | notebook-invite.ts, InlineNotePopover | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-184` | Stream 5 | Invite notes are not one genre: remark/critique/edit/question/aside | notebook-invite, InlineNotePopover, annotations | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-185` | Stream 3 / 5 | Mobile overlays + never persist thinking/JSON as a note | notebook-invite.ts, MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-186` | Stream 5 | Invite notes may be a word, a fragment, or a piece-level meta note | annotationPlacement, notebook-invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -339,6 +341,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 251 - Strip invite dumps; pin overlays on mobile
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Invite parse now pulls the first JSON object out of thinking/phase leftovers and refuses to save dump text as a note. On viewports under 640px the invite picker, status, and note card pin to a bottom sheet instead of overflowing the caret.
+- **Modified Files:** `notebook-invite.ts`, `MarkdownNotebook.scss`, tests, docs
+- **Tests:** invite dump cases added; full notebook-frontend suite running.
 
 ### Entry 250 - Invite notes have more than one move
 - **Date:** 2026-08-18

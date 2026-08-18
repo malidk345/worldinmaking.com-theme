@@ -75,6 +75,7 @@ export default async function handler(req: Request) {
                     phrase: payload.phrase,
                     text: payload.text,
                     intent: payload.intent,
+                    scope: payload.scope,
                     ...(payload.suggestion ? { suggestion: payload.suggestion } : {}),
                 }
             })

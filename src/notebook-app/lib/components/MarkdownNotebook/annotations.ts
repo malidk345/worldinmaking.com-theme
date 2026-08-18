@@ -32,14 +32,19 @@ export function getAnnotationNotes(
 export function upsertAnnotation(
     annotations: NotebookAnnotationMap | undefined,
     refId: string,
-    notes: InlinePhilosopherNote[]
+    notes: InlinePhilosopherNote[],
+    extra?: { scope?: NotebookAnnotation['scope'] }
 ): NotebookAnnotationMap {
     const next: NotebookAnnotationMap = { ...(annotations || {}) }
     if (!notes.length) {
         delete next[refId]
         return next
     }
-    next[refId] = { id: refId, notes }
+    next[refId] = {
+        id: refId,
+        notes,
+        scope: extra?.scope || next[refId]?.scope,
+    }
     return next
 }
 
@@ -92,7 +97,7 @@ export function pruneAnnotations(
     if (!annotations) return undefined
     const next: NotebookAnnotationMap = {}
     for (const [id, annotation] of Object.entries(annotations)) {
-        if (refIds.has(id) && annotation.notes.length) {
+        if (annotation.notes.length && (refIds.has(id) || annotation.scope === 'piece')) {
             next[id] = annotation
         }
     }
@@ -197,9 +202,12 @@ export function serializeAnnotationsSidecar(
 ): string | null {
     const pruned = refIds ? pruneAnnotations(annotations, refIds) : annotations
     if (!pruned || !Object.keys(pruned).length) return null
-    const byId: Record<string, InlinePhilosopherNote[]> = {}
+    const byId: Record<string, unknown> = {}
     for (const [id, annotation] of Object.entries(pruned)) {
-        byId[id] = annotation.notes
+        byId[id] =
+            annotation.scope === 'piece'
+                ? { notes: annotation.notes, scope: 'piece' }
+                : annotation.notes
     }
     return `${ANNOTATIONS_SIDECAR_PREFIX}${JSON.stringify({ v: 1, byId })}${ANNOTATIONS_SIDECAR_SUFFIX}`
 }
@@ -239,7 +247,7 @@ function mergeOneAnnotation(
     if (!remote) return local
 
     const notes = mergeNoteLists(local.notes, remote.notes, base?.notes)
-    return notes.length ? { id, notes } : undefined
+    return notes.length ? { id, notes, scope: local?.scope || remote?.scope } : undefined
 }
 
 function mergeNoteLists(
@@ -307,10 +315,18 @@ function parseAnnotationPayload(value: unknown): NotebookAnnotationMap | undefin
     const byId = record.byId
     if (!byId || typeof byId !== 'object' || Array.isArray(byId)) return undefined
     const annotations: NotebookAnnotationMap = {}
-    for (const [id, rawNotes] of Object.entries(byId as Record<string, unknown>)) {
-        const notes = parseInlineNotes(rawNotes)
+    for (const [id, raw] of Object.entries(byId as Record<string, unknown>)) {
+        const packed =
+            raw && typeof raw === 'object' && !Array.isArray(raw)
+                ? (raw as { notes?: unknown; scope?: unknown })
+                : null
+        const notes = parseInlineNotes(packed ? packed.notes : raw)
         if (id && notes.length) {
-            annotations[id] = { id, notes }
+            annotations[id] = {
+                id,
+                notes,
+                scope: packed?.scope === 'piece' ? 'piece' : undefined,
+            }
         }
     }
     return Object.keys(annotations).length ? annotations : undefined

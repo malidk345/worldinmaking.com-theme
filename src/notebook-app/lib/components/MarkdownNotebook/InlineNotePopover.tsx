@@ -1,3 +1,4 @@
+import { IconCheck, IconTrash } from '@posthog/icons'
 import { LemonTextArea } from '@posthog/lemon-ui'
 
 import { formatNoteTime, noteIntentLabel } from './inlineNotes'
@@ -6,9 +7,9 @@ export function InlineNotePopover({
     name,
     avatar,
     text,
-    quote,
     createdAt,
     intent,
+    scope,
     suggestion,
     pending,
     draft,
@@ -23,10 +24,10 @@ export function InlineNotePopover({
     name: string
     avatar?: string
     text: string
-    quote?: string
     createdAt?: string
     kind?: 'human' | 'bot'
     intent?: import('./types').NotebookNoteIntent
+    scope?: 'span' | 'piece'
     suggestion?: string
     pending?: boolean
     draft?: boolean
@@ -39,7 +40,7 @@ export function InlineNotePopover({
     onApply?: () => void
 }): JSX.Element {
     const time = formatNoteTime(createdAt)
-    const intentLabel = noteIntentLabel(intent)
+    const intentLabel = scope === 'piece' ? [noteIntentLabel(intent), 'On the piece'].filter(Boolean).join(' · ') : noteIntentLabel(intent)
     const showSuggestion = intent === 'edit' && Boolean(suggestion)
     return (
         <aside
@@ -60,7 +61,6 @@ export function InlineNotePopover({
                     </span>
                 </span>
             </div>
-            {quote ? <blockquote className="MarkdownNotebook__inline-note-popover-quote">{quote}</blockquote> : null}
             {draft ? (
                 <>
                     <LemonTextArea
@@ -76,11 +76,12 @@ export function InlineNotePopover({
                         </button>
                         <button
                             type="button"
-                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--primary"
+                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon MarkdownNotebook__inline-note-popover-action--primary"
                             disabled={!text.trim()}
+                            aria-label="Save"
                             onClick={onSave}
                         >
-                            Save
+                            <IconCheck />
                         </button>
                     </div>
                 </>
@@ -103,8 +104,13 @@ export function InlineNotePopover({
                                 Apply
                             </button>
                         ) : null}
-                        <button type="button" className="MarkdownNotebook__inline-note-popover-action" onClick={onDelete}>
-                            Delete
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
+                            aria-label="Delete"
+                            onClick={onDelete}
+                        >
+                            <IconTrash />
                         </button>
                     </div>
                 </>

@@ -135,9 +135,13 @@ export type NotebookBlockNode =
     | NotebookCodeBlockNode
     | NotebookComponentBlockNode
 
+export type NotebookNoteScope = 'span' | 'piece'
+
 export type NotebookAnnotation = {
     id: string
     notes: InlinePhilosopherNote[]
+    /** `piece` is a meta note on the work; it has no underlined span. */
+    scope?: NotebookNoteScope
 }
 
 export type NotebookAnnotationMap = Record<string, NotebookAnnotation>

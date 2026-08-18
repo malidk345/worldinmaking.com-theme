@@ -2955,6 +2955,32 @@ button.MarkdownNotebook__component-title:focus-visible {
     background: transparent;
 }
 
+.MarkdownNotebook__piece-notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    align-items: center;
+    padding: 0 0 0.45rem;
+}
+
+.MarkdownNotebook__piece-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--color-text-primary, #1d4d4f);
+    border: 1px solid var(--color-bg-surface-primary, #fff);
+    border-radius: 999px;
+}
+
+.MarkdownNotebook__piece-note--flash {
+    box-shadow: 0 0 0 3px color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 22%, transparent);
+}
+
 .MarkdownNotebook__ref--note {
     background: transparent;
     border-bottom: 1px solid color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 28%, transparent);
@@ -3048,18 +3074,6 @@ button.MarkdownNotebook__component-title:focus-visible {
     border-radius: 0.35rem;
 }
 
-.MarkdownNotebook__inline-note-popover-quote {
-    margin: 0 0 0.45rem;
-    padding: 0 0 0 0.5rem;
-    overflow: hidden;
-    font-size: 0.75rem;
-    font-style: italic;
-    line-height: 1.35;
-    color: var(--color-text-secondary);
-    text-overflow: ellipsis;
-    border-left: 2px solid var(--color-border-primary);
-}
-
 .MarkdownNotebook__inline-note-popover-who .MarkdownNotebook__inline-note-face,
 .MarkdownNotebook__inline-note-popover-who .MarkdownNotebook__inline-note-fallback {
     width: 1.15rem;
@@ -3072,7 +3086,7 @@ button.MarkdownNotebook__component-title:focus-visible {
 .MarkdownNotebook__inline-note-popover-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.15rem;
+    gap: 0.5rem;
     margin-top: 0.35rem;
 }
 
@@ -3094,6 +3108,20 @@ button.MarkdownNotebook__component-title:focus-visible {
     color: var(--color-text-primary);
     background: var(--color-bg-fill-button-tertiary-hover);
     outline: none;
+}
+
+.MarkdownNotebook__inline-note-popover-action--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0;
+}
+
+.MarkdownNotebook__inline-note-popover-action--icon svg {
+    width: 0.875rem;
+    height: 0.875rem;
 }
 
 .MarkdownNotebook__inline-note-popover-action--primary {
@@ -3350,6 +3378,15 @@ button.MarkdownNotebook__component-title:focus-visible {
 @media (max-width: 640px) {
     .MarkdownNotebook {
         --markdown-notebook-content-offset: 0px;
+        overflow-x: clip;
+        max-width: 100%;
+    }
+
+    .MarkdownNotebook__canvas,
+    .MarkdownNotebook__text-row,
+    .MarkdownNotebook__text-block {
+        min-width: 0;
+        max-width: 100%;
     }
 
     .MarkdownNotebook__text-group {
@@ -3376,5 +3413,28 @@ button.MarkdownNotebook__component-title:focus-visible {
 
     h3.MarkdownNotebook__text-block--heading {
         font-size: 1.1rem !important;
+    }
+
+    .MarkdownNotebook__invite-picker,
+    .MarkdownNotebook__invite-status,
+    .MarkdownNotebook__inline-note-popover {
+        top: auto !important;
+        right: 8px;
+        bottom: max(12px, env(safe-area-inset-bottom, 12px));
+        left: 8px !important;
+        width: auto !important;
+        max-width: none;
+        max-height: min(70dvh, 28rem);
+        transform: none !important;
+    }
+
+    .MarkdownNotebook__inline-note-popover {
+        position: fixed;
+        z-index: calc(var(--z-popover) + 2);
+        width: auto;
+    }
+
+    .MarkdownNotebook__invite-picker {
+        max-height: min(70dvh, 28rem);
     }
 }

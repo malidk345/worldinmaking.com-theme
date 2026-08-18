@@ -36,7 +36,7 @@ import {
     deleteNotebookAnnotation,
     getRefQuote,
     notebookReadableText,
-    resolveAutonomousSpan,
+    resolveAutonomousPlacement,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/annotationPlacement'
 import { getNodeFingerprint } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components/MarkdownNotebook/collaboration'
@@ -245,8 +245,18 @@ test.describe('notebook frontend helpers', () => {
         expect(buildInviteCommentSystemPrompt('marx')).toMatch(/critique/)
         expect(parseInviteNotePayload('{"phrase":"erdem bir his değildir","intent":"edit","text":"Daha sıkı yaz.","suggestion":"Erdem bir his değil."}')).toMatchObject({
             intent: 'edit',
+            scope: 'span',
             suggestion: 'Erdem bir his değil.',
         })
+        expect(
+            parseInviteNotePayload('{"scope":"piece","phrase":"","intent":"aside","text":"Çerçeve eylemin kendisi."}')
+        ).toMatchObject({ scope: 'piece', phrase: '', text: 'Çerçeve eylemin kendisi.' })
+        expect(
+            parseInviteNotePayload(
+                '<thinking><case>phase text</case></thinking>\n{"phrase":"erdem bir his","intent":"critique","text":"Bu iddia durmuyor."}'
+            )
+        ).toMatchObject({ intent: 'critique', text: 'Bu iddia durmuyor.' })
+        expect(parseInviteNotePayload('Phase 1: dump\n{"phrase":"x"}').text).toBe('')
         expect(
             parseInlineNotes([
                 { by: 'you', name: 'Ada', text: 'note', avatar: '/a.png', kind: 'human' },
@@ -344,19 +354,24 @@ test.describe('notebook frontend helpers', () => {
             '# Title\n\nVirtue is not a feeling.\n\nThe market is a historical form, not nature.'
         )
         expect(notebookReadableText(parsed.nodes)).toContain('Virtue is not a feeling.')
-        expect(notebookReadableText(parsed.nodes)).not.toContain('Title')
+        expect(notebookReadableText(parsed.nodes)).toContain('Title: Title')
 
-        const first = resolveAutonomousSpan(parsed.nodes, 'Virtue is not a feeling', [], 'nietzsche')
-        expect(first).toMatchObject({ start: 0, end: 'Virtue is not a feeling'.length })
-        const afterFirst = applyRefOnNotebookSpan(parsed.nodes, first!, 'ref-a')
+        const first = resolveAutonomousPlacement(parsed.nodes, 'Virtue', 'span', [])
+        expect(first.kind).toBe('span')
+        if (first.kind !== 'span') return
+        expect(first.span.end - first.span.start).toBe('Virtue'.length)
+        const afterFirst = applyRefOnNotebookSpan(parsed.nodes, first.span, 'ref-a')
         const used = collectExistingRefSpans(afterFirst)
         expect(used).toHaveLength(1)
 
-        const second = resolveAutonomousSpan(afterFirst, 'Virtue is not a feeling', used, 'marx')
-        expect(second).not.toBeNull()
-        expect(second && first && second.nodeId === first.nodeId && second.start === first.start).toBe(false)
+        const meta = resolveAutonomousPlacement(afterFirst, '', 'piece', used)
+        expect(meta).toEqual({ kind: 'piece' })
+        expect(resolveAutonomousPlacement(afterFirst, 'Virtue', 'span', used)).toEqual({ kind: 'piece' })
 
-        const withBoth = applyRefOnNotebookSpan(afterFirst, second!, 'ref-b')
+        const second = resolveAutonomousPlacement(afterFirst, 'historical form', 'span', used)
+        expect(second.kind).toBe('span')
+        if (second.kind !== 'span') return
+        const withBoth = applyRefOnNotebookSpan(afterFirst, second.span, 'ref-b')
         const saved = {
             type: 'doc' as const,
             nodes: withBoth,
@@ -369,6 +384,11 @@ test.describe('notebook frontend helpers', () => {
                     id: 'ref-b',
                     notes: [{ by: 'marx', name: 'Marx', text: 'History first.', kind: 'bot' as const }],
                 },
+                'ref-piece': {
+                    id: 'ref-piece',
+                    scope: 'piece' as const,
+                    notes: [{ by: 'arendt', name: 'Arendt', text: 'The frame is the act.', kind: 'bot' as const }],
+                },
             },
             errors: [],
         }
@@ -376,11 +396,13 @@ test.describe('notebook frontend helpers', () => {
         expect(markdown).toContain('<ref id="ref-a">')
         expect(markdown).toContain('<ref id="ref-b">')
         expect(markdown).toContain('<!--wim-annotations:')
+        expect(markdown).toContain('"scope":"piece"')
 
         const afterDelete = deleteNotebookAnnotation(saved, 'ref-a', 'nietzsche')
         expect(afterDelete.annotations?.['ref-a']).toBeUndefined()
         expect(serializeMarkdownNotebook(afterDelete)).not.toContain('ref-a')
         expect(afterDelete.annotations?.['ref-b'].notes[0].text).toBe('History first.')
+        expect(afterDelete.annotations?.['ref-piece'].scope).toBe('piece')
         expect(getRefQuote(withBoth, 'ref-b').length).toBeGreaterThan(0)
         expect(formatNoteTime(new Date().toISOString())).toBe('Just now')
     })

@@ -47,25 +47,34 @@ export function normalizeInviteIntent(value: unknown): NotebookInviteIntent {
         : 'remark'
 }
 
+export type NotebookInviteScope = 'span' | 'piece'
+
+export function normalizeInviteScope(value: unknown, phrase: string): NotebookInviteScope {
+    if (value === 'piece' || value === 'meta' || value === 'document') return 'piece'
+    if (value === 'span') return phrase.trim() ? 'span' : 'piece'
+    return phrase.trim() ? 'span' : 'piece'
+}
+
 export function buildInviteCommentSystemPrompt(botId: string): string {
     const persona = extractPersona('', botId)
     return [
         buildPersonaHeader(persona, 'calm', 'autonomous_assistant', 'compact'),
-        'You have been invited into a notebook. You roam the page as yourself — not as a generic commenter.',
-        'Do not always leave a remark. Pick the ONE move this span actually needs:',
+        'You have been invited into a notebook. Read the whole page. You decide the scale.',
+        'You are not required to mark a sentence. You may mark a single word, a fragment, or leave a meta note on the piece.',
+        'scope=span: copy into `phrase` the exact word or fragment your move grips. One word is enough. Do not pad it into a sentence.',
+        'scope=piece: a meta move about the work, the method, the frame, the silence. Leave `phrase` empty. Do not invent a sentence to hang it on.',
+        'Then pick the ONE move that scale needs:',
         '- remark: a thought that sits beside the writing',
         '- critique: an objection or pressure on the claim',
         '- edit: concrete writing advice; put the rewritten span in `suggestion`',
         '- question: a real question the text has not answered',
         '- aside: a sideways connection, not a verdict',
-        'Mark ONE short span your method owns. Do not greet. Do not mention being an AI.',
+        'Do not greet. Do not mention being an AI.',
         'One to three sentences in `text`. Address the writing, not the reader as "user".',
-        'LANGUAGE: Write `text` and `suggestion` in the same language as the notebook body. If the page is Turkish, both are Turkish. Never default to English when the marked span is not English. JSON keys stay English.',
+        'LANGUAGE: Write `text` and `suggestion` in the same language as the notebook body. If the page is Turkish, both are Turkish. Never default to English when the page is not English. JSON keys stay English.',
         'No thinking tags, stage labels, or process notes.',
-        'Return ONLY JSON: {"phrase":"exact words from the notebook","intent":"remark|critique|edit|question|aside","text":"your move","suggestion":"optional rewrite of phrase"}',
-        'phrase must be 4-12 words copied exactly from the notebook body, never the title, never invented.',
-        'Do not default to the first sentence unless it is the only real claim.',
-        'Use `suggestion` only when intent is edit, and then it must rewrite just that phrase.',
+        'Return ONLY JSON: {"scope":"span|piece","phrase":"exact words or empty","intent":"remark|critique|edit|question|aside","text":"your move","suggestion":"optional rewrite of phrase"}',
+        'Never invent phrase text. Use `suggestion` only when intent is edit and scope is span.',
     ].join('\n')
 }
 
@@ -91,39 +100,100 @@ export function buildInviteCommentUserPrompt(input: { selection: string; noteboo
 export function cleanInviteCommentOutput(raw: string): string {
     let text = stripThinkingBlocks(raw || '').trim()
     if (!text) return ''
-    const fenced = text.match(/^```(?:json|markdown|md|text)?\s*\n([\s\S]*?)\n```$/i)
+    text = text.replace(/<(?:phase|stage|case|life|pair)(?:\s[^>]*)?>[\s\S]*?<\/(?:phase|stage|case|life|pair)\s*>/gi, '')
+    text = text.replace(/^(?:phase|stage)\s*\d*\s*[:.\-–—]\s*/gim, '')
+    const fenced = text.match(/```(?:json|markdown|md|text)?\s*\n([\s\S]*?)\n```/i)
     if (fenced) text = fenced[1].trim()
     return text.replace(/^["“]|["”]$/g, '').trim()
+}
+
+export function looksLikeInviteDump(text: string): boolean {
+    const value = text.trim()
+    if (!value) return true
+    if (value.startsWith('{') || value.startsWith('[')) return true
+    if (/"phrase"\s*:/.test(value) || /"intent"\s*:/.test(value)) return true
+    if (/<\/?(?:thinking|think|phase|stage|analysis)\b/i.test(value)) return true
+    if (/^(?:phase|stage|thinking)\b/i.test(value) && value.length > 40) return true
+    return false
+}
+
+export function extractFirstJsonObject(source: string): string | null {
+    const start = source.indexOf('{')
+    if (start === -1) return null
+    let depth = 0
+    let inString = false
+    let escaped = false
+    for (let index = start; index < source.length; index++) {
+        const character = source[index]
+        if (inString) {
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            if (character === '\\') {
+                escaped = true
+                continue
+            }
+            if (character === '"') inString = false
+            continue
+        }
+        if (character === '"') {
+            inString = true
+            continue
+        }
+        if (character === '{') depth += 1
+        if (character === '}') {
+            depth -= 1
+            if (depth === 0) return source.slice(start, index + 1)
+        }
+    }
+    return null
 }
 
 export function parseInviteNotePayload(raw: string): {
     phrase: string
     text: string
     intent: NotebookInviteIntent
+    scope: NotebookInviteScope
     suggestion?: string
 } {
     const cleaned = cleanInviteCommentOutput(raw)
-    try {
-        const parsed = JSON.parse(cleaned) as {
-            phrase?: unknown
-            text?: unknown
-            intent?: unknown
-            suggestion?: unknown
-        }
-        const text = typeof parsed.text === 'string' ? parsed.text.trim() : ''
-        const phrase = typeof parsed.phrase === 'string' ? parsed.phrase.trim() : ''
-        const suggestion = typeof parsed.suggestion === 'string' ? parsed.suggestion.trim() : ''
-        const intent = normalizeInviteIntent(parsed.intent)
-        if (text) {
-            return {
-                phrase,
-                text,
-                intent,
-                ...(suggestion && intent === 'edit' ? { suggestion } : {}),
+    const candidates = [cleaned]
+    const embedded = extractFirstJsonObject(cleaned)
+    if (embedded && embedded !== cleaned) candidates.unshift(embedded)
+
+    for (const candidate of candidates) {
+        try {
+            const parsed = JSON.parse(candidate) as {
+                phrase?: unknown
+                text?: unknown
+                intent?: unknown
+                scope?: unknown
+                suggestion?: unknown
             }
+            const text = typeof parsed.text === 'string' ? parsed.text.trim() : ''
+            const phrase = typeof parsed.phrase === 'string' ? parsed.phrase.trim() : ''
+            const suggestion = typeof parsed.suggestion === 'string' ? parsed.suggestion.trim() : ''
+            const intent = normalizeInviteIntent(parsed.intent)
+            const scope = normalizeInviteScope(parsed.scope, phrase)
+            if (text && !looksLikeInviteDump(text)) {
+                return {
+                    phrase: scope === 'piece' ? '' : phrase,
+                    text,
+                    intent,
+                    scope,
+                    ...(suggestion && intent === 'edit' && scope === 'span' && !looksLikeInviteDump(suggestion)
+                        ? { suggestion }
+                        : {}),
+                }
+            }
+        } catch {
+            /* try the next candidate */
         }
-    } catch {
-        /* fall through to plain text */
     }
-    return { phrase: '', text: cleaned, intent: 'remark' }
+
+    if (cleaned && !looksLikeInviteDump(cleaned)) {
+        return { phrase: '', text: cleaned, intent: 'remark', scope: 'piece' }
+    }
+    return { phrase: '', text: '', intent: 'remark', scope: 'piece' }
 }

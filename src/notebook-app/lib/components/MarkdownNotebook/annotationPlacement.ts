@@ -25,10 +25,13 @@ type CommentableRun = {
 }
 
 export function notebookReadableText(nodes: NotebookBlockNode[]): string {
-    return collectCommentableRuns(nodes)
-        .filter((run) => !run.skip && run.text.trim())
+    const runs = collectCommentableRuns(nodes).filter((run) => run.text.trim())
+    const title = runs.find((run) => run.skip)?.text.trim()
+    const body = runs
+        .filter((run) => !run.skip)
         .map((run) => run.text.trim())
         .join('\n\n')
+    return [title ? `Title: ${title}` : '', body].filter(Boolean).join('\n\n')
 }
 
 export function collectExistingRefSpans(nodes: NotebookBlockNode[]): NotebookTextSpan[] {
@@ -67,15 +70,29 @@ export function collectExistingRefSpans(nodes: NotebookBlockNode[]): NotebookTex
     return spans
 }
 
+export type AutonomousPlacement = { kind: 'span'; span: NotebookTextSpan } | { kind: 'piece' }
+
+export function resolveAutonomousPlacement(
+    nodes: NotebookBlockNode[],
+    phrase: string | undefined,
+    scope: 'span' | 'piece' | undefined,
+    used: NotebookTextSpan[]
+): AutonomousPlacement {
+    if (scope === 'piece') return { kind: 'piece' }
+    const fromPhrase = findPhraseSpan(nodes, phrase, used)
+    if (fromPhrase) return { kind: 'span', span: fromPhrase }
+    return { kind: 'piece' }
+}
+
+/** @deprecated Prefer resolveAutonomousPlacement — missing phrases are meta, not a random sentence. */
 export function resolveAutonomousSpan(
     nodes: NotebookBlockNode[],
     phrase: string | undefined,
     used: NotebookTextSpan[],
-    salt: string
+    _salt?: string
 ): NotebookTextSpan | null {
-    const fromPhrase = findPhraseSpan(nodes, phrase, used)
-    if (fromPhrase) return fromPhrase
-    return pickFallbackSpan(nodes, used, salt)
+    const placement = resolveAutonomousPlacement(nodes, phrase, undefined, used)
+    return placement.kind === 'span' ? placement.span : null
 }
 
 export function findPhraseSpan(
@@ -84,7 +101,7 @@ export function findPhraseSpan(
     used: NotebookTextSpan[]
 ): NotebookTextSpan | null {
     const needle = (phrase || '').trim()
-    if (needle.length < 4) return null
+    if (needle.length < 1) return null
     for (const run of collectCommentableRuns(nodes)) {
         if (run.skip || !run.text.trim()) continue
         let cursor = 0

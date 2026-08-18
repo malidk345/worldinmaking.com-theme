@@ -46,10 +46,9 @@ import {
     applyRefOnNotebookSpan,
     collectExistingRefSpans,
     deleteNotebookAnnotation,
-    getRefQuote,
     notebookReadableText,
     replaceRefQuotedText,
-    resolveAutonomousSpan,
+    resolveAutonomousPlacement,
 } from './annotationPlacement'
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
@@ -759,10 +758,10 @@ function MarkdownNotebookEditor({
         kind?: 'human' | 'bot'
         pending?: boolean
         draft?: boolean
-        quote?: string
         createdAt?: string
         intent?: import('./types').NotebookNoteIntent
         suggestion?: string
+        scope?: 'span' | 'piece'
         top: number
         left: number
     } | null>(null)
@@ -4114,7 +4113,6 @@ function MarkdownNotebookEditor({
             text: '',
             kind: 'human',
             draft: true,
-            quote: getRefQuote(documentRef.current.nodes, refId),
             createdAt: note.createdAt,
             top: floatingToolbar.top + 28,
             left: floatingToolbar.left,
@@ -4129,8 +4127,15 @@ function MarkdownNotebookEditor({
             for (const refId of refIds) {
                 const host = root.querySelector<HTMLElement>(`[data-notebook-ref="${refId}"]`)
                 if (!host) continue
-                host.classList.add('MarkdownNotebook__ref--flash')
-                window.setTimeout(() => host.classList.remove('MarkdownNotebook__ref--flash'), 1600)
+                host.classList.add(
+                    host.classList.contains('MarkdownNotebook__piece-note')
+                        ? 'MarkdownNotebook__piece-note--flash'
+                        : 'MarkdownNotebook__ref--flash'
+                )
+                window.setTimeout(() => {
+                    host.classList.remove('MarkdownNotebook__ref--flash')
+                    host.classList.remove('MarkdownNotebook__piece-note--flash')
+                }, 1600)
                 if (!first) first = host
             }
             first?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -4160,24 +4165,35 @@ function MarkdownNotebookEditor({
                 for (const result of results) {
                     const bot = bots.find((entry) => entry.id === result.botId)
                     if (!bot || !result.text.trim()) continue
-                    const span = resolveAutonomousSpan(nextNodes, result.phrase, used, `${bot.id}:${result.phrase}`)
-                    if (!span) continue
+                    const placement = resolveAutonomousPlacement(
+                        nextNodes,
+                        result.phrase,
+                        result.scope,
+                        used
+                    )
                     const refId = createNotebookRefId()
-                    nextNodes = applyRefOnNotebookSpan(nextNodes, span, refId)
-                    used.push(span)
+                    if (placement.kind === 'span') {
+                        nextNodes = applyRefOnNotebookSpan(nextNodes, placement.span, refId)
+                        used.push(placement.span)
+                    }
                     placed.push(refId)
-                    nextAnnotations = upsertAnnotation(nextAnnotations, refId, [
-                        {
-                            by: bot.id,
-                            name: bot.name,
-                            text: result.text.trim(),
-                            avatar: bot.avatarUrl,
-                            kind: 'bot',
-                            createdAt: stamped,
-                            intent: result.intent,
-                            suggestion: result.suggestion,
-                        },
-                    ])
+                    nextAnnotations = upsertAnnotation(
+                        nextAnnotations,
+                        refId,
+                        [
+                            {
+                                by: bot.id,
+                                name: bot.name,
+                                text: result.text.trim(),
+                                avatar: bot.avatarUrl,
+                                kind: 'bot',
+                                createdAt: stamped,
+                                intent: result.intent,
+                                suggestion: result.suggestion,
+                            },
+                        ],
+                        { scope: placement.kind }
+                    )
                 }
                 if (!placed.length) {
                     setInviteStatus({ names, error: 'They read the page but left no mark.' })
@@ -4300,10 +4316,10 @@ function MarkdownNotebookEditor({
                 kind: note?.kind,
                 pending: note?.pending,
                 draft: note?.kind === 'human' && !note?.text,
-                quote: getRefQuote(documentRef.current.nodes, hostRef),
                 createdAt: note?.createdAt,
                 intent: note?.intent,
                 suggestion: note?.suggestion,
+                scope: documentRef.current.annotations?.[hostRef]?.scope,
                 top: rect.bottom - (container?.top || 0) + 8,
                 left: rect.left - (container?.left || 0),
             })
@@ -4330,10 +4346,10 @@ function MarkdownNotebookEditor({
                     text: first.text,
                     kind: first.kind,
                     draft: first.kind === 'human' && !first.text,
-                    quote: getRefQuote(documentRef.current.nodes, refId),
                     createdAt: first.createdAt,
                     intent: first.intent,
                     suggestion: first.suggestion,
+                    scope: documentRef.current.annotations?.[refId]?.scope,
                     top: rect.bottom - (container?.top || 0) + 8,
                     left: rect.left - (container?.left || 0),
                 })
@@ -4372,7 +4388,6 @@ function MarkdownNotebookEditor({
             text: '',
             kind: 'human',
             draft: true,
-            quote: getRefQuote(documentRef.current.nodes, refId),
             createdAt: note.createdAt,
             top: (rect?.bottom || 40) - (container?.top || 0) + 8,
             left: (rect?.left || 0) - (container?.left || 0),
@@ -6262,6 +6277,40 @@ function MarkdownNotebookEditor({
         )
     }
 
+    const renderPieceNoteStrip = (): JSX.Element | null => {
+        const pieces = Object.values(document.annotations || {}).filter(
+            (annotation) => annotation.scope === 'piece' && annotation.notes.length
+        )
+        if (!pieces.length) return null
+        return (
+            <div className="MarkdownNotebook__piece-notes" contentEditable={false}>
+                {pieces.flatMap((annotation) =>
+                    annotation.notes.map((note) => (
+                        <button
+                            key={`${annotation.id}:${note.by}`}
+                            type="button"
+                            className="MarkdownNotebook__piece-note"
+                            data-notebook-ref={annotation.id}
+                            data-note-by={note.by}
+                            data-note-name={note.name}
+                            data-note-kind={note.kind || ''}
+                            data-note-avatar={note.avatar || ''}
+                            aria-label={note.name}
+                        >
+                            {note.avatar ? (
+                                <img src={note.avatar} alt="" className="MarkdownNotebook__inline-note-face" />
+                            ) : (
+                                <span className="MarkdownNotebook__inline-note-fallback">
+                                    {(note.name || note.by).charAt(0)}
+                                </span>
+                            )}
+                        </button>
+                    ))
+                )}
+            </div>
+        )
+    }
+
     const renderDebugToolbar = (): JSX.Element | null => {
         if (!showDebug) {
             return null
@@ -6643,6 +6692,7 @@ function MarkdownNotebookEditor({
                                             )}
                                         >
                                             {group.key === firstTextGroupKey ? renderDebugToolbar() : null}
+                                            {group.key === firstTextGroupKey ? renderPieceNoteStrip() : null}
                                             {chunks.map((chunk) => {
                                                 const chunkLastIndex = chunk.items[chunk.items.length - 1].index
                                                 const rows = chunk.items.map(({ node, index }) => (
@@ -6771,11 +6821,11 @@ function MarkdownNotebookEditor({
                             name={inlineNotePopover.name}
                             avatar={inlineNotePopover.avatar}
                             text={inlineNotePopover.text}
-                            quote={inlineNotePopover.quote}
                             createdAt={inlineNotePopover.createdAt}
                             kind={inlineNotePopover.kind}
                             intent={inlineNotePopover.intent}
                             suggestion={inlineNotePopover.suggestion}
+                            scope={inlineNotePopover.scope}
                             pending={inlineNotePopover.pending}
                             draft={inlineNotePopover.draft}
                             top={inlineNotePopover.top}
@@ -6816,7 +6866,7 @@ function MarkdownNotebookEditor({
                                           })
                                           setInlineNotePopover((current) =>
                                               current
-                                                  ? { ...current, quote: next.suggestion, suggestion: undefined }
+                                                  ? { ...current, suggestion: undefined }
                                                   : current
                                           )
                                       }

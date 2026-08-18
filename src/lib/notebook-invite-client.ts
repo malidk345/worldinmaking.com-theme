@@ -4,6 +4,7 @@ export type PhilosopherNoteResult = {
     phrase: string
     text: string
     intent?: 'remark' | 'critique' | 'edit' | 'question' | 'aside'
+    scope?: 'span' | 'piece'
     suggestion?: string
 }
 
