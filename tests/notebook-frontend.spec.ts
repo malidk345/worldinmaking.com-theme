@@ -11,8 +11,10 @@ import {
     upsertDiscussionReply,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/discussionComments'
 import {
+    buildInviteCommentSystemPrompt,
     cleanInviteCommentOutput,
     isNotebookInviteBotId,
+    parseInviteNotePayload,
     resolveInviteBot,
 } from '../src/lib/bots/notebook-invite'
 import { caretColorForClient, presenceStateToCarets } from '../src/notebook-app/scenes/notebooks/notebookPresence'
@@ -22,6 +24,22 @@ import {
     parseCalloutTone,
     parseDatabaseContent,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/writingBlockModel'
+import { formatNoteTime, parseInlineNotes } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineNotes'
+import {
+    mergeAnnotationMaps,
+    upsertAnnotation,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/annotations'
+import { parseMarkdownNotebook, serializeMarkdownNotebook } from '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
+import {
+    applyRefOnNotebookSpan,
+    collectExistingRefSpans,
+    deleteNotebookAnnotation,
+    getRefQuote,
+    notebookReadableText,
+    resolveAutonomousSpan,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/annotationPlacement'
+import { getNodeFingerprint } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
+import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components/MarkdownNotebook/collaboration'
 import { isNotebookImageFile, notebookImageExtension } from '../src/lib/notebook-upload-shared'
 import type { StoredNotebook } from '../src/notebook-app/scenes/notebooks/notebookStorage'
 import {
@@ -216,12 +234,155 @@ test.describe('notebook frontend helpers', () => {
         expect(withBot[1]).toMatchObject({ id: 'r2', text: 'updated', botId: 'marx' })
     })
 
-    test('only the four invite philosophers can be asked to comment', () => {
+    test('invite resolves known philosophers and rejects unknown names', () => {
         expect(isNotebookInviteBotId('nietzsche')).toBe(true)
         expect(isNotebookInviteBotId('hegel')).toBe(false)
         expect(resolveInviteBot('arendt')?.name).toBe('Arendt')
-        expect(resolveInviteBot('hegel')).toBeNull()
+        expect(resolveInviteBot('hegel')?.name).toBe('Hegel')
+        expect(resolveInviteBot('nobody')).toBeNull()
         expect(cleanInviteCommentOutput('```\nA short comment.\n```')).toBe('A short comment.')
+        expect(buildInviteCommentSystemPrompt('marx')).toMatch(/same language as the notebook body/)
+        expect(buildInviteCommentSystemPrompt('marx')).toMatch(/critique/)
+        expect(parseInviteNotePayload('{"phrase":"erdem bir his değildir","intent":"edit","text":"Daha sıkı yaz.","suggestion":"Erdem bir his değil."}')).toMatchObject({
+            intent: 'edit',
+            suggestion: 'Erdem bir his değil.',
+        })
+        expect(
+            parseInlineNotes([
+                { by: 'you', name: 'Ada', text: 'note', avatar: '/a.png', kind: 'human' },
+            ])
+        ).toEqual([
+            {
+                by: 'you',
+                name: 'Ada',
+                text: 'note',
+                avatar: '/a.png',
+                kind: 'human',
+                pending: false,
+                createdAt: undefined,
+                intent: undefined,
+                suggestion: undefined,
+            },
+        ])
+    })
+
+    test('inline notes live on the annotation layer, not inside markdown refs', () => {
+        const legacy = '# Title\n\n<ref id="abc" notes=\'[{"by":"nietzsche","name":"Nietzsche","text":"Yes.","kind":"bot"}]\'>Life</ref>'
+        const parsed = parseMarkdownNotebook(legacy)
+        const paragraph = parsed.nodes.find((node) => node.type === 'paragraph')
+        expect(paragraph && paragraph.type === 'paragraph').toBe(true)
+        if (!paragraph || paragraph.type !== 'paragraph') return
+        const mark = paragraph.children[0] && paragraph.children[0].type === 'text' ? paragraph.children[0].marks?.[0] : null
+        expect(mark).toMatchObject({ type: 'ref', id: 'abc' })
+        expect(mark && 'notes' in mark ? mark.notes : undefined).toBeUndefined()
+        expect(parsed.annotations?.abc.notes[0]).toMatchObject({ by: 'nietzsche', text: 'Yes.' })
+
+        const saved = serializeMarkdownNotebook(parsed)
+        expect(saved).toContain('<ref id="abc">Life</ref>')
+        expect(saved).not.toContain('notes=')
+        expect(saved).toContain('<!--wim-annotations:')
+
+        const roundTrip = parseMarkdownNotebook(saved)
+        expect(roundTrip.annotations?.abc.notes[0].text).toBe('Yes.')
+        expect(getNodeFingerprint(paragraph)).toBe(
+            getNodeFingerprint(roundTrip.nodes.find((node) => node.type === 'paragraph')!)
+        )
+
+        const withReply = {
+            ...roundTrip,
+            annotations: upsertAnnotation(roundTrip.annotations, 'abc', [
+                { by: 'nietzsche', name: 'Nietzsche', text: 'Updated.', kind: 'bot' },
+            ]),
+        }
+        expect(getNodeFingerprint(withReply.nodes.find((node) => node.type === 'paragraph')!)).toBe(
+            getNodeFingerprint(paragraph)
+        )
+    })
+
+    test('annotation maps merge by author without touching the other side', () => {
+        const base = upsertAnnotation({}, 'abc', [{ by: 'you', name: 'Ada', text: 'draft', kind: 'human' }])
+        const local = upsertAnnotation(base, 'abc', [
+            { by: 'you', name: 'Ada', text: 'mine', kind: 'human' },
+            { by: 'marx', name: 'Marx', text: 'local marx', kind: 'bot' },
+        ])
+        const remote = upsertAnnotation(base, 'abc', [
+            { by: 'you', name: 'Ada', text: 'draft', kind: 'human' },
+            { by: 'nietzsche', name: 'Nietzsche', text: 'remote nietzsche', kind: 'bot' },
+        ])
+        const merged = mergeAnnotationMaps(base, local, remote)
+        const by = Object.fromEntries((merged?.abc.notes || []).map((note) => [note.by, note.text]))
+        expect(by.you).toBe('mine')
+        expect(by.marx).toBe('local marx')
+        expect(by.nietzsche).toBe('remote nietzsche')
+
+        const baseMd = '# Title\n\nLife'
+        const localMd = serializeMarkdownNotebook({
+            ...parseMarkdownNotebook('# Title\n\n<ref id="abc">Life</ref>'),
+            annotations: local,
+            errors: [],
+        })
+        const remoteMd = serializeMarkdownNotebook({
+            ...parseMarkdownNotebook('# Title\n\n<ref id="abc">Life</ref>'),
+            annotations: remote,
+            errors: [],
+        })
+        const result = mergeNotebookMarkdownChanges({
+            baseMarkdown: baseMd,
+            localMarkdown: localMd,
+            remoteMarkdown: remoteMd,
+        })
+        expect(result.document.annotations?.abc.notes.map((note) => note.by).sort()).toEqual([
+            'marx',
+            'nietzsche',
+            'you',
+        ])
+        expect(result.mergedMarkdown).not.toContain('notes=')
+    })
+
+    test('autonomous invite places two notes on different spans and delete unwraps', () => {
+        const parsed = parseMarkdownNotebook(
+            '# Title\n\nVirtue is not a feeling.\n\nThe market is a historical form, not nature.'
+        )
+        expect(notebookReadableText(parsed.nodes)).toContain('Virtue is not a feeling.')
+        expect(notebookReadableText(parsed.nodes)).not.toContain('Title')
+
+        const first = resolveAutonomousSpan(parsed.nodes, 'Virtue is not a feeling', [], 'nietzsche')
+        expect(first).toMatchObject({ start: 0, end: 'Virtue is not a feeling'.length })
+        const afterFirst = applyRefOnNotebookSpan(parsed.nodes, first!, 'ref-a')
+        const used = collectExistingRefSpans(afterFirst)
+        expect(used).toHaveLength(1)
+
+        const second = resolveAutonomousSpan(afterFirst, 'Virtue is not a feeling', used, 'marx')
+        expect(second).not.toBeNull()
+        expect(second && first && second.nodeId === first.nodeId && second.start === first.start).toBe(false)
+
+        const withBoth = applyRefOnNotebookSpan(afterFirst, second!, 'ref-b')
+        const saved = {
+            type: 'doc' as const,
+            nodes: withBoth,
+            annotations: {
+                'ref-a': {
+                    id: 'ref-a',
+                    notes: [{ by: 'nietzsche', name: 'Nietzsche', text: 'Will first.', kind: 'bot' as const }],
+                },
+                'ref-b': {
+                    id: 'ref-b',
+                    notes: [{ by: 'marx', name: 'Marx', text: 'History first.', kind: 'bot' as const }],
+                },
+            },
+            errors: [],
+        }
+        const markdown = serializeMarkdownNotebook(saved)
+        expect(markdown).toContain('<ref id="ref-a">')
+        expect(markdown).toContain('<ref id="ref-b">')
+        expect(markdown).toContain('<!--wim-annotations:')
+
+        const afterDelete = deleteNotebookAnnotation(saved, 'ref-a', 'nietzsche')
+        expect(afterDelete.annotations?.['ref-a']).toBeUndefined()
+        expect(serializeMarkdownNotebook(afterDelete)).not.toContain('ref-a')
+        expect(afterDelete.annotations?.['ref-b'].notes[0].text).toBe('History first.')
+        expect(getRefQuote(withBoth, 'ref-b').length).toBeGreaterThan(0)
+        expect(formatNoteTime(new Date().toISOString())).toBe('Just now')
     })
 
     test('presence ignores this client and only draws carets with a node index', () => {

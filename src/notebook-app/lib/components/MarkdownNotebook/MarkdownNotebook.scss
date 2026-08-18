@@ -1691,6 +1691,11 @@ h3.MarkdownNotebook__text-block--heading {
         max-height: min(16rem, var(--markdown-notebook-insert-menu-max-height));
     }
 
+    .MarkdownNotebook__invite-picker {
+        max-width: calc(100vw - 12px);
+        max-height: min(18rem, var(--markdown-notebook-invite-picker-max-height));
+    }
+
     .MarkdownNotebook__insert-item {
         min-height: 2.25rem;
         padding: 0.35rem 0.45rem;
@@ -2735,11 +2740,416 @@ button.MarkdownNotebook__component-title:focus-visible {
     color: var(--color-text-secondary);
 }
 
-.MarkdownNotebook__invite-menu {
+.MarkdownNotebook__invite-status {
+    position: fixed;
+    top: var(--markdown-notebook-invite-picker-top);
+    left: var(--markdown-notebook-invite-picker-left);
+    z-index: calc(var(--z-popover) + 1);
+    box-sizing: border-box;
+    width: var(--markdown-notebook-invite-picker-width, 15rem);
+    max-width: min(16rem, calc(100vw - 16px));
+    padding: 0.45rem 0.55rem;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--color-text-secondary);
+    visibility: hidden;
+    background: var(--color-bg-surface-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: 0.625rem;
+    box-shadow: var(--shadow-elevation-3000);
+}
+
+.MarkdownNotebook__invite-status--positioned {
+    visibility: visible;
+}
+
+.MarkdownNotebook__invite-status--error {
+    color: var(--color-text-primary);
+}
+
+.MarkdownNotebook__invite-status--above {
+    transform: translateY(-100%);
+}
+
+.MarkdownNotebook__invite-picker {
+    position: fixed;
+    top: var(--markdown-notebook-invite-picker-top);
+    left: var(--markdown-notebook-invite-picker-left);
+    z-index: calc(var(--z-popover) + 1);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    min-width: 8rem;
+    width: var(--markdown-notebook-invite-picker-width);
+    max-width: min(16rem, calc(100vw - 16px));
+    max-height: var(--markdown-notebook-invite-picker-max-height);
     padding: 0.25rem;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-primary);
+    visibility: hidden;
+    background: var(--color-bg-surface-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: 0.625rem;
+    box-shadow: var(--shadow-elevation-3000);
+}
+
+.MarkdownNotebook__invite-picker--positioned {
+    visibility: visible;
+}
+
+.MarkdownNotebook__invite-picker--above {
+    transform: translateY(-100%);
+}
+
+.MarkdownNotebook__invite-picker-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0.2rem 0.4rem 0.05rem;
+}
+
+.MarkdownNotebook__invite-picker-head h5 {
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.MarkdownNotebook__invite-picker-head span {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+}
+
+.MarkdownNotebook__invite-picker-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.MarkdownNotebook__invite-picker-item {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0.2rem 0.35rem;
+    font: inherit;
+    color: var(--color-text-primary);
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 0.375rem;
+}
+
+.MarkdownNotebook__invite-picker-item:hover,
+.MarkdownNotebook__invite-picker-item:focus-visible,
+.MarkdownNotebook__invite-picker-item--active {
+    background: var(--color-bg-fill-button-tertiary-hover);
+    outline: none;
+}
+
+.MarkdownNotebook__invite-picker-mark {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    overflow: hidden;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-fill-tertiary);
+    border-radius: 999px;
+}
+
+.MarkdownNotebook__invite-picker-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.MarkdownNotebook__invite-picker-mark em {
+    position: absolute;
+    right: -0.15rem;
+    bottom: -0.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.7rem;
+    height: 0.7rem;
+    font-size: 0.5rem;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--color-bg-surface-primary);
+    background: var(--color-text-primary);
+    border-radius: 999px;
+}
+
+.MarkdownNotebook__invite-picker-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.MarkdownNotebook__invite-picker-name {
+    overflow: hidden;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.MarkdownNotebook__invite-picker-stance {
+    overflow: hidden;
+    font-size: 0.625rem;
+    line-height: 1.2;
+    color: var(--color-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.MarkdownNotebook__invite-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.15rem;
+    padding: 0.2rem 0.15rem 0.05rem;
+}
+
+.MarkdownNotebook__invite-picker-action {
+    min-height: 1.5rem;
+    padding: 0.15rem 0.4rem;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 0.375rem;
+}
+
+.MarkdownNotebook__invite-picker-action:hover,
+.MarkdownNotebook__invite-picker-action:focus-visible {
+    color: var(--color-text-primary);
+    background: var(--color-bg-fill-button-tertiary-hover);
+    outline: none;
+}
+
+.MarkdownNotebook__invite-picker-action--primary {
+    color: var(--color-text-primary);
+}
+
+.MarkdownNotebook__invite-picker-action:disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.MarkdownNotebook__ref--note {
+    background: transparent;
+    border-bottom: 1px solid color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 28%, transparent);
+    box-decoration-break: clone;
+}
+
+.MarkdownNotebook__ref--flash {
+    background: color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 12%, transparent);
+    animation: markdown-ref-flash 1.4s ease;
+}
+
+@keyframes markdown-ref-flash {
+    from {
+        background: color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 18%, transparent);
+    }
+    to {
+        background: transparent;
+    }
+}
+
+.MarkdownNotebook__inline-notes {
+    display: inline-flex;
+    gap: 1px;
+    align-items: center;
+    margin: 0 0.05rem 0 0.15rem;
+    vertical-align: text-bottom;
+    user-select: none;
+}
+
+.MarkdownNotebook__inline-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.95rem;
+    height: 0.95rem;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    cursor: pointer;
+    background: var(--color-text-primary, #1d4d4f);
+    border: 1px solid var(--color-bg-surface-primary, #fff);
+    border-radius: 999px;
+}
+
+.MarkdownNotebook__inline-note-face,
+.MarkdownNotebook__inline-note-fallback {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+}
+
+.MarkdownNotebook__inline-note-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+}
+
+.MarkdownNotebook__inline-note-popover-who {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    min-width: 0;
+}
+
+.MarkdownNotebook__inline-note-popover-meta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.MarkdownNotebook__inline-note-popover-meta em {
+    font-size: 0.625rem;
+    font-style: normal;
+    color: var(--color-text-tertiary);
+}
+
+.MarkdownNotebook__inline-note-popover-suggestion {
+    margin: 0.4rem 0 0;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+    background: var(--color-bg-fill-tertiary, rgb(0 0 0 / 4%));
+    border-radius: 0.35rem;
+}
+
+.MarkdownNotebook__inline-note-popover-quote {
+    margin: 0 0 0.45rem;
+    padding: 0 0 0 0.5rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-style: italic;
+    line-height: 1.35;
+    color: var(--color-text-secondary);
+    text-overflow: ellipsis;
+    border-left: 2px solid var(--color-border-primary);
+}
+
+.MarkdownNotebook__inline-note-popover-who .MarkdownNotebook__inline-note-face,
+.MarkdownNotebook__inline-note-popover-who .MarkdownNotebook__inline-note-fallback {
+    width: 1.15rem;
+    height: 1.15rem;
+    background: var(--color-text-primary, #1d4d4f);
+    border-radius: 999px;
+    color: #fff;
+}
+
+.MarkdownNotebook__inline-note-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.15rem;
+    margin-top: 0.35rem;
+}
+
+.MarkdownNotebook__inline-note-popover-action {
+    min-height: 1.5rem;
+    padding: 0.15rem 0.4rem;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 0.375rem;
+}
+
+.MarkdownNotebook__inline-note-popover-action:hover,
+.MarkdownNotebook__inline-note-popover-action:focus-visible {
+    color: var(--color-text-primary);
+    background: var(--color-bg-fill-button-tertiary-hover);
+    outline: none;
+}
+
+.MarkdownNotebook__inline-note-popover-action--primary {
+    color: var(--color-text-primary);
+}
+
+.MarkdownNotebook__inline-note-popover-action:disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.MarkdownNotebook__inline-note--pending {
+    animation: markdown-note-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes markdown-note-pulse {
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.MarkdownNotebook__inline-note-popover {
+    position: absolute;
+    z-index: 8;
+    width: min(18rem, calc(100% - 1.5rem));
+    padding: 0.6rem 0.7rem;
+    background: var(--color-bg-surface-primary, #fff);
+    border: 1px solid var(--markdown-notebook-component-border);
+    border-radius: 0.4rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+}
+
+.MarkdownNotebook__inline-note-popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
+}
+
+.MarkdownNotebook__inline-note-popover p {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.MarkdownNotebook__inline-note-popover-pending {
+    font-style: italic;
+    color: var(--color-text-secondary);
 }
 
 .MarkdownNotebook__callout {

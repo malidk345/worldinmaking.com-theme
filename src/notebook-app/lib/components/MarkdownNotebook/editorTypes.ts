@@ -49,6 +49,7 @@ export type InsertCommand = {
  * reaching into the editor's internals. The caller owns the command's label, icon, and behavior. */
 export type MarkdownNotebookInsertMenuApi = {
     insertComponent: (targetNodeId: string, tagName: string, props: NotebookComponentProps) => void
+    openPhilosopherInvite?: (targetNodeId: string) => void
 }
 
 export type InsertMenuState = {
@@ -154,6 +155,12 @@ export const INSERT_MENU_PLACEHOLDER = 'Filter…'
 export const INSERT_MENU_WIDTH = 228
 
 export const INSERT_MENU_VIEWPORT_PADDING = 8
+
+export const INVITE_PICKER_WIDTH = 248
+
+export const INVITE_PICKER_MAX_HEIGHT = 320
+
+export const INVITE_PICKER_MIN_HEIGHT = 160
 
 export const MAX_UNDO_HISTORY_ENTRIES = 100
 

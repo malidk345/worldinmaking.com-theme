@@ -14,6 +14,7 @@ import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TextSelectionPointerStartEvent } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
 import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart } from './listModel'
+import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
@@ -37,6 +38,7 @@ export function EditableListBlock({
     startTextSelectionPointer: (event: TextSelectionPointerStartEvent) => void
     restoreSelectionRef: MutableRefObject<RestoreSelectionRequest | null>
 }): JSX.Element {
+    const annotations = useNotebookAnnotations()
     const renderedItems = useMemo(() => buildRenderedListItems(node.items), [node.items])
     const listBlockRef = useRef<HTMLDivElement | null>(null)
 
@@ -228,7 +230,7 @@ export function EditableListBlock({
         event.preventDefault()
         const container = document.createElement('div')
         container.innerHTML = html
-        document.execCommand('insertHTML', false, inlineNodesToHtml(htmlElementToInlineNodes(container)))
+        document.execCommand('insertHTML', false, inlineNodesToHtml(htmlElementToInlineNodes(container), annotations))
         updateListItemChildrenFromElement(element)
     }
 
@@ -307,7 +309,8 @@ export function EditableListItemContent({
     setListItemRef: (itemIndex: number, itemId: string | undefined, element: HTMLElement | null) => void
 }): JSX.Element {
     const elementRef = useRef<HTMLDivElement | null>(null)
-    const renderedHtml = useMemo(() => inlineNodesToHtml(item.children), [item.children])
+    const annotations = useNotebookAnnotations()
+    const renderedHtml = useMemo(() => inlineNodesToHtml(item.children, annotations), [item.children, annotations])
 
     const setElementRef = useCallback(
         (element: HTMLDivElement | null): void => {
@@ -323,23 +326,16 @@ export function EditableListItemContent({
             return
         }
 
-        if (element.innerHTML === renderedHtml) {
-            return
+        if (element.innerHTML !== renderedHtml && !editableHtmlMatches(element, renderedHtml)) {
+            const selection = window.getSelection()
+            const caretInside =
+                Boolean(selection?.anchorNode && element.contains(selection.anchorNode)) &&
+                inlineNodesToHtml(htmlElementToInlineNodes(element), annotations) === renderedHtml
+            if (!caretInside) {
+                element.innerHTML = renderedHtml
+            }
         }
-
-        // While the caret is inside the item, the DOM is the source of the latest model state:
-        // rewriting innerHTML would destroy the caret mid-typing, so only sync when the live DOM
-        // does not already represent the same content.
-        const selection = window.getSelection()
-        if (
-            selection?.anchorNode &&
-            element.contains(selection.anchorNode) &&
-            inlineNodesToHtml(htmlElementToInlineNodes(element)) === renderedHtml
-        ) {
-            return
-        }
-
-        element.innerHTML = renderedHtml
+        syncInlineNoteChips(element, annotations)
     })
 
     return (

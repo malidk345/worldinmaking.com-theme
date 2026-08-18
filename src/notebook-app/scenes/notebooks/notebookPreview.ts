@@ -2,6 +2,7 @@
 
 export function notebookPreviewExcerpt(content: string, max = 92): string {
     const plain = (content || '')
+        .replace(/<!--wim-annotations:[\s\S]*?-->/g, ' ')
         .replace(/```[\s\S]*?```/g, ' ')
         .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
         .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')

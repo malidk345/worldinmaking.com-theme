@@ -2,6 +2,22 @@ import type { ReactNode } from 'react'
 
 export type NotebookMode = 'view' | 'edit'
 
+export type NotebookNoteIntent = 'remark' | 'critique' | 'edit' | 'question' | 'aside'
+
+export type InlinePhilosopherNote = {
+    by: string
+    name: string
+    text: string
+    avatar?: string
+    kind?: 'human' | 'bot'
+    pending?: boolean
+    createdAt?: string
+    /** What the mind is doing here — not always a comment. */
+    intent?: NotebookNoteIntent
+    /** For `edit`: a rewrite of the marked span, not of the whole page. */
+    suggestion?: string
+}
+
 export type NotebookInlineMark =
     | { type: 'bold' }
     | { type: 'italic' }
@@ -9,8 +25,9 @@ export type NotebookInlineMark =
     | { type: 'strike' }
     | { type: 'code' }
     | { type: 'link'; href: string }
-    /** Anchors a discussion or inline AI selection to this text. */
-    | { type: 'ref'; id: string }
+    /** Anchors a discussion or inline note. Note bodies live on `NotebookDocument.annotations`.
+     * `notes` is parse-only (legacy `<ref notes>` / HTML) and is lifted off the mark. */
+    | { type: 'ref'; id: string; notes?: InlinePhilosopherNote[] }
     /** A person mention: `<mention id="5">@Name</mention>` — the text is the display label. */
     | { type: 'mention'; id: string }
 
@@ -118,9 +135,18 @@ export type NotebookBlockNode =
     | NotebookCodeBlockNode
     | NotebookComponentBlockNode
 
+export type NotebookAnnotation = {
+    id: string
+    notes: InlinePhilosopherNote[]
+}
+
+export type NotebookAnnotationMap = Record<string, NotebookAnnotation>
+
 export type NotebookDocument = {
     type: 'doc'
     nodes: NotebookBlockNode[]
+    /** In-text comments keyed by `<ref id>`. Not stored on the mark; serialized as a sidecar. */
+    annotations?: NotebookAnnotationMap
     errors: NotebookParseError[]
 }
 

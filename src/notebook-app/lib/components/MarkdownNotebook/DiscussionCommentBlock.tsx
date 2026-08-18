@@ -7,14 +7,11 @@ import { LemonButton, LemonTextArea } from '@posthog/lemon-ui'
 import { formatEditedAgo, getNotebookActor } from '../../../../lib/notebook-actor'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { uuid } from '../../utils/dom'
-import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
-import { NOTEBOOK_INVITE_BOT_IDS, resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 import {
     appendDiscussionReply,
     parseDiscussionReplies,
     removeDiscussionReply,
     repliesToPropValue,
-    upsertDiscussionReply,
 } from './discussionComments'
 import { InsertMenuSelectionDirection } from './editorTypes'
 import { NotebookBlockNode, NotebookComponentBlockNode, NotebookMode } from './types'
@@ -43,9 +40,7 @@ export function DiscussionCommentBlock({
     void _insertParagraphAfterNode
     const replies = useMemo(() => parseDiscussionReplies(node.props.replies), [node.props.replies])
     const [draft, setDraft] = useState('')
-    const [invitingId, setInvitingId] = useState<string | null>(null)
     const autoFocus = mode === 'edit' && wasNotebookNodeJustInserted(node.id)
-    const passage = typeof node.props.passage === 'string' ? node.props.passage : ''
 
     const persistReplies = (next: ReturnType<typeof parseDiscussionReplies>): void => {
         updateNode(node.id, (currentNode) =>
@@ -70,45 +65,6 @@ export function DiscussionCommentBlock({
             })
         )
         setDraft('')
-    }
-
-    const invitePhilosopher = async (botId: string): Promise<void> => {
-        if (mode !== 'edit' || invitingId || !passage.trim()) return
-        const bot = resolveInviteBot(botId)
-        if (!bot) return
-        const pendingId = `pending-${bot.id}`
-        setInvitingId(bot.id)
-        let next = upsertDiscussionReply(replies, {
-            id: pendingId,
-            text: `${bot.name} is reading…`,
-            author: bot.displayName,
-            createdAt: new Date().toISOString(),
-            botId: bot.id,
-            pending: true,
-        })
-        persistReplies(next)
-        try {
-            const result = await requestPhilosopherComment({ botId: bot.id, selection: passage })
-            next = upsertDiscussionReply(next, {
-                id: pendingId,
-                text: result.text,
-                author: result.author,
-                createdAt: new Date().toISOString(),
-                botId: result.botId,
-            })
-            persistReplies(next)
-        } catch (error) {
-            next = upsertDiscussionReply(next, {
-                id: pendingId,
-                text: error instanceof Error ? error.message : 'Could not invite this philosopher.',
-                author: bot.displayName,
-                createdAt: new Date().toISOString(),
-                botId: bot.id,
-            })
-            persistReplies(next)
-        } finally {
-            setInvitingId(null)
-        }
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -181,25 +137,6 @@ export function DiscussionCommentBlock({
                 ) : (
                     <p className="MarkdownNotebook__discussion-comment-empty m-0">No replies yet</p>
                 )}
-
-                {mode === 'edit' && passage.trim() ? (
-                    <div className="MarkdownNotebook__discussion-comment-invite">
-                        {NOTEBOOK_INVITE_BOT_IDS.map((botId) => {
-                            const bot = resolveInviteBot(botId)
-                            if (!bot) return null
-                            return (
-                                <LemonButton
-                                    key={bot.id}
-                                    size="xsmall"
-                                    disabled={Boolean(invitingId)}
-                                    onClick={() => void invitePhilosopher(bot.id)}
-                                >
-                                    {bot.name}
-                                </LemonButton>
-                            )
-                        })}
-                    </div>
-                ) : null}
 
                 {mode === 'edit' ? (
                     <div className="MarkdownNotebook__discussion-comment-composer">

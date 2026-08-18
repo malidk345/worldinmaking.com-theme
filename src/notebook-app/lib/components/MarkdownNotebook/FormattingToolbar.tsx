@@ -9,8 +9,7 @@ import {
 } from 'react'
 
 import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import { LemonButton, LemonDropdown, LemonInput } from '@posthog/lemon-ui'
-import { NOTEBOOK_INVITE_BOT_IDS, resolveInviteBot } from '../../../../lib/bots/notebook-invite'
+import { LemonButton, LemonInput } from '@posthog/lemon-ui'
 
 import { IconBold, IconItalic, IconLink } from '@posthog/lemon-ui'
 
@@ -56,7 +55,6 @@ export function FormattingToolbar({
     selectionAIActions,
     isAskAIDisabled,
     startInlineCommentAtSelection,
-    invitePhilosopherToSelection,
     lockPosition,
     returnFocusToEditor,
 }: {
@@ -79,7 +77,6 @@ export function FormattingToolbar({
     selectionAIActions?: Array<{ id: string; label: string; tooltip: string; prompt: string }>
     isAskAIDisabled?: boolean
     startInlineCommentAtSelection?: () => void
-    invitePhilosopherToSelection?: (botId: string) => void
     lockPosition: () => void
     /** Moves focus back into the editor (Escape while the toolbar holds focus). */
     returnFocusToEditor?: () => void
@@ -355,32 +352,7 @@ export function FormattingToolbar({
                     onClick={startInlineCommentAtSelection}
                 />
             ) : null}
-            {invitePhilosopherToSelection ? (
-                <LemonDropdown
-                    overlay={
-                        <div className="MarkdownNotebook__invite-menu">
-                            {NOTEBOOK_INVITE_BOT_IDS.map((botId) => {
-                                const bot = resolveInviteBot(botId)
-                                if (!bot) return null
-                                return (
-                                    <LemonButton
-                                        key={bot.id}
-                                        size="small"
-                                        fullWidth
-                                        onClick={() => invitePhilosopherToSelection(bot.id)}
-                                    >
-                                        {bot.name}
-                                    </LemonButton>
-                                )
-                            })}
-                        </div>
-                    }
-                >
-                    <LemonButton size="xsmall" tooltip="Invite a philosopher to comment">
-                        Invite
-                    </LemonButton>
-                </LemonDropdown>
-            ) : null}
+
             {showInlineActions && askAIAboutSelection ? (
                 <>
                     <span className="MarkdownNotebook__format-divider" aria-hidden />

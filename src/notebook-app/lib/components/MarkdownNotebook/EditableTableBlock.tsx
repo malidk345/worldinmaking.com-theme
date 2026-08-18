@@ -19,6 +19,7 @@ import { shouldUseMarkdownPaste } from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TableCellPosition, TextSelectionPointerStartEvent } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
+import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow } from './tableModel'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTableBlockNode, NotebookTableCell } from './types'
@@ -610,7 +611,12 @@ export function EditableTableCellContent({
 }): JSX.Element {
     const elementRef = useRef<HTMLDivElement | null>(null)
     const skipDomSyncForHtmlRef = useRef<string | null>(null)
-    const renderedHtml = useMemo(() => inlineNodesToHtml(cell.children), [cell.children])
+    const annotations = useNotebookAnnotations()
+    const toHtml = useCallback(
+        (nodes: NotebookInlineNode[]) => inlineNodesToHtml(nodes, annotations),
+        [annotations]
+    )
+    const renderedHtml = useMemo(() => toHtml(cell.children), [cell.children, toHtml])
 
     const setElementRef = useCallback(
         (element: HTMLDivElement | null): void => {
@@ -630,27 +636,24 @@ export function EditableTableCellContent({
             document.activeElement === element && skipDomSyncForHtmlRef.current === renderedHtml
         skipDomSyncForHtmlRef.current = null
 
-        if (shouldSkipOwnInputSync || element.innerHTML === renderedHtml) {
-            return
-        }
-
-        // While the caret is inside the cell, the DOM is the source of the latest model state:
-        // rewriting innerHTML would destroy the caret mid-typing, so only sync when the live DOM
-        // does not already represent the same content.
-        const selection = window.getSelection()
         if (
-            selection?.anchorNode &&
-            element.contains(selection.anchorNode) &&
-            inlineNodesToHtml(htmlElementToInlineNodes(element)) === renderedHtml
+            !shouldSkipOwnInputSync &&
+            element.innerHTML !== renderedHtml &&
+            !editableHtmlMatches(element, renderedHtml)
         ) {
-            return
+            const selection = window.getSelection()
+            const caretInside =
+                Boolean(selection?.anchorNode && element.contains(selection.anchorNode)) &&
+                toHtml(htmlElementToInlineNodes(element)) === renderedHtml
+            if (!caretInside) {
+                element.innerHTML = renderedHtml
+            }
         }
-
-        element.innerHTML = renderedHtml
-    }, [renderedHtml])
+        syncInlineNoteChips(element, annotations)
+    }, [annotations, renderedHtml, toHtml])
 
     const updateChildren = (nextChildren: NotebookInlineNode[]): NotebookInlineNode[] => {
-        skipDomSyncForHtmlRef.current = inlineNodesToHtml(nextChildren)
+        skipDomSyncForHtmlRef.current = toHtml(nextChildren)
         updateTableCell(position, nextChildren)
         return nextChildren
     }
@@ -713,7 +716,7 @@ export function EditableTableCellContent({
         event.preventDefault()
         const container = document.createElement('div')
         container.innerHTML = html
-        document.execCommand('insertHTML', false, inlineNodesToHtml(htmlElementToInlineNodes(container)))
+        document.execCommand('insertHTML', false, toHtml(htmlElementToInlineNodes(container)))
         updateChildren(htmlElementToInlineNodes(event.currentTarget))
     }
 

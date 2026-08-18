@@ -653,11 +653,17 @@ function getVisibleViewport(): { top: number; left: number; width: number; heigh
     return { top, left, width, height, bottom: top + height, right: left + width }
 }
 
-export function getInsertMenuPosition(anchorElement: HTMLElement): InsertMenuPosition {
+export function getInsertMenuPosition(
+    anchorElement: HTMLElement,
+    size?: { width?: number; maxHeight?: number; minHeight?: number }
+): InsertMenuPosition {
+    const preferredWidth = size?.width ?? INSERT_MENU_WIDTH
+    const preferredMaxHeight = size?.maxHeight ?? INSERT_MENU_MAX_HEIGHT
+    const preferredMinHeight = size?.minHeight ?? INSERT_MENU_MIN_HEIGHT
     const anchorRect = anchorElement.getBoundingClientRect()
     const viewport = getVisibleViewport()
     const availableViewportWidth = Math.max(0, viewport.width - INSERT_MENU_VIEWPORT_PADDING * 2)
-    const width = Math.min(INSERT_MENU_WIDTH, availableViewportWidth)
+    const width = Math.min(preferredWidth, availableViewportWidth)
     const maxLeft = viewport.right - INSERT_MENU_VIEWPORT_PADDING - width
     const left = Math.min(
         Math.max(viewport.left + INSERT_MENU_VIEWPORT_PADDING, anchorRect.left),
@@ -668,7 +674,7 @@ export function getInsertMenuPosition(anchorElement: HTMLElement): InsertMenuPos
         viewport.bottom - anchorRect.bottom - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING
     )
     const availableAbove = Math.max(0, anchorRect.top - viewport.top - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING)
-    const placement = availableBelow >= INSERT_MENU_MIN_HEIGHT || availableBelow >= availableAbove ? 'below' : 'above'
+    const placement = availableBelow >= preferredMinHeight || availableBelow >= availableAbove ? 'below' : 'above'
     const availableHeight = placement === 'below' ? availableBelow : availableAbove
 
     return {
@@ -676,6 +682,6 @@ export function getInsertMenuPosition(anchorElement: HTMLElement): InsertMenuPos
         top: placement === 'below' ? anchorRect.bottom + INSERT_MENU_GAP : anchorRect.top - INSERT_MENU_GAP,
         left,
         width,
-        maxHeight: Math.min(INSERT_MENU_MAX_HEIGHT, Math.max(INSERT_MENU_MIN_HEIGHT, availableHeight)),
+        maxHeight: Math.min(preferredMaxHeight, Math.max(preferredMinHeight, availableHeight)),
     }
 }

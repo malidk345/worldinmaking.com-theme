@@ -39,6 +39,7 @@ import {
     TextSelectionPointerStartEvent,
 } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
+import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
@@ -110,7 +111,12 @@ export function EditableTextBlock({
 }): JSX.Element {
     const elementRef = useRef<HTMLElement | null>(null)
     const skipDomSyncForHtmlRef = useRef<string | null>(null)
-    const renderedHtml = useMemo(() => inlineNodesToHtml(node.children), [node.children])
+    const annotations = useNotebookAnnotations()
+    const toHtml = useCallback(
+        (nodes: NotebookInlineNode[]) => inlineNodesToHtml(nodes, annotations),
+        [annotations]
+    )
+    const renderedHtml = useMemo(() => toHtml(node.children), [node.children, toHtml])
     const text = getInlineText(node.children)
     const isEmpty = text.length === 0
     const aiThinkingLabel = isAIWritingPlaceholder ? AI_THINKING_LABEL : undefined
@@ -141,15 +147,18 @@ export function EditableTextBlock({
             (skipDomSyncForHtmlRef.current === renderedHtml || rootEditableInputHtml === renderedHtml)
         skipDomSyncForHtmlRef.current = null
 
-        if (shouldSkipOwnInputSync || element.innerHTML === renderedHtml) {
-            return
+        if (
+            !shouldSkipOwnInputSync &&
+            element.innerHTML !== renderedHtml &&
+            !editableHtmlMatches(element, renderedHtml)
+        ) {
+            element.innerHTML = renderedHtml
         }
-
-        element.innerHTML = renderedHtml
-    }, [renderedHtml, TextTag, node.id, rootEditableInputHtmlByNodeIdRef])
+        syncInlineNoteChips(element, annotations)
+    }, [annotations, renderedHtml, TextTag, node.id, rootEditableInputHtmlByNodeIdRef])
 
     const updateChildren = (nextChildren: NotebookInlineNode[]): NotebookInlineNode[] => {
-        skipDomSyncForHtmlRef.current = inlineNodesToHtml(nextChildren)
+        skipDomSyncForHtmlRef.current = toHtml(nextChildren)
         updateNode(node.id, (currentNode) => {
             if (!isTextBlockNode(currentNode)) {
                 return currentNode
@@ -166,10 +175,11 @@ export function EditableTextBlock({
         element: HTMLElement,
         nextChildren: NotebookInlineNode[]
     ): NotebookInlineNode[] => {
-        const nextHtml = inlineNodesToHtml(nextChildren)
-        if (element.innerHTML !== nextHtml) {
+        const nextHtml = toHtml(nextChildren)
+        if (element.innerHTML !== nextHtml && !editableHtmlMatches(element, nextHtml)) {
             element.innerHTML = nextHtml
         }
+        syncInlineNoteChips(element, annotations)
         restoreSelection(element, getInlineText(nextChildren).length, getInlineText(nextChildren).length)
         return updateChildren(nextChildren)
     }
@@ -323,6 +333,7 @@ export function EditableTextBlock({
     const handleInput = (event: FormEvent<HTMLElement>): void => {
         if (isAIWriting) {
             event.currentTarget.innerHTML = renderedHtml
+            syncInlineNoteChips(event.currentTarget, annotations)
             return
         }
 
@@ -397,16 +408,17 @@ export function EditableTextBlock({
         event.preventDefault()
         const container = document.createElement('div')
         container.innerHTML = html
-        document.execCommand('insertHTML', false, inlineNodesToHtml(htmlElementToInlineNodes(container)))
+        document.execCommand('insertHTML', false, toHtml(htmlElementToInlineNodes(container)))
         updateFromElement(event.currentTarget)
     }
 
     const handleBlur = (event: FormEvent<HTMLElement>): void => {
         const element = event.currentTarget
-        const sanitizedHtml = inlineNodesToHtml(htmlElementToInlineNodes(element))
-        if (element.innerHTML !== sanitizedHtml) {
+        const sanitizedHtml = toHtml(htmlElementToInlineNodes(element))
+        if (element.innerHTML !== sanitizedHtml && !editableHtmlMatches(element, sanitizedHtml)) {
             element.innerHTML = sanitizedHtml
         }
+        syncInlineNoteChips(element, annotations)
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
@@ -558,12 +570,13 @@ export function EditableTextBlock({
                 const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
                 const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
                 const nextChildren = normalizeInlineNodes([...beforeSelection, ...afterSelection])
-                const nextHtml = inlineNodesToHtml(nextChildren)
+                const nextHtml = toHtml(nextChildren)
 
                 event.preventDefault()
-                if (event.currentTarget.innerHTML !== nextHtml) {
+                if (event.currentTarget.innerHTML !== nextHtml && !editableHtmlMatches(event.currentTarget, nextHtml)) {
                     event.currentTarget.innerHTML = nextHtml
                 }
+                syncInlineNoteChips(event.currentTarget, annotations)
                 restoreSelection(event.currentTarget, selectionStart, selectionStart)
                 updateChildren(nextChildren)
                 if (isToolInsertMenuOpen) {

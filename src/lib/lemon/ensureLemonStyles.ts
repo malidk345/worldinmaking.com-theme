@@ -127,7 +127,8 @@ html.dark .MarkdownNotebook__wim-block,
 @media print {
   .notebook-app-scope .notebook-outline,
   .notebook-app-scope .MarkdownNotebook__format-toolbar,
-  .notebook-app-scope .MarkdownNotebook__insert-menu {
+  .notebook-app-scope .MarkdownNotebook__insert-menu,
+  .notebook-app-scope .MarkdownNotebook__invite-picker {
     display: none !important;
   }
 }

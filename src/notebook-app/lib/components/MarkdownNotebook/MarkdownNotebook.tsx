@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import {
     ClipboardEvent as ReactClipboardEvent,
     Component,
+    CSSProperties,
     DragEvent as ReactDragEvent,
     FocusEvent as ReactFocusEvent,
     FormEvent,
@@ -34,7 +35,25 @@ const LazyCodeEditor = lazyWithRetry(() =>
 
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
 import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
-import { parseDiscussionReplies, repliesToPropValue, upsertDiscussionReply } from './discussionComments'
+import {
+    EMPTY_ANNOTATIONS,
+    NotebookAnnotationsContext,
+    getAnnotationNotes,
+    updateNoteInAnnotations,
+    upsertAnnotation,
+} from './annotations'
+import {
+    applyRefOnNotebookSpan,
+    collectExistingRefSpans,
+    deleteNotebookAnnotation,
+    getRefQuote,
+    notebookReadableText,
+    replaceRefQuotedText,
+    resolveAutonomousSpan,
+} from './annotationPlacement'
+import { actorToInlineNote, applyRefToRange } from './inlineNotes'
+import { InlineNotePopover } from './InlineNotePopover'
+import { InvitePhilosopherPicker } from './InvitePhilosopherPicker'
 import { mergeNotebookMarkdownChanges } from './collaboration'
 import {
     ComponentPanelCacheEntry,
@@ -132,6 +151,9 @@ import {
     FloatingToolbarState,
     FloatingToolbarTextRange,
     INSERT_MENU_PLACEHOLDER,
+    INVITE_PICKER_MAX_HEIGHT,
+    INVITE_PICKER_MIN_HEIGHT,
+    INVITE_PICKER_WIDTH,
     InsertCommand,
     InsertMenuPosition,
     InsertMenuSelectionDirection,
@@ -727,6 +749,26 @@ function MarkdownNotebookEditor({
     remoteVersionRef.current = remoteVersion
     const remoteCaretAnchorsRef = useRef<Record<string, RemoteCaretAnchor>>({})
     const [adjustedRemoteCarets, setAdjustedRemoteCarets] = useState<RemoteNotebookCaret[] | undefined>(remoteCarets)
+    const [inlineNotePopover, setInlineNotePopover] = useState<{
+        nodeId: string
+        refId: string
+        by: string
+        name: string
+        avatar?: string
+        text: string
+        kind?: 'human' | 'bot'
+        pending?: boolean
+        draft?: boolean
+        quote?: string
+        createdAt?: string
+        intent?: import('./types').NotebookNoteIntent
+        suggestion?: string
+        top: number
+        left: number
+    } | null>(null)
+    const [invitePicker, setInvitePicker] = useState<{ nodeId: string } | null>(null)
+    const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
+    const [inviteStatus, setInviteStatus] = useState<{ names: string[]; error?: string } | null>(null)
     const initialInsertMenuAppliedRef = useRef(false)
     const emptyNodeRef = useRef<NotebookTextBlockNode>(makeEmptyParagraph('initial-empty'))
     const initializedComponentPanelNodeIdsRef = useRef<Set<string> | null>(null)
@@ -2741,7 +2783,11 @@ function MarkdownNotebookEditor({
     ])
 
     const updateNode = useCallback(
-        (nodeId: string, updater: (node: NotebookBlockNode) => NotebookBlockNode | null): void => {
+        (
+            nodeId: string,
+            updater: (node: NotebookBlockNode) => NotebookBlockNode | null,
+            extra?: { annotations?: NotebookDocument['annotations'] }
+        ): void => {
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
             let didUpdate = false
@@ -2756,19 +2802,32 @@ function MarkdownNotebookEditor({
                 return updatedNode ? [updatedNode] : []
             })
 
-            if (!didUpdate) {
+            if (!didUpdate && !extra?.annotations) {
                 return
             }
 
             commitDocument(
                 {
                     ...currentDocument,
-                    nodes: nextNodes,
+                    nodes: didUpdate ? nextNodes : currentDocument.nodes,
+                    ...(extra?.annotations ? { annotations: extra.annotations } : {}),
                 },
                 {
                     historyOperations,
                 }
             )
+        },
+        [commitDocument]
+    )
+
+    const updateAnnotations = useCallback(
+        (updater: (current: NonNullable<NotebookDocument['annotations']>) => NotebookDocument['annotations']): void => {
+            const currentDocument = documentRef.current
+            const next = updater(currentDocument.annotations || {})
+            commitDocument({
+                ...currentDocument,
+                annotations: next && Object.keys(next).length ? next : undefined,
+            })
         },
         [commitDocument]
     )
@@ -2810,6 +2869,20 @@ function MarkdownNotebookEditor({
                     tagName,
                     props,
                 }),
+            openPhilosopherInvite: (targetNodeId) => {
+                const anchorElement = blockRefs.current[targetNodeId]
+                setInsertMenu(null)
+                setInvitePicker({ nodeId: targetNodeId })
+                setInvitePickerPosition(
+                    anchorElement
+                        ? getInsertMenuPosition(anchorElement, {
+                              width: INVITE_PICKER_WIDTH,
+                              maxHeight: INVITE_PICKER_MAX_HEIGHT,
+                              minHeight: INVITE_PICKER_MIN_HEIGHT,
+                          })
+                        : null
+                )
+            },
         }),
         [replaceNodeWithInsertedComponent]
     )
@@ -3992,144 +4065,143 @@ function MarkdownNotebookEditor({
         )
     }
 
-    const startInlineCommentAtSelection = (inviteBotId?: string): void => {
+    const startInlineCommentAtSelection = (): void => {
         if (!floatingToolbar || !canStartInlineCommentAtSelection()) {
             return
         }
+        const textRange = floatingToolbar.textRanges[0]
+        const listRange = floatingToolbar.listItemRanges[0]
+        const targetNodeId = textRange?.node.id || listRange?.node.id
+        if (!targetNodeId) return
 
-        const textRangesByNodeId = new Map(floatingToolbar.textRanges.map((entry) => [entry.node.id, entry]))
-        const codeRangesByNodeId = new Map(floatingToolbar.codeRanges.map((entry) => [entry.node.id, entry]))
-        const listItemRangesByNodeId = new Map<string, FloatingToolbarListItemRange[]>()
-        floatingToolbar.listItemRanges.forEach((entry) => {
-            listItemRangesByNodeId.set(entry.node.id, [...(listItemRangesByNodeId.get(entry.node.id) ?? []), entry])
-        })
-
-        const currentDocument = documentRef.current
-        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const firstSelectedIndex = nodes.findIndex(
-            (node) =>
-                textRangesByNodeId.has(node.id) ||
-                listItemRangesByNodeId.has(node.id) ||
-                codeRangesByNodeId.has(node.id)
-        )
-        if (firstSelectedIndex === -1) {
-            return
-        }
-
+        const note = actorToInlineNote('')
         const refId = createNotebookRefId()
-        // The thread sits above the first block it refers to, so its zero-height margin row
-        // naturally aligns with the top of the highlighted content. The title row is the
-        // one exception: the `# ` heading always stays first, so a title comment goes
-        // right below it instead.
-        const passage = floatingToolbar.selectedMarkdown || ''
-        const inviteBot = inviteBotId ? resolveInviteBot(inviteBotId) : null
-        const pendingId = inviteBot ? `pending-${inviteBot.id}` : ''
-        const commentNode: NotebookComponentBlockNode = {
-            id: makeEmptyParagraph(`comment-${nodes[firstSelectedIndex].id}`).id,
-            type: 'component',
-            tagName: 'Comment',
-            props: {
-                ref: refId,
-                passage,
-                replies: inviteBot
-                    ? [
-                          {
-                              id: pendingId,
-                              text: `${inviteBot.name} is reading…`,
-                              author: inviteBot.displayName,
-                              createdAt: new Date().toISOString(),
-                              botId: inviteBot.id,
-                              pending: true,
-                          },
-                      ]
-                    : [],
-            },
-        }
-        const nextNodes = nodes.flatMap((node, index): NotebookBlockNode[] => {
-            let updatedNode = node
-            const textRange = textRangesByNodeId.get(node.id)
-            const codeRange = codeRangesByNodeId.get(node.id)
-            const listItemRanges = listItemRangesByNodeId.get(node.id)
-            if (textRange && isTextBlockNode(node)) {
-                updatedNode = { ...node, children: setInlineRefMark(node.children, textRange.range, refId) }
-            } else if (codeRange && node.type === 'code') {
-                updatedNode = setCodeRefMark(node, codeRange.range, refId)
-            } else if (listItemRanges && node.type === 'list') {
-                updatedNode = {
-                    ...node,
-                    items: node.items.map((item, itemIndex) => {
-                        const itemRange = listItemRanges.find((entry) => entry.itemIndex === itemIndex)
-                        return itemRange
-                            ? { ...item, children: setInlineRefMark(item.children, itemRange.range, refId) }
-                            : item
-                    }),
+        updateNode(
+            targetNodeId,
+            (current) => {
+                if (textRange && isTextBlockNode(current)) {
+                    return {
+                        ...current,
+                        children: applyRefToRange(current.children, textRange.range, refId),
+                    }
                 }
-            }
-            if (index !== firstSelectedIndex) {
-                return [updatedNode]
-            }
-            return index === 0 ? [updatedNode, commentNode] : [commentNode, updatedNode]
-        })
-
-        markNotebookNodeFreshlyInserted(commentNode.id)
+                if (listRange && current.type === 'list') {
+                    return {
+                        ...current,
+                        items: current.items.map((item, itemIndex) =>
+                            itemIndex === listRange.itemIndex
+                                ? {
+                                      ...item,
+                                      children: applyRefToRange(item.children, listRange.range, refId),
+                                  }
+                                : item
+                        ),
+                    }
+                }
+                return current
+            },
+            { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note]) }
+        )
         floatingToolbarPositionLockRef.current = null
         setFloatingToolbar(null)
         window.getSelection()?.removeAllRanges()
-        commitDocument({ ...currentDocument, nodes: nextNodes })
-
-        if (inviteBot && passage.trim()) {
-            const commentId = commentNode.id
-            void requestPhilosopherComment({ botId: inviteBot.id, selection: passage })
-                .then((result) => {
-                    updateNode(commentId, (current) =>
-                        current.type === 'component'
-                            ? {
-                                  ...current,
-                                  props: {
-                                      ...current.props,
-                                      replies: repliesToPropValue(
-                                          upsertDiscussionReply(parseDiscussionReplies(current.props.replies), {
-                                              id: pendingId,
-                                              text: result.text,
-                                              author: result.author,
-                                              createdAt: new Date().toISOString(),
-                                              botId: result.botId,
-                                          })
-                                      ),
-                                  },
-                              }
-                            : current
-                    )
-                })
-                .catch((error) => {
-                    updateNode(commentId, (current) =>
-                        current.type === 'component'
-                            ? {
-                                  ...current,
-                                  props: {
-                                      ...current.props,
-                                      replies: repliesToPropValue(
-                                          upsertDiscussionReply(parseDiscussionReplies(current.props.replies), {
-                                              id: pendingId,
-                                              text:
-                                                  error instanceof Error
-                                                      ? error.message
-                                                      : 'Could not invite this philosopher.',
-                                              author: inviteBot.displayName,
-                                              createdAt: new Date().toISOString(),
-                                              botId: inviteBot.id,
-                                          })
-                                      ),
-                                  },
-                              }
-                            : current
-                    )
-                })
-        }
+        setInlineNotePopover({
+            nodeId: targetNodeId,
+            refId,
+            by: note.by,
+            name: note.name,
+            avatar: note.avatar,
+            text: '',
+            kind: 'human',
+            draft: true,
+            quote: getRefQuote(documentRef.current.nodes, refId),
+            createdAt: note.createdAt,
+            top: floatingToolbar.top + 28,
+            left: floatingToolbar.left,
+        })
     }
 
-    const invitePhilosopherToSelection = (botId: string): void => {
-        startInlineCommentAtSelection(botId)
+    const revealInlineRefs = (refIds: string[]): void => {
+        window.setTimeout(() => {
+            const root = notebookRef.current
+            if (!root || !refIds.length) return
+            let first: HTMLElement | null = null
+            for (const refId of refIds) {
+                const host = root.querySelector<HTMLElement>(`[data-notebook-ref="${refId}"]`)
+                if (!host) continue
+                host.classList.add('MarkdownNotebook__ref--flash')
+                window.setTimeout(() => host.classList.remove('MarkdownNotebook__ref--flash'), 1600)
+                if (!first) first = host
+            }
+            first?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }, 40)
+    }
+
+    const invitePhilosophersToNode = (_anchorNodeId: string, botIds: string[]): void => {
+        const bots = botIds.map((id) => resolveInviteBot(id)).filter((bot): bot is NonNullable<typeof bot> => Boolean(bot))
+        if (!bots.length) return
+
+        const readable = notebookReadableText(documentRef.current.nodes)
+        if (!readable.trim()) return
+
+        const names = bots.map((bot) => bot.name)
+        setInvitePicker(null)
+        setInsertMenu(null)
+        setInviteStatus({ names })
+
+        void requestPhilosopherComment({ botIds: bots.map((bot) => bot.id), selection: readable })
+            .then((results) => {
+                const current = documentRef.current
+                const used = collectExistingRefSpans(current.nodes)
+                let nextNodes = current.nodes
+                let nextAnnotations = current.annotations
+                const placed: string[] = []
+                const stamped = new Date().toISOString()
+                for (const result of results) {
+                    const bot = bots.find((entry) => entry.id === result.botId)
+                    if (!bot || !result.text.trim()) continue
+                    const span = resolveAutonomousSpan(nextNodes, result.phrase, used, `${bot.id}:${result.phrase}`)
+                    if (!span) continue
+                    const refId = createNotebookRefId()
+                    nextNodes = applyRefOnNotebookSpan(nextNodes, span, refId)
+                    used.push(span)
+                    placed.push(refId)
+                    nextAnnotations = upsertAnnotation(nextAnnotations, refId, [
+                        {
+                            by: bot.id,
+                            name: bot.name,
+                            text: result.text.trim(),
+                            avatar: bot.avatarUrl,
+                            kind: 'bot',
+                            createdAt: stamped,
+                            intent: result.intent,
+                            suggestion: result.suggestion,
+                        },
+                    ])
+                }
+                if (!placed.length) {
+                    setInviteStatus({ names, error: 'They read the page but left no mark.' })
+                    window.setTimeout(() => setInviteStatus(null), 4000)
+                    return
+                }
+                commitDocument({
+                    ...current,
+                    nodes: nextNodes,
+                    annotations: nextAnnotations,
+                })
+                setInviteStatus(null)
+                revealInlineRefs(placed)
+            })
+            .catch((error) => {
+                const message = error instanceof Error ? error.message : 'Could not invite these philosophers.'
+                setInviteStatus({ names, error: message })
+                window.setTimeout(() => setInviteStatus(null), 4000)
+            })
+    }
+
+    const removeInlineNote = (refId: string, by?: string): void => {
+        commitDocument(deleteNotebookAnnotation(documentRef.current, refId, by))
+        setInlineNotePopover(null)
     }
 
     // Clicking a `<ref>` highlight scrolls its comment thread into view and flashes it.
@@ -4206,8 +4278,67 @@ function MarkdownNotebookEditor({
             }
         }
 
+        const noteButton = event.target.closest<HTMLElement>('[data-note-by]')
+        if (noteButton) {
+            event.preventDefault()
+            const host = noteButton.closest<HTMLElement>('[data-notebook-ref]')
+            const hostRef = host?.getAttribute('data-notebook-ref') || ''
+            const notes = getAnnotationNotes(documentRef.current.annotations, hostRef)
+            const by = noteButton.getAttribute('data-note-by') || ''
+            const note = notes.find((entry) => entry.by === by)
+            const rect = noteButton.getBoundingClientRect()
+            const container = notebookRef.current?.getBoundingClientRect()
+            const nodeId =
+                noteButton.closest<HTMLElement>('[data-markdown-notebook-node-id]')?.dataset.markdownNotebookNodeId || ''
+            setInlineNotePopover({
+                nodeId,
+                refId: hostRef,
+                by,
+                name: note?.name || noteButton.getAttribute('data-note-name') || by,
+                avatar: note?.avatar || noteButton.getAttribute('data-note-avatar') || undefined,
+                text: note?.text || '',
+                kind: note?.kind,
+                pending: note?.pending,
+                draft: note?.kind === 'human' && !note?.text,
+                quote: getRefQuote(documentRef.current.nodes, hostRef),
+                createdAt: note?.createdAt,
+                intent: note?.intent,
+                suggestion: note?.suggestion,
+                top: rect.bottom - (container?.top || 0) + 8,
+                left: rect.left - (container?.left || 0),
+            })
+            return
+        }
+
         const refId = event.target.closest('[data-notebook-ref]')?.getAttribute('data-notebook-ref')
         if (refId) {
+            const notes = getAnnotationNotes(documentRef.current.annotations, refId)
+            if (notes.length) {
+                const first = notes[0]
+                const host = event.target.closest<HTMLElement>('[data-notebook-ref]')
+                const rect = (host || event.target).getBoundingClientRect()
+                const container = notebookRef.current?.getBoundingClientRect()
+                const nodeId =
+                    event.target.closest<HTMLElement>('[data-markdown-notebook-node-id]')?.dataset
+                        .markdownNotebookNodeId || ''
+                setInlineNotePopover({
+                    nodeId,
+                    refId,
+                    by: first.by,
+                    name: first.name,
+                    avatar: first.avatar,
+                    text: first.text,
+                    kind: first.kind,
+                    draft: first.kind === 'human' && !first.text,
+                    quote: getRefQuote(documentRef.current.nodes, refId),
+                    createdAt: first.createdAt,
+                    intent: first.intent,
+                    suggestion: first.suggestion,
+                    top: rect.bottom - (container?.top || 0) + 8,
+                    left: rect.left - (container?.left || 0),
+                })
+                return
+            }
             focusDiscussionCommentForRef(refId)
         }
     }
@@ -4215,34 +4346,36 @@ function MarkdownNotebookEditor({
     // A block comment has no `<ref>` highlight: the thread anchors purely by sitting right
     // above the block it discusses (below it for the title row, which always stays first).
     const startBlockCommentForNode = (nodeId: string): void => {
-        const currentDocument = documentRef.current
-        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const targetIndex = nodes.findIndex((node) => node.id === nodeId)
-        if (targetIndex === -1) {
-            return
-        }
-
-        const insertIndex = Math.max(targetIndex, 1)
-        const existingCommentNode = nodes[insertIndex - 1]
-        if (
-            existingCommentNode &&
-            isDiscussionCommentNode(existingCommentNode) &&
-            !getDiscussionCommentRefId(existingCommentNode)
-        ) {
-            focusDiscussionCommentComposer(existingCommentNode.id)
-            return
-        }
-
-        const commentNode: NotebookComponentBlockNode = {
-            id: makeEmptyParagraph(`comment-${nodeId}`).id,
-            type: 'component',
-            tagName: 'Comment',
-            props: { replies: [] },
-        }
-        markNotebookNodeFreshlyInserted(commentNode.id)
-        commitDocument({
-            ...currentDocument,
-            nodes: [...nodes.slice(0, insertIndex), commentNode, ...nodes.slice(insertIndex)],
+        const node = documentRef.current.nodes.find((entry) => entry.id === nodeId)
+        if (!node || !isTextBlockNode(node)) return
+        const note = actorToInlineNote('')
+        const refId = createNotebookRefId()
+        const range = { start: 0, end: getInlineText(node.children).length || 0 }
+        if (range.end === 0) return
+        updateNode(
+            nodeId,
+            (current) =>
+                isTextBlockNode(current)
+                    ? { ...current, children: applyRefToRange(current.children, range, refId) }
+                    : current,
+            { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note]) }
+        )
+        const block = blockRefs.current[nodeId]
+        const container = notebookRef.current?.getBoundingClientRect()
+        const rect = block?.getBoundingClientRect()
+        setInlineNotePopover({
+            nodeId,
+            refId,
+            by: note.by,
+            name: note.name,
+            avatar: note.avatar,
+            text: '',
+            kind: 'human',
+            draft: true,
+            quote: getRefQuote(documentRef.current.nodes, refId),
+            createdAt: note.createdAt,
+            top: (rect?.bottom || 40) - (container?.top || 0) + 8,
+            left: (rect?.left || 0) - (container?.left || 0),
         })
     }
 
@@ -4254,8 +4387,13 @@ function MarkdownNotebookEditor({
         copyMarkdownToNotebookClipboard(floatingToolbar.selectedMarkdown)
     }
 
+    const closeInvitePicker = useCallback((): void => {
+        setInvitePicker(null)
+    }, [])
+
     const openInsertMenu = (nodeId: string, query: string = ''): void => {
         onInteractionStateChange?.(true)
+        setInvitePicker(null)
         setInsertMenu((currentMenu) => {
             const sameNode = currentMenu?.nodeId === nodeId
             return {
@@ -4452,6 +4590,56 @@ function MarkdownNotebookEditor({
             window.visualViewport?.removeEventListener('scroll', updateInsertMenuPosition)
         }
     }, [insertMenu, updateInsertMenuPosition])
+
+    const updateInvitePickerPosition = useCallback((): void => {
+        if (!invitePicker) {
+            setInvitePickerPosition(null)
+            return
+        }
+
+        const anchorElement = blockRefs.current[invitePicker.nodeId]
+        if (!anchorElement) {
+            setInvitePickerPosition(null)
+            return
+        }
+
+        setInvitePickerPosition(
+            getInsertMenuPosition(anchorElement, {
+                width: INVITE_PICKER_WIDTH,
+                maxHeight: INVITE_PICKER_MAX_HEIGHT,
+                minHeight: INVITE_PICKER_MIN_HEIGHT,
+            })
+        )
+    }, [invitePicker])
+
+    useLayoutEffect(() => {
+        updateInvitePickerPosition()
+    }, [document, invitePicker, updateInvitePickerPosition])
+
+    useEffect(() => {
+        if (!invitePicker) {
+            setInvitePickerPosition(null)
+            return
+        }
+
+        window.addEventListener('resize', updateInvitePickerPosition)
+        window.addEventListener('scroll', updateInvitePickerPosition, true)
+        window.visualViewport?.addEventListener('resize', updateInvitePickerPosition)
+        window.visualViewport?.addEventListener('scroll', updateInvitePickerPosition)
+
+        return () => {
+            window.removeEventListener('resize', updateInvitePickerPosition)
+            window.removeEventListener('scroll', updateInvitePickerPosition, true)
+            window.visualViewport?.removeEventListener('resize', updateInvitePickerPosition)
+            window.visualViewport?.removeEventListener('scroll', updateInvitePickerPosition)
+        }
+    }, [invitePicker, updateInvitePickerPosition])
+
+    useEffect(() => {
+        if (mode !== 'edit' && invitePicker) {
+            setInvitePicker(null)
+        }
+    }, [invitePicker, mode])
 
     useEffect(() => {
         if (!insertMenu) {
@@ -5152,7 +5340,7 @@ function MarkdownNotebookEditor({
 
         if (
             event.target.closest(
-                '.MarkdownNotebook__row, .MarkdownNotebook__insert-boundary, .MarkdownNotebook__debug-toolbar, .MarkdownNotebook__debug-drawer, .MarkdownNotebook__insert-menu, .MarkdownNotebook__format-toolbar, button, a, input, textarea, select, [role="button"], [contenteditable="true"]'
+                '.MarkdownNotebook__row, .MarkdownNotebook__insert-boundary, .MarkdownNotebook__debug-toolbar, .MarkdownNotebook__debug-drawer, .MarkdownNotebook__insert-menu, .MarkdownNotebook__invite-picker, .MarkdownNotebook__format-toolbar, button, a, input, textarea, select, [role="button"], [contenteditable="true"]'
             )
         ) {
             return
@@ -5407,7 +5595,7 @@ function MarkdownNotebookEditor({
             const nextText = getInlineText(nextChildren)
             const slashQuery = getSlashCommandQuery(nextText)
             if (node && isPromptComponentNode(node)) {
-                rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren)
+                rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren, documentRef.current.annotations)
                 if (getNotebookStringProp(node.props.question) !== nextText) {
                     updateNode(nodeId, (currentNode) => {
                         if (!isPromptComponentNode(currentNode)) {
@@ -5441,7 +5629,7 @@ function MarkdownNotebookEditor({
                 if (slashToken) {
                     if (slashToken.start === 0 && slashQuery !== null) {
                         const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
-                        const nextHtml = inlineNodesToHtml(queryChildren)
+                        const nextHtml = inlineNodesToHtml(queryChildren, documentRef.current.annotations)
                         rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
                         if (inlineEditableElement.innerHTML !== nextHtml) {
                             inlineEditableElement.innerHTML = nextHtml
@@ -5468,7 +5656,7 @@ function MarkdownNotebookEditor({
                 }
             }
 
-            rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren)
+            rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren, documentRef.current.annotations)
             updateNode(nodeId, (currentNode) => {
                 if (!isTextBlockNode(currentNode)) {
                     return currentNode
@@ -5830,6 +6018,13 @@ function MarkdownNotebookEditor({
         // Events from native editable elements (e.g. the AI prompt textarea) are excluded, because the DOM
         // selection can still point at a previously focused block.
         if (event.target instanceof HTMLElement && isNativeEditableElement(event.target)) {
+            return
+        }
+
+        if (mode === 'edit' && event.key === 'Escape' && invitePicker) {
+            event.preventDefault()
+            event.stopPropagation()
+            closeInvitePicker()
             return
         }
 
@@ -6282,7 +6477,7 @@ function MarkdownNotebookEditor({
                         if (token.start === 0) {
                             const queryChildren = token.query ? [{ type: 'text' as const, text: token.query }] : []
                             const element = blockRefs.current[node.id]
-                            const nextHtml = inlineNodesToHtml(queryChildren)
+                            const nextHtml = inlineNodesToHtml(queryChildren, documentRef.current.annotations)
                             rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
                             if (element && element.innerHTML !== nextHtml) {
                                 element.innerHTML = nextHtml
@@ -6369,6 +6564,7 @@ function MarkdownNotebookEditor({
     const firstTextGroupKey = renderedNodeGroups.find((group) => group.type === 'text')?.key
 
     return (
+        <NotebookAnnotationsContext.Provider value={document.annotations || EMPTY_ANNOTATIONS}>
         <div
             className={clsx(
                 'MarkdownNotebook',
@@ -6533,11 +6729,99 @@ function MarkdownNotebookEditor({
                             startInlineCommentAtSelection={
                                 canStartInlineCommentAtSelection() ? () => startInlineCommentAtSelection() : undefined
                             }
-                            invitePhilosopherToSelection={
-                                canStartInlineCommentAtSelection() ? invitePhilosopherToSelection : undefined
-                            }
                             lockPosition={lockFloatingToolbarPosition}
                             returnFocusToEditor={returnFocusFromFormattingToolbar}
+                        />
+                    ) : null}
+                    {invitePicker ? (
+                        <InvitePhilosopherPicker
+                            position={invitePickerPosition}
+                            onClose={closeInvitePicker}
+                            onConfirm={(botIds) => invitePhilosophersToNode(invitePicker.nodeId, botIds)}
+                        />
+                    ) : null}
+                    {inviteStatus ? (
+                        <div
+                            className={clsx(
+                                'MarkdownNotebook__invite-status',
+                                inviteStatus.error && 'MarkdownNotebook__invite-status--error',
+                                invitePickerPosition && 'MarkdownNotebook__invite-status--positioned',
+                                invitePickerPosition && `MarkdownNotebook__invite-status--${invitePickerPosition.placement}`
+                            )}
+                            style={
+                                invitePickerPosition
+                                    ? ({
+                                          '--markdown-notebook-invite-picker-left': `${invitePickerPosition.left}px`,
+                                          '--markdown-notebook-invite-picker-top': `${invitePickerPosition.top}px`,
+                                          '--markdown-notebook-invite-picker-width': `${invitePickerPosition.width}px`,
+                                          '--markdown-notebook-invite-picker-max-height': `${invitePickerPosition.maxHeight}px`,
+                                      } as CSSProperties)
+                                    : undefined
+                            }
+                            contentEditable={false}
+                        >
+                            {inviteStatus.error ||
+                                `${inviteStatus.names.join(' and ')} ${
+                                    inviteStatus.names.length === 1 ? 'is' : 'are'
+                                } reading the page…`}
+                        </div>
+                    ) : null}
+                    {inlineNotePopover ? (
+                        <InlineNotePopover
+                            name={inlineNotePopover.name}
+                            avatar={inlineNotePopover.avatar}
+                            text={inlineNotePopover.text}
+                            quote={inlineNotePopover.quote}
+                            createdAt={inlineNotePopover.createdAt}
+                            kind={inlineNotePopover.kind}
+                            intent={inlineNotePopover.intent}
+                            suggestion={inlineNotePopover.suggestion}
+                            pending={inlineNotePopover.pending}
+                            draft={inlineNotePopover.draft}
+                            top={inlineNotePopover.top}
+                            left={inlineNotePopover.left}
+                            onChangeDraft={(value) =>
+                                setInlineNotePopover((current) => (current ? { ...current, text: value } : current))
+                            }
+                            onSave={() => {
+                                const next = inlineNotePopover
+                                updateAnnotations((current) =>
+                                    updateNoteInAnnotations(current, next.refId, next.by, {
+                                        text: next.text.trim(),
+                                        pending: false,
+                                        createdAt: next.createdAt || new Date().toISOString(),
+                                    })
+                                )
+                                setInlineNotePopover(null)
+                            }}
+                            onClose={() => {
+                                if (inlineNotePopover.draft && !inlineNotePopover.text.trim()) {
+                                    removeInlineNote(inlineNotePopover.refId)
+                                    return
+                                }
+                                setInlineNotePopover(null)
+                            }}
+                            onDelete={() => removeInlineNote(inlineNotePopover.refId, inlineNotePopover.by)}
+                            onApply={
+                                inlineNotePopover.intent === 'edit' && inlineNotePopover.suggestion
+                                    ? () => {
+                                          const next = inlineNotePopover
+                                          commitDocument({
+                                              ...documentRef.current,
+                                              nodes: replaceRefQuotedText(
+                                                  documentRef.current.nodes,
+                                                  next.refId,
+                                                  next.suggestion || ''
+                                              ),
+                                          })
+                                          setInlineNotePopover((current) =>
+                                              current
+                                                  ? { ...current, quote: next.suggestion, suggestion: undefined }
+                                                  : current
+                                          )
+                                      }
+                                    : undefined
+                            }
                         />
                     ) : null}
                 </div>
@@ -6594,5 +6878,6 @@ function MarkdownNotebookEditor({
                 ) : null}
             </div>
         </div>
+        </NotebookAnnotationsContext.Provider>
     )
 }

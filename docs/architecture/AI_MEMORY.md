@@ -194,6 +194,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-174` | Stream 3 / 4 | Notebook Package B: callout/toggle, image upload, database + sub-page in slash | `registry.tsx`, Wim writing blocks, `/api/notebooks/upload` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-175` | Stream 2 | Fix `/` 404 + Next “Cancel rendering route” overlay | `pages/index.tsx`, `_app.tsx`, AppWindow | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-176` | Stream 5 | Invite a philosopher onto a notebook selection as a discussion comment | `invite-comment.ts`, MarkdownNotebook, DiscussionCommentBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-177` | Stream 5 / 3 | Slash Invite: pick two philosophers, they mark the passage in-text | `InvitePhilosopherPicker`, extraInsertCommands, inline notes | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-178` | Stream 3 / 5 | Philosopher picker as slash-adjacent overlay (not page bottom) | `InvitePhilosopherPicker`, MarkdownNotebook, InsertMenu | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-179` | Stream 5 / 3 | Notebook comments as a real annotation layer, not JSON-in-markdown | `annotations.ts`, markdown, collaboration, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-181` | Stream 5 / 3 | Autonomous invite: each philosopher marks their own span; notes deletable | `annotationPlacement.ts`, notebook-invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-182` | Stream 3 / 5 | Saved-note card, reveal after invite, 1–2 guests, invite errors | InlineNotePopover, MarkdownNotebook, annotationPlacement | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-183` | Stream 5 / 3 | Invite notes match page language; Close/Delete same chrome | notebook-invite.ts, InlineNotePopover | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-184` | Stream 5 | Invite notes are not one genre: remark/critique/edit/question/aside | notebook-invite, InlineNotePopover, annotations | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -332,6 +339,59 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 250 - Invite notes have more than one move
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Philosophers no longer always leave a remark. Each mark chooses `remark | critique | edit | question | aside`. Edit advice can carry a `suggestion` and Apply rewrites only that span. Invite generation uses `autonomous_assistant` instead of a forced dialectic.
+- **Modified Files:** `notebook-invite.ts`, `invite-comment.ts`, `notebook-invite-client.ts`, `types.ts`, `inlineNotes.ts`, `annotationPlacement.ts`, `InlineNotePopover.tsx`, `MarkdownNotebook.tsx`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts`
+
+### Entry 249 - Invite notes follow the page language; matching card actions
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Invite prompt now requires `text` in the notebook's language (Turkish page → Turkish note). The comment card dropped the leftover "Saved note" label; Close and Delete are the same compact text buttons.
+- **Modified Files:** `notebook-invite.ts`, `InlineNotePopover.tsx`, `MarkdownNotebook.scss`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts`
+
+### Entry 248 - Saved note cards and invite reveal
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** After invite, the page scrolls to the new marks and flashes them. Notes are real cards (quote + time + Delete). Invite accepts 1 or 2 philosophers. Failures show in the slash-adjacent status instead of failing silently. `createdAt` persists on the annotation layer.
+- **Modified Files:** `InlineNotePopover.tsx` (new), `InvitePhilosopherPicker.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `annotationPlacement.ts`, `inlineNotes.ts`, `types.ts`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 17 passed.
+- **Notes / Handoff:** `/` → Invite → 1 or 2 minds. They land on different sentences and the viewport follows. Chip → card → Delete.
+
+### Entry 247 - Invite is autonomous: each mind marks its own span
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Invite no longer wraps one paragraph with two stacked chips. The two philosophers read the whole notebook, each return a phrase, and each phrase becomes its own saved `<ref>` + annotation. Overlap is rejected; missing phrases fall back to an unused sentence (never the title). Notes persist in the sidecar. Popover Delete unwraps the highlight; Cancel on an empty draft discards it.
+- **Modified Files:** `annotationPlacement.ts` (new), `notebook-invite.ts`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `extraInsertCommands.tsx`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 17 passed. `pnpm run build:notebook-styles` — running/ok.
+- **Notes / Handoff:** `/` → Invite → pick two. They land on different sentences. Click chip → Delete.
+
+### Entry 246 - Stop painting note chips via contenteditable innerHTML
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chip `<button>`/`<img>` HTML was baked into `inlineNodesToHtml`. The browser serialized a different fragment than we generated, so `element.innerHTML = renderedHtml` rewrote the block in a loop and threw at that assignment. Refs are highlight-only again; chips are DOM-injected onto `[data-notebook-ref]` after sync.
+- **Modified Files:** `annotations.ts`, `markdown.ts`, `EditableTextBlock.tsx`, `EditableListBlock.tsx`, `EditableTableBlock.tsx`, `MarkdownNotebook.tsx`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 16 passed.
+
+### Entry 245 - Comments are an annotation layer, not markdown junk
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Inline notes no longer serialize as `notes=` JSON on `<ref>`. The mark is only an id. Note bodies live on `NotebookDocument.annotations` and persist as a trailing `<!--wim-annotations:…-->` sidecar. Legacy `notes=` attributes are lifted on parse. Adding/updating a comment does not change the block fingerprint. Two devices merge annotations by author independently of the text three-way merge. Philosopher replies update the layer only, not the paragraph.
+- **Modified Files:** `annotations.ts` (new), `types.ts`, `markdown.ts`, `inlineNotes.ts`, `collaboration.ts`, `MarkdownNotebook.tsx`, `EditableTextBlock.tsx`, `EditableListBlock.tsx`, `EditableTableBlock.tsx`, `notebookPreview.ts`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 16 passed.
+- **Notes / Handoff:** Old notebooks with `notes=` still open. After save they rewrite to `<ref id>` + sidecar. Next optional: @mentions on the same layer.
+
+### Entry 244 - Philosopher picker sits on the slash caret
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Invite no longer dumps a mismatched card at the bottom of the canvas. The picker is a fixed overlay using the same InsertMenu position helper (caret-anchored, flips above/below, Lemon tokens, avatars). Escape / outside click closes it.
+- **Modified Files:** `InvitePhilosopherPicker.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `InsertMenu.tsx`, `editorTypes.ts`, `site-bridge.scss`, `ensureLemonStyles.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm run build:notebook-styles` — ok. `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 14 passed.
+- **Notes / Handoff:** `/` → Invite should open the list next to the caret. Hard-refresh if the old bottom card is still cached.
 
 ### Entry 243 - Invite philosopher onto a selection
 - **Date:** 2026-08-18

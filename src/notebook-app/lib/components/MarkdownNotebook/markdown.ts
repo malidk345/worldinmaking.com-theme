@@ -4,6 +4,7 @@ import {
     NotebookCodeRefMark,
     NotebookComponentBlockNode,
     NotebookComponentProps,
+    NotebookAnnotationMap,
     NotebookDocument,
     NotebookInlineMark,
     NotebookInlineNode,
@@ -15,6 +16,13 @@ import {
     NotebookPropValue,
     NotebookTextBlockNode,
 } from './types'
+import {
+    ANNOTATIONS_SIDECAR_PREFIX,
+    collectRefIdsFromNodes,
+    liftNotesFromMarks,
+    serializeAnnotationsSidecar,
+    splitAnnotationsSidecar,
+} from './annotations'
 import {
     createStableNodeId,
     ensureUniqueNodeIds,
@@ -101,20 +109,16 @@ const INLINE_EMPHASIS_TOKENS: InlineEmphasisToken[] = [
 // whose tag names are required to start with an uppercase letter.
 const INLINE_TAG_NAMES = ['ref', 'mention'] as const
 type InlineTagName = (typeof INLINE_TAG_NAMES)[number]
-const INLINE_TAG_OPEN_REGEX = /^<(ref|mention)\s+id=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*>/
+const INLINE_TAG_OPEN_REGEX = /^<(ref|mention)((?:\s+[a-zA-Z][\w-]*=(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'))*)\s*>/
 let generatedNodeIdCounter = 0
 const serializedNodeCache = new WeakMap<NotebookBlockNode, string>()
 
 export function parseMarkdownNotebook(markdown: string | null | undefined): NotebookDocument {
-    const lines = (markdown ?? '').replace(/\r\n?/g, '\n').split('\n')
+    const { body, annotations } = splitAnnotationsSidecar((markdown ?? '').replace(/\r\n?/g, '\n'))
+    const lines = body.split('\n')
     const nodes: NotebookBlockNode[] = []
     const errors: NotebookParseError[] = []
-    const occurrences = new Map<string, number>()
     const pushParsedNode = (node: NotebookBlockNode): void => {
-        const fingerprint = getNodeFingerprint(node)
-        const occurrence = occurrences.get(fingerprint) ?? 0
-        occurrences.set(fingerprint, occurrence + 1)
-        node.id = createStableNodeId(fingerprint, occurrence)
         nodes.push(node)
     }
 
@@ -155,11 +159,27 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
         lineIndex = Math.max(result.nextLineIndex, lineIndex + 1)
     }
 
-    return { type: 'doc', nodes: ensureUniqueNodeIds(nodes), errors }
+    const lifted = liftNotesFromMarks({
+        type: 'doc',
+        nodes,
+        annotations,
+        errors,
+    })
+    const occurrences = new Map<string, number>()
+    const nodesWithIds = lifted.nodes.map((node) => {
+        const fingerprint = getNodeFingerprint(node)
+        const occurrence = occurrences.get(fingerprint) ?? 0
+        occurrences.set(fingerprint, occurrence + 1)
+        return { ...node, id: createStableNodeId(fingerprint, occurrence) }
+    })
+    return {
+        ...lifted,
+        nodes: ensureUniqueNodeIds(nodesWithIds),
+    }
 }
 
 export function serializeMarkdownNotebook(document: NotebookDocument): string {
-    if (document.nodes.length === 1 && isEmptyNotebookTitleNode(document.nodes[0])) {
+    if (document.nodes.length === 1 && isEmptyNotebookTitleNode(document.nodes[0]) && !document.annotations) {
         return ''
     }
 
@@ -178,7 +198,9 @@ export function serializeMarkdownNotebook(document: NotebookDocument): string {
     const shouldPreserveTrailingEmptyParagraph =
         shouldPreserveEmptyParagraphs && isEmptyParagraphNode(lastNode) && previousNode?.type !== 'component'
 
-    return shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
+    const body = shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
+    const sidecar = serializeAnnotationsSidecar(document.annotations, collectRefIdsFromNodes(document.nodes))
+    return sidecar ? `${body}${body ? '\n\n' : ''}${sidecar}` : body
 }
 
 function isEmptyNotebookTitleNode(node: NotebookBlockNode | undefined): boolean {
@@ -345,7 +367,12 @@ export function parseInlineMarkdown(markdown: string, marks: NotebookInlineMark[
             const inlineTag = parseInlineTag(markdown, index)
             if (inlineTag) {
                 nodes.push(
-                    ...parseInlineMarkdown(inlineTag.content, [...marks, { type: inlineTag.tagName, id: inlineTag.id }])
+                    ...parseInlineMarkdown(inlineTag.content, [
+                        ...marks,
+                        inlineTag.tagName === 'ref'
+                            ? { type: 'ref', id: inlineTag.id, notes: inlineTag.notes }
+                            : { type: inlineTag.tagName, id: inlineTag.id },
+                    ])
                 )
                 index = inlineTag.nextIndex
                 continue
@@ -518,17 +545,29 @@ function parseInlineLink(
  * A tag without a well-formed opener or matching closer is not a tag — the text stays
  * literal, so nothing a user types can ever be swallowed.
  */
+function parseInlineTagAttributes(raw: string): Record<string, string> {
+    const attributes: Record<string, string> = {}
+    const attributePattern = /([a-zA-Z][\w-]*)=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')/g
+    let match: RegExpExecArray | null = attributePattern.exec(raw)
+    while (match) {
+        attributes[match[1]] = (match[2] ?? match[3] ?? '').replace(/\\(.)/g, '$1')
+        match = attributePattern.exec(raw)
+    }
+    return attributes
+}
+
 function parseInlineTag(
     markdown: string,
     index: number
-): { tagName: InlineTagName; id: string; content: string; nextIndex: number } | null {
+): { tagName: InlineTagName; id: string; notes?: import('./types').InlinePhilosopherNote[]; content: string; nextIndex: number } | null {
     const openMatch = markdown.slice(index).match(INLINE_TAG_OPEN_REGEX)
     if (!openMatch) {
         return null
     }
 
     const tagName = openMatch[1] as InlineTagName
-    const id = (openMatch[2] ?? openMatch[3] ?? '').replace(/\\(.)/g, '$1')
+    const attributes = parseInlineTagAttributes(openMatch[2] || '')
+    const id = attributes.id || ''
     const contentStart = index + openMatch[0].length
     const closeToken = `</${tagName}>`
     const end = findTokenOutsideCodeSpans(markdown, closeToken, contentStart)
@@ -536,11 +575,41 @@ function parseInlineTag(
         return null
     }
 
+    const notes = tagName === 'ref' ? parseInlineNotesAttribute(attributes.notes) : undefined
+
     return {
         tagName,
         id,
+        notes,
         content: markdown.slice(contentStart, end),
         nextIndex: end + closeToken.length,
+    }
+}
+
+function parseInlineNotesAttribute(value: string | undefined): import('./types').InlinePhilosopherNote[] | undefined {
+    if (!value) return undefined
+    try {
+        const parsed = JSON.parse(value)
+        if (!Array.isArray(parsed)) return undefined
+        const notes = parsed
+            .map((entry) => {
+                if (!entry || typeof entry !== 'object') return null
+                const by = typeof entry.by === 'string' ? entry.by : ''
+                const name = typeof entry.name === 'string' ? entry.name : by
+                if (!by && !name) return null
+                return {
+                    by: by || name.toLowerCase(),
+                    name: name || by,
+                    text: typeof entry.text === 'string' ? entry.text : '',
+                    avatar: typeof entry.avatar === 'string' ? entry.avatar : undefined,
+                    kind: entry.kind === 'human' || entry.kind === 'bot' ? entry.kind : undefined,
+                    pending: entry.pending === true,
+                }
+            })
+            .filter((note): note is NonNullable<typeof note> => Boolean(note))
+        return notes.length ? notes : undefined
+    } catch {
+        return undefined
     }
 }
 
@@ -556,8 +625,8 @@ export function htmlElementToInlineNodes(element: HTMLElement): NotebookInlineNo
     return normalizeInlineNodes(htmlChildNodesToInlineNodes(element, []))
 }
 
-export function inlineNodesToHtml(nodes: NotebookInlineNode[]): string {
-    return nodes.map(inlineNodeToHtml).join('')
+export function inlineNodesToHtml(nodes: NotebookInlineNode[], annotations?: NotebookAnnotationMap): string {
+    return nodes.map((node) => inlineNodeToHtml(node, annotations)).join('')
 }
 
 export function sanitizeNotebookLinkHref(href: string): string | null {
@@ -590,6 +659,13 @@ function parseBlock(lines: string[], lineIndex: number): BlockParseResult {
         return {
             node: { id: '', type: 'component', tagName: DIVIDER_COMPONENT_TAG, props: {} },
             nextLineIndex: lineIndex + 1,
+        }
+    }
+
+    if (trimmed.startsWith(ANNOTATIONS_SIDECAR_PREFIX)) {
+        const commentEndLineIndex = getCommentBlockEndLine(lines, lineIndex)
+        if (commentEndLineIndex !== null) {
+            return { node: null, nextLineIndex: commentEndLineIndex + 1 }
         }
     }
 
@@ -1438,8 +1514,12 @@ function wrapInlineText(text: string, mark: NotebookInlineMark, marks: NotebookI
     if (mark.type === 'code') {
         return `\`${text}\``
     }
-    if (mark.type === 'ref' || mark.type === 'mention') {
-        return mark.id ? `<${mark.type} id=${JSON.stringify(mark.id)}>${text}</${mark.type}>` : text
+    if (mark.type === 'mention') {
+        return mark.id ? `<mention id=${JSON.stringify(mark.id)}>${text}</mention>` : text
+    }
+    if (mark.type === 'ref') {
+        if (!mark.id) return text
+        return `<ref id=${JSON.stringify(mark.id)}>${text}</ref>`
     }
     const href = sanitizeNotebookLinkHref(mark.href)
     return href ? `[${text}](${escapeMarkdownLinkHref(href)})` : text
@@ -1492,6 +1572,10 @@ function htmlNodeToInlineNodes(node: ChildNode, marks: NotebookInlineMark[]): No
     }
 
     if (!(node instanceof HTMLElement)) {
+        return []
+    }
+
+    if (node.hasAttribute('data-inline-note-chip')) {
         return []
     }
 
@@ -1551,18 +1635,18 @@ function isBlockBreakElement(node: ChildNode): node is HTMLElement {
     return tagName === 'div' || tagName === 'p'
 }
 
-function inlineNodeToHtml(node: NotebookInlineNode): string {
+function inlineNodeToHtml(node: NotebookInlineNode, annotations?: NotebookAnnotationMap): string {
     if (node.type === 'hardBreak') {
         return '<br>'
     }
 
     return normalizeInlineMarks(node.marks ?? []).reduce(
-        (html, mark) => wrapHtmlText(html, mark),
+        (html, mark) => wrapHtmlText(html, mark, annotations),
         escapeHtml(node.text)
     )
 }
 
-function wrapHtmlText(html: string, mark: NotebookInlineMark): string {
+function wrapHtmlText(html: string, mark: NotebookInlineMark, _annotations?: NotebookAnnotationMap): string {
     if (mark.type === 'bold') {
         return `<strong>${html}</strong>`
     }
@@ -1579,6 +1663,9 @@ function wrapHtmlText(html: string, mark: NotebookInlineMark): string {
         return `<code>${html}</code>`
     }
     if (mark.type === 'ref') {
+        // Chips are painted onto the host after innerHTML sync. Putting <button>/<img>
+        // in this string makes the browser serialize a different fragment and the
+        // contenteditable rewrite loop throws at `element.innerHTML = renderedHtml`.
         return `<span class="MarkdownNotebook__ref" data-notebook-ref="${escapeAttribute(mark.id)}">${html}</span>`
     }
     if (mark.type === 'mention') {

@@ -1,3 +1,4 @@
+import { mergeAnnotationMaps } from './annotations'
 import { parseMarkdownNotebook, serializeMarkdownNotebook, serializeNode } from './markdown'
 import { getStableComponentKey, reconcileNotebookDocuments } from './reconcile'
 import { applyTextChanges, getTextChanges, transformTextChanges, tryApplyTextChanges } from './textChanges'
@@ -138,6 +139,11 @@ export function mergeNotebookMarkdownChanges({
     const document: NotebookDocument = {
         type: 'doc',
         nodes: outputNodes,
+        annotations: mergeAnnotationMaps(
+            baseDocument.annotations,
+            localDocument.annotations,
+            remoteDocument.annotations
+        ),
         errors: [...localDocument.errors, ...remoteDocument.errors],
     }
 

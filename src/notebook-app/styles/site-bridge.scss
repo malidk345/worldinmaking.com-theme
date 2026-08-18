@@ -173,7 +173,8 @@ html.dark .notebook-app-scope,
     .notebook-app-scope .LemonButton,
     .notebook-app-scope [class*='floating'],
     .notebook-app-scope .MarkdownNotebook__format-toolbar,
-    .notebook-app-scope .MarkdownNotebook__insert-menu {
+    .notebook-app-scope .MarkdownNotebook__insert-menu,
+    .notebook-app-scope .MarkdownNotebook__invite-picker {
         display: none !important;
     }
 }

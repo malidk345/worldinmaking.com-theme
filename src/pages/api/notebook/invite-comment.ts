@@ -12,7 +12,8 @@ import {
     MAX_INVITE_SELECTION,
     buildInviteCommentSystemPrompt,
     buildInviteCommentUserPrompt,
-    cleanInviteCommentOutput,
+    parseInviteNotePayload,
+    pickTwoInviteBots,
     resolveInviteBot,
 } from 'lib/bots/notebook-invite'
 
@@ -29,9 +30,15 @@ export default async function handler(req: Request) {
     const parsed = await readJsonObject(req, 16 * 1024)
     if (!parsed.ok) return json({ ok: false, error: parsed.error }, parsed.status)
 
-    const botId = typeof parsed.body.botId === 'string' ? parsed.body.botId.trim().toLowerCase() : ''
-    const bot = resolveInviteBot(botId)
-    if (!bot) return json({ ok: false, error: 'Unknown philosopher' }, 400)
+    const requestedIds = Array.isArray(parsed.body.botIds)
+        ? parsed.body.botIds.filter((value): value is string => typeof value === 'string')
+        : typeof parsed.body.botId === 'string'
+          ? [parsed.body.botId]
+          : parsed.body.duo === true
+            ? pickTwoInviteBots()
+            : []
+    const bots = requestedIds.map((id) => resolveInviteBot(id.trim().toLowerCase())).filter(Boolean)
+    if (!bots.length) return json({ ok: false, error: 'Unknown philosopher' }, 400)
 
     const selection =
         typeof parsed.body.selection === 'string' ? parsed.body.selection.slice(0, MAX_INVITE_SELECTION) : ''
@@ -47,19 +54,41 @@ export default async function handler(req: Request) {
         return json({ ok: false, error: `Rate limit exceeded. Retry in ${retryAfterSec}s`, retryAfterSec }, 429)
     }
 
-    const result = await generateWithGateway({
-        systemPrompt: buildInviteCommentSystemPrompt(bot.id),
-        userPrompt: buildInviteCommentUserPrompt({ selection, notebook }),
-        taskType: 'dialectic_challenge',
-        temperature: 0.7,
-        thinkingDepth: 'brief',
-        botName: bot.name,
+    const notes = (
+        await Promise.all(
+            bots.map(async (bot) => {
+                if (!bot) return null
+                const result = await generateWithGateway({
+                    systemPrompt: buildInviteCommentSystemPrompt(bot.id),
+                    userPrompt: buildInviteCommentUserPrompt({ selection, notebook }),
+                    taskType: 'autonomous_assistant',
+                    temperature: 0.75,
+                    thinkingDepth: 'brief',
+                    botName: bot.name,
+                })
+                if (!result.ok) return null
+                const payload = parseInviteNotePayload(result.text)
+                if (!payload.text) return null
+                return {
+                    botId: bot.id,
+                    author: bot.displayName,
+                    phrase: payload.phrase,
+                    text: payload.text,
+                    intent: payload.intent,
+                    ...(payload.suggestion ? { suggestion: payload.suggestion } : {}),
+                }
+            })
+        )
+    ).filter(Boolean)
+
+    if (!notes.length) return json({ ok: false, error: 'Philosophers are unreachable right now' }, 503)
+
+    const first = notes[0]
+    return json({
+        ok: true,
+        notes,
+        text: first?.text,
+        author: first?.author,
+        botId: first?.botId,
     })
-
-    if (!result.ok) return json({ ok: false, error: 'Philosopher is unreachable right now' }, 503)
-
-    const text = cleanInviteCommentOutput(result.text)
-    if (!text) return json({ ok: false, error: 'Empty comment' }, 422)
-
-    return json({ ok: true, text, author: bot.displayName, botId: bot.id })
 }
