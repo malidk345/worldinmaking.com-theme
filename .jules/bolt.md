@@ -12,3 +12,7 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+
+## 2024-11-20 - Avoid [...iterable].reduce for Array Aggregation
+**Learning:** Using `[...iterable].reduce(...)` to aggregate values from iterables (like strings or sets) creates an intermediate array, which causes unnecessary memory allocation and GC pressure, particularly in frequently called parsing logic.
+**Action:** Replace `[...iterable].reduce(...)` with a standard `for...of` loop over the iterable, which operates in O(N) without the overhead of temporary array allocations.
