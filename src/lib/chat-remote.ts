@@ -4,7 +4,6 @@
  */
 import type { Chat } from '../components/ClaudeWorkspaceChat/types'
 import { supabase, isSupabaseConfigured } from './supabase'
-import { mergeChats } from './chat-merge'
 import {
     DEVICE_CHAT_OWNER_KEY,
     DEVICE_NOTEBOOK_OWNER_KEY,
