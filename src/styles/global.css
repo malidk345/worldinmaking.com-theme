@@ -3160,8 +3160,8 @@ article.reader-view-content-container:has(.quest-sidebar) {
     }
 }
 
-html[data-keyboard='open'],
-html[data-keyboard='open'] body {
+html[data-keyboard='open']:not([data-keyboard-surface='notebook']),
+html[data-keyboard='open']:not([data-keyboard-surface='notebook']) body {
     overflow: hidden;
     overscroll-behavior: none;
 }

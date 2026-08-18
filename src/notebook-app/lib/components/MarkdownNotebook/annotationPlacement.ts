@@ -72,6 +72,26 @@ export function collectExistingRefSpans(nodes: NotebookBlockNode[]): NotebookTex
 
 export type AutonomousPlacement = { kind: 'span'; span: NotebookTextSpan } | { kind: 'piece' }
 
+export function wordSpanAt(text: string, caret: number): { start: number; end: number } | null {
+    if (!text.trim()) return null
+    const isWord = (character: string): boolean => /[\p{L}\p{N}_'-]/u.test(character)
+    let index = Math.max(0, Math.min(caret, text.length))
+    if (index > 0 && (index === text.length || !isWord(text[index] || ''))) {
+        index -= 1
+    }
+    while (index > 0 && !isWord(text[index] || '') && !isWord(text[index - 1] || '')) {
+        index -= 1
+    }
+    let start = index
+    let end = index
+    while (start > 0 && isWord(text[start - 1])) start -= 1
+    while (end < text.length && isWord(text[end])) end += 1
+    if (end > start) return { start, end }
+    const first = text.match(/\S+/)
+    if (!first || first.index === undefined) return null
+    return { start: first.index, end: first.index + first[0].length }
+}
+
 export function resolveAutonomousPlacement(
     nodes: NotebookBlockNode[],
     phrase: string | undefined,

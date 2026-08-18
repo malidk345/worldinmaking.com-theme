@@ -49,6 +49,7 @@ import {
     notebookReadableText,
     replaceRefQuotedText,
     resolveAutonomousPlacement,
+    wordSpanAt,
 } from './annotationPlacement'
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
@@ -2859,6 +2860,54 @@ function MarkdownNotebookEditor({
         [mergedRegistry, replaceNode]
     )
 
+    const startInlineCommentFromSlash = (nodeId: string): void => {
+        const node = documentRef.current.nodes.find((entry) => entry.id === nodeId)
+        if (!node || !isTextBlockNode(node)) return
+
+        const note = actorToInlineNote('')
+        const refId = createNotebookRefId()
+        let nextChildren = node.children
+        const rawText = getInlineText(nextChildren)
+        const slash = getSlashTokenAt(rawText, rawText.length) || getSlashTokenAt(rawText, Math.max(0, rawText.length - 1))
+        if (slash) {
+            nextChildren = splitInlineNodesAt(nextChildren, slash.start)[0]
+        }
+        const text = getInlineText(nextChildren)
+        const range = wordSpanAt(text, text.length)
+        const scope = range ? 'span' : 'piece'
+
+        updateNode(
+            nodeId,
+            (current) =>
+                isTextBlockNode(current)
+                    ? {
+                          ...current,
+                          children: range ? applyRefToRange(nextChildren, range, refId) : nextChildren,
+                      }
+                    : current,
+            { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note], { scope }) }
+        )
+        setInsertMenu(null)
+
+        const block = blockRefs.current[nodeId]
+        const container = notebookRef.current?.getBoundingClientRect()
+        const rect = block?.getBoundingClientRect()
+        setInlineNotePopover({
+            nodeId,
+            refId,
+            by: note.by,
+            name: note.name,
+            avatar: note.avatar,
+            text: '',
+            kind: 'human',
+            draft: true,
+            createdAt: note.createdAt,
+            scope,
+            top: (rect?.bottom || 40) - (container?.top || 0) + 8,
+            left: (rect?.left || 0) - (container?.left || 0),
+        })
+    }
+
     const insertMenuApi = useMemo<MarkdownNotebookInsertMenuApi>(
         () => ({
             insertComponent: (targetNodeId, tagName, props) =>
@@ -2882,6 +2931,7 @@ function MarkdownNotebookEditor({
                         : null
                 )
             },
+            openInlineComment: (targetNodeId) => startInlineCommentFromSlash(targetNodeId),
         }),
         [replaceNodeWithInsertedComponent]
     )
@@ -6642,6 +6692,7 @@ function MarkdownNotebookEditor({
                     <div
                         className="MarkdownNotebook__canvas"
                         ref={canvasRef}
+                        data-writing-dock
                         contentEditable={mode === 'edit'}
                         suppressContentEditableWarning
                         data-markdown-notebook-editor

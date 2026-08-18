@@ -1,4 +1,4 @@
-import { IconDocument, IconPeople } from '@posthog/icons'
+import { IconComment, IconDocument, IconPeople } from '@posthog/icons'
 
 import { COMMON_INSERT_COMMAND_CATEGORY, InsertCommand } from '../../lib/components/MarkdownNotebook/InsertMenu'
 import { NotebookComponentProps } from '../../lib/components/MarkdownNotebook/types'
@@ -8,6 +8,7 @@ export type MarkdownNotebookInsertMenuApi = {
     insertComponent: (targetNodeId: string, tagName: string, props: NotebookComponentProps) => void
     openAIPrompt?: () => void
     openPhilosopherInvite?: (targetNodeId: string) => void
+    openInlineComment?: (targetNodeId: string) => void
 }
 
 /** Slash already ships WIM AI (inline editor). Page creates a real child notebook. */
@@ -30,13 +31,25 @@ export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): I
             },
         },
     ]
+    if (api.openInlineComment) {
+        commands.unshift({
+            key: 'inline-comment',
+            label: 'Comment',
+            category: COMMON_INSERT_COMMAND_CATEGORY,
+            description: 'Leave an inline note on this line',
+            aliases: ['comment', 'yorum', 'note', 'not'],
+            icon: <IconComment />,
+            closeOnRun: false,
+            run: (targetNodeId) => api.openInlineComment?.(targetNodeId),
+        })
+    }
     if (api.openPhilosopherInvite) {
         commands.unshift({
             key: 'invite-philosophers',
             label: 'Invite',
             category: COMMON_INSERT_COMMAND_CATEGORY,
             description: 'Invite philosophers to leave their own notes',
-            aliases: ['invite', 'filozof', 'philosopher', 'davet', 'yorum', 'comment'],
+            aliases: ['invite', 'filozof', 'philosopher', 'davet'],
             icon: <IconPeople />,
             closeOnRun: false,
             run: (targetNodeId) => api.openPhilosopherInvite?.(targetNodeId),

@@ -37,6 +37,7 @@ import {
     getRefQuote,
     notebookReadableText,
     resolveAutonomousPlacement,
+    wordSpanAt,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/annotationPlacement'
 import { getNodeFingerprint } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components/MarkdownNotebook/collaboration'
@@ -354,6 +355,7 @@ test.describe('notebook frontend helpers', () => {
             '# Title\n\nVirtue is not a feeling.\n\nThe market is a historical form, not nature.'
         )
         expect(notebookReadableText(parsed.nodes)).toContain('Virtue is not a feeling.')
+        expect(wordSpanAt('Virtue is not a feeling.', 0)).toEqual({ start: 0, end: 6 })
         expect(notebookReadableText(parsed.nodes)).toContain('Title: Title')
 
         const first = resolveAutonomousPlacement(parsed.nodes, 'Virtue', 'span', [])

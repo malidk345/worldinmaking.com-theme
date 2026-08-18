@@ -31,14 +31,30 @@ export function useKeyboardInset(): void {
 
             if (open) root.setAttribute('data-keyboard', 'open')
             else root.removeAttribute('data-keyboard')
+
+            const active = document.activeElement
+            if (active instanceof HTMLElement && active.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) {
+                root.setAttribute('data-keyboard-surface', 'notebook')
+            } else {
+                root.removeAttribute('data-keyboard-surface')
+            }
         }
 
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
             const el = event.target
-            if (el.closest('[data-writing-dock], .keyboard-lift')) return
+            if (el.closest('[data-writing-dock], .keyboard-lift, .MarkdownNotebook, [data-markdown-notebook-editor]')) {
+                return
+            }
             window.setTimeout(() => {
-                el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+                const vv = window.visualViewport
+                if (vv) {
+                    const rect = el.getBoundingClientRect()
+                    const top = vv.offsetTop + 12
+                    const bottom = vv.offsetTop + vv.height - 12
+                    if (rect.top >= top && rect.bottom <= bottom) return
+                }
+                el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
             }, 280)
         }
 
@@ -56,6 +72,7 @@ export function useKeyboardInset(): void {
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')
             root.removeAttribute('data-keyboard')
+            root.removeAttribute('data-keyboard-surface')
         }
     }, [])
 }

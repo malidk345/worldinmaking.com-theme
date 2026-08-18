@@ -203,6 +203,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-184` | Stream 5 | Invite notes are not one genre: remark/critique/edit/question/aside | notebook-invite, InlineNotePopover, annotations | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-185` | Stream 3 / 5 | Mobile overlays + never persist thinking/JSON as a note | notebook-invite.ts, MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-186` | Stream 5 | Invite notes may be a word, a fragment, or a piece-level meta note | annotationPlacement, notebook-invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-187` | Stream 3 | Mobile notebook tap no longer recenters; slash Comment is inline | useKeyboardInset, extraInsertCommands, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
