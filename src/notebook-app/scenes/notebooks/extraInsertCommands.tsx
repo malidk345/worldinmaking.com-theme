@@ -36,7 +36,7 @@ export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): I
             key: 'inline-comment',
             label: 'Comment',
             category: COMMON_INSERT_COMMAND_CATEGORY,
-            description: 'Leave an inline note on this line',
+            description: 'Leave a note on this block',
             aliases: ['comment', 'yorum', 'note', 'not'],
             icon: <IconComment />,
             closeOnRun: false,

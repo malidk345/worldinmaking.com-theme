@@ -18,7 +18,7 @@ import {
 } from './types'
 import {
     ANNOTATIONS_SIDECAR_PREFIX,
-    collectRefIdsFromNodes,
+    collectAnnotationKeepIds,
     liftNotesFromMarks,
     serializeAnnotationsSidecar,
     splitAnnotationsSidecar,
@@ -124,8 +124,15 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
 
     let lineIndex = 0
     let blankLinesBeforeBlock = 0
+    let pendingBlockId: string | undefined
     while (lineIndex < lines.length) {
         const line = lines[lineIndex]
+        const blockIdMatch = line.trim().match(/^<!--wim-block:([A-Za-z0-9_-]+)-->$/)
+        if (blockIdMatch) {
+            pendingBlockId = blockIdMatch[1]
+            lineIndex += 1
+            continue
+        }
 
         if (isEmptyParagraphPlaceholderLine(line)) {
             pushParsedNode({
@@ -133,7 +140,9 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
                 type: 'paragraph',
                 children: [],
                 startsGroup: nodes.length > 0 && blankLinesBeforeBlock > 1 ? true : undefined,
+                blockId: pendingBlockId,
             })
+            pendingBlockId = undefined
             blankLinesBeforeBlock = 0
             lineIndex += 1
             continue
@@ -152,6 +161,10 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
         if (result.node) {
             if (nodes.length > 0 && blankLinesBeforeBlock > 1) {
                 result.node.startsGroup = true
+            }
+            if (pendingBlockId) {
+                result.node.blockId = pendingBlockId
+                pendingBlockId = undefined
             }
             pushParsedNode(result.node)
         }
@@ -187,10 +200,11 @@ export function serializeMarkdownNotebook(document: NotebookDocument): string {
     const serialized = document.nodes
         .map((node, index) => {
             const block = serializeDocumentNode(node, shouldPreserveEmptyParagraphs)
+            const marked = node.blockId ? `<!--wim-block:${node.blockId}-->\n${block}` : block
             if (index === 0) {
-                return block
+                return marked
             }
-            return `${node.startsGroup ? NOTEBOOK_BLOCK_SEPARATOR : NOTEBOOK_BLOCK_JOINER}${block}`
+            return `${node.startsGroup ? NOTEBOOK_BLOCK_SEPARATOR : NOTEBOOK_BLOCK_JOINER}${marked}`
         })
         .join('')
     const lastNode = document.nodes[document.nodes.length - 1]
@@ -199,7 +213,7 @@ export function serializeMarkdownNotebook(document: NotebookDocument): string {
         shouldPreserveEmptyParagraphs && isEmptyParagraphNode(lastNode) && previousNode?.type !== 'component'
 
     const body = shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
-    const sidecar = serializeAnnotationsSidecar(document.annotations, collectRefIdsFromNodes(document.nodes))
+    const sidecar = serializeAnnotationsSidecar(document.annotations, collectAnnotationKeepIds(document.nodes))
     return sidecar ? `${body}${body ? '\n\n' : ''}${sidecar}` : body
 }
 

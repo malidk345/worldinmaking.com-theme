@@ -90,6 +90,14 @@ export function collectRefIdsFromNodes(nodes: NotebookBlockNode[]): Set<string> 
     return ids
 }
 
+export function collectAnnotationKeepIds(nodes: NotebookBlockNode[]): Set<string> {
+    const ids = collectRefIdsFromNodes(nodes)
+    for (const node of nodes) {
+        if (node.blockId) ids.add(node.blockId)
+    }
+    return ids
+}
+
 export function pruneAnnotations(
     annotations: NotebookAnnotationMap | undefined,
     refIds: Set<string>
@@ -205,8 +213,8 @@ export function serializeAnnotationsSidecar(
     const byId: Record<string, unknown> = {}
     for (const [id, annotation] of Object.entries(pruned)) {
         byId[id] =
-            annotation.scope === 'piece'
-                ? { notes: annotation.notes, scope: 'piece' }
+            annotation.scope === 'piece' || annotation.scope === 'block'
+                ? { notes: annotation.notes, scope: annotation.scope }
                 : annotation.notes
     }
     return `${ANNOTATIONS_SIDECAR_PREFIX}${JSON.stringify({ v: 1, byId })}${ANNOTATIONS_SIDECAR_SUFFIX}`
@@ -325,7 +333,7 @@ function parseAnnotationPayload(value: unknown): NotebookAnnotationMap | undefin
             annotations[id] = {
                 id,
                 notes,
-                scope: packed?.scope === 'piece' ? 'piece' : undefined,
+                scope: packed?.scope === 'piece' || packed?.scope === 'block' ? packed.scope : undefined,
             }
         }
     }

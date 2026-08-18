@@ -27,7 +27,7 @@ export function InlineNotePopover({
     createdAt?: string
     kind?: 'human' | 'bot'
     intent?: import('./types').NotebookNoteIntent
-    scope?: 'span' | 'piece'
+    scope?: 'span' | 'piece' | 'block'
     suggestion?: string
     pending?: boolean
     draft?: boolean

@@ -49,7 +49,6 @@ export function EditablePromptComponent({
     const wasBusyRef = useRef(false)
     const [isFlipped, setIsFlipped] = useState(false)
     const [showPresets, setShowPresets] = useState(false)
-    const [selectionX, setSelectionX] = useState<number | null>(null)
     const [isReviewing, setIsReviewing] = useState(false)
     const question = getNotebookStringProp(node.props.question) ?? ''
     const selectedMarkdown = (getNotebookStringProp(node.props.selectedMarkdown) ?? '').trim()
@@ -73,25 +72,9 @@ export function EditablePromptComponent({
         }
     }, [isAIPromptSubmitDisabled])
 
-    // Calculate exact X coordinate of current text selection/cursor relative to container
     useEffect(() => {
         if (!wrapperRef.current) return
-        const wrapperRect = wrapperRef.current.getBoundingClientRect()
-        setIsFlipped(wrapperRect.top < 65)
-
-        const sel = window.getSelection()
-        if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0)
-            const rangeRect = range.getBoundingClientRect()
-            if (rangeRect.width > 0 || rangeRect.left > 0) {
-                const centerX = (rangeRect.left + rangeRect.width / 2) - wrapperRect.left
-                // Clamp X within the wrapper bounds
-                const clampedX = Math.max(160, Math.min(wrapperRect.width - 160, centerX))
-                setSelectionX(clampedX)
-                return
-            }
-        }
-        setSelectionX(null)
+        setIsFlipped(wrapperRef.current.getBoundingClientRect().top < 65)
     }, [isActive])
 
     useEffect(() => {
@@ -210,10 +193,6 @@ export function EditablePromptComponent({
             <div ref={wrapperRef} className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt">
                 <div
                     className={clsx('WimInlinePill', 'WimInlinePill--review', isFlipped && 'WimInlinePill--flipped')}
-                    style={{
-                        left: selectionX !== null ? `${selectionX}px` : '50%',
-                        transform: 'translateX(-50%)',
-                    }}
                     contentEditable={false}
                     data-markdown-notebook-node-id={node.id}
                 >
@@ -251,10 +230,6 @@ export function EditablePromptComponent({
                     isFlipped && 'WimInlinePill--flipped',
                     isAIPromptSubmitDisabled && 'WimInlinePill--busy'
                 )}
-                style={{
-                    left: selectionX !== null ? `${selectionX}px` : '50%',
-                    transform: 'translateX(-50%)',
-                }}
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
             >

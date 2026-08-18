@@ -12,7 +12,7 @@ import {
 import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
-import { WIM_HIDDEN_INSERT_COMMAND_KEYS } from './scenes/notebooks/hiddenInsertCommands'
+
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
 import { playInlineEditorMarkdown } from './lib/wimai-typewriter'
 import { notebookExcerptForEditor } from '../lib/bots/wimai-editor'
@@ -739,7 +739,6 @@ export function App() {
                       isAskAIDisabled={isAskAIBusy}
                       extraInsertCommands={extraCommands}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
-                      hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}

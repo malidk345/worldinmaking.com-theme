@@ -254,6 +254,11 @@ test.describe('notebook frontend helpers', () => {
         ).toMatchObject({ scope: 'piece', phrase: '', text: 'Çerçeve eylemin kendisi.' })
         expect(
             parseInviteNotePayload(
+                '{"scope":"block","phrase":"Virtue is not a feeling","intent":"remark","text":"Bu paragraf durmuyor."}'
+            )
+        ).toMatchObject({ scope: 'block', phrase: 'Virtue is not a feeling' })
+        expect(
+            parseInviteNotePayload(
                 '<thinking><case>phase text</case></thinking>\n{"phrase":"erdem bir his","intent":"critique","text":"Bu iddia durmuyor."}'
             )
         ).toMatchObject({ intent: 'critique', text: 'Bu iddia durmuyor.' })
@@ -369,6 +374,11 @@ test.describe('notebook frontend helpers', () => {
         const meta = resolveAutonomousPlacement(afterFirst, '', 'piece', used)
         expect(meta).toEqual({ kind: 'piece' })
         expect(resolveAutonomousPlacement(afterFirst, 'Virtue', 'span', used)).toEqual({ kind: 'piece' })
+        const onBlock = resolveAutonomousPlacement(parsed.nodes, 'Virtue is not a feeling', 'block', [])
+        expect(onBlock.kind).toBe('block')
+        if (onBlock.kind === 'block') {
+            expect(onBlock.nodeId).toBeTruthy()
+        }
 
         const second = resolveAutonomousPlacement(afterFirst, 'historical form', 'span', used)
         expect(second.kind).toBe('span')
@@ -407,6 +417,26 @@ test.describe('notebook frontend helpers', () => {
         expect(afterDelete.annotations?.['ref-piece'].scope).toBe('piece')
         expect(getRefQuote(withBoth, 'ref-b').length).toBeGreaterThan(0)
         expect(formatNoteTime(new Date().toISOString())).toBe('Just now')
+
+        const blockId = 'blk-1'
+        const withBlock = {
+            ...saved,
+            nodes: parsed.nodes.map((node, index) => (index === 1 ? { ...node, blockId } : node)),
+            annotations: {
+                [blockId]: {
+                    id: blockId,
+                    scope: 'block' as const,
+                    notes: [{ by: 'you', name: 'Ada', text: 'This paragraph.', kind: 'human' as const }],
+                },
+            },
+        }
+        const blockMarkdown = serializeMarkdownNotebook(withBlock)
+        expect(blockMarkdown).toContain(`<!--wim-block:${blockId}-->`)
+        expect(blockMarkdown).toContain('"scope":"block"')
+        const blockRoundTrip = parseMarkdownNotebook(blockMarkdown)
+        expect(blockRoundTrip.nodes.some((node) => node.blockId === blockId)).toBe(true)
+        expect(blockRoundTrip.annotations?.[blockId]?.scope).toBe('block')
+        expect(blockRoundTrip.annotations?.[blockId]?.notes[0].text).toBe('This paragraph.')
     })
 
     test('presence ignores this client and only draws carets with a node index', () => {

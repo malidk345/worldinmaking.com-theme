@@ -62,6 +62,8 @@ export type NotebookComponentProps = Record<string, NotebookPropValue>
 type NotebookBlockNodeBase = {
     id: string
     startsGroup?: boolean
+    /** Persistent comment hook. Outside the fingerprint so editing text does not drop notes. */
+    blockId?: string
 }
 
 export type NotebookTextBlockNode = NotebookBlockNodeBase & {
@@ -135,12 +137,12 @@ export type NotebookBlockNode =
     | NotebookCodeBlockNode
     | NotebookComponentBlockNode
 
-export type NotebookNoteScope = 'span' | 'piece'
+export type NotebookNoteScope = 'span' | 'piece' | 'block'
 
 export type NotebookAnnotation = {
     id: string
     notes: InlinePhilosopherNote[]
-    /** `piece` is a meta note on the work; it has no underlined span. */
+    /** `piece` is a meta note on the work; it has no underlined span. `block` sits on one block. */
     scope?: NotebookNoteScope
 }
 

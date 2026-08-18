@@ -1,26 +1,7 @@
 import clsx from 'clsx'
 import { ReactNode, type CSSProperties, useEffect, useRef } from 'react'
 
-import {
-    IconCode,
-    IconCursor,
-    IconDatabase,
-    IconFunnels,
-    IconLifecycle,
-    IconList,
-    IconPencil,
-    IconPeople,
-    IconRetention,
-    IconRewindPlay,
-    IconSparkles,
-    IconStickiness,
-    IconTrends,
-    IconUserPaths,
-} from '@posthog/icons'
-
-import { Scene } from 'scenes/sceneTypes'
-
-import { ProductKey } from '~/queries/schema/schema-general'
+import { IconCode, IconList, IconPencil, IconSparkles } from '@posthog/icons'
 
 import {
     INSERT_MENU_GAP,
@@ -46,10 +27,6 @@ import {
 export function getInsertMenuOptionDomId(menuId: string, commandKey: string): string {
     return `${menuId}-option-${commandKey}`
 }
-
-/** Exported so a caller whose registry supersedes the built-in SQL command can hide it by key
- * without hard-coding the string, which would silently stop matching if the key were renamed. */
-export const QUERY_SQL_INSERT_COMMAND_KEY = 'query-sql'
 
 /** The menu's top group. Exported so a registry component can place its insert command here
  * without hard-coding the label, which would split into a second group if this were renamed. */
@@ -318,179 +295,6 @@ export function buildInsertCommands(
           ]
         : []
 
-    const queryCommands: InsertCommand[] = [
-        {
-            key: 'query-trend',
-            label: 'Trend',
-            category: 'Insight',
-            icon: <IconTrends />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: {
-                            kind: 'TrendsQuery',
-                            series: [{ kind: 'EventsNode', name: '$pageview', event: '$pageview', math: 'total' }],
-                        },
-                    },
-                }),
-        },
-        {
-            key: 'query-funnel',
-            label: 'Funnel',
-            category: 'Insight',
-            icon: <IconFunnels />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: {
-                            kind: 'FunnelsQuery',
-                            series: [
-                                { kind: 'EventsNode', name: '$pageview', event: '$pageview' },
-                                { kind: 'EventsNode', name: '$pageleave', event: '$pageleave' },
-                            ],
-                        },
-                    },
-                }),
-        },
-        {
-            key: 'query-retention',
-            label: 'Retention',
-            category: 'Insight',
-            icon: <IconRetention />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: {
-                            kind: 'RetentionQuery',
-                            retentionFilter: {
-                                period: 'Day',
-                                totalIntervals: 11,
-                                targetEntity: { id: '$pageview', name: '$pageview', type: 'events' },
-                                returningEntity: { id: '$pageview', name: '$pageview', type: 'events' },
-                            },
-                        },
-                    },
-                }),
-        },
-        {
-            key: 'query-paths',
-            label: 'Paths',
-            category: 'Insight',
-            aliases: ['user paths'],
-            icon: <IconUserPaths />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: { kind: 'PathsQuery', pathsFilter: { includeEventTypes: ['$pageview'] } },
-                    },
-                }),
-        },
-        {
-            key: 'query-stickiness',
-            label: 'Stickiness',
-            category: 'Insight',
-            icon: <IconStickiness />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: {
-                            kind: 'StickinessQuery',
-                            series: [{ kind: 'EventsNode', name: '$pageview', event: '$pageview', math: 'total' }],
-                            stickinessFilter: {},
-                        },
-                    },
-                }),
-        },
-        {
-            key: 'query-lifecycle',
-            label: 'Lifecycle',
-            category: 'Insight',
-            icon: <IconLifecycle />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'InsightVizNode',
-                        source: {
-                            kind: 'LifecycleQuery',
-                            series: [{ kind: 'EventsNode', name: '$pageview', event: '$pageview', math: 'total' }],
-                        },
-                    },
-                }),
-        },
-    ]
-
-    const sqlCommands: InsertCommand[] = [
-        {
-            key: QUERY_SQL_INSERT_COMMAND_KEY,
-            label: 'SQL',
-            category: commonCategory,
-            icon: <IconDatabase />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'DataTableNode',
-                        source: {
-                            kind: 'HogQLQuery',
-                            query: 'select event, count() from events where timestamp >= now() - interval 7 day group by event',
-                        },
-                    },
-                }),
-        },
-    ]
-
-    const dataCommands: InsertCommand[] = [
-        {
-            key: 'query-events',
-            label: 'Events',
-            category: 'Data',
-            icon: <IconCursor />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'DataTableNode',
-                        source: { kind: 'EventsQuery', select: ['*', 'event', 'person', 'timestamp'] },
-                    },
-                }),
-        },
-        {
-            key: 'data-people',
-            label: 'People',
-            category: 'Data',
-            icon: <IconPeople />,
-            run: (targetNodeId) =>
-                insertComponent(targetNodeId, 'Query', {
-                    query: {
-                        kind: 'DataTableNode',
-                        source: {
-                            kind: 'ActorsQuery',
-                            select: ['person_display_name -- Person', 'id', 'created_at'],
-                            // ActorsQuery hits ClickHouse, which requires a product query tag.
-                            // Match the notebook query tagging convention (see NotebookSQLEditor).
-                            tags: { productKey: ProductKey.NOTEBOOKS, scene: Scene.Notebook },
-                        },
-                    },
-                }),
-        },
-    ]
-
-    // Appended after every other built-in category so "Products" renders as the last group
-    // (grouping preserves first-occurrence order); scene-supplied product commands merge in.
-    const productCommands: InsertCommand[] = [
-        {
-            key: 'data-session-recordings',
-            label: 'Session recordings',
-            category: 'Products',
-            aliases: ['replay', 'playlist'],
-            icon: <IconRewindPlay />,
-            run: (targetNodeId) => insertRegisteredComponent(targetNodeId, 'RecordingPlaylist'),
-        },
-    ]
-
     const mediaCommands: InsertCommand[] = [
         {
             key: 'media-image',
@@ -630,18 +434,7 @@ export function buildInsertCommands(
         },
     ]
 
-    return [
-        ...aiCommands,
-        ...textCommands,
-        ...sqlCommands,
-        ...queryCommands,
-        ...dataCommands,
-        ...mediaCommands,
-        ...componentCommands,
-        ...textStyleCommands,
-        ...productCommands,
-        ...extraCommands,
-    ]
+    return [...aiCommands, ...textCommands, ...mediaCommands, ...componentCommands, ...textStyleCommands, ...extraCommands]
 }
 
 function getVisibleViewport(): { top: number; left: number; width: number; height: number; bottom: number; right: number } {

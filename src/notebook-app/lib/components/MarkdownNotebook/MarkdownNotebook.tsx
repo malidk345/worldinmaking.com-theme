@@ -2,7 +2,6 @@
 import clsx from 'clsx'
 import {
     ClipboardEvent as ReactClipboardEvent,
-    Component,
     CSSProperties,
     DragEvent as ReactDragEvent,
     FocusEvent as ReactFocusEvent,
@@ -11,7 +10,6 @@ import {
     KeyboardEvent,
     MouseEvent as ReactMouseEvent,
     ReactNode,
-    Suspense,
     useCallback,
     useEffect,
     useId,
@@ -21,17 +19,7 @@ import {
     useState,
 } from 'react'
 
-import { IconCode, IconDrag } from '@posthog/icons'
-import { LemonButton } from '@posthog/lemon-ui'
-
-import { Spinner } from 'lib/lemon-ui/Spinner'
-import { downloadFile } from 'lib/utils/dom'
-import { lazyWithRetry } from 'lib/utils/retryImport'
-
-// Monaco is heavy, so the markdown source editor only loads when the source drawer opens.
-const LazyCodeEditor = lazyWithRetry(() =>
-    import('lib/monaco/CodeEditor').then((module) => ({ default: module.CodeEditor }))
-)
+import { IconComment, IconDrag } from '@posthog/icons'
 
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
 import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
@@ -43,6 +31,7 @@ import {
     upsertAnnotation,
 } from './annotations'
 import {
+    applyBlockIdOnNode,
     applyRefOnNotebookSpan,
     collectExistingRefSpans,
     deleteNotebookAnnotation,
@@ -50,7 +39,6 @@ import {
     replaceRefQuotedText,
     clampOverlayPosition,
     resolveAutonomousPlacement,
-    wordSpanAt,
 } from './annotationPlacement'
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
@@ -311,9 +299,6 @@ export type MarkdownNotebookProps = {
     placeholder?: string
     className?: string
     autoFocus?: boolean
-    showDebug?: boolean
-    debugOpen?: boolean
-    onDebugOpenChange?: (isOpen: boolean) => void
     'data-attr'?: string
 }
 
@@ -392,12 +377,6 @@ function createDefaultAIConversationId(): string {
     }
     return makeEmptyParagraph('ai-conversation').id
 }
-
-/** Below this container width, comment threads render inline instead of in the margin. */
-const COMMENT_GUTTER_MIN_CONTAINER_WIDTH_PX = 960
-
-/** Vertical spacing between stacked comment threads in the gutter. */
-const GUTTER_COMMENT_GAP_PX = 8
 
 /** Short, human-skimmable id shared by a `<ref>` highlight and its `<Comment ref>` thread. */
 function createNotebookRefId(): string {
@@ -501,105 +480,8 @@ const NATIVE_RANGE_EDIT_INPUT_TYPES = new Set([
     'deleteByDrag',
 ])
 
-/** A debug recording session: JSONL entries downloaded as a .log file on stop. */
-type NotebookDebugLog = {
-    startedAt: number
-    entries: string[]
-    lastSelectionSummary: string | null
-}
-
-function truncateForDebugLog(value: string | null | undefined, maxLength: number): string | undefined {
-    if (value === null || value === undefined) {
-        return undefined
-    }
-    return value.length > maxLength ? `${value.slice(0, maxLength)}…(${String(value.length)} chars)` : value
-}
-
-function getDebugTargetInfo(target: EventTarget | null): Record<string, unknown> {
-    if (!(target instanceof Element)) {
-        return {}
-    }
-    const block = target.closest('[data-markdown-notebook-node-id]')
-    const className = typeof target.className === 'string' ? target.className.split(' ')[0] : ''
-    return {
-        target: `${target.tagName.toLowerCase()}${className ? `.${className}` : ''}`,
-        ...(block instanceof HTMLElement && block.dataset.markdownNotebookNodeId
-            ? { nodeId: block.dataset.markdownNotebookNodeId }
-            : {}),
-    }
-}
-
-function getDebugSelectionSummary(): Record<string, unknown> {
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-        return { selection: null }
-    }
-
-    const describePoint = (node: Node | null, offset: number): Record<string, unknown> => {
-        const element = node instanceof Element ? node : node?.parentElement
-        const block = element?.closest('[data-markdown-notebook-node-id]')
-        return {
-            nodeId: block instanceof HTMLElement ? block.dataset.markdownNotebookNodeId : undefined,
-            offset,
-        }
-    }
-
-    return {
-        collapsed: selection.isCollapsed,
-        anchor: describePoint(selection.anchorNode, selection.anchorOffset),
-        focus: describePoint(selection.focusNode, selection.focusOffset),
-        text: truncateForDebugLog(selection.toString(), 200),
-    }
-}
-
-// Debug recordings currently in flight, so a crash anywhere in the editor can flush them
-// before the component (and its refs) unmounts.
-const activeDebugLogCrashFlushers = new Set<(error: unknown) => void>()
-
-function flushMarkdownNotebookDebugLogsOnCrash(error: unknown): void {
-    for (const flush of activeDebugLogCrashFlushers) {
-        flush(error)
-    }
-}
-
-type MarkdownNotebookCrashReporterState = { error: Error | null; reported: boolean }
-
-/**
- * Downloads any in-flight debug recording before a render/commit crash unmounts the editor.
- * The error is rethrown so the surrounding error boundary still renders its usual fallback —
- * by then the log download has already been triggered.
- */
-class MarkdownNotebookCrashReporter extends Component<{ children: ReactNode }, MarkdownNotebookCrashReporterState> {
-    override state: MarkdownNotebookCrashReporterState = { error: null, reported: false }
-
-    static getDerivedStateFromError(error: Error): Partial<MarkdownNotebookCrashReporterState> {
-        return { error }
-    }
-
-    override componentDidCatch(error: Error): void {
-        flushMarkdownNotebookDebugLogsOnCrash(error)
-        this.setState({ reported: true })
-    }
-
-    override render(): ReactNode {
-        if (this.state.error) {
-            if (this.state.reported) {
-                throw this.state.error
-            }
-            // One empty pass: componentDidCatch runs after it commits, flushes the log, and
-            // flips `reported` so the next render rethrows into the surrounding boundary.
-            return null
-        }
-        return this.props.children
-    }
-}
-
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
-    return (
-        <MarkdownNotebookCrashReporter>
-            <MarkdownNotebookEditor {...props} />
-        </MarkdownNotebookCrashReporter>
-    )
+    return <MarkdownNotebookEditor {...props} />
 }
 
 function MarkdownNotebookEditor({
@@ -628,9 +510,6 @@ function MarkdownNotebookEditor({
     placeholder = 'Type / to insert a block, or just start writing…',
     className,
     autoFocus = false,
-    showDebug = false,
-    debugOpen,
-    onDebugOpenChange,
     'data-attr': dataAttr = 'markdown-notebook',
 }: MarkdownNotebookProps): JSX.Element {
     const mergedRegistry = useMemo(
@@ -653,15 +532,7 @@ function MarkdownNotebookEditor({
     const canvasDragOriginRef = useRef(false)
     const [selectedComponentNodeIds, setSelectedComponentNodeIds] = useState<Set<string>>(() => new Set())
     const [componentPanelCache, setComponentPanelCache] = useState<Record<string, ComponentPanelCacheEntry>>({})
-    const [internalDebugOpen, setInternalDebugOpen] = useState(false)
-    const isDebugOpen = debugOpen ?? internalDebugOpen
-    const [isDebugLogging, setIsDebugLogging] = useState(false)
-    const debugLogRef = useRef<NotebookDebugLog | null>(null)
-    // Margin layout needs the container to fit the text column plus the full comment
-    // gutter; below that, threads flow inline instead of hanging off-screen.
-    const [fitsCommentGutter, setFitsCommentGutter] = useState(true)
-    const [debugMarkdown, setDebugMarkdown] = useState(() => serializeMarkdownNotebook(document))
-    const debugDrawerId = useId()
+
     const insertMenuDomId = useId()
     const notebookRef = useRef<HTMLDivElement | null>(null)
     const mainRef = useRef<HTMLDivElement | null>(null)
@@ -763,7 +634,7 @@ function MarkdownNotebookEditor({
         createdAt?: string
         intent?: import('./types').NotebookNoteIntent
         suggestion?: string
-        scope?: 'span' | 'piece'
+        scope?: 'span' | 'piece' | 'block'
         top: number
         left: number
     } | null>(null)
@@ -800,246 +671,6 @@ function MarkdownNotebookEditor({
         [aiWritingNodeIndexes]
     )
 
-    useLayoutEffect(() => {
-        const element = mainRef.current
-        if (!hasDiscussionComments || !element || typeof ResizeObserver === 'undefined') {
-            return
-        }
-
-        const updateFitsCommentGutter = (): void => {
-            setFitsCommentGutter(element.clientWidth >= COMMENT_GUTTER_MIN_CONTAINER_WIDTH_PX)
-        }
-        updateFitsCommentGutter()
-        const resizeObserver = new ResizeObserver(updateFitsCommentGutter)
-        resizeObserver.observe(element)
-        return () => resizeObserver.disconnect()
-    }, [hasDiscussionComments])
-
-    const logDebugEntry = useCallback((type: string, payload: Record<string, unknown> = {}): void => {
-        const log = debugLogRef.current
-        if (!log) {
-            return
-        }
-        log.entries.push(JSON.stringify({ t: Date.now() - log.startedAt, type, ...payload }))
-    }, [])
-
-    const startDebugLogging = (): void => {
-        debugLogRef.current = { startedAt: Date.now(), entries: [], lastSelectionSummary: null }
-        logDebugEntry('start', {
-            markdown: lastSerializedValueRef.current,
-            remoteVersion: remoteVersionRef.current,
-            mode,
-            userAgent: typeof navigator === 'undefined' ? undefined : navigator.userAgent,
-        })
-        setIsDebugLogging(true)
-    }
-
-    const downloadDebugLog = useCallback((log: NotebookDebugLog): void => {
-        // downloadFile appends the anchor to the DOM and defers the object-URL revoke, which
-        // Firefox needs for the download to actually start.
-        downloadFile(
-            new File(
-                [log.entries.join('\n') + '\n'],
-                `markdown-notebook-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.log`,
-                { type: 'text/plain' }
-            )
-        )
-    }, [])
-
-    const stopDebugLoggingAndDownload = (): void => {
-        const log = debugLogRef.current
-        logDebugEntry('stop', { markdown: lastSerializedValueRef.current })
-        debugLogRef.current = null
-        setIsDebugLogging(false)
-        if (!log) {
-            return
-        }
-
-        downloadDebugLog(log)
-    }
-
-    // A crash can unmount the editor or leave its DOM unusable, which would silently discard
-    // an in-flight recording — the moment the editor did something worth debugging. Download
-    // the log immediately instead of losing it.
-    const flushDebugLogOnCrash = useCallback(
-        (error: unknown): void => {
-            const log = debugLogRef.current
-            if (!log) {
-                return
-            }
-
-            logDebugEntry('crash', {
-                error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
-                stack: error instanceof Error ? truncateForDebugLog(error.stack, 4000) : undefined,
-                markdown: lastSerializedValueRef.current,
-            })
-            debugLogRef.current = null
-            setIsDebugLogging(false)
-            downloadDebugLog(log)
-        },
-        [downloadDebugLog, logDebugEntry]
-    )
-
-    // While recording, an uncaught error anywhere flushes the log: crashes in event handlers
-    // and DOM listeners never reach the crash reporter boundary below. Unhandled rejections
-    // are recorded but don't end the session — they are usually background noise (a failed
-    // fetch), not an editor crash.
-    useEffect(() => {
-        if (!isDebugLogging) {
-            return
-        }
-
-        const handleWindowError = (event: ErrorEvent): void => {
-            flushDebugLogOnCrash(event.error ?? event.message)
-        }
-        const handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
-            const reason: unknown = event.reason
-            logDebugEntry('unhandledrejection', {
-                error: reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason),
-            })
-        }
-        activeDebugLogCrashFlushers.add(flushDebugLogOnCrash)
-        window.addEventListener('error', handleWindowError)
-        window.addEventListener('unhandledrejection', handleUnhandledRejection)
-        return () => {
-            activeDebugLogCrashFlushers.delete(flushDebugLogOnCrash)
-            window.removeEventListener('error', handleWindowError)
-            window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-        }
-    }, [isDebugLogging, flushDebugLogOnCrash, logDebugEntry])
-
-    // While recording, capture-phase listeners mirror every keyboard, mouse, input, and
-    // clipboard event into the log, plus deduplicated selection snapshots — together with
-    // the commit entries this reconstructs an editing session for offline debugging.
-    useEffect(() => {
-        const root = notebookRef.current
-        if (!isDebugLogging || !root) {
-            return
-        }
-
-        const logKeyboardEvent = (event: globalThis.KeyboardEvent): void => {
-            logDebugEntry(event.type, {
-                key: event.key,
-                code: event.code,
-                meta: event.metaKey || undefined,
-                ctrl: event.ctrlKey || undefined,
-                alt: event.altKey || undefined,
-                shift: event.shiftKey || undefined,
-                repeat: event.repeat || undefined,
-                ...getDebugTargetInfo(event.target),
-            })
-        }
-        const logMouseEvent = (event: globalThis.MouseEvent): void => {
-            logDebugEntry(event.type, {
-                button: event.button,
-                x: Math.round(event.clientX),
-                y: Math.round(event.clientY),
-                detail: event.detail,
-                ...getDebugTargetInfo(event.target),
-            })
-        }
-        const logInputEvent = (event: Event): void => {
-            const inputEvent = event as InputEvent
-            logDebugEntry(event.type, {
-                inputType: inputEvent.inputType,
-                data: truncateForDebugLog(inputEvent.data, 200),
-                ...getDebugTargetInfo(event.target),
-            })
-        }
-        const logClipboardEvent = (event: globalThis.ClipboardEvent): void => {
-            logDebugEntry(event.type, {
-                text: truncateForDebugLog(event.clipboardData?.getData('text/plain'), 500),
-                ...getDebugTargetInfo(event.target),
-            })
-        }
-        const logSelectionChange = (): void => {
-            const log = debugLogRef.current
-            if (!log) {
-                return
-            }
-            const summary = getDebugSelectionSummary()
-            const serializedSummary = JSON.stringify(summary)
-            if (serializedSummary === log.lastSelectionSummary) {
-                return
-            }
-            log.lastSelectionSummary = serializedSummary
-            logDebugEntry('selectionchange', summary)
-        }
-
-        // `beforeinput` is missing from HTMLElementEventMap in our TS lib, hence the
-        // EventListener casts.
-        const listenersByEventType: [string, EventListener][] = [
-            ['keydown', logKeyboardEvent as EventListener],
-            ['keyup', logKeyboardEvent as EventListener],
-            ['mousedown', logMouseEvent as EventListener],
-            ['mouseup', logMouseEvent as EventListener],
-            ['click', logMouseEvent as EventListener],
-            ['dblclick', logMouseEvent as EventListener],
-            ['contextmenu', logMouseEvent as EventListener],
-            ['beforeinput', logInputEvent],
-            ['input', logInputEvent],
-            ['cut', logClipboardEvent as EventListener],
-            ['copy', logClipboardEvent as EventListener],
-            ['paste', logClipboardEvent as EventListener],
-        ]
-        listenersByEventType.forEach(([type, listener]) => root.addEventListener(type, listener, true))
-        window.document.addEventListener('selectionchange', logSelectionChange)
-
-        return () => {
-            listenersByEventType.forEach(([type, listener]) => root.removeEventListener(type, listener, true))
-            window.document.removeEventListener('selectionchange', logSelectionChange)
-        }
-    }, [isDebugLogging, logDebugEntry])
-
-    // Stack margin comment threads in the gutter so neighbors never overlap: each thread
-    // starts at its anchor row's top unless the previous thread reaches below it, in which
-    // case it is pushed down just past that thread.
-    useLayoutEffect(() => {
-        if (!hasDiscussionComments || !fitsCommentGutter) {
-            return
-        }
-
-        const commentNodeIds = document.nodes.filter(isDiscussionCommentNode).map((node) => node.id)
-        const layoutGutterComments = (): void => {
-            let nextAvailableTop = -Infinity
-            for (const nodeId of commentNodeIds) {
-                const shell = blockRefs.current[nodeId]
-                const row = shell?.closest('.MarkdownNotebook__row')
-                if (!shell || !(row instanceof HTMLElement)) {
-                    continue
-                }
-                const rowTop = row.getBoundingClientRect().top
-                const offset = Math.max(0, nextAvailableTop - rowTop)
-                shell.style.top = `${offset}px`
-                nextAvailableTop = rowTop + offset + shell.offsetHeight + GUTTER_COMMENT_GAP_PX
-            }
-        }
-
-        layoutGutterComments()
-        if (typeof ResizeObserver === 'undefined') {
-            return
-        }
-        const resizeObserver = new ResizeObserver(layoutGutterComments)
-        if (canvasRef.current) {
-            resizeObserver.observe(canvasRef.current)
-        }
-        commentNodeIds.forEach((nodeId) => {
-            const shell = blockRefs.current[nodeId]
-            if (shell) {
-                resizeObserver.observe(shell)
-            }
-        })
-        return () => {
-            resizeObserver.disconnect()
-            commentNodeIds.forEach((nodeId) => {
-                const shell = blockRefs.current[nodeId]
-                if (shell) {
-                    shell.style.top = ''
-                }
-            })
-        }
-    }, [document, hasDiscussionComments, fitsCommentGutter])
-
     const clearFloatingToolbarRevealTimeout = useCallback((): void => {
         if (floatingToolbarRevealTimeoutRef.current === null) {
             return
@@ -1048,23 +679,6 @@ function MarkdownNotebookEditor({
         window.clearTimeout(floatingToolbarRevealTimeoutRef.current)
         floatingToolbarRevealTimeoutRef.current = null
     }, [])
-
-    const setDebugOpen = useCallback(
-        (nextOpen: boolean | ((isOpen: boolean) => boolean)): void => {
-            const resolvedNextOpen = typeof nextOpen === 'function' ? nextOpen(isDebugOpen) : nextOpen
-            if (debugOpen === undefined) {
-                setInternalDebugOpen(resolvedNextOpen)
-            }
-            onDebugOpenChange?.(resolvedNextOpen)
-        },
-        [debugOpen, isDebugOpen, onDebugOpenChange]
-    )
-
-    useEffect(() => {
-        if (!showDebug) {
-            setDebugOpen(false)
-        }
-    }, [setDebugOpen, showDebug])
 
     const mapRemoteCaretAnchors = useCallback(
         (previousDocument: NotebookDocument, nextDocument: NotebookDocument, remoteMergeVersion?: number): void => {
@@ -1135,7 +749,6 @@ function MarkdownNotebookEditor({
         // reverting only this user's edits.
         rebaseHistoryThroughDocumentChange(previousDocument, reconciledDocument)
         mapRemoteCaretAnchors(previousDocument, reconciledDocument)
-        logDebugEntry('external-value', { markdown: value })
         documentRef.current = reconciledDocument
         setDocument(reconciledDocument)
         if (restoreSelectionRequest) {
@@ -1147,7 +760,6 @@ function MarkdownNotebookEditor({
                 reconciledDocument
             )
         }
-        setDebugMarkdown(value)
         // The base is intentionally left untouched: an external `value` change is a local-side
         // update (artifact apply, restore), so the last synced server state remains the merge base.
         lastSerializedValueRef.current = value
@@ -1193,7 +805,7 @@ function MarkdownNotebookEditor({
                 scrollNotebookElementIntoView(element)
             }
         }
-    }, [debugMarkdown, document])
+    }, [document])
 
     useEffect(() => {
         if (!autoFocus || mode !== 'edit') {
@@ -1299,19 +911,13 @@ function MarkdownNotebookEditor({
             mapRemoteCaretAnchors(previousDocument, editableDocument, options.remoteMergeVersion)
 
             const serialized = serializeMarkdownNotebook(editableDocument)
-            logDebugEntry('commit', {
-                addToHistory: options.addToHistory ?? true,
-                ...(options.remoteMergeVersion !== undefined ? { remoteMergeVersion: options.remoteMergeVersion } : {}),
-                markdown: serialized,
-            })
             documentRef.current = editableDocument
             lastSerializedValueRef.current = serialized
             trackLocalSnapshot(serialized)
-            setDebugMarkdown(serialized)
             setDocument(editableDocument)
             onChange?.(serialized)
         },
-        [onChange, pushHistoryEntry, mapRemoteCaretAnchors, logDebugEntry, trackLocalSnapshot]
+        [onChange, pushHistoryEntry, mapRemoteCaretAnchors, trackLocalSnapshot]
     )
 
     const applyRemoteValue = useCallback(
@@ -1325,7 +931,6 @@ function MarkdownNotebookEditor({
                 // save, so everything in it is already contained in the local state. Merging it
                 // would re-apply insertions the local text has since built on, duplicating them —
                 // only the merge base advances. Undo history must survive autosaves too.
-                logDebugEntry('remote-echo', { behind: nextRemoteValue !== lastSerializedValueRef.current })
                 lastRemoteValueRef.current = nextRemoteValue
                 lastBaseValueRef.current = nextRemoteValue
                 // Older snapshots can't echo after a newer one: saves are acknowledged in order.
@@ -1337,12 +942,6 @@ function MarkdownNotebookEditor({
                 baseMarkdown: lastBaseValueRef.current,
                 localMarkdown: lastSerializedValueRef.current,
                 remoteMarkdown: nextRemoteValue,
-            })
-            logDebugEntry('remote-merge', {
-                baseMarkdown: lastBaseValueRef.current,
-                localMarkdown: lastSerializedValueRef.current,
-                remoteMarkdown: nextRemoteValue,
-                conflicts: mergeResult.conflicts,
             })
             const previousDocument = documentRef.current
             const reconciledDocument = ensureEditableNotebookDocument(
@@ -1398,7 +997,7 @@ function MarkdownNotebookEditor({
                 onConflict?.(mergeResult.conflicts)
             }
         },
-        [commitDocument, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange, logDebugEntry]
+        [commitDocument, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange]
     )
 
     useEffect(() => {
@@ -2664,7 +2263,7 @@ function MarkdownNotebookEditor({
 
             if (
                 event.target instanceof HTMLElement &&
-                (event.target.closest('.MarkdownNotebook__debug-drawer') || isNativeEditableElement(event.target))
+                isNativeEditableElement(event.target)
             ) {
                 return
             }
@@ -2745,7 +2344,6 @@ function MarkdownNotebookEditor({
                 NATIVE_RANGE_EDIT_INPUT_TYPES.has(nativeEvent.inputType) &&
                 inputEventCrossesInlineEditableBoundary(nativeEvent, notebookElement)
             ) {
-                logDebugEntry('blocked-cross-boundary-edit', { inputType: nativeEvent.inputType })
                 event.preventDefault()
                 event.stopPropagation()
                 return
@@ -2772,7 +2370,6 @@ function MarkdownNotebookEditor({
         deleteListItemRangeAtCurrentSelection,
         deleteSelectedNotebookBlocks,
         deleteTextAtCurrentSelection,
-        logDebugEntry,
         insertNewlineInCodeBlockAtCurrentSelection,
         insertTableRowAtCurrentSelection,
         mode,
@@ -2863,50 +2460,23 @@ function MarkdownNotebookEditor({
 
     const startInlineCommentFromSlash = (nodeId: string): void => {
         const node = documentRef.current.nodes.find((entry) => entry.id === nodeId)
-        if (!node || !isTextBlockNode(node)) return
+        if (!node) return
 
-        const note = actorToInlineNote('')
-        const refId = createNotebookRefId()
-        let nextChildren = node.children
-        const rawText = getInlineText(nextChildren)
-        const slash = getSlashTokenAt(rawText, rawText.length) || getSlashTokenAt(rawText, Math.max(0, rawText.length - 1))
-        if (slash) {
-            nextChildren = splitInlineNodesAt(nextChildren, slash.start)[0]
+        if (isTextBlockNode(node)) {
+            const rawText = getInlineText(node.children)
+            const slash =
+                getSlashTokenAt(rawText, rawText.length) || getSlashTokenAt(rawText, Math.max(0, rawText.length - 1))
+            if (slash) {
+                updateNode(nodeId, (current) =>
+                    isTextBlockNode(current)
+                        ? { ...current, children: splitInlineNodesAt(current.children, slash.start)[0] }
+                        : current
+                )
+            }
         }
-        const text = getInlineText(nextChildren)
-        const range = wordSpanAt(text, text.length)
-        const scope = range ? 'span' : 'piece'
 
-        updateNode(
-            nodeId,
-            (current) =>
-                isTextBlockNode(current)
-                    ? {
-                          ...current,
-                          children: range ? applyRefToRange(nextChildren, range, refId) : nextChildren,
-                      }
-                    : current,
-            { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note], { scope }) }
-        )
         setInsertMenu(null)
-
-        const block = blockRefs.current[nodeId]
-        const rect = block?.getBoundingClientRect()
-        const overlay = clampOverlayPosition(rect || { top: 40, bottom: 40, left: 16 })
-        setInlineNotePopover({
-            nodeId,
-            refId,
-            by: note.by,
-            name: note.name,
-            avatar: note.avatar,
-            text: '',
-            kind: 'human',
-            draft: true,
-            createdAt: note.createdAt,
-            scope,
-            top: overlay.top,
-            left: overlay.left,
-        })
+        startBlockCommentForNode(nodeId)
     }
 
     const insertMenuApi = useMemo<MarkdownNotebookInsertMenuApi>(
@@ -3067,8 +2637,6 @@ function MarkdownNotebookEditor({
             onInteractionStateChange?.(true)
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const promptId =
-                options?.source === 'selection' ? makeEmptyParagraph(`wimai-${nodeId}`).id : nodeId
             const promptProps: NotebookComponentProps = {
                 question: options?.question ?? '',
             }
@@ -3092,29 +2660,63 @@ function MarkdownNotebookEditor({
             if (options?.autoRun) {
                 promptProps.autoRun = true
             }
-            const promptNode: NotebookComponentBlockNode = {
-                id: promptId,
-                type: 'component',
-                tagName: 'Prompt',
-                props: promptProps,
-            }
             let didUpdate = false
-            const nextNodes = nodes.flatMap((currentNode): NotebookBlockNode[] => {
+            let promptId = nodeId
+            const nextNodes: NotebookBlockNode[] = nodes.flatMap((currentNode): NotebookBlockNode[] => {
                 if (didUpdate || currentNode.id !== nodeId) {
                     return [currentNode]
                 }
                 didUpdate = true
                 if (options?.source === 'selection') {
+                    promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
+                    const promptNode: NotebookComponentBlockNode = {
+                        id: promptId,
+                        type: 'component',
+                        tagName: 'Prompt',
+                        props: promptProps,
+                    }
                     return [currentNode, promptNode]
+                }
+                if (isTextBlockNode(currentNode)) {
+                    const rawText = getInlineText(currentNode.children)
+                    const slash =
+                        getSlashTokenAt(rawText, rawText.length) ||
+                        getSlashTokenAt(rawText, Math.max(0, rawText.length - 1))
+                    const remainder = slash ? splitInlineNodesAt(currentNode.children, slash.start)[0] : currentNode.children
+                    if (getInlineText(remainder).trim()) {
+                        promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
+                        const promptNode: NotebookComponentBlockNode = {
+                            id: promptId,
+                            type: 'component',
+                            tagName: 'Prompt',
+                            props: promptProps,
+                        }
+                        return [{ ...currentNode, children: remainder }, promptNode]
+                    }
                 }
                 if (!isTextBlockNode(currentNode) && currentNode.type !== 'component') {
                     return [currentNode]
                 }
+                const promptNode: NotebookComponentBlockNode = {
+                    id: promptId,
+                    type: 'component',
+                    tagName: 'Prompt',
+                    props: promptProps,
+                }
                 return [promptNode]
             })
+            if (!didUpdate) {
+                promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
+                nextNodes.push({
+                    id: promptId,
+                    type: 'component',
+                    tagName: 'Prompt',
+                    props: promptProps,
+                })
+            }
             commitDocument({
                 ...currentDocument,
-                nodes: didUpdate ? nextNodes : [...nextNodes, promptNode],
+                nodes: nextNodes,
             })
             setInsertMenu({
                 nodeId: promptId,
@@ -3788,22 +3390,6 @@ function MarkdownNotebookEditor({
         event.stopPropagation()
     }
 
-    const handleDebugMarkdownChange = (nextMarkdown: string): void => {
-        const nextDocument = parseMarkdownNotebook(nextMarkdown)
-        const reconciledDocument = ensureEditableNotebookDocument(
-            reconcileNotebookDocuments(documentRef.current, nextDocument).document
-        )
-        const serialized = serializeMarkdownNotebook(reconciledDocument)
-
-        documentRef.current = reconciledDocument
-        lastSerializedValueRef.current = serialized
-        trackLocalSnapshot(serialized)
-        lastBaseValueRef.current = serialized
-        setDebugMarkdown(nextMarkdown)
-        setDocument(reconciledDocument)
-        onChange?.(serialized)
-    }
-
     const getCurrentSelectionInlineRanges = (): {
         textRanges: FloatingToolbarTextRange[]
         listItemRanges: FloatingToolbarListItemRange[]
@@ -4227,29 +3813,37 @@ function MarkdownNotebookEditor({
                         result.scope,
                         used
                     )
-                    const refId = createNotebookRefId()
+                    const note = {
+                        by: bot.id,
+                        name: bot.name,
+                        text: result.text.trim(),
+                        avatar: bot.avatarUrl,
+                        kind: 'bot' as const,
+                        createdAt: stamped,
+                        intent: result.intent,
+                        suggestion: result.suggestion,
+                    }
                     if (placement.kind === 'span') {
+                        const refId = createNotebookRefId()
                         nextNodes = applyRefOnNotebookSpan(nextNodes, placement.span, refId)
                         used.push(placement.span)
+                        placed.push(refId)
+                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [note], { scope: 'span' })
+                    } else if (placement.kind === 'block') {
+                        const target = nextNodes.find((entry) => entry.id === placement.nodeId)
+                        const refId = target?.blockId || createNotebookRefId()
+                        nextNodes = applyBlockIdOnNode(nextNodes, placement.nodeId, refId)
+                        used.push({ nodeId: placement.nodeId, start: 0, end: 1 })
+                        placed.push(refId)
+                        const existing = nextAnnotations?.[refId]?.notes || []
+                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [...existing, note], {
+                            scope: 'block',
+                        })
+                    } else {
+                        const refId = createNotebookRefId()
+                        placed.push(refId)
+                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [note], { scope: 'piece' })
                     }
-                    placed.push(refId)
-                    nextAnnotations = upsertAnnotation(
-                        nextAnnotations,
-                        refId,
-                        [
-                            {
-                                by: bot.id,
-                                name: bot.name,
-                                text: result.text.trim(),
-                                avatar: bot.avatarUrl,
-                                kind: 'bot',
-                                createdAt: stamped,
-                                intent: result.intent,
-                                suggestion: result.suggestion,
-                            },
-                        ],
-                        { scope: placement.kind }
-                    )
                 }
                 if (!placed.length) {
                     setInviteStatus({ names, error: 'They read the page but left no mark.' })
@@ -4427,25 +4021,23 @@ function MarkdownNotebookEditor({
         }
     }
 
-    // A block comment has no `<ref>` highlight: the thread anchors purely by sitting right
-    // above the block it discusses (below it for the title row, which always stays first).
-    const startBlockCommentForNode = (nodeId: string): void => {
-        const node = documentRef.current.nodes.find((entry) => entry.id === nodeId)
-        if (!node || !isTextBlockNode(node)) return
-        const note = actorToInlineNote('')
-        const refId = createNotebookRefId()
-        const range = { start: 0, end: getInlineText(node.children).length || 0 }
-        if (range.end === 0) return
-        updateNode(
-            nodeId,
-            (current) =>
-                isTextBlockNode(current)
-                    ? { ...current, children: applyRefToRange(current.children, range, refId) }
-                    : current,
-            { annotations: upsertAnnotation(documentRef.current.annotations, refId, [note]) }
-        )
+    const openBlockNotePopover = (
+        nodeId: string,
+        refId: string,
+        note: {
+            by: string
+            name: string
+            avatar?: string
+            text: string
+            kind?: 'human' | 'bot'
+            createdAt?: string
+            intent?: import('./types').NotebookNoteIntent
+            suggestion?: string
+        },
+        draft = false
+    ): void => {
         const block = blockRefs.current[nodeId]
-        const rect = block?.getBoundingClientRect()
+        const rect = block?.closest('.MarkdownNotebook__row')?.getBoundingClientRect() || block?.getBoundingClientRect()
         const overlay = clampOverlayPosition(rect || { top: 40, bottom: 40, left: 16 })
         setInlineNotePopover({
             nodeId,
@@ -4453,13 +4045,46 @@ function MarkdownNotebookEditor({
             by: note.by,
             name: note.name,
             avatar: note.avatar,
-            text: '',
-            kind: 'human',
-            draft: true,
+            text: note.text,
+            kind: note.kind,
+            draft,
             createdAt: note.createdAt,
+            intent: note.intent,
+            suggestion: note.suggestion,
+            scope: 'block',
             top: overlay.top,
             left: overlay.left,
         })
+    }
+
+    // Block comments live on `node.blockId` + sidecar. They do not wrap or underline the text.
+    const startBlockCommentForNode = (nodeId: string): void => {
+        const node = documentRef.current.nodes.find((entry) => entry.id === nodeId)
+        if (!node || isPromptComponentNode(node)) return
+
+        const existingId = node.blockId
+        const existingNotes = existingId ? documentRef.current.annotations?.[existingId]?.notes || [] : []
+        const humanDraft = existingNotes.find((entry) => entry.kind === 'human' && !entry.text)
+        if (existingId && humanDraft) {
+            openBlockNotePopover(nodeId, existingId, humanDraft, true)
+            return
+        }
+
+        const note = actorToInlineNote('')
+        const refId = existingId || createNotebookRefId()
+        updateNode(
+            nodeId,
+            (current) => (current.blockId ? current : { ...current, blockId: refId }),
+            {
+                annotations: upsertAnnotation(
+                    documentRef.current.annotations,
+                    refId,
+                    existingNotes.length ? [...existingNotes, note] : [note],
+                    { scope: 'block' }
+                ),
+            }
+        )
+        openBlockNotePopover(nodeId, refId, note, true)
     }
 
     const copyFloatingToolbarSelection = (): void => {
@@ -5317,7 +4942,7 @@ function MarkdownNotebookEditor({
 
         if (
             event.target instanceof HTMLElement &&
-            (event.target.closest('.MarkdownNotebook__debug-drawer') || isNativeEditableElement(event.target))
+            isNativeEditableElement(event.target)
         ) {
             return
         }
@@ -5423,7 +5048,7 @@ function MarkdownNotebookEditor({
 
         if (
             event.target.closest(
-                '.MarkdownNotebook__row, .MarkdownNotebook__insert-boundary, .MarkdownNotebook__debug-toolbar, .MarkdownNotebook__debug-drawer, .MarkdownNotebook__insert-menu, .MarkdownNotebook__invite-picker, .MarkdownNotebook__format-toolbar, button, a, input, textarea, select, [role="button"], [contenteditable="true"]'
+                '.MarkdownNotebook__row, .MarkdownNotebook__insert-boundary, .MarkdownNotebook__insert-menu, .MarkdownNotebook__invite-picker, .MarkdownNotebook__format-toolbar, button, a, input, textarea, select, [role="button"], [contenteditable="true"]'
             )
         ) {
             return
@@ -6379,27 +6004,6 @@ function MarkdownNotebookEditor({
         )
     }
 
-    const renderDebugToolbar = (): JSX.Element | null => {
-        if (!showDebug) {
-            return null
-        }
-
-        return (
-            <div className="MarkdownNotebook__debug-toolbar" contentEditable={false}>
-                <LemonButton
-                    size="small"
-                    icon={<IconCode />}
-                    active={isDebugOpen}
-                    tooltip="Edit markdown source"
-                    aria-label="Edit markdown source"
-                    aria-controls={debugDrawerId}
-                    aria-expanded={isDebugOpen}
-                    onClick={() => setDebugOpen((isOpen) => !isOpen)}
-                />
-            </div>
-        )
-    }
-
     const renderNotebookRow = (node: NotebookBlockNode, index: number): JSX.Element => {
         const isTitleRow = index === 0
         const isAIWritingNode = aiWritingNodeIndexSet.has(index)
@@ -6436,6 +6040,11 @@ function MarkdownNotebookEditor({
             getFilteredInsertCommands(insertCommands, insertMenu.query).length === 0
 
         const isDraggableRow = mode === 'edit' && !isTitleRow && !isDiscussionCommentNode(node) && !isAIWritingNode
+        const blockNotes =
+            node.blockId && !isAIPromptOpen
+                ? document.annotations?.[node.blockId]?.notes || []
+                : []
+        const canCommentOnBlock = mode === 'edit' && !isAIPromptOpen && !isAIWritingNode && !isDiscussionCommentNode(node)
 
         return (
             <div
@@ -6469,6 +6078,57 @@ function MarkdownNotebookEditor({
                         onDragEnd={handleBlockDragEnd}
                     >
                         <IconDrag />
+                    </div>
+                ) : null}
+                {canCommentOnBlock || blockNotes.length ? (
+                    <div className="MarkdownNotebook__block-chrome" contentEditable={false}>
+                        {blockNotes.length ? (
+                            <div className="MarkdownNotebook__block-notes">
+                                {blockNotes.map((note) => (
+                                    <button
+                                        key={`${node.blockId}:${note.by}`}
+                                        type="button"
+                                        className="MarkdownNotebook__piece-note"
+                                        data-notebook-ref={node.blockId}
+                                        data-note-by={note.by}
+                                        data-note-name={note.name}
+                                        data-note-kind={note.kind || ''}
+                                        data-note-avatar={note.avatar || ''}
+                                        aria-label={note.name}
+                                        onClick={(event) => {
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            if (!node.blockId) return
+                                            openBlockNotePopover(node.id, node.blockId, note, note.kind === 'human' && !note.text)
+                                        }}
+                                    >
+                                        {note.avatar ? (
+                                            <img src={note.avatar} alt="" className="MarkdownNotebook__inline-note-face" />
+                                        ) : (
+                                            <span className="MarkdownNotebook__inline-note-fallback">
+                                                {(note.name || note.by).charAt(0)}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : null}
+                        {canCommentOnBlock ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__block-comment-btn"
+                                aria-label="Comment on this block"
+                                title="Comment on this block"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    startBlockCommentForNode(node.id)
+                                }}
+                            >
+                                <IconComment />
+                            </button>
+                        ) : null}
                     </div>
                 ) : null}
                 {dropIndicatorTarget?.index === index ? (
@@ -6667,10 +6327,8 @@ function MarkdownNotebookEditor({
         <div
             className={clsx(
                 'MarkdownNotebook',
-                isDebugOpen && 'MarkdownNotebook--debug-open',
                 mode === 'edit' && 'MarkdownNotebook--edit',
-                hasDiscussionComments &&
-                    (fitsCommentGutter ? 'MarkdownNotebook--comments-margin' : 'MarkdownNotebook--comments-inline'),
+                hasDiscussionComments && 'MarkdownNotebook--comments-inline',
                 className
             )}
             data-attr={dataAttr}
@@ -6734,15 +6392,7 @@ function MarkdownNotebookEditor({
 
                                 return (
                                     <Fragment key={group.key}>
-                                        <div
-                                            className={clsx(
-                                                'MarkdownNotebook__text-group',
-                                                group.key === firstTextGroupKey &&
-                                                    showDebug &&
-                                                    'MarkdownNotebook__text-group--with-debug-toolbar'
-                                            )}
-                                        >
-                                            {group.key === firstTextGroupKey ? renderDebugToolbar() : null}
+                                        <div className="MarkdownNotebook__text-group">
                                             {group.key === firstTextGroupKey ? renderPieceNoteStrip() : null}
                                             {chunks.map((chunk) => {
                                                 const chunkLastIndex = chunk.items[chunk.items.length - 1].index
@@ -6929,57 +6579,6 @@ function MarkdownNotebookEditor({
                         />
                     ) : null}
                 </div>
-                {showDebug && isDebugOpen ? (
-                    <aside className="MarkdownNotebook__debug-drawer" id={debugDrawerId}>
-                        <div className="MarkdownNotebook__debug-drawer-header">
-                            <span>Markdown</span>
-                            <div className="flex items-center gap-1">
-                                <LemonButton
-                                    size="xsmall"
-                                    type="secondary"
-                                    status={isDebugLogging ? 'danger' : undefined}
-                                    tooltip={
-                                        isDebugLogging
-                                            ? 'Stop recording and download the log'
-                                            : 'Record keystrokes, mouse events, and document changes into a downloadable log'
-                                    }
-                                    onClick={isDebugLogging ? stopDebugLoggingAndDownload : startDebugLogging}
-                                    data-attr="markdown-notebook-debug-log-toggle"
-                                >
-                                    {isDebugLogging ? 'Stop' : 'Log'}
-                                </LemonButton>
-                                <LemonButton size="xsmall" onClick={() => setDebugOpen(false)}>
-                                    Close
-                                </LemonButton>
-                            </div>
-                        </div>
-                        <div className="MarkdownNotebook__debug-markdown" aria-label="Markdown debug output">
-                            <Suspense
-                                fallback={
-                                    <div className="MarkdownNotebook__debug-markdown-loading">
-                                        <Spinner />
-                                    </div>
-                                }
-                            >
-                                <LazyCodeEditor
-                                    language="markdown"
-                                    value={debugMarkdown}
-                                    onChange={(nextMarkdown) => handleDebugMarkdownChange(nextMarkdown ?? '')}
-                                    height="100%"
-                                    options={{
-                                        minimap: { enabled: false },
-                                        wordWrap: 'on',
-                                        lineNumbers: 'on',
-                                        folding: false,
-                                        scrollBeyondLastLine: false,
-                                        automaticLayout: true,
-                                        fontSize: 12,
-                                    }}
-                                />
-                            </Suspense>
-                        </div>
-                    </aside>
-                ) : null}
             </div>
         </div>
         </NotebookAnnotationsContext.Provider>

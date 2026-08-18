@@ -70,7 +70,10 @@ export function collectExistingRefSpans(nodes: NotebookBlockNode[]): NotebookTex
     return spans
 }
 
-export type AutonomousPlacement = { kind: 'span'; span: NotebookTextSpan } | { kind: 'piece' }
+export type AutonomousPlacement =
+    | { kind: 'span'; span: NotebookTextSpan }
+    | { kind: 'block'; nodeId: string }
+    | { kind: 'piece' }
 
 export function clampOverlayPosition(
     anchor: { top: number; bottom: number; left: number },
@@ -110,11 +113,16 @@ export function wordSpanAt(text: string, caret: number): { start: number; end: n
 export function resolveAutonomousPlacement(
     nodes: NotebookBlockNode[],
     phrase: string | undefined,
-    scope: 'span' | 'piece' | undefined,
+    scope: 'span' | 'piece' | 'block' | undefined,
     used: NotebookTextSpan[]
 ): AutonomousPlacement {
     if (scope === 'piece') return { kind: 'piece' }
     const fromPhrase = findPhraseSpan(nodes, phrase, used)
+    if (scope === 'block') {
+        if (fromPhrase) return { kind: 'block', nodeId: fromPhrase.nodeId }
+        const fallback = nodes.find((node) => node.type !== 'component' && !used.some((span) => span.nodeId === node.id))
+        return fallback ? { kind: 'block', nodeId: fallback.id } : { kind: 'piece' }
+    }
     if (fromPhrase) return { kind: 'span', span: fromPhrase }
     return { kind: 'piece' }
 }
@@ -177,6 +185,13 @@ export function pickFallbackSpan(
     }
     if (!candidates.length) return null
     return candidates[hashSalt(salt) % candidates.length] || candidates[0]
+}
+
+export function applyBlockIdOnNode(nodes: NotebookBlockNode[], nodeId: string, blockId: string): NotebookBlockNode[] {
+    return nodes.map((node) => {
+        if (node.id !== nodeId) return node
+        return node.blockId ? node : { ...node, blockId }
+    })
 }
 
 export function applyRefOnNotebookSpan(

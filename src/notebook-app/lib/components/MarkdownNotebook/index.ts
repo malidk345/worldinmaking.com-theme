@@ -3,7 +3,6 @@ export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './Mark
 export type { InsertCommand, MarkdownNotebookInsertMenuApi } from './editorTypes'
 export {
     COMMON_INSERT_COMMAND_CATEGORY,
-    QUERY_SQL_INSERT_COMMAND_KEY,
     buildInsertCommands,
     omitInsertCommands,
 } from './InsertMenu'

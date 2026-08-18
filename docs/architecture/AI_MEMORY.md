@@ -205,6 +205,10 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-186` | Stream 5 | Invite notes may be a word, a fragment, or a piece-level meta note | annotationPlacement, notebook-invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-187` | Stream 3 | Mobile notebook tap no longer recenters; slash Comment is inline | useKeyboardInset, extraInsertCommands, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-188` | Stream 3 | Writing feel: don’t rebuild chips while typing; keep caret; return after note | annotations, EditableTextBlock, useKeyboardInset | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-189` | Stream 3 | Notebook blocks: idle paper, hover/touch light glassmorphism | `MarkdownNotebook.scss` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-190` | Stream 3 / 5 | Fix slash WIM AI stuck (CSS stacking + keep paragraph) | MarkdownNotebook, InsertMenu, SCSS | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-191` | Stream 3 / 5 | Block-level comments for humans and AI | annotations, markdown, invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-192` | Stream 3 | Delete unused notebook debug / PostHog insert / gutter code | MarkdownNotebook, InsertMenu, registry | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -343,6 +347,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 254 - Delete unused notebook debug and PostHog slash leftovers
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the unused debug logger / crash-reporter / markdown source drawer (never turned on from App). Deleted PostHog Insight/SQL/People/Replay slash commands and 30+ product node registrations WIM never inserts. Dropped the comment-gutter layout. `MarkdownNotebook.tsx` 7087 → 6586; InsertMenu 644 → 480; registry 290 → 144.
+- **Modified Files:** `MarkdownNotebook.tsx`, `InsertMenu.tsx`, `index.ts`, `markdownNotebookRegistry.tsx`, `App.tsx`, deleted `hiddenInsertCommands.ts`, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 26 passed.
+- **Notes / Handoff:** Remaining ~6.5k in the editor is live behavior (keyboard, lists, undo, collab). Next slim is split, not more delete.
+
+### Entry 253 - Unstick slash WIM AI; comments sit on blocks
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Glass hover no longer uses `isolation` + `backdrop-filter` on every row (that trapped slash/AI overlays and covered the WIM AI pill). The pill is in-flow, not a zero-height ghost. Slash WIM AI keeps the paragraph and only strips `/query`. Humans and philosophers can now leave notes on a whole block (`scope: block`, `<!--wim-block:id-->` + sidecar). Slash Comment and the hover comment button open a block note; invite may choose block / span / piece.
+- **Modified Files:** `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `EditablePromptComponent.tsx`, `annotations.ts`, `annotationPlacement.ts`, `markdown.ts`, `types.ts`, `notebook-invite.ts`, `notebook-invite-client.ts`, `extraInsertCommands.tsx`, `InlineNotePopover.tsx`, tests, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok. `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 26 passed.
+- **Notes / Handoff:** Hard-refresh. `/` → WIM AI should keep the line and show a usable pill. Hover a block → comment icon. Invite can land on a block chip.
+
+### Entry 252 - Hover/touch glass blocks on the paper surface
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Notebook stays paper-flat at rest. Each row (and quote/code/widget shells) now reveals a light glass plate on hover, tap, or focus-within — translucent fill, backdrop-blur, hairline border, inset highlight. Hover is pointer-fine only so mobile hover does not stick; touch uses `:active` + `:focus-within`. Text measure does not jump (`::before` plate). Reduced-transparency falls back to a solid tint.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+- **Notes / Handoff:** Hard-refresh the notebook. Idle should still look like a page. Hover a paragraph or tap to type: a glass block appears around that block only.
 
 ### Entry 251 - Strip invite dumps; pin overlays on mobile
 - **Date:** 2026-08-18

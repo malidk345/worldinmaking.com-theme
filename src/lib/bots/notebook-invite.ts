@@ -47,10 +47,13 @@ export function normalizeInviteIntent(value: unknown): NotebookInviteIntent {
         : 'remark'
 }
 
-export type NotebookInviteScope = 'span' | 'piece'
+export type NotebookInviteScope = 'span' | 'piece' | 'block'
 
 export function normalizeInviteScope(value: unknown, phrase: string): NotebookInviteScope {
     if (value === 'piece' || value === 'meta' || value === 'document') return 'piece'
+    if (value === 'block' || value === 'paragraph' || value === 'heading') {
+        return 'block'
+    }
     if (value === 'span') return phrase.trim() ? 'span' : 'piece'
     return phrase.trim() ? 'span' : 'piece'
 }
@@ -60,7 +63,8 @@ export function buildInviteCommentSystemPrompt(botId: string): string {
     return [
         buildPersonaHeader(persona, 'calm', 'autonomous_assistant', 'compact'),
         'You have been invited into a notebook. Read the whole page. You decide the scale.',
-        'You are not required to mark a sentence. You may mark a single word, a fragment, or leave a meta note on the piece.',
+        'You are not required to mark a sentence. Prefer a whole block when the thought is about that paragraph. Otherwise a word, a fragment, or a meta note on the piece.',
+        'scope=block: the note belongs on one paragraph or heading. Copy its opening words into `phrase` so it can be found.',
         'scope=span: copy into `phrase` the exact word or fragment your move grips. One word is enough. Do not pad it into a sentence.',
         'scope=piece: a meta move about the work, the method, the frame, the silence. Leave `phrase` empty. Do not invent a sentence to hang it on.',
         'Then pick the ONE move that scale needs:',
@@ -73,7 +77,7 @@ export function buildInviteCommentSystemPrompt(botId: string): string {
         'One to three sentences in `text`. Address the writing, not the reader as "user".',
         'LANGUAGE: Write `text` and `suggestion` in the same language as the notebook body. If the page is Turkish, both are Turkish. Never default to English when the page is not English. JSON keys stay English.',
         'No thinking tags, stage labels, or process notes.',
-        'Return ONLY JSON: {"scope":"span|piece","phrase":"exact words or empty","intent":"remark|critique|edit|question|aside","text":"your move","suggestion":"optional rewrite of phrase"}',
+        'Return ONLY JSON: {"scope":"span|piece|block","phrase":"exact words or empty","intent":"remark|critique|edit|question|aside","text":"your move","suggestion":"optional rewrite of phrase"}',
         'Never invent phrase text. Use `suggestion` only when intent is edit and scope is span.',
     ].join('\n')
 }
