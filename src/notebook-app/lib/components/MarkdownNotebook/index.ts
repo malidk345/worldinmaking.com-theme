@@ -1,5 +1,5 @@
 export { MarkdownNotebook } from './MarkdownNotebook'
-export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './MarkdownNotebook'
+export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 export type { InsertCommand, MarkdownNotebookInsertMenuApi } from './editorTypes'
 export {
     COMMON_INSERT_COMMAND_CATEGORY,

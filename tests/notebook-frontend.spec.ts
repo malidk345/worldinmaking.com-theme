@@ -30,6 +30,8 @@ import {
     upsertAnnotation,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/annotations'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
+import { applyPhilosopherInviteNotes } from '../src/notebook-app/lib/components/MarkdownNotebook/inviteApply'
+import { planOpenAIPromptInsert } from '../src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert'
 import {
     applyRefOnNotebookSpan,
     collectExistingRefSpans,
@@ -448,6 +450,38 @@ test.describe('notebook frontend helpers', () => {
         expect(blockRoundTrip.nodes.some((node) => node.blockId === blockId)).toBe(true)
         expect(blockRoundTrip.annotations?.[blockId]?.scope).toBe('block')
         expect(blockRoundTrip.annotations?.[blockId]?.notes[0].text).toBe('This paragraph.')
+    })
+
+    test('invite apply and slash WIM AI keep the writer’s text', () => {
+        const parsed = parseMarkdownNotebook('# Title\n\nVirtue is not a feeling.\n\nThe market is a historical form.')
+        const applied = applyPhilosopherInviteNotes(
+            parsed,
+            [
+                {
+                    botId: 'marx',
+                    author: 'Marx',
+                    phrase: 'Virtue is not a feeling',
+                    text: 'This paragraph is the claim.',
+                    scope: 'block',
+                },
+                { botId: 'arendt', author: 'Arendt', phrase: '', text: 'The frame is the act.', scope: 'piece' },
+            ],
+            [
+                { id: 'marx', name: 'Marx', avatarUrl: '/philosophers/marx.png' },
+                { id: 'arendt', name: 'Arendt' },
+            ],
+            { now: '2026-08-18T12:00:00.000Z', createId: (() => { let n = 0; return () => `id-${++n}` })() }
+        )
+        expect(applied.placed).toHaveLength(2)
+        expect(applied.document.nodes.some((node) => node.blockId)).toBe(true)
+        expect(Object.values(applied.document.annotations || {}).some((entry) => entry.scope === 'piece')).toBe(true)
+
+        const withSlash = parseMarkdownNotebook('hello /wim')
+        const planned = planOpenAIPromptInsert(withSlash.nodes, withSlash.nodes[0].id)
+        expect(planned.nodes).toHaveLength(2)
+        expect(planned.nodes[0].type).toBe('paragraph')
+        expect(getInlineText((planned.nodes[0] as NotebookTextBlockNode).children).trim()).toBe('hello')
+        expect(planned.nodes[1]).toMatchObject({ type: 'component', tagName: 'Prompt' })
     })
 
     test('presence ignores this client and only draws carets with a node index', () => {

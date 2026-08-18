@@ -210,6 +210,9 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-191` | Stream 3 / 5 | Block-level comments for humans and AI | annotations, markdown, invite, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-192` | Stream 3 | Delete unused notebook debug / PostHog insert / gutter code | MarkdownNotebook, InsertMenu, registry | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-193` | Stream 1 / 3 | End-to-end verify notebook + smoke; fix title-block invite + `/` smoke | annotationPlacement, smoke.spec, notebook tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-194` | Stream 3 | Extract notebook invite/AI/helpers out of MarkdownNotebook.tsx | notebookEditorModel, inviteApply, planAIPrompt | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-195` | Stream 3 | Block hover matches Active Windows list frame | MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-196` | Stream 3 | Sit block comment icon above the block, not inside | MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 
 
 
@@ -348,6 +351,29 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 258 - Comment icon sits above the block
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Block comment chrome stays right-aligned but now sits just outside, above the block (`bottom: 100%`). Text no longer needs extra right padding.
+- **Modified Files:** `MarkdownNotebook.scss`, `bundleCss.ts`, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+
+### Entry 257 - Block hover is the Active Windows hairline frame
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Notebook block hover no longer paints glass fill/shadow. Idle stays paper. Hover/focus draws the same 1.5px `border-primary` frame as Active Windows list items (`OSButton` `hover:border-primary`). Focus/active keeps a faint tint so the writing block is still visible.
+- **Modified Files:** `MarkdownNotebook.scss`, `bundleCss.ts`, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+- **Notes / Handoff:** Hard-refresh the notebook. Hover a paragraph: a thin site-chrome frame, not a frosted card.
+
+### Entry 256 - Split invite/AI helpers out of MarkdownNotebook
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Moved editor types/constants, philosopher note application, and slash/selection WIM AI insert planning out of the god file. `MarkdownNotebook.tsx` 6586 → 6251. Behavior unchanged; new unit coverage for invite apply + keep-paragraph prompt insert.
+- **Modified Files:** `notebookEditorModel.ts` (new), `inviteApply.ts` (new), `planAIPromptInsert.ts` (new), `MarkdownNotebook.tsx`, `index.ts`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 27 passed.
+- **Notes / Handoff:** Next extract candidates: undo/history, keyboard, clipboard. Do not push unless asked.
 
 ### Entry 255 - End-to-end notebook verify
 - **Date:** 2026-08-18

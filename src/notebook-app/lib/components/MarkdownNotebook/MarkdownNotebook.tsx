@@ -31,14 +31,10 @@ import {
     upsertAnnotation,
 } from './annotations'
 import {
-    applyBlockIdOnNode,
-    applyRefOnNotebookSpan,
-    collectExistingRefSpans,
     deleteNotebookAnnotation,
     notebookReadableText,
     replaceRefQuotedText,
     clampOverlayPosition,
-    resolveAutonomousPlacement,
 } from './annotationPlacement'
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
@@ -241,10 +237,7 @@ import {
 import {
     NotebookBlockNode,
     NotebookCodeBlockNode,
-    NotebookCollaborationConflict,
     NotebookComponentBlockNode,
-    NotebookComponentProps,
-    NotebookComponentRegistry,
     NotebookDocument,
     NotebookInlineMark,
     NotebookInlineNode,
@@ -254,231 +247,29 @@ import {
     NotebookTextBlockNode,
     NotebookTextSelectionRange,
 } from './types'
-import { cloneNotebookNode, getInlineText, getNodeFingerprint, normalizeInlineNodes } from './utils'
+import { cloneNotebookNode, getInlineText, normalizeInlineNodes } from './utils'
+import {
+    CommitDocumentOptions,
+    EMPTY_AI_WRITING_NODE_INDEX_SET,
+    MAX_TRACKED_LOCAL_SNAPSHOTS,
+    NATIVE_RANGE_EDIT_INPUT_TYPES,
+    POINTER_INERT_LINK_CONTAINER_SELECTOR,
+    UNDO_TYPING_GROUP_MS,
+    createDefaultAIConversationId,
+    createNotebookRefId,
+    getAIWritingPlaceholderNodeIds,
+    getComponentNodeUpdateHistoryOperations,
+    getLatestEmptyAIPromptNodeId,
+    type MarkdownNotebookAskAIRequest,
+    type MarkdownNotebookProps,
+    type NotebookHistoryEntry,
+    type NotebookHistoryState,
+    type RemoteCaretAnchor,
+} from './notebookEditorModel'
+import { applyPhilosopherInviteNotes } from './inviteApply'
+import { planOpenAIPromptInsert } from './planAIPromptInsert'
 
-export type MarkdownNotebookProps = {
-    value: string
-    onChange?: (value: string) => void
-    onAskAI?: (request: MarkdownNotebookAskAIRequest) => void | Promise<string | void>
-    isAskAIDisabled?: boolean
-    createAIConversationId?: () => string
-    mode?: NotebookMode
-    registry?: NotebookComponentRegistry
-    /** Caller-supplied insert-menu commands. Receives an API for inserting blocks so the command's
-     * behavior (e.g. opening a picker modal) and labeling stay in the caller, not this component. */
-    extraInsertCommands?: (api: MarkdownNotebookInsertMenuApi) => InsertCommand[]
-    /** Built-in insert-menu commands to drop, by key (e.g. `QUERY_SQL_INSERT_COMMAND_KEY`). For a
-     * caller whose registry supplies its own block for the same job and must not offer both. */
-    hiddenInsertCommandKeys?: string[]
-    /** Floating-toolbar selection AI quick actions (Rewrite / Challenge / …). */
-    selectionAIActions?: Array<{ id: string; label: string; tooltip: string; prompt: string }>
-    remoteValue?: string
-    /** Notebook version `remoteValue` corresponds to, for version-aware caret mapping. */
-    remoteVersion?: number
-    deferRemoteValue?: boolean
-    clientId?: string
-    onConflict?: (conflicts: NotebookCollaborationConflict[]) => void
-    onInteractionStateChange?: (isInteractionActive: boolean) => void
-    /** Carets of other clients editing this notebook, rendered as a positioned overlay. */
-    remoteCarets?: RemoteNotebookCaret[]
-    /** Reports the local caret whenever it moves; null when the selection leaves the notebook. */
-    onCaretChange?: (position: MarkdownNotebookCaretPosition | null) => void
-    initialInsertMenu?: { nodeIndex?: number; query?: string }
-    /** Converts external content (dropped or pasted files, dragged app resources or URLs) into
-     * blocks inserted at the drop/caret position. Return null to ignore the transfer; return a
-     * promise when conversion needs async work (e.g. file uploads) — the insert position is
-     * captured up front. */
-    convertExternalDataTransferToNodes?: (
-        dataTransfer: DataTransfer
-    ) => NotebookBlockNode[] | Promise<NotebookBlockNode[] | null> | null
-    focusAIPromptRequest?: number
-    aiWritingNodeIndexes?: number[]
-    /** In view mode, keep the filters toggle for definitions with `viewModeFilters` — for
-     * read-only canvases where the filters panel is the only way to configure a node. */
-    allowViewModeFilters?: boolean
-    placeholder?: string
-    className?: string
-    autoFocus?: boolean
-    'data-attr'?: string
-}
-
-export type MarkdownNotebookAskAIRequest = {
-    conversationId: string
-    /** Raw user directive. The inline editor follows this exactly. */
-    instruction: string
-    query: string
-    source: 'slash' | 'selection'
-    /** `inline` replaces the highlighted range; `block` replaces the Writing… node. */
-    apply?: 'block' | 'inline'
-    responseNodeId: string
-    responseNodeIndex: number
-    responseMarker: string
-    markdown: string
-    markdownWithResponse: string
-    selectedMarkdown?: string
-    selectedRefId?: string
-    selectionStart?: number
-    selectionEnd?: number
-    listItemIndex?: number
-}
-
-type CommitDocumentOptions = {
-    addToHistory?: boolean
-    historyOperations?: NotebookOperation[]
-    /** Set when the commit applies a remote merge: the notebook version being merged in.
-     * Remote caret pings already at this version reflect the change and must not be remapped. */
-    remoteMergeVersion?: number
-    /** Structural edits (e.g. a Tab indent) look like text edits to the differ, so they would
-     * otherwise fold into an adjacent typing run and stop being independently undoable. Pass
-     * false to force a discrete undo step. */
-    coalesce?: boolean
-}
-
-type RemoteCaretAnchor = {
-    caret: RemoteNotebookCaret
-    /** The position as the sender reported it — a new ping re-anchors, a heartbeat does not. */
-    source: MarkdownNotebookCaretPosition
-    /** The position remapped through local document changes since the ping. */
-    position: MarkdownNotebookCaretPosition
-}
-
-type NotebookHistoryEntry = {
-    /** Operations that revert the edit; the newest entry applies to the current document. */
-    ops: NotebookOperation[]
-    /** Where the cursor was while this document was current, so undo/redo can return to the edit point. */
-    selection: RestoreSelectionRequest | null
-    /** Wall-clock time of the last edit folded into this entry, for grouping typing runs. */
-    editedAt: number
-    /** Set when the entry edits a single block, enabling typing-run coalescing. */
-    coalesceNodeId: string | null
-}
-
-type NotebookHistoryState = {
-    undo: NotebookHistoryEntry[]
-    redo: NotebookHistoryEntry[]
-}
-
-/** Consecutive single-block edits within this window fold into one undo step. */
-// The editable surfaces whose links are pointer-inert while editing (see MarkdownNotebook.scss);
-// only these get the modifier-click open behavior, everything else keeps native navigation
-const POINTER_INERT_LINK_CONTAINER_SELECTOR =
-    '.MarkdownNotebook__text-block[contenteditable="true"], .MarkdownNotebook__list-block[contenteditable="true"], .MarkdownNotebook__table-cell-content[contenteditable="true"]'
-
-const UNDO_TYPING_GROUP_MS = 1000
-
-/** How many recent local serializations to remember for save-echo detection. Must comfortably
- * cover the keystrokes that can land between a save being sent and its response echoing back. */
-const MAX_TRACKED_LOCAL_SNAPSHOTS = 100
-const EMPTY_AI_WRITING_NODE_INDEX_SET = new Set<number>()
-
-function createDefaultAIConversationId(): string {
-    if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
-        return window.crypto.randomUUID()
-    }
-    return makeEmptyParagraph('ai-conversation').id
-}
-
-/** Short, human-skimmable id shared by a `<ref>` highlight and its `<Comment ref>` thread. */
-function createNotebookRefId(): string {
-    if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
-        return window.crypto.randomUUID().replace(/-/g, '').slice(0, 8)
-    }
-    return Math.random().toString(36).slice(2, 10)
-}
-
-function getAIWritingPlaceholderNodeIds(nodes: NotebookBlockNode[]): Set<string> {
-    const nodeIds = new Set<string>()
-    for (const node of nodes) {
-        if (node.type === 'paragraph' && getInlineText(node.children) === NOTEBOOK_AI_WRITING_PLACEHOLDER) {
-            nodeIds.add(node.id)
-        }
-    }
-    return nodeIds
-}
-
-function getLatestEmptyAIPromptNodeId(nodes: NotebookBlockNode[]): string | null {
-    for (let index = nodes.length - 1; index >= 0; index--) {
-        const node = nodes[index]
-        if (node && isPromptComponentNode(node) && !(getNotebookStringProp(node.props.question) ?? '').trim()) {
-            return node.id
-        }
-    }
-    return null
-}
-
-function getComponentNodeUpdateHistoryOperations(
-    nodes: NotebookBlockNode[],
-    index: number,
-    previousNode: NotebookBlockNode,
-    nextNode: NotebookBlockNode | null
-): NotebookOperation[] | undefined {
-    if (previousNode.type !== 'component' && nextNode?.type !== 'component') {
-        return undefined
-    }
-
-    const previousAfterId = index === 0 ? null : (nodes[index - 1]?.id ?? null)
-    if (!nextNode) {
-        return [{ type: 'insert_block', afterId: previousAfterId, node: cloneNotebookNode(previousNode) }]
-    }
-
-    if (
-        previousNode.type === 'component' &&
-        nextNode.type === 'component' &&
-        areComponentNodesEquivalent(previousNode, nextNode)
-    ) {
-        return []
-    }
-
-    if (previousNode.id === nextNode.id) {
-        return [{ type: 'replace_block', nodeId: previousNode.id, node: cloneNotebookNode(previousNode) }]
-    }
-
-    return [
-        { type: 'delete_block', nodeId: nextNode.id },
-        { type: 'insert_block', afterId: previousAfterId, node: cloneNotebookNode(previousNode) },
-    ]
-}
-
-function areComponentNodesEquivalent(
-    previousNode: NotebookComponentBlockNode,
-    nextNode: NotebookComponentBlockNode
-): boolean {
-    return (
-        previousNode.id === nextNode.id &&
-        previousNode.raw === nextNode.raw &&
-        getNodeFingerprint(previousNode) === getNodeFingerprint(nextNode) &&
-        componentNodeErrorsKey(previousNode) === componentNodeErrorsKey(nextNode)
-    )
-}
-
-function componentNodeErrorsKey(node: NotebookComponentBlockNode): string {
-    return node.errors?.join('\n') ?? ''
-}
-
-/** Input types whose browser default edits the DOM across the current selection/target range. */
-const NATIVE_RANGE_EDIT_INPUT_TYPES = new Set([
-    'insertText',
-    'insertParagraph',
-    'insertLineBreak',
-    'insertFromPaste',
-    'insertFromPasteAsQuotation',
-    'insertFromDrop',
-    'insertFromYank',
-    'insertReplacementText',
-    'insertTranspose',
-    'deleteContent',
-    'deleteContentBackward',
-    'deleteContentForward',
-    'deleteWordBackward',
-    'deleteWordForward',
-    'deleteSoftLineBackward',
-    'deleteSoftLineForward',
-    'deleteHardLineBackward',
-    'deleteHardLineForward',
-    'deleteEntireSoftLine',
-    'deleteByCut',
-    'deleteByDrag',
-])
+export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
     return <MarkdownNotebookEditor {...props} />
@@ -2637,89 +2428,13 @@ function MarkdownNotebookEditor({
             onInteractionStateChange?.(true)
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const promptProps: NotebookComponentProps = {
-                question: options?.question ?? '',
-            }
-            if (options?.source === 'selection') {
-                promptProps.source = 'selection'
-                promptProps.selectedMarkdown = options.selectedMarkdown ?? ''
-                promptProps.targetNodeId = options.targetNodeId ?? nodeId
-                if (options.selectionStart != null) {
-                    promptProps.selectionStart = options.selectionStart
-                }
-                if (options.selectionEnd != null) {
-                    promptProps.selectionEnd = options.selectionEnd
-                }
-                if (options.listItemIndex != null) {
-                    promptProps.listItemIndex = options.listItemIndex
-                }
-                if (options.selectedRefId) {
-                    promptProps.ref = options.selectedRefId
-                }
-            }
-            if (options?.autoRun) {
-                promptProps.autoRun = true
-            }
-            let didUpdate = false
-            let promptId = nodeId
-            const nextNodes: NotebookBlockNode[] = nodes.flatMap((currentNode): NotebookBlockNode[] => {
-                if (didUpdate || currentNode.id !== nodeId) {
-                    return [currentNode]
-                }
-                didUpdate = true
-                if (options?.source === 'selection') {
-                    promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
-                    const promptNode: NotebookComponentBlockNode = {
-                        id: promptId,
-                        type: 'component',
-                        tagName: 'Prompt',
-                        props: promptProps,
-                    }
-                    return [currentNode, promptNode]
-                }
-                if (isTextBlockNode(currentNode)) {
-                    const rawText = getInlineText(currentNode.children)
-                    const slash =
-                        getSlashTokenAt(rawText, rawText.length) ||
-                        getSlashTokenAt(rawText, Math.max(0, rawText.length - 1))
-                    const remainder = slash ? splitInlineNodesAt(currentNode.children, slash.start)[0] : currentNode.children
-                    if (getInlineText(remainder).trim()) {
-                        promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
-                        const promptNode: NotebookComponentBlockNode = {
-                            id: promptId,
-                            type: 'component',
-                            tagName: 'Prompt',
-                            props: promptProps,
-                        }
-                        return [{ ...currentNode, children: remainder }, promptNode]
-                    }
-                }
-                if (!isTextBlockNode(currentNode) && currentNode.type !== 'component') {
-                    return [currentNode]
-                }
-                const promptNode: NotebookComponentBlockNode = {
-                    id: promptId,
-                    type: 'component',
-                    tagName: 'Prompt',
-                    props: promptProps,
-                }
-                return [promptNode]
-            })
-            if (!didUpdate) {
-                promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
-                nextNodes.push({
-                    id: promptId,
-                    type: 'component',
-                    tagName: 'Prompt',
-                    props: promptProps,
-                })
-            }
+            const planned = planOpenAIPromptInsert(nodes, nodeId, options)
             commitDocument({
                 ...currentDocument,
-                nodes: nextNodes,
+                nodes: planned.nodes,
             })
             setInsertMenu({
-                nodeId: promptId,
+                nodeId: planned.promptId,
                 query: options?.question ?? '',
                 selectedIndex: 0,
                 mode: 'ai',
@@ -3798,65 +3513,15 @@ function MarkdownNotebookEditor({
 
         void requestPhilosopherComment({ botIds: bots.map((bot) => bot.id), selection: readable })
             .then((results) => {
-                const current = documentRef.current
-                const used = collectExistingRefSpans(current.nodes)
-                let nextNodes = current.nodes
-                let nextAnnotations = current.annotations
-                const placed: string[] = []
-                const stamped = new Date().toISOString()
-                for (const result of results) {
-                    const bot = bots.find((entry) => entry.id === result.botId)
-                    if (!bot || !result.text.trim()) continue
-                    const placement = resolveAutonomousPlacement(
-                        nextNodes,
-                        result.phrase,
-                        result.scope,
-                        used
-                    )
-                    const note = {
-                        by: bot.id,
-                        name: bot.name,
-                        text: result.text.trim(),
-                        avatar: bot.avatarUrl,
-                        kind: 'bot' as const,
-                        createdAt: stamped,
-                        intent: result.intent,
-                        suggestion: result.suggestion,
-                    }
-                    if (placement.kind === 'span') {
-                        const refId = createNotebookRefId()
-                        nextNodes = applyRefOnNotebookSpan(nextNodes, placement.span, refId)
-                        used.push(placement.span)
-                        placed.push(refId)
-                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [note], { scope: 'span' })
-                    } else if (placement.kind === 'block') {
-                        const target = nextNodes.find((entry) => entry.id === placement.nodeId)
-                        const refId = target?.blockId || createNotebookRefId()
-                        nextNodes = applyBlockIdOnNode(nextNodes, placement.nodeId, refId)
-                        used.push({ nodeId: placement.nodeId, start: 0, end: 1 })
-                        placed.push(refId)
-                        const existing = nextAnnotations?.[refId]?.notes || []
-                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [...existing, note], {
-                            scope: 'block',
-                        })
-                    } else {
-                        const refId = createNotebookRefId()
-                        placed.push(refId)
-                        nextAnnotations = upsertAnnotation(nextAnnotations, refId, [note], { scope: 'piece' })
-                    }
-                }
-                if (!placed.length) {
+                const applied = applyPhilosopherInviteNotes(documentRef.current, results, bots)
+                if (!applied.placed.length) {
                     setInviteStatus({ names, error: 'They read the page but left no mark.' })
                     window.setTimeout(() => setInviteStatus(null), 4000)
                     return
                 }
-                commitDocument({
-                    ...current,
-                    nodes: nextNodes,
-                    annotations: nextAnnotations,
-                })
+                commitDocument(applied.document)
                 setInviteStatus(null)
-                revealInlineRefs(placed)
+                revealInlineRefs(applied.placed)
             })
             .catch((error) => {
                 const message = error instanceof Error ? error.message : 'Could not invite these philosophers.'
