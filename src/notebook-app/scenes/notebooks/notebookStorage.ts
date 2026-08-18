@@ -77,9 +77,52 @@ function storageKey(): string {
 }
 const HISTORY_KEY_PREFIX = 'wim_notebook_history_'
 const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1', 'wim_notebooks_v2', STORAGE_KEY_BASE]
-const MAX_HISTORY = 50
+const MAX_HISTORY = 12
+const MAX_FULL_HISTORY_BODIES = 3
+const HISTORY_QUOTA_KEEP = [12, 6, 3, 1]
 /** Min ms between automatic history snapshots while typing */
 const SNAPSHOT_MIN_INTERVAL_MS = 20_000
+
+function isQuotaExceeded(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+    const name = 'name' in error ? String(error.name) : ''
+    const code = 'code' in error ? Number(error.code) : 0
+    return name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED' || code === 22 || code === 1014
+}
+
+function setLocalStorageItem(key: string, value: string): boolean {
+    if (typeof window === 'undefined') return false
+    try {
+        window.localStorage.setItem(key, value)
+        return true
+    } catch (error) {
+        if (!isQuotaExceeded(error)) return false
+        evictStaleNotebookHistory(key)
+        try {
+            window.localStorage.setItem(key, value)
+            return true
+        } catch {
+            return false
+        }
+    }
+}
+
+function evictStaleNotebookHistory(keepKey?: string): void {
+    if (typeof window === 'undefined') return
+    const keys: string[] = []
+    for (let index = 0; index < window.localStorage.length; index++) {
+        const key = window.localStorage.key(index)
+        if (key && key.startsWith(HISTORY_KEY_PREFIX) && key !== keepKey) keys.push(key)
+    }
+    // Drop oldest-looking keys first (prefix + id is stable; last written keys tend to be later in the list).
+    for (const key of keys) {
+        try {
+            window.localStorage.removeItem(key)
+        } catch {
+            /* ignore */
+        }
+    }
+}
 
 /** Fire-and-forget remote sync — never throws into UI paths. Emits sync status for the chrome. */
 function queueRemote(promise: Promise<unknown>): void {
@@ -120,7 +163,7 @@ function queueRemote(promise: Promise<unknown>): void {
                 const idx = localList.findIndex((nb) => nb.id === result.notebook.id)
                 if (idx >= 0 && localList[idx].version !== result.notebook.version) {
                     localList[idx].version = result.notebook.version
-                    writeLocalNotebooks(localList)
+                    writeAll(localList)
                 }
             }
 
@@ -280,7 +323,7 @@ export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
 function seedDefaults(): StoredNotebook[] {
     const deleted = readLocalDeletedNotebookIds()
     if (deleted.includes('welcome-notebook') || deleted.includes('welcome')) {
-        localStorage.setItem(storageKey(), '[]')
+        setLocalStorageItem(storageKey(), '[]')
         return []
     }
     const seed = DEFAULT_NOTEBOOKS.map((n) => ({
@@ -288,7 +331,7 @@ function seedDefaults(): StoredNotebook[] {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }))
-    localStorage.setItem(storageKey(), JSON.stringify(seed))
+    setLocalStorageItem(storageKey(), JSON.stringify(seed))
     for (const key of LEGACY_STORAGE_KEYS) {
         try {
             localStorage.removeItem(key)
@@ -300,7 +343,10 @@ function seedDefaults(): StoredNotebook[] {
 }
 
 function writeAll(notebooks: StoredNotebook[]): void {
-    localStorage.setItem(storageKey(), JSON.stringify(notebooks))
+    if (!setLocalStorageItem(storageKey(), JSON.stringify(notebooks))) {
+        evictStaleNotebookHistory()
+        setLocalStorageItem(storageKey(), JSON.stringify(notebooks))
+    }
     emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
 }
 
@@ -350,8 +396,39 @@ export function retryNotebookRemoteSync(): void {
     schedulePushAll()
 }
 
+/** Newest `MAX_FULL_HISTORY_BODIES` keep content; older rows are metadata only. */
+export function compactHistoryForStorage(history: NotebookVersion[]): NotebookVersion[] {
+    const sliced = history.slice(-MAX_HISTORY)
+    return sliced.map((entry, index) => {
+        if (index >= sliced.length - MAX_FULL_HISTORY_BODIES) return entry
+        if (!entry.content) return entry
+        return {
+            version: entry.version,
+            title: entry.title,
+            timestamp: entry.timestamp,
+            label: entry.label,
+        }
+    })
+}
+
 function writeHistory(id: string, history: NotebookVersion[]): void {
-    localStorage.setItem(`${HISTORY_KEY_PREFIX}${id}`, JSON.stringify(history.slice(-MAX_HISTORY)))
+    const key = `${HISTORY_KEY_PREFIX}${id}`
+    const compacted = compactHistoryForStorage(history)
+    for (const keep of HISTORY_QUOTA_KEEP) {
+        const slice = compacted.slice(-Math.min(keep, compacted.length))
+        if (setLocalStorageItem(key, JSON.stringify(slice))) return
+    }
+    if (typeof window === 'undefined') return
+    try {
+        window.localStorage.removeItem(key)
+    } catch {
+        /* ignore */
+    }
+}
+
+/** Test / drawer helper: persist a history list without throwing. */
+export function writeNotebookHistory(id: string, history: NotebookVersion[]): void {
+    writeHistory(id, history)
 }
 
 /** Pure local read — no hydrate side effects (used by remote merge). */
@@ -575,10 +652,12 @@ export function duplicateNotebook(id: string): StoredNotebook | undefined {
 }
 
 export function getNotebookHistory(id: string): NotebookVersion[] {
-    const data = localStorage.getItem(`${HISTORY_KEY_PREFIX}${id}`)
-    if (!data) return []
+    if (typeof window === 'undefined') return []
     try {
-        return JSON.parse(data) as NotebookVersion[]
+        const data = window.localStorage.getItem(`${HISTORY_KEY_PREFIX}${id}`)
+        if (!data) return []
+        const parsed = JSON.parse(data) as NotebookVersion[]
+        return Array.isArray(parsed) ? parsed : []
     } catch {
         return []
     }

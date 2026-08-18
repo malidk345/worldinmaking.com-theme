@@ -213,6 +213,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-194` | Stream 3 | Extract notebook invite/AI/helpers out of MarkdownNotebook.tsx | notebookEditorModel, inviteApply, planAIPrompt | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-195` | Stream 3 | Block hover matches Active Windows list frame | MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
 | `TSK-196` | Stream 3 | Sit block comment icon above the block, not inside | MarkdownNotebook.scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-197` | Stream 4 / 3 | Notebook save/sync must not rewind typing | App.tsx, notebookRemote, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-198` | Stream 3 | Notebook blocks use Lemon Table frame + white fill | MarkdownNotebook.scss | `[REVERTED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-199` | Stream 3 | Mobile notes stay by the block; comment icon only when active | MarkdownNotebook, annotationPlacement | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-18 |
+| `TSK-200` | Stream 4 | localStorage history setItem must not crash saves | notebookStorage.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-201` | Stream 4 / 3 | P1: save queue, 3 full history bodies, flush on hide | App.tsx, notebookStorage.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-202` | Stream 3 | P2: extract undo/clipboard/keyboard from MarkdownNotebook | MarkdownNotebook.tsx, useNotebookUndo/Clipboard/Keyboard | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-203` | Stream 3 | P3: block \u00b7\u00b7\u00b7 menu (Comment / Invite / WIM AI / Delete) | MarkdownNotebook.tsx, SCSS | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-204` | Stream 5 | P4: WIM AI excerpt around block; errors stay off the page | wimai-editor.ts, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-205` | Stream 5 / 3 | P5: mentions + resolve notes | annotations, InlineNotePopover, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 
 
 
@@ -351,6 +360,82 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 268 - P5 mentions + resolve
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `@` opens a mention picker from the current actor plus invite philosophers. Picking one inserts `<mention id>` that survives serialize/parse. Notes can be Resolved / Reopened; the sidecar keeps the text, chips dim, delete is unchanged.
+- **Modified Files:** `mentionPeople.ts`, `MentionPicker.tsx`, `annotations.ts`, `types.ts`, `InlineNotePopover.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts`, `tests/notebook-frontend.spec.ts`, docs
+- **Tests:** `pnpm exec playwright test --config=playwright.helpers.config.ts tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 33 passed.
+- **Handoff:** Sequential packages P1–P5 are complete. Markdown-first notebook stays. No AFFiNE/Yjs, no WIM AI persona, no Lemon Table cards.
+
+### Entry 267 - P4 WIM AI excerpt + errors stay off the page
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `notebookExcerptForEditor` now windows around the target block / selection (not the notebook tail). Failed inline-edit replies no longer become document prose: `applyNotebookAIFailure` restores the Prompt with an `error` prop, the pill shows the message, and review mode does not open. `App.tsx` applies markdown only when `data.ok` and the body is non-empty.
+- **Modified Files:** `wimai-editor.ts`, `notebookAI.ts`, `App.tsx`, `EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts`, `tests/wimai-editor.spec.ts`, `playwright.helpers.config.ts`, docs
+- **Tests:** `pnpm exec playwright test --config=playwright.helpers.config.ts tests/wimai-editor.spec.ts tests/notebook-frontend.spec.ts` — 32 passed.
+- **Handoff:** Package 4 is done. Package 5 (mentions / resolve) is optional. Do not start it unless asked.
+
+### Entry 266 - P3 block more-menu
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Editable blocks (not title / AI-writing / prompt / discussion) get a `···` LemonMenu: Comment, Invite, WIM AI, Delete. Comment icon stays a separate hover/focus control. Menu uses the same chrome as the comment button (above the block, not always-on on touch). Delete is danger and omitted on the title because the menu itself is hidden there.
+- **Modified Files:** `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `notebookEditorModel.ts`, `tests/notebook-frontend.spec.ts`, `bundleCss.ts`, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 29 passed. `node scripts/compile-notebook-css.js` — ok.
+- **Handoff:** Package 3 is done. Next is Package 4 only: WIM AI excerpt around the current block + never write errors into the page as markdown.
+
+### Entry 265 - P2 extract undo / clipboard / keyboard hooks
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Behavior-neutral split of `MarkdownNotebook.tsx` (6256 → 5653). Undo stack + rebase/coalesce lives in `useNotebookUndo`; copy/cut/paste + internal markdown clipboard in `useNotebookClipboard`; `beforeinput` capture and Cmd/Ctrl shortcuts in `useNotebookKeyboard`. Commit/slash/comments/invite stay in the editor.
+- **Modified Files:** `MarkdownNotebook.tsx`, `useNotebookUndo.ts`, `useNotebookClipboard.ts`, `useNotebookKeyboard.ts`, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 28 passed.
+- **Handoff:** Package 2 is done. Next is Package 3 only: block `···` menu (Comment / Invite / WIM AI / Delete). Do not start P4–P5 in the same turn.
+
+### Entry 264 - P1 writing trust: queued save tail + 3 full history bodies
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Close Package 1. `persistOpenNotebookDraft` no longer drops a later draft when a save is already running: `saveQueuedRef` last-write-wins drains the latest refs after the in-flight write. Idle 1100ms + `visibilitychange=hidden` / `pagehide` / unmount flush stay. History keeps 12 rows but only the newest 3 full bodies; `writeHistory` never throws.
+- **Modified Files:** `src/notebook-app/App.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `tests/notebook-frontend.spec.ts`, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts tests/wimai-editor.spec.ts` — 28 passed.
+- **Handoff:** Package 1 is done. Next is Package 2 only: extract `useNotebookUndo` / clipboard / keyboard from `MarkdownNotebook.tsx` (6256 lines). Do not start P3–P5 in the same turn.
+
+### Entry 263 - History setItem no longer crashes saves
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** `writeHistory` stored 50 full notebook copies and threw QuotaExceededError into the save path. Writes now catch quota errors, shrink to 12/6/3/1 snapshots, evict other notebooks' history, and never throw. `writeLocalNotebooks` (undefined) now uses `writeAll`.
+- **Modified Files:** `notebookStorage.ts`, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 18 passed.
+
+### Entry 262 - Mobile comments stay with the block
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Note cards no longer pin to a mobile bottom sheet; they clamp to the visible viewport next to the block (above if needed). The comment icon is hidden on touch until the block is focused or a note is open — chips for existing notes stay visible.
+- **Modified Files:** `MarkdownNotebook.scss`, `MarkdownNotebook.tsx`, `annotationPlacement.ts`, `bundleCss.ts`, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+
+### Entry 261 - Revert Lemon Table block cards
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Always-on white Lemon Table cards on notebook rows were reverted. Blocks are paper again; hover/focus is the thin Active Windows frame.
+- **Modified Files:** `MarkdownNotebook.scss`, `bundleCss.ts`, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+
+### Entry 260 - Blocks use the Lemon Table chrome
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Each notebook row is now a Lemon Table card: white `surface-primary` fill, 1px `border-primary`, `var(--radius)`. Always on, not hover-only.
+- **Modified Files:** `MarkdownNotebook.scss`, `bundleCss.ts`, docs
+- **Tests:** `pnpm run build:notebook-styles` — ok.
+
+### Entry 259 - Save/sync no longer rewinds live typing
+- **Date:** 2026-08-18
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Autosave now writes the latest draft from refs and does not mark saved if the user already typed past that snapshot. Own-save / last-save echoes no longer update `remoteValue` while the draft is ahead. The editor treats last-base and shorter-prefix remotes as echoes instead of merging them back over the caret.
+- **Modified Files:** `App.tsx`, `notebookRemote.ts`, `MarkdownNotebook.tsx`, tests, docs
+- **Tests:** `pnpm exec playwright test tests/notebook-frontend.spec.ts` — 18 passed.
+- **Notes / Handoff:** Hard-refresh. Typing should stay put while the status flips edited → saved. Not pushed.
 
 ### Entry 258 - Comment icon sits above the block
 - **Date:** 2026-08-18

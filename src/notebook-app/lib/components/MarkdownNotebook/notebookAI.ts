@@ -1,4 +1,4 @@
-import { isTextBlockNode } from './documentModel'
+import { getNotebookStringProp, isPromptComponentNode, isTextBlockNode } from './documentModel'
 import { plainTextToInlineNodes, splitInlineNodesAt } from './inlineContent'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
 import type { NotebookBlockNode, NotebookInlineNode } from './types'
@@ -59,6 +59,62 @@ export function replaceInlineRangeInMarkdown(
 }
 
 export const NOTEBOOK_AI_WRITING_PLACEHOLDER = 'Writing…'
+
+export function applyNotebookAIFailure(
+    markdown: string,
+    options: {
+        apply?: 'block' | 'inline'
+        responseNodeIndex: number
+        instruction: string
+        error: string
+    }
+): string {
+    const document = parseMarkdownNotebook(markdown)
+    const nodes = [...document.nodes]
+    const error = options.error.trim() || 'The editor is unavailable right now.'
+    const instruction = options.instruction.trim()
+
+    const withError = (node: NotebookBlockNode) => {
+        if (isPromptComponentNode(node)) {
+            return {
+                ...node,
+                props: {
+                    ...node.props,
+                    question: getNotebookStringProp(node.props.question) || instruction,
+                    error,
+                    autoRun: false,
+                },
+            }
+        }
+        return {
+            id: node.id,
+            type: 'component' as const,
+            tagName: 'Prompt',
+            props: { question: instruction, error, autoRun: false },
+        }
+    }
+
+    if (options.apply === 'inline') {
+        const promptIndex = nodes.findIndex(
+            (node, index) => isPromptComponentNode(node) && index >= options.responseNodeIndex
+        )
+        if (promptIndex >= 0) {
+            nodes[promptIndex] = withError(nodes[promptIndex])
+        }
+        return serializeMarkdownNotebook({ ...document, nodes })
+    }
+
+    const index = Math.max(0, Math.min(options.responseNodeIndex, Math.max(nodes.length - 1, 0)))
+    const node = nodes[index]
+    if (!node) return markdown
+
+    const isPlaceholder =
+        isTextBlockNode(node) && getInlineText(node.children) === NOTEBOOK_AI_WRITING_PLACEHOLDER
+    if (isPlaceholder || isPromptComponentNode(node)) {
+        nodes[index] = withError(node)
+    }
+    return serializeMarkdownNotebook({ ...document, nodes })
+}
 
 export type NotebookAIResponseMarkdownResult = {
     markdown: string

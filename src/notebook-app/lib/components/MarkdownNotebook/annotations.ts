@@ -33,7 +33,7 @@ export function upsertAnnotation(
     annotations: NotebookAnnotationMap | undefined,
     refId: string,
     notes: InlinePhilosopherNote[],
-    extra?: { scope?: NotebookAnnotation['scope'] }
+    extra?: { scope?: NotebookAnnotation['scope']; resolved?: boolean }
 ): NotebookAnnotationMap {
     const next: NotebookAnnotationMap = { ...(annotations || {}) }
     if (!notes.length) {
@@ -44,8 +44,22 @@ export function upsertAnnotation(
         id: refId,
         notes,
         scope: extra?.scope || next[refId]?.scope,
+        resolved: extra && 'resolved' in extra ? extra.resolved : next[refId]?.resolved,
     }
     return next
+}
+
+export function setAnnotationResolved(
+    annotations: NotebookAnnotationMap | undefined,
+    refId: string,
+    resolved: boolean
+): NotebookAnnotationMap {
+    const current = annotations?.[refId]
+    if (!current) return annotations || {}
+    return {
+        ...(annotations || {}),
+        [refId]: { ...current, resolved },
+    }
 }
 
 export function updateNoteInAnnotations(
@@ -213,8 +227,12 @@ export function serializeAnnotationsSidecar(
     const byId: Record<string, unknown> = {}
     for (const [id, annotation] of Object.entries(pruned)) {
         byId[id] =
-            annotation.scope === 'piece' || annotation.scope === 'block'
-                ? { notes: annotation.notes, scope: annotation.scope }
+            annotation.scope === 'piece' || annotation.scope === 'block' || annotation.resolved
+                ? {
+                      notes: annotation.notes,
+                      ...(annotation.scope ? { scope: annotation.scope } : {}),
+                      ...(annotation.resolved ? { resolved: true } : {}),
+                  }
                 : annotation.notes
     }
     return `${ANNOTATIONS_SIDECAR_PREFIX}${JSON.stringify({ v: 1, byId })}${ANNOTATIONS_SIDECAR_SUFFIX}`
@@ -255,7 +273,15 @@ function mergeOneAnnotation(
     if (!remote) return local
 
     const notes = mergeNoteLists(local.notes, remote.notes, base?.notes)
-    return notes.length ? { id, notes, scope: local?.scope || remote?.scope } : undefined
+    return notes.length
+        ? {
+              id,
+              notes,
+              scope: local?.scope || remote?.scope,
+              resolved:
+                  (local?.resolved ?? false) === (base?.resolved ?? false) ? remote?.resolved : local?.resolved,
+          }
+        : undefined
 }
 
 function mergeNoteLists(
@@ -326,7 +352,7 @@ function parseAnnotationPayload(value: unknown): NotebookAnnotationMap | undefin
     for (const [id, raw] of Object.entries(byId as Record<string, unknown>)) {
         const packed =
             raw && typeof raw === 'object' && !Array.isArray(raw)
-                ? (raw as { notes?: unknown; scope?: unknown })
+                ? (raw as { notes?: unknown; scope?: unknown; resolved?: unknown })
                 : null
         const notes = parseInlineNotes(packed ? packed.notes : raw)
         if (id && notes.length) {
@@ -334,6 +360,7 @@ function parseAnnotationPayload(value: unknown): NotebookAnnotationMap | undefin
                 id,
                 notes,
                 scope: packed?.scope === 'piece' || packed?.scope === 'block' ? packed.scope : undefined,
+                resolved: packed?.resolved === true,
             }
         }
     }

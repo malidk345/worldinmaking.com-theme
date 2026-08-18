@@ -1,11 +1,13 @@
 import { readFileSync } from 'fs'
 import { test, expect } from '@playwright/test'
 import {
+    MAX_WIMAI_NOTEBOOK,
     WIMAI_BOT_NAME,
     WIMAI_SYSTEM_PROMPT,
     buildWimaiEditorUserPrompt,
     cleanWimaiEditorOutput,
     notebookExcerptForEditor,
+    wimaiEditorFailureMessage,
 } from '../src/lib/bots/wimai-editor'
 
 test.describe('WIM AI inline editor', () => {
@@ -46,10 +48,28 @@ test.describe('WIM AI inline editor', () => {
         expect(cleanWimaiEditorOutput('<thinking>plan</thinking>\nKeep the claim.')).toBe('Keep the claim.')
     })
 
-    test('notebook excerpt drops the writing marker and trims from the end', () => {
+    test('notebook excerpt drops the writing marker', () => {
         const excerpt = notebookExcerptForEditor('# Title\n\nWriting…\n\nBody', 'Writing…')
         expect(excerpt).not.toContain('Writing…')
         expect(excerpt).toContain('# Title')
+    })
+
+    test('notebook excerpt keeps a heading near the top, not only the tail', () => {
+        const tail = `${'z'.repeat(80)}\n\n`.repeat(60)
+        const markdown = `# Title near top\n\nIntro stays local.\n\n${tail}`
+        expect(markdown.length).toBeGreaterThan(MAX_WIMAI_NOTEBOOK)
+        const excerpt = notebookExcerptForEditor(markdown, '', 0)
+        expect(excerpt.startsWith('# Title near top')).toBe(true)
+        expect(excerpt).toContain('Intro stays local.')
+        expect(excerpt.length).toBeLessThanOrEqual(MAX_WIMAI_NOTEBOOK)
+    })
+
+    test('failure message is never treated as editor markdown', () => {
+        expect(wimaiEditorFailureMessage({ ok: false, error: 'Rate limit exceeded. Retry in 12s' }, 429)).toBe(
+            'Rate limit exceeded. Retry in 12s'
+        )
+        expect(wimaiEditorFailureMessage({ ok: false }, 503)).toBe('The editor is unavailable right now.')
+        expect(wimaiEditorFailureMessage(null, 422)).toBe('No edit returned. Try again.')
     })
 })
 
@@ -74,6 +94,37 @@ test.describe('WIM AI typewriter apply', () => {
         expect(latest).toContain('The wage is the price of labor.')
         expect(latest).not.toContain(NOTEBOOK_AI_WRITING_PLACEHOLDER)
         expect(replaceNotebookAIResponseMarkdown(base, 1, 'done', 1).markdown).toContain('done')
+    })
+
+    test('a failed editor reply restores the prompt and does not insert the error as prose', async () => {
+        const { applyNotebookAIFailure, NOTEBOOK_AI_WRITING_PLACEHOLDER } = await import(
+            '../src/notebook-app/lib/components/MarkdownNotebook/notebookAI'
+        )
+        const { parseMarkdownNotebook } = await import(
+            '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
+        )
+        const { getInlineText } = await import('../src/notebook-app/lib/components/MarkdownNotebook/utils')
+        const base = `# Title\n\n${NOTEBOOK_AI_WRITING_PLACEHOLDER}\n\nAfter`
+        const failed = applyNotebookAIFailure(base, {
+            apply: 'block',
+            responseNodeIndex: 1,
+            instruction: 'Shorten this',
+            error: 'Editor is unavailable right now',
+        })
+        expect(failed).not.toContain(NOTEBOOK_AI_WRITING_PLACEHOLDER)
+        expect(failed).toContain('# Title')
+        expect(failed).toContain('After')
+        const parsed = parseMarkdownNotebook(failed)
+        expect(parsed.nodes[1]).toMatchObject({
+            type: 'component',
+            tagName: 'Prompt',
+            props: { question: 'Shorten this', error: 'Editor is unavailable right now' },
+        })
+        expect(
+            parsed.nodes.some(
+                (node) => node.type === 'paragraph' && getInlineText(node.children).includes('unavailable')
+            )
+        ).toBe(false)
     })
 })
 
@@ -102,5 +153,8 @@ test.describe('inline editor stays off the chatbot', () => {
         expect(src).toContain('/api/notebook/inline-edit')
         expect(src).not.toContain("taskType: 'community_reply'")
         expect(src).not.toContain("bot: defaultBot")
+        expect(src).toContain('applyNotebookAIFailure')
+        expect(src).toContain('wimaiEditorFailureMessage')
+        expect(src).not.toContain('data?.error')
     })
 })

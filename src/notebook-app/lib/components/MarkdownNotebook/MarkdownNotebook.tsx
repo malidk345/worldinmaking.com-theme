@@ -1,7 +1,6 @@
 
 import clsx from 'clsx'
 import {
-    ClipboardEvent as ReactClipboardEvent,
     CSSProperties,
     DragEvent as ReactDragEvent,
     FocusEvent as ReactFocusEvent,
@@ -19,7 +18,8 @@ import {
     useState,
 } from 'react'
 
-import { IconComment, IconDrag } from '@posthog/icons'
+import { IconComment, IconDrag, IconEllipsis } from '@posthog/icons'
+import { LemonMenu } from '@posthog/lemon-ui'
 
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
 import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
@@ -27,6 +27,7 @@ import {
     EMPTY_ANNOTATIONS,
     NotebookAnnotationsContext,
     getAnnotationNotes,
+    setAnnotationResolved,
     updateNoteInAnnotations,
     upsertAnnotation,
 } from './annotations'
@@ -39,6 +40,14 @@ import {
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
 import { InvitePhilosopherPicker } from './InvitePhilosopherPicker'
+import { MentionPicker } from './MentionPicker'
+import {
+    filterMentionPeople,
+    getMentionTokenAt,
+    insertMentionMark,
+    listMentionPeople,
+    type MentionPerson,
+} from './mentionPeople'
 import { mergeNotebookMarkdownChanges } from './collaboration'
 import {
     ComponentPanelCacheEntry,
@@ -54,8 +63,6 @@ import {
     MarkdownNotebookTextSurface,
     areNotebookDocumentsEqual,
     ensureEditableNotebookDocument,
-    getClipboardMarkdown,
-    getHistoryRestoreSelection,
     getInlineInsertMenuQuery,
     getSlashTokenAt,
     getInsertMenuFilterQuery,
@@ -82,26 +89,19 @@ import {
     removeNotebookNodesWithRefCleanup,
     stripNotebookRefMarksFromNodes,
     mapRestoreSelectionThroughDocumentChange,
-    readSystemClipboardText,
     rekeyNotebookNodes,
-    serializeNotebookNodes,
-    setClipboardMarkdown,
     setsEqual,
     textBlocksShareContinuationStyle,
     updateNotebookCodeBlockText,
     withoutLeadingEmptyTitleGroup,
     withPreservedGroupStart,
-    writeSystemClipboardText,
 } from './documentModel'
 import {
-    findTextPosition,
     getClosestEditableBlockElement,
     getCollapsedSelectionRange,
     getCollapsedSelectionRestoreRequest,
-    getComponentNodeForSelection,
     getElementForNode,
     getElementLineHeight,
-    getFocusedComponentNode,
     getInlineEditableElementForSelection,
     getNormalizedSelectionBounds,
     getNotebookBlockElement,
@@ -113,17 +113,12 @@ import {
     getSelectedTextRanges,
     getSelectionClientRect,
     getSelectionRange,
-    inputEventCrossesInlineEditableBoundary,
     isFormattingToolbarFocused,
     isNativeEditableElement,
-    isSelectionInsideElement,
     rangeIntersectsNode,
     restoreSelection,
     restoreTextSelectionRanges,
     scrollNotebookElementIntoView,
-    selectionMatchesRange,
-    setNotebookSelectionEnd,
-    setNotebookSelectionStart,
 } from './domSelection'
 import {
     FLOATING_TOOLBAR_ESTIMATED_HEIGHT,
@@ -144,7 +139,6 @@ import {
     InsertMenuSelectionDirection,
     InsertMenuState,
     MarkdownNotebookInsertMenuApi,
-    MAX_UNDO_HISTORY_ENTRIES,
     NOTEBOOK_TITLE_PLACEHOLDER,
     RestoreSelectionRequest,
     RestoreTextRange,
@@ -202,12 +196,7 @@ import {
     serializeMarkdownNotebook,
 } from './markdown'
 import { NOTEBOOK_AI_WRITING_PLACEHOLDER } from './notebookAI'
-import {
-    NotebookOperation,
-    applyNotebookOperations,
-    diffNotebookDocuments,
-    rebaseNotebookOperationStack,
-} from './operations'
+import { NotebookOperation } from './operations'
 import { reconcileNotebookDocuments } from './reconcile'
 import {
     getMarkdownNotebookComponentDefinition,
@@ -252,22 +241,24 @@ import {
     CommitDocumentOptions,
     EMPTY_AI_WRITING_NODE_INDEX_SET,
     MAX_TRACKED_LOCAL_SNAPSHOTS,
-    NATIVE_RANGE_EDIT_INPUT_TYPES,
     POINTER_INERT_LINK_CONTAINER_SELECTOR,
-    UNDO_TYPING_GROUP_MS,
+    buildBlockMoreMenuItems,
+    canShowBlockMoreMenu,
     createDefaultAIConversationId,
     createNotebookRefId,
     getAIWritingPlaceholderNodeIds,
     getComponentNodeUpdateHistoryOperations,
     getLatestEmptyAIPromptNodeId,
+    type BlockMoreMenuAction,
     type MarkdownNotebookAskAIRequest,
     type MarkdownNotebookProps,
-    type NotebookHistoryEntry,
-    type NotebookHistoryState,
     type RemoteCaretAnchor,
 } from './notebookEditorModel'
 import { applyPhilosopherInviteNotes } from './inviteApply'
 import { planOpenAIPromptInsert } from './planAIPromptInsert'
+import { useNotebookClipboard } from './useNotebookClipboard'
+import { useNotebookKeyboard } from './useNotebookKeyboard'
+import { useNotebookUndo } from './useNotebookUndo'
 
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
@@ -397,8 +388,6 @@ function MarkdownNotebookEditor({
             return currentNode
         })
     }
-    const notebookClipboardMarkdownRef = useRef<string | null>(null)
-    const historyRef = useRef<NotebookHistoryState>({ undo: [], redo: [] })
     const lastSerializedValueRef = useRef(value)
     // Recent local serializations, oldest first. A remote update matching one of these is the
     // echo of our own save — already contained in the local state, so merging it back in would
@@ -426,11 +415,19 @@ function MarkdownNotebookEditor({
         intent?: import('./types').NotebookNoteIntent
         suggestion?: string
         scope?: 'span' | 'piece' | 'block'
+        resolved?: boolean
         top: number
         left: number
     } | null>(null)
+    const [mentionPicker, setMentionPicker] = useState<{
+        nodeId: string
+        start: number
+        query: string
+        listItemIndex?: number
+    } | null>(null)
     const [invitePicker, setInvitePicker] = useState<{ nodeId: string } | null>(null)
     const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
+    const [blockMenuNodeId, setBlockMenuNodeId] = useState<string | null>(null)
     const [inviteStatus, setInviteStatus] = useState<{ names: string[]; error?: string } | null>(null)
     const initialInsertMenuAppliedRef = useRef(false)
     const emptyNodeRef = useRef<NotebookTextBlockNode>(makeEmptyParagraph('initial-empty'))
@@ -509,19 +506,17 @@ function MarkdownNotebookEditor({
         []
     )
 
-    const rebaseHistoryThroughDocumentChange = useCallback(
-        (previousDocument: NotebookDocument, nextDocument: NotebookDocument): void => {
-            const incomingOps = diffNotebookDocuments(previousDocument, nextDocument)
-            if (!incomingOps.length) {
-                return
-            }
-            historyRef.current = {
-                undo: rebaseNotebookOperationStack(historyRef.current.undo, incomingOps),
-                redo: rebaseNotebookOperationStack(historyRef.current.redo, incomingOps),
-            }
-        },
-        []
-    )
+    const {
+        rebaseHistoryThroughDocumentChange,
+        pushHistoryEntry,
+        undoHistory,
+        redoHistory,
+        bindCommitDocument,
+    } = useNotebookUndo({
+        documentRef,
+        notebookElementRef: notebookRef,
+        restoreSelectionRef,
+    })
 
     useEffect(() => {
         if (value === lastSerializedValueRef.current) {
@@ -623,58 +618,6 @@ function MarkdownNotebookEditor({
         // oxlint-disable-next-line exhaustive-deps
     }, [initialInsertMenu, mode])
 
-    const captureHistorySelection = useCallback((): RestoreSelectionRequest | null => {
-        return notebookRef.current
-            ? getCollapsedSelectionRestoreRequest(window.getSelection(), notebookRef.current)
-            : null
-    }, [])
-
-    const pushHistoryEntry = useCallback(
-        (
-            previousDocument: NotebookDocument,
-            nextDocument: NotebookDocument,
-            historyOperations?: NotebookOperation[],
-            coalesce: boolean = true
-        ): void => {
-            const inverseOps = historyOperations ?? diffNotebookDocuments(nextDocument, previousDocument)
-            if (!inverseOps.length) {
-                return
-            }
-
-            const now = Date.now()
-            const onlyOp = inverseOps.length === 1 ? inverseOps[0] : null
-            // A non-coalescing entry stays its own undo step: it never folds into the previous
-            // entry, and a null coalesceNodeId keeps the next typing run from folding into it.
-            const coalesceNodeId =
-                coalesce && onlyOp && (onlyOp.type === 'text' || onlyOp.type === 'replace_block') ? onlyOp.nodeId : null
-            const lastEntry = historyRef.current.undo[historyRef.current.undo.length - 1]
-            if (
-                coalesceNodeId &&
-                lastEntry &&
-                lastEntry.coalesceNodeId === coalesceNodeId &&
-                now - lastEntry.editedAt < UNDO_TYPING_GROUP_MS &&
-                !historyRef.current.redo.length
-            ) {
-                // Fold the typing run into the open entry. For wholesale block replaces the
-                // older inverse already restores the pre-run content, so the new one is moot.
-                if (!(onlyOp?.type === 'replace_block' && lastEntry.ops.every((op) => op.type === 'replace_block'))) {
-                    lastEntry.ops = [...inverseOps, ...lastEntry.ops]
-                }
-                lastEntry.editedAt = now
-                return
-            }
-
-            historyRef.current = {
-                undo: [
-                    ...historyRef.current.undo.slice(-(MAX_UNDO_HISTORY_ENTRIES - 1)),
-                    { ops: inverseOps, selection: captureHistorySelection(), editedAt: now, coalesceNodeId },
-                ],
-                redo: [],
-            }
-        },
-        [captureHistorySelection]
-    )
-
     const trackLocalSnapshot = useCallback((serialized: string): void => {
         const snapshots = localSnapshotsRef.current
         if (snapshots[snapshots.length - 1] === serialized) {
@@ -710,22 +653,27 @@ function MarkdownNotebookEditor({
         },
         [onChange, pushHistoryEntry, mapRemoteCaretAnchors, trackLocalSnapshot]
     )
+    bindCommitDocument(commitDocument)
 
     const applyRemoteValue = useCallback(
         (nextRemoteValue: string): void => {
+            const localMarkdown = lastSerializedValueRef.current
             const snapshotIndex =
-                nextRemoteValue === lastSerializedValueRef.current
+                nextRemoteValue === localMarkdown
                     ? localSnapshotsRef.current.length - 1
                     : localSnapshotsRef.current.indexOf(nextRemoteValue)
-            if (snapshotIndex !== -1) {
-                // The remote state matches a recent local serialization: it's the echo of our own
-                // save, so everything in it is already contained in the local state. Merging it
-                // would re-apply insertions the local text has since built on, duplicating them —
-                // only the merge base advances. Undo history must survive autosaves too.
+            const isKnownEcho =
+                snapshotIndex !== -1 ||
+                nextRemoteValue === lastBaseValueRef.current ||
+                (nextRemoteValue.length < localMarkdown.length && localMarkdown.startsWith(nextRemoteValue))
+            if (isKnownEcho) {
+                // Own save or last-save echo: the draft already continues from this body.
+                // Merging it would rewind or duplicate characters typed after the save.
                 lastRemoteValueRef.current = nextRemoteValue
                 lastBaseValueRef.current = nextRemoteValue
-                // Older snapshots can't echo after a newer one: saves are acknowledged in order.
-                localSnapshotsRef.current.splice(0, snapshotIndex)
+                if (snapshotIndex > 0) {
+                    localSnapshotsRef.current.splice(0, snapshotIndex)
+                }
                 return
             }
 
@@ -852,68 +800,6 @@ function MarkdownNotebookEditor({
             }
         }
     }, [isTransientInteractionActive, onInteractionStateChange])
-
-    const applyHistoryEntrySelection = useCallback(
-        (entry: NotebookHistoryEntry, nextDocument: NotebookDocument): void => {
-            const selection = entry.selection
-            const entrySelection =
-                selection && 'nodeId' in selection && nextDocument.nodes.some((node) => node.id === selection.nodeId)
-                    ? selection
-                    : null
-            restoreSelectionRef.current = entrySelection ?? getHistoryRestoreSelection(nextDocument)
-        },
-        []
-    )
-
-    const undoHistory = useCallback((): boolean => {
-        const entry = historyRef.current.undo[historyRef.current.undo.length - 1]
-        if (!entry) {
-            return false
-        }
-
-        const result = applyNotebookOperations(documentRef.current, entry.ops)
-        if (!result) {
-            // The entry no longer fits the document (a conflicting remote edit slipped past
-            // the rebase): drop the stale stack rather than apply garbage.
-            historyRef.current = { ...historyRef.current, undo: [] }
-            return false
-        }
-
-        historyRef.current = {
-            undo: historyRef.current.undo.slice(0, -1),
-            redo: [
-                ...historyRef.current.redo.slice(-(MAX_UNDO_HISTORY_ENTRIES - 1)),
-                { ops: result.inverted, selection: captureHistorySelection(), editedAt: 0, coalesceNodeId: null },
-            ],
-        }
-        applyHistoryEntrySelection(entry, result.document)
-        commitDocument(result.document, { addToHistory: false })
-        return true
-    }, [applyHistoryEntrySelection, captureHistorySelection, commitDocument])
-
-    const redoHistory = useCallback((): boolean => {
-        const entry = historyRef.current.redo[historyRef.current.redo.length - 1]
-        if (!entry) {
-            return false
-        }
-
-        const result = applyNotebookOperations(documentRef.current, entry.ops)
-        if (!result) {
-            historyRef.current = { ...historyRef.current, redo: [] }
-            return false
-        }
-
-        historyRef.current = {
-            undo: [
-                ...historyRef.current.undo.slice(-(MAX_UNDO_HISTORY_ENTRIES - 1)),
-                { ops: result.inverted, selection: captureHistorySelection(), editedAt: 0, coalesceNodeId: null },
-            ],
-            redo: historyRef.current.redo.slice(0, -1),
-        }
-        applyHistoryEntrySelection(entry, result.document)
-        commitDocument(result.document, { addToHistory: false })
-        return true
-    }, [applyHistoryEntrySelection, captureHistorySelection, commitDocument])
 
     const deleteSelectedNotebookBlocks = useCallback(
         (replacementText: string = ''): boolean => {
@@ -2041,136 +1927,6 @@ function MarkdownNotebookEditor({
         return true
     }, [commitDocument])
 
-    useEffect(() => {
-        const notebookElement = notebookRef.current
-        if (!notebookElement) {
-            return
-        }
-
-        const handleBeforeInput = (event: Event): void => {
-            if (mode !== 'edit') {
-                return
-            }
-
-            if (
-                event.target instanceof HTMLElement &&
-                isNativeEditableElement(event.target)
-            ) {
-                return
-            }
-
-            const nativeEvent = event as InputEvent
-            if (
-                (nativeEvent.inputType === 'insertParagraph' || nativeEvent.inputType === 'insertLineBreak') &&
-                insertNewlineInCodeBlockAtCurrentSelection()
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (
-                nativeEvent.inputType === 'insertParagraph' &&
-                (splitListItemAtCurrentSelection() ||
-                    insertTableRowAtCurrentSelection() ||
-                    splitTextBlockAtCurrentSelection())
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (
-                nativeEvent.inputType === 'insertText' &&
-                nativeEvent.data === '/' &&
-                startInsertMenuAtCurrentTextSelection()
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (
-                nativeEvent.inputType === 'insertText' &&
-                typeof nativeEvent.data === 'string' &&
-                nativeEvent.data.length > 0 &&
-                (deleteSelectedNotebookBlocks(nativeEvent.data) ||
-                    deleteListItemRangeAtCurrentSelection(nativeEvent.data))
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (
-                (nativeEvent.inputType === 'deleteContentBackward' ||
-                    nativeEvent.inputType === 'deleteContentForward') &&
-                deleteSelectedNotebookBlocks()
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (
-                (nativeEvent.inputType === 'deleteContentBackward' ||
-                    nativeEvent.inputType === 'deleteContentForward') &&
-                (deleteListItemRangeAtCurrentSelection() ||
-                    deleteListItemAtCurrentSelection(
-                        nativeEvent.inputType === 'deleteContentBackward' ? 'backward' : 'forward'
-                    ) ||
-                    deleteTextAtCurrentSelection(
-                        nativeEvent.inputType === 'deleteContentBackward' ? 'backward' : 'forward'
-                    ))
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            // A native edit whose range crosses inline-editable boundaries would restructure
-            // React-managed DOM and crash the next React commit. If no handler above claimed
-            // the edit, dropping it is the safe outcome.
-            if (
-                NATIVE_RANGE_EDIT_INPUT_TYPES.has(nativeEvent.inputType) &&
-                inputEventCrossesInlineEditableBoundary(nativeEvent, notebookElement)
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (nativeEvent.inputType !== 'historyUndo' && nativeEvent.inputType !== 'historyRedo') {
-                return
-            }
-
-            if (nativeEvent.inputType === 'historyUndo') {
-                undoHistory()
-            } else {
-                redoHistory()
-            }
-
-            event.preventDefault()
-            event.stopPropagation()
-        }
-
-        notebookElement.addEventListener('beforeinput', handleBeforeInput, true)
-        return () => notebookElement.removeEventListener('beforeinput', handleBeforeInput, true)
-    }, [
-        deleteListItemAtCurrentSelection,
-        deleteListItemRangeAtCurrentSelection,
-        deleteSelectedNotebookBlocks,
-        deleteTextAtCurrentSelection,
-        insertNewlineInCodeBlockAtCurrentSelection,
-        insertTableRowAtCurrentSelection,
-        mode,
-        redoHistory,
-        splitListItemAtCurrentSelection,
-        splitTextBlockAtCurrentSelection,
-        startInsertMenuAtCurrentTextSelection,
-        undoHistory,
-    ])
-
     const updateNode = useCallback(
         (
             nodeId: string,
@@ -2934,177 +2690,6 @@ function MarkdownNotebookEditor({
         beginTextSelectionPointer(event.clientX, event.clientY)
     }
 
-    const copyMarkdownToNotebookClipboard = (markdown: string): void => {
-        notebookClipboardMarkdownRef.current = markdown
-        writeSystemClipboardText(markdown)
-    }
-
-    const pasteNotebookClipboardAfterNode = (nodeId: string): void => {
-        const fallbackMarkdown = notebookClipboardMarkdownRef.current
-        const pasteMarkdown = (markdown: string | null): void => {
-            const nextMarkdown = markdown || fallbackMarkdown
-            if (!nextMarkdown) {
-                return
-            }
-
-            insertMarkdownAfterNode(nodeId, nextMarkdown, `component-keyboard-paste-${nodeId}-${nextMarkdown.length}`)
-        }
-
-        void readSystemClipboardText().then(pasteMarkdown)
-    }
-
-    const handleCopy = (event: ReactClipboardEvent<HTMLDivElement>): void => {
-        if (event.target instanceof HTMLElement && isNativeEditableElement(event.target)) {
-            return
-        }
-
-        const selection = window.getSelection()
-        if (getComponentNodeForSelection(selection, documentRef.current.nodes, blockRefs.current)) {
-            return
-        }
-
-        const notebookElement = notebookRef.current
-        const markdown = notebookElement
-            ? getSelectedNotebookMarkdown(
-                  selection,
-                  notebookElement,
-                  documentRef.current.nodes,
-                  blockRefs.current,
-                  listItemRefs.current
-              )
-            : null
-        if (markdown) {
-            event.preventDefault()
-            setClipboardMarkdown(event.clipboardData, markdown)
-            return
-        }
-
-        const focusedComponentNode = getFocusedComponentNode(
-            window.document.activeElement,
-            documentRef.current.nodes,
-            blockRefs.current
-        )
-        if (focusedComponentNode) {
-            const markdown = serializeNotebookNodes([focusedComponentNode])
-            notebookClipboardMarkdownRef.current = markdown
-            event.preventDefault()
-            setClipboardMarkdown(event.clipboardData, markdown)
-            return
-        }
-    }
-
-    const handleCut = (event: ReactClipboardEvent<HTMLDivElement>): void => {
-        if (mode !== 'edit' || (event.target instanceof HTMLElement && isNativeEditableElement(event.target))) {
-            return
-        }
-
-        const selection = window.getSelection()
-        if (getComponentNodeForSelection(selection, documentRef.current.nodes, blockRefs.current)) {
-            return
-        }
-
-        const notebookElement = notebookRef.current
-        const markdown = notebookElement
-            ? getSelectedNotebookMarkdown(
-                  selection,
-                  notebookElement,
-                  documentRef.current.nodes,
-                  blockRefs.current,
-                  listItemRefs.current
-              )
-            : null
-        if (markdown) {
-            event.preventDefault()
-            notebookClipboardMarkdownRef.current = markdown
-            setClipboardMarkdown(event.clipboardData, markdown)
-            if (!deleteSelectedNotebookBlocks() && !deleteListItemRangeAtCurrentSelection('', true)) {
-                deleteTextAtCurrentSelection('forward')
-            }
-            return
-        }
-
-        const focusedComponentNode = getFocusedComponentNode(
-            window.document.activeElement,
-            documentRef.current.nodes,
-            blockRefs.current
-        )
-        if (focusedComponentNode) {
-            const markdown = serializeNotebookNodes([focusedComponentNode])
-            notebookClipboardMarkdownRef.current = markdown
-            event.preventDefault()
-            setClipboardMarkdown(event.clipboardData, markdown)
-            requestFocusAfterRemovingNode(focusedComponentNode.id)
-            updateNode(focusedComponentNode.id, () => null)
-            return
-        }
-    }
-
-    // Pasted files insert after the block holding the caret (or the focused component); pastes
-    // with no block context append to the end.
-    const getPasteInsertBoundaryIndex = (target: HTMLElement): number => {
-        const nodes = documentRef.current.nodes.length ? documentRef.current.nodes : [emptyNodeRef.current]
-        const focusedComponentNode = getFocusedComponentNode(target, nodes, blockRefs.current)
-        const nodeId = focusedComponentNode
-            ? focusedComponentNode.id
-            : target.closest<HTMLElement>('[data-markdown-notebook-node-id]')?.dataset.markdownNotebookNodeId
-        const nodeIndex = nodeId ? nodes.findIndex((node) => node.id === nodeId) : -1
-        return nodeIndex === -1 ? nodes.length : nodeIndex + 1
-    }
-
-    const handleNotebookPaste = (event: ReactClipboardEvent<HTMLDivElement>): void => {
-        if (mode !== 'edit' || !(event.target instanceof HTMLElement) || isNativeEditableElement(event.target)) {
-            return
-        }
-
-        // Pasted files (e.g. a screenshot) have no text representation the editor could insert —
-        // hand them to the external converter, mirroring the file drop path.
-        const clipboardFiles = event.clipboardData?.files
-        if (
-            convertExternalDataTransferToNodes &&
-            clipboardFiles?.length &&
-            !event.clipboardData.getData('text/plain')
-        ) {
-            const result = convertExternalDataTransferToNodes(event.clipboardData)
-            if (result) {
-                event.preventDefault()
-                event.stopPropagation()
-                const boundaryIndex = getPasteInsertBoundaryIndex(event.target)
-                if (result instanceof Promise) {
-                    void result.then((insertedNodes) => {
-                        if (insertedNodes?.length) {
-                            insertExternalNodesAtBoundary(insertedNodes, boundaryIndex)
-                        }
-                    })
-                    return
-                }
-                insertExternalNodesAtBoundary(result, boundaryIndex)
-                return
-            }
-        }
-
-        const targetComponentNode = getFocusedComponentNode(event.target, documentRef.current.nodes, blockRefs.current)
-        if (!targetComponentNode) {
-            return
-        }
-
-        const pastedMarkdown = getClipboardMarkdown(event.clipboardData)
-        if (!pastedMarkdown) {
-            return
-        }
-
-        const didPaste = insertMarkdownAfterNode(
-            targetComponentNode.id,
-            pastedMarkdown,
-            `component-paste-${targetComponentNode.id}-${pastedMarkdown.length}`
-        )
-        if (!didPaste) {
-            return
-        }
-
-        event.preventDefault()
-        event.stopPropagation()
-    }
-
     const getCurrentSelectionInlineRanges = (): {
         textRanges: FloatingToolbarTextRange[]
         listItemRanges: FloatingToolbarListItemRange[]
@@ -3647,6 +3232,7 @@ function MarkdownNotebookEditor({
                 intent: note?.intent,
                 suggestion: note?.suggestion,
                 scope: documentRef.current.annotations?.[hostRef]?.scope,
+                resolved: documentRef.current.annotations?.[hostRef]?.resolved,
                 top: overlay.top,
                 left: overlay.left,
             })
@@ -3677,6 +3263,7 @@ function MarkdownNotebookEditor({
                     intent: first.intent,
                     suggestion: first.suggestion,
                     scope: documentRef.current.annotations?.[refId]?.scope,
+                    resolved: documentRef.current.annotations?.[refId]?.resolved,
                     top: overlay.top,
                     left: overlay.left,
                 })
@@ -3717,6 +3304,7 @@ function MarkdownNotebookEditor({
             intent: note.intent,
             suggestion: note.suggestion,
             scope: 'block',
+            resolved: documentRef.current.annotations?.[refId]?.resolved,
             top: overlay.top,
             left: overlay.left,
         })
@@ -3752,6 +3340,24 @@ function MarkdownNotebookEditor({
         openBlockNotePopover(nodeId, refId, note, true)
     }
 
+    const runBlockMoreMenuAction = (nodeId: string, action: BlockMoreMenuAction): void => {
+        setBlockMenuNodeId(null)
+        if (action === 'comment') {
+            startBlockCommentForNode(nodeId)
+            return
+        }
+        if (action === 'invite') {
+            insertMenuApi.openPhilosopherInvite(nodeId)
+            return
+        }
+        if (action === 'wim-ai') {
+            openAIPrompt(nodeId)
+            return
+        }
+        requestFocusAfterRemovingNode(nodeId)
+        deleteNodeWithRefCleanup(nodeId)
+    }
+
     const copyFloatingToolbarSelection = (): void => {
         if (!floatingToolbar?.selectedMarkdown) {
             return
@@ -3763,6 +3369,49 @@ function MarkdownNotebookEditor({
     const closeInvitePicker = useCallback((): void => {
         setInvitePicker(null)
     }, [])
+
+    const closeMentionPicker = useCallback((): void => {
+        setMentionPicker(null)
+    }, [])
+
+    const insertMentionPerson = useCallback(
+        (person: MentionPerson): void => {
+            if (!mentionPicker) return
+            const tokenEnd = mentionPicker.start + 1 + mentionPicker.query.length
+            updateNode(mentionPicker.nodeId, (current) => {
+                if (isTextBlockNode(current)) {
+                    return {
+                        ...current,
+                        children: insertMentionMark(current.children, mentionPicker.start, tokenEnd, person),
+                    }
+                }
+                if (current.type === 'list' && mentionPicker.listItemIndex != null) {
+                    const itemIndex = mentionPicker.listItemIndex
+                    return {
+                        ...current,
+                        items: current.items.map((item, index) =>
+                            index === itemIndex
+                                ? {
+                                      ...item,
+                                      children: insertMentionMark(item.children, mentionPicker.start, tokenEnd, person),
+                                  }
+                                : item
+                        ),
+                    }
+                }
+                return current
+            })
+            const caret = mentionPicker.start + person.label.length + 1
+            restoreSelectionRef.current = {
+                nodeId: mentionPicker.nodeId,
+                start: caret,
+                end: caret,
+                listItemIndex: mentionPicker.listItemIndex,
+            }
+            setMentionPicker(null)
+        },
+        [mentionPicker, updateNode]
+    )
 
     const openInsertMenu = (nodeId: string, query: string = ''): void => {
         onInteractionStateChange?.(true)
@@ -4013,6 +3662,69 @@ function MarkdownNotebookEditor({
             setInvitePicker(null)
         }
     }, [invitePicker, mode])
+
+    useEffect(() => {
+        if (mode !== 'edit') {
+            setMentionPicker(null)
+            return
+        }
+
+        const syncMentionPicker = (): void => {
+            if (insertMenu || invitePicker) {
+                setMentionPicker(null)
+                return
+            }
+            if (window.document.activeElement?.closest('.MarkdownNotebook__mention-picker')) {
+                return
+            }
+            const notebookElement = notebookRef.current
+            if (!notebookElement) return
+            const element = getInlineEditableElementForSelection(window.getSelection(), notebookElement)
+            if (!element || element.classList.contains('MarkdownNotebook__text-block--ai-prompt')) {
+                setMentionPicker(null)
+                return
+            }
+            const nodeId = element.dataset.markdownNotebookNodeId
+            const node = nodeId ? documentRef.current.nodes.find((entry) => entry.id === nodeId) : null
+            if (!nodeId || !node) {
+                setMentionPicker(null)
+                return
+            }
+            let text = ''
+            let listItemIndex: number | undefined
+            if (isTextBlockNode(node)) {
+                text = getInlineText(node.children)
+            } else if (node.type === 'list') {
+                const itemId = element.dataset.markdownNotebookListItemId
+                const rawIndex = Number(element.dataset.markdownNotebookListItemIndex)
+                listItemIndex = getListItemIndex(node.items, rawIndex, itemId)
+                const item = node.items[listItemIndex]
+                if (!item) {
+                    setMentionPicker(null)
+                    return
+                }
+                text = getInlineText(item.children)
+            } else {
+                setMentionPicker(null)
+                return
+            }
+            const range = getSelectionRange(element, nodeId)
+            const caret = range ? Math.max(range.start, range.end) : text.length
+            const token = getMentionTokenAt(text, caret)
+            if (!token) {
+                setMentionPicker(null)
+                return
+            }
+            setMentionPicker({ nodeId, start: token.start, query: token.query, listItemIndex })
+        }
+
+        window.document.addEventListener('selectionchange', syncMentionPicker)
+        notebookRef.current?.addEventListener('keyup', syncMentionPicker)
+        return () => {
+            window.document.removeEventListener('selectionchange', syncMentionPicker)
+            notebookRef.current?.removeEventListener('keyup', syncMentionPicker)
+        }
+    }, [insertMenu, invitePicker, mode])
 
     useEffect(() => {
         if (!insertMenu) {
@@ -4489,219 +4201,6 @@ function MarkdownNotebookEditor({
         return true
     }, [updateNode])
 
-    const selectNotebookContents = (): boolean => {
-        const canvasElement = canvasRef.current
-        const selection = window.getSelection()
-        if (!canvasElement || !selection) {
-            return false
-        }
-
-        const nodes = documentRef.current.nodes.length ? documentRef.current.nodes : [emptyNodeRef.current]
-        const firstNode = nodes.find((node) => blockRefs.current[node.id])
-        const lastNode = [...nodes].reverse().find((node) => blockRefs.current[node.id])
-        if (!firstNode || !lastNode) {
-            return false
-        }
-
-        const firstElement = blockRefs.current[firstNode.id]
-        const lastElement = blockRefs.current[lastNode.id]
-        if (!firstElement || !lastElement) {
-            return false
-        }
-
-        const range = canvasElement.ownerDocument.createRange()
-        setNotebookSelectionStart(range, firstNode, firstElement)
-        setNotebookSelectionEnd(range, lastNode, lastElement)
-        selection.removeAllRanges()
-        selection.addRange(range)
-
-        setSelectedComponentNodeIds(getSelectedComponentNodeIds(selection, nodes, blockRefs.current))
-        scheduleFloatingToolbarUpdateFromSelection()
-        return true
-    }
-
-    const selectTextBlockContents = (target: EventTarget | null): boolean => {
-        if (!(target instanceof HTMLElement)) {
-            return false
-        }
-
-        const activeTextBlockElement = target.closest('.MarkdownNotebook__text-block')
-        const selection = window.getSelection()
-        if (!(activeTextBlockElement instanceof HTMLElement) || !canvasRef.current?.contains(activeTextBlockElement)) {
-            return false
-        }
-
-        if (!selection) {
-            return false
-        }
-
-        const range = activeTextBlockElement.ownerDocument.createRange()
-        const startPosition = findTextPosition(activeTextBlockElement, 0)
-        const endPosition = findTextPosition(activeTextBlockElement, activeTextBlockElement.textContent?.length ?? 0)
-        range.setStart(startPosition.node, startPosition.offset)
-        range.setEnd(endPosition.node, endPosition.offset)
-        if (selectionMatchesRange(selection, range)) {
-            return false
-        }
-
-        selection.removeAllRanges()
-        selection.addRange(range)
-
-        setSelectedComponentNodeIds(new Set())
-        scheduleFloatingToolbarUpdateFromSelection()
-        return true
-    }
-
-    const selectCodeBlockContents = (target: EventTarget | null): boolean => {
-        if (!(target instanceof HTMLElement)) {
-            return false
-        }
-
-        const codeBlockElement = target.closest('.MarkdownNotebook__code-block')
-        if (!(codeBlockElement instanceof HTMLElement) || !canvasRef.current?.contains(codeBlockElement)) {
-            return false
-        }
-
-        const selection = window.getSelection()
-        if (!selection) {
-            return false
-        }
-
-        const range = codeBlockElement.ownerDocument.createRange()
-        const startPosition = findTextPosition(codeBlockElement, 0)
-        const endPosition = findTextPosition(codeBlockElement, codeBlockElement.textContent?.length ?? 0)
-        range.setStart(startPosition.node, startPosition.offset)
-        range.setEnd(endPosition.node, endPosition.offset)
-        if (selectionMatchesRange(selection, range)) {
-            return false
-        }
-
-        codeBlockElement.focus()
-        selection.removeAllRanges()
-        selection.addRange(range)
-        setSelectedComponentNodeIds(new Set())
-        scheduleFloatingToolbarUpdateFromSelection()
-        return true
-    }
-
-    const selectAIPromptContents = (target: EventTarget | null): boolean => {
-        if (!(target instanceof HTMLElement)) {
-            return false
-        }
-
-        const aiPromptTextBlock = target.closest('.MarkdownNotebook__text-block--ai-prompt')
-        if (!(aiPromptTextBlock instanceof HTMLElement) || !canvasRef.current?.contains(aiPromptTextBlock)) {
-            return false
-        }
-
-        aiPromptTextBlock.focus()
-        restoreSelection(aiPromptTextBlock, 0, aiPromptTextBlock.textContent?.length ?? 0)
-        scheduleFloatingToolbarUpdateFromSelection()
-        return true
-    }
-
-    const handleNotebookKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-        if (mode !== 'edit' || event.altKey || !(event.metaKey || event.ctrlKey)) {
-            return
-        }
-
-        if (
-            event.target instanceof HTMLElement &&
-            isNativeEditableElement(event.target)
-        ) {
-            return
-        }
-
-        const key = event.key.toLowerCase()
-        const inlineMarkShortcuts: Partial<Record<string, NotebookInlineMark['type']>> = {
-            b: 'bold',
-            i: 'italic',
-            u: 'underline',
-        }
-        const shiftInlineMarkShortcuts: Partial<Record<string, NotebookInlineMark['type']>> = {
-            x: 'strike',
-        }
-
-        if (!event.shiftKey && key === 'a') {
-            if (selectAIPromptContents(event.target)) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (insertMenu) {
-                return
-            }
-
-            if (selectTextBlockContents(event.target) || selectCodeBlockContents(event.target)) {
-                event.preventDefault()
-                event.stopPropagation()
-                return
-            }
-
-            if (selectNotebookContents()) {
-                event.preventDefault()
-                event.stopPropagation()
-            }
-            return
-        }
-
-        const inlineMarkType = event.shiftKey ? shiftInlineMarkShortcuts[key] : inlineMarkShortcuts[key]
-        if (inlineMarkType) {
-            if (insertMenu) {
-                return
-            }
-
-            if (applyInlineMark(inlineMarkType, getCurrentSelectionInlineRanges())) {
-                event.preventDefault()
-                event.stopPropagation()
-            }
-            return
-        }
-
-        const focusedComponentNode = getFocusedComponentNode(
-            window.document.activeElement,
-            documentRef.current.nodes,
-            blockRefs.current
-        )
-        if (focusedComponentNode && !event.shiftKey && key === 'c') {
-            const focusedComponentElement = blockRefs.current[focusedComponentNode.id]
-            if (focusedComponentElement && isSelectionInsideElement(window.getSelection(), focusedComponentElement)) {
-                return
-            }
-
-            copyMarkdownToNotebookClipboard(serializeNotebookNodes([focusedComponentNode]))
-            event.preventDefault()
-            event.stopPropagation()
-            return
-        }
-        if (focusedComponentNode && !event.shiftKey && key === 'v') {
-            pasteNotebookClipboardAfterNode(focusedComponentNode.id)
-            event.preventDefault()
-            event.stopPropagation()
-            return
-        }
-
-        const isUndoShortcut = key === 'z'
-        const isRedoShortcut = key === 'y' && !event.shiftKey
-        if (!isUndoShortcut && !isRedoShortcut) {
-            return
-        }
-
-        if (isUndoShortcut) {
-            if (event.shiftKey) {
-                redoHistory()
-            } else {
-                undoHistory()
-            }
-        } else {
-            redoHistory()
-        }
-
-        event.preventDefault()
-        event.stopPropagation()
-    }
-
     const handleMainMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || event.button !== 0 || event.defaultPrevented) {
             return
@@ -4866,6 +4365,56 @@ function MarkdownNotebookEditor({
             nodes: [...nodes.slice(0, clampedBoundaryIndex), ...insertedNodes, ...nodes.slice(clampedBoundaryIndex)],
         })
     }
+
+    const {
+        copyMarkdownToNotebookClipboard,
+        pasteNotebookClipboardAfterNode,
+        handleCopy,
+        handleCut,
+        handleNotebookPaste,
+    } = useNotebookClipboard({
+        mode,
+        documentRef,
+        notebookElementRef: notebookRef,
+        blockRefs,
+        listItemRefs,
+        emptyNodeRef,
+        convertExternalDataTransferToNodes,
+        insertMarkdownAfterNode,
+        insertExternalNodesAtBoundary,
+        deleteSelectedNotebookBlocks,
+        deleteListItemRangeAtCurrentSelection,
+        deleteTextAtCurrentSelection,
+        requestFocusAfterRemovingNode,
+        updateNode,
+    })
+
+    const { handleNotebookKeyDown } = useNotebookKeyboard({
+        mode,
+        insertMenu,
+        documentRef,
+        notebookElementRef: notebookRef,
+        canvasRef,
+        blockRefs,
+        emptyNodeRef,
+        undoHistory,
+        redoHistory,
+        copyMarkdownToNotebookClipboard,
+        pasteNotebookClipboardAfterNode,
+        applyInlineMark,
+        getCurrentSelectionInlineRanges,
+        setSelectedComponentNodeIds,
+        scheduleFloatingToolbarUpdateFromSelection,
+        deleteListItemAtCurrentSelection,
+        deleteListItemRangeAtCurrentSelection,
+        deleteSelectedNotebookBlocks,
+        deleteTextAtCurrentSelection,
+        insertNewlineInCodeBlockAtCurrentSelection,
+        insertTableRowAtCurrentSelection,
+        splitListItemAtCurrentSelection,
+        splitTextBlockAtCurrentSelection,
+        startInsertMenuAtCurrentTextSelection,
+    })
 
     const handleCanvasDragOver = (event: ReactDragEvent<HTMLDivElement>): void => {
         if (!blockDragNodeIdRef.current) {
@@ -5647,7 +5196,10 @@ function MarkdownNotebookEditor({
                         <button
                             key={`${annotation.id}:${note.by}`}
                             type="button"
-                            className="MarkdownNotebook__piece-note"
+                            className={clsx(
+                                'MarkdownNotebook__piece-note',
+                                annotation.resolved && 'MarkdownNotebook__piece-note--resolved'
+                            )}
                             data-notebook-ref={annotation.id}
                             data-note-by={note.by}
                             data-note-name={note.name}
@@ -5710,6 +5262,17 @@ function MarkdownNotebookEditor({
                 ? document.annotations?.[node.blockId]?.notes || []
                 : []
         const canCommentOnBlock = mode === 'edit' && !isAIPromptOpen && !isAIWritingNode && !isDiscussionCommentNode(node)
+        const canShowMoreMenu = canShowBlockMoreMenu({
+            mode,
+            isTitleRow,
+            isAIPrompt: isAIPromptOpen,
+            isAIWriting: isAIWritingNode,
+            isDiscussionComment: isDiscussionCommentNode(node),
+        })
+        const blockMoreMenuItems = canShowMoreMenu
+            ? buildBlockMoreMenuItems({ canInvite: true, canAskAI: Boolean(onAskAI) })
+            : []
+        const isBlockMenuOpen = blockMenuNodeId === node.id
 
         return (
             <div
@@ -5719,7 +5282,9 @@ function MarkdownNotebookEditor({
                     isAIPromptOpen && 'MarkdownNotebook__row--ai-prompt',
                     isAIWritingNode && 'MarkdownNotebook__row--ai-writing',
                     isDiscussionCommentNode(node) && 'MarkdownNotebook__row--margin-comment',
-                    draggingNodeId === node.id && 'MarkdownNotebook__row--dragging'
+                    draggingNodeId === node.id && 'MarkdownNotebook__row--dragging',
+                    inlineNotePopover?.nodeId === node.id && 'MarkdownNotebook__row--note-open',
+                    isBlockMenuOpen && 'MarkdownNotebook__row--menu-open'
                 )}
                 onMouseEnter={(event) => updateActiveBoundaryFromRow(event, index)}
                 onMouseMove={(event) => updateActiveBoundaryFromRow(event, index)}
@@ -5745,7 +5310,7 @@ function MarkdownNotebookEditor({
                         <IconDrag />
                     </div>
                 ) : null}
-                {canCommentOnBlock || blockNotes.length ? (
+                {canCommentOnBlock || canShowMoreMenu || blockNotes.length ? (
                     <div className="MarkdownNotebook__block-chrome" contentEditable={false}>
                         {blockNotes.length ? (
                             <div className="MarkdownNotebook__block-notes">
@@ -5753,7 +5318,11 @@ function MarkdownNotebookEditor({
                                     <button
                                         key={`${node.blockId}:${note.by}`}
                                         type="button"
-                                        className="MarkdownNotebook__piece-note"
+                                        className={clsx(
+                                            'MarkdownNotebook__piece-note',
+                                            document.annotations?.[node.blockId]?.resolved &&
+                                                'MarkdownNotebook__piece-note--resolved'
+                                        )}
                                         data-notebook-ref={node.blockId}
                                         data-note-by={note.by}
                                         data-note-name={note.name}
@@ -5793,6 +5362,33 @@ function MarkdownNotebookEditor({
                             >
                                 <IconComment />
                             </button>
+                        ) : null}
+                        {canShowMoreMenu ? (
+                            <LemonMenu
+                                placement="bottom-end"
+                                onVisibilityChange={(visible) =>
+                                    setBlockMenuNodeId((current) => {
+                                        if (visible) return node.id
+                                        return current === node.id ? null : current
+                                    })
+                                }
+                                items={blockMoreMenuItems.map((item) => ({
+                                    label: item.label,
+                                    status: item.status,
+                                    onClick: () => runBlockMoreMenuAction(node.id, item.key),
+                                }))}
+                            >
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__block-more-btn"
+                                    aria-label="Block actions"
+                                    title="Block actions"
+                                    data-attr="markdown-notebook-block-menu"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                >
+                                    <IconEllipsis />
+                                </button>
+                            </LemonMenu>
                         ) : null}
                     </div>
                 ) : null}
@@ -6156,6 +5752,23 @@ function MarkdownNotebookEditor({
                             onConfirm={(botIds) => invitePhilosophersToNode(invitePicker.nodeId, botIds)}
                         />
                     ) : null}
+                    {mentionPicker ? (
+                        <MentionPicker
+                            people={filterMentionPeople(listMentionPeople(), mentionPicker.query)}
+                            query={mentionPicker.query}
+                            position={
+                                blockRefs.current[mentionPicker.nodeId]
+                                    ? getInsertMenuPosition(blockRefs.current[mentionPicker.nodeId]!, {
+                                          width: INVITE_PICKER_WIDTH,
+                                          maxHeight: INVITE_PICKER_MAX_HEIGHT,
+                                          minHeight: INVITE_PICKER_MIN_HEIGHT,
+                                      })
+                                    : null
+                            }
+                            onClose={closeMentionPicker}
+                            onPick={insertMentionPerson}
+                        />
+                    ) : null}
                     {inviteStatus ? (
                         <div
                             className={clsx(
@@ -6194,6 +5807,7 @@ function MarkdownNotebookEditor({
                             scope={inlineNotePopover.scope}
                             pending={inlineNotePopover.pending}
                             draft={inlineNotePopover.draft}
+                            resolved={inlineNotePopover.resolved}
                             top={inlineNotePopover.top}
                             left={inlineNotePopover.left}
                             onChangeDraft={(value) =>
@@ -6221,6 +5835,20 @@ function MarkdownNotebookEditor({
                                 returnFocusToEditor(nodeId)
                             }}
                             onDelete={() => removeInlineNote(inlineNotePopover.refId, inlineNotePopover.by)}
+                            onToggleResolved={
+                                inlineNotePopover.draft
+                                    ? undefined
+                                    : () => {
+                                          const next = inlineNotePopover
+                                          const resolved = !next.resolved
+                                          updateAnnotations((current) =>
+                                              setAnnotationResolved(current, next.refId, resolved)
+                                          )
+                                          setInlineNotePopover((current) =>
+                                              current ? { ...current, resolved } : current
+                                          )
+                                      }
+                            }
                             onApply={
                                 inlineNotePopover.intent === 'edit' && inlineNotePopover.suggestion
                                     ? () => {

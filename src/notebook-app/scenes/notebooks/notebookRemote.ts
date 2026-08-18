@@ -273,14 +273,24 @@ export function planOpenNotebookRemoteApply(input: {
     latest: Pick<StoredNotebook, 'version' | 'updatedAt' | 'content' | 'title'>
     draftContent: string
     draftTitle: string
-}): { adopt: boolean; applyContent: boolean; applyTitle: boolean } {
+}): { adopt: boolean; applyContent: boolean; applyTitle: boolean; applyRemoteBase: boolean } {
     if (!shouldAdoptRemoteNotebook(input.current, input.latest)) {
-        return { adopt: false, applyContent: false, applyTitle: false }
+        return { adopt: false, applyContent: false, applyTitle: false, applyRemoteBase: false }
     }
+    const dirtyContent = input.draftContent !== input.current.content
+    const latestIsLastSave = input.latest.content === input.current.content
+    const latestIsDraft = input.latest.content === input.draftContent
+    // Own save / version echo: the draft already continues from this body. Feeding it back
+    // as remoteValue makes the editor merge a stale ancestor and can rewind keystrokes.
+    const latestLooksLikeRewind =
+        dirtyContent &&
+        input.latest.content.length < input.draftContent.length &&
+        input.draftContent.startsWith(input.latest.content)
     return {
         adopt: true,
-        applyContent: input.draftContent === input.current.content,
+        applyContent: !dirtyContent,
         applyTitle: input.draftTitle === input.current.title,
+        applyRemoteBase: latestIsDraft || (!latestIsLastSave && !latestLooksLikeRewind),
     }
 }
 

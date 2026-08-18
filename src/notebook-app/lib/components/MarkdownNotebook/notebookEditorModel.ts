@@ -204,6 +204,42 @@ function componentNodeErrorsKey(node: NotebookComponentBlockNode): string {
     return node.errors?.join('\n') ?? ''
 }
 
+export type BlockMoreMenuAction = 'comment' | 'invite' | 'wim-ai' | 'delete'
+
+export type BlockMoreMenuItem = {
+    key: BlockMoreMenuAction
+    label: string
+    status?: 'danger'
+}
+
+export function canShowBlockMoreMenu(options: {
+    mode: NotebookMode
+    isTitleRow: boolean
+    isAIPrompt: boolean
+    isAIWriting: boolean
+    isDiscussionComment: boolean
+}): boolean {
+    return (
+        options.mode === 'edit' &&
+        !options.isTitleRow &&
+        !options.isAIPrompt &&
+        !options.isAIWriting &&
+        !options.isDiscussionComment
+    )
+}
+
+export function buildBlockMoreMenuItems(options: { canInvite?: boolean; canAskAI?: boolean } = {}): BlockMoreMenuItem[] {
+    const items: BlockMoreMenuItem[] = [{ key: 'comment', label: 'Comment' }]
+    if (options.canInvite !== false) {
+        items.push({ key: 'invite', label: 'Invite' })
+    }
+    if (options.canAskAI) {
+        items.push({ key: 'wim-ai', label: 'WIM AI' })
+    }
+    items.push({ key: 'delete', label: 'Delete', status: 'danger' })
+    return items
+}
+
 export function makePromptComponentNode(id: string, props: NotebookComponentProps): NotebookComponentBlockNode {
     return {
         id,

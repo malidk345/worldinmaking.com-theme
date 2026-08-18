@@ -52,6 +52,7 @@ export function EditablePromptComponent({
     const [isReviewing, setIsReviewing] = useState(false)
     const question = getNotebookStringProp(node.props.question) ?? ''
     const selectedMarkdown = (getNotebookStringProp(node.props.selectedMarkdown) ?? '').trim()
+    const error = (getNotebookStringProp(node.props.error) ?? '').trim()
     const autoRun = node.props.autoRun === true
 
     const setElementRef = useCallback(
@@ -62,15 +63,18 @@ export function EditablePromptComponent({
         [setBlockRef]
     )
 
-    // Detect when AI finish writing to switch to Accept/Reject review mode
+    // Detect when AI finish writing to switch to Accept/Reject review mode.
+    // A failed request sets `error` and must not look like a successful edit.
     useEffect(() => {
         if (isAIPromptSubmitDisabled) {
             wasBusyRef.current = true
-        } else if (wasBusyRef.current) {
-            wasBusyRef.current = false
-            setIsReviewing(true)
+            return
         }
-    }, [isAIPromptSubmitDisabled])
+        if (wasBusyRef.current) {
+            wasBusyRef.current = false
+            if (!error) setIsReviewing(true)
+        }
+    }, [error, isAIPromptSubmitDisabled])
 
     useEffect(() => {
         if (!wrapperRef.current) return
@@ -116,6 +120,7 @@ export function EditablePromptComponent({
                 props: {
                     ...currentNode.props,
                     question: nextQuestion,
+                    error: '',
                 },
             }
         })
@@ -125,6 +130,14 @@ export function EditablePromptComponent({
     const handleRunPrompt = (queryToRun: string = question): void => {
         if (!queryToRun.trim() || isAIPromptSubmitDisabled) {
             return
+        }
+        if (error) {
+            updateNode(node.id, (currentNode) => {
+                if (!isPromptComponentNode(currentNode)) {
+                    return currentNode
+                }
+                return { ...currentNode, props: { ...currentNode.props, error: '' } }
+            })
         }
         submitAIPrompt(queryToRun)
     }
@@ -228,7 +241,8 @@ export function EditablePromptComponent({
                 className={clsx(
                     'WimInlinePill',
                     isFlipped && 'WimInlinePill--flipped',
-                    isAIPromptSubmitDisabled && 'WimInlinePill--busy'
+                    isAIPromptSubmitDisabled && 'WimInlinePill--busy',
+                    error && 'WimInlinePill--error'
                 )}
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
@@ -279,6 +293,7 @@ export function EditablePromptComponent({
                     <IconArrowUp className="size-3.5 stroke-[2.5]" />
                 </button>
             </div>
+            {error ? <p className="WimInlinePill__error">{error}</p> : null}
 
             {/* Presets Popup Menu when (+) is clicked */}
             {showPresets && !question.trim() && (

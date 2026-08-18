@@ -27,8 +27,15 @@ import {
 import { formatNoteTime, parseInlineNotes } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineNotes'
 import {
     mergeAnnotationMaps,
+    setAnnotationResolved,
     upsertAnnotation,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/annotations'
+import {
+    filterMentionPeople,
+    getMentionTokenAt,
+    insertMentionMark,
+    listMentionPeople,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/mentionPeople'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
 import { applyPhilosopherInviteNotes } from '../src/notebook-app/lib/components/MarkdownNotebook/inviteApply'
 import { planOpenAIPromptInsert } from '../src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert'
@@ -44,7 +51,16 @@ import {
 import { getNodeFingerprint } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components/MarkdownNotebook/collaboration'
 import { isNotebookImageFile, notebookImageExtension } from '../src/lib/notebook-upload-shared'
-import type { StoredNotebook } from '../src/notebook-app/scenes/notebooks/notebookStorage'
+import {
+    compactHistoryForStorage,
+    getNotebookHistory,
+    writeNotebookHistory,
+    type StoredNotebook,
+} from '../src/notebook-app/scenes/notebooks/notebookStorage'
+import {
+    buildBlockMoreMenuItems,
+    canShowBlockMoreMenu,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/notebookEditorModel'
 import {
     notebookMatchesQuery,
     notebookPreviewExcerpt,
@@ -206,7 +222,7 @@ test.describe('notebook frontend helpers', () => {
             draftTitle: 'Local',
         })
         expect(shouldAdoptRemoteNotebook(current, latest)).toBe(true)
-        expect(dirty).toEqual({ adopt: true, applyContent: false, applyTitle: true })
+        expect(dirty).toEqual({ adopt: true, applyContent: false, applyTitle: true, applyRemoteBase: true })
 
         const clean = planOpenNotebookRemoteApply({
             current,
@@ -214,7 +230,20 @@ test.describe('notebook frontend helpers', () => {
             draftContent: 'saved',
             draftTitle: 'Local',
         })
-        expect(clean).toEqual({ adopt: true, applyContent: true, applyTitle: true })
+        expect(clean).toEqual({ adopt: true, applyContent: true, applyTitle: true, applyRemoteBase: true })
+
+        const ownSaveEcho = planOpenNotebookRemoteApply({
+            current,
+            latest: { ...latest, content: 'saved', title: 'Local' },
+            draftContent: 'saved plus local typing',
+            draftTitle: 'Local',
+        })
+        expect(ownSaveEcho).toEqual({
+            adopt: true,
+            applyContent: false,
+            applyTitle: true,
+            applyRemoteBase: false,
+        })
     })
 
     test('discussion replies parse, append, and delete by id', () => {
@@ -320,6 +349,60 @@ test.describe('notebook frontend helpers', () => {
         expect(getNodeFingerprint(withReply.nodes.find((node) => node.type === 'paragraph')!)).toBe(
             getNodeFingerprint(paragraph)
         )
+    })
+
+    test('mention marks and resolved notes survive serialize', () => {
+        expect(getMentionTokenAt('hello @mar', 10)).toEqual({ start: 6, query: 'mar' })
+        expect(getMentionTokenAt('mail@x.com', 10)).toBeNull()
+        const people = listMentionPeople()
+        expect(people.some((person) => person.id === 'marx')).toBe(true)
+        expect(filterMentionPeople(people, 'mar').map((person) => person.id)).toContain('marx')
+
+        const mentioned = insertMentionMark([{ type: 'text', text: 'hi @mar' }], 3, 7, {
+            id: 'marx',
+            label: 'Marx',
+        })
+        const parsed = parseMarkdownNotebook(
+            serializeMarkdownNotebook({
+                type: 'doc',
+                nodes: [{ id: 'p1', type: 'paragraph', children: mentioned }],
+                errors: [],
+            })
+        )
+        const paragraph = parsed.nodes[0]
+        expect(paragraph?.type).toBe('paragraph')
+        if (paragraph?.type !== 'paragraph') return
+        expect(paragraph.children[0]).toMatchObject({
+            type: 'text',
+            text: 'hi ',
+        })
+        expect(paragraph.children[1]).toMatchObject({
+            type: 'text',
+            text: '@Marx',
+            marks: [{ type: 'mention', id: 'marx' }],
+        })
+
+        const withNote = upsertAnnotation({}, 'abc', [{ by: 'you', name: 'Ada', text: 'keep me', kind: 'human' }])
+        const resolved = setAnnotationResolved(withNote, 'abc', true)
+        expect(resolved.abc.notes[0].text).toBe('keep me')
+        expect(resolved.abc.resolved).toBe(true)
+        const saved = serializeMarkdownNotebook({
+            type: 'doc',
+            nodes: [
+                {
+                    id: 'p1',
+                    type: 'paragraph',
+                    children: [{ type: 'text', text: 'Life', marks: [{ type: 'ref', id: 'abc' }] }],
+                },
+            ],
+            annotations: resolved,
+            errors: [],
+        })
+        expect(saved).toContain('"resolved":true')
+        expect(parseMarkdownNotebook(saved).annotations?.abc).toMatchObject({
+            resolved: true,
+            notes: [{ text: 'keep me' }],
+        })
     })
 
     test('annotation maps merge by author without touching the other side', () => {
@@ -484,6 +567,48 @@ test.describe('notebook frontend helpers', () => {
         expect(planned.nodes[1]).toMatchObject({ type: 'component', tagName: 'Prompt' })
     })
 
+    test('block more menu is Comment / Invite / WIM AI / Delete, not on title or writing rows', () => {
+        expect(
+            canShowBlockMoreMenu({
+                mode: 'edit',
+                isTitleRow: false,
+                isAIPrompt: false,
+                isAIWriting: false,
+                isDiscussionComment: false,
+            })
+        ).toBe(true)
+        expect(
+            canShowBlockMoreMenu({
+                mode: 'edit',
+                isTitleRow: true,
+                isAIPrompt: false,
+                isAIWriting: false,
+                isDiscussionComment: false,
+            })
+        ).toBe(false)
+        expect(
+            canShowBlockMoreMenu({
+                mode: 'edit',
+                isTitleRow: false,
+                isAIPrompt: false,
+                isAIWriting: true,
+                isDiscussionComment: false,
+            })
+        ).toBe(false)
+        expect(buildBlockMoreMenuItems({ canAskAI: true }).map((item) => item.key)).toEqual([
+            'comment',
+            'invite',
+            'wim-ai',
+            'delete',
+        ])
+        expect(buildBlockMoreMenuItems({ canAskAI: false }).map((item) => item.key)).toEqual([
+            'comment',
+            'invite',
+            'delete',
+        ])
+        expect(buildBlockMoreMenuItems({ canAskAI: true }).find((item) => item.key === 'delete')?.status).toBe('danger')
+    })
+
     test('presence ignores this client and only draws carets with a node index', () => {
         const colorA = caretColorForClient('peer-a')
         const colorB = caretColorForClient('peer-b')
@@ -526,5 +651,23 @@ test.describe('notebook frontend helpers', () => {
         expect(isNotebookImageFile({ type: 'application/pdf' })).toBe(false)
         expect(notebookImageExtension('image/webp')).toBe('webp')
         expect(notebookImageExtension('image/jpeg')).toBe('jpg')
+    })
+
+    test('history keeps only three full bodies and writeHistory survives quota', () => {
+        const entries = Array.from({ length: 6 }, (_, index) => ({
+            version: index + 1,
+            content: `body-${index + 1}`,
+            title: 'Doc',
+            timestamp: `2026-08-19T12:0${index}:00.000Z`,
+        }))
+        const compacted = compactHistoryForStorage(entries)
+        expect(compacted).toHaveLength(6)
+        expect(compacted.slice(0, 3).every((entry) => !entry.content)).toBe(true)
+        expect(compacted.slice(-3).map((entry) => entry.content)).toEqual(['body-4', 'body-5', 'body-6'])
+        expect(() => writeNotebookHistory('nb-quota-test', entries)).not.toThrow()
+        if (typeof localStorage !== 'undefined') {
+            expect(getNotebookHistory('nb-quota-test').length).toBeGreaterThan(0)
+            localStorage.removeItem('wim_notebook_history_nb-quota-test')
+        }
     })
 })

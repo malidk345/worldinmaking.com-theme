@@ -6,6 +6,7 @@ import {
 import { planOpenNotebookRemoteApply } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
+    applyNotebookAIFailure,
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
@@ -15,7 +16,7 @@ import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands
 
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
 import { playInlineEditorMarkdown } from './lib/wimai-typewriter'
-import { notebookExcerptForEditor } from '../lib/bots/wimai-editor'
+import { notebookExcerptForEditor, wimaiEditorFailureMessage } from '../lib/bots/wimai-editor'
 import {
     StoredNotebook,
     getNotebooks,
@@ -171,6 +172,68 @@ export function App() {
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
   const editorContainerRef = useRef<HTMLDivElement | null>(null)
+  const routeRef = useRef(route)
+  const notebookRef = useRef(currentNotebook)
+  const markdownRef = useRef(markdown)
+  const titleRef = useRef(title)
+  const saveInFlightRef = useRef(false)
+  const saveQueuedRef = useRef(false)
+  useEffect(() => {
+    routeRef.current = route
+  }, [route])
+  useEffect(() => {
+    notebookRef.current = currentNotebook
+  }, [currentNotebook])
+  useEffect(() => {
+    markdownRef.current = markdown
+  }, [markdown])
+  useEffect(() => {
+    titleRef.current = title
+  }, [title])
+
+  const persistOpenNotebookDraft = useCallback((reason: 'idle' | 'flush'): boolean => {
+    if (routeRef.current.page !== 'editor') return false
+    if (!notebookRef.current) return false
+    if (saveInFlightRef.current) {
+      saveQueuedRef.current = true
+      return false
+    }
+
+    saveInFlightRef.current = true
+    let didSave = false
+    try {
+      do {
+        saveQueuedRef.current = false
+        const current = notebookRef.current
+        if (!current) break
+        const nextTitle = titleRef.current
+        const nextContent = markdownRef.current
+        if (nextContent === current.content && nextTitle === current.title) {
+          if (reason === 'idle') setSyncStatus('saved')
+          break
+        }
+        const saved = saveNotebook({ ...current, title: nextTitle, content: nextContent })
+        notebookRef.current = saved
+        setCurrentNotebook(saved)
+        setRemoteMarkdown(saved.content)
+        didSave = true
+      } while (saveQueuedRef.current)
+
+      if (didSave) {
+        const stillTyping =
+          markdownRef.current !== notebookRef.current?.content ||
+          titleRef.current !== notebookRef.current?.title
+        setSyncStatus(stillTyping ? 'edited' : 'saved')
+      }
+    } finally {
+      saveInFlightRef.current = false
+    }
+
+    if (saveQueuedRef.current) {
+      return persistOpenNotebookDraft(reason) || didSave
+    }
+    return didSave
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -275,6 +338,18 @@ export function App() {
       }
     }
 
+    const fail = (error: string) => {
+      if (requestId !== askAIAbortRef.current) return
+      setMarkdown(
+        applyNotebookAIFailure(request.markdownWithResponse, {
+          apply: request.apply ?? 'block',
+          responseNodeIndex: request.responseNodeIndex,
+          instruction: (request.instruction || request.query || '').trim(),
+          error,
+        })
+      )
+    }
+
     try {
       const instruction = (request.instruction || request.query || '').trim()
       const res = await fetch('/api/notebook/inline-edit', {
@@ -283,7 +358,10 @@ export function App() {
         body: JSON.stringify({
           instruction,
           selection: request.selectedMarkdown || '',
-          notebook: notebookExcerptForEditor(request.markdownWithResponse, request.responseMarker),
+          notebook: notebookExcerptForEditor(request.markdownWithResponse, request.responseMarker, {
+            nodeIndex: request.responseNodeIndex,
+            selectedMarkdown: request.selectedMarkdown,
+          }),
         }),
       })
 
@@ -294,14 +372,15 @@ export function App() {
         data = null
       }
 
-      const reply =
-        (typeof data?.markdown === 'string' && data.markdown.trim()) ||
-        (typeof data?.error === 'string' && data.error) ||
-        (res.ok ? 'No edit returned. Try again.' : `Request failed (${res.status}).`)
-
       if (requestId !== askAIAbortRef.current) return
 
-      if (!data?.ok || !data.markdown?.trim() || request.apply === 'inline') {
+      const reply = typeof data?.markdown === 'string' ? data.markdown.trim() : ''
+      if (!data?.ok || !reply) {
+        fail(wimaiEditorFailureMessage(data, res.status))
+        return
+      }
+
+      if (request.apply === 'inline') {
         applyStatic(reply)
         return reply
       }
@@ -309,7 +388,7 @@ export function App() {
       await playInlineEditorMarkdown({
         baseMarkdown: request.markdownWithResponse,
         responseNodeIndex: request.responseNodeIndex,
-        fullText: data.markdown,
+        fullText: reply,
         isCancelled: () => requestId !== askAIAbortRef.current,
         onFrame: (nextMarkdown) => {
           if (requestId !== askAIAbortRef.current) return
@@ -319,7 +398,7 @@ export function App() {
       return reply
     } catch (error) {
       console.warn('[notebook editor] request failed', error)
-      applyStatic('The editor is unreachable right now. Please try again.')
+      fail('The editor is unreachable right now. Please try again.')
     } finally {
       if (requestId === askAIAbortRef.current) {
         setIsAskAIBusy(false)
@@ -357,20 +436,23 @@ export function App() {
 
   useEffect(() => {
     if (route.page !== 'editor' || !currentNotebook) return
+    const notebookId = currentNotebook.id
     const applyRemoteIfNewer = () => {
-      const latest = getNotebook(currentNotebook.id)
-      if (!latest) {
+      const latest = getNotebook(notebookId)
+      const current = notebookRef.current
+      if (!latest || !current || current.id !== notebookId) {
         return
       }
       const plan = planOpenNotebookRemoteApply({
-        current: currentNotebook,
+        current,
         latest,
-        draftContent: markdown,
-        draftTitle: title,
+        draftContent: markdownRef.current,
+        draftTitle: titleRef.current,
       })
       if (!plan.adopt) return
+      notebookRef.current = latest
       setCurrentNotebook(latest)
-      setRemoteMarkdown(latest.content)
+      if (plan.applyRemoteBase) setRemoteMarkdown(latest.content)
       if (plan.applyContent) setMarkdown(latest.content)
       if (plan.applyTitle) setTitle(latest.title)
       if (plan.applyContent && plan.applyTitle) setSyncStatus('saved')
@@ -381,9 +463,10 @@ export function App() {
       window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, applyRemoteIfNewer)
       window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, applyRemoteIfNewer)
     }
-  }, [route.page, currentNotebook, markdown, title])
+  }, [route.page, currentNotebook?.id])
 
-  // Auto-save with debounce (snapshots throttled inside saveNotebook)
+  // Auto-save after idle. Always read the latest draft from refs so a save that
+  // lands while the user is already typing again cannot write (or echo) a stale body.
   useEffect(() => {
     if (!currentNotebook || route.page !== 'editor') return
     const dirty = markdown !== currentNotebook.content || title !== currentNotebook.title
@@ -392,13 +475,28 @@ export function App() {
       return
     }
     setSyncStatus('edited')
-    const timer = setTimeout(() => {
-      const saved = saveNotebook({ ...currentNotebook, title, content: markdown })
-      setCurrentNotebook(saved)
-      setSyncStatus('saved')
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [markdown, title]) // eslint-disable-line react-hooks/exhaustive-deps
+    const timer = window.setTimeout(() => {
+      persistOpenNotebookDraft('idle')
+    }, 1100)
+    return () => window.clearTimeout(timer)
+  }, [markdown, title, currentNotebook?.id, route.page, persistOpenNotebookDraft])
+
+  useEffect(() => {
+    if (route.page !== 'editor' || !currentNotebook) return
+    const flush = () => {
+      persistOpenNotebookDraft('flush')
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      flush()
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [route.page, currentNotebook?.id, persistOpenNotebookDraft])
 
   const handlePublish = useCallback(
     (meta: {
@@ -474,19 +572,6 @@ export function App() {
     })
     setMarkdownVersion((v) => v + 1)
   }, [])
-
-  const routeRef = useRef(route)
-  const notebookRef = useRef(currentNotebook)
-  const markdownRef = useRef(markdown)
-  useEffect(() => {
-    routeRef.current = route
-  }, [route])
-  useEffect(() => {
-    notebookRef.current = currentNotebook
-  }, [currentNotebook])
-  useEffect(() => {
-    markdownRef.current = markdown
-  }, [markdown])
 
   useEffect(() => {
     const handleInsertText = (e: Event) => {

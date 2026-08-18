@@ -20,6 +20,8 @@ export function InlineNotePopover({
     onClose,
     onDelete,
     onApply,
+    onToggleResolved,
+    resolved,
 }: {
     name: string
     avatar?: string
@@ -38,6 +40,8 @@ export function InlineNotePopover({
     onClose: () => void
     onDelete: () => void
     onApply?: () => void
+    onToggleResolved?: () => void
+    resolved?: boolean
 }): JSX.Element {
     const time = formatNoteTime(createdAt)
     const showSuggestion = intent === 'edit' && Boolean(suggestion)
@@ -112,6 +116,16 @@ export function InlineNotePopover({
                                 onClick={onApply}
                             >
                                 <IconCheck />
+                            </button>
+                        ) : null}
+                        {onToggleResolved ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__inline-note-popover-action"
+                                aria-label={resolved ? 'Reopen' : 'Resolve'}
+                                onClick={onToggleResolved}
+                            >
+                                {resolved ? 'Reopen' : 'Resolve'}
                             </button>
                         ) : null}
                         <button

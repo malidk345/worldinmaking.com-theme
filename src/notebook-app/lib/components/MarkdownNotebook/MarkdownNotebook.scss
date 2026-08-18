@@ -337,8 +337,6 @@ html.dark .MarkdownNotebook,
     transition: border-color 120ms ease, background 120ms ease;
 }
 
-// Same language as Active Windows list items (OSButton hover:border-primary):
-// idle is paper, hover/focus draws a hairline frame. No glass fill — that fought the page.
 @media (hover: hover) and (pointer: fine) {
     .MarkdownNotebook__row:hover {
         background: transparent;
@@ -1053,6 +1051,10 @@ html.dark .MarkdownNotebook,
         animation: wimPulseGlow 1.8s infinite ease-in-out;
     }
 
+    &.WimInlinePill--error {
+        border-color: color-mix(in sRGB, #ef4444 55%, rgba(255, 255, 255, 0.11));
+    }
+
     &.WimInlinePill--review {
         width: auto;
         min-width: 70px;
@@ -1064,6 +1066,14 @@ html.dark .MarkdownNotebook,
         border-color: rgba(255, 255, 255, 0.18);
         animation: wimPillSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+}
+
+.WimInlinePill__error {
+    margin: 0.35rem 0 0;
+    padding: 0 0.2rem;
+    color: #fca5a5;
+    font-size: 0.72rem;
+    line-height: 1.3;
 }
 
 .WimInlinePill__selectedTag {
@@ -3149,6 +3159,17 @@ button.MarkdownNotebook__component-title:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 22%, transparent);
 }
 
+.MarkdownNotebook__piece-note--resolved {
+    opacity: 0.38;
+    filter: grayscale(0.4);
+}
+
+.MarkdownNotebook__mention-picker-empty {
+    margin: 0.4rem 0.2rem;
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+}
+
 .MarkdownNotebook__block-chrome {
     position: absolute;
     right: 0.2rem;
@@ -3168,7 +3189,8 @@ button.MarkdownNotebook__component-title:focus-visible {
     pointer-events: auto;
 }
 
-.MarkdownNotebook__block-comment-btn {
+.MarkdownNotebook__block-comment-btn,
+.MarkdownNotebook__block-more-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3192,11 +3214,18 @@ button.MarkdownNotebook__component-title:focus-visible {
 
 @media (hover: hover) and (pointer: fine) {
     .MarkdownNotebook__row:hover .MarkdownNotebook__block-comment-btn,
-    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn {
+    .MarkdownNotebook__row:hover .MarkdownNotebook__block-more-btn,
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-more-btn,
+    .MarkdownNotebook__row--note-open .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook__row--note-open .MarkdownNotebook__block-more-btn,
+    .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-more-btn {
         opacity: 0.7;
     }
 
-    .MarkdownNotebook__block-comment-btn:hover {
+    .MarkdownNotebook__block-comment-btn:hover,
+    .MarkdownNotebook__block-more-btn:hover {
         color: var(--color-text-primary);
         background: transparent;
         border-color: var(--color-border-primary);
@@ -3205,14 +3234,14 @@ button.MarkdownNotebook__component-title:focus-visible {
 }
 
 .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn,
-.MarkdownNotebook__block-comment-btn:focus-visible {
+.MarkdownNotebook__row:focus-within .MarkdownNotebook__block-more-btn,
+.MarkdownNotebook__row--note-open .MarkdownNotebook__block-comment-btn,
+.MarkdownNotebook__row--note-open .MarkdownNotebook__block-more-btn,
+.MarkdownNotebook__row--menu-open .MarkdownNotebook__block-comment-btn,
+.MarkdownNotebook__row--menu-open .MarkdownNotebook__block-more-btn,
+.MarkdownNotebook__block-comment-btn:focus-visible,
+.MarkdownNotebook__block-more-btn:focus-visible {
     opacity: 0.85;
-}
-
-@media (hover: none) {
-    .MarkdownNotebook__block-comment-btn {
-        opacity: 0.55;
-    }
 }
 
 .MarkdownNotebook__ref--note {
@@ -3651,8 +3680,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     }
 
     .MarkdownNotebook__invite-picker,
-    .MarkdownNotebook__invite-status,
-    .MarkdownNotebook__inline-note-popover {
+    .MarkdownNotebook__invite-status {
         top: auto !important;
         right: 8px;
         bottom: max(12px, env(safe-area-inset-bottom, 12px));
@@ -3664,9 +3692,8 @@ button.MarkdownNotebook__component-title:focus-visible {
     }
 
     .MarkdownNotebook__inline-note-popover {
-        position: fixed;
-        z-index: calc(var(--z-popover) + 2);
-        width: auto;
+        width: min(18rem, calc(100vw - 16px));
+        max-height: min(55dvh, 22rem);
     }
 
     .MarkdownNotebook__invite-picker {

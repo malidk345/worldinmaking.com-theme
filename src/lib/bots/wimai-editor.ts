@@ -79,12 +79,99 @@ export function cleanWimaiEditorOutput(raw: string): string {
     return lines.join('\n').trim()
 }
 
-export function notebookExcerptForEditor(markdown: string, marker = ''): string {
-    let next = markdown || ''
+export type NotebookExcerptAround = {
+    nodeIndex?: number
+    selectedMarkdown?: string
+}
+
+export function wimaiEditorFailureMessage(
+    data: { ok?: boolean; markdown?: string; error?: string } | null,
+    status = 0
+): string {
+    if (typeof data?.error === 'string' && data.error.trim()) {
+        return data.error.trim()
+    }
+    if (status === 429) {
+        return 'Rate limit exceeded. Try again in a moment.'
+    }
+    if (status >= 500 || status === 0) {
+        return 'The editor is unavailable right now.'
+    }
+    return 'No edit returned. Try again.'
+}
+
+function sliceAround(text: string, center: number, max: number): string {
+    if (text.length <= max) return text
+    const half = Math.floor(max / 2)
+    let start = Math.max(0, center - half)
+    let end = Math.min(text.length, start + max)
+    start = Math.max(0, end - max)
+    return text.slice(start, end)
+}
+
+function blocksAround(source: string, nodeIndex: number, max: number): string {
+    const blocks = source.split(/\n{2,}/)
+    if (!blocks.length) return source.slice(0, max)
+    const index = Math.max(0, Math.min(nodeIndex, blocks.length - 1))
+    let left = Math.max(0, index - 1)
+    let right = Math.min(blocks.length, index + 2)
+    let window = blocks.slice(left, right).join('\n\n')
+    while (window.length < max && (left > 0 || right < blocks.length)) {
+        if (left > 0) {
+            const next = `${blocks[left - 1]}\n\n${window}`
+            if (next.length > max) break
+            window = next
+            left--
+        }
+        if (right < blocks.length) {
+            const next = `${window}\n\n${blocks[right]}`
+            if (next.length > max) break
+            window = next
+            right++
+        }
+    }
+    return window.length > max ? window.slice(0, max) : window
+}
+
+export function notebookExcerptForEditor(
+    markdown: string,
+    marker = '',
+    around?: number | NotebookExcerptAround
+): string {
+    const options = typeof around === 'number' ? { nodeIndex: around } : around || {}
+    const original = markdown || ''
+    let center = -1
+
+    if (options.selectedMarkdown) {
+        const at = original.indexOf(options.selectedMarkdown)
+        if (at >= 0) {
+            center = at + Math.floor(Math.min(options.selectedMarkdown.length, original.length - at) / 2)
+        }
+    }
+
+    if (center < 0 && marker) {
+        const at = original.indexOf(marker)
+        if (at >= 0) center = at
+    }
+
+    let next = original
     if (marker) {
+        const markerAt = original.indexOf(marker)
         next = next.split(marker).join('')
+        if (center > markerAt && markerAt >= 0) {
+            center = Math.max(0, center - marker.length)
+        }
     }
     next = next.replace(/\n{3,}/g, '\n\n').trim()
     if (next.length <= MAX_WIMAI_NOTEBOOK) return next
-    return next.slice(-MAX_WIMAI_NOTEBOOK)
+
+    if (center >= 0) {
+        return sliceAround(next, Math.min(center, next.length), MAX_WIMAI_NOTEBOOK)
+    }
+
+    if (options.nodeIndex != null && options.nodeIndex >= 0) {
+        return blocksAround(next, options.nodeIndex, MAX_WIMAI_NOTEBOOK)
+    }
+
+    return next.slice(0, MAX_WIMAI_NOTEBOOK)
 }

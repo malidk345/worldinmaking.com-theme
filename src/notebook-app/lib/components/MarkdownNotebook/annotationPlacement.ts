@@ -80,13 +80,23 @@ export function clampOverlayPosition(
     size: { width: number; height: number } = { width: 288, height: 220 }
 ): { top: number; left: number } {
     const padding = 8
-    const width = Math.min(size.width, Math.max(160, window.innerWidth - padding * 2))
-    const left = Math.min(Math.max(padding, anchor.left), Math.max(padding, window.innerWidth - width - padding))
+    const viewport = window.visualViewport
+    const viewLeft = viewport?.offsetLeft ?? 0
+    const viewTop = viewport?.offsetTop ?? 0
+    const viewWidth = viewport?.width ?? window.innerWidth
+    const viewHeight = viewport?.height ?? window.innerHeight
+    const viewRight = viewLeft + viewWidth
+    const viewBottom = viewTop + viewHeight
+    const width = Math.min(size.width, Math.max(160, viewWidth - padding * 2))
+    const left = Math.min(Math.max(viewLeft + padding, anchor.left), Math.max(viewLeft + padding, viewRight - width - padding))
     const below = anchor.bottom + padding
+    const above = anchor.top - size.height - padding
     const top =
-        below + size.height > window.innerHeight - padding
-            ? Math.max(padding, anchor.top - size.height - padding)
-            : below
+        below + size.height <= viewBottom - padding
+            ? below
+            : above >= viewTop + padding
+              ? above
+              : Math.min(Math.max(viewTop + padding, below), Math.max(viewTop + padding, viewBottom - size.height - padding))
     return { top, left }
 }
 

@@ -144,6 +144,8 @@ export type NotebookAnnotation = {
     notes: InlinePhilosopherNote[]
     /** `piece` is a meta note on the work; it has no underlined span. `block` sits on one block. */
     scope?: NotebookNoteScope
+    /** Resolved notes stay in the sidecar; chips dim instead of deleting. */
+    resolved?: boolean
 }
 
 export type NotebookAnnotationMap = Record<string, NotebookAnnotation>
