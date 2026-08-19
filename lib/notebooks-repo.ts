@@ -378,19 +378,58 @@ export async function deleteNotebook(idOrShort: string, ownerKey: string, userId
     if (findError) throw findError
     if (!existing) return false
     const row = existing as { id: string; owner_key: string; auth_user_id: string | null; deleted_at: string | null }
-    if (row.deleted_at) return true
+
+    // Already deleted — finish any partial cleanup and return success
+    if (row.deleted_at) {
+        await purgeNotebookData(row.id, row.owner_key).catch(() => {})
+        return true
+    }
+
     const allowed = row.owner_key === ownerKey || Boolean(userId && row.auth_user_id === userId)
     if (!allowed) return false
 
-    const { data, error } = await supabaseAdmin
+    // 1. Hard-delete the notebook row from DB
+    const { error: delError } = await supabaseAdmin
         .from('wim_notebooks')
-        .update({ deleted_at: new Date().toISOString(), is_published: false })
+        .delete()
         .eq('id', row.id)
-        .is('deleted_at', null)
-        .select('id')
 
-    if (error) throw error
-    return Array.isArray(data) && data.length > 0
+    if (delError) throw delError
+
+    // 2. Purge history + storage — best-effort, never fatal
+    await purgeNotebookData(row.id, row.owner_key).catch((e) =>
+        console.error('[deleteNotebook] purge error', e)
+    )
+
+    return true
+}
+
+/**
+ * Purge all data associated with a deleted notebook:
+ * - All wim_notebook_history rows for this notebook
+ * - All storage files in notebook-media/<ownerKey>/
+ * Best-effort: errors are logged, not thrown.
+ */
+async function purgeNotebookData(notebookId: string, ownerKey: string): Promise<void> {
+    // Delete version history
+    await supabaseAdmin
+        .from('wim_notebook_history')
+        .delete()
+        .eq('notebook_id', notebookId)
+        .catch((e) => console.error('[purgeNotebookData] history delete error', e))
+
+    // List and delete all storage files uploaded by this owner
+    const { data: files, error: listError } = await supabaseAdmin.storage
+        .from('notebook-media')
+        .list(ownerKey, { limit: 1000 })
+
+    if (!listError && files && files.length > 0) {
+        const paths = files.map((f) => `${ownerKey}/${f.name}`)
+        await supabaseAdmin.storage
+            .from('notebook-media')
+            .remove(paths)
+            .catch((e) => console.error('[purgeNotebookData] storage remove error', e))
+    }
 }
 
 export async function listHistory(notebookId: string): Promise<NotebookVersionDTO[]> {
