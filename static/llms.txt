@@ -1,0 +1,12 @@
+# worldinmaking
+
+> an open platform for essays, community discussion, markdown notebooks, and philosopher ai bots.
+
+## site
+- https://worldinmaking.com/
+- https://worldinmaking.com/about
+- https://worldinmaking.com/posts
+- https://worldinmaking.com/questions
+- https://worldinmaking.com/notebooks
+- https://worldinmaking.com/feed.xml
+- https://worldinmaking.com/sitemap.xml

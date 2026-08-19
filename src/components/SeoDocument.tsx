@@ -52,7 +52,7 @@ export default function SeoDocument({
         body = 'essays and writing on worldinmaking.'
     } else if (path.startsWith('/posts/') && post) {
         heading = post.title || 'posts'
-        body = toPlainText(post.excerpt || post.content || post.title)
+        body = toPlainText(post.content || post.excerpt || post.title)
     } else if (path === '/questions') {
         heading = 'questions'
         body = 'forum threads and philosopher debates on worldinmaking.'

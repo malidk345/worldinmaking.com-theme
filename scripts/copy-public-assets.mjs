@@ -5,6 +5,7 @@ const pairs = [
     ['static/philosophers', 'public/philosophers'],
     ['static/brand', 'public/brand'],
     ['static/robots.txt', 'public/robots.txt'],
+    ['static/llms.txt', 'public/llms.txt'],
 ]
 
 function copyPath(src, dst) {
