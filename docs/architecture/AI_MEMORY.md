@@ -228,6 +228,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-209` | Stream 5 / 1 | Enterprise AI Architecture: Resilient Gateway, Exponential Jitter Circuit Breakers, Fast Failover & Telemetry | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/rate-limit.ts`, `src/pages/api/philosopher-bot.ts`, `src/pages/api/notebook/inline-edit.ts`, `tests/ai-gateway-resilience.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-210` | Stream 3 / 5 | Minimalist Icon-Driven Inline WIM AI: Preset Action Palette, Keyboard Review Bar & Regenerate | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-211` | Stream 3 / 5 | In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar | `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `renderNode.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-212` | Stream 3 / 5 | Fix Block More Menu (···) WIM AI Action to Target Full Block Text In-Place | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -353,6 +354,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 276 - Fix Block More Menu (···) WIM AI Action to Target Full Block Text In-Place (TSK-212)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed block more menu (`···`) WIM AI action:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`: In `runBlockMoreMenuAction(nodeId, 'wim-ai')`, properly extracted the block's text and passed `source: 'selection'`, `targetNodeId: nodeId`, `selectedMarkdown: text`, and range `[0, text.length]`.
+  2. Clicking WIM AI from the 3-dot menu now directly mounts the floating prompt badge targeting that block, triggers the illuminated light shimmer on the block, and rewrites it in-place with user Accept/Reject review controls.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, Playwright unit test suite (38/38 passed).
+- **Handoff:** 3-dot menu WIM AI triggers in-place block rewrite properly.
 
 ### Entry 275 - In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar (TSK-211)
 - **Date:** 2026-08-19

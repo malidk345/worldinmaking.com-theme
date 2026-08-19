@@ -3351,6 +3351,28 @@ function MarkdownNotebookEditor({
             return
         }
         if (action === 'wim-ai') {
+            const targetNode = documentRef.current.nodes.find((n) => n.id === nodeId)
+            if (targetNode) {
+                let text = ''
+                if (isTextBlockNode(targetNode)) {
+                    text = getInlineText(targetNode.children)
+                } else if (targetNode.type === 'code') {
+                    text = getNotebookStringProp(targetNode.props.code) || ''
+                } else if (targetNode.type === 'list') {
+                    text = targetNode.items.map((it) => getInlineText(it.children)).join('\n')
+                }
+
+                if (text.trim()) {
+                    openAIPrompt(nodeId, {
+                        source: 'selection',
+                        targetNodeId: nodeId,
+                        selectedMarkdown: text,
+                        selectionStart: 0,
+                        selectionEnd: text.length,
+                    })
+                    return
+                }
+            }
             openAIPrompt(nodeId)
             return
         }
