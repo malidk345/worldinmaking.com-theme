@@ -1,5 +1,7 @@
+export const runtime = 'edge'
+
 import React from 'react'
-import type { GetStaticProps, GetStaticPaths } from 'next'
+import type { GetServerSideProps } from 'next'
 import Inbox from '../../components/Inbox'
 import SEO from 'components/seo'
 import {
@@ -18,14 +20,7 @@ type QuestionSeo = {
     author?: string
 }
 
-export const getStaticPaths: GetStaticPaths = async () => {
-    return {
-        paths: [],
-        fallback: 'blocking',
-    }
-}
-
-export const getStaticProps: GetStaticProps<{ permalink: string; question: QuestionSeo }> = async (ctx) => {
+export const getServerSideProps: GetServerSideProps<{ permalink: string; question: QuestionSeo }> = async (ctx) => {
     const permalink = String(ctx.params?.permalink || '').trim()
     if (!/^\d+$/.test(permalink)) return { notFound: true }
     const rows = await fetchSupabaseCommunityPosts(undefined, permalink)
@@ -43,41 +38,31 @@ export const getStaticProps: GetStaticProps<{ permalink: string; question: Quest
                 author: profile?.username || '',
             },
         },
-        revalidate: 60,
     }
 }
 
 export default function QuestionDetailPage({ permalink, question }: { permalink: string; question: QuestionSeo }) {
     const path = `/questions/${permalink}`
-    const title = question?.title ? `${question.title} - WorldInMaking Questions` : 'Questions - WorldInMaking'
-    const desc = formatSeoDescription(question?.content, 'Community question discussion on WorldInMaking.')
-    const canonical = pageCanonical(path)
-    const jsonLd = [
-        buildBreadcrumbJsonLd([
-            { name: 'Home', item: '/' },
-            { name: 'Questions', item: '/questions' },
-            { name: question?.title || `Question #${permalink}`, item: path },
-        ]),
-        buildDiscussionJsonLd({
-            headline: question?.title || `Question #${permalink}`,
-            content: question?.content || '',
-            url: canonical,
-            datePublished: question?.created_at,
-            authorName: question?.author || 'WorldInMaking Community',
-        }),
-    ]
-
     return (
         <>
             <SEO
-                title={title}
-                description={desc}
-                canonical={canonical}
-                article={{
-                    publishedTime: question?.created_at,
-                    author: question?.author,
-                }}
-                structuredData={jsonLd}
+                title={question.title}
+                description={formatSeoDescription(question.content)}
+                article
+                structuredData={[
+                    buildDiscussionJsonLd({
+                        title: question.title,
+                        description: formatSeoDescription(question.content),
+                        url: pageCanonical(path),
+                        datePublished: question.created_at,
+                        author: question.author,
+                    }),
+                    buildBreadcrumbJsonLd([
+                        { name: 'worldinmaking', path: '/' },
+                        { name: 'questions', path: '/questions' },
+                        { name: question.title, path },
+                    ]),
+                ]}
             />
             <Inbox path={path} permalink={permalink} />
         </>
