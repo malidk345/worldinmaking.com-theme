@@ -71,6 +71,7 @@ export function renderNode({
     hasInvalidInsertMenuQuery,
     isAIWriting,
     isAIWritingPlaceholder,
+    isAIShimmering,
     isAIPromptSubmitDisabled,
     aiPromptFocusRequest,
     submitInsertMenuSelection,
@@ -122,6 +123,7 @@ export function renderNode({
     hasInvalidInsertMenuQuery: boolean
     isAIWriting: boolean
     isAIWritingPlaceholder: boolean
+    isAIShimmering?: boolean
     isAIPromptSubmitDisabled: boolean
     aiPromptFocusRequest?: number
     submitInsertMenuSelection: (queryOverride?: string) => boolean
@@ -302,6 +304,7 @@ export function renderNode({
             hasInvalidInsertMenuQuery={hasInvalidInsertMenuQuery}
             isAIWriting={isAIWriting}
             isAIWritingPlaceholder={isAIWritingPlaceholder}
+            isAIShimmering={isAIShimmering}
             submitInsertMenuSelection={submitInsertMenuSelection}
             handleSelectionChange={handleSelectionChange}
             startTextSelectionPointer={startTextSelectionPointer}

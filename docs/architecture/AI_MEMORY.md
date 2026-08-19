@@ -227,6 +227,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-208` | Stream 2 / 5 | Remove deleted notebooks from Desktop pinned items and add self-healing cleanup | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/lib/notebookStorage.ts`, `src/components/Desktop/index.tsx`, `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-209` | Stream 5 / 1 | Enterprise AI Architecture: Resilient Gateway, Exponential Jitter Circuit Breakers, Fast Failover & Telemetry | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/rate-limit.ts`, `src/pages/api/philosopher-bot.ts`, `src/pages/api/notebook/inline-edit.ts`, `tests/ai-gateway-resilience.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-210` | Stream 3 / 5 | Minimalist Icon-Driven Inline WIM AI: Preset Action Palette, Keyboard Review Bar & Regenerate | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-211` | Stream 3 / 5 | In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar | `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `renderNode.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -352,6 +353,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 275 - In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar (TSK-211)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Implemented direct in-place block rewriting with illuminated light sweep animation and user review control:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx` & `renderNode.tsx`: Added `isAIShimmering` prop to target blocks when AI is generating in-place replacements.
+  2. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`: Created `wimTextLightSweep` and `wimBlockGlowPulse` animations where gradient light sweeps across the text characters while enveloped in a soft breathing halo during the thinking/writing process.
+  3. Seamlessly connected in-place block review bar so users have total control to Accept (`Tab`/`Enter`), Regenerate (`↻`), or Reject & Revert (`Esc`) the block back to its original state.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/renderNode.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, Playwright unit test suite (38/38 passed).
+- **Handoff:** Block-level AI rewrite with text light sweep and review control is fully live.
 
 ### Entry 274 - Minimalist Icon-Driven Inline WIM AI (TSK-210)
 - **Date:** 2026-08-19

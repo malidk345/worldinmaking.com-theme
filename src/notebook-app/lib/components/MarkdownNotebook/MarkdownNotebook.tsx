@@ -5553,6 +5553,8 @@ function MarkdownNotebookEditor({
                     hasInvalidInsertMenuQuery,
                     isAIWriting: isAIWritingNode,
                     isAIWritingPlaceholder: aiWritingPlaceholderNodeIds.has(node.id),
+                    isAIShimmering:
+                        isAIWritingNode || (isAIPromptSubmitDisabled && aiSelectionReviewRef.current?.targetNodeId === node.id),
                     aiPromptFocusRequest:
                         focusAIPromptNodeId === node.id && focusAIPromptRequest !== undefined
                             ? focusAIPromptRequest

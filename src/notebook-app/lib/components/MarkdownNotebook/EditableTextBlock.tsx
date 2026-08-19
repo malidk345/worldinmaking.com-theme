@@ -72,6 +72,7 @@ export function EditableTextBlock({
     hasInvalidInsertMenuQuery,
     isAIWriting,
     isAIWritingPlaceholder,
+    isAIShimmering,
     submitInsertMenuSelection,
     handleSelectionChange,
     startTextSelectionPointer,
@@ -103,6 +104,7 @@ export function EditableTextBlock({
     hasInvalidInsertMenuQuery: boolean
     isAIWriting: boolean
     isAIWritingPlaceholder: boolean
+    isAIShimmering?: boolean
     submitInsertMenuSelection: (queryOverride?: string) => boolean
     handleSelectionChange: () => void
     startTextSelectionPointer: (event: TextSelectionPointerStartEvent) => void
@@ -672,7 +674,8 @@ export function EditableTextBlock({
                 'MarkdownNotebook__text-row',
                 showInlineInsertMenuButton &&
                     isInlineInsertMenuButtonVisible &&
-                    'MarkdownNotebook__text-row--inline-menu-visible'
+                    'MarkdownNotebook__text-row--inline-menu-visible',
+                isAIShimmering && 'MarkdownNotebook__text-row--ai-shimmer'
             )}
         >
             {showInlineInsertMenuButton ? (
@@ -708,6 +711,7 @@ export function EditableTextBlock({
                     isToolInsertMenuOpen && 'MarkdownNotebook__text-block--insert-placeholder',
                     isAIWriting && 'MarkdownNotebook__text-block--ai-writing',
                     isAIWritingPlaceholder && 'MarkdownNotebook__text-block--ai-thinking',
+                    isAIShimmering && 'MarkdownNotebook__text-block--ai-shimmer',
                     hasInvalidInsertMenuQuery && 'MarkdownNotebook__text-block--invalid-insert-filter'
                 )}
                 data-markdown-notebook-node-id={node.id}
