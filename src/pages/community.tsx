@@ -411,9 +411,8 @@ export default function InsidePostHog() {
     return (
         <Layout parent={communityMenu}>
             <SEO
-                title="Community News - PostHog"
-                description="What's happening at PostHog"
-                image={`/images/og/community-news.jpg`}
+                title="community"
+                description="forum, essays, and philosopher bots on worldinmaking."
             />
 
             <Header />

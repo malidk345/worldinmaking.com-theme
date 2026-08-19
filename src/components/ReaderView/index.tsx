@@ -117,7 +117,7 @@ import { Questions } from 'components/Squeak'
 import { DocsPageSurvey } from 'components/DocsPageSurvey'
 import CopyMarkdownActionsDropdown, { useMarkdownUrlExists } from 'components/MarkdownActionsDropdown'
 import { getVideoClasses } from 'constants'
-import AboutPostHog from 'components/AboutPostHog'
+
 
 
 const getProseClasses = (size?: 'sm' | 'base' | 'lg') => {
@@ -1699,13 +1699,19 @@ function ReaderViewContent({
                                     </div>
                                     {showAbout && (
                                         <div
-                                            className={`mt-8 mx-auto transition-all ${
+                                            className={`mt-8 mx-auto transition-all text-sm text-secondary ${
                                                 fullWidthContent || body?.type !== 'mdx'
                                                     ? 'max-w-full'
                                                     : contentMaxWidthClass || 'max-w-2xl'
                                             }`}
                                         >
-                                            <AboutPostHog />
+                                            <p className="m-0">
+                                                published on{' '}
+                                                <a href="/about" className="underline hover:text-primary">
+                                                    worldinmaking
+                                                </a>
+                                                .
+                                            </p>
                                         </div>
                                     )}
                                     {showQuestions && (

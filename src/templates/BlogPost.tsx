@@ -542,11 +542,10 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
     return (
         <>
             <SEO
-                title={seo?.metaTitle || title + ' - WorldInMaking'}
+                title={seo?.metaTitle || title}
                 description={seo?.metaDescription || excerpt}
                 article
-                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${(fields?.slug || '').replace(/\//g, '')}.jpeg`}
-                imageType="absolute"
+                image={featuredImage?.publicURL || featuredImage?.url || undefined}
                 lang={lang || (languageAlternates ? 'en' : undefined)}
                 languageAlternates={languageAlternates}
                 documentRkey={

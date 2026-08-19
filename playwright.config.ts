@@ -19,10 +19,12 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
     ],
-    webServer: {
-        command: 'pnpm dev',
-        url: testBaseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-    },
+    webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
+        ? undefined
+        : {
+              command: 'pnpm dev',
+              url: testBaseURL,
+              reuseExistingServer: !process.env.CI,
+              timeout: 120000,
+          },
 })

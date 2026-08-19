@@ -40,3 +40,5 @@ export default function Partnerships(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

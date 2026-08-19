@@ -47,3 +47,6 @@ __pycache__
 
 worldinmaking.com-theme/
 pages-build-log.txt
+.tsbuildinfo*
+playwright-report/
+test-results/

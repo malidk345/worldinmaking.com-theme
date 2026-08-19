@@ -12,7 +12,7 @@ export default function Newsletter() {
 
     return (
         <div className="mx-auto max-w-screen-xl">
-            <SEO title="Newsletter - PostHog" />
+            <SEO title="newsletter" />
             <LandingPageNotice title="Newsletter" />
             <FeaturedPost {...featuredPost?.attributes} />
             <NewsletterForm placement="blog-index" />

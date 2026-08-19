@@ -3238,8 +3238,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     )
 }
 
+export const useOptionalApp = (): AppContextType | null => {
+    return useContext(Context)
+}
+
 export const useApp = (): AppContextType => {
-    const context = useContext(Context)
+    const context = useOptionalApp()
 
     if (!context) {
         throw new Error('useApp must be used within an AppProvider')

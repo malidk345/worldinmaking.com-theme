@@ -234,8 +234,12 @@ export const Provider = ({
     return <Context.Provider value={value}>{children}</Context.Provider>
 }
 
+export const useOptionalWindow = (): WindowContextType | null => {
+    return useContext(Context)
+}
+
 export const useWindow = (): WindowContextType => {
-    const context = useContext(Context)
+    const context = useOptionalWindow()
 
     if (!context) {
         throw new Error('useWindow must be used within a WindowProvider')

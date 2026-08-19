@@ -94,7 +94,7 @@ export default function Notifications() {
 
     return (
         <Layout parent={communityMenu}>
-            <SEO title="Notifications - WorldInMaking" />
+            <SEO title="notifications" noindex />
             <section className="py-12 mb-12 px-5 max-w-screen-mdlg mx-auto">
                 <h1>Notifications</h1>
                 {isValidating && !user ? (

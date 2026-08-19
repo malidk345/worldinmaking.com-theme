@@ -9,7 +9,7 @@ export default function SignupPage() {
 
     return (
         <div className="min-h-screen bg-primary text-primary flex items-center justify-center p-4">
-            <SEO title="Sign up - WorldInMaking" />
+            <SEO title="sign up" description="create a worldinmaking account." noindex />
             <div className="w-full max-w-md bg-primary border border-primary rounded-xl p-6 shadow-2xl">
                 <div className="flex items-center gap-2 mb-4">
                     <WimLogo className="size-7" />

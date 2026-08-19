@@ -5,7 +5,7 @@ import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
 export default function NotebooksPage() {
     return (
         <div className="w-full h-full min-h-0 flex-1 flex flex-col relative overflow-hidden bg-primary">
-            <SEO title="Markdown Notebooks - WorldInMaking OS" />
+            <SEO title="notebooks" description="markdown notebooks on worldinmaking." />
             <NotebooksListSkeleton />
         </div>
     )

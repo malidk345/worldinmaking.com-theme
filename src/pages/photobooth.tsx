@@ -1111,3 +1111,5 @@ export default function Photobooth(): JSX.Element {
         </ScrollArea>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

@@ -58,12 +58,15 @@ export default function Document() {
     return (
         <Html lang="en" className="light" suppressHydrationWarning>
             <Head>
+                <meta charSet="utf-8" />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual"
                 />
                 <link rel="icon" href="/brand/wim-mark.png" type="image/png" />
                 <link rel="apple-touch-icon" href="/brand/wim-mark.png" />
+                <meta name="theme-color" content="#141E40" />
+                <meta name="color-scheme" content="light dark" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
             <body data-scheme="primary" data-skin="modern" data-wallpaper="hogzilla" suppressHydrationWarning>

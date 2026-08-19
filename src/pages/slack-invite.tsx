@@ -42,3 +42,5 @@ function Slack() {
 }
 
 export default Slack
+
+export { getServerSideProps } from 'lib/legacyGone'

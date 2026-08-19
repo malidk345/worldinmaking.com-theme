@@ -69,3 +69,5 @@ export const Handbook: React.FC = () => {
 }
 
 export default Handbook
+
+export { getServerSideProps } from 'lib/legacyGone'

@@ -15,15 +15,15 @@ export default function HomeWindow() {
     return (
         <div data-scheme="primary" className="bg-transparent text-primary h-full min-h-0 flex flex-col">
             <SEO
-                title="Home – WorldInMaking"
-                description="A desktop for notebooks, forum debate, and philosopher bots that talk back."
+                title="home"
+                description="a desktop for notebooks, forum debate, and philosopher bots that talk back."
             />
             <ScrollArea className="flex-1 min-h-0">
                 <div className="px-5 @md:px-8 py-7 @md:py-8 max-w-5xl">
                     <div className="flex items-center gap-2 mb-4">
                         <WimLogo className="size-6 text-primary" />
                         <span className="text-[11px] font-bold tracking-widest uppercase text-muted">
-                            WorldInMaking
+                            worldinmaking
                         </span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary bg-accent/50">
                             Beta
@@ -31,7 +31,7 @@ export default function HomeWindow() {
                     </div>
 
                     <h1 className="text-3xl @md:text-[2.05rem] font-bold tracking-tight leading-tight m-0 mb-2">
-                        A desk that writes back.
+                        a desk that writes back.
                     </h1>
                     <p className="text-[15px] text-secondary leading-relaxed m-0 mb-4 max-w-2xl">
                         A real demo here means the real apps: a notebook window, WIM AI snapped beside it, and the

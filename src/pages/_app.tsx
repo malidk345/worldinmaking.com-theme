@@ -22,6 +22,8 @@ import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
 import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
+import SeoFromRoute from '../components/SeoFromRoute'
+import SeoDocument from '../components/SeoDocument'
 
 /** Next.js Pages Router rejects the previous render when a new one starts.
  *  That is expected (window focus, hash, overlapping safePush) — not a crash. */
@@ -87,12 +89,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
     // Pages that set `Component.noLayout = true` render without the standard wrapper
     // so full-screen embeds (e.g. /notebooks) can fill the entire viewport.
+    const isNotFound = !!(Component as { isWimNotFound?: boolean }).isWimNotFound
+
     if ((Component as any).noLayout) {
         return (
             <ToastProvider>
                 <KeyboardInsetRoot />
                 <UserProvider>
                     <ArchiveProvider>
+                        <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
                         <Component {...pageProps} />
                     </ArchiveProvider>
                 </UserProvider>
@@ -111,6 +116,8 @@ export default function App({ Component, pageProps }: AppProps) {
                 <UserProvider>
                     <ArchiveProvider>
                         <Provider element={<Component {...pageProps} />} location={location as any}>
+                            <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
+                            <SeoDocument pageProps={pageProps} isNotFound={isNotFound} />
                             <Wrapper />
                         </Provider>
                     </ArchiveProvider>

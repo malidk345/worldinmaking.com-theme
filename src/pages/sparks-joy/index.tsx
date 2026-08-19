@@ -203,3 +203,5 @@ export default function SparkJoy(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

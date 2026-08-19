@@ -151,3 +151,5 @@ export default function TeamUpdates() {
         </Layout>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

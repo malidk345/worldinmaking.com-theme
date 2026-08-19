@@ -64,3 +64,5 @@ const PostHugPage = () => {
 }
 
 export default PostHugPage
+
+export { getServerSideProps } from 'lib/legacyGone'

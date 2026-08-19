@@ -12,7 +12,7 @@ export default function Blog({ title = 'Blog' }) {
 
     return (
         <div className="mx-auto max-w-screen-xl">
-            <SEO title={`${title} - PostHog`} />
+            <SEO title={title} />
             <LandingPageNotice title={title} />
             <FeaturedPost {...featuredPost?.attributes} />
             <NewsletterForm placement="blog-index" />

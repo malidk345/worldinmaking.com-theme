@@ -489,3 +489,5 @@ export default function Team(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

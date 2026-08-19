@@ -712,7 +712,7 @@ export default function Inbox(props) {
 
     return (
         <>
-            <SEO title={(permalink && question?.attributes?.subject) || data?.topic?.label || 'Forums'} />
+            <SEO title={(permalink && question?.attributes?.subject) || data?.topic?.label || 'questions'} />
             {ready ? (
                 <div
                     suppressHydrationWarning

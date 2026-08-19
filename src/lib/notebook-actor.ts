@@ -1,5 +1,5 @@
 import type { User } from 'hooks/useUser'
-import getAvatarURL from 'components/Squeak/util/getAvatar'
+import { resolveUserOrPhilosopherAvatar } from './user-portraits'
 
 export type NotebookPerson = {
     first_name: string
@@ -24,7 +24,9 @@ export function userToNotebookActor(user: User | null | undefined): NotebookPers
     const username = user.username || user.profile?.username || ''
     const first = user.profile?.firstName || username || 'You'
     const last = user.profile?.lastName || undefined
-    const avatar = getAvatarURL(user.profile) || undefined
+    const profile = user.profile as { avatar?: { url?: string; data?: { attributes?: { url?: string } } }; gravatarURL?: string } | undefined
+    const raw = profile?.avatar?.url || profile?.avatar?.data?.attributes?.url || profile?.gravatarURL || ''
+    const avatar = resolveUserOrPhilosopherAvatar(username, raw) || raw || undefined
     return {
         first_name: first,
         last_name: last,

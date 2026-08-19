@@ -132,3 +132,5 @@ export default function KBDShortcuts(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

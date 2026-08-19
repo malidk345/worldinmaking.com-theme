@@ -46,3 +46,5 @@ export default function Reputation() {
         </div>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

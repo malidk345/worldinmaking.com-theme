@@ -157,7 +157,7 @@ const Blog = ({
     const [allPostsFilter, setAllPostsFilter] = useState<'latest' | 'popular'>('latest')
     return (
         <Layout>
-            <SEO title="Blog - PostHog" />
+            <SEO title="posts" description="essays and writing on worldinmaking." />
 
             <PostLayout article={false} title="Blog" hideSidebar hideSurvey>
                 <h1 className="mb-6 mt-0">Blog</h1>

@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
 
     return (
         <div className="min-h-screen bg-primary text-primary flex items-center justify-center p-6">
-            <SEO title="Set password" noindex />
+            <SEO title="set password" noindex />
             <div className="w-full max-w-md bg-primary border border-primary rounded-xl p-6 shadow-2xl">
                 <div className="flex items-center gap-2 mb-4">
                     <WimLogo className="size-7" />

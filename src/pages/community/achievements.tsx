@@ -166,3 +166,5 @@ export default function Achievements() {
         </div>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

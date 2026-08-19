@@ -3,6 +3,7 @@ import { CallToAction } from 'components/CallToAction'
 import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
 import { ZoomImage } from 'components/ZoomImage'
 import SEO from 'components/seo'
+import { buildArticleJsonLd, pageCanonical } from 'lib/seo'
 import dayjs from 'dayjs'
 import { useUser } from 'hooks/useUser'
 import React, { useContext, useState, useEffect } from 'react'
@@ -115,7 +116,26 @@ export default function ClientPost({
         router.push('/posts')
     }
     const author = authors?.data?.[0]
+    const authorName =
+        author?.attributes?.name ||
+        author?.attributes?.firstName ||
+        author?.attributes?.username ||
+        (typeof author === 'string' ? author : undefined)
     const imageURL = featuredImage?.url
+    const publishedTime = publishedAt || date
+    const modifiedTime = date || publishedAt
+    const canonicalUrl = pageCanonical(`/posts/${slug}`)
+    const articleSchema = buildArticleJsonLd({
+        title,
+        description: excerpt || title,
+        url: canonicalUrl,
+        image: imageURL,
+        datePublished: publishedTime,
+        dateModified: modifiedTime,
+        author: authorName,
+        keywords: post_tags?.data?.map((t) => t.attributes?.label || t.attributes?.name || '').filter(Boolean),
+        wordCount: body ? body.split(/\s+/).filter(Boolean).length : undefined,
+    })
 
     return (
         <div className="@container">
@@ -126,7 +146,17 @@ export default function ClientPost({
                             fullWidthContent ? 'max-w-full' : 'max-w-3xl'
                         }  md:px-8 2xl:px-12`}
                     >
-                        <SEO title={title + ' - PostHog'} />
+                        <SEO
+                            title={title}
+                            description={excerpt || title}
+                            article
+                            image={imageURL}
+                            canonicalUrl={canonicalUrl}
+                            publishedTime={publishedTime}
+                            modifiedTime={modifiedTime}
+                            authorName={authorName}
+                            structuredData={articleSchema}
+                        />
                         <article>
                             <Post
                                 imageURL={imageURL}

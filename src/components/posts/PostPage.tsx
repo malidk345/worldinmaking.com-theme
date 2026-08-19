@@ -10,7 +10,7 @@ import {
     type SupabasePost,
 } from 'lib/supabaseBlog'
 
-const ClientPost = dynamic(() => import('components/Edition/ClientPost'), { ssr: false })
+const ClientPost = dynamic(() => import('components/Edition/ClientPost'), { ssr: true })
 
 const Skeleton = () => {
     const { fullWidthContent } = useLayoutData()
@@ -41,10 +41,16 @@ const NotFound = ({ slug }: { slug: string }) => (
 /**
  * Single post page — Supabase `posts` only (Squeak path removed).
  */
-export default function PostPage({ params }: { params?: { slug?: string } }) {
+export default function PostPage({
+    params,
+    initialPost = null,
+}: {
+    params?: { slug?: string }
+    initialPost?: SupabasePost | null
+}) {
     const router = useRouter()
-    const [post, setPost] = useState<SupabasePost | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [post, setPost] = useState<SupabasePost | null>(initialPost)
+    const [loading, setLoading] = useState(!initialPost)
     const [missing, setMissing] = useState(false)
 
     // Prefer SSR props; fall back to router for client navigations / edge shells
@@ -76,6 +82,12 @@ export default function PostPage({ params }: { params?: { slug?: string } }) {
     }
 
     useEffect(() => {
+        if (initialPost && normalizePostSlug(initialPost.slug || '') === slug) {
+            setPost(initialPost)
+            setMissing(false)
+            setLoading(false)
+            return
+        }
         void load()
     }, [slug])
 

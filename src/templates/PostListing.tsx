@@ -81,16 +81,18 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
 
     return (
         <PostsContext.Provider value={{ setLoginModalOpen }}>
-            <SEO title="Posts" />
+            <SEO
+                title="posts"
+                description="essays and writing on worldinmaking."
+            />
             <Modal open={loginModalOpen} setOpen={setLoginModalOpen}>
                 <div className="px-4">
                     <div className="p-4 max-w-[450px] mx-auto relative rounded-md dark:bg-dark bg-light mt-12 border border-input">
                         <p className="m-0 text-sm font-bold dark:text-white">
-                            Note: PostHog.com authentication is separate from your PostHog app.
+                            sign in to worldinmaking to continue.
                         </p>
                         <p className="text-sm my-2 dark:text-white">
-                            We suggest signing up with your personal email. Soon you'll be able to link your PostHog app
-                            account.
+                            use the email you registered with. there is no separate product login.
                         </p>
                         <Authentication
                             onAuth={() => setLoginModalOpen(false)}

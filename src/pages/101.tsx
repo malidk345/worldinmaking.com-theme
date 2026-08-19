@@ -104,3 +104,5 @@ export default function WhatIsPostHog(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

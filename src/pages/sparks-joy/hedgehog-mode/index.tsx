@@ -25,3 +25,5 @@ export default function HedgehogModeGame(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

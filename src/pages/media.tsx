@@ -43,3 +43,5 @@ export default function Media({ data }: MediaProps) {
     )
 }
 
+
+export { getServerSideProps } from 'lib/legacyGone'

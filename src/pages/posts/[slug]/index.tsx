@@ -1,14 +1,19 @@
-import dynamic from 'next/dynamic'
+import React from 'react'
+import type { GetServerSideProps } from 'next'
+import PostPage from 'components/posts/PostPage'
+import { fetchSupabasePostBySlug, normalizePostSlug, type SupabasePost } from 'lib/supabaseBlog'
 
-const PostPage = dynamic(() => import('components/posts/PostPage'), {
-    ssr: false,
-    loading: () => null,
-})
+export const getServerSideProps: GetServerSideProps<{
+    params: { slug: string }
+    initialPost: SupabasePost
+}> = async (ctx) => {
+    const slug = normalizePostSlug(String(ctx.params?.slug || ''))
+    if (!slug) return { notFound: true }
+    const initialPost = await fetchSupabasePostBySlug(slug)
+    if (!initialPost) return { notFound: true }
+    return { props: { params: { slug }, initialPost } }
+}
 
-export const getStaticProps = ({ params }: { params?: { slug?: string } }) => ({ props: { params: params || {} } })
-export const getStaticPaths = () => ({
-    paths: [{ params: { slug: 'default' } }],
-    fallback: false,
-})
-
-export default PostPage
+export default function PostSlugPage(props: { params: { slug: string }; initialPost: SupabasePost }) {
+    return <PostPage {...props} />
+}

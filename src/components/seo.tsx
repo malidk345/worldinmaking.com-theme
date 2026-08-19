@@ -1,8 +1,20 @@
-'use client'
 import React, { useEffect } from 'react'
+import Head from 'next/head'
 import { useLocation } from '../hooks/useLocation'
-import { useApp } from '../context/App'
-import { useWindow } from '../context/Window'
+import { useOptionalApp } from '../context/App'
+import { useOptionalWindow } from '../context/Window'
+import {
+    SITE,
+    absoluteUrl,
+    formatSeoDescription,
+    formatSeoTitle,
+    pageCanonical,
+} from '../lib/seo'
+
+export type LanguageAlternate = {
+    hrefLang: string
+    href: string
+}
 
 interface SEOProps {
     title: string
@@ -15,27 +27,27 @@ interface SEOProps {
     updateWindowTitle?: boolean
     lang?: string
     languageAlternates?: LanguageAlternate[]
-    /** schema.org JSON-LD object(s) emitted as <script type="application/ld+json"> */
     structuredData?: Record<string, any> | Record<string, any>[]
     documentRkey?: string
+    publishedTime?: string
+    modifiedTime?: string
+    authorName?: string
+    imageAlt?: string
 }
 
-// PostHog's AT Protocol identity, used for Standard.site discovery links
-const STANDARD_SITE_DID = 'did:plc:go7eemqz4y5nhonj4kg5w2p6'
+function WindowTitleSync({ title, enabled }: { title: string; enabled: boolean }) {
+    const windowContext = useOptionalWindow()
+    const appWindow = windowContext?.appWindow
+    const appContext = useOptionalApp()
+    const setWindowTitle = appContext?.setWindowTitle
 
-export type LanguageAlternate = {
-    hrefLang: string
-    href: string
-}
+    useEffect(() => {
+        if (enabled && title && appWindow && setWindowTitle) {
+            setWindowTitle(appWindow, title)
+        }
+    }, [title, enabled, appWindow, setWindowTitle])
 
-// Static site metadata — replaces Gatsby useStaticQuery
-const SITE_METADATA = {
-    defaultTitle: 'WorldInMaking',
-    titleTemplate: '%s | WorldInMaking',
-    defaultDescription: 'We make your product self-driving',
-    siteUrl: 'https://posthog.com',
-    defaultImage: '/brand/wim-mark.png',
-    twitterUsername: '@posthog',
+    return null
 }
 
 export const SEO = ({
@@ -45,61 +57,87 @@ export const SEO = ({
     article,
     canonicalUrl,
     noindex,
-    imageType = 'relative',
     updateWindowTitle = true,
-    lang,
+    lang = 'en',
     languageAlternates,
     structuredData,
-    documentRkey,
+    publishedTime,
+    modifiedTime,
+    authorName,
+    imageAlt,
 }: SEOProps): JSX.Element => {
-    const windowContext = useWindow()
-    const appWindow = windowContext?.appWindow
-    const appContext = useApp()
-    const setWindowTitle = appContext?.setWindowTitle
     const { pathname } = useLocation()
-
-    const { defaultTitle, titleTemplate, defaultDescription, siteUrl, defaultImage, twitterUsername } = SITE_METADATA
-
+    const formattedTitle = formatSeoTitle(title)
+    const metaDescription = formatSeoDescription(description || SITE.defaultDescription)
+    const canonical = canonicalUrl || pageCanonical(pathname)
+    const ogImage = absoluteUrl(image || SITE.defaultImage)
+    const robots = noindex
+        ? 'noindex, nofollow'
+        : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
     const structuredDataItems = structuredData
         ? Array.isArray(structuredData)
             ? structuredData
             : [structuredData]
         : []
+    const ogLocale = lang === 'tr' ? 'tr_TR' : 'en_US'
 
-    const seo = {
-        title: title || defaultTitle,
-        description: description || defaultDescription,
-        image:
-            imageType === 'absolute' || image?.startsWith('http')
-                ? image
-                : `${siteUrl}${image || defaultImage}`,
-        url: `${siteUrl}${pathname}`,
-    }
-
-    useEffect(() => {
-        if (updateWindowTitle && seo.title && appWindow && setWindowTitle) {
-            setWindowTitle(appWindow, seo.title)
-        }
-    }, [seo.title, updateWindowTitle, appWindow, setWindowTitle])
-
-    // In Next.js App Router, head tags are managed via metadata API or next/head.
-    // This component returns null for server rendering; window title is updated client-side.
-    return <></>
+    return (
+        <>
+            <Head>
+                <title>{formattedTitle}</title>
+                <meta name="description" content={metaDescription} />
+                <link rel="canonical" href={canonical} />
+                <link rel="alternate" hrefLang="en" href={canonical} />
+                <link rel="alternate" hrefLang="x-default" href={canonical} />
+                <link
+                    rel="alternate"
+                    type="application/rss+xml"
+                    title="worldinmaking posts"
+                    href={`${SITE.url}/feed.xml`}
+                />
+                <meta name="robots" content={robots} />
+                <meta name="googlebot" content={robots} />
+                <meta property="og:locale" content={ogLocale} />
+                <meta property="og:type" content={article ? 'article' : 'website'} />
+                <meta property="og:site_name" content={SITE.name} />
+                <meta property="og:title" content={formattedTitle} />
+                <meta property="og:description" content={metaDescription} />
+                <meta property="og:url" content={canonical} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:image:alt" content={imageAlt || formattedTitle} />
+                {article && publishedTime ? <meta property="article:published_time" content={publishedTime} /> : null}
+                {article && (modifiedTime || publishedTime) ? (
+                    <meta property="article:modified_time" content={modifiedTime || publishedTime} />
+                ) : null}
+                {article && authorName ? <meta property="article:author" content={authorName} /> : null}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={formattedTitle} />
+                <meta name="twitter:description" content={metaDescription} />
+                <meta name="twitter:image" content={ogImage} />
+                {languageAlternates?.map((alt) => (
+                    <link key={alt.hrefLang} rel="alternate" hrefLang={alt.hrefLang} href={alt.href} />
+                ))}
+                {structuredDataItems.map((item, index) => (
+                    <script
+                        // eslint-disable-next-line react/no-danger
+                        key={index}
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }}
+                    />
+                ))}
+            </Head>
+            <WindowTitleSync title={formattedTitle} enabled={updateWindowTitle} />
+        </>
+    )
 }
 
 export default SEO
 
-/**
- * Build schema.org JSON-LD for a product/app page: a SoftwareApplication, the PostHog
- * Organization, and (optionally) a FAQPage. Pass the result to <SEO structuredData={...} />.
- * FAQ entries without an `answer` are skipped, so FAQPage only renders once answers exist.
- */
+/** @deprecated PostHog product schema — kept so leftover templates compile. Prefer buildWebSiteJsonLd. */
 export const buildProductStructuredData = ({
     name,
     description,
     slug,
-    operatingSystem = 'Web',
-    faq,
 }: {
     name: string
     description?: string
@@ -107,45 +145,16 @@ export const buildProductStructuredData = ({
     operatingSystem?: string
     faq?: { question?: string; answer?: string }[]
 }): Record<string, any>[] => {
-    const items: Record<string, any>[] = [
+    return [
         {
             '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            name,
-            description,
-            applicationCategory: 'BusinessApplication',
-            operatingSystem,
-            url: `https://posthog.com/${(slug || '').replace(/^\//, '')}`,
-            offers: {
-                '@type': 'Offer',
-                price: '0',
-                priceCurrency: 'USD',
-                description: 'Generous free tier, then usage-based pricing',
-            },
-            publisher: { '@type': 'Organization', name: 'PostHog', url: 'https://posthog.com' },
-        },
-        {
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'PostHog',
-            url: 'https://posthog.com',
-            logo: 'https://posthog.com/images/og/default.png',
-            sameAs: [
-                'https://twitter.com/PostHog',
-                'https://github.com/PostHog',
-                'https://www.linkedin.com/company/posthog',
-            ],
+            '@type': 'WebApplication',
+            name: formatSeoTitle(name),
+            description: description || SITE.defaultDescription,
+            url: pageCanonical(slug),
+            applicationCategory: 'EducationalApplication',
+            operatingSystem: 'Web',
+            publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
         },
     ]
-    const faqEntities = (faq || [])
-        .filter((q) => q && q.question && q.answer)
-        .map((q) => ({
-            '@type': 'Question',
-            name: q.question,
-            acceptedAnswer: { '@type': 'Answer', text: q.answer },
-        }))
-    if (faqEntities.length) {
-        items.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqEntities })
-    }
-    return items
 }

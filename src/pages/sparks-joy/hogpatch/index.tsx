@@ -16,3 +16,5 @@ export default function HogPatch(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

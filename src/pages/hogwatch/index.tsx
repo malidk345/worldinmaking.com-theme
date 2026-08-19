@@ -210,3 +210,5 @@ export default function HogWatchPage() {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

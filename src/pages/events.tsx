@@ -731,3 +731,5 @@ const EventsPage = () => {
 }
 
 export default EventsPage
+
+export { getServerSideProps } from 'lib/legacyGone'

@@ -16,3 +16,5 @@ export default function BrickHog(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

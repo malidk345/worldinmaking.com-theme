@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useApp } from 'context/App'
 import Layout from 'components/Layout'
+import SEO from 'components/seo'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -15,6 +16,7 @@ export default function LoginPage() {
 
     return (
         <Layout>
+            <SEO title="sign in" description="sign in to worldinmaking." noindex />
             <div className="min-h-[80vh] flex items-center justify-center p-4">
                 <div className="text-center text-muted font-medium text-sm">
                     Opening sign in window...

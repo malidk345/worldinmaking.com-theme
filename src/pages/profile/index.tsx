@@ -26,7 +26,7 @@ export default function ProfileIndexPage() {
 
     return (
         <div className="h-full bg-primary text-primary flex items-center justify-center p-6">
-            <SEO title="User Profile - WorldInMaking" />
+            <SEO title="profile" noindex />
             <div className="max-w-md w-full text-center p-6 bg-accent border border-primary rounded-2xl shadow-xl">
                 <h1 className="text-xl font-bold mb-2">View Your Profile</h1>
                 <p className="text-sm text-secondary mb-6">

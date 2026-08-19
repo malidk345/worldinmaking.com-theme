@@ -25,3 +25,5 @@ export default function HogWars(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

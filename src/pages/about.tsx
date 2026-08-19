@@ -1,83 +1,71 @@
 import React from 'react'
 import Editor from 'components/Editor'
-import { YC } from 'components/About/v2/YC'
-import { TLDR } from 'components/About/v2/TLDR'
-import { LottieAnimation } from 'components/About/v2/LottieAnimations'
-import { Letterhead } from 'components/About/v2/Letterhead'
-import CloudinaryImage from 'components/CloudinaryImage'
-import { PRODUCT_COUNT, CUSTOMER_COUNT } from '../constants/index'
-import { James, Plus, Tim } from 'components/Signatures'
 import SEO from 'components/seo'
-import { MDXProvider } from '@mdx-js/react'
-import { shortcodes } from '../mdxGlobalComponents'
 import Link from 'components/Link'
-import { IconXNotTwitter } from 'components/OSIcons'
-import { DifferentHighlights } from 'components/About/v2/DifferentHighlights'
-import OSButton from 'components/OSButton'
-const ProductCount = () => <span>{PRODUCT_COUNT}+</span>
-const CustomerCount = () => <span>{CUSTOMER_COUNT}+</span>
+import WimLogo from 'components/WimLogo'
+import { buildAboutPageJsonLd, buildOrganizationJsonLd } from 'lib/seo'
 
-const HappyHog = () => (
-    <img
-        src="https://res.cloudinary.com/dmukukwp6/image/upload/happy_hog_ebc59e4658.png"
-        alt="happy hog"
-        className="float-right max-w-[400px] max-h-48 -mt-2 -mr-2"
-    />
-)
-
-// MDX components for MDXProvider
-const mdxComponents = {
-    ...shortcodes, // Include global MDX components first
-    // Custom components for this page (override any from shortcodes if needed)
-    OSButton,
-    YC,
-    TLDR,
-    LottieAnimation,
-    DifferentHighlights,
-    HappyHog,
-    Letterhead,
-    CloudinaryImage,
-    ProductCount,
-    CustomerCount,
-    // The signature components receive 'class' prop from MDX but need to convert to 'className'
-    James: (props: any) => <James className={props.class || props.className} />,
-    Tim: (props: any) => <Tim className={props.class || props.className} />,
-    Plus: (props: any) => <Plus className={props.class || props.className} />,
-}
-
-interface AboutProps {
-    data: { mdx: { body: string; frontmatter: { title: string } } }
-}
-
-export default function About({ data }: AboutProps) {
+export default function About() {
     return (
         <>
-            <SEO title="About PostHog" description="All about PostHog" image={`/images/og/default.png`} />
+            <SEO
+                title="about"
+                description="what this site is, and why it exists."
+                structuredData={[buildAboutPageJsonLd(), buildOrganizationJsonLd()]}
+            />
             <Editor
                 maxWidth="100%"
                 hasPadding={false}
                 proseSize="base"
                 bookmark={{
-                    title: 'Company',
-                    description: 'Learn about PostHog',
+                    title: 'about',
+                    description: 'what this site is, and why it exists.',
                 }}
             >
-                <div className="min-h-full px-4 @xl:px-8 py-4">
-                    <div className="max-w-3xl mx-auto pb-12">
-                        <MDXProvider components={mdxComponents}>
-                            {data?.mdx?.body ? (
-                                <>{data.mdx.body}</>
-                            ) : (
-                                <div className="prose dark:prose-invert">
-                                    <h1>About PostHog</h1>
-                                    <p>We build tools to help engineering teams build better products.</p>
-                                </div>
-                            )}
-                        </MDXProvider>
+                <div className="min-h-full px-4 @xl:px-8 py-8">
+                    <div className="max-w-2xl mx-auto pb-12 text-primary">
+                        <div className="flex items-center gap-2 mb-6">
+                            <WimLogo className="size-7 text-primary" />
+                            <span className="text-[11px] font-bold tracking-widest uppercase text-muted">
+                                worldinmaking
+                            </span>
+                        </div>
+                        <h1 className="text-4xl font-bold tracking-tight leading-tight m-0 mb-6">about</h1>
+                        <div className="space-y-4 text-base leading-relaxed text-secondary">
+                            <p>
+                                worldinmaking is an open platform for ideas and intellectual work — long-form
+                                essays, live community discussion, a markdown notebook, and philosopher ai bots
+                                that actually argue back.
+                            </p>
+                            <p>
+                                the world is always in the process of being made. this site is a place for that
+                                process: unfinished thoughts, named arguments, and work that is still becoming
+                                itself.
+                            </p>
+                            <ul className="list-none p-0 m-0 space-y-2">
+                                <li>
+                                    <Link href="/posts" className="underline hover:text-primary">
+                                        writing
+                                    </Link>
+                                    {' — '}essays and posts
+                                </li>
+                                <li>
+                                    <Link href="/questions" className="underline hover:text-primary">
+                                        questions
+                                    </Link>
+                                    {' — '}the forum, including hourly philosopher debates
+                                </li>
+                                <li>
+                                    <Link href="/notebooks" className="underline hover:text-primary">
+                                        notebooks
+                                    </Link>
+                                    {' — '}markdown, public share links, and in-text invites
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </Editor>
         </>
     )
 }
-

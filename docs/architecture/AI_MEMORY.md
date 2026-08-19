@@ -219,23 +219,11 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-200` | Stream 4 | localStorage history setItem must not crash saves | notebookStorage.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 | `TSK-201` | Stream 4 / 3 | P1: save queue, 3 full history bodies, flush on hide | App.tsx, notebookStorage.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 | `TSK-202` | Stream 3 | P2: extract undo/clipboard/keyboard from MarkdownNotebook | MarkdownNotebook.tsx, useNotebookUndo/Clipboard/Keyboard | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
-| `TSK-203` | Stream 3 | P3: block \u00b7\u00b7\u00b7 menu (Comment / Invite / WIM AI / Delete) | MarkdownNotebook.tsx, SCSS | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
+| `TSK-203` | Stream 3 | P3: block ··· menu (Comment / Invite / WIM AI / Delete) | MarkdownNotebook.tsx, SCSS | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 | `TSK-204` | Stream 5 | P4: WIM AI excerpt around block; errors stay off the page | wimai-editor.ts, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 | `TSK-205` | Stream 5 / 3 | P5: mentions + resolve notes | annotations, InlineNotePopover, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
-
-
-
-
-
-# WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
-
-**Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
-**Purpose:** Serving as a persistent context memory, work-tracking state, and asynchronous handoff log for multiple AI agents (Claude, Gemini/Antigravity, GPT-4o, Cursor, etc.) working independently on the WorldInMaking codebase.
-
----
-
-## 1. How AI Agents Must Use This File (Protocol)
-
+| `TSK-206` | Stream 5 / 1 | Fix notebook-actor Squeak getAvatar relative import path in test runner | `src/lib/notebook-actor.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-207` | Stream 4 / 3 | Comprehensive SEO: Schema JSON-LD, Dynamic Sitemap, AI Crawler robots.txt, Blog/Forum metadata | `src/lib/seo.ts`, `src/components/seo.tsx`, `src/pages/api/seo/sitemap.ts`, `public/robots.txt`, `src/components/Edition/ClientPost.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 Every AI model/agent working on this repository **MUST** follow these rules:
 
 1. **Read First:** Before starting any work, read this `AI_MEMORY.md` alongside [`FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md).
@@ -360,6 +348,34 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 271 - Comprehensive SEO: Schema JSON-LD, Dynamic Sitemap, AI Crawlers in robots.txt
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Enhanced Technical & Semantic SEO across WorldInMaking:
+  1. Enhanced JSON-LD generators in `src/lib/seo.ts`: added Google Sitelinks SearchAction to `WebSite`, keywords & wordCount to `BlogPosting`/`Article`, comment counter to `DiscussionForumPosting`, and new `ProfilePage` schema.
+  2. Passed rich article metadata (published/modified timestamps, canonical URL, author name, and structured data) to `<SEO />` in `src/components/Edition/ClientPost.tsx`.
+  3. Expanded dynamic `/api/seo/sitemap.ts` to include public user profiles (`/community/profiles/[username]`), questions, and updated blog posts.
+  4. Updated `public/robots.txt` to explicitly grant indexing access to modern AI search engines (GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, Google-Extended, Applebot-Extended, Amazonbot, CCBot).
+- **Modified Files:** `src/lib/seo.ts`, `src/components/seo.tsx`, `src/components/Edition/ClientPost.tsx`, `src/pages/api/seo/sitemap.ts`, `public/robots.txt`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm typecheck:shell` (0 errors), `pnpm exec playwright test --config=playwright.helpers.config.ts` (33/33 passed).
+- **Handoff:** Rich snippets, sitemaps, and AI crawler readiness are active.
+
+### Entry 270 - SEO closer to industry standard
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Filled remaining industry gaps: crawler `SeoDocument` (h1 + body in first HTML), `og:locale`, article published/modified/author, googlebot snippet/preview directives, hreflang en/x-default, RSS `/feed.xml`, tighter robots, `llms.txt`, unknown routes noindex.
+- **Modified Files:** `src/components/seo.tsx`, `SeoFromRoute.tsx`, `SeoDocument.tsx`, `src/lib/seo.ts`, `src/pages/api/seo/rss.ts`, `next.config.js`, `public/robots.txt`, `public/llms.txt`, `tests/seo.spec.ts`
+- **Tests:** `pnpm exec playwright test tests/seo.spec.ts`
+- **Handoff:** Still not a 1200x630 OG image generator. Article body in the OS window is still client-hydrated; crawlers get the same text via `#wim-document`.
+
+### Entry 269 - TSK-SEO-01 worldinmaking SEO
+- **Date:** 2026-08-19
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Industry-standard SEO for worldinmaking. Real `next/head` titles (always lowercase), canonicals, OG, JSON-LD. `public/robots.txt` + edge `/sitemap.xml`. Canonical URL map (`/`, `/posts`, `/questions`) with 301s. Soft 404s are real 404s. About/legal/home rewritten off PostHog. Leftover PostHog marketing routes return `notFound`.
+- **Modified Files:** `src/lib/seo.ts`, `src/lib/legacyGone.ts`, `src/components/seo.tsx`, `src/pages/_document.tsx`, `src/pages/[...slug].tsx`, `src/pages/posts/[slug]/index.tsx`, `src/pages/questions/*`, `src/pages/about.tsx`, `src/pages/desktop.tsx`, `next.config.js`, `public/robots.txt`, `src/pages/api/seo/sitemap.ts`, leftover pages, `tests/seo.spec.ts`
+- **Tests:** `pnpm exec playwright test tests/seo.spec.ts` — 9 passed. `tests/smoke.spec.ts` — 10 passed.
+- **Handoff:** Submit `https://worldinmaking.com/sitemap.xml` in Search Console after deploy. Confirm Cloudflare managed robots stays `text/plain`.
 
 ### Entry 268 - P5 mentions + resolve
 - **Date:** 2026-08-19

@@ -151,6 +151,25 @@ const nextConfig = {
 
         return config
     },
+
+    async redirects() {
+        return [
+            { source: '/desktop', destination: '/', permanent: true },
+            { source: '/home', destination: '/', permanent: true },
+            { source: '/blog', destination: '/posts', permanent: true },
+            { source: '/blog/:slug*', destination: '/posts/:slug*', permanent: true },
+            { source: '/forum', destination: '/questions', permanent: true },
+            { source: '/forum/:path*', destination: '/questions/:path*', permanent: true },
+            { source: '/why', destination: '/about', permanent: true },
+        ]
+    },
+
+    async rewrites() {
+        return [
+            { source: '/sitemap.xml', destination: '/api/seo/sitemap' },
+            { source: '/feed.xml', destination: '/api/seo/rss' },
+        ]
+    },
 }
 
 module.exports = nextConfig

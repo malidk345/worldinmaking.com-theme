@@ -197,3 +197,5 @@ function SubprocessorsPage(): JSX.Element {
 }
 
 export default SubprocessorsPage
+
+export { getServerSideProps } from 'lib/legacyGone'

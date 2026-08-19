@@ -403,3 +403,5 @@ export default function PostHogMCPLanding(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

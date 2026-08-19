@@ -487,3 +487,5 @@ export default function SessionReplayLanding(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

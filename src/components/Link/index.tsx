@@ -12,17 +12,17 @@ import { sanitizeNavigationUrl } from 'lib/utils'
 
 // Helper function to create standard context menu items
 const createStandardMenuItems = (url: string, state?: any, isExternal = false): ContextMenuItemProps[] => {
-    const fullUrl = url?.startsWith('/') ? `https://posthog.com${url}` : url
+    const fullUrl = url?.startsWith('/') ? `https://worldinmaking.com${url}` : url
 
     return [
         {
             type: 'item',
             disabled: isExternal,
             children: isExternal ? (
-                <span>Open in new PostHog window</span>
+                <span>open in new window</span>
             ) : (
                 <Link href={url} state={{ ...state, newWindow: true }} contextMenu={false}>
-                    Open in new PostHog window
+                    open in new window
                 </Link>
             ),
         },

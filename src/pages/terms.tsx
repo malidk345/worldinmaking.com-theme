@@ -5,10 +5,10 @@ import SEO from 'components/seo'
 export default function TermsPage() {
     return (
         <Layout>
-            <SEO title="Terms of Service - WorldInMaking OS" description="WorldInMaking OS Terms of Service." />
+            <SEO title="terms of service" description="terms of service for worldinmaking." />
             <div className="max-w-4xl mx-auto px-4 py-12 space-y-8 text-primary">
                 <header className="border-b border-primary pb-6 space-y-2">
-                    <h1 className="text-4xl font-extrabold tracking-tight">Terms of Service</h1>
+                    <h1 className="text-4xl font-extrabold tracking-tight">terms of service</h1>
                     <p className="text-xs font-mono text-muted uppercase">WorldInMaking OS · Effective August 2026</p>
                 </header>
 

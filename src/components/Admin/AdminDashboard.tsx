@@ -398,7 +398,7 @@ export default function AdminDashboard() {
     if (!user || !allowed) {
         return (
             <div className="h-full bg-primary text-primary flex items-center justify-center p-8">
-                <SEO title="Admin Dashboard - WorldInMaking" />
+                <SEO title="admin" noindex />
                 <div className="max-w-md w-full text-center p-8 bg-accent border border-primary rounded-2xl shadow-2xl">
                     <IconShield className="w-12 h-12 mx-auto text-red mb-4 opacity-80" />
                     <h1 className="text-xl font-bold mb-2">Access Restricted</h1>
@@ -412,7 +412,7 @@ export default function AdminDashboard() {
 
     return (
         <div data-scheme="primary" className="h-full bg-primary text-primary flex flex-col overflow-hidden select-none">
-            <SEO title="Admin OS Dashboard - WorldInMaking" />
+            <SEO title="admin" noindex />
 
             <div className="p-4 border-b border-primary bg-accent/40 backdrop-blur-md flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">

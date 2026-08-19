@@ -455,3 +455,5 @@ export default function AIObservabilityLanding(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

@@ -41,3 +41,5 @@ export default function Start(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

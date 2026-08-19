@@ -138,7 +138,7 @@ function Desktop() {
                         type: 'item',
                         children: (
                             <Link href="/about" state={{ newWindow: true }}>
-                                About PostHog
+                                about
                             </Link>
                         ),
                     },

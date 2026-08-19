@@ -6,9 +6,10 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         expect(response?.status()).toBe(200)
     })
 
-    test('Desktop route (/desktop) loads successfully', async ({ page }) => {
+    test('Desktop route (/desktop) redirects to home', async ({ page }) => {
         const response = await page.goto('/desktop')
         expect(response?.status()).toBe(200)
+        expect(new URL(page.url()).pathname).toBe('/')
     })
 
     test('Login route (/login) opens auth portal', async ({ page }) => {

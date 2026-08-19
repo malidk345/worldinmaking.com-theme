@@ -39,3 +39,5 @@ export default function Paint({ initialState }: { initialState: any }): JSX.Elem
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

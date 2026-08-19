@@ -604,3 +604,5 @@ export default function ProductAnalyticsLanding(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

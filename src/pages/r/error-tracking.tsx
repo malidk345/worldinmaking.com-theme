@@ -316,3 +316,5 @@ export default function ErrorTrackingLanding(): JSX.Element {
         </>
     )
 }
+
+export { getServerSideProps } from 'lib/legacyGone'

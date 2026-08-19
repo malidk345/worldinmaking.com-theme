@@ -197,7 +197,7 @@ export default function DisplayOptions(): JSX.Element {
 
     return (
         <>
-            <SEO title="Display options" description="Personalize your PostHog.com experience" />
+            <SEO title="display options" description="personalize worldinmaking." noindex />
             <div data-scheme="secondary" className="w-full h-full bg-primary text-primary p-4 border-t border-primary">
                 <div className="bg-primary grid grid-cols-2 gap-2">
                     <ToggleGroup

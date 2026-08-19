@@ -5,10 +5,10 @@ import SEO from 'components/seo'
 export default function PrivacyPage() {
     return (
         <Layout>
-            <SEO title="Privacy Policy - WorldInMaking OS" description="WorldInMaking OS Privacy Policy." />
+            <SEO title="privacy policy" description="privacy policy for worldinmaking." />
             <div className="max-w-4xl mx-auto px-4 py-12 space-y-8 text-primary">
                 <header className="border-b border-primary pb-6 space-y-2">
-                    <h1 className="text-4xl font-extrabold tracking-tight">Privacy Policy</h1>
+                    <h1 className="text-4xl font-extrabold tracking-tight">privacy policy</h1>
                     <p className="text-xs font-mono text-muted uppercase">WorldInMaking OS · Effective August 2026</p>
                 </header>
 
