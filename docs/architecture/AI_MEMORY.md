@@ -239,6 +239,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-220` | Stream 1 / 2 | Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage | `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-221` | Stream 1 / 4 | Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole | `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-222` | Stream 2 / 4 | Automatic Bucket Creation and Resilience for Notebook Media Image Uploads | `src/pages/api/notebooks/upload.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-223` | Stream 4 / 5 | Supabase Full-Stack Architecture Hardening: 121 Indexes, pg_trgm Search, Auto-Profile Trigger & Storage RLS | Supabase DB / `scratch/optimize_database.mjs` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -364,6 +365,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 287 - Supabase Full-Stack Architecture Hardening: 121 Indexes, pg_trgm Search, Auto-Profile Trigger & Storage RLS (TSK-223)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Completed comprehensive full-stack database and storage optimization on Supabase project (`iydypisgfaksqkjdraiu`):
+  1. **Extensions & Indexes:** Installed `pg_trgm` and `uuid-ossp`; created 17 critical performance indexes on unindexed foreign keys and high-frequency query columns (`posts.author_id`, `posts.created_at`, `posts.slug`, `wim_notebooks.auth_user_id`, `wim_notebooks.owner_key`, `comments.user_id`, `forum_mentions`, trigram GIN indexes for titles and usernames), reaching 121 total optimized indexes.
+  2. **Automated User Onboarding:** Installed `on_auth_user_created` trigger on `auth.users` with `handle_new_user()` to automatically provision `public.profiles` on any email, Google, or GitHub signup.
+  3. **Data Integrity Backfill:** Safely backfilled all missing auth profiles, ensuring 100% parity (`56/56` auth users now have matching profiles).
+  4. **Storage & RLS Hardening:** Configured public storage buckets (`blog-images`, `notebook-media`, `avatars`) with RLS policies for public reads and authenticated uploads/updates.
+- **Modified Files:** Supabase Database, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 2.9s).
+- **Handoff:** Supabase database and storage are fully optimized, indexed, and synchronized with the frontend.
 
 ### Entry 286 - Automatic Bucket Creation and Resilience for Notebook Media Image Uploads (TSK-222)
 - **Date:** 2026-08-19
