@@ -233,6 +233,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-214` | Stream 3 / 5 | Position WIM AI Prompt Box Directly Above Target Block with Selected Container Highlight | `src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert.ts`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-215` | Stream 3 / 5 | Refine Shimmer Intensity & Preserve Natural Theme Font Colors | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-216` | Stream 3 / 5 | Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-217` | Stream 3 / 5 | Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -358,6 +359,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 281 - Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens (TSK-217)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Redesigned WIM AI prompt container to float centered without creating separate document blocks, vanish instantly upon submission, and match theme tokens:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`: Made prompt box return `null` immediately when AI starts writing (`(autoRun || isAIPromptSubmitDisabled) && !isReviewing`), letting in-place text generation and shimmer take center stage without pushing content down.
+  2. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`: Converted `.MarkdownNotebook__row--ai-prompt` into a 0-height non-blocking container with `.WimInlinePill` floating centered (`left: 50%; transform: translateX(-50%)`) directly above the target block/selection.
+  3. Replaced hardcoded `#1b1b1d` / `#18181b` dark colors with PostHog / Wim OS theme tokens (`var(--color-bg-surface-primary, #232630)`, `var(--color-border-primary)`, `var(--color-text-primary)`, `var(--color-accent)`).
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, Playwright unit test suite (40/40 passed in 4.6s).
+- **Handoff:** WIM AI prompt floats seamlessly centered over the block, vanishes on prompt submit, and harmonizes with notebook theme tokens.
 
 ### Entry 280 - Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals (TSK-216)
 - **Date:** 2026-08-19

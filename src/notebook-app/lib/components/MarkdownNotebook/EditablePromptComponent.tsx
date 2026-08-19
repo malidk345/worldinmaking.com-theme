@@ -312,15 +312,9 @@ export function EditablePromptComponent({
 
     void restoreSelectionRef
 
+    // When AI is actively writing in-place, the prompt box vanishes immediately
     if ((autoRun || isAIPromptSubmitDisabled) && !isReviewing) {
-        return (
-            <div className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt">
-                <div className="WimInlinePill WimInlinePill--busy" contentEditable={false} data-markdown-notebook-node-id={node.id}>
-                    <span className="WimInlinePill__spinner" />
-                    <span className="WimInlinePill__writingText">WIM AI writing…</span>
-                </div>
-            </div>
-        )
+        return null
     }
 
     // Review Mode: After AI generates text, show Accept (✓), Retry (↻), and Reject (✕)
