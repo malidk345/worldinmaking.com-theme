@@ -599,6 +599,32 @@ export function unpublishNotebook(id: string): StoredNotebook | undefined {
     return saveNotebook({ ...notebook, isPublished: false }, { snapshot: true, snapshotLabel: 'Unpublished' })
 }
 
+const DESKTOP_PINNED_APPS_KEY = 'wim_os_desktop_pinned_items'
+
+export function unpinNotebookFromDesktop(id: string): void {
+    if (typeof window === 'undefined' || !id) return
+    try {
+        const raw = localStorage.getItem(DESKTOP_PINNED_APPS_KEY)
+        if (!raw) return
+        const existing = JSON.parse(raw)
+        if (!Array.isArray(existing)) return
+        const filtered = existing.filter(
+            (item: any) =>
+                item &&
+                item.id !== id &&
+                item.notebookId !== id &&
+                item.url !== `/notebooks?id=${id}` &&
+                !String(item.url || '').endsWith(`=${id}`)
+        )
+        if (filtered.length !== existing.length) {
+            localStorage.setItem(DESKTOP_PINNED_APPS_KEY, JSON.stringify(filtered))
+            window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 export function deleteNotebook(id: string): void {
     const target = getNotebook(id)
     rememberDeletedNotebookId(id)
@@ -606,8 +632,11 @@ export function deleteNotebook(id: string): void {
     const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
     writeAll(notebooks)
     localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`)
+    unpinNotebookFromDesktop(id)
     if (target) {
         localStorage.removeItem(`${HISTORY_KEY_PREFIX}${target.id}`)
+        unpinNotebookFromDesktop(target.id)
+        if (target.short_id) unpinNotebookFromDesktop(target.short_id)
         queueRemote(deleteNotebookRemote(target.id))
     } else {
         queueRemote(deleteNotebookRemote(id))

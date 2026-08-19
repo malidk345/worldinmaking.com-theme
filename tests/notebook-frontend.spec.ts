@@ -53,7 +53,9 @@ import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components
 import { isNotebookImageFile, notebookImageExtension } from '../src/lib/notebook-upload-shared'
 import {
     compactHistoryForStorage,
+    deleteNotebook,
     getNotebookHistory,
+    unpinNotebookFromDesktop,
     writeNotebookHistory,
     type StoredNotebook,
 } from '../src/notebook-app/scenes/notebooks/notebookStorage'
@@ -669,5 +671,22 @@ test.describe('notebook frontend helpers', () => {
             expect(getNotebookHistory('nb-quota-test').length).toBeGreaterThan(0)
             localStorage.removeItem('wim_notebook_history_nb-quota-test')
         }
+    })
+
+    test('deleting a notebook automatically unpins it from desktop pinned items', () => {
+        if (typeof localStorage === 'undefined') return
+        const customAppsKey = 'wim_os_desktop_pinned_items'
+        const initial = [
+            { id: 'nb-keep', notebookId: 'nb-keep', label: 'Keep Me', url: '/notebooks?id=nb-keep' },
+            { id: 'nb-delete-me', notebookId: 'nb-delete-me', label: 'Delete Me', url: '/notebooks?id=nb-delete-me' },
+        ]
+        localStorage.setItem(customAppsKey, JSON.stringify(initial))
+
+        unpinNotebookFromDesktop('nb-delete-me')
+
+        const remaining = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
+        expect(remaining).toHaveLength(1)
+        expect(remaining[0].id).toBe('nb-keep')
+        localStorage.removeItem(customAppsKey)
     })
 })

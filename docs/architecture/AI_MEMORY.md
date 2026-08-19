@@ -224,6 +224,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-205` | Stream 5 / 3 | P5: mentions + resolve notes | annotations, InlineNotePopover, MarkdownNotebook | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-19 |
 | `TSK-206` | Stream 5 / 1 | Fix notebook-actor Squeak getAvatar relative import path in test runner | `src/lib/notebook-actor.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-207` | Stream 4 / 3 | Comprehensive SEO: Schema JSON-LD, Dynamic Sitemap, AI Crawler robots.txt, Blog/Forum metadata | `src/lib/seo.ts`, `src/components/seo.tsx`, `src/pages/api/seo/sitemap.ts`, `public/robots.txt`, `src/components/Edition/ClientPost.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-208` | Stream 2 / 5 | Remove deleted notebooks from Desktop pinned items and add self-healing cleanup | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/lib/notebookStorage.ts`, `src/components/Desktop/index.tsx`, `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 Every AI model/agent working on this repository **MUST** follow these rules:
 
 1. **Read First:** Before starting any work, read this `AI_MEMORY.md` alongside [`FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md).
@@ -348,6 +349,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 272 - Remove deleted notebooks from Desktop pinned items
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed orphaned desktop note icons when notebooks are deleted:
+  1. Added `unpinNotebookFromDesktop` helper in `src/notebook-app/scenes/notebooks/notebookStorage.ts` and `src/lib/notebookStorage.ts` and wired it into `deleteNotebook(id)`.
+  2. Added self-healing and deleted notebook filtering to `loadPinnedApps` in `src/components/Desktop/index.tsx` and `src/components/Archive/ArchiveWindow.tsx`, preventing any deleted notes from lingering on the desktop.
+  3. Added automated unit test in `tests/notebook-frontend.spec.ts` verifying unpin behavior upon deletion.
+- **Modified Files:** `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/lib/notebookStorage.ts`, `src/components/Desktop/index.tsx`, `src/components/Archive/ArchiveWindow.tsx`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm typecheck:shell` (0 errors), `pnpm exec playwright test --config=playwright.helpers.config.ts` (34/34 passed).
+- **Handoff:** Desktop pinned items are automatically synchronized when notebooks are deleted.
 
 ### Entry 271 - Comprehensive SEO: Schema JSON-LD, Dynamic Sitemap, AI Crawlers in robots.txt
 - **Date:** 2026-08-19

@@ -159,10 +159,37 @@ export function saveNotebook(notebook: StoredNotebook): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notebooks))
 }
 
+const DESKTOP_PINNED_APPS_KEY = 'wim_os_desktop_pinned_items'
+
+export function unpinNotebookFromDesktop(id: string): void {
+    if (typeof window === 'undefined' || !id) return
+    try {
+        const raw = localStorage.getItem(DESKTOP_PINNED_APPS_KEY)
+        if (!raw) return
+        const existing = JSON.parse(raw)
+        if (!Array.isArray(existing)) return
+        const filtered = existing.filter(
+            (item: any) =>
+                item &&
+                item.id !== id &&
+                item.notebookId !== id &&
+                item.url !== `/notebooks?id=${id}` &&
+                !String(item.url || '').endsWith(`=${id}`)
+        )
+        if (filtered.length !== existing.length) {
+            localStorage.setItem(DESKTOP_PINNED_APPS_KEY, JSON.stringify(filtered))
+            window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 export function deleteNotebook(id: string): void {
     const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notebooks))
     localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`)
+    unpinNotebookFromDesktop(id)
 }
 
 export function createNotebook(title?: string, content?: string): StoredNotebook {

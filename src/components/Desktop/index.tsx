@@ -47,13 +47,58 @@ function Desktop() {
     }, [router.query.open])
 
     const loadPinnedApps = useCallback(() => {
+        if (typeof window === 'undefined') return
         try {
             const customAppsKey = 'wim_os_desktop_pinned_items'
-            const existing = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
-            const mapped: AppItem[] = existing.map((item: any) => ({
+            const raw = localStorage.getItem(customAppsKey)
+            const existing = JSON.parse(raw || '[]')
+            if (!Array.isArray(existing)) {
+                setPinnedApps([])
+                return
+            }
+
+            let deletedIds: string[] = []
+            try {
+                deletedIds = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+            } catch {
+                deletedIds = []
+            }
+            const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : [])
+
+            let existingNotebookIds: Set<string> | null = null
+            try {
+                const storedRaw = localStorage.getItem('wim_os_notebooks')
+                if (storedRaw) {
+                    const parsed = JSON.parse(storedRaw)
+                    if (Array.isArray(parsed)) {
+                        existingNotebookIds = new Set(
+                            parsed.flatMap((n: any) => [n?.id, n?.short_id].filter(Boolean))
+                        )
+                    }
+                }
+            } catch {
+                existingNotebookIds = null
+            }
+
+            const validItems = existing.filter((item: any) => {
+                if (!item) return false
+                const targetId = item.notebookId || item.id
+                if (!targetId) return true
+                if (deletedSet.has(targetId)) return false
+                if (existingNotebookIds && !existingNotebookIds.has(targetId)) {
+                    return false
+                }
+                return true
+            })
+
+            if (validItems.length !== existing.length) {
+                localStorage.setItem(customAppsKey, JSON.stringify(validItems))
+            }
+
+            const mapped: AppItem[] = validItems.map((item: any) => ({
                 label: item.label,
                 Icon: <AppIcon name="doc" />,
-                url: `/notebooks?id=${item.notebookId}`,
+                url: item.url || (item.notebookId ? `/notebooks?id=${item.notebookId}` : '/notebooks'),
                 source: 'desktop',
             }))
             setPinnedApps(mapped)

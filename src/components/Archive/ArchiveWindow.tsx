@@ -33,11 +33,25 @@ function loadPinnedApps(): AppItem[] {
     try {
         const existing = JSON.parse(localStorage.getItem(PINNED_APPS_KEY) || '[]')
         if (!Array.isArray(existing)) return []
-        return existing.map((item: { label?: string; notebookId?: string }) => ({
-            label: item.label || 'Notebook',
-            Icon: <AppIcon name="doc" />,
-            url: item.notebookId ? `/notebooks?id=${item.notebookId}` : undefined,
-        }))
+        let deletedIds: string[] = []
+        try {
+            deletedIds = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+        } catch {
+            deletedIds = []
+        }
+        const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : [])
+
+        return existing
+            .filter((item: any) => {
+                if (!item) return false
+                const targetId = item.notebookId || item.id
+                return !targetId || !deletedSet.has(targetId)
+            })
+            .map((item: { label?: string; notebookId?: string; url?: string }) => ({
+                label: item.label || 'Notebook',
+                Icon: <AppIcon name="doc" />,
+                url: item.url || (item.notebookId ? `/notebooks?id=${item.notebookId}` : undefined),
+            }))
     } catch {
         return []
     }
