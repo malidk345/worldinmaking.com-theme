@@ -230,6 +230,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-211` | Stream 3 / 5 | In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar | `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `renderNode.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-212` | Stream 3 / 5 | Fix Block More Menu (···) WIM AI Action to Target Full Block Text In-Place | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-213` | Stream 3 / 5 | Fluid Typewriter Character-by-Character Streaming Rewrite for In-Place Block AI | `src/notebook-app/lib/wimai-typewriter.ts`, `src/notebook-app/App.tsx`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-214` | Stream 3 / 5 | Position WIM AI Prompt Box Directly Above Target Block with Selected Container Highlight | `src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert.ts`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-215` | Stream 3 / 5 | Refine Shimmer Intensity & Preserve Natural Theme Font Colors | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -355,6 +357,26 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 279 - Refine Shimmer Intensity & Preserve Natural Theme Font Colors (TSK-215)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Toned down shimmer light sweep intensity and preserved natural theme typography:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`: Replaced stark `#ffffff` text gradient with subtle `currentColor` luminance wave using soft `color-mix` accents (`#60a5fa` / `#93c5fd` at low opacity).
+  2. Slowed animation to 3.2s for a calm, premium, non-glaring shimmer effect.
+  3. Removed forced `#f4f4f5` white text overrides on targeted rows, maintaining the site's dark theme typography.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, Playwright unit test suite (39/39 passed).
+- **Handoff:** Shimmer effect is subtle, gentle, and respects dark theme font colors.
+
+### Entry 278 - Position WIM AI Prompt Box Above Target Block with Container Highlight (TSK-214)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Positioned the WIM AI floating prompt pill directly above the target block during edits:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert.ts`: Placed the Prompt block before the target block in selection mode (`[Prompt, TargetNode]`).
+  2. `MarkdownNotebook.tsx`: Calculated `aiTargetedNodeIds` and applied `MarkdownNotebook__row--ai-targeted` container styling to the target block.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert.ts`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (39/39 passed).
 
 ### Entry 277 - Fluid Typewriter Character-by-Character Streaming Rewrite for In-Place Block AI (TSK-213)
 - **Date:** 2026-08-19

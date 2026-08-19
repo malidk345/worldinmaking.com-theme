@@ -2217,6 +2217,19 @@ function MarkdownNotebookEditor({
         () => (focusAIPromptRequest === undefined ? null : getLatestEmptyAIPromptNodeId(document.nodes)),
         [document.nodes, focusAIPromptRequest]
     )
+    const aiTargetedNodeIds = useMemo(() => {
+        const ids = new Set<string>()
+        for (const n of document.nodes) {
+            if (isPromptComponentNode(n)) {
+                const targetId = getNotebookStringProp(n.props.targetNodeId)
+                if (targetId) ids.add(targetId)
+            }
+        }
+        if (aiSelectionReviewRef.current?.targetNodeId) {
+            ids.add(aiSelectionReviewRef.current.targetNodeId)
+        }
+        return ids
+    }, [document.nodes])
     const showInsertBoundaries = mode === 'edit' && document.nodes.length > 0
     const placeholderNodeId = hasNotebookContent(renderedNodes) ? null : renderedNodes[0]?.id
     const insertCommands = useMemo(
@@ -5303,6 +5316,7 @@ function MarkdownNotebookEditor({
                     isInsertMenuOpen && 'MarkdownNotebook__row--insert-menu-open',
                     isAIPromptOpen && 'MarkdownNotebook__row--ai-prompt',
                     isAIWritingNode && 'MarkdownNotebook__row--ai-writing',
+                    aiTargetedNodeIds.has(node.id) && 'MarkdownNotebook__row--ai-targeted',
                     isDiscussionCommentNode(node) && 'MarkdownNotebook__row--margin-comment',
                     draggingNodeId === node.id && 'MarkdownNotebook__row--dragging',
                     inlineNotePopover?.nodeId === node.id && 'MarkdownNotebook__row--note-open',

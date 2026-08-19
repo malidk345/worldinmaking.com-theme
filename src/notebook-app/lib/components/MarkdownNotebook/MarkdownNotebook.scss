@@ -1497,45 +1497,43 @@ html.dark .MarkdownNotebook,
 
 @keyframes wimTextLightSweep {
     0% {
-        background-position: -200% center;
+        background-position: -250% center;
     }
     100% {
-        background-position: 200% center;
-    }
-}
-
-@keyframes wimBlockGlowPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.2), 0 0 16px rgba(59, 130, 246, 0.12);
-        background-color: rgba(59, 130, 246, 0.03);
-    }
-    50% {
-        box-shadow: 0 0 0 1.5px rgba(147, 197, 253, 0.45), 0 0 24px rgba(96, 165, 250, 0.25);
-        background-color: rgba(59, 130, 246, 0.07);
+        background-position: 250% center;
     }
 }
 
 .MarkdownNotebook__text-block--ai-shimmer {
     position: relative;
-    border-radius: 6px;
+    border-radius: 4px;
     background: linear-gradient(
         90deg,
-        rgba(255, 255, 255, 0.92) 0%,
-        #93c5fd 25%,
-        #ffffff 50%,
-        #60a5fa 75%,
-        rgba(255, 255, 255, 0.92) 100%
+        currentColor 0%,
+        currentColor 36%,
+        color-mix(in sRGB, currentColor 65%, #60a5fa 35%) 48%,
+        color-mix(in sRGB, currentColor 45%, #93c5fd 55%) 52%,
+        currentColor 64%,
+        currentColor 100%
     );
-    background-size: 200% auto;
+    background-size: 250% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: wimTextLightSweep 2s infinite linear, wimBlockGlowPulse 2.2s infinite ease-in-out;
+    animation: wimTextLightSweep 3.2s infinite ease-in-out;
 }
 
 .MarkdownNotebook__text-row--ai-shimmer {
     position: relative;
     border-radius: 6px;
+}
+
+.MarkdownNotebook__row--ai-targeted {
+    position: relative;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .MarkdownNotebook__text-block--ai-thinking {

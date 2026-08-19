@@ -49,7 +49,7 @@ export function planOpenAIPromptInsert(
         didUpdate = true
         if (options?.source === 'selection') {
             promptId = makeEmptyParagraph(`wimai-${nodeId}`).id
-            return [currentNode, makePromptComponentNode(promptId, promptProps)]
+            return [makePromptComponentNode(promptId, promptProps), currentNode]
         }
         if (isTextBlockNode(currentNode)) {
             const rawText = getInlineText(currentNode.children)
