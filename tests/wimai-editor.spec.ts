@@ -96,6 +96,28 @@ test.describe('WIM AI typewriter apply', () => {
         expect(replaceNotebookAIResponseMarkdown(base, 1, 'done', 1).markdown).toContain('done')
     })
 
+    test('animates selection and block in-place rewrites via playInlineSelectionMarkdown', async () => {
+        const { playInlineSelectionMarkdown } = await import('../src/notebook-app/lib/wimai-typewriter')
+
+        const base = `# Title\n\nOriginal long sentence about economics.\n\nAfter`
+        const frames: string[] = []
+        const latest = await playInlineSelectionMarkdown({
+            baseMarkdown: base,
+            responseNodeIndex: 1,
+            start: 0,
+            end: 'Original long sentence about economics.'.length,
+            fullText: 'Concise economics summary.',
+            isCancelled: () => false,
+            onFrame: (markdown) => frames.push(markdown),
+        })
+
+        expect(frames.length).toBeGreaterThan(0)
+        expect(latest).toContain('Concise economics summary.')
+        expect(latest).not.toContain('Original long sentence about economics.')
+        expect(latest).toContain('# Title')
+        expect(latest).toContain('After')
+    })
+
     test('a failed editor reply restores the prompt and does not insert the error as prose', async () => {
         const { applyNotebookAIFailure, NOTEBOOK_AI_WRITING_PLACEHOLDER } = await import(
             '../src/notebook-app/lib/components/MarkdownNotebook/notebookAI'

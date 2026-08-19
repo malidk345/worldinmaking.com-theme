@@ -15,7 +15,7 @@ import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
-import { playInlineEditorMarkdown } from './lib/wimai-typewriter'
+import { playInlineEditorMarkdown, playInlineSelectionMarkdown } from './lib/wimai-typewriter'
 import { notebookExcerptForEditor, wimaiEditorFailureMessage } from '../lib/bots/wimai-editor'
 import {
     StoredNotebook,
@@ -381,7 +381,21 @@ export function App() {
       }
 
       if (request.apply === 'inline') {
-        applyStatic(reply)
+        const start = request.selectionStart ?? 0
+        const end = request.selectionEnd ?? start + (request.selectedMarkdown?.length ?? 0)
+        await playInlineSelectionMarkdown({
+          baseMarkdown: request.markdownWithResponse,
+          responseNodeIndex: request.responseNodeIndex,
+          start,
+          end,
+          fullText: reply,
+          listItemIndex: request.listItemIndex,
+          isCancelled: () => requestId !== askAIAbortRef.current,
+          onFrame: (nextMarkdown) => {
+            if (requestId !== askAIAbortRef.current) return
+            setMarkdown(nextMarkdown)
+          },
+        })
         return reply
       }
 

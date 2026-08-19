@@ -229,6 +229,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-210` | Stream 3 / 5 | Minimalist Icon-Driven Inline WIM AI: Preset Action Palette, Keyboard Review Bar & Regenerate | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-211` | Stream 3 / 5 | In-Place Block AI Rewrite with Text Light Shimmer Effect & Revert Review Bar | `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `renderNode.tsx`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-212` | Stream 3 / 5 | Fix Block More Menu (···) WIM AI Action to Target Full Block Text In-Place | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-213` | Stream 3 / 5 | Fluid Typewriter Character-by-Character Streaming Rewrite for In-Place Block AI | `src/notebook-app/lib/wimai-typewriter.ts`, `src/notebook-app/App.tsx`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -354,6 +355,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 277 - Fluid Typewriter Character-by-Character Streaming Rewrite for In-Place Block AI (TSK-213)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Enabled real-time typewriter character-by-character streaming animation for in-place block and selection rewrites:
+  1. `src/notebook-app/lib/wimai-typewriter.ts`: Created `playInlineSelectionMarkdown` utilizing `playbackChunks` and `replaceInlineRangeInMarkdown` with smooth 24ms cadences.
+  2. `src/notebook-app/App.tsx`: Wired `playInlineSelectionMarkdown` into `handleNotebookAskAI` when `request.apply === 'inline'` instead of instant static snapping.
+  3. `tests/wimai-editor.spec.ts`: Added automated unit test verifying inline animated streaming frames across document nodes.
+- **Modified Files:** `src/notebook-app/lib/wimai-typewriter.ts`, `src/notebook-app/App.tsx`, `tests/wimai-editor.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (39/39 passed in 4.8s).
+- **Handoff:** In-place block AI rewriting now visually streams word-by-word/char-by-char with typewriter animation.
 
 ### Entry 276 - Fix Block More Menu (···) WIM AI Action to Target Full Block Text In-Place (TSK-212)
 - **Date:** 2026-08-19
