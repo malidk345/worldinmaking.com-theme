@@ -58,10 +58,24 @@ export function ensureUniqueNodeIds(nodes: NotebookBlockNode[]): NotebookBlockNo
 }
 
 export function cloneNotebookDocument(document: NotebookDocument): NotebookDocument {
+    if (typeof structuredClone === 'function') {
+        try {
+            return structuredClone(document)
+        } catch {
+            /* fall through to JSON clone */
+        }
+    }
     return JSON.parse(JSON.stringify(document)) as NotebookDocument
 }
 
 export function cloneNotebookNode<T extends NotebookBlockNode>(node: T): T {
+    if (typeof structuredClone === 'function') {
+        try {
+            return structuredClone(node)
+        } catch {
+            /* fall through to JSON clone */
+        }
+    }
     return JSON.parse(JSON.stringify(node)) as T
 }
 
@@ -208,7 +222,24 @@ function normalizeForSimilarity(value: string): string {
 }
 
 export function marksEqual(left: NotebookInlineMark[], right: NotebookInlineMark[]): boolean {
-    return JSON.stringify(normalizeInlineMarks(left)) === JSON.stringify(normalizeInlineMarks(right))
+    if (left === right) return true
+    if (!left.length && !right.length) return true
+    const normLeft = normalizeInlineMarks(left)
+    const normRight = normalizeInlineMarks(right)
+    if (normLeft.length !== normRight.length) return false
+    for (let i = 0; i < normLeft.length; i++) {
+        const l = normLeft[i]
+        const r = normRight[i]
+        if (!l || !r || l.type !== r.type) return false
+        if (l.type === 'link' && r.type === 'link') {
+            if (l.href !== r.href || l.title !== r.title) return false
+        } else if (l.type === 'mention' && r.type === 'mention') {
+            if (l.id !== r.id) return false
+        } else if (l.type === 'ref' && r.type === 'ref') {
+            if (l.id !== r.id) return false
+        }
+    }
+    return true
 }
 
 export function normalizeInlineMarks(marks: NotebookInlineMark[]): NotebookInlineMark[] {

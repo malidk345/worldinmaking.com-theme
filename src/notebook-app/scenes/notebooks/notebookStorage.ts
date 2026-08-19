@@ -342,7 +342,10 @@ function seedDefaults(): StoredNotebook[] {
     return seed
 }
 
+let inMemoryNotebooksCache: StoredNotebook[] | null = null
+
 function writeAll(notebooks: StoredNotebook[]): void {
+    inMemoryNotebooksCache = notebooks
     if (!setLocalStorageItem(storageKey(), JSON.stringify(notebooks))) {
         evictStaleNotebookHistory()
         setLocalStorageItem(storageKey(), JSON.stringify(notebooks))
@@ -431,8 +434,9 @@ export function writeNotebookHistory(id: string, history: NotebookVersion[]): vo
     writeHistory(id, history)
 }
 
-/** Pure local read — no hydrate side effects (used by remote merge). */
+/** Pure local read — cached in-memory with automatic invalidation. */
 function readLocalNotebooks(): StoredNotebook[] {
+    if (inMemoryNotebooksCache) return inMemoryNotebooksCache
     if (typeof window === 'undefined') return [...DEFAULT_NOTEBOOKS]
     const data = localStorage.getItem(storageKey()) || localStorage.getItem(STORAGE_KEY_BASE)
     if (!data) {
@@ -448,16 +452,23 @@ function readLocalNotebooks(): StoredNotebook[] {
                 /* fall through */
             }
         }
-        return seedDefaults()
+        const seeded = seedDefaults()
+        inMemoryNotebooksCache = seeded
+        return seeded
     }
     try {
         const parsed = JSON.parse(data) as StoredNotebook[]
         if (!Array.isArray(parsed) || parsed.length === 0) {
-            return seedDefaults()
+            const seeded = seedDefaults()
+            inMemoryNotebooksCache = seeded
+            return seeded
         }
+        inMemoryNotebooksCache = parsed
         return parsed
     } catch {
-        return seedDefaults()
+        const seeded = seedDefaults()
+        inMemoryNotebooksCache = seeded
+        return seeded
     }
 }
 
@@ -467,6 +478,7 @@ export function getNotebooks(): StoredNotebook[] {
 }
 
 export function rehydrateNotebooksForIdentity(): void {
+    inMemoryNotebooksCache = null
     hydrateStarted = false
     resetNotebookPullThrottle()
     stopLiveSync?.()
@@ -476,6 +488,11 @@ export function rehydrateNotebooksForIdentity(): void {
 }
 
 if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+        if (e.key === storageKey() || e.key === STORAGE_KEY_BASE) {
+            inMemoryNotebooksCache = null
+        }
+    })
     window.addEventListener(WIM_IDENTITY_EVENT, () => {
         rehydrateNotebooksForIdentity()
     })
