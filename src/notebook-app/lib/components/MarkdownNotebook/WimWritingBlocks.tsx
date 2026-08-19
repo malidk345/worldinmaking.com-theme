@@ -138,8 +138,10 @@ export function SubPageBlock({ node }: NotebookComponentRenderProps): JSX.Elemen
 export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentRenderProps): JSX.Element {
     const src = parseStringProp(node.props.src)
     const alt = parseStringProp(node.props.alt)
+    const caption = parseStringProp(node.props.caption) ?? alt
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [urlDraft, setUrlDraft] = useState(src)
     const inputRef = useRef<HTMLInputElement | null>(null)
     const editable = mode === 'edit'
 
@@ -150,7 +152,8 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
         setError(null)
         try {
             const uploaded = await uploadNotebookImage(file)
-            updateProps({ src: uploaded.url, alt: alt || file.name.replace(/\.[^.]+$/, '') })
+            const defaultAlt = file.name.replace(/\.[^.]+$/, '')
+            updateProps({ src: uploaded.url, alt: alt || defaultAlt, caption: caption || alt || '' })
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Upload failed.')
         } finally {
@@ -158,40 +161,131 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
         }
     }
 
-    return (
-        <div className="MarkdownNotebook__image-block">
-            {src ? <img className="MarkdownNotebook__image" src={src} alt={alt} /> : null}
-            {editable ? (
-                <div className="MarkdownNotebook__component-form">
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        hidden
-                        onChange={(event) => {
-                            void handleFiles(event.target.files)
-                            event.target.value = ''
-                        }}
-                    />
-                    <LemonButton
-                        size="small"
-                        type="secondary"
-                        icon={<IconUpload />}
-                        loading={busy}
-                        onClick={() => inputRef.current?.click()}
-                    >
-                        {src ? 'Replace image' : 'Upload image'}
-                    </LemonButton>
-                    <LemonInput
-                        value={src}
-                        onChange={(value) => updateProps({ src: value })}
-                        placeholder="or paste an image URL"
-                        autoFocus={wasNotebookNodeJustInserted(node.id) && !src}
-                    />
-                    <LemonInput value={alt} onChange={(value) => updateProps({ alt: value })} placeholder="Alt text" />
-                    {error ? <p className="MarkdownNotebook__image-error m-0">{error}</p> : null}
+    // When image is uploaded: render ONLY image and italic caption (no form block below!)
+    if (src) {
+        return (
+            <figure className="MarkdownNotebook__image-container">
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    hidden
+                    onChange={(event) => {
+                        void handleFiles(event.target.files)
+                        event.target.value = ''
+                    }}
+                />
+                <div className="MarkdownNotebook__image-wrapper">
+                    <img className="MarkdownNotebook__image" src={src} alt={alt || caption} />
+                    {editable ? (
+                        <div className="MarkdownNotebook__image-overlay-actions">
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__image-overlay-btn"
+                                onClick={() => inputRef.current?.click()}
+                                disabled={busy}
+                                title="Replace image"
+                            >
+                                <IconUpload className="size-3.5" />
+                                <span>{busy ? 'Uploading…' : 'Replace'}</span>
+                            </button>
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__image-overlay-btn MarkdownNotebook__image-overlay-btn--danger"
+                                onClick={() => updateProps({ src: '' })}
+                                title="Remove image"
+                            >
+                                <IconTrash className="size-3.5" />
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
-            ) : null}
+
+                {/* Italic caption / alt bilgi */}
+                {editable ? (
+                    <figcaption className="MarkdownNotebook__image-caption-box">
+                        <input
+                            type="text"
+                            value={caption}
+                            onChange={(e) => {
+                                const val = e.target.value
+                                updateProps({ caption: val, alt: val })
+                            }}
+                            placeholder="Add a caption… (italik alt bilgi)"
+                            className="MarkdownNotebook__image-caption-input"
+                        />
+                    </figcaption>
+                ) : caption ? (
+                    <figcaption className="MarkdownNotebook__image-caption-box">
+                        <em className="MarkdownNotebook__image-caption-text">{caption}</em>
+                    </figcaption>
+                ) : null}
+
+                {error ? <p className="MarkdownNotebook__image-error m-0 text-center">{error}</p> : null}
+            </figure>
+        )
+    }
+
+    // When NO image is uploaded: show clean upload placeholder
+    return (
+        <div className="MarkdownNotebook__image-empty-card">
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                hidden
+                onChange={(event) => {
+                    void handleFiles(event.target.files)
+                    event.target.value = ''
+                }}
+            />
+            <div className="MarkdownNotebook__image-empty-content">
+                <div className="MarkdownNotebook__image-empty-icon">
+                    <IconUpload className="size-6 text-[var(--color-text-secondary)]" />
+                </div>
+                <div className="flex flex-col items-center gap-1 text-center">
+                    <p className="text-sm font-medium m-0 text-[var(--color-text-primary)]">
+                        Add an image
+                    </p>
+                    <p className="text-xs text-[var(--color-text-secondary)] m-0">
+                        PNG, JPEG, WebP, or GIF (up to 6 MB)
+                    </p>
+                </div>
+                {editable ? (
+                    <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-xs">
+                        <LemonButton
+                            size="small"
+                            type="primary"
+                            icon={<IconUpload />}
+                            loading={busy}
+                            onClick={() => inputRef.current?.click()}
+                        >
+                            Upload image
+                        </LemonButton>
+                        <div className="w-full">
+                            <LemonInput
+                                size="small"
+                                value={urlDraft}
+                                onChange={(value) => setUrlDraft(value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && urlDraft.trim()) {
+                                        e.preventDefault()
+                                        updateProps({ src: urlDraft.trim() })
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (urlDraft.trim()) {
+                                        updateProps({ src: urlDraft.trim() })
+                                    }
+                                }}
+                                placeholder="or paste image URL & Enter"
+                                autoFocus={wasNotebookNodeJustInserted(node.id)}
+                            />
+                        </div>
+                    </div>
+                ) : null}
+                {error ? <p className="MarkdownNotebook__image-error m-0 text-center">{error}</p> : null}
+            </div>
         </div>
     )
 }

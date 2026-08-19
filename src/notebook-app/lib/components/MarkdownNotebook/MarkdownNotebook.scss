@@ -3755,6 +3755,183 @@ button.MarkdownNotebook__component-title:focus-visible {
     color: var(--color-text-secondary);
 }
 
+.MarkdownNotebook__image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin: 1.25rem 0;
+    padding: 0;
+    position: relative;
+}
+
+.MarkdownNotebook__image-wrapper {
+    position: relative;
+    max-width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    border-radius: var(--radius, 8px);
+    overflow: hidden;
+
+    &:hover .MarkdownNotebook__image-overlay-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+.MarkdownNotebook__image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius, 8px);
+    object-fit: contain;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    background: var(--color-bg-surface-secondary, rgba(255, 255, 255, 0.04));
+}
+
+.MarkdownNotebook__image-overlay-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 15;
+    pointer-events: none;
+
+    @media (max-width: 640px) {
+        opacity: 0.95;
+        pointer-events: auto;
+    }
+}
+
+.MarkdownNotebook__image-overlay-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 28px;
+    padding: 0 0.6rem;
+    border-radius: var(--radius-sm, 6px);
+    background: rgba(24, 24, 27, 0.82);
+    color: #f4f4f5;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    touch-action: manipulation;
+
+    &:hover {
+        background: rgba(39, 39, 42, 0.95);
+        border-color: rgba(255, 255, 255, 0.35);
+        transform: scale(1.04);
+        color: #ffffff;
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+
+    &--danger {
+        color: #f87171;
+        padding: 0 0.45rem;
+
+        &:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+    }
+}
+
+.MarkdownNotebook__image-caption-box {
+    width: 100%;
+    max-width: 600px;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    text-align: center;
+}
+
+.MarkdownNotebook__image-caption-input {
+    width: 100%;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary, #a1a1aa);
+    background: transparent;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    padding: 0.2rem 0.5rem;
+    transition: color 0.15s ease;
+
+    &::placeholder {
+        color: var(--color-text-tertiary, #71717a);
+        font-style: italic;
+        opacity: 0.65;
+    }
+
+    &:focus {
+        color: var(--color-text-primary, #f4f4f5);
+    }
+
+    @media (max-width: 640px) {
+        font-size: 16px; // iOS Safari zoom fix
+    }
+}
+
+.MarkdownNotebook__image-caption-text {
+    display: block;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary, #a1a1aa);
+}
+
+.MarkdownNotebook__image-empty-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 1rem 0;
+    padding: 1.75rem 1rem;
+    border: 1.5px dashed var(--color-border-primary, rgba(255, 255, 255, 0.16));
+    border-radius: var(--radius, 8px);
+    background: var(--color-bg-surface-secondary, rgba(255, 255, 255, 0.02));
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+
+    &:hover {
+        border-color: var(--color-accent, #3b82f6);
+        background: rgba(59, 130, 246, 0.03);
+    }
+}
+
+.MarkdownNotebook__image-empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.MarkdownNotebook__image-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color-bg-surface-primary, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.1));
+}
+
 .MarkdownNotebook__image-block {
     display: flex;
     flex-direction: column;
@@ -3763,7 +3940,8 @@ button.MarkdownNotebook__component-title:focus-visible {
 
 .MarkdownNotebook__image-error {
     font-size: 0.75rem;
-    color: var(--danger, #8b3a3a);
+    color: var(--danger, #ef4444);
+    margin-top: 0.35rem;
 }
 
 .MarkdownNotebook__database {

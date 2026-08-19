@@ -1159,6 +1159,11 @@ function serializeCommentNode(node: NotebookComponentBlockNode): string {
 
 function parseImageBlock(lines: string[], lineIndex: number): BlockParseResult {
     const match = lines[lineIndex].trim().match(IMAGE_BLOCK_REGEX)
+    const rawTarget = unescapeMarkdownImageValue(match?.[2] ?? '').trim()
+    const targetMatch = rawTarget.match(/^(\S+)(?:\s+["'](.*)["'])?$/)
+    const src = targetMatch ? targetMatch[1] : rawTarget
+    const caption = targetMatch?.[2] || ''
+    const alt = unescapeMarkdownImageValue(match?.[1] ?? '')
 
     return {
         node: {
@@ -1166,8 +1171,9 @@ function parseImageBlock(lines: string[], lineIndex: number): BlockParseResult {
             type: 'component',
             tagName: 'Image',
             props: {
-                alt: unescapeMarkdownImageValue(match?.[1] ?? ''),
-                src: unescapeMarkdownImageValue(match?.[2] ?? ''),
+                alt: alt || caption,
+                caption: caption || alt,
+                src,
             },
         },
         nextLineIndex: lineIndex + 1,
@@ -1479,8 +1485,12 @@ function serializePropValue(value: NotebookPropValue): string {
 
 function serializeImageNode(node: NotebookComponentBlockNode): string {
     const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : ''
+    const alt = typeof node.props.alt === 'string' ? node.props.alt : (typeof node.props.caption === 'string' ? node.props.caption : '')
+    const caption = typeof node.props.caption === 'string' && node.props.caption !== alt ? node.props.caption : ''
 
+    if (caption) {
+        return `![${escapeMarkdownImageAlt(alt)}](${escapeMarkdownImageSrc(src)} "${escapeMarkdownImageAlt(caption)}")`
+    }
     return `![${escapeMarkdownImageAlt(alt)}](${escapeMarkdownImageSrc(src)})`
 }
 
