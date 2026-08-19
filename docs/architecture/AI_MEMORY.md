@@ -236,6 +236,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-217` | Stream 3 / 5 | Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-218` | Stream 3 / 5 | Apply Site Standard Crisp Border Radius (var(--radius, 6px) / 4px) to WIM AI Overlays | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-219` | Stream 2 / 5 | Notebook Engine Performance Hardening: In-Memory Storage Cache, Fast structuredClone & Allocation-Free Marks Comparison | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/notebook-app/lib/components/MarkdownNotebook/utils.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-220` | Stream 1 / 2 | Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage | `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -361,6 +362,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 284 - Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage (TSK-220)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Resolved the Next.js href interpolation runtime error and eliminated editor text deletion race conditions:
+  1. `src/components/AppWindow/index.tsx`: Added guard in window focus navigation to resolve un-interpolated dynamic brackets (`/[...]`) against `window.location.pathname` instead of passing raw `/profile/[username]` template strings directly to `router.push`.
+  2. `src/components/Link/index.tsx`: Added fallback to standard anchor when `safeUrl` contains dynamic template brackets, preventing Next.js Link from throwing query interpolation exceptions.
+  3. `src/notebook-app/scenes/notebooks/notebookStorage.ts`: Ensured `saveNotebook` increments `next.version` monotonically on every local content change so local writes always outrank stale server pulls in `pickNewerNotebook`.
+  4. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`: Hardened `isKnownEcho` in `applyRemoteValue` to recognize identical and prefix/snapshot content, preventing spurious 3-way merges from reverting local keystrokes.
+- **Modified Files:** `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 4.0s).
+- **Handoff:** Profile links and window navigation never throw dynamic route errors; notebook writing and remote sync operate without text loss.
 
 ### Entry 283 - Notebook Engine Performance Hardening: In-Memory Storage Cache, Fast structuredClone & Allocation-Free Marks Comparison (TSK-219)
 - **Date:** 2026-08-19

@@ -666,8 +666,10 @@ function MarkdownNotebookEditor({
                     : localSnapshotsRef.current.indexOf(nextRemoteValue)
             const isKnownEcho =
                 snapshotIndex !== -1 ||
+                nextRemoteValue === localMarkdown ||
                 nextRemoteValue === lastBaseValueRef.current ||
-                (nextRemoteValue.length < localMarkdown.length && localMarkdown.startsWith(nextRemoteValue))
+                localSnapshotsRef.current.includes(nextRemoteValue) ||
+                (nextRemoteValue.length <= localMarkdown.length && localMarkdown.startsWith(nextRemoteValue))
             if (isKnownEcho) {
                 // Own save or last-save echo: the draft already continues from this body.
                 // Merging it would rewind or duplicate characters typed after the save.

@@ -214,6 +214,14 @@ export default function Link({
 
     // Shared internal link renderer
     const renderInternalLink = (extraProps?: any) => {
+        const hasDynamicBrackets = /\[[^\]]+\]/.test(safeUrl)
+        if (hasDynamicBrackets) {
+            return (
+                <a {...other} {...extraProps} href={safeUrl} className={className} onClick={handleClick}>
+                    {children}
+                </a>
+            )
+        }
         if (preview) {
             return (
                 <Tooltip

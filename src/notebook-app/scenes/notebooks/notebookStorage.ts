@@ -540,6 +540,10 @@ export function saveNotebook(
     const contentChanged =
         !previous || previous.content !== next.content || previous.title !== next.title
 
+    if (contentChanged) {
+        next.version = Math.max(Number(previous?.version || 0), Number(next.version || 0)) + 1
+    }
+
     const history = getNotebookHistory(notebook.id)
     const lastSnap = history[history.length - 1]
     const lastSnapAge = lastSnap ? Date.now() - new Date(lastSnap.timestamp).getTime() : Infinity
@@ -563,7 +567,6 @@ export function saveNotebook(
                 label: options.snapshotLabel,
             })
             writeHistory(notebook.id, history)
-            next.version = (next.version || 1) + 1
         }
     }
 
