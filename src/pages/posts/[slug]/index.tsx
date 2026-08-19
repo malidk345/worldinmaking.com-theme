@@ -1,21 +1,20 @@
-export const runtime = 'edge'
-
-import React from 'react'
-import type { GetServerSideProps } from 'next'
+import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
 import PostPage from 'components/posts/PostPage'
 import { fetchSupabasePostBySlug, normalizePostSlug, type SupabasePost } from 'lib/supabaseBlog'
 
-export const getServerSideProps: GetServerSideProps<{
-    params: { slug: string }
-    initialPost: SupabasePost
-}> = async (ctx) => {
-    const slug = normalizePostSlug(String(ctx.params?.slug || ''))
-    if (!slug) return { notFound: true }
-    const initialPost = await fetchSupabasePostBySlug(slug)
-    if (!initialPost) return { notFound: true }
-    return { props: { params: { slug }, initialPost } }
-}
+export default function PostSlugPage() {
+    const router = useRouter()
+    const slug = normalizePostSlug(String(router.query.slug || ''))
+    const [initialPost, setInitialPost] = useState<SupabasePost | null | undefined>(undefined)
 
-export default function PostSlugPage(props: { params: { slug: string }; initialPost: SupabasePost }) {
-    return <PostPage {...props} />
+    useEffect(() => {
+        if (!slug) return
+        fetchSupabasePostBySlug(slug).then((post) => setInitialPost(post ?? null))
+    }, [slug])
+
+    if (!slug || initialPost === undefined) return null
+    if (initialPost === null) return null
+
+    return <PostPage params={{ slug }} initialPost={initialPost} />
 }
