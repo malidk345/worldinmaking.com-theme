@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import Explorer from 'components/Explorer'
 import SEO from 'components/seo'
@@ -19,4 +17,4 @@ export default function HogPatch(): JSX.Element {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

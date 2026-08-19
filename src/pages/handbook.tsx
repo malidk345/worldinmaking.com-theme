@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import { SEO } from 'components/seo'
@@ -72,4 +70,4 @@ export const Handbook: React.FC = () => {
 
 export default Handbook
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

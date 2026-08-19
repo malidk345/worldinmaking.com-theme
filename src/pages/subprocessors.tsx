@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React, { useMemo, useState } from 'react'
 import { SEO } from 'components/seo'
 import Link from 'components/Link'
@@ -200,4 +198,4 @@ function SubprocessorsPage(): JSX.Element {
 
 export default SubprocessorsPage
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import Link from 'components/Link'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -49,4 +47,4 @@ export default function Reputation() {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

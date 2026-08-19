@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React, { useState, useEffect } from 'react'
 import SEO from 'components/seo'
 import ReaderView from 'components/ReaderView'
@@ -406,4 +404,4 @@ export default function PostHogMCPLanding(): JSX.Element {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

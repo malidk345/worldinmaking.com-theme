@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import SEO from 'components/seo'
 import WhyPostHogViewer from 'components/WhyPostHog'
@@ -44,4 +42,4 @@ export default function Start(): JSX.Element {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

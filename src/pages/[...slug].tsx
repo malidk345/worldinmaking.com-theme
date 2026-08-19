@@ -1,7 +1,5 @@
-export const runtime = 'edge'
-
 import React from 'react'
-import type { GetServerSideProps } from 'next'
+import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
 import Inbox from '../components/Inbox'
 import ProfileWrapper from '../components/Profile'
@@ -24,22 +22,10 @@ const NotebooksListSkeleton = dynamic(
     }
 )
 
-const ALLOWED_ROOTS = new Set(['share', 'notebooks', 'profile', 'u', 'display-options', 'bookmarks'])
-
-export const getServerSideProps: GetServerSideProps<{ slugParts: string[] }> = async (ctx) => {
-    const raw = ctx.params?.slug
+export default function DynamicSlugPage() {
+    const router = useRouter()
+    const raw = router.query.slug
     const slugParts = Array.isArray(raw) ? raw.map(String) : raw ? [String(raw)] : []
-    const root = slugParts[0] || ''
-    if (root === 'community' && slugParts[1] === 'profiles') {
-        return { props: { slugParts } }
-    }
-    if (ALLOWED_ROOTS.has(root)) {
-        return { props: { slugParts } }
-    }
-    return { notFound: true }
-}
-
-export default function DynamicSlugPage({ slugParts }: { slugParts: string[] }) {
     const slugs = slugParts.length > 0 ? slugParts : ['questions']
     const rootSegment = slugs[0]
     const slugStr = slugs[slugs.length - 1]

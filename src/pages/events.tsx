@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React, { useEffect, useState, useCallback } from 'react'
 import SEO from 'components/seo'
 import Explorer from 'components/Explorer'
@@ -734,4 +732,4 @@ const EventsPage = () => {
 
 export default EventsPage
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

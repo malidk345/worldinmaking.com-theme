@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import Explorer from 'components/Explorer'
 import Link from 'next/link'
@@ -206,4 +204,4 @@ export default function SparkJoy(): JSX.Element {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

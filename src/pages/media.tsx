@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import Editor from 'components/Editor'
 import SEO from 'components/seo'
@@ -46,4 +44,4 @@ export default function Media({ data }: MediaProps) {
 }
 
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

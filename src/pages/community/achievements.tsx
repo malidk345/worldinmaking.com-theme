@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { IconCheck } from '@posthog/icons'
 import CloudinaryImage from 'components/CloudinaryImage'
 import Link from 'components/Link'
@@ -169,4 +167,4 @@ export default function Achievements() {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

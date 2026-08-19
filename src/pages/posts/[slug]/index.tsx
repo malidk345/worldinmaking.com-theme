@@ -1,11 +1,16 @@
-export const runtime = 'edge'
-
 import React from 'react'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticProps, GetStaticPaths } from 'next'
 import PostPage from 'components/posts/PostPage'
 import { fetchSupabasePostBySlug, normalizePostSlug, type SupabasePost } from 'lib/supabaseBlog'
 
-export const getServerSideProps: GetServerSideProps<{
+export const getStaticPaths: GetStaticPaths = async () => {
+    return {
+        paths: [],
+        fallback: 'blocking',
+    }
+}
+
+export const getStaticProps: GetStaticProps<{
     params: { slug: string }
     initialPost: SupabasePost
 }> = async (ctx) => {
@@ -13,7 +18,7 @@ export const getServerSideProps: GetServerSideProps<{
     if (!slug) return { notFound: true }
     const initialPost = await fetchSupabasePostBySlug(slug)
     if (!initialPost) return { notFound: true }
-    return { props: { params: { slug }, initialPost } }
+    return { props: { params: { slug }, initialPost }, revalidate: 60 }
 }
 
 export default function PostSlugPage(props: { params: { slug: string }; initialPost: SupabasePost }) {

@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React, { useState } from 'react'
 import SEO from 'components/seo'
 import ReaderView from 'components/ReaderView'
@@ -213,4 +211,4 @@ export default function HogWatchPage() {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

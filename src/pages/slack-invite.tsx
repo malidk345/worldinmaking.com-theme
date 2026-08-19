@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React, { useEffect, useState } from 'react'
 import Spinner from 'components/Spinner'
 import { SEO } from 'components/seo'
@@ -45,4 +43,4 @@ function Slack() {
 
 export default Slack
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'

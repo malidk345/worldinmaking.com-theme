@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import React from 'react'
 import SEO from 'components/seo'
 import Editor from 'components/Editor'
@@ -43,4 +41,4 @@ export default function Partnerships(): JSX.Element {
     )
 }
 
-export { getServerSideProps } from 'lib/legacyGone'
+export { getStaticProps } from 'lib/legacyGone'
