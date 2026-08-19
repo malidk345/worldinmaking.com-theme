@@ -234,6 +234,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-215` | Stream 3 / 5 | Refine Shimmer Intensity & Preserve Natural Theme Font Colors | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-216` | Stream 3 / 5 | Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-217` | Stream 3 / 5 | Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-218` | Stream 3 / 5 | Apply Site Standard Crisp Border Radius (var(--radius, 6px) / 4px) to WIM AI Overlays | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -359,6 +360,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 282 - Apply Site Standard Crisp Border Radius to WIM AI Overlays (TSK-218)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Replaced capsule `9999px` border radius on WIM AI overlays with the site's crisp design system standards:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`: Set `.WimInlinePill`, `.WimInlinePill--review`, and `.WimInlinePill__presets` to `var(--radius, 6px)`, and buttons/tags to `var(--radius-sm, 4px)`.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, Playwright unit test suite (40/40 passed in 4.9s).
+- **Handoff:** WIM AI overlay border radius matches the site and notebook component design language.
 
 ### Entry 281 - Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens (TSK-217)
 - **Date:** 2026-08-19
