@@ -55,7 +55,7 @@ function splitName(meta: Record<string, unknown> | undefined, username: string |
 
 function roleType(role: string | null | undefined): User['role']['type'] {
     const r = (role || 'member').toLowerCase()
-    if (r === 'admin' || r === 'moderator' || r === 'staff') return 'moderator'
+    if (r === 'admin' || r === 'moderator' || r === 'staff' || r === 'webmaster') return 'moderator'
     if (r === 'public') return 'public'
     return 'authenticated'
 }
@@ -72,6 +72,14 @@ export function mapSupabaseToUser(
     profile: WimProfileRow | null
 ): User {
     const meta = (authUser.user_metadata || {}) as Record<string, unknown>
+    const appMeta = (authUser.app_metadata || {}) as Record<string, unknown>
+    const effectiveRole =
+        profile?.role ||
+        (appMeta?.role as string) ||
+        (meta?.role as string) ||
+        (appMeta?.is_admin || appMeta?.claims_admin || meta?.is_admin || meta?.isAdmin ? 'admin' : null) ||
+        'member'
+    const isModerator = roleType(effectiveRole) === 'moderator'
     const username =
         profile?.username ||
         (meta.username as string) ||
@@ -98,7 +106,7 @@ export function mapSupabaseToUser(
         lastName,
         biography: profile?.bio ?? null,
         company: null,
-        companyRole: null,
+        companyRole: effectiveRole && effectiveRole.toLowerCase() !== 'member' ? effectiveRole : (profile?.role || null),
         github: profile?.github ?? null,
         linkedin: profile?.linkedin ?? null,
         location: profile?.location ?? null,
@@ -135,14 +143,14 @@ export function mapSupabaseToUser(
         id: authUser.id as unknown as number,
         email: authUser.email || '',
         isMember: true,
-        isModerator: roleType(profile?.role) === 'moderator',
+        isModerator,
         blocked: false,
         confirmed: true,
         createdAt,
         provider: 'local' as const,
         username,
         profile: profileData as User['profile'],
-        role: { type: roleType(profile?.role) },
+        role: { type: roleType(effectiveRole) },
         wallet: { balance: 0, transactions: [] },
         hasPosthogLogin: false,
     } satisfies User

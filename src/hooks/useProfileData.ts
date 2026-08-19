@@ -141,7 +141,9 @@ export function useProfileData(identifier?: string | number) {
                         return user.profile?.avatar
                     })(),
                     reputation: user.profile?.reputation || 0,
-                    companyRole: user.role?.type || 'member',
+                    companyRole:
+                        user.profile?.companyRole ||
+                        (user.isModerator || user.role?.type === 'moderator' ? 'Admin' : 'member'),
                     createdAt: user.createdAt || new Date().toISOString(),
                     teams: { data: [] } as any,
                 },

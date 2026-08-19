@@ -237,6 +237,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-218` | Stream 3 / 5 | Apply Site Standard Crisp Border Radius (var(--radius, 6px) / 4px) to WIM AI Overlays | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-219` | Stream 2 / 5 | Notebook Engine Performance Hardening: In-Memory Storage Cache, Fast structuredClone & Allocation-Free Marks Comparison | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/notebook-app/lib/components/MarkdownNotebook/utils.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-220` | Stream 1 / 2 | Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage | `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-221` | Stream 1 / 4 | Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole | `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -362,6 +363,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 285 - Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole (TSK-221)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed role degradation where admin users were showing up as standard members:
+  1. `src/lib/wim-auth.ts`: Expanded `mapSupabaseToUser` to resolve roles from `authUser.app_metadata?.role`, `authUser.user_metadata?.role`, `app_metadata.is_admin`, and `user_metadata.is_admin` alongside `profile.role`, preventing JWT auth claims from being missed when the profile row is unpopulated or delayed.
+  2. `src/lib/wim-auth.ts`: Preserved `companyRole: effectiveRole` in the profile data object instead of defaulting to `null`.
+  3. `src/hooks/useProfileData.ts`: Fixed session fallback to preserve `user.profile.companyRole` and reflect `Admin` when `isModerator` or role is admin.
+- **Modified Files:** `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 8.8s).
+- **Handoff:** Admin role and moderator status resolve cleanly and consistently across session and profile views.
 
 ### Entry 284 - Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage (TSK-220)
 - **Date:** 2026-08-19
