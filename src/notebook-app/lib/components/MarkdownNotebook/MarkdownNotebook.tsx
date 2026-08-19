@@ -191,6 +191,7 @@ import {
     inlineNodesToHtml,
     makeEmptyParagraph,
     makeListItemId,
+    parseInlineMarkdown,
     parseMarkdownNotebook,
     sanitizeNotebookLinkHref,
     serializeMarkdownNotebook,
@@ -361,12 +362,13 @@ function MarkdownNotebookEditor({
         listItemIndex?: number
     ): void => {
         updateNode(targetNodeId, (currentNode) => {
+            const parsedReplacement = parseInlineMarkdown(replacement)
             if (isTextBlockNode(currentNode)) {
                 const [before, rest] = splitInlineNodesAt(currentNode.children, start)
                 const [, after] = splitInlineNodesAt(rest, Math.max(0, end - start))
                 return {
                     ...currentNode,
-                    children: normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after]),
+                    children: normalizeInlineNodes([...before, ...parsedReplacement, ...after]),
                 }
             }
             if (currentNode.type === 'list' && listItemIndex != null && currentNode.items[listItemIndex]) {
@@ -380,7 +382,7 @@ function MarkdownNotebookEditor({
                         const [, after] = splitInlineNodesAt(rest, Math.max(0, end - start))
                         return {
                             ...item,
-                            children: normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after]),
+                            children: normalizeInlineNodes([...before, ...parsedReplacement, ...after]),
                         }
                     }),
                 }

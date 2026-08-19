@@ -161,6 +161,33 @@ test.describe('selection rewrite replaces only the highlighted range', () => {
         expect(next).toContain('<Prompt')
         expect(next).toContain('world')
     })
+
+    test('parses rich markdown formatting instead of keeping raw markdown syntax', async () => {
+        const { replaceInlineRangeInMarkdown } = await import(
+            '../src/notebook-app/lib/components/MarkdownNotebook/notebookAI'
+        )
+        const { parseMarkdownNotebook } = await import(
+            '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
+        )
+        const markdown = 'Initial sentence.'
+        const replaced = replaceInlineRangeInMarkdown(markdown, 0, 0, 'Initial sentence.'.length, '**Bold** and *Italic* and `code`')
+        const parsed = parseMarkdownNotebook(replaced)
+        const paragraph = parsed.nodes[0]
+        expect(paragraph.type).toBe('paragraph')
+        if (paragraph.type === 'paragraph') {
+            const boldNode = paragraph.children.find((child) => child.type === 'text' && child.text === 'Bold')
+            expect(boldNode).toBeDefined()
+            expect(boldNode && 'marks' in boldNode && boldNode.marks?.some((m) => m.type === 'bold')).toBe(true)
+
+            const italicNode = paragraph.children.find((child) => child.type === 'text' && child.text === 'Italic')
+            expect(italicNode).toBeDefined()
+            expect(italicNode && 'marks' in italicNode && italicNode.marks?.some((m) => m.type === 'italic')).toBe(true)
+
+            const codeNode = paragraph.children.find((child) => child.type === 'text' && child.text === 'code')
+            expect(codeNode).toBeDefined()
+            expect(codeNode && 'marks' in codeNode && codeNode.marks?.some((m) => m.type === 'code')).toBe(true)
+        }
+    })
 })
 
 test.describe('inline editor stays off the chatbot', () => {

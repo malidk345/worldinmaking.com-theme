@@ -232,6 +232,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-213` | Stream 3 / 5 | Fluid Typewriter Character-by-Character Streaming Rewrite for In-Place Block AI | `src/notebook-app/lib/wimai-typewriter.ts`, `src/notebook-app/App.tsx`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-214` | Stream 3 / 5 | Position WIM AI Prompt Box Directly Above Target Block with Selected Container Highlight | `src/notebook-app/lib/components/MarkdownNotebook/planAIPromptInsert.ts`, `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-215` | Stream 3 / 5 | Refine Shimmer Intensity & Preserve Natural Theme Font Colors | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-216` | Stream 3 / 5 | Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -357,6 +358,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 280 - Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals (TSK-216)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed raw markdown syntax rendering and added smooth lifecycle dismissal:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/notebookAI.ts` & `MarkdownNotebook.tsx`: Replaced `plainTextToInlineNodes(replacement)` with `parseInlineMarkdown(replacement)` in `replaceChildrenRange` and `replaceInlineRangeInNode`. Formatted outputs like `**bold**`, `*italic*`, `` `code` `` now parse directly into rich inline mark nodes instead of appearing as raw literal syntax strings.
+  2. `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`: Added `handleDocumentClick` click-outside listener to cleanly auto-accept review mode on focus shift, auto-delete empty/errored prompts, and eliminate lingering pills.
+  3. `tests/wimai-editor.spec.ts`: Added automated unit test verifying markdown parsing in selection and block rewrites.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/notebookAI.ts`, `tests/wimai-editor.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 5.0s), `pnpm typecheck:shell` (0 errors).
+- **Handoff:** Markdown formatting renders properly formatted, and prompt/review pills dismiss cleanly.
 
 ### Entry 279 - Refine Shimmer Intensity & Preserve Natural Theme Font Colors (TSK-215)
 - **Date:** 2026-08-19

@@ -101,6 +101,64 @@ export function EditablePromptComponent({
         [setBlockRef]
     )
 
+    const deletePrompt = useCallback((): void => {
+        deleteNodeAndFocusAdjacent()
+    }, [deleteNodeAndFocusAdjacent])
+
+    const handleAccept = useCallback((): void => {
+        acceptAISelection()
+    }, [acceptAISelection])
+
+    const handleReject = useCallback((): void => {
+        rejectAISelection()
+    }, [rejectAISelection])
+
+    const updateQuestion = useCallback(
+        (nextQuestion: string): void => {
+            updateNode(node.id, (currentNode) => {
+                if (!isPromptComponentNode(currentNode)) {
+                    return currentNode
+                }
+                return {
+                    ...currentNode,
+                    props: {
+                        ...currentNode.props,
+                        question: nextQuestion,
+                        error: '',
+                    },
+                }
+            })
+            updateAIPromptQuery(nextQuestion)
+        },
+        [node.id, updateNode, updateAIPromptQuery]
+    )
+
+    const handleRunPrompt = useCallback(
+        (queryToRun: string = question): void => {
+            if (!queryToRun.trim() || isAIPromptSubmitDisabled) {
+                return
+            }
+            if (error) {
+                updateNode(node.id, (currentNode) => {
+                    if (!isPromptComponentNode(currentNode)) {
+                        return currentNode
+                    }
+                    return { ...currentNode, props: { ...currentNode.props, error: '' } }
+                })
+            }
+            setShowPresets(false)
+            submitAIPrompt(queryToRun)
+        },
+        [error, isAIPromptSubmitDisabled, node.id, question, submitAIPrompt, updateNode]
+    )
+
+    const handleRetry = useCallback((): void => {
+        setIsReviewing(false)
+        if (question.trim()) {
+            handleRunPrompt(question)
+        }
+    }, [handleRunPrompt, question])
+
     // Detect when AI finishes writing to switch to Accept/Reject review mode.
     useEffect(() => {
         if (isAIPromptSubmitDisabled) {
@@ -154,16 +212,16 @@ export function EditablePromptComponent({
         const handleReviewKeyDown = (e: globalThis.KeyboardEvent) => {
             if (e.key === 'Tab' || e.key === 'Enter') {
                 e.preventDefault()
-                acceptAISelection()
+                handleAccept()
             } else if (e.key === 'Escape') {
                 e.preventDefault()
-                rejectAISelection()
+                handleReject()
             }
         }
 
         window.addEventListener('keydown', handleReviewKeyDown)
         return () => window.removeEventListener('keydown', handleReviewKeyDown)
-    }, [isReviewing, mode, acceptAISelection, rejectAISelection])
+    }, [isReviewing, mode, handleAccept, handleReject])
 
     // Click outside listener: auto-dismisses empty prompts, auto-accepts review on focus change
     useEffect(() => {
@@ -174,7 +232,7 @@ export function EditablePromptComponent({
             const target = e.target as Node | null
             if (target && !wrapperRef.current.contains(target)) {
                 if (isReviewing) {
-                    acceptAISelection()
+                    handleAccept()
                     return
                 }
                 if (!question.trim() || error) {
@@ -185,59 +243,7 @@ export function EditablePromptComponent({
 
         document.addEventListener('mousedown', handleDocumentClick)
         return () => document.removeEventListener('mousedown', handleDocumentClick)
-    }, [mode, isAIPromptSubmitDisabled, isReviewing, question, error, acceptAISelection, deletePrompt])
-
-    const updateQuestion = (nextQuestion: string): void => {
-        updateNode(node.id, (currentNode) => {
-            if (!isPromptComponentNode(currentNode)) {
-                return currentNode
-            }
-            return {
-                ...currentNode,
-                props: {
-                    ...currentNode.props,
-                    question: nextQuestion,
-                    error: '',
-                },
-            }
-        })
-        updateAIPromptQuery(nextQuestion)
-    }
-
-    const handleRunPrompt = (queryToRun: string = question): void => {
-        if (!queryToRun.trim() || isAIPromptSubmitDisabled) {
-            return
-        }
-        if (error) {
-            updateNode(node.id, (currentNode) => {
-                if (!isPromptComponentNode(currentNode)) {
-                    return currentNode
-                }
-                return { ...currentNode, props: { ...currentNode.props, error: '' } }
-            })
-        }
-        setShowPresets(false)
-        submitAIPrompt(queryToRun)
-    }
-
-    const handleAccept = (): void => {
-        acceptAISelection()
-    }
-
-    const handleReject = (): void => {
-        rejectAISelection()
-    }
-
-    const handleRetry = (): void => {
-        setIsReviewing(false)
-        if (question.trim()) {
-            handleRunPrompt(question)
-        }
-    }
-
-    const deletePrompt = (): void => {
-        deleteNodeAndFocusAdjacent()
-    }
+    }, [mode, isAIPromptSubmitDisabled, isReviewing, question, error, handleAccept, deletePrompt])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         event.stopPropagation()

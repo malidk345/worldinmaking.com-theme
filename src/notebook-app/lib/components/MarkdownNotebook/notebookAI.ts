@@ -1,6 +1,6 @@
 import { getNotebookStringProp, isPromptComponentNode, isTextBlockNode } from './documentModel'
 import { plainTextToInlineNodes, splitInlineNodesAt } from './inlineContent'
-import { parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
+import { parseInlineMarkdown, parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
 import type { NotebookBlockNode, NotebookInlineNode } from './types'
 import { getInlineText, getNodeFingerprint, getNodeSignature, getNodeText, normalizeInlineNodes } from './utils'
 
@@ -15,7 +15,8 @@ function replaceChildrenRange(
     const to = Math.max(from, Math.min(end, textLength))
     const [before, rest] = splitInlineNodesAt(children, from)
     const [, after] = splitInlineNodesAt(rest, to - from)
-    return normalizeInlineNodes([...before, ...plainTextToInlineNodes(replacement), ...after])
+    const parsedReplacement = parseInlineMarkdown(replacement)
+    return normalizeInlineNodes([...before, ...parsedReplacement, ...after])
 }
 
 /** Replace a character range inside one block. Leaves every other node (including the Prompt) intact. */
