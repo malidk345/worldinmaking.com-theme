@@ -243,6 +243,10 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-224` | Stream 1 / 5 | Add Edge Runtime Export to All SSR/Dynamic Routes for Cloudflare Pages Build Compatibility | `src/pages/**/*.tsx` (32 routes) | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-225` | Stream 4 / 2 | True Hard Delete and Orphan Data Purge for Notebooks & Storage Media | `lib/notebooks-repo.ts`, `scripts/purge-deleted-notebooks.mjs` | `[COMPLETED]` | Antigravity / Claude Sonnet 4.6 | 2026-08-19 |
 | `TSK-226` | Stream 3 / 5 | WIM AI Inline Editor Mobile Responsiveness, Touch Targets & iOS Safari Auto-Zoom Fix | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-227` | Stream 3 / 5 | Compact WimInlinePill & Review Action Bar Sizing across Desktop & Mobile | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-228` | Stream 3 / 5 | Mobile Long-Press (Basılı Tutma) Block Action Bar & Touch Reordering (Move Up/Down, Duplicate, Delete, Comment, AI) | `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-229` | Stream 3 / 5 | Unify Slash (/) and 3-Dot Block Menus with Site Profile Menu UI & Compact Scrollable Viewport | `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-230` | Stream 3 / 5 | Pure Image Block Rendering with Edit Dialog (IconPencil) & Isolated Italic Caption Screen | `WimWritingBlocks.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -369,7 +373,47 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
-### Entry 290 - WIM AI Inline Editor Mobile Responsiveness & Touch UX (TSK-226)
+### Entry 294 - Pure Image Block Rendering with Edit Dialog (IconPencil) & Isolated Caption Screen (TSK-230)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Upgraded the image block to be completely pure and minimalist in the notebook document view:
+  1. **Bare Shell Presentation:** Removed the component header toolbar ("Image", duplicate delete icon, collapse chevron) and card wrapper borders (`.MarkdownNotebook__component-shell--bare`) from images, allowing them to render purely as standalone images without surrounding block containers.
+  2. **Pure Image Display:** When an image is uploaded/rendered, only the image and (if provided) a clean italic caption (`<em className="MarkdownNotebook__image-caption-text">`) are shown. Removed all inline caption input boxes and placeholder text under the image from the document view.
+  3. **Edit Toolbar & Modal:** Replaced the "Replace" button with an **Edit** action (`IconPencil` / Düzenle). Clicking "Edit" opens a clean, focused dialog (`.MarkdownNotebook__image-edit-card`) with backdrop blur.
+  4. **Edit Dialog Capabilities:** Inside the Edit dialog, users can upload a new image or paste a URL, write/edit the italic caption (alt text), and Save or Cancel cleanly.
+  5. **Delete Retention:** Kept the quick Remove (`IconTrash`) button on the image overlay toolbar.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/NotebookComponentShell.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/WimWritingBlocks.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 7.5s.
+
+### Entry 293 - Slash (/) & 3-Dot Block Menus RoundHog Font Unification & Mobile Centering (TSK-229)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Styled both the slash (`/`) insert menu and the 3-dot block more menu to match the site's profile dropdown menu:
+  1. **Font Unification:** Applied the site's signature brand font `RoundHog, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif` across the slash menu, categories, items, and `LemonMenu` popovers.
+  2. **Mobile Horizontal Centering:** Fixed mobile horizontal offset bug by setting `left: 50% !important; transform: translateX(-50%) !important; width: calc(100vw - 24px) !important;` so the slash menu is never cut off on the left on touch viewports.
+  3. **Visual Alignment:** Compact item heights (`26px`), 13px font size, 500 font-weight, matching padding (`0 8px`), clean unboxed icons with `0.65` opacity (`1.0` on hover), and glassmorphic surface backdrop blur.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 7.1s.
+
+### Entry 292 - Mobile Long-Press (Basılı Tutma) Block Action Bar & Touch Reordering (TSK-228)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Created intuitive mobile block interactions with long-press gestures, touch reordering, and quiet focus states:
+  1. **Long-Press Gesture (420ms):** Holding a block on touch devices activates haptic feedback (`navigator.vibrate(40)`) and pops up the `.MarkdownNotebook__mobile-block-bar` above the selected block.
+  2. **Mobile Block Actions:** Added quick actions for Comment (💬 Yorum), WIM AI (✨ AI), Move Up (⬆️ Yukarı), Move Down (⬇️ Aşağı), Duplicate (📋 Kopyala), and Delete (🗑️ Sil).
+  3. **Touch Block Reordering:** Added `moveBlockUp(nodeId)` and `moveBlockDown(nodeId)` via `moveBlockToBoundary`, enabling effortless 1-tap reordering on mobile without clunky drag handle touch issues.
+  4. **Quiet Reading View:** Kept block chrome completely invisible during casual scrolling / reading, only revealing subtle buttons on active `:focus-within` or on long-press.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 6.0s.
+
+### Entry 291 - Compact WimInlinePill & Review Action Bar Sizing (TSK-227)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Refined WIM AI inline prompt pill dimensions to be sleek, minimalist, and compact:
+  1. Desktop height adjusted to `32px` (max-width `360px`), mobile height adjusted to `36px`.
+  2. Sub-actions, submit, and review buttons resized to `20x20px` (desktop) and `24x24px` (mobile).
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed.
 - **Date:** 2026-08-19
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
 - **Summary:** Made the WIM AI inline prompt pill, action palette, and review bars fully responsive on mobile viewports (<640px):

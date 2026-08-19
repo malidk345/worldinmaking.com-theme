@@ -305,10 +305,13 @@ export function NotebookComponentShell({
         event.stopPropagation()
     }
 
+    const isBare = node.tagName === 'Image' || Boolean(definition?.bare)
+
     return (
         <div
             className={clsx(
                 'MarkdownNotebook__component-shell',
+                isBare && 'MarkdownNotebook__component-shell--bare',
                 `MarkdownNotebook__component-shell--status-${runStatus}`,
                 isSelected && 'MarkdownNotebook__component-shell--selected',
                 errors.length && 'MarkdownNotebook__component-shell--error'
@@ -318,138 +321,140 @@ export function NotebookComponentShell({
             tabIndex={mode === 'edit' ? 0 : undefined}
             onKeyDown={handleKeyDown}
         >
-            <div
-                className="MarkdownNotebook__component-toolbar"
-                onPointerDownCapture={handleToolbarPointerDownCapture}
-                onMouseDownCapture={handleToolbarMouseDownCapture}
-            >
-                <div className="MarkdownNotebook__component-toolbar-left">
-                    {canToggleComponentPanels ? (
-                        <button
-                            type="button"
-                            className={titleClassName}
-                            aria-expanded={hasOpenComponentPanel}
-                            onClick={toggleAllComponentPanels}
-                        >
-                            {titleContent}
-                        </button>
-                    ) : (
-                        <div className={titleClassName}>{titleContent}</div>
-                    )}
-                    {showModeActions || showViewModeFilters ? (
-                        <div className="MarkdownNotebook__component-mode-actions">
-                            <LemonButton
-                                aria-label={filtersLabel}
-                                size="xsmall"
-                                icon={<IconPencil />}
-                                active={componentPanels.filters}
-                                tooltip={filtersLabel}
-                                disabledReason={toolbarExtras?.filtersDisabledReason ?? undefined}
-                                onClick={() => toggleComponentPanel('filters')}
-                            />
-                            {showModeActions ? (
+            {!isBare ? (
+                <div
+                    className="MarkdownNotebook__component-toolbar"
+                    onPointerDownCapture={handleToolbarPointerDownCapture}
+                    onMouseDownCapture={handleToolbarMouseDownCapture}
+                >
+                    <div className="MarkdownNotebook__component-toolbar-left">
+                        {canToggleComponentPanels ? (
+                            <button
+                                type="button"
+                                className={titleClassName}
+                                aria-expanded={hasOpenComponentPanel}
+                                onClick={toggleAllComponentPanels}
+                            >
+                                {titleContent}
+                            </button>
+                        ) : (
+                            <div className={titleClassName}>{titleContent}</div>
+                        )}
+                        {showModeActions || showViewModeFilters ? (
+                            <div className="MarkdownNotebook__component-mode-actions">
                                 <LemonButton
-                                    aria-label={resultsLabel}
+                                    aria-label={filtersLabel}
                                     size="xsmall"
-                                    icon={componentPanels.results ? <IconEye /> : <IconHide />}
-                                    active={componentPanels.results}
-                                    tooltip={resultsLabel}
-                                    onClick={() => toggleComponentPanel('results')}
+                                    icon={<IconPencil />}
+                                    active={componentPanels.filters}
+                                    tooltip={filtersLabel}
+                                    disabledReason={toolbarExtras?.filtersDisabledReason ?? undefined}
+                                    onClick={() => toggleComponentPanel('filters')}
+                                />
+                                {showModeActions ? (
+                                    <LemonButton
+                                        aria-label={resultsLabel}
+                                        size="xsmall"
+                                        icon={componentPanels.results ? <IconEye /> : <IconHide />}
+                                        active={componentPanels.results}
+                                        tooltip={resultsLabel}
+                                        onClick={() => toggleComponentPanel('results')}
+                                    />
+                                ) : null}
+                            </div>
+                        ) : null}
+                    </div>
+                    {mode === 'edit' ? (
+                        isEditingTitle ? (
+                            <input
+                                className="MarkdownNotebook__component-toolbar-title MarkdownNotebook__component-toolbar-title--input"
+                                value={titleInputValue}
+                                placeholder={titlePlaceholder}
+                                aria-label="Component title"
+                                spellCheck={false}
+                                autoFocus
+                                onChange={(event) => setTitleDraft(event.target.value)}
+                                onBlur={() => {
+                                    commitTitle()
+                                    setIsEditingTitle(false)
+                                }}
+                                onKeyDown={handleTitleKeyDown}
+                            />
+                        ) : (
+                            // Clicking the title collapses the whole cell (same as hiding both panels);
+                            // double-click renames. No extra control is added to the toolbar.
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__component-toolbar-title MarkdownNotebook__component-toolbar-title--button"
+                                title={resolvedTitle ?? titlePlaceholder}
+                                aria-expanded={hasOpenComponentPanel}
+                                onClick={() => {
+                                    if (!canToggleComponentPanels) {
+                                        return
+                                    }
+                                    if (titleCollapseTimerRef.current) {
+                                        clearTimeout(titleCollapseTimerRef.current)
+                                    }
+                                    titleCollapseTimerRef.current = setTimeout(() => {
+                                        titleCollapseTimerRef.current = null
+                                        toggleAllComponentPanels()
+                                    }, 250)
+                                }}
+                                onDoubleClick={() => {
+                                    if (titleCollapseTimerRef.current) {
+                                        clearTimeout(titleCollapseTimerRef.current)
+                                        titleCollapseTimerRef.current = null
+                                    }
+                                    setIsEditingTitle(true)
+                                }}
+                            >
+                                {resolvedTitle ?? (
+                                    <span className="MarkdownNotebook__component-toolbar-title-placeholder">
+                                        {titlePlaceholder}
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    ) : resolvedTitle ? (
+                        <div className="MarkdownNotebook__component-toolbar-title" title={resolvedTitle}>
+                            {resolvedTitle}
+                        </div>
+                    ) : null}
+                    {mode === 'edit' || toolbarMenuItems || showCollapseToggle ? (
+                        <div className="MarkdownNotebook__component-actions">
+                            {showCollapseToggle ? (
+                                <LemonButton
+                                    aria-label={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
+                                    size="xsmall"
+                                    icon={hasOpenComponentPanel ? <IconCollapse /> : <IconExpand />}
+                                    tooltip={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
+                                    onClick={toggleAllComponentPanels}
+                                />
+                            ) : null}
+                            {toolbarMenuItems ? (
+                                <LemonMenu items={toolbarMenuItems} placement="bottom-end">
+                                    <LemonButton
+                                        aria-label="More actions"
+                                        size="xsmall"
+                                        icon={<IconEllipsis />}
+                                        tooltip="More actions"
+                                    />
+                                </LemonMenu>
+                            ) : null}
+                            {mode === 'edit' ? (
+                                <LemonButton
+                                    aria-label="Delete component"
+                                    size="xsmall"
+                                    icon={<IconTrash />}
+                                    tooltip="Delete"
+                                    status="danger"
+                                    onClick={deleteNode}
                                 />
                             ) : null}
                         </div>
                     ) : null}
                 </div>
-                {mode === 'edit' ? (
-                    isEditingTitle ? (
-                        <input
-                            className="MarkdownNotebook__component-toolbar-title MarkdownNotebook__component-toolbar-title--input"
-                            value={titleInputValue}
-                            placeholder={titlePlaceholder}
-                            aria-label="Component title"
-                            spellCheck={false}
-                            autoFocus
-                            onChange={(event) => setTitleDraft(event.target.value)}
-                            onBlur={() => {
-                                commitTitle()
-                                setIsEditingTitle(false)
-                            }}
-                            onKeyDown={handleTitleKeyDown}
-                        />
-                    ) : (
-                        // Clicking the title collapses the whole cell (same as hiding both panels);
-                        // double-click renames. No extra control is added to the toolbar.
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__component-toolbar-title MarkdownNotebook__component-toolbar-title--button"
-                            title={resolvedTitle ?? titlePlaceholder}
-                            aria-expanded={hasOpenComponentPanel}
-                            onClick={() => {
-                                if (!canToggleComponentPanels) {
-                                    return
-                                }
-                                if (titleCollapseTimerRef.current) {
-                                    clearTimeout(titleCollapseTimerRef.current)
-                                }
-                                titleCollapseTimerRef.current = setTimeout(() => {
-                                    titleCollapseTimerRef.current = null
-                                    toggleAllComponentPanels()
-                                }, 250)
-                            }}
-                            onDoubleClick={() => {
-                                if (titleCollapseTimerRef.current) {
-                                    clearTimeout(titleCollapseTimerRef.current)
-                                    titleCollapseTimerRef.current = null
-                                }
-                                setIsEditingTitle(true)
-                            }}
-                        >
-                            {resolvedTitle ?? (
-                                <span className="MarkdownNotebook__component-toolbar-title-placeholder">
-                                    {titlePlaceholder}
-                                </span>
-                            )}
-                        </button>
-                    )
-                ) : resolvedTitle ? (
-                    <div className="MarkdownNotebook__component-toolbar-title" title={resolvedTitle}>
-                        {resolvedTitle}
-                    </div>
-                ) : null}
-                {mode === 'edit' || toolbarMenuItems || showCollapseToggle ? (
-                    <div className="MarkdownNotebook__component-actions">
-                        {showCollapseToggle ? (
-                            <LemonButton
-                                aria-label={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
-                                size="xsmall"
-                                icon={hasOpenComponentPanel ? <IconCollapse /> : <IconExpand />}
-                                tooltip={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
-                                onClick={toggleAllComponentPanels}
-                            />
-                        ) : null}
-                        {toolbarMenuItems ? (
-                            <LemonMenu items={toolbarMenuItems} placement="bottom-end">
-                                <LemonButton
-                                    aria-label="More actions"
-                                    size="xsmall"
-                                    icon={<IconEllipsis />}
-                                    tooltip="More actions"
-                                />
-                            </LemonMenu>
-                        ) : null}
-                        {mode === 'edit' ? (
-                            <LemonButton
-                                aria-label="Delete component"
-                                size="xsmall"
-                                icon={<IconTrash />}
-                                tooltip="Delete"
-                                status="danger"
-                                onClick={deleteNode}
-                            />
-                        ) : null}
-                    </div>
-                ) : null}
-            </div>
+            ) : null}
             <NotebookComponentToolbarExtrasContext.Provider value={setToolbarExtras}>
                 <ComponentPanelContext.Provider value={componentPanelState}>
                     {errors.length ? (

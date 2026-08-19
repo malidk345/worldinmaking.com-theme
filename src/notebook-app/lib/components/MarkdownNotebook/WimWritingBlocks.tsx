@@ -1,6 +1,16 @@
 import { useRef, useState } from 'react'
 
-import { IconCollapse, IconDocument, IconExpand, IconInfo, IconPlus, IconTrash, IconUpload } from '@posthog/icons'
+import {
+    IconCollapse,
+    IconDocument,
+    IconExpand,
+    IconInfo,
+    IconPencil,
+    IconPlus,
+    IconTrash,
+    IconUpload,
+    IconX,
+} from '@posthog/icons'
 import { LemonButton, LemonCheckbox, LemonInput, LemonSelect, LemonTextArea } from '@posthog/lemon-ui'
 
 import { uploadNotebookImage } from '../../../../lib/notebook-upload'
@@ -48,20 +58,23 @@ export function CalloutBlock({ node, updateProps, mode }: NotebookComponentRende
                         }))}
                     />
                 ) : (
-                    <span>{CALLOUT_LABELS[tone]}</span>
+                    <span className="font-semibold text-sm">{CALLOUT_LABELS[tone]}</span>
                 )}
             </div>
-            {editable ? (
-                <LemonTextArea
-                    value={text}
-                    onChange={(value) => updateProps({ text: value })}
-                    placeholder="Write a callout…"
-                    minRows={2}
-                    autoFocus={wasNotebookNodeJustInserted(node.id)}
-                />
-            ) : (
-                <p className="MarkdownNotebook__callout-text">{text || 'Callout'}</p>
-            )}
+            <div className="MarkdownNotebook__callout-content">
+                {editable ? (
+                    <LemonTextArea
+                        value={text}
+                        onChange={(value) => updateProps({ text: value })}
+                        placeholder="Write callout text…"
+                        minRows={2}
+                        className="MarkdownNotebook__callout-textarea"
+                        autoFocus={wasNotebookNodeJustInserted(node.id)}
+                    />
+                ) : (
+                    <p className="m-0 leading-relaxed">{text}</p>
+                )}
+            </div>
         </div>
     )
 }
@@ -109,10 +122,10 @@ export function ToggleBlock({ node, updateProps, mode }: NotebookComponentRender
     )
 }
 
-export function SubPageBlock({ node }: NotebookComponentRenderProps): JSX.Element {
+export function SubpageBlock({ node }: NotebookComponentRenderProps): JSX.Element {
+    const title = parseStringProp(node.props.title) || 'Untitled Subpage'
+    const description = parseStringProp(node.props.description) || 'Embedded subpage reference'
     const notebookId = parseStringProp(node.props.notebookId)
-    const title = parseStringProp(node.props.title, 'Untitled page')
-    const description = parseStringProp(node.props.description, 'Open this page in the notebook app.')
 
     return (
         <button
@@ -142,6 +155,8 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [urlDraft, setUrlDraft] = useState(src)
+    const [isEditing, setIsEditing] = useState(false)
+    const [captionDraft, setCaptionDraft] = useState(caption)
     const inputRef = useRef<HTMLInputElement | null>(null)
     const editable = mode === 'edit'
 
@@ -153,7 +168,8 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
         try {
             const uploaded = await uploadNotebookImage(file)
             const defaultAlt = file.name.replace(/\.[^.]+$/, '')
-            updateProps({ src: uploaded.url, alt: alt || defaultAlt, caption: caption || alt || '' })
+            updateProps({ src: uploaded.url, alt: alt || defaultAlt, caption: captionDraft || caption || alt || '' })
+            setUrlDraft(uploaded.url)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Upload failed.')
         } finally {
@@ -161,7 +177,7 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
         }
     }
 
-    // When image is uploaded: render ONLY image and italic caption (no form block below!)
+    // When image is uploaded: render ONLY image and clean italic caption
     if (src) {
         return (
             <figure className="MarkdownNotebook__image-container">
@@ -182,17 +198,20 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
                             <button
                                 type="button"
                                 className="MarkdownNotebook__image-overlay-btn"
-                                onClick={() => inputRef.current?.click()}
-                                disabled={busy}
-                                title="Replace image"
+                                onClick={() => {
+                                    setCaptionDraft(caption)
+                                    setUrlDraft(src)
+                                    setIsEditing(true)
+                                }}
+                                title="Edit image and caption"
                             >
-                                <IconUpload className="size-3.5" />
-                                <span>{busy ? 'Uploading…' : 'Replace'}</span>
+                                <IconPencil className="size-3.5" />
+                                <span>Edit</span>
                             </button>
                             <button
                                 type="button"
                                 className="MarkdownNotebook__image-overlay-btn MarkdownNotebook__image-overlay-btn--danger"
-                                onClick={() => updateProps({ src: '' })}
+                                onClick={() => updateProps({ src: '', caption: '', alt: '' })}
                                 title="Remove image"
                             >
                                 <IconTrash className="size-3.5" />
@@ -201,24 +220,92 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
                     ) : null}
                 </div>
 
-                {/* Italic caption / alt bilgi */}
-                {editable ? (
-                    <figcaption className="MarkdownNotebook__image-caption-box">
-                        <input
-                            type="text"
-                            value={caption}
-                            onChange={(e) => {
-                                const val = e.target.value
-                                updateProps({ caption: val, alt: val })
-                            }}
-                            placeholder="Add a caption… (italik alt bilgi)"
-                            className="MarkdownNotebook__image-caption-input"
-                        />
-                    </figcaption>
-                ) : caption ? (
+                {/* Clean italic caption if present */}
+                {caption ? (
                     <figcaption className="MarkdownNotebook__image-caption-box">
                         <em className="MarkdownNotebook__image-caption-text">{caption}</em>
                     </figcaption>
+                ) : null}
+
+                {/* Edit modal / popover dialog */}
+                {isEditing ? (
+                    <div className="MarkdownNotebook__image-edit-overlay" onClick={() => setIsEditing(false)}>
+                        <div
+                            className="MarkdownNotebook__image-edit-card"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="MarkdownNotebook__image-edit-header">
+                                <span className="font-semibold text-sm">Edit Image</span>
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__image-edit-close"
+                                    onClick={() => setIsEditing(false)}
+                                >
+                                    <IconX className="size-4" />
+                                </button>
+                            </div>
+
+                            <div className="MarkdownNotebook__image-edit-body">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-medium text-[var(--color-text-secondary)]">Image Source</label>
+                                    <div className="flex items-center gap-2">
+                                        <LemonButton
+                                            size="small"
+                                            icon={<IconUpload />}
+                                            loading={busy}
+                                            onClick={() => inputRef.current?.click()}
+                                        >
+                                            Upload new
+                                        </LemonButton>
+                                        <div className="flex-1">
+                                            <LemonInput
+                                                size="small"
+                                                value={urlDraft}
+                                                onChange={(val) => setUrlDraft(val)}
+                                                placeholder="or paste URL"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 mt-3">
+                                    <label className="text-xs font-medium text-[var(--color-text-secondary)]">Caption (Italic)</label>
+                                    <LemonInput
+                                        size="small"
+                                        value={captionDraft}
+                                        onChange={(val) => setCaptionDraft(val)}
+                                        placeholder="Add a caption…"
+                                    />
+                                </div>
+
+                                {error ? <p className="MarkdownNotebook__image-error m-0 text-xs mt-2">{error}</p> : null}
+                            </div>
+
+                            <div className="MarkdownNotebook__image-edit-footer">
+                                <LemonButton
+                                    size="small"
+                                    type="secondary"
+                                    onClick={() => setIsEditing(false)}
+                                >
+                                    Cancel
+                                </LemonButton>
+                                <LemonButton
+                                    size="small"
+                                    type="primary"
+                                    onClick={() => {
+                                        updateProps({
+                                            src: urlDraft.trim() || src,
+                                            caption: captionDraft.trim(),
+                                            alt: captionDraft.trim() || alt,
+                                        })
+                                        setIsEditing(false)
+                                    }}
+                                >
+                                    Save
+                                </LemonButton>
+                            </div>
+                        </div>
+                    </div>
                 ) : null}
 
                 {error ? <p className="MarkdownNotebook__image-error m-0 text-center">{error}</p> : null}

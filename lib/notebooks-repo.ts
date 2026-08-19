@@ -459,7 +459,7 @@ export async function appendHistory(
     const { error } = await supabaseAdmin.from('wim_notebook_history').insert({
         notebook_id: notebookId,
         version: entry.version,
-        content: entry.content,
+        content: entry.content ?? '',
         title: entry.title ?? null,
         timestamp: entry.timestamp || new Date().toISOString(),
         label: entry.label ?? null,
@@ -474,7 +474,7 @@ export async function replaceHistory(notebookId: string, entries: NotebookVersio
     const rows = entries.map((entry) => ({
         notebook_id: notebookId,
         version: entry.version,
-        content: entry.content,
+        content: entry.content ?? '',
         title: entry.title ?? null,
         timestamp: entry.timestamp || new Date().toISOString(),
         label: entry.label ?? null,

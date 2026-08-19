@@ -386,10 +386,6 @@ html.dark .MarkdownNotebook,
     min-width: 0;
 }
 
-.MarkdownNotebook__text-row--ai-prompt {
-    grid-template-columns: var(--markdown-notebook-inline-control-width) minmax(0, 1fr);
-}
-
 .MarkdownNotebook__line-insert-menu-button {
     justify-self: start;
     color: var(--color-text-secondary);
@@ -975,24 +971,27 @@ html.dark .MarkdownNotebook,
 
 .MarkdownNotebook__text-row--ai-prompt {
     position: relative;
-    display: flex;
-    justify-content: center;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    grid-template-columns: none !important;
     height: auto;
-    min-height: 2.5rem;
-    margin: 0.15rem 0 0.4rem;
-    padding: 0.15rem 0;
+    min-height: 2.75rem;
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.2rem 0;
     overflow: visible;
-    z-index: 40;
+    z-index: 50;
 }
 
 @keyframes wimPillSlideIn {
     0% {
         opacity: 0;
-        transform: translateY(6px) scale(0.96);
+        transform: translateY(6px) scale(0.97);
     }
     100% {
         opacity: 1;
-        transform: none;
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -1010,11 +1009,11 @@ html.dark .MarkdownNotebook,
 @keyframes wimPresetsFadeIn {
     0% {
         opacity: 0;
-        transform: translateY(4px) scale(0.97);
+        transform: translateX(-50%) translateY(4px) scale(0.97);
     }
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 }
 
@@ -1025,7 +1024,7 @@ html.dark .MarkdownNotebook,
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 0;
+    height: auto;
     margin: 0;
     padding: 0;
     overflow: visible;
@@ -1036,35 +1035,28 @@ html.dark .MarkdownNotebook,
 }
 
 .WimInlinePill {
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: auto;
-    margin: 0;
+    position: relative;
+    margin: 0 auto;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    height: 36px;
-    padding: 0.2rem 0.55rem;
-    max-width: 380px;
+    justify-content: space-between;
+    gap: 0.35rem;
+    height: 32px;
+    padding: 0.15rem 0.45rem;
+    max-width: 360px;
     width: max-content;
-    min-width: 260px;
+    min-width: 240px;
     border-radius: var(--radius, 6px);
     background: var(--color-bg-surface-primary, #232630);
     border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.14));
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 5px rgba(0, 0, 0, 0.15);
     z-index: 60;
     color: var(--color-text-primary, #f4f4f5);
     backdrop-filter: blur(16px);
     animation: wimPillSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     box-sizing: border-box;
-
-    &.WimInlinePill--flipped {
-        top: 6px;
-        bottom: auto;
-    }
+    pointer-events: auto;
 
     &.WimInlinePill--busy {
         display: none;
@@ -1076,66 +1068,67 @@ html.dark .MarkdownNotebook,
 
     &.WimInlinePill--review {
         width: auto;
-        min-width: 84px;
+        min-width: 80px;
         max-width: 120px;
-        height: 32px;
-        padding: 0.15rem 0.45rem;
-        gap: 0.45rem;
+        height: 28px;
+        padding: 0.1rem 0.4rem;
+        gap: 0.35rem;
         justify-content: center;
         border-radius: var(--radius, 6px);
         background: var(--color-bg-surface-primary, #232630);
         border-color: var(--color-border-primary, rgba(255, 255, 255, 0.2));
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         animation: wimPillSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @media (max-width: 640px) {
-        width: calc(100% - 12px);
-        max-width: calc(100vw - 20px);
+        width: calc(100% - 20px);
+        max-width: min(360px, calc(100vw - 20px));
         min-width: 0;
-        height: 42px;
-        padding: 0.25rem 0.45rem;
-        gap: 0.35rem;
-        border-radius: var(--radius, 8px);
+        height: 36px;
+        padding: 0.2rem 0.45rem;
+        gap: 0.3rem;
+        margin: 0 auto;
+        border-radius: var(--radius, 6px);
         touch-action: manipulation;
 
         &.WimInlinePill--review {
             width: auto;
-            min-width: 124px;
+            min-width: 110px;
             max-width: calc(100vw - 24px);
-            height: 38px;
-            padding: 0.2rem 0.55rem;
-            gap: 0.55rem;
+            height: 32px;
+            padding: 0.15rem 0.5rem;
+            gap: 0.45rem;
         }
     }
 }
 
 .WimInlinePill__error {
-    margin: 0.35rem 0 0;
+    margin: 0.25rem 0 0;
     padding: 0 0.2rem;
     color: var(--danger, #fca5a5);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     line-height: 1.3;
 }
 
 .WimInlinePill__selectedTag {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 500;
     color: var(--color-text-secondary, #a1a1aa);
     background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08));
     border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.12));
-    padding: 0.08rem 0.35rem;
+    padding: 0.05rem 0.3rem;
     border-radius: var(--radius-sm, 4px);
-    max-width: 100px;
+    max-width: 90px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     flex-shrink: 0;
 
     @media (max-width: 640px) {
-        max-width: 65px;
-        font-size: 0.65rem;
-        padding: 0.05rem 0.25rem;
+        max-width: 60px;
+        font-size: 0.62rem;
+        padding: 0.04rem 0.22rem;
     }
 }
 
@@ -1143,8 +1136,8 @@ html.dark .MarkdownNotebook,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-sm, 4px);
     background: rgba(34, 197, 94, 0.16);
     color: #4ade80;
@@ -1159,7 +1152,7 @@ html.dark .MarkdownNotebook,
         color: #ffffff;
         border-color: #22c55e;
         transform: scale(1.08);
-        box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
     }
 
     &:active {
@@ -1167,9 +1160,9 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-sm, 6px);
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm, 5px);
     }
 }
 
@@ -1177,8 +1170,8 @@ html.dark .MarkdownNotebook,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-sm, 4px);
     background: var(--color-bg-fill-button-tertiary, rgba(255, 255, 255, 0.1));
     color: var(--color-text-secondary, #a1a1aa);
@@ -1200,9 +1193,9 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-sm, 6px);
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm, 5px);
     }
 }
 
@@ -1210,8 +1203,8 @@ html.dark .MarkdownNotebook,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-sm, 4px);
     background: rgba(239, 68, 68, 0.16);
     color: #f87171;
@@ -1226,7 +1219,7 @@ html.dark .MarkdownNotebook,
         color: #ffffff;
         border-color: #ef4444;
         transform: scale(1.08);
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
     }
 
     &:active {
@@ -1234,9 +1227,9 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-sm, 6px);
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm, 5px);
     }
 }
 
@@ -1244,8 +1237,8 @@ html.dark .MarkdownNotebook,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-sm, 4px);
     background: var(--color-bg-fill-button-tertiary, rgba(255, 255, 255, 0.1));
     color: var(--color-text-secondary, #a1a1aa);
@@ -1266,18 +1259,18 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-sm, 6px);
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm, 5px);
     }
 }
 
 .WimInlinePill__input {
     flex: 1;
     min-width: 0;
-    height: 26px;
-    padding: 0 0.2rem;
-    font-size: 0.82rem;
+    height: 24px;
+    padding: 0 0.15rem;
+    font-size: 0.78rem;
     color: var(--color-text-primary, #f4f4f5);
     background: transparent;
     border: 0;
@@ -1289,8 +1282,8 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        font-size: 16px; // Prevents iOS Safari auto-zoom on input focus
-        height: 32px;
+        font-size: 15px; // Keeps mobile readable while staying compact
+        height: 26px;
     }
 }
 
@@ -1298,8 +1291,8 @@ html.dark .MarkdownNotebook,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-sm, 4px);
     background: var(--color-bg-fill-button-tertiary, rgba(255, 255, 255, 0.12));
     color: var(--color-text-secondary, #9ca3af);
@@ -1330,9 +1323,9 @@ html.dark .MarkdownNotebook,
     }
 
     @media (max-width: 640px) {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-sm, 6px);
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm, 5px);
     }
 }
 
@@ -1905,6 +1898,7 @@ h3.MarkdownNotebook__text-block--heading {
     }
 }
 
+/* Slash (/) Insert Menu — styled identically to site's profile / taskbar menu */
 .MarkdownNotebook__insert-menu {
     position: fixed;
     top: var(--markdown-notebook-insert-menu-top);
@@ -1912,18 +1906,23 @@ h3.MarkdownNotebook__text-block--heading {
     z-index: calc(var(--z-popover) + 1);
     box-sizing: border-box;
     width: var(--markdown-notebook-insert-menu-width);
-    max-width: min(14.25rem, calc(100vw - 16px));
-    max-height: var(--markdown-notebook-insert-menu-max-height);
-    padding: 0.25rem;
+    min-width: 180px;
+    max-width: min(15rem, calc(100vw - 16px));
+    max-height: min(200px, var(--markdown-notebook-insert-menu-max-height, 220px));
+    padding: 5px;
     margin: 0;
-    overflow: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     color: var(--color-text-primary);
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     visibility: hidden;
-    background: var(--color-bg-surface-primary);
-    border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
-    box-shadow: var(--shadow-elevation-3000);
+    background: var(--color-bg-surface-primary, #232630);
+    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius, 6px);
+    box-shadow: 0px 10px 38px -10px rgba(0, 0, 0, 0.45), 0px 10px 20px -15px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(16px);
+    animation: wimPresetsFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .MarkdownNotebook__insert-menu--positioned {
@@ -1935,18 +1934,21 @@ h3.MarkdownNotebook__text-block--heading {
 }
 
 .MarkdownNotebook__insert-category + .MarkdownNotebook__insert-category {
-    margin-top: 0.375rem;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.08));
 }
 
 .MarkdownNotebook__insert-category h5 {
-    padding: 0.2rem 0.4rem 0.05rem;
+    padding: 3px 6px 2px;
     margin: 0;
-    font-size: 0.625rem;
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 11px;
     font-weight: 600;
     line-height: 1.2;
-    color: var(--color-text-secondary);
+    color: var(--color-text-secondary, #a1a1aa);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
 }
 
 .MarkdownNotebook__insert-grid {
@@ -1957,25 +1959,28 @@ h3.MarkdownNotebook__text-block--heading {
 
 .MarkdownNotebook__insert-item {
     display: flex;
-    gap: 0.375rem;
+    gap: 8px;
     align-items: center;
-    min-height: 1.75rem;
-    padding: 0.2rem 0.35rem;
-    font: inherit;
-    font-size: 0.8125rem;
+    min-height: 26px;
+    height: 26px;
+    padding: 0 8px;
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-primary);
+    line-height: 1;
+    color: var(--color-text-primary, #f4f4f5);
     text-align: left;
     cursor: pointer;
     background: transparent;
     border: 0;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-sm, 4px);
+    transition: background 120ms ease, color 120ms ease;
 }
 
 .MarkdownNotebook__insert-item:disabled {
-    color: var(--color-text-tertiary);
+    color: var(--color-text-tertiary, #71717a);
     cursor: not-allowed;
-    opacity: 0.65;
+    opacity: 0.5;
 }
 
 .MarkdownNotebook__insert-item-icon {
@@ -1983,30 +1988,37 @@ h3.MarkdownNotebook__text-block--heading {
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 1.125rem;
-    height: 1.125rem;
-    color: var(--color-text-secondary);
-    background: var(--color-bg-fill-tertiary);
-    border-radius: 0.2rem;
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-secondary, #a1a1aa);
+    background: transparent;
+    opacity: 0.65;
+    transition: opacity 120ms ease, color 120ms ease;
 }
 
 .MarkdownNotebook__insert-item-icon svg {
-    width: 0.8125rem;
-    height: 0.8125rem;
+    width: 15px;
+    height: 15px;
 }
 
 .MarkdownNotebook__insert-item-highlight {
     padding: 0 0.0625rem;
     color: inherit;
-    background: var(--mark);
+    background: var(--mark, rgba(59, 130, 246, 0.3));
     border-radius: 0.1875rem;
 }
 
 .MarkdownNotebook__insert-item:hover,
 .MarkdownNotebook__insert-item:focus-visible,
 .MarkdownNotebook__insert-item--selected {
-    background: var(--color-bg-fill-button-tertiary-hover);
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08));
+    color: var(--color-text-primary, #ffffff);
     outline: none;
+
+    .MarkdownNotebook__insert-item-icon {
+        opacity: 1;
+        color: var(--color-text-primary, #ffffff);
+    }
 }
 
 .MarkdownNotebook__insert-item:disabled:hover,
@@ -2023,35 +2035,129 @@ h3.MarkdownNotebook__text-block--heading {
 .MarkdownNotebook__empty-menu,
 .MarkdownNotebook__parse-errors,
 .MarkdownNotebook__component-errors {
-    font-size: 0.8125rem;
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 13px;
 }
 
 .MarkdownNotebook__empty-menu {
     padding: 0.5rem 0.4rem;
-    color: var(--color-text-secondary);
+    color: var(--color-text-secondary, #a1a1aa);
     text-align: center;
+}
+
+/* 3-Dot Block More Menu Popovers & LemonMenu styling — match site profile / taskbar menu */
+.Popover__content:has(.LemonMenuOverlay),
+.Popover__content:has(.LemonMenuItemList),
+.LemonMenuOverlay {
+    background: var(--color-bg-surface-primary, #232630) !important;
+    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.12)) !important;
+    border-radius: var(--radius, 6px) !important;
+    padding: 5px !important;
+    min-width: 160px !important;
+    box-shadow: 0px 10px 38px -10px rgba(0, 0, 0, 0.45), 0px 10px 20px -15px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(16px);
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.LemonMenuOverlay ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+}
+
+.LemonMenuOverlay .LemonButton {
+    min-height: 26px !important;
+    height: 26px !important;
+    padding: 0 8px !important;
+    border-radius: var(--radius-sm, 4px) !important;
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    color: var(--color-text-primary, #f4f4f5) !important;
+    gap: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    transition: background 120ms ease, color 120ms ease !important;
+
+    &:hover,
+    &:focus-visible {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08)) !important;
+        color: var(--color-text-primary, #ffffff) !important;
+    }
+
+    .LemonButton__icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 16px !important;
+        height: 16px !important;
+        margin: 0 !important;
+        color: var(--color-text-secondary, #a1a1aa) !important;
+        opacity: 0.65 !important;
+        transition: opacity 120ms ease, color 120ms ease !important;
+    }
+
+    &:hover .LemonButton__icon {
+        opacity: 1 !important;
+        color: var(--color-text-primary, #ffffff) !important;
+    }
+
+    &.LemonButton--status-danger {
+        color: #f87171 !important;
+
+        .LemonButton__icon {
+            color: #f87171 !important;
+            opacity: 0.75 !important;
+        }
+
+        &:hover {
+            background: rgba(239, 68, 68, 0.12) !important;
+            color: #fca5a5 !important;
+        }
+    }
 }
 
 @media (max-width: 640px) {
     .MarkdownNotebook__insert-menu {
-        max-width: calc(100vw - 12px);
-        max-height: min(16rem, var(--markdown-notebook-insert-menu-max-height));
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        min-width: 0 !important;
+        max-height: min(180px, 45vh);
+        padding: 4px;
+        margin: 0 auto;
+    }
+
+    .MarkdownNotebook__insert-menu--above {
+        transform: translate(-50%, -100%) !important;
     }
 
     .MarkdownNotebook__invite-picker {
-        max-width: calc(100vw - 12px);
-        max-height: min(18rem, var(--markdown-notebook-invite-picker-max-height));
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        min-width: 0 !important;
+        max-height: min(180px, 45vh);
     }
 
     .MarkdownNotebook__insert-item {
-        min-height: 2.25rem;
-        padding: 0.35rem 0.45rem;
-        font-size: 0.875rem;
+        min-height: 28px;
+        height: 28px;
+        font-size: 13.5px;
     }
 
     .MarkdownNotebook__insert-item-icon {
-        width: 1.375rem;
-        height: 1.375rem;
+        width: 16px;
+        height: 16px;
     }
 }
 
@@ -2543,6 +2649,39 @@ h3.MarkdownNotebook__text-block--heading {
     box-shadow: none;
     outline: none;
     transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, backdrop-filter 180ms ease;
+}
+
+.MarkdownNotebook__component-shell--bare {
+    background: transparent !important;
+    border: none !important;
+    border-left: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0.25rem 0 !important;
+    overflow: visible !important;
+
+    &:hover,
+    &:active,
+    &:focus,
+    &:focus-within {
+        background: transparent !important;
+        border: none !important;
+        border-left: none !important;
+        box-shadow: none !important;
+    }
+
+    &::after {
+        display: none !important;
+    }
+
+    .MarkdownNotebook__component-panel {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3438,6 +3577,84 @@ button.MarkdownNotebook__component-title:focus-visible {
     opacity: 0.85;
 }
 
+.MarkdownNotebook__row--mobile-active {
+    background: color-mix(in sRGB, var(--color-accent, #3b82f6) 8%, transparent);
+    border-radius: var(--radius, 6px);
+    box-shadow: 0 0 0 1.5px color-mix(in sRGB, var(--color-accent, #3b82f6) 40%, transparent);
+}
+
+.MarkdownNotebook__mobile-block-bar {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.35rem;
+    background: var(--color-bg-surface-primary, #232630);
+    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.16));
+    border-radius: var(--radius, 8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(16px);
+    pointer-events: auto;
+    animation: wimPresetsFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    white-space: nowrap;
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.MarkdownNotebook__mobile-block-bar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    height: 28px;
+    padding: 0 0.45rem;
+    border-radius: var(--radius-sm, 5px);
+    background: var(--color-bg-fill-button-tertiary, rgba(255, 255, 255, 0.08));
+    color: var(--color-text-primary, #f4f4f5);
+    border: 1px solid transparent;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    touch-action: manipulation;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+
+    &:active {
+        transform: scale(0.94);
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.18));
+    }
+
+    &--danger {
+        color: #f87171;
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.25);
+
+        &:active {
+            background: #ef4444;
+            color: #ffffff;
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome {
+        opacity: 0.95;
+        pointer-events: auto;
+    }
+
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-more-btn {
+        opacity: 0.9;
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}
+
 .MarkdownNotebook__ref--note {
     background: transparent;
     border-bottom: 1px solid color-mix(in sRGB, var(--color-text-primary, #1d4d4f) 28%, transparent);
@@ -3856,35 +4073,6 @@ button.MarkdownNotebook__component-title:focus-visible {
     text-align: center;
 }
 
-.MarkdownNotebook__image-caption-input {
-    width: 100%;
-    text-align: center;
-    font-style: italic;
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    color: var(--color-text-secondary, #a1a1aa);
-    background: transparent;
-    border: 0;
-    outline: none;
-    box-shadow: none;
-    padding: 0.2rem 0.5rem;
-    transition: color 0.15s ease;
-
-    &::placeholder {
-        color: var(--color-text-tertiary, #71717a);
-        font-style: italic;
-        opacity: 0.65;
-    }
-
-    &:focus {
-        color: var(--color-text-primary, #f4f4f5);
-    }
-
-    @media (max-width: 640px) {
-        font-size: 16px; // iOS Safari zoom fix
-    }
-}
-
 .MarkdownNotebook__image-caption-text {
     display: block;
     text-align: center;
@@ -3892,6 +4080,79 @@ button.MarkdownNotebook__component-title:focus-visible {
     font-size: 0.8125rem;
     line-height: 1.4;
     color: var(--color-text-secondary, #a1a1aa);
+}
+
+/* Image Edit Dialog Overlay & Card */
+.MarkdownNotebook__image-edit-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: calc(var(--z-popover) + 50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    padding: 1rem;
+    animation: wimPresetsFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.MarkdownNotebook__image-edit-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--color-bg-surface-primary, #232630);
+    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.14));
+    border-radius: var(--radius, 8px);
+    box-shadow: 0px 16px 48px -8px rgba(0, 0, 0, 0.6);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.MarkdownNotebook__image-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.08));
+    color: var(--color-text-primary, #f4f4f5);
+}
+
+.MarkdownNotebook__image-edit-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text-secondary, #a1a1aa);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+
+    &:hover {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08));
+        color: var(--color-text-primary, #ffffff);
+    }
+}
+
+.MarkdownNotebook__image-edit-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.MarkdownNotebook__image-edit-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.08));
 }
 
 .MarkdownNotebook__image-empty-card {

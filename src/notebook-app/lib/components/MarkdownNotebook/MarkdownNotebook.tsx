@@ -9,6 +9,7 @@ import {
     KeyboardEvent,
     MouseEvent as ReactMouseEvent,
     ReactNode,
+    TouchEvent as ReactTouchEvent,
     useCallback,
     useEffect,
     useId,
@@ -18,7 +19,18 @@ import {
     useState,
 } from 'react'
 
-import { IconComment, IconDrag, IconEllipsis } from '@posthog/icons'
+import {
+    IconArrowDown,
+    IconArrowUp,
+    IconComment,
+    IconCopy,
+    IconDrag,
+    IconEllipsis,
+    IconPeople,
+    IconSparkles,
+    IconTrash,
+    IconX,
+} from '@posthog/icons'
 import { LemonMenu } from '@posthog/lemon-ui'
 
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
@@ -430,6 +442,8 @@ function MarkdownNotebookEditor({
     const [invitePicker, setInvitePicker] = useState<{ nodeId: string } | null>(null)
     const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
     const [blockMenuNodeId, setBlockMenuNodeId] = useState<string | null>(null)
+    const [mobileActiveNodeId, setMobileActiveNodeId] = useState<string | null>(null)
+    const touchStartPosRef = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout> | null } | null>(null)
     const [inviteStatus, setInviteStatus] = useState<{ names: string[]; error?: string } | null>(null)
     const initialInsertMenuAppliedRef = useRef(false)
     const emptyNodeRef = useRef<NotebookTextBlockNode>(makeEmptyParagraph('initial-empty'))
@@ -554,6 +568,68 @@ function MarkdownNotebookEditor({
         trackLocalSnapshot(value)
         // oxlint-disable-next-line exhaustive-deps
     }, [value])
+
+    useEffect(() => {
+        if (!mobileActiveNodeId) return
+        const handleOutsideDismiss = (e: MouseEvent | TouchEvent) => {
+            const target = e.target as HTMLElement | null
+            if (!target?.closest('.MarkdownNotebook__mobile-block-bar') && !target?.closest('.MarkdownNotebook__row--mobile-active')) {
+                setMobileActiveNodeId(null)
+            }
+        }
+        document.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
+        document.addEventListener('mousedown', handleOutsideDismiss)
+        return () => {
+            document.removeEventListener('touchstart', handleOutsideDismiss)
+            document.removeEventListener('mousedown', handleOutsideDismiss)
+        }
+    }, [mobileActiveNodeId])
+
+    const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
+        if (mode !== 'edit' || isTitle) return
+        const touch = event.touches[0]
+        if (!touch) return
+        const x = touch.clientX
+        const y = touch.clientY
+
+        if (touchStartPosRef.current?.timer) {
+            clearTimeout(touchStartPosRef.current.timer)
+        }
+
+        const timer = setTimeout(() => {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                try {
+                    navigator.vibrate(40)
+                } catch {
+                    // Ignore vibration errors
+                }
+            }
+            setMobileActiveNodeId(nodeId)
+        }, 420)
+
+        touchStartPosRef.current = { x, y, timer }
+    }
+
+    const handleRowTouchMove = (event: ReactTouchEvent<HTMLDivElement>): void => {
+        if (!touchStartPosRef.current) return
+        const touch = event.touches[0]
+        if (!touch) return
+        const dx = Math.abs(touch.clientX - touchStartPosRef.current.x)
+        const dy = Math.abs(touch.clientY - touchStartPosRef.current.y)
+        if (dx > 8 || dy > 8) {
+            if (touchStartPosRef.current.timer) {
+                clearTimeout(touchStartPosRef.current.timer)
+            }
+            touchStartPosRef.current = null
+        }
+    }
+
+    const handleRowTouchEnd = (): void => {
+        if (touchStartPosRef.current?.timer) {
+            clearTimeout(touchStartPosRef.current.timer)
+        }
+        touchStartPosRef.current = null
+    }
 
     useLayoutEffect(() => {
         const request = restoreSelectionRef.current
@@ -3397,6 +3473,39 @@ function MarkdownNotebookEditor({
         deleteNodeWithRefCleanup(nodeId)
     }
 
+    const moveBlockUp = (nodeId: string): void => {
+        const currentDocument = documentRef.current
+        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+        const fromIndex = nodes.findIndex((node) => node.id === nodeId)
+        if (fromIndex > 1) {
+            moveBlockToBoundary(nodeId, fromIndex - 1)
+        }
+    }
+
+    const moveBlockDown = (nodeId: string): void => {
+        const currentDocument = documentRef.current
+        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+        const fromIndex = nodes.findIndex((node) => node.id === nodeId)
+        if (fromIndex >= 1 && fromIndex < nodes.length - 1) {
+            moveBlockToBoundary(nodeId, fromIndex + 2)
+        }
+    }
+
+    const duplicateBlock = (nodeId: string): void => {
+        const currentDocument = documentRef.current
+        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+        const fromIndex = nodes.findIndex((node) => node.id === nodeId)
+        if (fromIndex < 0) return
+        const originalNode = nodes[fromIndex]
+        const duplicatedNode = {
+            ...originalNode,
+            id: makeEmptyParagraph(`duplicate-${originalNode.id}`).id,
+        }
+        const nextNodes = [...nodes]
+        nextNodes.splice(fromIndex + 1, 0, duplicatedNode)
+        commitDocument({ ...currentDocument, nodes: nextNodes })
+    }
+
     const copyFloatingToolbarSelection = (): void => {
         if (!floatingToolbar?.selectedMarkdown) {
             return
@@ -5324,13 +5433,128 @@ function MarkdownNotebookEditor({
                     isDiscussionCommentNode(node) && 'MarkdownNotebook__row--margin-comment',
                     draggingNodeId === node.id && 'MarkdownNotebook__row--dragging',
                     inlineNotePopover?.nodeId === node.id && 'MarkdownNotebook__row--note-open',
-                    isBlockMenuOpen && 'MarkdownNotebook__row--menu-open'
+                    isBlockMenuOpen && 'MarkdownNotebook__row--menu-open',
+                    mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active'
                 )}
                 onMouseEnter={(event) => updateActiveBoundaryFromRow(event, index)}
                 onMouseMove={(event) => updateActiveBoundaryFromRow(event, index)}
                 onFocusCapture={() => handleRowFocus(index)}
                 onBlurCapture={(event) => handleRowBlur(event, index)}
+                onTouchStart={(event) => handleRowTouchStart(node.id, isTitleRow, event)}
+                onTouchMove={handleRowTouchMove}
+                onTouchEnd={handleRowTouchEnd}
+                onTouchCancel={handleRowTouchEnd}
             >
+                {mobileActiveNodeId === node.id && mode === 'edit' && !isTitleRow ? (
+                    <div className="MarkdownNotebook__mobile-block-bar" contentEditable={false}>
+                        {canCommentOnBlock ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    setMobileActiveNodeId(null)
+                                    startBlockCommentForNode(node.id)
+                                }}
+                                title="Yorum yap"
+                            >
+                                <IconComment className="size-3.5" />
+                                <span>Yorum</span>
+                            </button>
+                        ) : null}
+
+                        {onAskAI && !isAIPromptOpen ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    setMobileActiveNodeId(null)
+                                    runBlockMoreMenuAction(node.id, 'wim-ai')
+                                }}
+                                title="WIM AI"
+                            >
+                                <IconSparkles className="size-3.5 text-blue-400" />
+                                <span>AI</span>
+                            </button>
+                        ) : null}
+
+                        {index > 1 ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    moveBlockUp(node.id)
+                                }}
+                                title="Yukarı taşı"
+                            >
+                                <IconArrowUp className="size-3.5" />
+                                <span>Yukarı</span>
+                            </button>
+                        ) : null}
+
+                        {index < renderedNodes.length - 1 ? (
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    moveBlockDown(node.id)
+                                }}
+                                title="Aşağı taşı"
+                            >
+                                <IconArrowDown className="size-3.5" />
+                                <span>Aşağı</span>
+                            </button>
+                        ) : null}
+
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__mobile-block-bar-btn"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                duplicateBlock(node.id)
+                                setMobileActiveNodeId(null)
+                            }}
+                            title="Kopyala"
+                        >
+                            <IconCopy className="size-3.5" />
+                        </button>
+
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__mobile-block-bar-btn MarkdownNotebook__mobile-block-bar-btn--danger"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setMobileActiveNodeId(null)
+                                runBlockMoreMenuAction(node.id, 'delete')
+                            }}
+                            title="Sil"
+                        >
+                            <IconTrash className="size-3.5" />
+                        </button>
+
+                        <button
+                            type="button"
+                            className="MarkdownNotebook__mobile-block-bar-btn"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setMobileActiveNodeId(null)
+                            }}
+                            title="Kapat"
+                        >
+                            <IconX className="size-3.5" />
+                        </button>
+                    </div>
+                ) : null}
                 {isDraggableRow ? (
                     <div
                         className="MarkdownNotebook__drag-handle"
@@ -5415,6 +5639,16 @@ function MarkdownNotebookEditor({
                                 items={blockMoreMenuItems.map((item) => ({
                                     label: item.label,
                                     status: item.status,
+                                    icon:
+                                        item.key === 'comment' ? (
+                                            <IconComment className="size-4 opacity-50 group-hover/item:opacity-75" />
+                                        ) : item.key === 'invite' ? (
+                                            <IconPeople className="size-4 opacity-50 group-hover/item:opacity-75" />
+                                        ) : item.key === 'wim-ai' ? (
+                                            <IconSparkles className="size-4 text-blue-400 opacity-80 group-hover/item:opacity-100" />
+                                        ) : item.key === 'delete' ? (
+                                            <IconTrash className="size-4 text-red-400 opacity-70 group-hover/item:opacity-100" />
+                                        ) : undefined,
                                     onClick: () => runBlockMoreMenuAction(node.id, item.key),
                                 }))}
                             >
