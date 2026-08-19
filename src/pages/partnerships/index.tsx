@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React from 'react'
 import SEO from 'components/seo'
 import Editor from 'components/Editor'

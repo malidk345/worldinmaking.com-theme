@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React, { useCallback, useState } from 'react'
 import HugHog from 'components/HugHog'
 import Layout from 'components/Layout'

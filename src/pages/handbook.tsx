@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import { SEO } from 'components/seo'

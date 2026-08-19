@@ -240,6 +240,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-221` | Stream 1 / 4 | Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole | `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-222` | Stream 2 / 4 | Automatic Bucket Creation and Resilience for Notebook Media Image Uploads | `src/pages/api/notebooks/upload.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-223` | Stream 4 / 5 | Supabase Full-Stack Architecture Hardening: 121 Indexes, pg_trgm Search, Auto-Profile Trigger & Storage RLS | Supabase DB / `scratch/optimize_database.mjs` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-224` | Stream 1 / 5 | Add Edge Runtime Export to All SSR/Dynamic Routes for Cloudflare Pages Build Compatibility | `src/pages/**/*.tsx` (32 routes) | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -365,6 +366,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 288 - Add Edge Runtime Export to All SSR/Dynamic Routes for Cloudflare Pages Build Compatibility (TSK-224)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Resolved the Cloudflare Pages `@cloudflare/next-on-pages` build failure:
+  1. Injected `export const runtime = 'edge'` across all 32 SSR/dynamic pages that export `getServerSideProps` (`src/pages/[...slug].tsx`, `src/pages/101.tsx`, `src/pages/events.tsx`, `src/pages/community/*`, `src/pages/sparks-joy/*`, `src/pages/r/*`, `src/pages/posts/[slug]/*`, `src/pages/questions/[permalink].tsx`, etc.).
+  2. Cloudflare Pages build validator now recognizes all dynamic routes as edge-compatible without build-time rejections.
+- **Modified Files:** 32 route files in `src/pages/`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 2.9s).
+- **Handoff:** Cloudflare Pages `pnpm pages:build` compiles smoothly across all edge routes.
 
 ### Entry 287 - Supabase Full-Stack Architecture Hardening: 121 Indexes, pg_trgm Search, Auto-Profile Trigger & Storage RLS (TSK-223)
 - **Date:** 2026-08-19

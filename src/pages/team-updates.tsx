@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import Layout from 'components/Layout'
 import React, { useEffect, useState } from 'react'
 import qs from 'qs'

@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { IconCheck } from '@posthog/icons'
 import CloudinaryImage from 'components/CloudinaryImage'
 import Link from 'components/Link'

@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React from 'react'
 import SEO from 'components/seo'
 import WhyPostHogViewer from 'components/WhyPostHog'

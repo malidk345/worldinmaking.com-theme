@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import SEO from 'components/seo'
 import Editor from 'components/Editor'

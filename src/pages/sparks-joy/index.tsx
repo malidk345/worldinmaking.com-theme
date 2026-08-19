@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React from 'react'
 import Explorer from 'components/Explorer'
 import Link from 'next/link'

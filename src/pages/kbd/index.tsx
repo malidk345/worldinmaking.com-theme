@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React, { useState, useEffect } from 'react'
 import SEO from 'components/seo'
 import ScrollArea from 'components/RadixUI/ScrollArea'

@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React from 'react'
 import Link from 'components/Link'
 import ScrollArea from 'components/RadixUI/ScrollArea'

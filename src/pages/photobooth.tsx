@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { CallToAction } from 'components/CallToAction'
 import CloudinaryImage from 'components/CloudinaryImage'
 import Layout from 'components/Layout'

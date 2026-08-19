@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React, { useMemo, useState } from 'react'
 import { SEO } from 'components/seo'
 import Link from 'components/Link'

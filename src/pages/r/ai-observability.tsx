@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import React, { useState, useEffect, useMemo } from 'react'
 import SEO from 'components/seo'
 import ReaderView from 'components/ReaderView'
