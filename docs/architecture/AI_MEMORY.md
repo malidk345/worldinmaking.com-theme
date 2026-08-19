@@ -241,6 +241,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-222` | Stream 2 / 4 | Automatic Bucket Creation and Resilience for Notebook Media Image Uploads | `src/pages/api/notebooks/upload.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-223` | Stream 4 / 5 | Supabase Full-Stack Architecture Hardening: 121 Indexes, pg_trgm Search, Auto-Profile Trigger & Storage RLS | Supabase DB / `scratch/optimize_database.mjs` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-224` | Stream 1 / 5 | Add Edge Runtime Export to All SSR/Dynamic Routes for Cloudflare Pages Build Compatibility | `src/pages/**/*.tsx` (32 routes) | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-225` | Stream 4 / 2 | True Hard Delete and Orphan Data Purge for Notebooks & Storage Media | `lib/notebooks-repo.ts`, `scripts/purge-deleted-notebooks.mjs` | `[COMPLETED]` | Antigravity / Claude Sonnet 4.6 | 2026-08-19 |
+| `TSK-226` | Stream 3 / 5 | WIM AI Inline Editor Mobile Responsiveness, Touch Targets & iOS Safari Auto-Zoom Fix | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -366,6 +368,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 290 - WIM AI Inline Editor Mobile Responsiveness & Touch UX (TSK-226)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Made the WIM AI inline prompt pill, action palette, and review bars fully responsive on mobile viewports (<640px):
+  1. Responsive Pill Dimensions: Fluid width `calc(100% - 12px)` capped at `calc(100vw - 20px)` with `box-sizing: border-box` preventing horizontal overflow on narrow mobile screens.
+  2. Touch Targets: Scaled all buttons (`__plusBtn`, `__submitBtn`, `__acceptBtn`, `__retryBtn`, `__rejectBtn`) to 28x28px with `touch-action: manipulation` for effortless tapping.
+  3. iOS Safari Auto-Zoom Fix: Set input `font-size: 16px` on mobile breakpoints to stop browser viewport jumps.
+  4. Presets Palette: Constrained width to `calc(100vw - 24px)` with scrollable touch surface.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`
+- **Tests:** 36/36 Playwright unit tests passed.
+
+### Entry 289 - True Hard Delete and Orphan Data Purge for Notebooks & Storage Media (TSK-225)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity / Claude Sonnet 4.6
+- **Summary:** Upgraded notebook deletion from soft-delete to true hard delete and purged orphaned data:
+  1. `lib/notebooks-repo.ts`: `deleteNotebook` now performs a hard SQL `DELETE` on `wim_notebooks`, purges all associated version history in `wim_notebook_history`, and removes uploaded media files from `notebook-media` bucket under the owner key prefix.
+  2. Purge Script: Ran `scripts/purge-deleted-notebooks.mjs` against Supabase to clean up 27 previously soft-deleted rows and their history records.
+- **Modified Files:** `lib/notebooks-repo.ts`, `scripts/purge-deleted-notebooks.mjs`
 
 ### Entry 288 - Add Edge Runtime Export to All SSR/Dynamic Routes for Cloudflare Pages Build Compatibility (TSK-224)
 - **Date:** 2026-08-19
