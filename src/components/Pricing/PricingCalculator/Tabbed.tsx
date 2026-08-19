@@ -266,14 +266,16 @@ export default function Tabbed() {
             nodes: [{ products: billingProducts }],
         },
     } = useStaticQuery(allProductsData)
-    const [analyticsData, setAnalyticsData] = useState(
-        analyticsSliders.reduce((acc, slider) => {
+    // ⚡ Bolt: Fixed array-as-object anti-pattern (using {} instead of []) and lazily
+    // initialized state to prevent O(N) dict construction on every React render
+    const [analyticsData, setAnalyticsData] = useState(() => {
+        return analyticsSliders.reduce((acc: Record<string, any>, slider) => {
             slider.types.forEach(({ type, enhanced }) => {
                 acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
             })
             return acc
-        }, [])
-    )
+        }, {})
+    })
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
     const { products: initialProducts, setVolume, setProduct, monthlyTotal } = useProducts()
