@@ -38,12 +38,27 @@ export default async function handler(req: Request) {
     const id = crypto.randomUUID()
     const path = `${auth.ownerKey}/${id}.${ext}`
 
-    const { error } = await supabaseAdmin.storage.from('notebook-media').upload(path, await file.arrayBuffer(), {
+    let uploadRes = await supabaseAdmin.storage.from('notebook-media').upload(path, await file.arrayBuffer(), {
         contentType: file.type,
         upsert: false,
     })
-    if (error) {
-        return json({ error: error.message || 'Storage is not available.' }, 503)
+    if (
+        uploadRes.error &&
+        (uploadRes.error.message?.toLowerCase().includes('not found') ||
+            uploadRes.error.message?.toLowerCase().includes('bucket'))
+    ) {
+        try {
+            await supabaseAdmin.storage.createBucket('notebook-media', { public: true })
+            uploadRes = await supabaseAdmin.storage.from('notebook-media').upload(path, await file.arrayBuffer(), {
+                contentType: file.type,
+                upsert: false,
+            })
+        } catch {
+            /* ignore bucket create error */
+        }
+    }
+    if (uploadRes.error) {
+        return json({ error: uploadRes.error.message || 'Storage is not available.' }, 503)
     }
 
     const { data } = supabaseAdmin.storage.from('notebook-media').getPublicUrl(path)

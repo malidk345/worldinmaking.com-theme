@@ -238,6 +238,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-219` | Stream 2 / 5 | Notebook Engine Performance Hardening: In-Memory Storage Cache, Fast structuredClone & Allocation-Free Marks Comparison | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/notebook-app/lib/components/MarkdownNotebook/utils.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-220` | Stream 1 / 2 | Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage | `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-221` | Stream 1 / 4 | Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole | `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-222` | Stream 2 / 4 | Automatic Bucket Creation and Resilience for Notebook Media Image Uploads | `src/pages/api/notebooks/upload.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -363,6 +364,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 286 - Automatic Bucket Creation and Resilience for Notebook Media Image Uploads (TSK-222)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Enhanced notebook image upload API route resilience:
+  1. `src/pages/api/notebooks/upload.ts`: Added automated storage bucket creation fallback for `'notebook-media'`, auto-creating public bucket and retrying when Supabase returns bucket-not-found errors instead of throwing 503 exceptions.
+- **Modified Files:** `src/pages/api/notebooks/upload.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright unit test suite (40/40 passed in 6.6s).
+- **Handoff:** Both profile avatar uploads and notebook media uploads operate seamlessly with automated bucket fallback.
 
 ### Entry 285 - Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole (TSK-221)
 - **Date:** 2026-08-19
