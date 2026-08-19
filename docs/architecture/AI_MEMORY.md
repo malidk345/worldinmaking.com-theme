@@ -225,6 +225,9 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-206` | Stream 5 / 1 | Fix notebook-actor Squeak getAvatar relative import path in test runner | `src/lib/notebook-actor.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-207` | Stream 4 / 3 | Comprehensive SEO: Schema JSON-LD, Dynamic Sitemap, AI Crawler robots.txt, Blog/Forum metadata | `src/lib/seo.ts`, `src/components/seo.tsx`, `src/pages/api/seo/sitemap.ts`, `public/robots.txt`, `src/components/Edition/ClientPost.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-208` | Stream 2 / 5 | Remove deleted notebooks from Desktop pinned items and add self-healing cleanup | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/lib/notebookStorage.ts`, `src/components/Desktop/index.tsx`, `src/components/Archive/ArchiveWindow.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-209` | Stream 5 / 1 | Enterprise AI Architecture: Resilient Gateway, Exponential Jitter Circuit Breakers, Fast Failover & Telemetry | `src/lib/bots/ai-gateway.ts`, `src/lib/bots/rate-limit.ts`, `src/pages/api/philosopher-bot.ts`, `src/pages/api/notebook/inline-edit.ts`, `tests/ai-gateway-resilience.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-210` | Stream 3 / 5 | Minimalist Icon-Driven Inline WIM AI: Preset Action Palette, Keyboard Review Bar & Regenerate | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+
 Every AI model/agent working on this repository **MUST** follow these rules:
 
 1. **Read First:** Before starting any work, read this `AI_MEMORY.md` alongside [`FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md).
@@ -349,6 +352,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 274 - Minimalist Icon-Driven Inline WIM AI (TSK-210)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Elevated Notebook Inline WIM AI UI/UX with minimalist icon-driven actions and keyboard workflow:
+  1. `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`: Replaced text pills with clean, icon-first English preset actions (`IconSparkles` Improve, `IconBolt` Counter-thesis, `IconPencil` Shorten, `IconList` Key points, `IconQuote` Aphorism).
+  2. Added full keyboard navigation to action palette (`ArrowDown`/`ArrowUp`/`Enter`/`Tab`/`Esc`).
+  3. Added review mode bar with Accept (`IconCheck`, `Tab`/`Enter`), Regenerate/Retry (`IconRefresh`), and Discard/Reject (`IconX`, `Esc`).
+  4. Updated SCSS styles in `MarkdownNotebook.scss` with glassmorphic dark palette, icon alignment, and compiled `bundleCss.ts`.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm build:notebook-styles`, `pnpm typecheck:shell` PASS (0 errors), Playwright unit test suite (38/38 passed).
+- **Handoff:** Inline editor UI is sleek, icon-first, and fully keyboard controllable.
+
+### Entry 273 - Enterprise AI Architecture: Resilient Gateway, Exponential Jitter Circuit Breaker & Telemetry (TSK-209)
+- **Date:** 2026-08-19
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Upgraded existing AI architecture to enterprise/industry-grade resilience and observability:
+  1. `src/lib/bots/ai-gateway.ts`: Implemented exponential backoff with randomized jitter on rate-limited keys (`calculateExponentialCooldownWithJitter`), dynamic streak resetting on successes, and 0ms fast-failover across provider families when all family keys are in active cooling.
+  2. `src/lib/bots/rate-limit.ts`: Added structured RateLimitResult (`limit`, `remaining`, `resetSec`, `retryAfterSec`), `buildRateLimitHeaders` helper, and `resetRateLimit` for test isolation.
+  3. API Handlers (`src/pages/api/philosopher-bot.ts`, `src/pages/api/notebook/inline-edit.ts`): Wired standard telemetry headers (`X-RateLimit-*`, `X-WIM-AI-Provider`, `X-WIM-AI-Latency-Ms`) and standardized error codes (`RATE_LIMITED`, `PROVIDER_FAILED`, `MISSING_QUESTION`, `INVALID_JSON`).
+  4. Created comprehensive test suite in `tests/ai-gateway-resilience.spec.ts` testing circuit breaker exponential scaling, sliding window rate limiter, standard header emission, and thinking tag stripping.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/index.ts`, `src/lib/bots/rate-limit.ts`, `src/pages/api/philosopher-bot.ts`, `src/pages/api/notebook/inline-edit.ts`, `tests/ai-gateway-resilience.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm typecheck:shell` PASS (0 errors), Playwright unit test suite (38/38 passed).
+- **Handoff:** Edge AI Gateway is resilient against thundering herd, provider outages, and rate limits.
 
 ### Entry 272 - Remove deleted notebooks from Desktop pinned items
 - **Date:** 2026-08-19

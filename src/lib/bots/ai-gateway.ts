@@ -498,9 +498,10 @@ export function resetProviderCooldowns(): void {
     resetFamilyKeyCursor()
 }
 
-export { markFamilyCooling, markGroqKeyCooling, markFamilyKeyCooling }
+export { markFamilyCooling, markGroqKeyCooling, markFamilyKeyCooling, resetKeyCooldownStreak }
 
 const KEY_COOLDOWNS = new Map<string, number>()
+const KEY_FAILURE_STREAKS = new Map<string, number>()
 const RATE_LIMIT_KEY_COOLDOWN_MS = HEAVY_THINKING_COOLDOWN_MS
 const AUTH_KEY_COOLDOWN_MS = 30 * 60 * 1000
 
@@ -512,7 +513,7 @@ function cooldownSlot(family: string, key: string): string {
     return `${family}:${keyId(key)}`
 }
 
-function isFamilyKeyCooling(family: string, key: string): boolean {
+export function isFamilyKeyCooling(family: string, key: string): boolean {
     const slot = cooldownSlot(family, key)
     const until = KEY_COOLDOWNS.get(slot)
     if (!until) return false
@@ -523,16 +524,32 @@ function isFamilyKeyCooling(family: string, key: string): boolean {
     return true
 }
 
-function markFamilyKeyCooling(family: string, key: string, ms = RATE_LIMIT_KEY_COOLDOWN_MS): void {
-    KEY_COOLDOWNS.set(cooldownSlot(family, key), Date.now() + ms)
+export function calculateExponentialCooldownWithJitter(family: string, key: string, baseMs: number, maxMs = 5 * 60 * 1000): number {
+    const slot = cooldownSlot(family, key)
+    const streak = (KEY_FAILURE_STREAKS.get(slot) || 0) + 1
+    KEY_FAILURE_STREAKS.set(slot, streak)
+    const jitter = Math.floor(Math.random() * 1000)
+    const backoff = Math.min(maxMs, baseMs * Math.pow(1.8, streak - 1)) + jitter
+    return backoff
 }
 
-function isGroqKeyCooling(key: string): boolean {
+function resetKeyCooldownStreak(family: string, key: string): void {
+    const slot = cooldownSlot(family, key)
+    KEY_FAILURE_STREAKS.delete(slot)
+    KEY_COOLDOWNS.delete(slot)
+}
+
+function markFamilyKeyCooling(family: string, key: string, ms = RATE_LIMIT_KEY_COOLDOWN_MS, useExponential = true): void {
+    const effectiveMs = useExponential ? calculateExponentialCooldownWithJitter(family, key, ms) : ms
+    KEY_COOLDOWNS.set(cooldownSlot(family, key), Date.now() + effectiveMs)
+}
+
+export function isGroqKeyCooling(key: string): boolean {
     return isFamilyKeyCooling('groq', key)
 }
 
-function markGroqKeyCooling(key: string, ms = HEAVY_THINKING_COOLDOWN_MS): void {
-    markFamilyKeyCooling('groq', key, ms)
+function markGroqKeyCooling(key: string, ms = HEAVY_THINKING_COOLDOWN_MS, useExponential = true): void {
+    markFamilyKeyCooling('groq', key, ms, useExponential)
 }
 
 export function collectGroqKeys(store: EnvStore): string[] {
@@ -1011,6 +1028,13 @@ async function tryGroqFamily(
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let softFails = 0
+    // Fast-path: If all keys in this family are currently cooling down, don't stall
+    const liveGroqKeys = groqKeys.filter((key) => !isGroqKeyCooling(key))
+    if (groqKeys.length > 0 && liveGroqKeys.length === 0 && params.otherFamilyAvailable) {
+        markFamilyCooling('groq')
+        attempts.push(`groq: fast-failover (all ${groqKeys.length} keys cooling)`)
+        return null
+    }
     for (const key of groqKeys) {
         if (Date.now() >= params.deadline) return null
         if (shouldLeaveFamily(params, softFails)) {
@@ -1030,6 +1054,7 @@ async function tryGroqFamily(
             params.thinkingDepth,
         ), params.deadline)
         if (r.ok) {
+            resetKeyCooldownStreak('groq', key)
             if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(model)) {
                 markGroqKeyCooling(key)
             }
@@ -1047,7 +1072,7 @@ async function tryGroqFamily(
         if (isRateLimitDetail(r.detail)) {
             markGroqKeyCooling(key)
         } else if (isAuthDetail(r.detail)) {
-            markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
+            markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS, false)
         }
         attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
         softFails += 1
@@ -1069,6 +1094,13 @@ async function tryGeminiFamily(
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let softFails = 0
+    // Fast-path: If all keys in this family are currently cooling down, don't stall
+    const liveGeminiKeys = geminiKeys.filter((key) => !isFamilyKeyCooling('gemini', key))
+    if (geminiKeys.length > 0 && liveGeminiKeys.length === 0 && params.otherFamilyAvailable) {
+        markFamilyCooling('gemini')
+        attempts.push(`gemini: fast-failover (all ${geminiKeys.length} keys cooling)`)
+        return null
+    }
     for (const key of geminiKeys) {
         if (Date.now() >= params.deadline) return null
         if (shouldLeaveFamily(params, softFails)) {
@@ -1095,6 +1127,7 @@ async function tryGeminiFamily(
                 params.deadline,
             )
             if (r.ok) {
+                resetKeyCooldownStreak('gemini', key)
                 console.info('[gateway] gemini generate ok', {
                     model,
                     key: `${keyIdx}/${geminiKeys.length} …${keyId(key)}`,
@@ -1108,7 +1141,7 @@ async function tryGeminiFamily(
                 continue
             }
             if (isAuthDetail(r.detail)) {
-                markFamilyKeyCooling('gemini', key, AUTH_KEY_COOLDOWN_MS)
+                markFamilyKeyCooling('gemini', key, AUTH_KEY_COOLDOWN_MS, false)
                 skipRestOfKey = true
             }
         }

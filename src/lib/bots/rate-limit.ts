@@ -26,7 +26,9 @@ function pruneExpired(now: number): void {
 
 export interface RateLimitResult {
     allowed: boolean
+    limit: number
     remaining: number
+    resetSec: number
     retryAfterSec: number
 }
 
@@ -47,17 +49,42 @@ export function checkRateLimit(key: string, limit = 20, windowMs = 60 * 60 * 100
         b = { count: 0, resetAt: now + windowMs }
         buckets.set(key, b)
     }
+    const resetSec = Math.max(1, Math.ceil((b.resetAt - now) / 1000))
     if (b.count >= limit) {
         return {
             allowed: false,
+            limit,
             remaining: 0,
-            retryAfterSec: Math.max(1, Math.ceil((b.resetAt - now) / 1000)),
+            resetSec,
+            retryAfterSec: resetSec,
         }
     }
     b.count += 1
     return {
         allowed: true,
+        limit,
         remaining: Math.max(0, limit - b.count),
-        retryAfterSec: Math.max(1, Math.ceil((b.resetAt - now) / 1000)),
+        resetSec,
+        retryAfterSec: resetSec,
     }
+}
+
+export function resetRateLimit(key?: string): void {
+    if (key) {
+        buckets.delete(key)
+    } else {
+        buckets.clear()
+    }
+}
+
+export function buildRateLimitHeaders(rl: RateLimitResult): Record<string, string> {
+    const headers: Record<string, string> = {
+        'X-RateLimit-Limit': String(rl.limit),
+        'X-RateLimit-Remaining': String(rl.remaining),
+        'X-RateLimit-Reset': String(rl.resetSec),
+    }
+    if (!rl.allowed) {
+        headers['Retry-After'] = String(rl.retryAfterSec)
+    }
+    return headers
 }

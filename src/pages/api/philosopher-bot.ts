@@ -6,7 +6,7 @@
 export const runtime = 'edge'
 
 import { runBotTurn, type ThinkingDepth } from 'lib/bots'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimit, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -18,58 +18,64 @@ import {
     readOptionalString,
 } from 'lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+        },
     })
 }
 
 export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return json({ error: 'Method not allowed' }, 405)
+        return json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405)
     }
 
     // Runtime bindings must be read per request on Cloudflare Pages.
     const env = getRuntimeEnv()
     const parsed = await readJsonObject(req, 32 * 1024)
-    if (!parsed.ok) return json({ error: parsed.error, success: false }, parsed.status)
+    if (!parsed.ok) return json({ error: parsed.error, success: false, code: 'INVALID_JSON' }, parsed.status)
     const body = parsed.body
 
     const philosopher = normalizeBotName(body.philosopher, 'Nietzsche')
-    if (!philosopher) return json({ error: 'Unknown philosopher bot', success: false }, 400)
+    if (!philosopher) return json({ error: 'Unknown philosopher bot', success: false, code: 'UNKNOWN_BOT' }, 400)
 
     const mood = parseBotMood(body.mood)
     const taskType = parseTaskType(body.taskType)
     const thinkingDepth = parseThinkingDepth(body.thinkingDepth) as ThinkingDepth | undefined | null
     if (!mood || !taskType || thinkingDepth === null) {
-        return json({ error: 'Invalid mood, taskType, or thinkingDepth', success: false }, 400)
+        return json({ error: 'Invalid mood, taskType, or thinkingDepth', success: false, code: 'INVALID_PARAMETERS' }, 400)
     }
 
     const rawQuestion = body.question
     if (typeof rawQuestion !== 'string' || !rawQuestion.trim()) {
-        return json({ error: 'Question string is required', success: false }, 400)
+        return json({ error: 'Question string is required', success: false, code: 'MISSING_QUESTION' }, 400)
     }
     const question = rawQuestion.trim()
     if (question.length > 8000) {
-        return json({ error: 'Question too long (max 8000 chars)', success: false }, 400)
+        return json({ error: 'Question too long (max 8000 chars)', success: false, code: 'QUESTION_TOO_LONG' }, 400)
     }
 
     const context = readOptionalString(body.context, 12000)
-    if (context === null) return json({ error: 'context must be a string', success: false }, 400)
+    if (context === null) return json({ error: 'context must be a string', success: false, code: 'INVALID_CONTEXT' }, 400)
 
     const clientIp = getClientIp(req)
     const aggregate = checkRateLimit(`llm:${clientIp}`, 60, 60 * 60 * 1000)
     const rl = checkRateLimit(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000)
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
+        const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
         return json(
             {
                 success: false,
+                code: 'RATE_LIMITED',
                 error: `Rate limit exceeded for philosopher ${philosopher}. Retry in ${retryAfterSec}s`,
                 retryAfterSec,
             },
-            429
+            429,
+            rlHeaders
         )
     }
 
@@ -86,8 +92,10 @@ export default async function handler(req: Request) {
         })
     } catch (error) {
         console.error('[philosopher-bot] unexpected failure', error)
-        return json({ success: false, error: 'Philosopher network unavailable' }, 503)
+        return json({ success: false, error: 'Philosopher network unavailable', code: 'UNEXPECTED_FAILURE' }, 503)
     }
+
+    const rlHeaders = buildRateLimitHeaders(rl)
 
     if (!result.success) {
         console.error('[philosopher-bot] FAILED', {
@@ -102,32 +110,39 @@ export default async function handler(req: Request) {
         return json(
             {
                 success: false,
+                code: 'PROVIDER_FAILED',
                 error: 'Philosopher network unavailable',
                 philosopher: result.philosopher,
                 epistemicStance: result.epistemicStance,
                 reply: result.reply,
                 thought: result.thought,
                 thinking: result.thinking,
-                provider: result.provider,
-                confident: false,
-                host: result.host,
-                latencyMs: result.latencyMs,
-                taskType: result.taskType,
+                configured: result.configured,
+                attempts: result.attempts,
             },
-            503
+            503,
+            rlHeaders
         )
     }
 
-    return json({
-        success: true,
-        philosopher: result.philosopher,
-        epistemicStance: result.epistemicStance,
-        thought: result.thought,
-        thinking: result.thinking,
-        reply: result.reply,
-        provider: result.provider,
-        confident: true,
-        latencyMs: result.latencyMs,
-        taskType: result.taskType,
-    })
+    return json(
+        {
+            success: true,
+            philosopher: result.philosopher,
+            epistemicStance: result.epistemicStance,
+            reply: result.reply,
+            thought: result.thought,
+            thinking: result.thinking,
+            provider: result.provider,
+            latencyMs: result.latencyMs,
+            taskType: result.taskType,
+            persona: result.persona,
+        },
+        200,
+        {
+            ...rlHeaders,
+            'X-WIM-AI-Provider': result.provider,
+            'X-WIM-AI-Latency-Ms': String(result.latencyMs),
+        }
+    )
 }

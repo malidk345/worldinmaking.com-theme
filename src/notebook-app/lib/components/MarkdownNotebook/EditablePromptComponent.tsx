@@ -1,17 +1,54 @@
 import clsx from 'clsx'
 import { KeyboardEvent, MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 
-import { IconPlus, IconArrowUp, IconCheck, IconX } from '@posthog/icons'
+import {
+    IconPlus,
+    IconArrowUp,
+    IconCheck,
+    IconX,
+    IconSparkles,
+    IconBolt,
+    IconPencil,
+    IconList,
+    IconQuote,
+    IconRefresh,
+} from '@posthog/icons'
 
 import { getNotebookStringProp, isPromptComponentNode } from './documentModel'
 import { RestoreSelectionRequest } from './editorTypes'
 import { NotebookBlockNode, NotebookComponentBlockNode, NotebookMode } from './types'
 
-const PRESET_PILLS = [
-    { label: 'İyileştir', prompt: 'Metnin anlatımını iyileştir ve akıcı hale getir' },
-    { label: 'Kısalt', prompt: 'Metni özünü bozmadan daha kısa ve öz yaz' },
-    { label: 'Özetle', prompt: 'Temel noktaları 3 maddede özetle' },
-    { label: 'İmla Düzelt', prompt: 'Yazım ve dilbilgisi hatalarını düzelt' },
+const PRESET_ACTIONS = [
+    {
+        id: 'improve',
+        label: 'Improve',
+        Icon: IconSparkles,
+        prompt: 'Improve clarity, tone, and flow while preserving the core thesis',
+    },
+    {
+        id: 'counter',
+        label: 'Counter-thesis',
+        Icon: IconBolt,
+        prompt: 'Challenge this premise with a rigorous Socratic counter-argument',
+    },
+    {
+        id: 'shorten',
+        label: 'Shorten',
+        Icon: IconPencil,
+        prompt: 'Make concise and direct without losing philosophical nuance',
+    },
+    {
+        id: 'summarize',
+        label: 'Key points',
+        Icon: IconList,
+        prompt: 'Distill the core concepts into structured key takeaways',
+    },
+    {
+        id: 'aphorism',
+        label: 'Aphorism',
+        Icon: IconQuote,
+        prompt: 'Transform this idea into a memorable philosophical aphorism',
+    },
 ]
 
 export function EditablePromptComponent({
@@ -49,6 +86,7 @@ export function EditablePromptComponent({
     const wasBusyRef = useRef(false)
     const [isFlipped, setIsFlipped] = useState(false)
     const [showPresets, setShowPresets] = useState(false)
+    const [selectedPresetIndex, setSelectedPresetIndex] = useState<number>(-1)
     const [isReviewing, setIsReviewing] = useState(false)
     const question = getNotebookStringProp(node.props.question) ?? ''
     const selectedMarkdown = (getNotebookStringProp(node.props.selectedMarkdown) ?? '').trim()
@@ -63,8 +101,7 @@ export function EditablePromptComponent({
         [setBlockRef]
     )
 
-    // Detect when AI finish writing to switch to Accept/Reject review mode.
-    // A failed request sets `error` and must not look like a successful edit.
+    // Detect when AI finishes writing to switch to Accept/Reject review mode.
     useEffect(() => {
         if (isAIPromptSubmitDisabled) {
             wasBusyRef.current = true
@@ -110,6 +147,24 @@ export function EditablePromptComponent({
         submitAIPrompt(question)
     }, [autoRun, isAIPromptSubmitDisabled, mode, question, submitAIPrompt])
 
+    // Keyboard listener in review mode (Tab = Accept, Esc = Reject)
+    useEffect(() => {
+        if (!isReviewing || mode !== 'edit') return
+
+        const handleReviewKeyDown = (e: globalThis.KeyboardEvent) => {
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault()
+                acceptAISelection()
+            } else if (e.key === 'Escape') {
+                e.preventDefault()
+                rejectAISelection()
+            }
+        }
+
+        window.addEventListener('keydown', handleReviewKeyDown)
+        return () => window.removeEventListener('keydown', handleReviewKeyDown)
+    }, [isReviewing, mode, acceptAISelection, rejectAISelection])
+
     const updateQuestion = (nextQuestion: string): void => {
         updateNode(node.id, (currentNode) => {
             if (!isPromptComponentNode(currentNode)) {
@@ -139,6 +194,7 @@ export function EditablePromptComponent({
                 return { ...currentNode, props: { ...currentNode.props, error: '' } }
             })
         }
+        setShowPresets(false)
         submitAIPrompt(queryToRun)
     }
 
@@ -150,6 +206,13 @@ export function EditablePromptComponent({
         rejectAISelection()
     }
 
+    const handleRetry = (): void => {
+        setIsReviewing(false)
+        if (question.trim()) {
+            handleRunPrompt(question)
+        }
+    }
+
     const deletePrompt = (): void => {
         deleteNodeAndFocusAdjacent()
     }
@@ -157,9 +220,37 @@ export function EditablePromptComponent({
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         event.stopPropagation()
 
+        if (showPresets && !question.trim()) {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                setSelectedPresetIndex((prev) => (prev + 1) % PRESET_ACTIONS.length)
+                return
+            }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault()
+                setSelectedPresetIndex((prev) => (prev <= 0 ? PRESET_ACTIONS.length - 1 : prev - 1))
+                return
+            }
+            if (event.key === 'Enter' && selectedPresetIndex >= 0) {
+                event.preventDefault()
+                const preset = PRESET_ACTIONS[selectedPresetIndex]
+                if (preset) {
+                    updateQuestion(preset.prompt)
+                    handleRunPrompt(preset.prompt)
+                }
+                return
+            }
+        }
+
         if (event.key === 'Enter') {
             event.preventDefault()
             handleRunPrompt(event.currentTarget.value)
+            return
+        }
+
+        if (event.key === 'Tab' && !question.trim()) {
+            event.preventDefault()
+            setShowPresets((prev) => !prev)
             return
         }
 
@@ -174,6 +265,10 @@ export function EditablePromptComponent({
 
         if (event.key === 'Escape') {
             event.preventDefault()
+            if (showPresets) {
+                setShowPresets(false)
+                return
+            }
             if (question.trim() && typeof window !== 'undefined') {
                 localStorage.setItem('wim_ai_draft_prompt', question.trim())
             }
@@ -200,7 +295,7 @@ export function EditablePromptComponent({
         )
     }
 
-    // Review Mode: After AI generates text, show ONLY Accept (✓) and Reject (✕) icons
+    // Review Mode: After AI generates text, show Accept (✓), Retry (↻), and Reject (✕)
     if (isReviewing) {
         return (
             <div ref={wrapperRef} className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt">
@@ -209,24 +304,35 @@ export function EditablePromptComponent({
                     contentEditable={false}
                     data-markdown-notebook-node-id={node.id}
                 >
-                    {/* Accept (✓) Icon Button */}
+                    {/* Accept (✓) Button */}
                     <button
                         type="button"
                         className="WimInlinePill__acceptBtn"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={handleAccept}
-                        title="Accept AI changes (✓)"
+                        title="Accept (Tab / Enter)"
                     >
                         <IconCheck className="size-3.5 stroke-[2.5]" />
                     </button>
 
-                    {/* Reject (✕) Icon Button */}
+                    {/* Retry (↻) Button */}
+                    <button
+                        type="button"
+                        className="WimInlinePill__retryBtn"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={handleRetry}
+                        title="Regenerate"
+                    >
+                        <IconRefresh className="size-3" />
+                    </button>
+
+                    {/* Reject (✕) Button */}
                     <button
                         type="button"
                         className="WimInlinePill__rejectBtn"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={handleReject}
-                        title="Reject AI changes (✕)"
+                        title="Discard (Esc)"
                     >
                         <IconX className="size-3.5 stroke-[2.5]" />
                     </button>
@@ -247,12 +353,15 @@ export function EditablePromptComponent({
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
             >
-                {/* Left (+) Plus Circle Button */}
+                {/* Left (+) Plus Button */}
                 <button
                     type="button"
                     className="WimInlinePill__plusBtn"
-                    onClick={() => setShowPresets(!showPresets)}
-                    title="Quick actions"
+                    onClick={() => {
+                        setShowPresets(!showPresets)
+                        setSelectedPresetIndex(0)
+                    }}
+                    title="Actions (Tab)"
                 >
                     <IconPlus className="size-3 text-[#999999]" />
                 </button>
@@ -274,7 +383,7 @@ export function EditablePromptComponent({
                         updateQuestion(event.currentTarget.value)
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder={selectedMarkdown ? 'Tell WIM AI what to change' : 'Tell WIM AI what to write'}
+                    placeholder={selectedMarkdown ? 'Ask WIM AI to edit…' : 'Ask WIM AI to write…'}
                     className="WimInlinePill__input"
                     disabled={mode !== 'edit' || isAIPromptSubmitDisabled}
                 />
@@ -295,23 +404,28 @@ export function EditablePromptComponent({
             </div>
             {error ? <p className="WimInlinePill__error">{error}</p> : null}
 
-            {/* Presets Popup Menu when (+) is clicked */}
+            {/* Presets Popup Menu when (+) or Tab is triggered */}
             {showPresets && !question.trim() && (
                 <div className={clsx('WimInlinePill__presets', isFlipped ? 'WimInlinePill__presets--top' : 'WimInlinePill__presets--bottom')}>
-                    {PRESET_PILLS.map((pill) => (
-                        <button
-                            key={pill.label}
-                            type="button"
-                            className="WimInlinePill__presetItem"
-                            onClick={() => {
-                                updateQuestion(pill.prompt)
-                                handleRunPrompt(pill.prompt)
-                                setShowPresets(false)
-                            }}
-                        >
-                            {pill.label}
-                        </button>
-                    ))}
+                    {PRESET_ACTIONS.map((preset, index) => {
+                        const IconComponent = preset.Icon
+                        const isSelected = selectedPresetIndex === index
+                        return (
+                            <button
+                                key={preset.id}
+                                type="button"
+                                className={clsx('WimInlinePill__presetItem', isSelected && 'WimInlinePill__presetItem--selected')}
+                                onClick={() => {
+                                    updateQuestion(preset.prompt)
+                                    handleRunPrompt(preset.prompt)
+                                }}
+                                title={preset.prompt}
+                            >
+                                <IconComponent className="size-3 text-[#a1a1aa] flex-shrink-0" />
+                                <span>{preset.label}</span>
+                            </button>
+                        )
+                    })}
                 </div>
             )}
         </div>
