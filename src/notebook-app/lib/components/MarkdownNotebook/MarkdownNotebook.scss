@@ -4068,9 +4068,39 @@ button.MarkdownNotebook__component-title:focus-visible {
 .MarkdownNotebook__image-caption-box {
     width: 100%;
     max-width: 600px;
-    margin: 0.5rem 0 0;
+    margin: 0.35rem auto 0;
     padding: 0;
     text-align: center;
+}
+
+.MarkdownNotebook__image-caption-input {
+    width: 100%;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    line-height: 1.4;
+    color: var(--color-text-secondary, #a1a1aa);
+    background: transparent;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    padding: 0.2rem 0.5rem;
+    transition: color 0.15s ease;
+
+    &::placeholder {
+        color: var(--color-text-tertiary, #71717a);
+        font-style: italic;
+        opacity: 0.45;
+    }
+
+    &:focus {
+        color: var(--color-text-primary, #f4f4f5);
+    }
+
+    @media (max-width: 640px) {
+        font-size: 16px; // iOS Safari zoom fix
+    }
 }
 
 .MarkdownNotebook__image-caption-text {
@@ -4080,79 +4110,6 @@ button.MarkdownNotebook__component-title:focus-visible {
     font-size: 0.8125rem;
     line-height: 1.4;
     color: var(--color-text-secondary, #a1a1aa);
-}
-
-/* Image Edit Dialog Overlay & Card */
-.MarkdownNotebook__image-edit-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: calc(var(--z-popover) + 50);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(4px);
-    padding: 1rem;
-    animation: wimPresetsFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.MarkdownNotebook__image-edit-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--color-bg-surface-primary, #232630);
-    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.14));
-    border-radius: var(--radius, 8px);
-    box-shadow: 0px 16px 48px -8px rgba(0, 0, 0, 0.6);
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-}
-
-.MarkdownNotebook__image-edit-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.08));
-    color: var(--color-text-primary, #f4f4f5);
-}
-
-.MarkdownNotebook__image-edit-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm, 4px);
-    color: var(--color-text-secondary, #a1a1aa);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
-
-    &:hover {
-        background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08));
-        color: var(--color-text-primary, #ffffff);
-    }
-}
-
-.MarkdownNotebook__image-edit-body {
-    display: flex;
-    flex-direction: column;
-}
-
-.MarkdownNotebook__image-edit-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.08));
 }
 
 .MarkdownNotebook__image-empty-card {

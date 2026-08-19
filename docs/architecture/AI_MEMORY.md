@@ -373,17 +373,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
-### Entry 294 - Pure Image Block Rendering with Edit Dialog (IconPencil) & Isolated Caption Screen (TSK-230)
+### Entry 294 - Pure Image Presentation with Zero Screen Darkening & Direct Inline Caption (TSK-230)
 - **Date:** 2026-08-19
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
-- **Summary:** Upgraded the image block to be completely pure and minimalist in the notebook document view:
+- **Summary:** Upgraded the image block to be completely pure, smooth, and minimalist with zero modals and zero screen darkening:
   1. **Bare Shell Presentation:** Removed the component header toolbar ("Image", duplicate delete icon, collapse chevron) and card wrapper borders (`.MarkdownNotebook__component-shell--bare`) from images, allowing them to render purely as standalone images without surrounding block containers.
-  2. **Pure Image Display:** When an image is uploaded/rendered, only the image and (if provided) a clean italic caption (`<em className="MarkdownNotebook__image-caption-text">`) are shown. Removed all inline caption input boxes and placeholder text under the image from the document view.
-  3. **Edit Toolbar & Modal:** Replaced the "Replace" button with an **Edit** action (`IconPencil` / Düzenle). Clicking "Edit" opens a clean, focused dialog (`.MarkdownNotebook__image-edit-card`) with backdrop blur.
-  4. **Edit Dialog Capabilities:** Inside the Edit dialog, users can upload a new image or paste a URL, write/edit the italic caption (alt text), and Save or Cancel cleanly.
-  5. **Delete Retention:** Kept the quick Remove (`IconTrash`) button on the image overlay toolbar.
+  2. **Direct Edit Action:** The "Edit" (`IconPencil`) button directly opens the native image replacement file picker without opening any modal dialog or dimming/darkening the screen.
+  3. **Direct Inline Italic Caption:** Caption is edited directly in-place under the image in clean, borderless italic text without any modal or dark screen overlay.
+  4. **Delete Retention:** Kept the quick Remove (`IconTrash`) button on the image overlay toolbar.
 - **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/NotebookComponentShell.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/WimWritingBlocks.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `docs/architecture/AI_MEMORY.md`
-- **Tests:** 36/36 Playwright unit tests passed in 7.5s.
+- **Tests:** 36/36 Playwright unit tests passed in 5.5s.
 
 ### Entry 293 - Slash (/) & 3-Dot Block Menus RoundHog Font Unification & Mobile Centering (TSK-229)
 - **Date:** 2026-08-19
