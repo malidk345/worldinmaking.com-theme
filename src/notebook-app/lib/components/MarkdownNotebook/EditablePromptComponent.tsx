@@ -165,6 +165,28 @@ export function EditablePromptComponent({
         return () => window.removeEventListener('keydown', handleReviewKeyDown)
     }, [isReviewing, mode, acceptAISelection, rejectAISelection])
 
+    // Click outside listener: auto-dismisses empty prompts, auto-accepts review on focus change
+    useEffect(() => {
+        if (mode !== 'edit' || isAIPromptSubmitDisabled) return
+
+        const handleDocumentClick = (e: MouseEvent) => {
+            if (!wrapperRef.current) return
+            const target = e.target as Node | null
+            if (target && !wrapperRef.current.contains(target)) {
+                if (isReviewing) {
+                    acceptAISelection()
+                    return
+                }
+                if (!question.trim() || error) {
+                    deletePrompt()
+                }
+            }
+        }
+
+        document.addEventListener('mousedown', handleDocumentClick)
+        return () => document.removeEventListener('mousedown', handleDocumentClick)
+    }, [mode, isAIPromptSubmitDisabled, isReviewing, question, error, acceptAISelection, deletePrompt])
+
     const updateQuestion = (nextQuestion: string): void => {
         updateNode(node.id, (currentNode) => {
             if (!isPromptComponentNode(currentNode)) {
