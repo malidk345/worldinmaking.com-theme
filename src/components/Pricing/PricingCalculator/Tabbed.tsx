@@ -266,13 +266,15 @@ export default function Tabbed() {
             nodes: [{ products: billingProducts }],
         },
     } = useStaticQuery(allProductsData)
-    const [analyticsData, setAnalyticsData] = useState(
-        analyticsSliders.reduce((acc, slider) => {
+    // ⚡ Bolt: Use lazy initialization to avoid running reduce on every render
+    // ⚡ Bolt: Use {} instead of [] to prevent array-as-object de-optimization in V8
+    const [analyticsData, setAnalyticsData] = useState(() =>
+        analyticsSliders.reduce((acc: Record<string, { volume: number; cost: number; enhanced: boolean }>, slider) => {
             slider.types.forEach(({ type, enhanced }) => {
                 acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
             })
             return acc
-        }, [])
+        }, {})
     )
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
