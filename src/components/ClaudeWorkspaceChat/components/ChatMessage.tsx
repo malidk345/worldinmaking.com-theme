@@ -7,6 +7,10 @@ import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/compo
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 interface ChatMessageProps {
   message: Message;
@@ -65,30 +69,6 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return (
     voices.find((voice) => voice.lang.replace('_', '-').toLowerCase() === lang.toLowerCase()) ||
     voices.find((voice) => voice.lang.toLowerCase().startsWith(prefix))
-  )
-}
-
-function philosopherSurname(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts[parts.length - 1] || name
-}
-
-function PhilosopherMark({ model }: { model?: ModelOption }) {
-  if (!model) return null
-  const surname = philosopherSurname(model.name)
-  return (
-    <div className="flex items-center gap-1.5 font-sans" title={model.name}>
-      <span className="inline-flex size-[18px] shrink-0 overflow-hidden rounded-full border border-primary/40 bg-accent">
-        {model.avatarUrl ? (
-          <img src={model.avatarUrl} alt="" className="size-full object-cover object-top" />
-        ) : (
-          <span className={`flex size-full items-center justify-center text-[7px] font-semibold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
-            {model.initials || surname.slice(0, 1)}
-          </span>
-        )}
-      </span>
-      <span className="text-[12.5px] font-medium leading-none text-secondary">{surname}</span>
-    </div>
   )
 }
 
@@ -198,16 +178,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   return (
-    <div className="py-4 px-4 sm:px-8 max-w-3xl mx-auto">
-      {/* USER MESSAGE: Rounded White Capsule Bubble with Action Icons on the Left */}
+    <div className="py-2.5 sm:py-3 px-4 sm:px-8 max-w-3xl mx-auto">
+      {/* USER MESSAGE: Compact Bubble with Action Icons on the Left */}
       {isUser ? (
-        <div className="flex flex-row items-end justify-end group gap-2">
+        <div className="flex flex-row items-end justify-end group gap-1.5">
           {/* Action Icons LEFT of User Message (Visible on Hover) */}
-          <div className="flex items-center gap-1 text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+          <div className="flex items-center gap-0.5 text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity mb-0.5">
             {onEditPrompt && (
               <button
                 onClick={() => onEditPrompt(message.content, message.id)}
-                className="p-1.5 hover:text-primary hover:bg-light-3 rounded-md transition-colors cursor-pointer"
+                className="p-1 hover:text-primary hover:bg-accent rounded transition-colors cursor-pointer"
                 title="Edit"
               >
                 <Edit2 className="h-3.5 w-3.5" />
@@ -215,28 +195,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             )}
             <button
               onClick={handleCopy}
-              className="p-1.5 hover:text-primary hover:bg-light-3 rounded-md transition-colors cursor-pointer"
+              className="p-1 hover:text-primary hover:bg-accent rounded transition-colors cursor-pointer"
               title="Copy"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
 
-          <div className="relative max-w-[85%] rounded-md bg-primary border border-primary px-4 py-3 text-primary text-[15px] leading-[1.5] font-sans shadow-2xs">
+          <div className="relative w-fit max-w-[85%] rounded-md bg-primary border border-primary px-3 py-1.5 text-primary text-[14px] sm:text-[15px] leading-[1.45] font-sans shadow-2xs">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
         </div>
       ) : (
-        /* ASSISTANT MESSAGE: philosopher pill above thinking, full-width reply */
+        /* ASSISTANT MESSAGE: philosopher header with thinking on the same row, full-width reply */
         <div className="space-y-2 text-primary">
-          <PhilosopherMark
-            model={
-              modelOptions.find((option) => option.id === message.modelUsed) ||
-              modelOptions[0]
-            }
-          />
           <div className="w-full min-w-0">
             <ThinkingBlock
+              model={
+                modelOptions.find((option) => option.id === message.modelUsed) ||
+                modelOptions[0]
+              }
+              timestamp={message.timestamp}
               thinking={
                 message.thinkingProcess || {
                   summary: '',

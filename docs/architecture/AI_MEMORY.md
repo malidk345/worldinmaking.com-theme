@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 319 - Chat Polish: Surnames, Exact Clock Times, Inline Thinking Trigger & Navy Glow (TSK-255)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Applied user-directed chat refinements and Community UI parity:
+  1. **Philosopher Surname & Exact Time:** Replaced full philosopher titles with clean surnames (*Kant*, *Nietzsche*, *Descartes*, *Marx*, etc.) and formatted timestamps to exact clock times (`HH:mm`) stored as clean ISO timestamps.
+  2. **Inline Thinking Row:** Integrated the thinking process trigger button into the same top row as the philosopher avatar and timestamp, expanding to full width underneath when clicked.
+  3. **Compact User Bubble & Navy Input Glow:** Compacted user message bubble padding to `px-3 py-1.5` with `rounded-md`, and enhanced the chat composer box with modern ambient glow transitioning to navy blue (`#1E3A8A`) on focus/typing.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.5s.
+
 ### Entry 318 - Align WIM AI Chat Typography & Background Colors with Community (TSK-254)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

@@ -634,7 +634,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       id: `m-user-${Date.now()}`,
       role: 'user',
       content: promptText || attachments.map((attachment) => attachment.name).join(', '),
-      timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toISOString(),
       attachments,
     };
 
@@ -643,7 +643,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       id: assistantMessageId,
       role: 'assistant',
       content: '',
-      timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toISOString(),
       modelUsed: selectedModelId,
       isStreaming: true,
       isTypingDone: false,

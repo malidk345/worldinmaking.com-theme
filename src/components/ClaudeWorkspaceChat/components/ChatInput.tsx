@@ -228,10 +228,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-md border bg-primary px-2.5 py-1.5 shadow-xs transition-[border-color,box-shadow,background-color] duration-150 ${
+        className={`pointer-events-auto relative rounded-md border bg-primary px-2.5 py-1.5 transition-all duration-200 ${
           isDragging
-            ? 'border-primary ring-2 ring-primary/30 bg-accent'
-            : 'border-primary hover:border-primary focus-within:border-primary'
+            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/35 shadow-[0_0_18px_rgba(30,58,138,0.25)] bg-accent'
+            : prompt.trim().length > 0
+            ? 'border-[#1E3A8A] ring-1 ring-[#1E3A8A]/35 shadow-[0_0_15px_rgba(30,58,138,0.2)] focus-within:ring-2 focus-within:ring-[#1E3A8A]/40 focus-within:shadow-[0_0_20px_rgba(30,58,138,0.28)]'
+            : 'border-primary shadow-[0_0_10px_rgba(0,0,0,0.03)] hover:border-[#1E3A8A]/50 hover:shadow-[0_0_12px_rgba(30,58,138,0.12)] focus-within:border-[#1E3A8A] focus-within:ring-2 focus-within:ring-[#1E3A8A]/25 focus-within:shadow-[0_0_18px_rgba(30,58,138,0.22)]'
         }`}
       >
         {slashMatches.length > 0 && (

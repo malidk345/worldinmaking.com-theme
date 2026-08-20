@@ -1,5 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ThinkingProcess, ThinkingStep } from '../types';
+import { ModelOption, ThinkingProcess, ThinkingStep } from '../types';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import {
   Brain,
   Check,
@@ -12,9 +14,30 @@ import {
   Zap,
 } from 'lucide-react';
 
+function philosopherSurname(name?: string): string {
+  if (!name) return 'AI';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts[parts.length - 1] || name;
+}
+
+function formatExactTime(ts?: string): string {
+  if (!ts) {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  const trimmed = ts.trim();
+  if (/^\d{1,2}:\d{2}$/.test(trimmed)) return trimmed;
+  const d = dayjs(trimmed);
+  if (d.isValid()) {
+    return d.format('HH:mm');
+  }
+  return trimmed;
+}
+
 interface ThinkingBlockProps {
   thinking: ThinkingProcess;
   isLive?: boolean;
+  model?: ModelOption;
+  timestamp?: string;
 }
 
 type ThoughtSegment = {
@@ -186,7 +209,7 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
   );
 };
 
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false }) => {
+export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false, model, timestamp }) => {
   const [isOpen, setIsOpen] = useState(isLive);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
@@ -219,43 +242,72 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     }
   }, [segments, isLive, isOpen]);
 
-  if (!isLive && !hasThoughtText) return null;
+  const formattedTime = formatExactTime(timestamp);
+  const surname = philosopherSurname(model?.name);
+  const showThinkingTrigger = isLive || hasThoughtText;
+
+  if (!model && !showThinkingTrigger) return null;
 
   return (
-    <div className="my-1 w-full max-w-full select-none font-sans text-secondary">
-      <button
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-expanded={isOpen}
-        className="group/status flex w-full items-center justify-between py-0.5 text-left text-[13px] text-stone-500 transition-colors hover:text-stone-800 focus:outline-none dark:text-stone-400 dark:hover:text-stone-200"
-      >
-        <span className="flex min-w-0 items-center gap-1.5 pr-2">
-          <ThinkingLeadIcon live={isLive} />
-          {isLive ? (
-            <>
-              <span className="wim-think-sheen shrink-0 leading-tight">Thinking</span>
-              {activeStage && !/^(thinking|thought|think)$/i.test(activeStage) && (
-                <>
-                  <span className="shrink-0 text-stone-400 dark:text-stone-500">·</span>
-                  <StageTitle title={activeStage} className="text-[13px] font-normal" />
-                </>
+    <div className="w-full max-w-full select-none font-sans text-secondary">
+      {/* Header Row: Philosopher Profile (Left) + Thinking Trigger (Right on same line) */}
+      <div className="flex items-center justify-between gap-2 w-full min-w-0 flex-wrap pb-1">
+        {model ? (
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="size-8 shrink-0 rounded-full mr-2.5 overflow-hidden border border-primary/30 bg-accent">
+              {model.avatarUrl ? (
+                <img src={model.avatarUrl} alt={surname} className="size-full object-cover object-top" />
+              ) : (
+                <span className={`flex size-full items-center justify-center text-xs font-bold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
+                  {model.initials || surname.slice(0, 2)}
+                </span>
               )}
-            </>
-          ) : (
-            <span className="truncate leading-tight">
-              {formatDoneHeader(durationSeconds, activeStage)}
+            </div>
+            <strong className="font-bold text-[15px] text-primary leading-tight">
+              {surname}
+            </strong>
+            <span className="text-sm text-muted relative cursor-default" suppressHydrationWarning>
+              {formattedTime}
             </span>
-          )}
-        </span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-200 dark:text-stone-500 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
+          </div>
+        ) : <div />}
 
+        {/* Thinking trigger on the same row */}
+        {showThinkingTrigger && (
+          <button
+            type="button"
+            onClick={() => setIsOpen((open) => !open)}
+            aria-expanded={isOpen}
+            className="group/status inline-flex items-center gap-1.5 py-0.5 text-left text-[13px] text-stone-500 transition-colors hover:text-stone-800 focus:outline-none dark:text-stone-400 dark:hover:text-stone-200 cursor-pointer ml-auto"
+          >
+            <ThinkingLeadIcon live={isLive} />
+            {isLive ? (
+              <>
+                <span className="wim-think-sheen shrink-0 leading-tight">Thinking</span>
+                {activeStage && !/^(thinking|thought|think)$/i.test(activeStage) && (
+                  <>
+                    <span className="shrink-0 text-stone-400 dark:text-stone-500">·</span>
+                    <StageTitle title={activeStage} className="text-[13px] font-normal" />
+                  </>
+                )}
+              </>
+            ) : (
+              <span className="truncate leading-tight">
+                {formatDoneHeader(durationSeconds, activeStage)}
+              </span>
+            )}
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-200 dark:text-stone-500 ${
+                isOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+        )}
+      </div>
+
+      {/* Expanded Full-Width Thinking Panel */}
       {isOpen && hasThoughtText && (
-        <div className="relative mt-1 min-w-0">
+        <div className="relative mt-1 min-w-0 w-full mb-2">
           <div
             ref={scrollRef}
             onScroll={handleScroll}
