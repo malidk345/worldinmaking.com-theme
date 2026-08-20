@@ -28,21 +28,15 @@ export function useMenuData(): MenuType[] {
             items: [
                 {
                     type: 'item',
-                    label: 'Newsletter',
-                    link: '/newsletter',
-                    icon: <Icons.IconNewspaper className="size-4 text-orange" />,
-                },
-                {
-                    type: 'item',
                     label: 'Blog',
                     link: '/blog',
                     icon: <Icons.IconPencil className="size-4 text-yellow" />,
                 },
                 {
                     type: 'item' as const,
-                    label: "WIM's AI Bots",
+                    label: 'WIM AI',
                     link: '/workspace-chat',
-                    icon: <Icons.IconChat className="size-4 text-orange" />,
+                    icon: <Icons.IconChat className="size-4 text-red" />,
                 },
                 {
                     type: 'item' as const,
@@ -53,7 +47,7 @@ export function useMenuData(): MenuType[] {
             ],
         },
         {
-            trigger: 'Company',
+            trigger: 'About',
             items: [
                 {
                     type: 'item',

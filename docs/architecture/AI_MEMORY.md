@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 309 - Taskbar Navigation Menu Updates (TSK-245)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Updated navigation menu items in `src/components/TaskBarMenu/menuData.tsx`:
+  1. **WIM AI Renaming & Icon Update:** Renamed `"WIM's AI Bots"` to `"WIM AI"` and changed its icon styling to red (`text-red`).
+  2. **Company Header Removal:** Changed the `"Company"` menu trigger to `"About"` so the standalone "Company" text above About is eliminated.
+  3. **Newsletter Removal:** Removed the `"Newsletter"` item from the Community menu list.
+- **Modified Files:** `src/components/TaskBarMenu/menuData.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.4s.
+
 ### Entry 308 - Main Forum Post (First Entry) Like & Vote Buttons (TSK-244)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
