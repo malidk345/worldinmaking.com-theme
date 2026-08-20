@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import BlogPost from '../../../templates/BlogPost'
 import { normalizePostSlug } from 'lib/supabaseBlog'
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const rawSlug = context.params?.slug

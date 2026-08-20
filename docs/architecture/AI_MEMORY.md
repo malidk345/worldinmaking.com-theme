@@ -374,6 +374,14 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 316 - Use experimental-edge Runtime for Next.js Pages Router (TSK-252)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the Next.js production build error (`Page /blog/[slug] provided runtime 'edge', use runtime 'experimental-edge' instead`):
+  1. **Pages Router Edge Config:** Updated `src/pages/posts/[slug]/index.tsx` and `src/pages/blog/[slug]/index.tsx` to `export const runtime = 'experimental-edge'`, which is the required syntax for dynamic SSR pages under Next.js 14 Pages router.
+- **Modified Files:** `src/pages/posts/[slug]/index.tsx`, `src/pages/blog/[slug]/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 4.2s.
+
 ### Entry 315 - Cloudflare Edge Runtime Config & Legal Documents Window Fix (TSK-251)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
