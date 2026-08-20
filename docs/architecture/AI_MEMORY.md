@@ -374,6 +374,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 310 - Desktop Contact App & Admin Messages Integration (TSK-246)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Built the desktop Contact app window and connected it to the Admin Panel Messages inbox:
+  1. **Edge Contact API (`src/pages/api/contact.ts`):** Created an edge endpoint that validates name, email, topic, and message, enforces IP rate-limiting, and inserts directly into the `contact_messages` table via `supabaseAdmin`.
+  2. **OS Contact Window Component (`src/components/Contact/ContactWindow.tsx`):** Designed a retro OS desktop window matching the system aesthetic (`OSInput`, `OSTextarea`, `OSSelect`, `OSButton`, `ScrollArea`), with auto-fill from user session, loading spinners, and instant success state.
+  3. **Page & Window Router Integration:** Created `src/pages/contact.tsx` and registered `/contact` in `src/components/AppWindow/WindowRouter.tsx` so desktop icon double-clicks open the window smoothly.
+  4. **Regression Tests:** Added `tests/contact.spec.ts` testing method enforcement and payload validation.
+- **Modified Files:** `src/pages/api/contact.ts`, `src/components/Contact/ContactWindow.tsx`, `src/pages/contact.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `tests/contact.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 2.9s.
+
 ### Entry 309 - Taskbar Navigation Menu Updates (TSK-245)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

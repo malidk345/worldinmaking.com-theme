@@ -30,6 +30,7 @@ function AuthWindow() {
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
+import ContactWindow from 'components/Contact/ContactWindow'
 import HomeWindow from 'components/Home/HomeWindow'
 import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
@@ -49,6 +50,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/archive') {
         return <ArchiveWindow />
+    }
+
+    if (path === '/contact') {
+        return <ContactWindow />
     }
 
     if (path === '/home') {
