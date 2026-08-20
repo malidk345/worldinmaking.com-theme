@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 313 - Fix Live Production SSR Post Slug Resolution & Hydration (TSK-249)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the blank window issue on live production page refreshes (F5) on blog and post URLs:
+  1. **Server-Side Slug Resolution (`getServerSideProps`):** Added `getServerSideProps` to `src/pages/posts/[slug]/index.tsx` and `src/pages/blog/[slug]/index.tsx` to prevent Next.js from emitting empty static optimization shells on production builds, passing the real `slug` and `path` into initial window props.
+  2. **Hardened Slug Extraction (`src/templates/BlogPost.tsx`):** Updated `extractSlugFromPath` to filter out Next.js router bracket placeholders (`[slug]`, `[...slug]`) and resolve slugs reactively across `props.slug`, `props.path`, `router.asPath`, `router.query.slug`, and `window.location.pathname`.
+- **Modified Files:** `src/pages/posts/[slug]/index.tsx`, `src/pages/blog/[slug]/index.tsx`, `src/templates/BlogPost.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 3.6s.
+
 ### Entry 312 - OS Quick Toolbar (FooterBar) Removal (TSK-248)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

@@ -46,12 +46,21 @@ const A = (props) => <Link {...props} state={{ newWindow: true }} />
 
 function extractSlugFromPath(path?: string): string {
     if (!path) return ''
-    const parts = path.split('/').filter(Boolean)
-    // /posts/my-slug or /blog/my-slug
-    if (parts.length >= 2 && (parts[0] === 'posts' || parts[0] === 'blog')) {
-        return normalizePostSlug(parts.slice(1).join('/'))
+    const cleanPath = path.split('?')[0].split('#')[0]
+    const parts = cleanPath.split('/').filter(Boolean)
+    // Filter out Next.js placeholders '[slug]', '[...slug]', etc.
+    const validParts = parts.filter((p) => !p.startsWith('[') && !p.endsWith(']'))
+    if (validParts.length === 0) return ''
+    if (validParts.length >= 2 && (validParts[0] === 'posts' || validParts[0] === 'blog')) {
+        return normalizePostSlug(validParts.slice(1).join('/'))
     }
-    return normalizePostSlug(parts[parts.length - 1] || '')
+    if (validParts.length === 1 && validParts[0] !== 'posts' && validParts[0] !== 'blog') {
+        return normalizePostSlug(validParts[0])
+    }
+    if (validParts.length >= 2) {
+        return normalizePostSlug(validParts[validParts.length - 1])
+    }
+    return ''
 }
 
 function extractTableOfContents(content?: string) {
@@ -360,7 +369,7 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
         </div>
     ) : null
 }
-export default function BlogPost({ data = {}, pageContext = {}, mobile = false, path: pathProp }: any) {
+export default function BlogPost({ data = {}, pageContext = {}, mobile = false, path: pathProp, slug: slugProp }: any) {
     const router = useRouter()
 
     // Desktop windows: WindowRouter passes path=/posts/slug (browser URL may stay on /)
@@ -376,9 +385,13 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
     }, [router?.asPath])
 
     const pathname =
-        windowPath && /^\/(blog|posts)\//.test(String(windowPath))
+        windowPath && /^\/(blog|posts)\/.+/.test(String(windowPath))
             ? String(windowPath)
-            : browserPath || String(windowPath) || '/'
+            : browserPath && /^\/(blog|posts)\/.+/.test(String(browserPath))
+            ? String(browserPath)
+            : typeof window !== 'undefined' && /^\/(blog|posts)\/.+/.test(window.location.pathname)
+            ? window.location.pathname
+            : windowPath || browserPath || '/'
 
     const rawPostData =
         data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
@@ -393,7 +406,21 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
         ''
 
     // WIM: load HTML/markdown body from Supabase when props are empty (desktop window open)
-    const slug = extractSlugFromPath(pathname) || extractSlugFromPath(windowPath)
+    const rawRouterSlug = typeof router?.query?.slug === 'string'
+        ? router.query.slug
+        : Array.isArray(router?.query?.slug)
+        ? router.query.slug[0]
+        : ''
+    const resolvedRouterSlug = rawRouterSlug && !rawRouterSlug.startsWith('[') ? normalizePostSlug(rawRouterSlug) : ''
+
+    const slug =
+        (slugProp ? normalizePostSlug(slugProp) : '') ||
+        extractSlugFromPath(pathname) ||
+        extractSlugFromPath(windowPath) ||
+        resolvedRouterSlug ||
+        extractSlugFromPath(router?.asPath) ||
+        (typeof window !== 'undefined' ? extractSlugFromPath(window.location.pathname) : '') ||
+        ''
     const [remote, setRemote] = useState<ReturnType<typeof supabaseToBlogData> | null>(null)
     const [remoteLoading, setRemoteLoading] = useState(!initialBody && !!slug)
     const [remoteMissing, setRemoteMissing] = useState(false)
