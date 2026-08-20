@@ -49,6 +49,7 @@ import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts
 import { isAdminNavigationRequest, isUiDesignRequest } from 'lib/ai/design-request';
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
+import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import {
   chatAuthHeaders,
   claimDeviceAccountOnLogin,
@@ -197,6 +198,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
   const [selectedStylePreset, setSelectedStylePreset] = useState<StylePresetId>('default');
   selectedModelIdRef.current = selectedModelId
+
+  useEffect(() => {
+    ensureLemonStyles()
+    return () => releaseLemonStyles()
+  }, [])
 
   useEffect(() => {
     const applyBind = (bind: NotebookChatBind | null) => {

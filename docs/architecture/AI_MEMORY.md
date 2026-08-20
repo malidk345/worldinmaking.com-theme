@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 324 - Fix Lemon Popover / Philosopher Selector in Standalone Chat Windows (TSK-260)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed philosopher selector dropdown rendering in standalone/desktop chat mode without design alteration:
+  1. **Guaranteed Lemon UI CSS Loading:** Mounted `ensureLemonStyles()` and `releaseLemonStyles()` in `ClaudeWorkspaceChat/index.tsx` so Lemon Popover, Menu, and Button styles are injected even outside the Notebook scope.
+  2. **Layer Elevation (`z-index: 999999`):** Elevated `.Popover` and `.notebook-app-scope.Popover` in `ensureLemonStyles.ts` to `z-index: 999999` so portaled dropdowns never render behind Desktop/Modal windows.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `src/lib/lemon/ensureLemonStyles.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.6s.
+
 ### Entry 323 - Chat UI Cleanup: Sidebar Header Minimalization, Chat Item Polish & Stop Button Contrast (TSK-259)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

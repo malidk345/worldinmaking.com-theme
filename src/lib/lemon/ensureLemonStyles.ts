@@ -115,7 +115,14 @@ html.dark .MarkdownNotebook__wim-block,
 [data-notebook-host-theme='dark'] .MarkdownNotebook__wim-block {
   background: var(--color-bg-surface-primary, #1e1f23) !important;
 }
-.notebook-app-scope.Popover > .Popover__box {
+.notebook-app-scope.Popover,
+.Popover.notebook-app-scope,
+.Popover {
+  --z-popover: 999999 !important;
+  z-index: 999999 !important;
+}
+.notebook-app-scope.Popover > .Popover__box,
+.Popover.notebook-app-scope > .Popover__box {
   background: var(--color-bg-surface-popover) !important;
   border-color: var(--secondary-3000-button-border) !important;
 }
