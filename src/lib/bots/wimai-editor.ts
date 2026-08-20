@@ -65,7 +65,7 @@ export function cleanWimaiEditorOutput(raw: string): string {
     let text = stripThinkingBlocks(raw || '').trim()
     if (!text) return ''
 
-    const fenced = text.match(/^```(?:markdown|md|text)?\s*\n([\s\S]*?)\n```$/i)
+    const fenced = text.match(/^(?:```+|~~~+)(?:markdown|md|text)?\s*\n([\s\S]*?)\n(?:```+|~~~+)$/i)
     if (fenced) {
         text = fenced[1].trim()
     }

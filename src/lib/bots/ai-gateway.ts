@@ -129,7 +129,7 @@ const FAILOVER_RESERVE_MS = 16_000
 const MAX_FAMILY_SOFT_FAILS = 2
 const MAX_SYSTEM_PROMPT_CHARS = 8_000
 const MAX_USER_PROMPT_CHARS = 24_000
-const DEFAULT_MAX_TOKENS = 2048
+const DEFAULT_MAX_TOKENS = 4096
 /** Groq on_demand qwen/qwen3.6-27b: 8K TPM. Request size = input + max_tokens. */
 export const GROQ_TPM_LIMIT = 8_000
 const GROQ_TPM_SAFETY = 500
@@ -173,7 +173,7 @@ function groqPromptCaps(_thinking: boolean, compact: boolean): PromptCaps {
 }
 
 function wantedGroqMaxTokens(_model: string, _thinking: boolean, compact: boolean): number {
-    return compact ? 768 : 1_024
+    return compact ? 1_024 : 2_048
 }
 
 function trimKeepEnds(text: string, budget: number): string {
@@ -418,7 +418,10 @@ export function extractProviderReasoning(payload: unknown): string {
 
 function resolveMaxTokens(model: string, thinkingDepth?: ThinkingDepth): number {
     if (isQwen36(model)) {
-        return usesNativeQwenReasoning(thinkingDepth) ? 3072 : 2048
+        return usesNativeQwenReasoning(thinkingDepth) ? 4096 : 3072
+    }
+    if (/gemini/i.test(model)) {
+        return 8192
     }
     return DEFAULT_MAX_TOKENS
 }
@@ -591,16 +594,40 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS): Promise<Response> {
+function backoffWithJitter(attempt: number, baseMs = 180, maxMs = 1200): Promise<void> {
+    const exp = Math.min(maxMs, baseMs * Math.pow(1.8, attempt))
+    const jitter = Math.random() * (baseMs * 0.5)
+    return sleep(Math.floor(exp + jitter))
+}
+
+async function fetchWithTimeout(
+    input: RequestInfo | URL,
+    init: RequestInit,
+    timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS
+): Promise<Response> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+    const onAbort = () => controller.abort()
+    if (init?.signal) {
+        if (init.signal.aborted) {
+            clearTimeout(timer)
+            throw new Error('client request aborted')
+        }
+        init.signal.addEventListener('abort', onAbort, { once: true })
+    }
+
     try {
         return await fetch(input, { ...init, signal: controller.signal })
     } catch (error: any) {
+        if (init?.signal?.aborted) throw new Error('client request aborted')
         if (controller.signal.aborted) throw new Error(`provider request timeout after ${timeoutMs}ms`)
         throw error
     } finally {
         clearTimeout(timer)
+        if (init?.signal) {
+            init.signal.removeEventListener('abort', onAbort)
+        }
     }
 }
 
@@ -634,7 +661,7 @@ async function withRetry(
     const first = await fn()
     if (first.ok || !isTransientDetail(first.detail)) return first
     if (deadline && Date.now() + 350 >= deadline) return first
-    await sleep(350)
+    await backoffWithJitter(0, 200, 600)
     return fn()
 }
 

@@ -368,10 +368,35 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-75` | Stream 5 | Stop thinking leaking into public reply; stop public replies being cut off | `thinking-tags.ts`, `thinking.ts`, `ai-gateway.ts`, `persona-engine.ts`, `orchestrate.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-76` | Stream 1 / 5 | Fix CF Pages edge webpack: no Function()/eval in runtime-env (and groq-key-cursor) | `src/lib/bots/runtime-env.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-77` | Stream 5 | Fix sandbox Preview.tsx `expected "}"` when LLM puts `const data = [{...}]` inside JSX | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
+| `TSK-78` | Stream 5 | AI Architecture Elevation: AbortSignal propagation, exponential backoff jitter, SSE keep-alive heartbeat, anti-looping safeguards, search URL dedup | `src/lib/bots/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-20 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 301 - AI Generation Truncation & Premature Cutoff Prevention (TSK-237)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Diagnosed and resolved the root causes behind AI answers getting abruptly cut off midway:
+  1. **Expanded Token Headroom:** Increased `DEFAULT_MAX_TOKENS` from 2048 to 4096 (and Gemini up to 8192, Qwen up to 4096), and `wantedGroqMaxTokens` from 768/1024 to 1024/2048, allowing models to generate comprehensive answers without hitting hard output token ceilings.
+  2. **Universal Truncation Detection & Recovery:** In `orchestrate.ts`, removed the strict `&& thinking.summary` prerequisite on `looksLikeTruncatedReply` checks across `runBotTurn` and `streamBotTurn`. Any mid-sentence cutoff (whether in brief, standard, or thinking mode) now triggers `continuePublicReply` automatically.
+  3. **Seamless Text Stitching:** Added `stitchRemainder` to merge truncated bases and follow-up remainders cleanly without word concatenation or duplicate spacing.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.9s.
+
+### Entry 300 - Enterprise AI System Architecture Elevation (TSK-78)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Elevated AI system architecture to industry standards without touching model definitions or router mappings:
+  1. **Downstream AbortSignal & Disconnect Protection:** In `ai-gateway.ts`, `fetchWithTimeout` now registers client `AbortSignal` listeners, instantly aborting in-flight LLM HTTP connections when a user disconnects or cancels a generation.
+  2. **Exponential Backoff with Jitter:** Implemented randomized jitter backoff (`backoffWithJitter`) on transient 429/5xx retries, preventing thundering herd concurrency issues.
+  3. **SSE Stream Heartbeat Keep-Alive:** In `src/pages/api/chat.ts`, added 15s interval `: keep-alive\n\n` comments during extended reasoning phases to avoid Edge worker/Cloudflare timeout drops.
+  4. **Typed Error Standard:** Enforced strict machine-readable error codes (`PROVIDER_UNAVAILABLE`, `CHAT_FAILED`) on SSE error event frames.
+  5. **Web Search Canonicalization:** In `web-search.ts`, added `canonicalizeSearchUrl` to strip tracking query parameters (`utm_*`, `fbclid`, `ref`) and deduplicate URLs across multi-provider search results.
+  6. **WIM AI Fence Sanitizer:** Multi-backtick and tilde fence parsing in `wimai-editor.ts` to protect inline code blocks from rendering breaks.
+  7. **Bot Anti-Looping Rule:** Enforced explicit anti-echo and thread progression directives in `SECURITY_PREAMBLE` to prevent circular bot discussions.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/pages/api/chat.ts`, `src/lib/bots/web-search.ts`, `src/lib/bots/wimai-editor.ts`, `src/lib/bots/orchestrate.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 5.0s.
 
 ### Entry 299 - Forum Mention Chip Double Border & Span Nesting Bug Fix (TSK-236)
 - **Date:** 2026-08-20

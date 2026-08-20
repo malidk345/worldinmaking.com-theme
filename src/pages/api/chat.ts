@@ -220,6 +220,16 @@ export default async function handler(req: Request) {
                     groqKeysVisible.length,
                     groqKeysVisible.map((key, index) => `${index + 1}:…${key.slice(-4)}`).join(' ')
                 )
+
+                // Periodic SSE keep-alive heartbeat to prevent edge proxy dropouts during deep reasoning
+                const heartbeat = setInterval(() => {
+                    try {
+                        controller.enqueue(new TextEncoder().encode(': keep-alive\n\n'))
+                    } catch {
+                        clearInterval(heartbeat)
+                    }
+                }, 15_000)
+
                 send({ type: 'thinking_start' })
                 const context = [
                     systemPrompt.value
@@ -273,13 +283,15 @@ export default async function handler(req: Request) {
                     onLifecycle: (event) => send({ type: 'phase', phase: event }),
                 })
 
+                clearInterval(heartbeat)
+
                 if (!result.success) {
                     const attempts = 'attempts' in result ? result.attempts : []
                     console.error('[chat] providers failed', { error: result.error, attempts })
                     const lastAttempt = (attempts[attempts.length - 1] || '').replace(/\s+/g, ' ').slice(0, 180)
                     send({
                         type: 'error',
-                        code: 'provider_unavailable',
+                        code: 'PROVIDER_UNAVAILABLE',
                         message: lastAttempt ? `The reply could not be completed. ${lastAttempt}` : result.reply,
                         retryable: true,
                     })
@@ -395,7 +407,7 @@ export default async function handler(req: Request) {
                 controller.close()
             } catch (error) {
                 console.error('[chat] request failed', error)
-                send({ type: 'error', code: 'chat_failed', message: 'AI service failed', retryable: true })
+                send({ type: 'error', code: 'CHAT_FAILED', message: 'AI service failed', retryable: true })
                 controller.close()
             }
         },

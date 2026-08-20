@@ -47,11 +47,25 @@ function isHttpUrl(value: string): boolean {
     }
 }
 
+function canonicalizeSearchUrl(rawUrl: string): string {
+    try {
+        const url = new URL(rawUrl)
+        url.hash = ''
+        const params = new URLSearchParams(url.search)
+        const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ref', 'fbclid', 'gclid']
+        trackingParams.forEach((param) => params.delete(param))
+        url.search = params.toString() ? `?${params.toString()}` : ''
+        return url.toString().replace(/\/+$/, '').toLowerCase()
+    } catch {
+        return rawUrl.replace(/\/+$/, '').toLowerCase()
+    }
+}
+
 function pushUnique(results: SearchResultItem[], item: SearchResultItem, limit = 6): void {
     if (results.length >= limit) return
     if (!item.title.trim() || !isHttpUrl(item.url)) return
-    const key = item.url.replace(/\/+$/, '').toLowerCase()
-    if (results.some((existing) => existing.url.replace(/\/+$/, '').toLowerCase() === key)) return
+    const key = canonicalizeSearchUrl(item.url)
+    if (results.some((existing) => canonicalizeSearchUrl(existing.url) === key)) return
     results.push({
         title: item.title.trim().slice(0, 180),
         url: item.url,
