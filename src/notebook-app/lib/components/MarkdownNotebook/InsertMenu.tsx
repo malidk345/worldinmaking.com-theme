@@ -172,7 +172,11 @@ export function getInsertCommandSearchText(command: InsertCommand): string {
 
 export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
     return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
-        accumulator[command.category] = [...(accumulator[command.category] ?? []), command]
+        // ⚡ Bolt: Use .push instead of array spread to avoid O(N^2) memory churn during grouping
+        if (!accumulator[command.category]) {
+            accumulator[command.category] = []
+        }
+        accumulator[command.category].push(command)
         return accumulator
     }, {})
 }
