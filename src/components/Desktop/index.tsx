@@ -7,8 +7,6 @@ import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
 import ContextMenu from 'components/RadixUI/ContextMenu'
 import DesktopIcon from './DesktopIcon'
-import { Screensaver } from '../Screensaver'
-import { useInactivityDetection } from '../../hooks/useInactivityDetection'
 import NotificationsPanel from 'components/NotificationsPanel'
 import { ClaudeWorkspaceChatPanel } from 'components/ClaudeWorkspaceChat'
 import Wallpapers, { getWallpaperGlow } from './Wallpapers'
@@ -25,11 +23,11 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
     const productLinks = useProductLinks()
-    const { setScreensaverPreviewActive, setConfetti, updateSiteSettings, addWindow, updateWindow, handleSnapToSide } =
+    const { setConfetti, updateSiteSettings, addWindow, updateWindow, handleSnapToSide } =
         useAppActions()
     const { siteSettings, compact, isMobile } = useAppSettings()
     const { windows } = useAppWindows()
-    const { screensaverPreviewActive, confetti } = useAppUIState()
+    const { confetti } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
     const router = useRouter()
 
@@ -113,11 +111,6 @@ function Desktop() {
         return () => window.removeEventListener('wimDesktopPinnedChanged', loadPinnedApps)
     }, [loadPinnedApps])
 
-    const { isInactive, dismiss } = useInactivityDetection({
-        enabled: !siteSettings.screensaverDisabled,
-    })
-    const { addToast } = useToast()
-
     const glow = getWallpaperGlow(siteSettings.wallpaper)
     const applyGlow = (items: AppItem[]) =>
         items.map((app) =>
@@ -140,40 +133,6 @@ function Desktop() {
         height: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
         maxHeight: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
     } as const
-
-    const handleScreensaverDismiss = () => {
-        addToast({
-            title: 'Screensaver dismissed',
-            description: 'Want to disable it permanently?',
-            duration: 10000,
-            actionLabel: 'Disable screensaver',
-            onAction: () => {
-                updateSiteSettings({ ...siteSettings, screensaverDisabled: true })
-                addToast({
-                    title: 'Screensaver disabled',
-                    description: (
-                        <>
-                            Change this setting in{' '}
-                            <Link
-                                href="/display-options"
-                                className="text-red dark:text-yellow font-semibold"
-                                state={{ newWindow: true }}
-                            >
-                                Display options
-                            </Link>
-                            .
-                        </>
-                    ),
-                    duration: 10000,
-                    onUndo: () => {
-                        updateSiteSettings({ ...siteSettings, screensaverDisabled: false })
-                    },
-                })
-            },
-        })
-        setScreensaverPreviewActive(false)
-        dismiss()
-    }
 
     return (
         <>
@@ -237,12 +196,6 @@ function Desktop() {
                         </div>
                     </nav>
                 </div>
-                {!compact && (
-                    <Screensaver
-                        isActive={isInactive || screensaverPreviewActive}
-                        onDismiss={handleScreensaverDismiss}
-                    />
-                )}
                 <HedgeHogModeEmbed />
             </ContextMenu>
             <NotificationsPanel />

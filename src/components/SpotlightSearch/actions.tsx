@@ -51,7 +51,6 @@ export const useSpotlightActions = (): SpotlightAction[] => {
         siteSettings,
         updateSiteSettings,
         closeAllWindows,
-        setScreensaverPreviewActive,
         setConfetti,
         copyDesktopParams,
     } = useApp()
@@ -218,13 +217,6 @@ export const useSpotlightActions = (): SpotlightAction[] => {
             icon: <IconX />,
             keywords: ['close all', 'windows', 'clean up'],
             perform: () => closeAllWindows(),
-        },
-        {
-            id: 'screensaver',
-            label: 'Start screensaver',
-            icon: <IconMagicWand />,
-            keywords: ['screensaver', 'screen saver'],
-            perform: () => setScreensaverPreviewActive(true),
         },
         {
             id: 'confetti',

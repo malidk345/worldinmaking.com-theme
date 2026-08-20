@@ -690,7 +690,7 @@ export function App() {
   // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
   return (
     <div
-      className={`App notebook-app-scope min-h-full h-auto text-[var(--text-3000,#1d1f27)] ${
+      className={`App notebook-app-scope w-full h-full min-h-full flex-1 flex flex-col text-[var(--text-3000,#1d1f27)] ${
         route.page === 'public' ? 'bg-transparent' : 'bg-[var(--bg-3000,#f3f4f5)]'
       } ${hostTheme === 'dark' ? 'dark' : ''}`}
       theme={hostTheme}
@@ -702,10 +702,10 @@ export function App() {
       <main
         className={
           route.page === 'public'
-            ? 'p-3 sm:p-6 lg:p-8 pb-16 max-w-[1400px] mx-auto bg-transparent'
+            ? 'flex-1 w-full p-3 sm:p-6 lg:p-8 pb-16 max-w-[1400px] mx-auto bg-transparent'
             : route.page === 'editor'
-              ? 'px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-3 sm:space-y-6'
-              : 'p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
+              ? 'flex-1 w-full px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-3 sm:space-y-6'
+              : 'flex-1 w-full p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
         }
       >
         <ErrorBoundary>

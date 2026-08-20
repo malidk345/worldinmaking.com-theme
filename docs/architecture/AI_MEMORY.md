@@ -374,6 +374,45 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 305 - Screensaver Feature Removal & Codebase Streamlining (TSK-241)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Removed the screensaver feature across the application UI, commands, shortcuts, and core context state:
+  1. **Display Options Clean Up:** Removed `Screensaver` import, `previewScreensaver` state, and the Screensaver toggle group UI from `src/components/DisplayOptions/index.tsx`.
+  2. **Desktop Integration Removal:** Removed `Screensaver` component render, `useInactivityDetection` hook integration, and toast prompts from `src/components/Desktop/index.tsx`.
+  3. **Spotlight & Keyboard Shortcuts:** Removed the `screensaver` action from `src/components/SpotlightSearch/actions.tsx` and the `Shift+Z` shortcut from `src/pages/kbd/index.tsx` and `src/context/App.tsx`.
+  4. **Core State & Constants:** Cleaned up `screensaverDisabled`, `screensaverPreviewActive`, `INACTIVITY_TIMEOUTS`, and context definitions in `src/context/App.tsx` and `src/constants/index.ts`.
+- **Modified Files:** `src/components/DisplayOptions/index.tsx`, `src/components/Desktop/index.tsx`, `src/components/SpotlightSearch/actions.tsx`, `src/pages/kbd/index.tsx`, `src/context/App.tsx`, `src/constants/index.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.3s.
+
+### Entry 304 - Custom Cursor Removal & Default Cursor Enforcement (TSK-240)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Removed custom cursor options (XL, James' face) and custom cursor stylesheet injection from the codebase, enforcing standard default OS cursors:
+  1. **Display Options Clean Up:** Removed `XL_CURSOR_SVG`, `cursorOptions`, `handleCursorChange`, and the Cursor `ToggleGroup` block from `src/components/DisplayOptions/index.tsx`.
+  2. **Core App Shell Cleanup:** Removed `updateCursor`, `applyStyles`, and the custom cursor SVG definitions from `src/context/App.tsx`. Added automatic cleanup (`cleanupCustomCursor`) to remove any existing `#custom-cursor-style` tag from DOM `head`.
+  3. **Types & State Streamlining:** Removed `cursor` from `SiteSettings` interface, `getInitialSiteSettings`, `useState`, and `Context` definitions.
+- **Modified Files:** `src/components/DisplayOptions/index.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.2s.
+
+### Entry 303 - Display Options Window Full-Height Background Unification (TSK-239)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the background color split and input button mismatch in Display Options:
+  1. **Full-Height Flex Container:** Updated `src/components/DisplayOptions/index.tsx` container to `w-full h-full min-h-full flex-1 flex flex-col bg-primary text-primary p-4 border-t border-primary`, guaranteeing that the background covers the entire window viewport evenly.
+  2. **Unified Wallpaper Trigger Style:** Replaced hardcoded `bg-white dark:bg-dark` with `bg-input-bg border border-input` in `WallpaperSelect`, ensuring all control buttons share a consistent theme palette without contrast breaks.
+- **Modified Files:** `src/components/DisplayOptions/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.3s.
+
+### Entry 302 - Notebook Window Background & Full-Height Container Unification (TSK-238)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the two-tone background split in the notebook app window where the table area was grayish (`var(--bg-3000)`) and the empty area below it was white (`bg-primary`):
+  1. **Full-Height Flex Layout:** Updated `src/notebook-app/App.tsx` container from `min-h-full h-auto` to `w-full h-full min-h-full flex-1 flex flex-col` and made `<main>` `flex-1 w-full`, ensuring the theme background fills 100% of the window viewport regardless of list item count.
+  2. **Unified Shell Container Background:** Updated `src/components/Notebooks/NotebooksList.tsx` and `src/pages/notebooks/index.tsx` from `bg-primary` to `bg-[var(--bg-3000,#f3f4f5)]` to eliminate any shade disparity between the outer window and the inner notebook application.
+- **Modified Files:** `src/notebook-app/App.tsx`, `src/components/Notebooks/NotebooksList.tsx`, `src/pages/notebooks/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 22/22 Playwright notebook frontend tests passed in 5.9s.
+
 ### Entry 301 - AI Generation Truncation & Premature Cutoff Prevention (TSK-237)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

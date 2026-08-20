@@ -21,7 +21,7 @@ export interface NotebooksListProps {
  */
 export function NotebooksListSkeleton(_props: NotebooksListProps = {}): JSX.Element {
     return (
-        <div className="w-full h-full min-h-0 flex-1 relative bg-primary overflow-hidden flex flex-col">
+        <div className="w-full h-full min-h-0 flex-1 relative bg-[var(--bg-3000,#f3f4f5)] overflow-hidden flex flex-col">
             <NativeNotebookApp />
         </div>
     )
