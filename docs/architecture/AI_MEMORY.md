@@ -369,10 +369,31 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-76` | Stream 1 / 5 | Fix CF Pages edge webpack: no Function()/eval in runtime-env (and groq-key-cursor) | `src/lib/bots/runtime-env.ts`, `src/lib/bots/groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-77` | Stream 5 | Fix sandbox Preview.tsx `expected "}"` when LLM puts `const data = [{...}]` inside JSX | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-78` | Stream 5 | AI Architecture Elevation: AbortSignal propagation, exponential backoff jitter, SSE keep-alive heartbeat, anti-looping safeguards, search URL dedup | `src/lib/bots/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-20 |
+| `TSK-262` | Stream 4 | Sole admin: only dursunkayamustafa@gmail.com; strip leftover JWT admin claims | `src/lib/wim-auth.ts`, live Supabase auth/profiles | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 327 - Fix Duplicate Helper Definitions in AI Gateway for Cloudflare Build (TSK-263)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Resolved webpack compilation error (`the name sleep is defined multiple times`) in `src/lib/bots/ai-gateway.ts`:
+  1. Removed redundant duplicate definitions of `sleep`, `backoffWithJitter`, and `withRetry`.
+  2. Verified successful compilation of all 81 static/dynamic pages with `pnpm build` (exit code 0).
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed, Next.js build completed cleanly.
+
+### Entry 326 - Sole Site Admin Account (TSK-262)
+- **Date:** 2026-08-20
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Locked WorldInMaking so only `dursunkayamustafa@gmail.com` (username `dursunkayamustafa`) is admin with full privileges.
+  1. Promoted that profile to `admin` and set auth `raw_app_meta_data` `{ role: admin, is_admin, claims_admin }`.
+  2. Demoted `mustafadursunkaya36@gmail.com` (`mercury`) from `profiles.role = admin` to `member`.
+  3. Cleared leftover JWT admin claims on `mustafadursunkaya36@gmail.com`, `mustafadursunkayaa@gmail.com`, and `info@worldinmaking.com`.
+  4. Stopped client `mapSupabaseToUser` from promoting anyone via JWT `is_admin` / `claims_admin`; profile role is now the source of truth.
+- **Modified Files:** `src/lib/wim-auth.ts`, live Supabase `auth.users` + `public.profiles`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** SQL audit: 1 admin profile, 1 JWT admin claim set, both the same email.
 
 ### Entry 325 - Robust Cloudflare Pages Env Key Parsing & Groq Model Fallback (TSK-261)
 - **Date:** 2026-08-20

@@ -1077,44 +1077,6 @@ export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
 
 const GROQ_FALLBACK_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function backoffWithJitter(attempt: number, baseMs = 180, maxMs = 1200): Promise<void> {
-    const exp = Math.min(maxMs, baseMs * Math.pow(1.8, attempt))
-    const jitter = Math.random() * (baseMs * 0.5)
-    return sleep(Math.floor(exp + jitter))
-}
-
-async function withRetry<T extends { ok: boolean; detail?: string }>(
-    fn: () => Promise<T>,
-    deadline?: number,
-    maxRetries = 2
-): Promise<T> {
-    let lastResult: T | null = null
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        if (deadline && Date.now() >= deadline) break
-        const result = await fn()
-        if (result.ok) return result
-        lastResult = result
-        if (deadline && Date.now() >= deadline) break
-        const detail = (result.detail || '').toLowerCase()
-        if (
-            isRateLimitDetail(detail) ||
-            isAuthDetail(detail) ||
-            detail.includes('abort') ||
-            detail.includes('timeout')
-        ) {
-            return result
-        }
-        if (attempt < maxRetries) {
-            await backoffWithJitter(attempt)
-        }
-    }
-    return lastResult || ({ ok: false, detail: 'all retries exhausted' } as unknown as T)
-}
-
 /** Groq — rotate through keys, first success wins. Two misses → other family. */
 async function tryGroqFamily(
     groqKeys: string[],

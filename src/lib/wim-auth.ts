@@ -72,13 +72,9 @@ export function mapSupabaseToUser(
     profile: WimProfileRow | null
 ): User {
     const meta = (authUser.user_metadata || {}) as Record<string, unknown>
-    const appMeta = (authUser.app_metadata || {}) as Record<string, unknown>
-    const effectiveRole =
-        profile?.role ||
-        (appMeta?.role as string) ||
-        (meta?.role as string) ||
-        (appMeta?.is_admin || appMeta?.claims_admin || meta?.is_admin || meta?.isAdmin ? 'admin' : null) ||
-        'member'
+    // Profile role is the source of truth. JWT is_admin / claims_admin leftovers
+    // must not promote anyone to admin on the client.
+    const effectiveRole = (profile?.role && String(profile.role).trim()) || 'member'
     const isModerator = roleType(effectiveRole) === 'moderator'
     const username =
         profile?.username ||
