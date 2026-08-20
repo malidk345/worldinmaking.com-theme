@@ -555,40 +555,7 @@ function markGroqKeyCooling(key: string, ms = HEAVY_THINKING_COOLDOWN_MS, useExp
     markFamilyKeyCooling('groq', key, ms, useExponential)
 }
 
-export function collectGroqKeys(store: EnvStore): string[] {
-    return collectApiKeys(store.GROQ_API_KEYS, store.GROQ_API_KEY, store.GROQ_KEYS, store.GROQ_KEY)
-}
 
-export function collectGeminiKeys(store: EnvStore): string[] {
-    return collectApiKeys(
-        store.GEMINI_API_KEYS,
-        store.GEMINI_API_KEY,
-        store.GEMINI_KEYS,
-        store.GEMINI_KEY,
-        store.GOOGLE_GENERATIVE_AI_API_KEY,
-        store.GOOGLE_API_KEY,
-        store.GOOGLE_AI_API_KEY,
-        store.GOOGLE_GEMINI_API_KEY,
-    )
-}
-
-/** Sequential: request 1 uses key 1, request 2 uses key 2, then wraps. Hot keys go last. */
-export function takeFamilyKeyOrder(family: string, keys: string[], start?: number): string[] {
-    if (keys.length <= 1) return keys
-    const index = typeof start === 'number' ? start : nextFamilyKeyStart(family, keys.length)
-    const rotated = rotateKeys(keys, index)
-    const live = rotated.filter((key) => !isFamilyKeyCooling(family, key))
-    const cooling = rotated.filter((key) => isFamilyKeyCooling(family, key))
-    return live.length > 0 ? [...live, ...cooling] : rotated
-}
-
-export function takeGroqKeyOrder(keys: string[], start?: number): string[] {
-    return takeFamilyKeyOrder('groq', keys, start)
-}
-
-export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
-    return takeFamilyKeyOrder('gemini', keys, start)
-}
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -1047,6 +1014,107 @@ function shouldLeaveFamily(params: FamilyParams, softFails: number): boolean {
     return false
 }
 
+export function collectGroqKeys(store: EnvStore): string[] {
+    const rawValues: Array<string | undefined> = [
+        store.GROQ_API_KEYS,
+        store.GROQ_API_KEY,
+        store.GROQ_KEYS,
+        store.GROQ_KEY,
+    ]
+    if (store && typeof store === 'object') {
+        for (const [k, v] of Object.entries(store)) {
+            if (/^GROQ_?(API_?)?KEY(S|_\d+)?$/i.test(k) || /^GROQ_KEYS?(_\d+)?$/i.test(k)) {
+                rawValues.push(v)
+            }
+        }
+    }
+    return collectApiKeys(...rawValues)
+}
+
+export function collectGeminiKeys(store: EnvStore): string[] {
+    const rawValues: Array<string | undefined> = [
+        store.GEMINI_API_KEYS,
+        store.GEMINI_API_KEY,
+        store.GEMINI_KEYS,
+        store.GEMINI_KEY,
+        store.GOOGLE_GENERATIVE_AI_API_KEY,
+        store.GOOGLE_API_KEY,
+        store.GOOGLE_AI_API_KEY,
+        store.GOOGLE_GEMINI_API_KEY,
+    ]
+    if (store && typeof store === 'object') {
+        for (const [k, v] of Object.entries(store)) {
+            if (
+                /^GEMINI_?(API_?)?KEY(S|_\d+)?$/i.test(k) ||
+                /^GOOGLE_?(API_?)?KEY(S|_\d+)?$/i.test(k) ||
+                /^GOOGLE_GENERATIVE_AI_API_KEY(S|_\d+)?$/i.test(k) ||
+                /^GOOGLE_AI_API_KEY(S|_\d+)?$/i.test(k)
+            ) {
+                rawValues.push(v)
+            }
+        }
+    }
+    return collectApiKeys(...rawValues)
+}
+
+/** Sequential: request 1 uses key 1, request 2 uses key 2, then wraps. Hot keys go last. */
+export function takeFamilyKeyOrder(family: string, keys: string[], start?: number): string[] {
+    if (keys.length <= 1) return keys
+    const index = typeof start === 'number' ? start : nextFamilyKeyStart(family, keys.length)
+    const rotated = rotateKeys(keys, index)
+    const live = rotated.filter((key) => !isFamilyKeyCooling(family, key))
+    const cooling = rotated.filter((key) => isFamilyKeyCooling(family, key))
+    return live.length > 0 ? [...live, ...cooling] : rotated
+}
+
+export function takeGroqKeyOrder(keys: string[], start?: number): string[] {
+    return takeFamilyKeyOrder('groq', keys, start)
+}
+
+export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
+    return takeFamilyKeyOrder('gemini', keys, start)
+}
+
+const GROQ_FALLBACK_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function backoffWithJitter(attempt: number, baseMs = 180, maxMs = 1200): Promise<void> {
+    const exp = Math.min(maxMs, baseMs * Math.pow(1.8, attempt))
+    const jitter = Math.random() * (baseMs * 0.5)
+    return sleep(Math.floor(exp + jitter))
+}
+
+async function withRetry<T extends { ok: boolean; detail?: string }>(
+    fn: () => Promise<T>,
+    deadline?: number,
+    maxRetries = 2
+): Promise<T> {
+    let lastResult: T | null = null
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (deadline && Date.now() >= deadline) break
+        const result = await fn()
+        if (result.ok) return result
+        lastResult = result
+        if (deadline && Date.now() >= deadline) break
+        const detail = (result.detail || '').toLowerCase()
+        if (
+            isRateLimitDetail(detail) ||
+            isAuthDetail(detail) ||
+            detail.includes('abort') ||
+            detail.includes('timeout')
+        ) {
+            return result
+        }
+        if (attempt < maxRetries) {
+            await backoffWithJitter(attempt)
+        }
+    }
+    return lastResult || ({ ok: false, detail: 'all retries exhausted' } as unknown as T)
+}
+
 /** Groq — rotate through keys, first success wins. Two misses → other family. */
 async function tryGroqFamily(
     groqKeys: string[],
@@ -1062,43 +1130,51 @@ async function tryGroqFamily(
         attempts.push(`groq: fast-failover (all ${groqKeys.length} keys cooling)`)
         return null
     }
+    const modelsToTry = Array.from(new Set([model, ...GROQ_FALLBACK_MODELS].filter(Boolean)))
     for (const key of groqKeys) {
         if (Date.now() >= params.deadline) return null
         if (shouldLeaveFamily(params, softFails)) {
             markFamilyCooling('groq')
             return null
         }
-        const r = await withRetry(() => chatCompletions(
-            'https://api.groq.com/openai/v1/chat/completions',
-            key,
-            model,
-            params.systemPrompt,
-            params.userPrompt,
-            params.temperature,
-            {},
-            params.deadline,
-            params.history,
-            params.thinkingDepth,
-        ), params.deadline)
-        if (r.ok) {
-            resetKeyCooldownStreak('groq', key)
-            console.info('[gateway] groq generate ok', {
-                model,
-                key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
-            })
-            return {
-                ok: true,
-                text: r.text,
-                provider: model.toLowerCase().includes('qwen') ? 'groq:qwen' : 'groq:llama',
-                ...(model.toLowerCase().includes('qwen') ? { trace: 'qwen' as const } : {}),
+        for (const curModel of modelsToTry) {
+            if (Date.now() >= params.deadline) return null
+            const r = await withRetry(() => chatCompletions(
+                'https://api.groq.com/openai/v1/chat/completions',
+                key,
+                curModel,
+                params.systemPrompt,
+                params.userPrompt,
+                params.temperature,
+                {},
+                params.deadline,
+                params.history,
+                params.thinkingDepth,
+            ), params.deadline)
+            if (r.ok) {
+                resetKeyCooldownStreak('groq', key)
+                console.info('[gateway] groq generate ok', {
+                    model: curModel,
+                    key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
+                })
+                return {
+                    ok: true,
+                    text: r.text,
+                    provider: curModel.toLowerCase().includes('qwen') ? 'groq:qwen' : 'groq:llama',
+                    ...(curModel.toLowerCase().includes('qwen') ? { trace: 'qwen' as const } : {}),
+                }
             }
+            if (isRateLimitDetail(r.detail)) {
+                markGroqKeyCooling(key)
+                attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
+                break
+            } else if (isAuthDetail(r.detail)) {
+                markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS, false)
+                attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
+                break
+            }
+            attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
         }
-        if (isRateLimitDetail(r.detail)) {
-            markGroqKeyCooling(key)
-        } else if (isAuthDetail(r.detail)) {
-            markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS, false)
-        }
-        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
         softFails += 1
         if (shouldLeaveFamily(params, softFails)) {
             markFamilyCooling('groq')

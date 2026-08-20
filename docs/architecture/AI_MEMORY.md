@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 325 - Robust Cloudflare Pages Env Key Parsing & Groq Model Fallback (TSK-261)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Made API key collection and model rotation resilient for Cloudflare Pages production:
+  1. **Pattern & Case-Insensitive Secret Discovery:** `collectGroqKeys` and `collectGeminiKeys` now scan all env keys case-insensitively and match `GROQ_API_KEYS`, `GROQ_API_KEY`, `GROQ_KEYS`, `GROQ_KEY_1`, `GEMINI_API_KEYS`, etc.
+  2. **Groq Model In-Family Fallback:** Added automatic fallback to `llama-3.3-70b-versatile` inside `tryGroqFamily` so temporary Qwen limits/outages do not immediately starve requests onto Gemini quotas.
+  3. **Multi-Key Parser Hardening:** Support comma, semicolon, newline, quotes, and whitespace in secret values.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/runtime-env.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.5s.
+
 ### Entry 324 - Fix Lemon Popover / Philosopher Selector in Standalone Chat Windows (TSK-260)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

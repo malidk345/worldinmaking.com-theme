@@ -67,13 +67,20 @@ export function envFrom(store: EnvStore, ...names: string[]): string {
         const v = store[name]
         if (v && String(v).trim()) return String(v).trim()
     }
+    // Case-insensitive fallback for Cloudflare Pages environment variables
+    const lowerNames = names.map((n) => n.toLowerCase())
+    for (const [k, v] of Object.entries(store || {})) {
+        if (lowerNames.includes(k.toLowerCase()) && v && String(v).trim()) {
+            return String(v).trim()
+        }
+    }
     return ''
 }
 
 export function splitKeys(raw: string): string[] {
     return raw
-        .split(',')
-        .map((k) => k.trim())
+        .split(/[,;\n\r]+/)
+        .map((k) => k.trim().replace(/^['"]+|['"]+$/g, ''))
         .filter(Boolean)
 }
 
@@ -100,21 +107,22 @@ export function getWaitUntil(): ((promise: Promise<unknown>) => void) | null {
     return null
 }
 
+function hasKeyMatching(store: EnvStore, pattern: RegExp): boolean {
+    if (!store || typeof store !== 'object') return false
+    for (const [k, v] of Object.entries(store)) {
+        if (pattern.test(k) && typeof v === 'string' && v.trim()) return true
+    }
+    return false
+}
+
 export function getProviderKeyFlags(store: EnvStore) {
     return {
-        groq: !!(envFrom(store, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')),
-        openai: !!envFrom(store, 'OPENAI_API_KEY', 'OPENAI_KEY'),
-        gemini: !!envFrom(
-            store,
-            'GEMINI_API_KEYS',
-            'GEMINI_API_KEY',
-            'GEMINI_KEYS',
-            'GEMINI_KEY',
-            'GOOGLE_GENERATIVE_AI_API_KEY',
-            'GOOGLE_API_KEY',
-            'GOOGLE_AI_API_KEY',
-            'GOOGLE_GEMINI_API_KEY',
-        ),
+        groq: hasKeyMatching(store, /^GROQ_?(API_?)?KEY(S|_\d+)?$/i) || hasKeyMatching(store, /^GROQ_KEYS?(_\d+)?$/i),
+        openai: hasKeyMatching(store, /^OPENAI_?(API_?)?KEY(S|_\d+)?$/i),
+        gemini:
+            hasKeyMatching(store, /^(GEMINI|GOOGLE)_?(API_?)?KEY(S|_\d+)?$/i) ||
+            hasKeyMatching(store, /^GOOGLE_GENERATIVE_AI_API_KEY(S|_\d+)?$/i) ||
+            hasKeyMatching(store, /^GOOGLE_AI_API_KEY(S|_\d+)?$/i),
         cfContext: hasCloudflareContext(),
         envSource: hasCloudflareContext() ? ('cloudflare+process' as const) : ('process-only' as const),
     }
