@@ -51,16 +51,37 @@ export function mentionChipHtml(username: string): string {
 export function decorateForumMentions(input: string): string {
     const raw = String(input || '')
     if (!raw) return raw
-    const withOld = raw.replace(OLD_HANDLE, (_all, name) => mentionChipHtml(name))
-    return withOld.replace(HANDLE, (all, name, offset) => {
-        const start = offset + (all.startsWith('@') ? 0 : 1)
-        const before = withOld.slice(Math.max(0, start - 24), start)
-        if (/data-mention=["'][^"']*$/i.test(before) || /<span[^>]*forum-mention[^>]*>$/i.test(before)) {
-            return all
+
+    // Split text into HTML tags and plain text chunks to avoid double-wrapping existing mentions
+    const parts = raw.split(/(<[^>]+>)/g)
+    let insideMentionSpan = false
+
+    const processed = parts.map((part) => {
+        if (!part) return part
+        if (part.startsWith('<')) {
+            if (/<span[^>]*class=["'][^"']*forum-mention/i.test(part) || /<span[^>]*data-mention/i.test(part)) {
+                insideMentionSpan = true
+            } else if (/<\/span>/i.test(part)) {
+                insideMentionSpan = false
+            }
+            return part
         }
-        const prefix = all.startsWith('@') ? '' : all[0]
-        return `${prefix}${mentionChipHtml(name)}`
+
+        // If inside an existing mention span, do not double-decorate
+        if (insideMentionSpan) {
+            return part
+        }
+
+        // Replace legacy handles or plain @handles in plain text
+        let chunk = part.replace(OLD_HANDLE, (_all, name) => mentionChipHtml(name))
+        chunk = chunk.replace(HANDLE, (all, name) => {
+            const prefix = all.startsWith('@') ? '' : all[0]
+            return `${prefix}${mentionChipHtml(name)}`
+        })
+        return chunk
     })
+
+    return processed.join('')
 }
 
 export function forumMentionClassName(): string {

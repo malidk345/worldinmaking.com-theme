@@ -1993,12 +1993,6 @@ export const communityMenu = {
     icon: 'IconChat',
     children: [
         {
-            name: 'News',
-            icon: 'IconNewspaper',
-            color: 'blue',
-            url: '/community',
-        },
-        {
             name: 'Posts',
             icon: 'IconBook',
             color: 'red',

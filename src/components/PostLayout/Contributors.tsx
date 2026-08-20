@@ -1,6 +1,7 @@
 import Link from 'components/Link'
 import Tooltip from 'components/Tooltip'
 import CloudinaryImage from 'components/CloudinaryImage'
+import Avatar from 'components/Squeak/components/Avatar'
 import React from 'react'
 import { IContributor } from './types'
 import { Image, Transformation } from 'cloudinary-react'
@@ -100,13 +101,12 @@ export const ContributorSmall = ({
 }: IContributor & { text?: boolean; url?: string }) => {
     const Container = url ? Link : 'div'
     return (
-        <Container {...(url ? { to: url, state } : {})} className="flex space-x-2 items-center no-underline">
-            <ContributorImageSmall
-                className={url ? 'hover:border-red hover:z-10 dark:hover:border-red' : ''}
-                image={image}
-                name={name}
-            />
-            {text && <span className="author text-[14px] font-semibold">{name}</span>}
+        <Container
+            {...(url ? { to: url, state } : {})}
+            className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline"
+        >
+            <Avatar image={typeof image === 'string' ? image : null} className="size-6" />
+            {text && <span className="author text-sm font-semibold truncate max-w-[12rem]">{name}</span>}
         </Container>
     )
 }

@@ -15,6 +15,16 @@
     .prose {
         @apply max-w-none;
 
+        p,
+        li {
+            line-height: 1.5;
+        }
+
+        p {
+            margin-top: 1.1em;
+            margin-bottom: 1.1em;
+        }
+
         /* Chrome misplaces collapsed row borders when rows have fractional
            heights (e.g. wrapped inline-block code pills), drawing dividers
            through cell text. Typography puts borders on tr/thead, which only
@@ -895,7 +905,7 @@ fieldset {
 
     p,
     li {
-        @apply text-base leading-7;
+        @apply text-base leading-[1.5];
 
         li {
             @apply text-base;

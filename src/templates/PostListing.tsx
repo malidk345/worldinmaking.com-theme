@@ -14,6 +14,7 @@ import ProgressBar from 'components/ProgressBar'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
 import Modal from 'components/Modal'
 import { Authentication } from 'components/Squeak'
+import { handleFromDisplayName } from 'lib/profile-path'
 import hourglassAnimation from '../images/icons8-hourglass.json'
 import hourglassAnimationWhite from '../images/icons8-hourglass-white.json'
 
@@ -177,15 +178,20 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                                         author.attributes?.avatar?.formats?.thumbnail?.url ||
                                                         author.attributes?.avatar?.url ||
                                                         ''
-                                                    const handle = author.attributes?.username || author.id
+                                                    const handle =
+                                                        author.attributes?.username ||
+                                                        author.attributes?.handle ||
+                                                        author.id ||
+                                                        (name ? handleFromDisplayName(name) || name : '')
                                                     const href = handle
-                                                        ? `/profile/${encodeURIComponent(String(handle))}`
+                                                        ? `/profile/${encodeURIComponent(String(handle).replace(/^\/profile\//, ''))}`
                                                         : ''
                                                     return (
                                                         <li key={author.id || name}>
                                                             <Link
                                                                 to={href || '#'}
-                                                                className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline"
+                                                                state={{ newWindow: true }}
+                                                                className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline cursor-pointer"
                                                             >
                                                                 <Avatar
                                                                     image={avatarUrl || null}

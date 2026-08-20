@@ -475,7 +475,7 @@ export default function RichText({
                             aria-multiline="true"
                             data-placeholder="Type more details..."
                             suppressContentEditableWarning
-                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full [&_.forum-mention]:inline-flex [&_.forum-mention]:items-center [&_.forum-mention]:px-1.5 [&_.forum-mention]:py-px [&_.forum-mention]:rounded-sm [&_.forum-mention]:border [&_.forum-mention]:border-navy [&_.forum-mention]:text-navy [&_.forum-mention]:bg-navy/10 [&_.forum-mention]:font-semibold ${className}`}
+                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none text-[15px] leading-[1.5] break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full [&_.forum-mention]:inline-flex [&_.forum-mention]:items-center [&_.forum-mention]:px-1.5 [&_.forum-mention]:py-px [&_.forum-mention]:rounded-sm [&_.forum-mention]:border [&_.forum-mention]:border-navy [&_.forum-mention]:text-navy [&_.forum-mention]:bg-navy/10 [&_.forum-mention]:font-semibold ${className}`}
                             onInput={() => {
                                 syncFromEditor()
                                 refreshMentionQuery()

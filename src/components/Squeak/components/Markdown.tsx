@@ -29,13 +29,20 @@ const cleanMdxContent = (content: string): string => {
 }
 
 function ForumMentionChip({ username, children }: { username?: string; children?: React.ReactNode }) {
-    const handle = String(username || '')
-        .replace(/^@/, '')
+    let text = ''
+    if (typeof children === 'string') {
+        text = children
+    } else if (Array.isArray(children)) {
+        text = children.map((c) => (typeof c === 'string' ? c : '')).join('')
+    }
+    const handle = String(username || text || '')
+        .replace(/^@+/, '')
+        .replace(/<[^>]+>/g, '')
         .trim()
-    const href = mentionProfileHref(handle || String(children || ''))
+    const href = mentionProfileHref(handle)
     return (
         <Link href={href} className={forumMentionClassName()} state={{ newWindow: true }}>
-            {children || `@${handle}`}
+            @{handle}
         </Link>
     )
 }
@@ -64,7 +71,7 @@ export const Markdown = ({
             transformImageUri={transformImageUri}
             rehypePlugins={[rehypeRaw, [rehypeSanitize, forumMarkdownSchema]]}
             className={cn(
-                'markdown prose dark:prose-invert prose-sm max-w-full min-w-0 text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full',
+                'markdown prose dark:prose-invert prose-sm max-w-full min-w-0 text-primary text-[15px] leading-[1.5] [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere] [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full',
                 !regularText,
                 className
             )}

@@ -373,6 +373,52 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 299 - Forum Mention Chip Double Border & Span Nesting Bug Fix (TSK-236)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the bug where tagging someone (@mention) in a forum post caused the mention chip border to double/duplicate upon submitting:
+  1. **Tag-Aware Mention Decoration:** In `src/lib/forum-mentions.ts` (`decorateForumMentions`), previously the handle regex matched `@handle` inside existing `<span class="forum-mention">@handle</span>` tags, wrapping the span inside another span. Refactored `decorateForumMentions` to parse HTML tag boundaries and skip already-tagged mention spans.
+  2. **Single Clean Link Output:** In `src/components/Squeak/components/Markdown.tsx` (`ForumMentionChip`), sanitized children and guaranteed a single, non-nested `<Link className={forumMentionClassName()} ...>@{handle}</Link>` output without nested borders.
+- **Modified Files:** `src/lib/forum-mentions.ts`, `src/components/Squeak/components/Markdown.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 6.8s.
+
+### Entry 298 - Legacy Community Newspaper Removal & Clean Forum Route Binding (TSK-235)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Removed the legacy "Inside PostHog / Community Newspaper" page while preserving the community forum intact:
+  1. **Route Clean-up:** Replaced `src/pages/community.tsx` with a clean `<Inbox path="/community" />` binding so `/community` directly opens the WorldInMaking Community Forum.
+  2. **Nav Menu:** Removed the redundant "News" sub-link from `communityMenu` in `src/navs/index.js`.
+- **Modified Files:** `src/pages/community.tsx`, `src/navs/index.js`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 5.1s.
+
+### Entry 297 - Community & Forum Posts Typography & Spacing Harmonization (TSK-234)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Applied the exact blog reading font size, line-height, and paragraph spacing to all community/forum inputs, threads, questions, and replies:
+  1. **Markdown Content:** Configured `Markdown.tsx` to use `text-[15px] leading-[1.5] [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5]`.
+  2. **Community Input/RichText Editor:** Configured `RichText.tsx` editor to use `text-[15px] leading-[1.5]` for seamless WYSIWYG parity between typing and reading.
+- **Modified Files:** `src/components/Squeak/components/Markdown.tsx`, `src/components/Squeak/components/RichText.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 6.4s.
+
+### Entry 296 - Blog & Reader View Interline Spacing Fine-Tuning (TSK-233)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Tuned the line spacing (`line-height`) across blog articles and prose reading view slightly without changing any font family, font size, or weight settings:
+  1. **Line-Height Adjustment:** Refined paragraph and list item line heights from default `1.75` / `leading-7` (28px) to `1.5` (`leading-[1.5]`, 22.5px), creating a tighter, more cohesive reading flow.
+  2. **Vertical Rhythm:** Adjusted prose paragraph vertical margins to `1.1em` for balanced spacing between paragraphs.
+- **Modified Files:** `src/components/Squeak/components/ClientPostMarkdown.tsx`, `src/styles/global.css`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.8s.
+
+### Entry 295 - Unified Author Oval Pill Badge across Post Detail & Reader Views (TSK-232)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Applied the exact same oval pill author badge design from the posts table (`PostListing.tsx`) to all post content views (`ReaderView`, `BlogPost.tsx`, `Contributors.tsx`, and `ClientPost.tsx`):
+  1. **Visual Consistency:** Author badge now uses `inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline cursor-pointer` with `Avatar (size-6)` and `text-sm font-semibold truncate max-w-[12rem]`.
+  2. **Profile Linking & Window Resolution:** Resolved handle generation from display names / usernames (`handleFromDisplayName`) and passed `state={{ newWindow: true }}` so clicking the author badge instantly opens the desktop window to `/profile/[username]` (or profile ID).
+  3. **Multiple Authors Support:** Renders seamlessly in a wrapped flex container with `gap-1.5` when a post has multiple co-authors.
+- **Modified Files:** `src/components/ReaderView/index.tsx`, `src/templates/BlogPost.tsx`, `src/templates/PostListing.tsx`, `src/components/PostLayout/Contributors.tsx`, `src/components/Edition/ClientPost.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 4.8s.
+
 ### Entry 294 - Pure Image Presentation with Zero Screen Darkening & Direct Inline Caption (TSK-230)
 - **Date:** 2026-08-19
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

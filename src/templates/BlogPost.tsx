@@ -18,6 +18,7 @@ import Title from 'components/Edition/Title'
 import Upvote from 'components/Edition/Upvote'
 import LikeButton from 'components/Edition/LikeButton'
 import { Questions } from 'components/Squeak'
+import Avatar from 'components/Squeak/components/Avatar'
 import { useRouter } from 'next/router'
 import qs from 'qs'
 import Breadcrumbs from 'components/Edition/Breadcrumbs'
@@ -39,6 +40,7 @@ import {
     normalizePostSlug,
     type SupabasePost,
 } from 'lib/supabaseBlog'
+import { handleFromDisplayName } from 'lib/profile-path'
 
 const A = (props) => <Link {...props} state={{ newWindow: true }} />
 
@@ -80,6 +82,7 @@ function supabaseToBlogData(post: SupabasePost, fullPath: string) {
     const date = post.created_at ? post.created_at.split('T')[0] : ''
     const author = post.author || 'WorldInMaking'
     const tableOfContents = extractTableOfContents(post.content || '')
+    const handle = (post as any).author_handle || (post as any).author_username || handleFromDisplayName(author) || author
     return {
         body: post.content || '',
         content: post.content || '',
@@ -98,6 +101,9 @@ function supabaseToBlogData(post: SupabasePost, fullPath: string) {
                     image:
                         post.author_avatar ||
                         'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                    handle,
+                    username: handle,
+                    url: `/profile/${encodeURIComponent(handle)}`,
                 },
             ],
             tags: Array.isArray(post.tags) ? post.tags : post.category ? [post.category] : [],
@@ -161,47 +167,45 @@ export const Contributors = ({ contributors }) => {
     ) : null
 }
 
-const ContributorsSmall = ({ contributors }) => {
+const ContributorsSmall = ({ contributors }: { contributors?: any[] }) => {
     return contributors?.[0] ? (
         <div className="flex space-x-2 items-center mb-4">
-            <div className="text-sm opacity-50">Posted by</div>
-
-            <div>
-                <ul className="flex list-none !m-0 !p-0 space-x-2">
-                    {contributors.map(({ profile_id, name, profile, ...other }) => {
-                        const image = profile?.avatar?.url || other?.image
-                        const url =
-                            (profile?.username && `/profile/${encodeURIComponent(profile.username)}`) ||
-                            (profile_id && `/profile/${encodeURIComponent(String(profile_id))}`)
-                        const Container = url ? Link : 'div'
-                        const gatsbyImage = image && getImage(image)
-                        return (
-                            <li className="!mb-0" key={name}>
-                                <Container className="flex space-x-2 items-center" {...(url ? { to: url } : {})}>
-                                    <span>
-                                        {typeof image === 'string' ? (
-                                            <CloudinaryImage
-                                                width={50}
-                                                className="w-6 h-6 border border-primary rounded-full"
-                                                src={image}
-                                            />
-                                        ) : gatsbyImage ? (
-                                            <CloudinaryImage
-                                                image={gatsbyImage}
-                                                alt={name}
-                                                className="w-6 h-6 border border-primary rounded-full"
-                                            />
-                                        ) : (
-                                            ''
-                                        )}
-                                    </span>
-                                    <span>{name}</span>
-                                </Container>
-                            </li>
-                        )
-                    })}
-                </ul>
-            </div>
+            <ul className="flex flex-wrap gap-1.5 list-none !m-0 !p-0">
+                {contributors.map(({ profile_id, name, profile, ...other }) => {
+                    const avatarUrl =
+                        profile?.avatar?.formats?.thumbnail?.url ||
+                        profile?.avatar?.url ||
+                        other?.image ||
+                        ''
+                    const handle =
+                        profile?.username ||
+                        profile_id ||
+                        (other as any)?.handle ||
+                        (other as any)?.username ||
+                        (other as any)?.url?.replace?.(/^\/profile\//, '') ||
+                        (name ? handleFromDisplayName(name) || name : '')
+                    const href =
+                        (other as any)?.url ||
+                        (handle ? `/profile/${encodeURIComponent(String(handle).replace(/^\/profile\//, ''))}` : '')
+                    const Container = href ? Link : 'div'
+                    return (
+                        <li className="!mb-0" key={name}>
+                            <Container
+                                className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline cursor-pointer"
+                                {...(href ? { to: href, state: { newWindow: true } } : {})}
+                            >
+                                <Avatar
+                                    image={avatarUrl || null}
+                                    className="size-6"
+                                />
+                                <span className="text-sm font-semibold truncate max-w-[12rem]">
+                                    {name}
+                                </span>
+                            </Container>
+                        </li>
+                    )
+                })}
+            </ul>
         </div>
     ) : null
 }

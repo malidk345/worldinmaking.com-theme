@@ -14,14 +14,56 @@ import Upvote from './Upvote'
 import { Questions } from 'components/Squeak'
 import { Contributors } from '../../templates/BlogPost'
 import Link from 'components/Link'
+import Avatar from 'components/Squeak/components/Avatar'
+import { handleFromDisplayName } from 'lib/profile-path'
 
-export const Post = ({ imageURL, title, date, belowTitle, body, cta, transformImageUri }) => {
+export const Post = ({ imageURL, title, date, authors, belowTitle, body, cta, transformImageUri }: any) => {
     return (
         <>
             <div className="mb-4">
                 <div className="mb-4">
                     <Title className="text-primary dark:text-primary-dark">{title}</Title>
-                    <p className="!m-0 opacity-70">{dayjs(date).format('MMM DD, YYYY')}</p>
+                    <div className="flex items-center gap-3 flex-wrap mt-1 mb-2">
+                        <p className="!m-0 opacity-70 text-sm">{dayjs(date).format('MMM DD, YYYY')}</p>
+                        {authors?.data?.length > 0 && (
+                            <ul className="list-none m-0 p-0 flex flex-wrap gap-1.5">
+                                {authors.data.map((author: any) => {
+                                    const name =
+                                        [author.attributes?.firstName, author.attributes?.lastName]
+                                            .filter(Boolean)
+                                            .join(' ') ||
+                                        author.attributes?.name ||
+                                        'Author'
+                                    const avatarUrl =
+                                        author.attributes?.avatar?.formats?.thumbnail?.url ||
+                                        author.attributes?.avatar?.url ||
+                                        ''
+                                    const handle =
+                                        author.attributes?.username ||
+                                        author.attributes?.handle ||
+                                        author.id ||
+                                        (name ? handleFromDisplayName(name) || name : '')
+                                    const href = handle
+                                        ? `/profile/${encodeURIComponent(String(handle).replace(/^\/profile\//, ''))}`
+                                        : ''
+                                    return (
+                                        <li key={author.id || name} className="!mb-0">
+                                            <Link
+                                                to={href || '#'}
+                                                state={{ newWindow: true }}
+                                                className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline cursor-pointer"
+                                            >
+                                                <Avatar image={avatarUrl || null} className="size-6" />
+                                                <span className="text-sm font-semibold truncate max-w-[12rem]">
+                                                    {name}
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </div>
                     {belowTitle?.()}
                 </div>
                 {imageURL && (
@@ -162,6 +204,7 @@ export default function ClientPost({
                                 imageURL={imageURL}
                                 title={title}
                                 date={date || publishedAt}
+                                authors={authors}
                                 belowTitle={() =>
                                     isModerator ? (
                                         <div className="mt-2 text-sm inline-flex space-x-2 text-muted">

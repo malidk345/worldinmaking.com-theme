@@ -21,6 +21,8 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
 import BookmarkButton from 'components/BookmarkButton'
 import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
+import Avatar from 'components/Squeak/components/Avatar'
+import { handleFromDisplayName } from 'lib/profile-path'
 
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
@@ -235,44 +237,40 @@ const contentWidthOptions: ToggleOption[] = [
     },
 ]
 
-const ContributorsSmall = ({ contributors }) => {
+const ContributorsSmall = ({ contributors }: { contributors?: any[] }) => {
     return contributors?.[0] ? (
         <div className="not-prose">
-            <ul className="flex space-x-2">
+            <ul className="flex flex-wrap gap-1.5 list-none m-0 p-0">
                 {contributors.map(({ profile_id, name, profile, ...other }) => {
-                    const image = profile?.avatar?.url || other?.image
-                    const color = profile?.color
-                    const url = profile_id && `/community/profiles/${profile_id}`
-                    const Container = url ? Link : 'div'
-                    const gatsbyImage = image && getImage(image)
+                    const avatarUrl =
+                        profile?.avatar?.formats?.thumbnail?.url ||
+                        profile?.avatar?.url ||
+                        other?.image ||
+                        ''
+                    const handle =
+                        profile?.username ||
+                        profile_id ||
+                        (other as any)?.handle ||
+                        (other as any)?.username ||
+                        (other as any)?.url?.replace?.(/^\/profile\//, '') ||
+                        (name ? handleFromDisplayName(name) || name : '')
+                    const href =
+                        (other as any)?.url ||
+                        (handle ? `/profile/${encodeURIComponent(String(handle).replace(/^\/profile\//, ''))}` : '')
+                    const Container = href ? Link : 'div'
                     return (
                         <li className="!mb-0" key={name}>
                             <Container
-                                className="flex space-x-2 items-center"
-                                {...(url ? { to: url, state: { newWindow: true } } : {})}
+                                className="inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full bg-primary !no-underline hover:!underline cursor-pointer"
+                                {...(href ? { to: href, state: { newWindow: true } } : {})}
                             >
-                                {typeof image === 'string' ? (
-                                    <CloudinaryImage
-                                        width={50}
-                                        className={`w-6 h-6 border border-primary rounded-full overflow-hidden bg-${
-                                            color ? color : 'red'
-                                        }`}
-                                        src={image}
-                                    />
-                                ) : gatsbyImage ? (
-                                    <RemoteImage
-                                        src={resolveImageSrc(gatsbyImage)}
-                                        alt={name}
-                                        className={`w-6 h-6 border border-primary rounded-full overflow-hidden bg-${
-                                            color ? color : 'red'
-                                        }`}
-                                        width={24}
-                                        height={24}
-                                    />
-                                ) : (
-                                    ''
-                                )}
-                                <span className="text-sm font-semibold">{name}</span>
+                                <Avatar
+                                    image={avatarUrl || null}
+                                    className="size-6"
+                                />
+                                <span className="text-sm font-semibold truncate max-w-[12rem]">
+                                    {name}
+                                </span>
                             </Container>
                         </li>
                     )
