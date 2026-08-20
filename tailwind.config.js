@@ -236,6 +236,7 @@ module.exports = {
                 fairytale: ['Computer Modern', 'sans-serif'],
                 serif: ['Garamond', 'Times New Roman', 'serif'],
                 sans: [
+                    'RoundHog',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'avenir next',
@@ -250,6 +251,7 @@ module.exports = {
                     'sans-serif',
                 ],
                 wimbot: [
+                    'RoundHog',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'avenir next',
@@ -264,6 +266,7 @@ module.exports = {
                     'sans-serif',
                 ],
                 'claude-sans': [
+                    'RoundHog',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'avenir next',
@@ -278,6 +281,7 @@ module.exports = {
                     'sans-serif',
                 ],
                 'claude-serif': [
+                    'RoundHog',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'avenir next',
