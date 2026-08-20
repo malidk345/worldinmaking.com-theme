@@ -266,13 +266,17 @@ export default function Tabbed() {
             nodes: [{ products: billingProducts }],
         },
     } = useStaticQuery(allProductsData)
-    const [analyticsData, setAnalyticsData] = useState(
-        analyticsSliders.reduce((acc, slider) => {
+    const [analyticsData, setAnalyticsData] = useState(() =>
+        // ⚡ Bolt Performance Optimization:
+        // Lazy initialize the state to avoid running this reduce on every render.
+        // Also, use `{}` instead of `[]` to prevent the JS engine from de-optimizing
+        // the array into dictionary mode when assigning string keys.
+        analyticsSliders.reduce((acc: any, slider) => {
             slider.types.forEach(({ type, enhanced }) => {
                 acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
             })
             return acc
-        }, [])
+        }, {})
     )
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
