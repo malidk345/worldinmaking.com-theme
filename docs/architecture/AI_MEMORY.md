@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 312 - OS Quick Toolbar (FooterBar) Removal (TSK-248)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Removed the redundant fixed bottom-left quick toolbar (`FooterBar.tsx` / `data-os-toolbar`):
+  1. **Wrapper Clean Up:** Removed `FooterBar` import and component render from `src/components/Wrapper/index.tsx`.
+  2. **File Deletion:** Deleted obsolete `src/components/OSChrome/FooterBar.tsx`.
+- **Modified Files:** `src/components/Wrapper/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 3.6s.
+
 ### Entry 311 - Blog Post Layout Unification on Direct Refresh (TSK-247)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

@@ -43,7 +43,6 @@ const WindowList = React.memo(function WindowList() {
     )
 })
 
-import FooterBar from 'components/OSChrome/FooterBar'
 import { useApp } from '../../context/App'
 
 export default function Wrapper() {
@@ -65,7 +64,6 @@ export default function Wrapper() {
                 <SearchOverlay />
                 <CookieBannerToast />
                 <ActiveWindowsPanel />
-                <FooterBar />
                 <CommandPalette />
                 <AuthModal
                     isOpen={!!isAuthModalOpen}
