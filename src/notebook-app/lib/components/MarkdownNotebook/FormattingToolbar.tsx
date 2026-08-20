@@ -9,9 +9,8 @@ import {
 } from 'react'
 
 import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import { LemonButton, LemonInput } from '@posthog/lemon-ui'
-
-import { IconBold, IconItalic, IconLink } from '@posthog/lemon-ui'
+import { LemonButton, LemonInput } from '~nb-lib/lemon-ui/index'
+import { IconBold, IconItalic, IconLink } from '../../icons/iconsShim'
 
 import {
     FloatingToolbarCodeRange,

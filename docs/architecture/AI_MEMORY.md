@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 314 - Fix Mobile Long-Press / FormattingToolbar Icon Import Crash (TSK-250)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the "This notebook view hit an error" crash when long-pressing or selecting text on mobile/desktop in MarkdownNotebook:
+  1. **Root Cause Analysis:** `FormattingToolbar.tsx` was importing `IconBold`, `IconItalic`, `IconLink` from `@posthog/lemon-ui` instead of `iconsShim.tsx`. Because `@posthog/lemon-ui` does not export those icons, React received `undefined` components when mounting the floating formatting toolbar on text selection, triggering the Notebook `ErrorBoundary`.
+  2. **Import Resolution:** Updated `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx` to import `IconBold`, `IconItalic`, `IconLink` from `../../icons/iconsShim` and UI components from `~nb-lib/lemon-ui/index`.
+- **Modified Files:** `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 3.7s.
+
 ### Entry 313 - Fix Live Production SSR Post Slug Resolution & Hydration (TSK-249)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
