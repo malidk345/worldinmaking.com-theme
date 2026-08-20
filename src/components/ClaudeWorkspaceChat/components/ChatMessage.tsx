@@ -222,7 +222,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             </button>
           </div>
 
-          <div className="relative max-w-[85%] rounded-[18px] bg-primary border border-primary px-4 py-3 text-primary text-[15px] leading-[1.5] font-sans shadow-2xs">
+          <div className="relative max-w-[85%] rounded-md bg-primary border border-primary px-4 py-3 text-primary text-[15px] leading-[1.5] font-sans shadow-2xs">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
         </div>

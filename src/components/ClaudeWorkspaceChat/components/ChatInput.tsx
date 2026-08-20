@@ -223,19 +223,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      {/* Floating Capsule Input Box with Drag & Drop */}
+      {/* Floating Input Box with Drag & Drop */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-[18px] border bg-primary px-2.5 py-1.5 shadow-xs transition-[border-color,box-shadow,background-color] duration-150 ${
+        className={`pointer-events-auto relative rounded-md border bg-primary px-2.5 py-1.5 shadow-xs transition-[border-color,box-shadow,background-color] duration-150 ${
           isDragging
             ? 'border-primary ring-2 ring-primary/30 bg-accent'
             : 'border-primary hover:border-primary focus-within:border-primary'
         }`}
       >
         {slashMatches.length > 0 && (
-          <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded-lg border border-primary bg-primary py-0.5 shadow-sm">
+          <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded-md border border-primary bg-primary py-0.5 shadow-sm">
             {slashMatches.map((command, index) => (
               <button
                 key={command.id}
@@ -257,7 +257,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-1.5 rounded-lg border border-primary bg-accent px-2 py-0.5 text-[11px] text-secondary"
+                className="flex items-center gap-1.5 rounded-md border border-primary bg-accent px-2 py-0.5 text-[11px] text-secondary"
               >
                 {att.type === 'image' ? (
                   <IconImage className={`${CHIP_ICON} text-amber-700`} />
@@ -384,7 +384,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-7 w-7 items-center justify-center rounded-xl border border-primary bg-primary text-primary shadow-2xs hover:bg-accent cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary text-primary shadow-2xs hover:bg-accent cursor-pointer"
                 title="Stop"
               >
                 <div className="size-2.5 rounded-[2px] bg-primary text-primary" />
@@ -394,7 +394,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!prompt.trim() && attachments.length === 0}
-                className={`flex h-7 w-7 items-center justify-center rounded-xl shadow-2xs ${
+                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs ${
                   prompt.trim() || attachments.length > 0
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
