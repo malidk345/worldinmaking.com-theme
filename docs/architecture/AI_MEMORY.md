@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 315 - Cloudflare Edge Runtime Config & Legal Documents Window Fix (TSK-251)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the Cloudflare Pages build failure and converted Legal documents to native OS windows:
+  1. **Edge Runtime Config:** Added `export const runtime = 'edge'` to `src/pages/posts/[slug]/index.tsx` and `src/pages/blog/[slug]/index.tsx` as required by `@cloudflare/next-on-pages`.
+  2. **Legal Desktop Window Integration:** Upgraded `src/components/Legal/index.tsx` to include rich tab content for Terms of Service, Privacy Policy, DPA, BAA, and Subprocessors within `OSTabs` and `ScrollArea`, eliminating full page navigations.
+  3. **Removed Standalone Page Layouts:** Updated `src/pages/terms.tsx` and `src/pages/privacy.tsx` to render `<Legal />` directly without `<Layout>`, allowing legal documents opened from the Taskbar menu to pop as native desktop windows.
+- **Modified Files:** `src/pages/posts/[slug]/index.tsx`, `src/pages/blog/[slug]/index.tsx`, `src/components/Legal/index.tsx`, `src/pages/terms.tsx`, `src/pages/privacy.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 4.4s.
+
 ### Entry 314 - Fix Mobile Long-Press / FormattingToolbar Icon Import Crash (TSK-250)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
