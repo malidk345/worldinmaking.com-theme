@@ -230,10 +230,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDrop={handleDrop}
         className={`pointer-events-auto relative rounded-md border bg-primary px-2.5 py-1.5 transition-all duration-200 ${
           isDragging
-            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/35 shadow-[0_0_18px_rgba(30,58,138,0.25)] bg-accent'
+            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/40 shadow-[0_0_22px_rgba(30,58,138,0.35)] bg-accent'
             : prompt.trim().length > 0
-            ? 'border-[#1E3A8A] ring-1 ring-[#1E3A8A]/35 shadow-[0_0_15px_rgba(30,58,138,0.2)] focus-within:ring-2 focus-within:ring-[#1E3A8A]/40 focus-within:shadow-[0_0_20px_rgba(30,58,138,0.28)]'
-            : 'border-primary shadow-[0_0_10px_rgba(0,0,0,0.03)] hover:border-[#1E3A8A]/50 hover:shadow-[0_0_12px_rgba(30,58,138,0.12)] focus-within:border-[#1E3A8A] focus-within:ring-2 focus-within:ring-[#1E3A8A]/25 focus-within:shadow-[0_0_18px_rgba(30,58,138,0.22)]'
+            ? 'border-[#1E3A8A] ring-1 ring-[#1E3A8A]/40 shadow-[0_0_18px_rgba(30,58,138,0.25),0_2px_10px_rgba(30,58,138,0.15)] focus-within:ring-2 focus-within:ring-[#1E3A8A]/50 focus-within:shadow-[0_0_24px_rgba(30,58,138,0.35),0_4px_14px_rgba(30,58,138,0.2)]'
+            : 'border-primary shadow-[0_0_12px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-[0_0_14px_rgba(255,255,255,0.09),0_2px_8px_rgba(0,0,0,0.4)] hover:shadow-[0_0_16px_rgba(0,0,0,0.12),0_4px_12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_0_18px_rgba(255,255,255,0.14),0_4px_12px_rgba(0,0,0,0.5)] focus-within:border-[#1E3A8A] focus-within:ring-2 focus-within:ring-[#1E3A8A]/35 focus-within:shadow-[0_0_20px_rgba(30,58,138,0.28),0_4px_12px_rgba(30,58,138,0.18)]'
         }`}
       >
         {slashMatches.length > 0 && (

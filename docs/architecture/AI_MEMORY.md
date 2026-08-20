@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 320 - Chat UI Polish: Ambient Composer Glow, Bottom Message Fade & User Action Icons (TSK-256)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Applied user-directed visual refinements to WIM AI chat:
+  1. **Ambient Composer Glow:** Added luminous border glow in resting/hover states matching the active theme color, transitioning to glowing navy `#1E3A8A` on focus and typing.
+  2. **Smooth Message Fade Under Input:** Replaced static dock with a floating gradient backdrop (`from-primary via-primary/95 to-transparent pt-14 pb-3`), allowing messages to glide and fade away smoothly under the composer during scroll.
+  3. **User Action Icons Repositioned:** Moved user message action icons (edit, copy) underneath the user bubble, matching the exact sizing (`h-3.5 w-3.5`) and padding (`p-0.5`) of the philosopher actions.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.7s.
+
 ### Entry 319 - Chat Polish: Surnames, Exact Clock Times, Inline Thinking Trigger & Navy Glow (TSK-255)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

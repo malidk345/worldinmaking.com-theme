@@ -1280,7 +1280,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               </div>
             </div>
           ) : (
-            <div className="pt-3 pb-4 space-y-5">
+            <div className="pt-3 pb-36 space-y-5">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1290,9 +1290,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onOpenArtifact={(art, origin) => {
                     if (isArtifactsOpen && activeArtifact?.id === art.id && !isArtifactExpanded) {
                       setIsArtifactExpanded(true)
-                      return
+                    } else {
+                      openArtifact(art, { origin })
                     }
-                    openArtifact(art, { origin })
                   }}
                   onOpenSources={openSources}
                   onEditPrompt={handleEditPrompt}
@@ -1304,7 +1304,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
-              <div ref={chatBottomRef} className="h-3" />
+              <div ref={chatBottomRef} className="h-4" />
             </div>
           )}
         </main>
@@ -1312,7 +1312,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {activeChat && activeChat.messages.length > 0 && (
         <div
           data-writing-dock
-          className="relative z-20 shrink-0 bg-gradient-to-t from-primary via-primary/90 to-transparent pt-2 pb-2"
+          className="absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-primary via-primary/95 to-transparent pt-14 pb-3"
         >
           <ChatInput
             onSendMessage={handleSendMessage}
