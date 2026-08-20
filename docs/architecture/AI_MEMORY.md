@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 317 - Revert Edge SSR & Use Clean Static Client Slug Routing (TSK-253)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the Cloudflare build failure (`ReferenceError: navigator is not defined` / Edge bundling evaluation error):
+  1. **Clean Static Export:** Removed `getServerSideProps` and `runtime = 'experimental-edge'` from `src/pages/posts/[slug]/index.tsx` and `src/pages/blog/[slug]/index.tsx`.
+  2. **Reactive Client Slug Resolution:** Implemented robust multi-fallback client slug resolution from `router.query.slug`, `router.asPath`, and `window.location.pathname` inside the static page components, enabling 0-overhead instant builds on Cloudflare Pages without Edge worker CPU/bundle penalties.
+- **Modified Files:** `src/pages/posts/[slug]/index.tsx`, `src/pages/blog/[slug]/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 3.8s.
+
 ### Entry 316 - Use experimental-edge Runtime for Next.js Pages Router (TSK-252)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
