@@ -7,9 +7,10 @@ import {
     fetchSupabaseCommunityReplies,
     formatSupabaseCommunityToStrapi,
 } from 'lib/supabaseCommunity'
-import { setReplyVote } from 'lib/wim-user-data'
+import { setReplyVote, setCommunityPostVote } from 'lib/wim-user-data'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { runAdminAction } from 'lib/admin-client'
+import { clearSupabaseCache } from 'lib/supabase-rest'
 import { useState, useEffect, useCallback } from 'react'
 
 type UseQuestionOptions = {
@@ -21,6 +22,13 @@ function mapReplies(replies: any[], includeHidden: boolean) {
         .filter((r) => includeHidden || !r.is_hidden)
         .map((r) => {
         const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+        const votes = Array.isArray(r.community_reply_votes) ? r.community_reply_votes : []
+        const upvoteProfiles = votes
+            .filter((v: any) => v.vote === 1)
+            .map((v: any) => ({ id: v.user_id }))
+        const downvoteProfiles = votes
+            .filter((v: any) => v.vote === -1)
+            .map((v: any) => ({ id: v.user_id }))
         return {
             id: r.id,
             attributes: {
@@ -41,8 +49,8 @@ function mapReplies(replies: any[], includeHidden: boolean) {
                         },
                     },
                 },
-                upvoteProfiles: { data: [] },
-                downvoteProfiles: { data: [] },
+                upvoteProfiles: { data: upvoteProfiles },
+                downvoteProfiles: { data: downvoteProfiles },
             },
         }
     })
@@ -163,9 +171,94 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
     }
 
     const voteReply = async (replyId: number, type: 'up' | 'down') => {
-        if (!user?.profile?.id) return
-        await setReplyVote(replyId, type)
-        // optimistic UI already complex; reload
+        const userId = user?.id || user?.profile?.id
+        if (!userId) return
+
+        // Optimistic UI update
+        if (questionData?.attributes?.replies?.data) {
+            const updatedReplies = questionData.attributes.replies.data.map((r: any) => {
+                if (r.id !== replyId) return r
+                const currentUp = (r.attributes?.upvoteProfiles?.data || []).map((p: any) => String(p.id))
+                const currentDown = (r.attributes?.downvoteProfiles?.data || []).map((p: any) => String(p.id))
+                const uidStr = String(userId)
+                const isCurrentlyUp = currentUp.includes(uidStr)
+                const isCurrentlyDown = currentDown.includes(uidStr)
+
+                let nextUp = currentUp.filter((pId: string) => pId !== uidStr)
+                let nextDown = currentDown.filter((pId: string) => pId !== uidStr)
+
+                if (type === 'up' && !isCurrentlyUp) {
+                    nextUp.push(uidStr)
+                } else if (type === 'down' && !isCurrentlyDown) {
+                    nextDown.push(uidStr)
+                }
+
+                return {
+                    ...r,
+                    attributes: {
+                        ...r.attributes,
+                        upvoteProfiles: { data: nextUp.map((pId: string) => ({ id: pId })) },
+                        downvoteProfiles: { data: nextDown.map((pId: string) => ({ id: pId })) },
+                    },
+                }
+            })
+            setQuestionData({
+                ...questionData,
+                attributes: {
+                    ...questionData.attributes,
+                    replies: { data: updatedReplies },
+                },
+            } as any)
+        }
+
+        try {
+            await setReplyVote(replyId, type)
+        } catch (e) {
+            console.error('[voteReply] failed:', e)
+        }
+        clearSupabaseCache()
+        await load()
+    }
+
+    const voteQuestion = async (type: 'up' | 'down') => {
+        const userId = user?.id || user?.profile?.id
+        if (!userId) return
+
+        const targetPostId = questionData?.id || questionID || id
+        if (!targetPostId) return
+
+        if (questionData?.attributes) {
+            const currentUp = (questionData.attributes.upvoteProfiles?.data || []).map((p: any) => String(p.id))
+            const currentDown = (questionData.attributes.downvoteProfiles?.data || []).map((p: any) => String(p.id))
+            const uidStr = String(userId)
+            const isCurrentlyUp = currentUp.includes(uidStr)
+            const isCurrentlyDown = currentDown.includes(uidStr)
+
+            let nextUp = currentUp.filter((pId: string) => pId !== uidStr)
+            let nextDown = currentDown.filter((pId: string) => pId !== uidStr)
+
+            if (type === 'up' && !isCurrentlyUp) {
+                nextUp.push(uidStr)
+            } else if (type === 'down' && !isCurrentlyDown) {
+                nextDown.push(uidStr)
+            }
+
+            setQuestionData({
+                ...questionData,
+                attributes: {
+                    ...questionData.attributes,
+                    upvoteProfiles: { data: nextUp.map((pId: string) => ({ id: pId })) },
+                    downvoteProfiles: { data: nextDown.map((pId: string) => ({ id: pId })) },
+                },
+            } as any)
+        }
+
+        try {
+            await setCommunityPostVote(targetPostId, type)
+        } catch (e) {
+            console.error('[voteQuestion] failed:', e)
+        }
+        clearSupabaseCache()
         await load()
     }
 
@@ -222,6 +315,7 @@ export const useQuestion = (id: number | string | undefined, options?: UseQuesti
         pinThread,
         mutate,
         voteReply,
+        voteQuestion,
         handleTopicChange,
         isModerator: user?.role?.type === 'moderator',
     }

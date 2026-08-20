@@ -12,12 +12,24 @@ import QuestionSkeleton from './QuestionSkeleton'
 import SubscribeButton from './SubscribeButton'
 import Link from 'components/Link'
 import { useUser } from 'hooks/useUser'
-import { IconArchive, IconPencil, IconPin, IconTrash, IconUndo, IconShieldLock } from '@posthog/icons'
+import {
+    IconArchive,
+    IconPencil,
+    IconPin,
+    IconTrash,
+    IconUndo,
+    IconShieldLock,
+    IconThumbsUp,
+    IconThumbsUpFilled,
+    IconThumbsDown,
+    IconThumbsDownFilled,
+} from '@posthog/icons'
 import EditWrapper from './EditWrapper'
 import ReportSpamButton from './ReportSpamButton'
 import OSButton from 'components/OSButton'
 import { useToast } from '../../../context/Toast'
 import { useWindow } from '../../../context/Window'
+import { useApp } from '../../../context/App'
 import { runAdminAction } from 'lib/admin-client'
 
 type QuestionProps = {
@@ -35,6 +47,49 @@ type QuestionProps = {
 }
 
 export const CurrentQuestionContext = createContext<any>({})
+
+const QuestionVoteButton = ({
+    type,
+    voted,
+    votes,
+    onClick,
+}: {
+    type: 'up' | 'down'
+    voted: boolean
+    votes: number
+    onClick: () => void
+}) => {
+    return (
+        <OSButton
+            onClick={onClick}
+            icon={
+                type === 'up' ? (
+                    voted ? (
+                        <IconThumbsUpFilled className="text-white" />
+                    ) : (
+                        <IconThumbsUp />
+                    )
+                ) : voted ? (
+                    <IconThumbsDownFilled className="text-white" />
+                ) : (
+                    <IconThumbsDown />
+                )
+            }
+            size="md"
+            className={
+                type === 'up'
+                    ? voted
+                        ? '!bg-green !text-white !border-green'
+                        : ''
+                    : voted
+                    ? '!bg-red !text-white !border-red'
+                    : ''
+            }
+        >
+            <strong>{votes}</strong>
+        </OSButton>
+    )
+}
 
 const DeleteButton = ({ questionID, onDeleted }: { questionID: number | string; onDeleted?: () => void }) => {
     const router = useRouter()
@@ -107,10 +162,48 @@ export function Question(props: QuestionProps) {
         handleResolve,
         handleReplyDelete,
         voteReply,
+        voteQuestion,
         archive,
         pinThread,
         mutate,
     } = useQuestion(id, { data: question })
+
+    const { openSignIn } = useApp()
+
+    const questionUpvoted = React.useMemo(
+        () =>
+            questionData?.attributes?.upvoteProfiles?.data?.some(
+                (p: any) =>
+                    (user?.id && String(p?.id) === String(user.id)) ||
+                    (user?.profile?.id && String(p?.id) === String(user.profile.id))
+            ) ?? false,
+        [questionData?.attributes?.upvoteProfiles, user?.id, user?.profile?.id]
+    )
+    const questionDownvoted = React.useMemo(
+        () =>
+            questionData?.attributes?.downvoteProfiles?.data?.some(
+                (p: any) =>
+                    (user?.id && String(p?.id) === String(user.id)) ||
+                    (user?.profile?.id && String(p?.id) === String(user.profile.id))
+            ) ?? false,
+        [questionData?.attributes?.downvoteProfiles, user?.id, user?.profile?.id]
+    )
+    const questionUpvotes = React.useMemo(
+        () => questionData?.attributes?.upvoteProfiles?.data?.length || 0,
+        [questionData?.attributes?.upvoteProfiles]
+    )
+    const questionDownvotes = React.useMemo(
+        () => questionData?.attributes?.downvoteProfiles?.data?.length || 0,
+        [questionData?.attributes?.downvoteProfiles]
+    )
+
+    const handleQuestionVote = (type: 'up' | 'down') => {
+        if (!user) {
+            openSignIn()
+        } else {
+            voteQuestion(type)
+        }
+    }
 
     useEffect(() => {
         if (questionData) {
@@ -150,6 +243,7 @@ export function Question(props: QuestionProps) {
                 handleResolve,
                 handleReplyDelete,
                 voteReply,
+                voteQuestion,
                 mutate,
             }}
         >
@@ -269,6 +363,21 @@ export function Question(props: QuestionProps) {
                             >
                                 <Markdown className="question-content">{questionData.attributes.body}</Markdown>
                             </EditWrapper>
+
+                            <div className="flex items-center gap-1 mt-3">
+                                <QuestionVoteButton
+                                    type="up"
+                                    voted={questionUpvoted}
+                                    votes={questionUpvotes}
+                                    onClick={() => handleQuestionVote('up')}
+                                />
+                                <QuestionVoteButton
+                                    type="down"
+                                    voted={questionDownvoted}
+                                    votes={questionDownvotes}
+                                    onClick={() => handleQuestionVote('down')}
+                                />
+                            </div>
 
                             {!isEditingQuestion && showSlug && slugs?.length > 0 && slugs[0]?.slug !== '/questions' && (
                                 <p className="text-xs text-secondary pb-4 mb-0 mt-2">

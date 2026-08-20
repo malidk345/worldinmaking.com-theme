@@ -145,8 +145,20 @@ export async function setReplyVote(
     const uid = await requireUserId()
     if (!uid) return { ok: false, error: 'Not signed in' }
     const value = vote === 'up' ? 1 : -1
-    // delete existing then insert (portable without unique constraint knowledge)
+
+    const { data: existing } = await supabase
+        .from('community_reply_votes')
+        .select('vote')
+        .eq('user_id', uid)
+        .eq('reply_id', Number(replyId))
+        .maybeSingle()
+
     await supabase.from('community_reply_votes').delete().eq('user_id', uid).eq('reply_id', Number(replyId))
+
+    if (existing && existing.vote === value) {
+        return { ok: true }
+    }
+
     const { error } = await supabase.from('community_reply_votes').insert({
         reply_id: Number(replyId),
         user_id: uid,
@@ -158,16 +170,29 @@ export async function setReplyVote(
 
 export async function setCommunityPostVote(
     postId: number | string,
-    vote: 1 | -1 | 0
+    vote: 'up' | 'down' | 1 | -1 | 0
 ): Promise<{ ok: boolean; error?: string }> {
     const uid = await requireUserId()
     if (!uid) return { ok: false, error: 'Not signed in' }
+    const value = vote === 'up' || vote === 1 ? 1 : vote === 'down' || vote === -1 ? -1 : 0
+
+    const { data: existing } = await supabase
+        .from('community_post_votes')
+        .select('vote')
+        .eq('user_id', uid)
+        .eq('post_id', Number(postId))
+        .maybeSingle()
+
     await supabase.from('community_post_votes').delete().eq('user_id', uid).eq('post_id', Number(postId))
-    if (vote === 0) return { ok: true }
+
+    if (value === 0 || (existing && existing.vote === value)) {
+        return { ok: true }
+    }
+
     const { error } = await supabase.from('community_post_votes').insert({
         post_id: Number(postId),
         user_id: uid,
-        vote,
+        vote: value,
     })
     if (error) return { ok: false, error: error.message }
     return { ok: true }

@@ -374,6 +374,36 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 308 - Main Forum Post (First Entry) Like & Vote Buttons (TSK-244)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Added the like and vote (upvote/downvote) buttons to the main forum thread topic (the first entry):
+  1. **Supabase Post Votes REST Join:** Updated `fetchSupabaseCommunityPosts` and `formatSupabaseCommunityToStrapi` in `src/lib/supabaseCommunity.ts` to join `community_post_votes(user_id, vote)` and map `upvoteProfiles` / `downvoteProfiles` for topic posts.
+  2. **Topic Post Voting Logic:** Implemented `voteQuestion` in `src/components/Squeak/hooks/useQuestion.tsx` and enhanced `setCommunityPostVote` in `src/lib/wim-user-data.ts` to support toggle-off, string vote types, and optimistic UI updates.
+  3. **Question Voting Component:** Added `QuestionVoteButton` rendering below the original post body in `src/components/Squeak/components/Question.tsx` matching the design and auth behaviors of reply vote buttons.
+- **Modified Files:** `src/lib/supabaseCommunity.ts`, `src/lib/wim-user-data.ts`, `src/components/Squeak/hooks/useQuestion.tsx`, `src/components/Squeak/components/Question.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.9s.
+
+### Entry 307 - Forum Reply Like & Upvote/Downvote System Restoration (TSK-243)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Diagnosed and fixed the broken forum reply upvote/downvote and like system:
+  1. **Supabase REST Queries:** Updated `fetchSupabaseCommunityReplies` and `fetchSupabasePostBySlug` in `src/lib/supabaseCommunity.ts` to join `community_reply_votes(user_id, vote)` instead of omitting vote rows.
+  2. **Reply Vote Mapping:** Replaced empty hardcoded `upvoteProfiles: { data: [] }` in `useQuestion.tsx` with parsed profiles grouped by upvotes (`vote === 1`) and downvotes (`vote === -1`).
+  3. **Toggle Support & Optimistic UI:** Enhanced `setReplyVote` in `src/lib/wim-user-data.ts` to support unvoting (toggle off when clicking an active vote) and added optimistic state updates in `useQuestion.tsx` alongside `clearSupabaseCache()` to bypass stale 60s memory caches.
+  4. **Robust Auth Matching:** Improved `upvoted` and `downvoted` checks in `src/components/Squeak/components/Reply.tsx` to match against both Supabase auth UUID and profile identifiers.
+- **Modified Files:** `src/lib/supabaseCommunity.ts`, `src/lib/wim-user-data.ts`, `src/components/Squeak/hooks/useQuestion.tsx`, `src/components/Squeak/components/Reply.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.8s.
+
+### Entry 306 - Forum Admin "Mark as Solution" Removal (TSK-242)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Removed the redundant "Mark as solution" and "Undo solution" action triggers for forum admins and moderators:
+  1. **Author-Only Resolution:** Updated `resolvable` in `src/components/Squeak/components/Reply.tsx` so that only the question's original author (`isAuthor`) can mark replies as a solution, eliminating the intrusive admin solution button displayed on every reply.
+  2. **Author-Only Undo:** Updated the solution badge undo button so only the original author can unmark an answer.
+- **Modified Files:** `src/components/Squeak/components/Reply.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 3.3s.
+
 ### Entry 305 - Screensaver Feature Removal & Codebase Streamlining (TSK-241)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

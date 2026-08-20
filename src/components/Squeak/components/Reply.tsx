@@ -283,7 +283,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
     const isTeamMember = profile?.data?.attributes?.teams?.data?.length > 0
     const resolvable =
         !resolved &&
-        (isAuthor || isModerator) &&
+        isAuthor &&
         topics?.data?.every((topic) => !topic.attributes.label.startsWith('#'))
 
     const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -344,17 +344,28 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
 
     const pronouns = profile?.data?.attributes?.pronouns
     const helpful = useMemo(() => reply?.attributes?.helpful, [])
+    const currentUserId = user?.id || user?.profile?.id
     const upvoted = useMemo(
-        () => reply?.attributes?.upvoteProfiles?.data?.some((profile) => profile?.id === user?.profile?.id),
-        [reply?.attributes?.upvoteProfiles, user?.profile?.id]
+        () =>
+            reply?.attributes?.upvoteProfiles?.data?.some(
+                (p: any) =>
+                    (user?.id && String(p?.id) === String(user.id)) ||
+                    (user?.profile?.id && String(p?.id) === String(user.profile.id))
+            ) ?? false,
+        [reply?.attributes?.upvoteProfiles, user?.id, user?.profile?.id]
     )
     const downvoted = useMemo(
-        () => reply?.attributes?.downvoteProfiles?.data?.some((profile) => profile?.id === user?.profile?.id),
-        [reply?.attributes?.downvoteProfiles, user?.profile?.id]
+        () =>
+            reply?.attributes?.downvoteProfiles?.data?.some(
+                (p: any) =>
+                    (user?.id && String(p?.id) === String(user.id)) ||
+                    (user?.profile?.id && String(p?.id) === String(user.profile.id))
+            ) ?? false,
+        [reply?.attributes?.downvoteProfiles, user?.id, user?.profile?.id]
     )
-    const upvotes = useMemo(() => reply?.attributes?.upvoteProfiles?.data?.length, [reply?.attributes?.upvoteProfiles])
+    const upvotes = useMemo(() => reply?.attributes?.upvoteProfiles?.data?.length || 0, [reply?.attributes?.upvoteProfiles])
     const downvotes = useMemo(
-        () => reply?.attributes?.downvoteProfiles?.data?.length,
+        () => reply?.attributes?.downvoteProfiles?.data?.length || 0,
         [reply?.attributes?.downvoteProfiles]
     )
     const isMax = profile?.data?.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
@@ -439,7 +450,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         <span className="border rounded-sm text-[#008200cc] text-xs font-semibold py-0.5 px-1 uppercase">
                             Solution
                         </span>
-                        {(isAuthor || isModerator) && (
+                        {isAuthor && (
                             <button
                                 onClick={async () => {
                                     try {
@@ -552,7 +563,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         )}
 
                         <div className="space-y-1 mt-2">
-                            {(isModerator || resolvable) && !(resolved && resolvedBy?.data?.id === id) && (
+                            {resolvable && !(resolved && resolvedBy?.data?.id === id) && (
                                 <OSButton
                                     onClick={async () => {
                                         setResolving(true)
