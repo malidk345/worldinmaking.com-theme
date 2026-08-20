@@ -374,6 +374,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 311 - Blog Post Layout Unification on Direct Refresh (TSK-247)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Unified the blog post page rendering between desktop window navigation and browser hard refreshes (F5):
+  1. **Page Route Fixes (`src/pages/posts/[slug]/index.tsx` & `src/pages/blog/[slug]/index.tsx`):** Switched direct post page routes from legacy `PostPage` (`ClientPost`) to modern `BlogPost` (`src/templates/BlogPost.tsx`) matching `WindowRouter`.
+  2. **Catch-all Fallback (`src/pages/[...slug].tsx`):** Added `rootSegment === 'blog' || rootSegment === 'posts'` handling to render `BlogPost` seamlessly.
+- **Modified Files:** `src/pages/posts/[slug]/index.tsx`, `src/pages/blog/[slug]/index.tsx`, `src/pages/[...slug].tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright unit tests passed in 4.2s.
+
 ### Entry 310 - Desktop Contact App & Admin Messages Integration (TSK-246)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

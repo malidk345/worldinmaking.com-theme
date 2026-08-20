@@ -5,6 +5,7 @@ import Inbox from '../components/Inbox'
 import ProfileWrapper from '../components/Profile'
 import DisplayOptions from '../components/DisplayOptions'
 import Bookmarks from './bookmarks'
+import BlogPost from '../templates/BlogPost'
 import { SharedChatView } from '../components/Share/SharedChatView'
 
 const NotebooksListSkeleton = dynamic(
@@ -45,6 +46,9 @@ export default function DynamicSlugPage() {
     }
     if (rootSegment === 'bookmarks') {
         return <Bookmarks key={fullPath} />
+    }
+    if (rootSegment === 'blog' || rootSegment === 'posts') {
+        return <BlogPost key={fullPath} path={fullPath} />
     }
     if (rootSegment === 'questions' || rootSegment === 'forum' || rootSegment === 'community') {
         return (
