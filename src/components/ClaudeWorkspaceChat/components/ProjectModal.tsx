@@ -39,19 +39,19 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs font-sans">
+      <div className="w-full max-w-lg rounded-2xl border border-primary bg-primary text-primary p-6 shadow-2xl space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-          <div className="flex items-center gap-2 text-stone-900 font-semibold text-base">
-            <FolderPlus className="h-5 w-5 text-[#1E3A8A]" />
-            <h2 className="text-base font-semibold text-stone-900">
+        <div className="flex items-center justify-between border-b border-primary pb-3">
+          <div className="flex items-center gap-2 text-primary font-semibold text-base">
+            <FolderPlus className="h-5 w-5 text-secondary" />
+            <h2 className="text-base font-semibold text-primary">
               New project
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1 text-secondary hover:bg-accent hover:text-primary cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

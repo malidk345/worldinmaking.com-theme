@@ -72,22 +72,22 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({ citations, origin = 
       />
       <motion.div
         ref={frameRef}
-        className="absolute z-50 flex flex-col overflow-hidden rounded-2xl border border-[#e6e6e6] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
+        className="absolute z-50 flex flex-col overflow-hidden rounded-2xl border border-primary bg-primary text-primary font-sans shadow-xl"
         initial={initialFrame}
         animate={{ top: targetTop, left: targetLeft, width: targetWidth, height: targetHeight }}
         transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.85 }}
       >
-        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#ececec] bg-white px-3 font-claude-sans select-none">
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-primary bg-primary px-3 font-sans select-none text-primary">
           <div className="min-w-0">
-            <div className="truncate text-[13.5px] font-medium text-[#1a1a1a]">Sources</div>
-            <div className="text-[11px] text-[#8a8a8a]">
+            <div className="truncate text-[13.5px] font-medium text-primary">Sources</div>
+            <div className="text-[11px] text-secondary">
               {citations.length} {citations.length === 1 ? 'website' : 'websites'}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[#8c8c8c] hover:bg-[#f4f4f4] hover:text-[#1a1a1a] cursor-pointer"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-secondary hover:bg-accent hover:text-primary cursor-pointer"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -95,21 +95,21 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({ citations, origin = 
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="border-b border-[#f0f0f0] px-4 py-3">
+          <div className="border-b border-primary px-4 py-3">
             <div className="flex items-start gap-3">
-              <SourceFavicon citation={active} size={28} className="mt-0.5 shrink-0 border border-[#ececec]" />
+              <SourceFavicon citation={active} size={28} className="mt-0.5 shrink-0 border border-primary" />
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-medium leading-snug text-[#1a1a1a]">{active.title}</div>
-                {hostName ? <div className="mt-0.5 text-[12px] text-[#8a8a8a]">{hostName}</div> : null}
+                <div className="text-[14px] font-medium leading-snug text-primary">{active.title}</div>
+                {hostName ? <div className="mt-0.5 text-[12px] text-secondary">{hostName}</div> : null}
                 {active.snippet ? (
-                  <p className="mt-2 text-[13px] leading-relaxed text-[#4a4a4a]">{active.snippet}</p>
+                  <p className="mt-2 text-[13px] leading-relaxed text-secondary">{active.snippet}</p>
                 ) : null}
                 {href ? (
                   <a
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] px-2.5 py-1 text-[12px] text-[#3d3d3d] hover:bg-[#fafafa]"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary px-2.5 py-1 text-[12px] text-primary hover:bg-accent transition-colors"
                   >
                     <ExternalLink className="h-3 w-3" />
                     Open site
@@ -128,14 +128,14 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({ citations, origin = 
                   <button
                     type="button"
                     onClick={() => setActiveId(citation.id)}
-                    className={`flex w-full items-center gap-2.5 px-4 py-2 text-left cursor-pointer ${
-                      selected ? 'bg-[#f7f7f7]' : 'hover:bg-[#fafafa]'
+                    className={`flex w-full items-center gap-2.5 px-4 py-2 text-left cursor-pointer transition-colors ${
+                      selected ? 'bg-accent text-primary' : 'hover:bg-accent text-primary'
                     }`}
                   >
-                    <SourceFavicon citation={citation} size={18} className="shrink-0 border border-[#ececec]" />
+                    <SourceFavicon citation={citation} size={18} className="shrink-0 border border-primary" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] text-[#1a1a1a]">{citation.title}</span>
-                      <span className="block truncate text-[11px] text-[#8a8a8a]">
+                      <span className="block truncate text-[13px] text-primary">{citation.title}</span>
+                      <span className="block truncate text-[11px] text-secondary">
                         {citationHostname(citation.url) || citation.source || ''}
                       </span>
                     </span>
@@ -145,7 +145,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({ citations, origin = 
                         target="_blank"
                         rel="noreferrer"
                         onClick={(event) => event.stopPropagation()}
-                        className="shrink-0 rounded p-1 text-[#b0b0b0] hover:text-[#1a1a1a]"
+                        className="shrink-0 rounded p-1 text-secondary hover:text-primary"
                         aria-label="Open source"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />

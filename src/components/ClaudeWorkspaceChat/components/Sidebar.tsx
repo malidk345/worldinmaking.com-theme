@@ -53,7 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             <aside
-                className={`absolute inset-y-0 left-0 z-30 flex h-full w-64 shrink-0 flex-col border-r border-primary transition-all duration-300 md:relative md:translate-x-0 ${PANEL_BG} ${
+                data-scheme="secondary"
+                className={`absolute inset-y-0 left-0 z-30 flex h-full w-64 shrink-0 flex-col bg-primary font-sans border-r border-primary transition-all duration-300 md:relative md:translate-x-0 ${
                     isOpen
                         ? 'translate-x-0 opacity-100'
                         : '-translate-x-full md:-ml-64 opacity-0 pointer-events-none'
@@ -64,14 +65,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex items-center gap-0.5 text-muted">
                         <button
                             onClick={onOpenSearchModal}
-                            className="p-1.5 rounded-md hover:bg-light-3 hover:text-primary transition-colors"
+                            className="p-1.5 rounded-md hover:bg-accent hover:text-primary transition-colors cursor-pointer"
                             title="Search"
                         >
                             <Search className="h-4 w-4" />
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-1.5 rounded-md hover:bg-light-3 hover:text-primary transition-colors"
+                            className="p-1.5 rounded-md hover:bg-accent hover:text-primary transition-colors cursor-pointer"
                             title="Close history"
                         >
                             <PanelLeft className="h-4 w-4" />
@@ -85,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onNewChat()
                             if (window.innerWidth < 1024) onClose()
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-secondary hover:bg-light-3 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-secondary hover:bg-accent hover:text-primary transition-colors cursor-pointer"
                     >
                         <Plus className="h-4 w-4" />
                         <span>New chat</span>
@@ -161,8 +162,8 @@ const ChatItem: React.FC<ChatItemProps> = ({
     return (
         <div
             onClick={onSelect}
-            className={`group relative flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
-                isActive ? 'bg-light-3 text-primary font-medium' : 'text-secondary hover:bg-light-3'
+            className={`group relative flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-sans transition-colors ${
+                isActive ? 'bg-accent text-primary font-medium' : 'text-secondary hover:bg-accent hover:text-primary'
             }`}
         >
             {isEditing ? (
@@ -171,7 +172,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
                         type="text"
                         value={editTitle}
                         onChange={(e) => onEditTitleChange(e.target.value)}
-                        className="w-full rounded border border-primary bg-white px-1.5 py-0.5 text-xs text-primary focus:outline-none"
+                        className="w-full rounded border border-primary bg-primary px-1.5 py-0.5 text-xs text-primary focus:outline-none"
                         autoFocus
                     />
                     <button onClick={onSaveRename} className="text-emerald-600">

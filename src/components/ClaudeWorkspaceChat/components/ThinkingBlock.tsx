@@ -222,7 +222,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
   if (!isLive && !hasThoughtText) return null;
 
   return (
-    <div className="my-1 w-full max-w-full select-none font-claude-sans text-secondary">
+    <div className="my-1 w-full max-w-full select-none font-sans text-secondary">
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}

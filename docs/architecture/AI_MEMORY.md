@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 318 - Align WIM AI Chat Typography & Background Colors with Community (TSK-254)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Aligned WIM AI chat typography and background colors with the Community entry / post page (`src/components/Squeak/` & `src/components/Inbox/`):
+  1. **Font System Uniformity:** Replaced `font-wimbot`, `font-claude-sans`, `font-claude-serif` with standard `font-sans` across `ClaudeWorkspaceChat`, `ChatMessage`, `ChatInput`, `Sidebar`, `ThinkingBlock`, `ArtifactsPanel`, `SourcesPanel`, `SearchModal`, `SettingsModal`, and `ShareModal`. Removed `notebook-app-scope` class from `ClaudeWorkspaceChatPanel` to prevent Notebook's custom `RoundHog`/`Inter` font injection.
+  2. **Typography Sizing & Leading:** Updated message responses, user chat bubbles, and the composer textarea to `text-[15px] leading-[1.5]` matching Community `RichText` & `Markdown` components with standard prose modifiers (`[&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere]`).
+  3. **Background & Theme Variable Tokens:** Replaced hardcoded `bg-white`, `bg-[#fafafa]`, and custom hex backgrounds with theme tokens `bg-primary`, `bg-accent`, `text-primary`, `text-secondary`, `border-primary`, and `data-scheme="secondary"` matching Community styling in both light and dark modes.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx`, `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `src/components/ClaudeWorkspaceChat/components/SourcesPanel.tsx`, `src/components/ClaudeWorkspaceChat/components/SearchModal.tsx`, `src/components/ClaudeWorkspaceChat/components/SettingsModal.tsx`, `src/components/ClaudeWorkspaceChat/components/ShareModal.tsx`, `src/components/ClaudeWorkspaceChat/components/ProjectModal.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 5.1s.
+
 ### Entry 317 - Revert Edge SSR & Use Clean Static Client Slug Routing (TSK-253)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

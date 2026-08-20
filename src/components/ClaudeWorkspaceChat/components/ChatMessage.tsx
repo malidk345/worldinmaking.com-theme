@@ -77,8 +77,8 @@ function PhilosopherMark({ model }: { model?: ModelOption }) {
   if (!model) return null
   const surname = philosopherSurname(model.name)
   return (
-    <div className="flex items-center gap-1.5" title={model.name}>
-      <span className="inline-flex size-[18px] shrink-0 overflow-hidden rounded-full border border-[#e8e8e8] bg-[#ececec]">
+    <div className="flex items-center gap-1.5 font-sans" title={model.name}>
+      <span className="inline-flex size-[18px] shrink-0 overflow-hidden rounded-full border border-primary/40 bg-accent">
         {model.avatarUrl ? (
           <img src={model.avatarUrl} alt="" className="size-full object-cover object-top" />
         ) : (
@@ -87,7 +87,7 @@ function PhilosopherMark({ model }: { model?: ModelOption }) {
           </span>
         )}
       </span>
-      <span className="text-[12.5px] font-medium leading-none text-[#6a6a6a]">{surname}</span>
+      <span className="text-[12.5px] font-medium leading-none text-secondary">{surname}</span>
     </div>
   )
 }
@@ -222,7 +222,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             </button>
           </div>
 
-          <div className="relative max-w-[85%] rounded-[18px] bg-white border border-primary px-4 py-3 text-primary text-[14.5px] leading-relaxed font-claude-sans shadow-2xs hover:bg-white transition-colors">
+          <div className="relative max-w-[85%] rounded-[18px] bg-primary border border-primary px-4 py-3 text-primary text-[15px] leading-[1.5] font-sans shadow-2xs">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
         </div>
@@ -250,9 +250,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             />
           </div>
 
-          {/* Response Text with High Quality Editorial Anthropic Serif Font */}
+          {/* Response Text with Community matching font and sizing */}
           <div
-            className="font-claude-serif text-[15px] sm:text-[15.5px] leading-[1.6] text-primary claude-prose max-w-none tracking-[0.01em]"
+            className="font-sans text-[15px] leading-[1.5] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere]"
             style={
               isLiveAnswer && fadeMs > 0
                 ? { animation: `wim-token-fade ${fadeMs}ms ease-out` }
@@ -265,7 +265,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                rehypePlugins={[rehypeSanitize]}
               components={{
                 p: ({ children }: any) => (
-                  <p className="mb-2.5 last:mb-0 leading-[1.55rem] break-words">{children}</p>
+                  <p className="mb-2.5 last:mb-0 leading-[1.5] break-words">{children}</p>
                 ),
                 code({ node, inline, className, children, ...props }: any) {
                   const match = /language-(\w+)/.exec(className || '');
@@ -297,24 +297,24 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
-            <div className="mt-3.5 space-y-2 font-claude-sans">
+            <div className="mt-3.5 space-y-2 font-sans">
               {message.artifacts.map((art) => (
                 <button
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-[#e7e7e7] bg-[#fafafa] px-4 py-3 text-left transition-all hover:bg-white hover:shadow-sm cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-primary bg-primary px-4 py-3 text-left transition-all hover:bg-accent cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
-                    <div className="truncate text-[14px] font-medium leading-tight text-[#1a1a1a]">
+                    <div className="truncate text-[14px] font-medium leading-tight text-primary">
                       {art.title}
                     </div>
-                    <div className="mt-0.5 truncate text-[12.5px] text-[#8a8a8a]">
+                    <div className="mt-0.5 truncate text-[12.5px] text-secondary">
                       {artifactCardMeta(art)}
                     </div>
                   </div>
-                  <div className="pointer-events-none absolute right-3 top-1/2 flex h-[58px] w-[44px] -translate-y-1/2 -rotate-[8deg] items-center justify-center rounded-t-md border border-[#e5e5e5] bg-white shadow-sm transition-transform group-hover/artifact-block:-rotate-[5deg]" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" className="text-[#b0b0b0]">
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex h-[58px] w-[44px] -translate-y-1/2 -rotate-[8deg] items-center justify-center rounded-t-md border border-primary bg-primary shadow-sm transition-transform group-hover/artifact-block:-rotate-[5deg]" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" className="text-secondary">
                       <path d="M212.24,83.76l-56-56A6,6,0,0,0,152,26H56A14,14,0,0,0,42,40V216a14,14,0,0,0,14,14H200a14,14,0,0,0,14-14V88A6,6,0,0,0,212.24,83.76ZM158,46.48,193.52,82H158ZM200,218H56a2,2,0,0,1-2-2V40a2,2,0,0,1,2-2h90V88a6,6,0,0,0,6,6h50V216A2,2,0,0,1,200,218Z" />
                     </svg>
                   </div>

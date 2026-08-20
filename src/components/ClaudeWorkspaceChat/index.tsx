@@ -1222,7 +1222,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming])
 
   return (
-    <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
+    <div className="relative flex h-full min-h-0 w-full min-w-0 bg-primary text-primary font-sans overflow-hidden antialiased">
       {/* Left Collapsible Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -1238,7 +1238,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       />
 
       {/* Main Workspace Area */}
-      <div ref={workspaceRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div ref={workspaceRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-primary text-primary">
         {/* Top Header Bar */}
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -1246,7 +1246,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         />
 
         {/* Chat Stream & Conversation Body */}
-        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative">
+        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative bg-primary">
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
               <div className="mb-5 flex w-full flex-wrap justify-center gap-2">
@@ -1255,7 +1255,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                     key={starter.label}
                     type="button"
                     onClick={() => fillComposer(starter.prompt)}
-                    className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[13px] text-[#3d3d3d] hover:border-[#d4d4d4] hover:bg-[#fafafa] cursor-pointer"
+                    className="rounded-full border border-primary bg-primary px-3 py-1.5 text-[13px] text-primary hover:bg-accent transition-colors cursor-pointer"
                   >
                     {starter.label}
                   </button>
@@ -1465,7 +1465,7 @@ export function ClaudeWorkspaceChatPanel() {
             style={panelStyle}
             data-scheme="primary"
              data-skin="classic"
-            className={`fixed w-[min(calc(100vw-1rem),26rem)] max-w-[calc(100vw-1rem)] text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A] notebook-app-scope ${WINDOW_BG}`}
+            className={`fixed w-[min(calc(100vw-1rem),26rem)] max-w-[calc(100vw-1rem)] bg-primary text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased ${WINDOW_BG}`}
           >
             <App onClose={closePanel} />
           </motion.div>

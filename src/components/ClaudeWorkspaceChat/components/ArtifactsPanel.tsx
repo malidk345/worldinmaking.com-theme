@@ -28,7 +28,7 @@ function isBadgeLabel(value: string): boolean {
 }
 
 const EditorialBadge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="mr-1.5 inline-flex items-center rounded-full border border-[#e8b4b4] bg-white px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.06em] text-[#c45c5c] font-claude-sans align-middle">
+  <span className="mr-1.5 inline-flex items-center rounded-full border border-primary/40 bg-accent px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.06em] text-secondary font-sans align-middle">
     {children}
   </span>
 )
@@ -242,14 +242,14 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
         animate={stage ? { opacity: 1, y: 0 } : { top: targetTop, left: targetLeft, width: targetWidth, height: targetHeight }}
         transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.85 }}
       >
-      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#ececec] bg-white px-2 sm:gap-3 sm:px-3 font-claude-sans select-none">
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-primary bg-primary px-2 sm:gap-3 sm:px-3 font-sans select-none text-primary">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
-          <div className="flex h-8 shrink-0 items-center rounded bg-[#f3f4f6] p-0.5">
+          <div className="flex h-8 shrink-0 items-center rounded bg-accent p-0.5">
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
               className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
-                activeTab === 'preview' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
+                activeTab === 'preview' ? 'bg-primary text-primary shadow-xs' : 'text-secondary hover:text-primary'
               }`}
               title="Preview"
               aria-label="Preview"
@@ -261,7 +261,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               type="button"
               onClick={() => setActiveTab('code')}
               className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
-                activeTab === 'code' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
+                activeTab === 'code' ? 'bg-primary text-primary shadow-xs' : 'text-secondary hover:text-primary'
               }`}
               title="Code"
               aria-label="Code"
@@ -271,9 +271,9 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             </button>
           </div>
 
-          <div className="flex min-w-0 items-center gap-1.5 text-[13px] sm:text-[13.5px] font-normal text-[#6a6a6a]">
-            <h2 className="min-w-0 truncate" title={artifact.title}>{displayTitle}</h2>
-            <span className="hidden shrink-0 text-[#b0b0b0] sm:inline">·</span>
+          <div className="flex min-w-0 items-center gap-1.5 text-[13px] sm:text-[13.5px] font-normal text-secondary">
+            <h2 className="min-w-0 truncate text-primary font-medium" title={artifact.title}>{displayTitle}</h2>
+            <span className="hidden shrink-0 text-secondary sm:inline">·</span>
             <span className="hidden shrink-0 sm:inline">{formatLabel}</span>
           </div>
 
@@ -453,51 +453,51 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             </div>
           </div>
         ) : (
-          /* Markdown / Document View — Claude editorial canvas */
-          <div className="mx-auto w-full max-w-[40rem] min-w-0 overflow-x-auto bg-white px-4 pb-16 pt-4 text-[15px] leading-[1.65] text-[#1a1a1a] font-claude-serif sm:px-8 sm:pt-5 sm:text-[16.5px] sm:leading-[1.7] md:px-12">
+          /* Markdown / Document View */
+          <div className="mx-auto w-full max-w-[40rem] min-w-0 overflow-x-auto bg-primary px-4 pb-16 pt-4 text-[15px] leading-[1.5] text-primary font-sans markdown prose dark:prose-invert prose-sm sm:px-8 sm:pt-5 md:px-12">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeSanitize]}
               components={{
                 h1: ({ children }) => (
-                  <h1 className="mt-2 mb-4 break-words text-[1.45rem] font-bold leading-[1.25] text-[#1a1a1a] font-claude-serif sm:mb-5 sm:text-[1.85rem]">
+                  <h1 className="mt-2 mb-4 break-words text-[1.45rem] font-bold leading-[1.25] text-primary font-sans sm:mb-5 sm:text-[1.85rem]">
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="mt-6 mb-3 break-words text-[1.15rem] font-bold leading-snug text-[#1a1a1a] font-claude-serif sm:mt-8 sm:text-[1.28rem]">
+                  <h2 className="mt-6 mb-3 break-words text-[1.15rem] font-bold leading-snug text-primary font-sans sm:mt-8 sm:text-[1.28rem]">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="mt-6 mb-2 text-[1.12rem] font-bold text-[#1a1a1a] font-claude-serif">
+                  <h3 className="mt-6 mb-2 text-[1.12rem] font-bold text-primary font-sans">
                     {children}
                   </h3>
                 ),
                 h4: ({ children }) => (
-                  <h4 className="mt-5 mb-1.5 text-[1.02rem] font-bold text-[#1a1a1a] font-claude-serif">
+                  <h4 className="mt-5 mb-1.5 text-[1.02rem] font-bold text-primary font-sans">
                     {children}
                   </h4>
                 ),
                 p: ({ children }) => (
-                  <p className="mb-4 break-words text-[#1a1a1a] font-claude-serif leading-[1.65] sm:leading-[1.7]">
+                  <p className="mb-4 break-words text-primary font-sans leading-[1.5]">
                     {children}
                   </p>
                 ),
                 strong: ({ children }) => (
-                  <strong className="font-bold text-[#1a1a1a]">{children}</strong>
+                  <strong className="font-bold text-primary">{children}</strong>
                 ),
                 em: ({ children }) => (
-                  <em className="italic text-[#1a1a1a]">{children}</em>
+                  <em className="italic text-primary">{children}</em>
                 ),
                 del: ({ children }) => (
-                  <del className="line-through text-[#1a1a1a]">{children}</del>
+                  <del className="line-through text-secondary">{children}</del>
                 ),
                 ul: ({ children }) => (
-                  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-[#1a1a1a] font-claude-serif">{children}</ul>
+                  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-primary font-sans">{children}</ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="list-decimal pl-7 mb-5 space-y-2 text-[#1a1a1a] font-claude-serif marker:font-claude-serif">{children}</ol>
+                  <ol className="list-decimal pl-7 mb-5 space-y-2 text-primary font-sans">{children}</ol>
                 ),
                 li: ({ children }) => (
                   <li className="pl-1.5 leading-[1.7]">{children}</li>

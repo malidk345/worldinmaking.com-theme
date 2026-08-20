@@ -20,15 +20,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs">
-      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs font-sans">
+      <div className="w-full max-w-md rounded-2xl border border-primary bg-primary text-primary p-6 shadow-2xl space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-          <div className="flex items-center gap-2 text-stone-900 font-semibold text-base">
-            <SettingsIcon className="h-5 w-5 text-stone-700" />
+        <div className="flex items-center justify-between border-b border-primary pb-3">
+          <div className="flex items-center gap-2 text-primary font-semibold text-base">
+            <SettingsIcon className="h-5 w-5 text-secondary" />
             <span>wim's ai bots settings</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-stone-400 hover:text-stone-700">
+          <button onClick={onClose} className="p-1 rounded-lg text-secondary hover:text-primary cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
