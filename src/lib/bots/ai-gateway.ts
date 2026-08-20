@@ -1082,9 +1082,6 @@ async function tryGroqFamily(
         ), params.deadline)
         if (r.ok) {
             resetKeyCooldownStreak('groq', key)
-            if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(model)) {
-                markGroqKeyCooling(key)
-            }
             console.info('[gateway] groq generate ok', {
                 model,
                 key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
@@ -1349,9 +1346,7 @@ export async function streamWithGateway(params: {
                         params.thinkingDepth,
                     )
                     if (r.ok) {
-                        if (usesNativeQwenReasoning(params.thinkingDepth) && isQwen36(groqModel)) {
-                            markGroqKeyCooling(key)
-                        }
+                        resetKeyCooldownStreak('groq', key)
                         console.info('[gateway] groq stream ok', {
                             model: groqModel,
                             key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
@@ -1378,8 +1373,19 @@ export async function streamWithGateway(params: {
         }
 
         if (family === 'gemini' && geminiKeys.length > 0) {
+            let softFails = 0
+            const geminiParams: FamilyParams = {
+                systemPrompt,
+                userPrompt,
+                deadline,
+                switchBy: groqKeys.length ? Math.min(deadline, started + (GATEWAY_TOTAL_TIMEOUT_MS - FAILOVER_RESERVE_MS)) : deadline,
+                otherFamilyAvailable: groqKeys.length > 0,
+                thinkingDepth: params.thinkingDepth,
+                temperature: params.temperature,
+                history: params.history,
+            }
             for (const key of geminiKeys) {
-                if (Date.now() >= deadline) break
+                if (Date.now() >= deadline || shouldLeaveFamily(geminiParams, softFails)) break
                 const keyIdx = geminiKeys.indexOf(key) + 1
                 let skipRestOfKey = false
                 for (const model of GEMINI_MODELS) {
@@ -1395,6 +1401,7 @@ export async function streamWithGateway(params: {
                         params.thinkingDepth,
                     )
                     if (r.ok) {
+                        resetKeyCooldownStreak('gemini', key)
                         console.info('[gateway] gemini stream ok', {
                             model,
                             key: `${keyIdx}/${geminiKeys.length} …${keyId(key)}`,
@@ -1412,10 +1419,17 @@ export async function streamWithGateway(params: {
                         skipRestOfKey = true
                     }
                 }
+                softFails += 1
+                if (shouldLeaveFamily(geminiParams, softFails)) {
+                    markFamilyCooling('gemini')
+                    break
+                }
             }
             if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
                 markFamilyCooling('gemini')
             }
+            if (softFails > 0 && groqKeys.length > 0) preferPrimaryFamily('groq')
+            continue
         }
     }
 

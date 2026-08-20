@@ -330,8 +330,7 @@ async function recoverPublicReply(input: {
         temperature: 0.4,
         thinkingDepth: 'brief' as const,
     }
-    // Never bounce back onto Groq in the same minute as a thinking turn.
-    const gen = await generateWithGateway({ ...payload, skipFamilies: ['groq'] })
+    const gen = await generateWithGateway(payload)
     if (!gen.ok) return ''
     return stripThinkingBlocks(gen.text).trim()
 }
@@ -351,7 +350,6 @@ async function continuePublicReply(input: {
         env: input.runtimeEnv,
         temperature: 0.4,
         thinkingDepth: 'brief' as const,
-        skipFamilies: ['groq'],
     })
     if (!gen.ok) return ''
     return stripThinkingBlocks(gen.text).trim()

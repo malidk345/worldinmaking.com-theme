@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 322 - Fix AI Gateway Rotation & Groq Key Failover (TSK-258)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed model rotation and rate limit prevention:
+  1. **Removed Premature Key Cooldown:** Eliminated buggy `markGroqKeyCooling` calls on successful Groq requests that were locking active Groq keys out for 25s after single turns and starving subsequent queries onto Gemini.
+  2. **Unblocked Groq from Continuation/Recovery:** Removed `skipFamilies: ['groq']` from `recoverPublicReply` and `continuePublicReply` in `orchestrate.ts`, allowing full multi-provider balancing.
+  3. **Seamless Gemini -> Groq Streaming Failover:** Added graceful `shouldLeaveFamily` and `preferPrimaryFamily('groq')` fallback to `streamWithGateway` when Gemini returns 429 quota errors.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/orchestrate.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.7s.
+
 ### Entry 321 - Fix Chat Streaming Scroll Jitter & Jump UX (TSK-257)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
