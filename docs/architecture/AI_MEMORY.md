@@ -374,6 +374,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 321 - Fix Chat Streaming Scroll Jitter & Jump UX (TSK-257)
+- **Date:** 2026-08-20
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed chat scrolling UX during live assistant generation:
+  1. **Removed Smooth Scroll Collisions:** Replaced `scroll-smooth` on the main container with native `[overflow-anchor:auto]` and `overscroll-contain` to prevent CSS animation queue collisions with rapid streaming token updates.
+  2. **`rAF`-Batched Pinning:** Switched ResizeObserver and stream tick auto-scrolling to `requestAnimationFrame` to ensure zero jitter and silky-smooth bottom pinning without layout trashing.
+  3. **Generous Buffer:** Extended user scroll-away threshold to 120px to prevent flapping while reading previous context.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 36/36 Playwright unit tests passed in 2.7s.
+
 ### Entry 320 - Chat UI Polish: Ambient Composer Glow, Bottom Message Fade & User Action Icons (TSK-256)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

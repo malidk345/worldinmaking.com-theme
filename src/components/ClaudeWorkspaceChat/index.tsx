@@ -486,7 +486,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       setIsAwayFromBottom(false)
       return
     }
-    const away = readGap() > 96
+    const away = readGap() > 120
     pinToBottomRef.current = !away
     setIsAwayFromBottom(away)
   }
@@ -499,10 +499,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       setIsAwayFromBottom(false)
       return
     }
-    setIsAwayFromBottom(readGap() > 96)
+    setIsAwayFromBottom(readGap() > 120)
   }
 
-  const scrollChatToBottom = (behavior: ScrollBehavior = 'smooth') => {
+  const scrollChatToBottom = (behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current
     if (!scroller) return
     if (behavior === 'auto') {
@@ -523,7 +523,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!scroller) return
     updateAwayFromBottom()
     scroller.addEventListener('scroll', updateAwayFromBottom, { passive: true })
-    const observer = new ResizeObserver(keepPinnedIfNeeded)
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(keepPinnedIfNeeded)
+    })
     observer.observe(scroller)
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
     return () => {
@@ -541,7 +543,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   // Stay pinned to the latest line unless the user scrolled away
   useEffect(() => {
     if (!pinToBottomRef.current) return
-    scrollChatToBottom('auto')
+    requestAnimationFrame(() => scrollChatToBottom('auto'))
   }, [lastStreamTick])
 
   // Auto-open artifact when switching chats
@@ -1246,7 +1248,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         />
 
         {/* Chat Stream & Conversation Body */}
-        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative bg-primary">
+        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative bg-primary [overflow-anchor:auto] overscroll-contain">
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
               <div className="mb-5 flex w-full flex-wrap justify-center gap-2">
