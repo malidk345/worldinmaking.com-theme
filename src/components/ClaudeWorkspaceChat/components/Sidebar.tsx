@@ -1,7 +1,6 @@
-import React, { useState } from 'react'
-import { PANEL_BG } from '../../../constants/frostedSurfaces'
+import React from 'react'
 import { Chat } from '../types'
-import { Plus, Search, PanelLeft, Star, Trash2, Edit2, Check, X } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
 interface SidebarProps {
     isOpen: boolean
@@ -11,9 +10,8 @@ interface SidebarProps {
     onSelectChat: (id: string) => void
     onNewChat: () => void
     onDeleteChat: (id: string) => void
-    onRenameChat: (id: string, newTitle: string) => void
-    onToggleStarChat: (id: string) => void
-    onOpenSearchModal: () => void
+    onRenameChat?: (id: string, newTitle: string) => void
+    onToggleStarChat?: (id: string) => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,27 +22,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onSelectChat,
     onNewChat,
     onDeleteChat,
-    onRenameChat,
-    onToggleStarChat,
-    onOpenSearchModal,
 }) => {
-    const [editingChatId, setEditingChatId] = useState<string | null>(null)
-    const [editTitle, setEditTitle] = useState('')
-
-    const handleStartRename = (e: React.MouseEvent, chat: Chat) => {
-        e.stopPropagation()
-        setEditingChatId(chat.id)
-        setEditTitle(chat.title)
-    }
-
-    const handleSaveRename = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation()
-        if (editTitle.trim()) onRenameChat(id, editTitle.trim())
-        setEditingChatId(null)
-    }
-
     return (
         <>
+            {/* Mobile Backdrop */}
             {isOpen && (
                 <div
                     onClick={onClose}
@@ -62,22 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
                 <div className="flex items-center justify-between px-3 pt-3 pb-1">
                     <span className="text-[13px] font-medium text-primary">Chats</span>
-                    <div className="flex items-center gap-0.5 text-muted">
-                        <button
-                            onClick={onOpenSearchModal}
-                            className="p-1.5 rounded-md hover:bg-accent hover:text-primary transition-colors cursor-pointer"
-                            title="Search"
-                        >
-                            <Search className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="p-1.5 rounded-md hover:bg-accent hover:text-primary transition-colors cursor-pointer"
-                            title="Close history"
-                        >
-                            <PanelLeft className="h-4 w-4" />
-                        </button>
-                    </div>
                 </div>
 
                 <div className="px-2 pb-2">
@@ -86,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onNewChat()
                             if (window.innerWidth < 1024) onClose()
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-secondary hover:bg-accent hover:text-primary transition-colors cursor-pointer"
+                        className="flex w-full items-center gap-2 rounded-md border border-primary/40 px-2.5 py-1.5 text-[13px] text-secondary hover:bg-accent hover:text-primary transition-colors cursor-pointer"
                     >
                         <Plus className="h-4 w-4" />
                         <span>New chat</span>
@@ -102,22 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 key={chat.id}
                                 chat={chat}
                                 isActive={activeChatId === chat.id}
-                                isEditing={editingChatId === chat.id}
-                                editTitle={editTitle}
-                                onEditTitleChange={setEditTitle}
                                 onSelect={() => {
                                     onSelectChat(chat.id)
                                     if (window.innerWidth < 1024) onClose()
-                                }}
-                                onStartRename={(e) => handleStartRename(e, chat)}
-                                onSaveRename={(e) => handleSaveRename(e, chat.id)}
-                                onCancelRename={(e) => {
-                                    e.stopPropagation()
-                                    setEditingChatId(null)
-                                }}
-                                onToggleStar={(e) => {
-                                    e.stopPropagation()
-                                    onToggleStarChat(chat.id)
                                 }}
                                 onDelete={(e) => {
                                     e.stopPropagation()
@@ -135,69 +87,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
 interface ChatItemProps {
     chat: Chat
     isActive: boolean
-    isEditing: boolean
-    editTitle: string
-    onEditTitleChange: (v: string) => void
     onSelect: () => void
-    onStartRename: (e: React.MouseEvent) => void
-    onSaveRename: (e: React.MouseEvent) => void
-    onCancelRename: (e: React.MouseEvent) => void
-    onToggleStar: (e: React.MouseEvent) => void
     onDelete: (e: React.MouseEvent) => void
 }
 
 const ChatItem: React.FC<ChatItemProps> = ({
     chat,
     isActive,
-    isEditing,
-    editTitle,
-    onEditTitleChange,
     onSelect,
-    onStartRename,
-    onSaveRename,
-    onCancelRename,
-    onToggleStar,
     onDelete,
 }) => {
     return (
         <div
             onClick={onSelect}
-            className={`group relative flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-sans transition-colors ${
-                isActive ? 'bg-accent text-primary font-medium' : 'text-secondary hover:bg-accent hover:text-primary'
+            className={`group relative flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-sans transition-all duration-150 ${
+                isActive
+                    ? 'bg-accent border border-primary/40 text-primary font-semibold shadow-2xs'
+                    : 'text-secondary border border-transparent hover:bg-accent/70 hover:text-primary'
             }`}
         >
-            {isEditing ? (
-                <div className="flex w-full items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => onEditTitleChange(e.target.value)}
-                        className="w-full rounded border border-primary bg-primary px-1.5 py-0.5 text-xs text-primary focus:outline-none"
-                        autoFocus
-                    />
-                    <button onClick={onSaveRename} className="text-emerald-600">
-                        <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={onCancelRename} className="text-muted">
-                        <X className="h-3.5 w-3.5" />
-                    </button>
-                </div>
-            ) : (
-                <>
-                    <span className="truncate pr-10">{chat.title || 'New chat'}</span>
-                    <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-accent/90 rounded-md p-0.5">
-                        <button onClick={onToggleStar} className="p-1 text-muted hover:text-amber-500" title="Star">
-                            <Star className={`h-3 w-3 ${chat.starred ? 'fill-amber-500 text-amber-500' : ''}`} />
-                        </button>
-                        <button onClick={onStartRename} className="p-1 text-muted hover:text-primary" title="Rename">
-                            <Edit2 className="h-3 w-3" />
-                        </button>
-                        <button onClick={onDelete} className="p-1 text-muted hover:text-rose-600" title="Delete">
-                            <Trash2 className="h-3 w-3" />
-                        </button>
-                    </div>
-                </>
-            )}
+            <span className="truncate pr-7">{chat.title || 'New chat'}</span>
+            <div className="absolute right-1 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={onDelete}
+                    className="p-1 rounded text-muted hover:text-rose-600 hover:bg-primary/10 transition-colors cursor-pointer"
+                    title="Delete chat"
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                </button>
+            </div>
         </div>
     )
 }

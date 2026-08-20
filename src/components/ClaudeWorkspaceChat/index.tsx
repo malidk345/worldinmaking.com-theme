@@ -1236,7 +1236,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         onDeleteChat={handleDeleteChat}
         onRenameChat={handleRenameChat}
         onToggleStarChat={handleToggleStarChat}
-        onOpenSearchModal={() => setSearchModalOpen(true)}
       />
 
       {/* Main Workspace Area */}

@@ -386,10 +386,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary text-primary shadow-2xs hover:bg-accent cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary shadow-2xs hover:bg-accent cursor-pointer transition-colors"
                 title="Stop"
               >
-                <div className="size-2.5 rounded-[2px] bg-primary text-primary" />
+                <div className="size-2.5 rounded-[2px] bg-black dark:bg-white shadow-xs" />
               </button>
             ) : (
               <button
