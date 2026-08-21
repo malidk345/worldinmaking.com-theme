@@ -12,7 +12,8 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
 import { getFluidSystemPrompt } from '../bots/fluid-prompts';
-import { envFrom, getRuntimeEnv } from '../bots/runtime-env';
+import { getRuntimeEnv } from '../bots/runtime-env';
+import { collectGeminiKeys, collectGroqKeys } from '../bots/ai-gateway';
 
 /**
  * 1. Initializes a LangChain LLM model instance for a specific API key and model ID.
@@ -49,11 +50,8 @@ export async function invokeWithKeyRotation(params: {
     temperature?: number;
 }): Promise<{ reply: string; usedKeyIndex: number; provider: string }> {
     const env = getRuntimeEnv();
-    const rawGroqKey = envFrom(env, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY');
-    const rawGeminiKey = envFrom(env, 'GEMINI_API_KEYS', 'GEMINI_API_KEY', 'GEMINI_KEYS', 'GEMINI_KEY', 'GOOGLE_API_KEY');
-
-    const groqKeys = rawGroqKey.split(',').map(k => k.trim()).filter(Boolean);
-    const geminiKeys = rawGeminiKey.split(',').map(k => k.trim()).filter(Boolean);
+    const groqKeys = collectGroqKeys(env);
+    const geminiKeys = collectGeminiKeys(env);
 
     // Prepare direct messages array
     const messagesInput = params.messages || (
@@ -127,11 +125,8 @@ export async function invokeStreamWithKeyRotation(params: {
     temperature?: number;
 }): Promise<{ stream: AsyncGenerator<string, void, unknown>; provider: string }> {
     const env = getRuntimeEnv();
-    const rawGroqKey = envFrom(env, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY');
-    const rawGeminiKey = envFrom(env, 'GEMINI_API_KEYS', 'GEMINI_API_KEY', 'GEMINI_KEYS', 'GEMINI_KEY', 'GOOGLE_API_KEY');
-
-    const groqKeys = rawGroqKey.split(',').map(k => k.trim()).filter(Boolean);
-    const geminiKeys = rawGeminiKey.split(',').map(k => k.trim()).filter(Boolean);
+    const groqKeys = collectGroqKeys(env);
+    const geminiKeys = collectGeminiKeys(env);
 
     const messagesInput = params.messages || (
         params.systemPrompt && params.userPrompt
@@ -209,10 +204,7 @@ export async function invokeStreamWithKeyRotation(params: {
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq', temperature?: number) {
     const env = getRuntimeEnv();
-    const rawKey = preferredProvider === 'gemini'
-        ? envFrom(env, 'GEMINI_API_KEYS', 'GEMINI_API_KEY', 'GEMINI_KEYS', 'GEMINI_KEY', 'GOOGLE_API_KEY')
-        : envFrom(env, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY');
-    const keys = rawKey.split(',').map(k => k.trim()).filter(Boolean);
+    const keys = preferredProvider === 'gemini' ? collectGeminiKeys(env) : collectGroqKeys(env);
     const key = keys[Math.floor(Math.random() * keys.length)] || '';
     return createLangChainModelWithKey(preferredProvider, key, undefined, temperature);
 }

@@ -15,6 +15,62 @@ export type EnvStore = Record<string, string | undefined>
 
 const CF_REQUEST_CONTEXT = Symbol.for('__cloudflare-request-context__')
 
+/**
+ * Cloudflare Pages / Workers `env` often hides dashboard secrets from
+ * Object.keys / Object.entries. Local `process.env` enumerates; production
+ * only allows `env.GROQ_API_KEY_2`. Probe these names directly.
+ */
+const SECRET_NAME_BASES = [
+    'GROQ_API_KEY',
+    'GROQ_KEY',
+    'GEMINI_API_KEY',
+    'GEMINI_KEY',
+    'GOOGLE_API_KEY',
+    'GOOGLE_GENERATIVE_AI_API_KEY',
+    'GOOGLE_AI_API_KEY',
+    'GOOGLE_GEMINI_API_KEY',
+    'OPENAI_API_KEY',
+    'OPENAI_KEY',
+    'TAVILY_API_KEY',
+    'TAVILY_KEY',
+    'BRAVE_SEARCH_API_KEY',
+    'BRAVE_API_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'CRON_SECRET',
+    'BOT_ACT_SECRET',
+    'GROQ_MODEL',
+    'GROQ_PRIMARY_MODEL',
+    'QWEN_MODEL',
+] as const
+
+const NUMBERED_SECRET_MAX = 32
+
+function expandSecretNames(): string[] {
+    const names: string[] = []
+    for (const base of SECRET_NAME_BASES) {
+        names.push(base, `${base}S`)
+        for (let i = 0; i <= NUMBERED_SECRET_MAX; i++) {
+            names.push(`${base}_${i}`, `${base}S_${i}`)
+            if (i >= 2) names.push(`${base}${i}`, `${base}S${i}`)
+        }
+    }
+    return names
+}
+
+const KNOWN_SECRET_NAMES = expandSecretNames()
+
+function stringifyBinding(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        return trimmed ? trimmed : undefined
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+    return undefined
+}
+
 type CfRequestContext = {
     env?: Record<string, unknown>
     [key: string]: unknown
@@ -32,34 +88,93 @@ function getCfRequestContext(): CfRequestContext | null {
     return null
 }
 
-function getCfEnv(): Record<string, string> {
+/**
+ * Copy every readable string binding off a Workers/Pages env proxy.
+ * Enumeration is best-effort; known secret names are always probed.
+ */
+export function flattenEnvBindings(source: unknown): EnvStore {
+    const out: EnvStore = {}
+    if (!source || typeof source !== 'object') return out
+    const record = source as Record<string | symbol, unknown>
+
+    const add = (key: string, value: unknown) => {
+        const text = stringifyBinding(value)
+        if (text) out[key] = text
+    }
+
+    const visitKey = (key: string | symbol) => {
+        if (typeof key !== 'string' || !key) return
+        try {
+            add(key, record[key])
+        } catch {
+            // getter threw
+        }
+    }
+
+    try {
+        Object.keys(record).forEach(visitKey)
+    } catch {
+        /* proxy may forbid keys() */
+    }
+    try {
+        Object.getOwnPropertyNames(record).forEach(visitKey)
+    } catch {
+        /* ignore */
+    }
+    try {
+        Reflect.ownKeys(record).forEach(visitKey)
+    } catch {
+        /* ignore */
+    }
+
+    for (const name of KNOWN_SECRET_NAMES) {
+        if (out[name]) continue
+        try {
+            add(name, record[name])
+        } catch {
+            /* ignore */
+        }
+    }
+
+    return out
+}
+
+function getCfEnv(): EnvStore {
     try {
         const ctx = getCfRequestContext()
-        const env = ctx?.env
-        if (env && typeof env === 'object') {
-            const out: Record<string, string> = {}
-            for (const [k, v] of Object.entries(env)) {
-                if (typeof v === 'string' && v.length > 0) out[k] = v
-            }
-            return out
-        }
+        return flattenEnvBindings(ctx?.env)
     } catch {
-        // Not in CF edge context
+        return {}
     }
-    return {}
 }
 
 export function getRuntimeEnv(): EnvStore {
-    // Start with process.env (works locally, may be empty in CF edge for secrets)
-    const base: EnvStore = { ...(process.env as EnvStore) }
-
-    // Merge CF secrets on top — these are the authoritative values in production
+    const base = flattenEnvBindings(process.env)
     const cfEnv = getCfEnv()
-    for (const [k, v] of Object.entries(cfEnv)) {
-        base[k] = v
-    }
+    return { ...base, ...cfEnv }
+}
 
-    return base
+/** Direct property reads for `GROQ_API_KEY`, `GROQ_API_KEYS`, `GROQ_API_KEY_2`, `GROQ_API_KEY2`, … */
+export function readFamilyBindingValues(store: EnvStore | null | undefined, bases: string[]): string[] {
+    if (!store) return []
+    const values: string[] = []
+    const add = (name: string) => {
+        const text = stringifyBinding(store[name])
+        if (text) values.push(text)
+    }
+    for (const base of bases) {
+        if (!base.endsWith('S')) add(`${base}S`)
+        add(base)
+        for (let i = 0; i <= NUMBERED_SECRET_MAX; i++) {
+            if (!base.endsWith('S')) add(`${base}S_${i}`)
+            add(`${base}_${i}`)
+            if (i >= 2) {
+                if (!base.endsWith('S')) add(`${base}S${i}`)
+                add(`${base}${i}`)
+            }
+        }
+    }
+    return values
 }
 
 export function envFrom(store: EnvStore, ...names: string[]): string {

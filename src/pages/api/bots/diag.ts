@@ -7,6 +7,7 @@ export const runtime = 'edge'
 
 import { getRuntimeEnv, getProviderKeyFlags, hasCloudflareContext } from 'lib/bots/runtime-env'
 import { envFrom } from 'lib/bots/runtime-env'
+import { collectGeminiKeys, collectGroqKeys } from 'lib/bots/ai-gateway'
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getClientIp } from 'lib/bots/request-validation'
 
@@ -44,6 +45,8 @@ export default async function handler(req: Request) {
         cfContext: hasCloudflareContext(),
         envSource: flags.envSource,
         providerFlags: flags,
+        groqKeyCount: collectGroqKeys(env).length,
+        geminiKeyCount: collectGeminiKeys(env).length,
         // Only aggregate readiness is returned. Never expose key names or previews.
         visibleKeyCount: visibleKeys.length,
     })

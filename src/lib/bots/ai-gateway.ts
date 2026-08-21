@@ -9,6 +9,7 @@ import {
     envFrom,
     getProviderKeyFlags,
     getRuntimeEnv,
+    readFamilyBindingValues,
 } from './runtime-env'
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor, setFamilyKeyStart } from './groq-key-cursor'
@@ -1015,12 +1016,10 @@ function shouldLeaveFamily(params: FamilyParams, softFails: number): boolean {
 }
 
 export function collectGroqKeys(store: EnvStore): string[] {
-    const rawValues: Array<string | undefined> = [
-        store.GROQ_API_KEYS,
-        store.GROQ_API_KEY,
-        store.GROQ_KEYS,
-        store.GROQ_KEY,
-    ]
+    const rawValues: Array<string | undefined> = readFamilyBindingValues(store, [
+        'GROQ_API_KEY',
+        'GROQ_KEY',
+    ])
     if (store && typeof store === 'object') {
         for (const [k, v] of Object.entries(store)) {
             if (/^GROQ_?(API_?)?KEY(S|_\d+)?$/i.test(k) || /^GROQ_KEYS?(_\d+)?$/i.test(k)) {
@@ -1032,16 +1031,14 @@ export function collectGroqKeys(store: EnvStore): string[] {
 }
 
 export function collectGeminiKeys(store: EnvStore): string[] {
-    const rawValues: Array<string | undefined> = [
-        store.GEMINI_API_KEYS,
-        store.GEMINI_API_KEY,
-        store.GEMINI_KEYS,
-        store.GEMINI_KEY,
-        store.GOOGLE_GENERATIVE_AI_API_KEY,
-        store.GOOGLE_API_KEY,
-        store.GOOGLE_AI_API_KEY,
-        store.GOOGLE_GEMINI_API_KEY,
-    ]
+    const rawValues: Array<string | undefined> = readFamilyBindingValues(store, [
+        'GEMINI_API_KEY',
+        'GEMINI_KEY',
+        'GOOGLE_GENERATIVE_AI_API_KEY',
+        'GOOGLE_API_KEY',
+        'GOOGLE_AI_API_KEY',
+        'GOOGLE_GEMINI_API_KEY',
+    ])
     if (store && typeof store === 'object') {
         for (const [k, v] of Object.entries(store)) {
             if (

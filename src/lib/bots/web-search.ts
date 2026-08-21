@@ -5,7 +5,7 @@
  * Comma-separated keys rotate and fail over on 429/5xx. Missing keys are skipped.
  */
 
-import { getRuntimeEnv } from './runtime-env'
+import { getRuntimeEnv, readFamilyBindingValues } from './runtime-env'
 import { isNewsQuery } from './search-intent'
 import { collectApiKeys, rotateKeys } from './search-keys'
 
@@ -294,8 +294,8 @@ export async function searchWebSources(query: string): Promise<SearchResultItem[
     if (!cleanQuery) return []
 
     const env = getRuntimeEnv()
-    const tavilyKeys = collectApiKeys(env.TAVILY_API_KEYS, env.TAVILY_API_KEY, env.TAVILY_KEY)
-    const braveKeys = collectApiKeys(env.BRAVE_SEARCH_API_KEYS, env.BRAVE_SEARCH_API_KEY, env.BRAVE_API_KEY)
+    const tavilyKeys = collectApiKeys(...readFamilyBindingValues(env, ['TAVILY_API_KEY', 'TAVILY_KEY']))
+    const braveKeys = collectApiKeys(...readFamilyBindingValues(env, ['BRAVE_SEARCH_API_KEY', 'BRAVE_API_KEY']))
     const results: SearchResultItem[] = []
 
     if (tavilyKeys.length > 0) {

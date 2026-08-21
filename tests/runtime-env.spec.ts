@@ -4,10 +4,13 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import {
     envFrom,
+    flattenEnvBindings,
     getProviderKeyFlags,
     getRuntimeEnv,
     hasCloudflareContext,
+    readFamilyBindingValues,
 } from '../src/lib/bots/runtime-env'
+import { collectGeminiKeys, collectGroqKeys } from '../src/lib/bots/ai-gateway'
 import { nextFamilyKeyStart, nextGroqKeyStart, resetFamilyKeyCursor, resetGroqKeyCursor } from '../src/lib/bots/groq-key-cursor'
 
 const CF_REQUEST_CONTEXT = Symbol.for('__cloudflare-request-context__')
@@ -71,6 +74,55 @@ test.describe('edge-safe runtime env', () => {
         expect(second).toBe((first + 1) % 4)
         resetFamilyKeyCursor(family)
         delete process.env.WIM_SEED_CURSOR_FILE
+    })
+
+    test('reads non-enumerable CF secrets including numbered AI keys', () => {
+        const values = {
+            GROQ_API_KEY: 'gsk_one',
+            GROQ_API_KEY_2: 'gsk_two',
+            GROQ_API_KEY3: 'gsk_three',
+            GEMINI_API_KEY_2: 'AIza_two',
+        }
+        const hidden = new Proxy({} as Record<string, string>, {
+            get(_target, prop) {
+                return typeof prop === 'string' ? values[prop as keyof typeof values] : undefined
+            },
+            ownKeys: () => [],
+            getOwnPropertyDescriptor: () => undefined,
+            has: (_target, prop) => typeof prop === 'string' && prop in values,
+        })
+        expect(Object.entries(hidden)).toEqual([])
+        expect(Object.getOwnPropertyNames(hidden)).toEqual([])
+
+        const host = globalThis as typeof globalThis & { [CF_REQUEST_CONTEXT]?: { env?: Record<string, unknown> } }
+        const prev = host[CF_REQUEST_CONTEXT]
+        host[CF_REQUEST_CONTEXT] = { env: hidden }
+        try {
+            const env = getRuntimeEnv()
+            expect(env.GROQ_API_KEY).toBe('gsk_one')
+            expect(env.GROQ_API_KEY_2).toBe('gsk_two')
+            expect(env.GROQ_API_KEY3).toBe('gsk_three')
+            expect(collectGroqKeys(env)).toEqual(['gsk_one', 'gsk_two', 'gsk_three'])
+            expect(collectGeminiKeys(env)).toEqual(['AIza_two'])
+        } finally {
+            if (prev === undefined) delete host[CF_REQUEST_CONTEXT]
+            else host[CF_REQUEST_CONTEXT] = prev
+        }
+    })
+
+    test('flattenEnvBindings and family probes find GROQ_API_KEY_2 without enumeration', () => {
+        const values = { GROQ_API_KEY: 'gsk_a', GROQ_API_KEY_2: 'gsk_b' }
+        const hidden = new Proxy({} as Record<string, string>, {
+            get(_target, prop) {
+                return typeof prop === 'string' ? values[prop as keyof typeof values] : undefined
+            },
+            ownKeys: () => [],
+            getOwnPropertyDescriptor: () => undefined,
+        })
+        const flat = flattenEnvBindings(hidden)
+        expect(flat.GROQ_API_KEY).toBe('gsk_a')
+        expect(flat.GROQ_API_KEY_2).toBe('gsk_b')
+        expect(readFamilyBindingValues(flat, ['GROQ_API_KEY'])).toEqual(['gsk_a', 'gsk_b'])
     })
 
     test('gemini key cursor round-robins independently of groq', () => {

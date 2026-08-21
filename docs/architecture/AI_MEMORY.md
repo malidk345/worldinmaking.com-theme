@@ -376,10 +376,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-267` | Stream 3 | Draft wallpapers: paper field, 1px grain, agora rings, ink/ember marks, bang | `Wallpapers.tsx`, `useTheme.tsx`, `App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
 | `TSK-268` | Stream 3 | Mobile browser tabs/chrome (`theme-color`) match current wallpaper | `src/lib/wallpaperChrome.ts`, `_document.tsx`, `App.tsx`, `theme-init.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-269` | Stream 3 | Draft world bang sits in the lower wallpaper band | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-270` | Stream 5 | Production AI key rotation: CF env is not enumerable; probe numbered secrets | `src/lib/bots/runtime-env.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 333 - Production AI key rotation on Cloudflare (TSK-270)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Live key rotation saw only one Groq/Gemini secret because Cloudflare Pages `env` does not enumerate dashboard bindings (`Object.entries` is empty). Runtime now probes `GROQ_API_KEY`, `GROQ_API_KEYS`, `GROQ_API_KEY_2`… directly and flattens them onto a plain store before rotation.
+- **Modified Files:** `src/lib/bots/runtime-env.ts`, `src/lib/bots/ai-gateway.ts`, `src/lib/bots/web-search.ts`, `src/lib/chat-bots/langchain-pipeline.ts`, `src/pages/api/bots/diag.ts`, `tests/runtime-env.spec.ts`, `.env.example`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 40/40 Playwright (`runtime-env`, `thinking-tags`, `gateway-rotation`, `web-search-keys`).
 
 ### Entry 332 - Draft world bang lower on the field (TSK-269)
 - **Date:** 2026-08-21
