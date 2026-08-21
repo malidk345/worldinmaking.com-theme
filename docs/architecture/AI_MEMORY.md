@@ -370,10 +370,48 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-77` | Stream 5 | Fix sandbox Preview.tsx `expected "}"` when LLM puts `const data = [{...}]` inside JSX | `src/components/ClaudeWorkspaceChat/sandbox/*` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-14 |
 | `TSK-78` | Stream 5 | AI Architecture Elevation: AbortSignal propagation, exponential backoff jitter, SSE keep-alive heartbeat, anti-looping safeguards, search URL dedup | `src/lib/bots/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-20 |
 | `TSK-262` | Stream 4 | Sole admin: only dursunkayamustafa@gmail.com; strip leftover JWT admin claims | `src/lib/wim-auth.ts`, live Supabase auth/profiles | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
+| `TSK-264` | Stream 3 | Layered cobalt wallpapers stacked in CSS (field / clouds / bang), responsive | `Wallpapers.tsx`, `useTheme.tsx`, `App.tsx`, `tailwind.config.js`, `public/images/wallpapers/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
+| `TSK-265` | Stream 3 | Cobalt clouds/stars as packed vector dots instead of a zoomable bitmap | `src/components/Desktop/Wallpapers.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
+| `TSK-266` | Stream 3 | Layered meadow wallpapers (field / grass blades / flowers) stacked like cobalt | `Wallpapers.tsx`, `useTheme.tsx`, `App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
+| `TSK-267` | Stream 3 | Draft wallpapers: paper field, 1px grain, agora rings, ink/ember marks, bang | `Wallpapers.tsx`, `useTheme.tsx`, `App.tsx`, `tailwind.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-20 |
+| `TSK-268` | Stream 3 | Mobile browser tabs/chrome (`theme-color`) match current wallpaper | `src/lib/wallpaperChrome.ts`, `_document.tsx`, `App.tsx`, `theme-init.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-269` | Stream 3 | Draft world bang sits in the lower wallpaper band | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 332 - Draft world bang lower on the field (TSK-269)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Moved the Draft world bang from the upper sky (`top: 24%`) into the lower wallpaper band (`bottom: 10%`, still right-aligned). Picker thumb matches.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 331 - Mobile browser chrome matches wallpaper (TSK-268)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Mobile Safari/Chrome tab and address-bar color now follow the active wallpaper field (and light/dark mode) instead of a fixed navy `#141E40`. Applied before first paint from localStorage, then kept in sync when Display Options or `\` cycles the wallpaper.
+- **Modified Files:** `src/lib/wallpaperChrome.ts`, `src/pages/_document.tsx`, `src/context/App.tsx`, `src/components/Desktop/Wallpapers.tsx`, `src/html.tsx`, `static/scripts/theme-init.js`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** `pnpm typecheck:shell` still fails on pre-existing unused retired wallpaper scene bindings (TS6133), not on this change.
+
+### Entry 330 - Layered meadow wallpapers (TSK-266)
+- **Date:** 2026-08-20
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added three stacked meadow wallpapers with the cobalt layer pattern: CSS sky-to-grass field, dense packed grass blades, individually scattered pixel daisies/clover. Sits under desktop icons.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 329 - Cobalt clouds/stars as vector dots, not a zoomed bitmap (TSK-265)
+- **Date:** 2026-08-20
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the cobalt cloud/star PNG with site-native layers: 18 individually placed plus-stars and a dense SVG cloud band built from packed 1px squares. Field stays CSS; bang stays the icon. Zoom no longer reveals a selectable bitmap grid.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 328 - Layered Cobalt Wallpapers on the Site (TSK-264)
+- **Date:** 2026-08-20
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added three Display Options wallpapers built from stacked site layers instead of a baked composite: CSS cobalt gradient, screen-blended cloud/star plate, and a viewport-scaled bang icon. Each layer is its own wallpaper (`cobalt`, `cobalt-clouds`, `cobalt-bang`); the latter two reuse the lower layers.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/context/App.tsx`, `tailwind.config.js`, `public/images/wallpapers/cobalt-*.png|jpg`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Type-level wallpaper union + themeOptions wiring. Visual check in Display Options.
 
 ### Entry 327 - Fix Duplicate Helper Definitions in AI Gateway for Cloudflare Build (TSK-263)
 - **Date:** 2026-08-20

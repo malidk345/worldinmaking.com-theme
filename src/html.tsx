@@ -16,6 +16,9 @@ export default function HTML(props: HTMLProps): JSX.Element {
                 <meta charSet="utf-8" />
                 <meta httpEquiv="x-ua-compatible" content="ie=edge" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3EFE6" />
+                <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141E40" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <meta name="naver-site-verification" content="a58db4b98c2bf9e4b52a4aa0c20fcf1fcdab2793" />
                 <link
                     rel="preload"
@@ -40,7 +43,7 @@ export default function HTML(props: HTMLProps): JSX.Element {
             <body
                 {...props.bodyAttributes}
                 className="light"
-                data-wallpaper="hogzilla"
+                data-wallpaper="draft-world"
                 data-reduce-transparency="false"
             >
                 {props.preBodyComponents}

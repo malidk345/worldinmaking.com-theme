@@ -26,6 +26,7 @@ import { installSqueakFetchGuard } from 'lib/squeak'
 import { isForumPath } from 'components/AppWindow/WindowRouter'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
+import { applyWallpaperBrowserChrome, resolveKeptWallpaper } from '../lib/wallpaperChrome'
 
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
@@ -266,7 +267,7 @@ export const Context = createContext<AppContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        wallpaper: 'hogzilla',
+        wallpaper: 'draft-world',
         reduceTransparency: false,
         clickBehavior: 'double',
         performanceBoost: false,
@@ -357,7 +358,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        wallpaper: 'hogzilla',
+        wallpaper: 'draft-world',
         reduceTransparency: false,
         clickBehavior: 'double',
         performanceBoost: false,
@@ -1487,7 +1488,7 @@ export interface SiteSettings {
     /** Stored theme; runtime may briefly pass broader strings from window.__onThemeChange. */
     theme: 'light' | 'dark' | string
     skinMode: 'modern' | 'classic'
-    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party' | 'agora'
+    wallpaper: 'cobalt' | 'hogzilla' | 'draft-world' | 'rain-embers' | 'plaza-bang'
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
     performanceBoost?: boolean
@@ -1502,17 +1503,14 @@ const getInitialSiteSettings = (): SiteSettings => {
         colorMode: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         theme: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         skinMode: 'modern',
-        wallpaper: 'hogzilla',
+        wallpaper: 'draft-world',
         clickBehavior: 'double',
         performanceBoost: false,
         reduceTransparency: false,
         ...(typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteSettings') || '{}') : {}),
     }
 
-    const retiredWallpapers = ['action-figure', '2001-bliss', 'parade', 'coding-at-night', 'custom-pro']
-    if (retiredWallpapers.includes(siteSettings.wallpaper)) {
-        siteSettings.wallpaper = 'hogzilla'
-    }
+    siteSettings.wallpaper = resolveKeptWallpaper(siteSettings.wallpaper)
 
     // The classic skin has been retired; force anyone with it saved back to modern
     siteSettings.skinMode = 'modern'
@@ -1577,7 +1575,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         colorMode: 'light',
         theme: 'light',
         skinMode: 'modern',
-        wallpaper: 'hogzilla',
+        wallpaper: 'draft-world',
         clickBehavior: 'double',
         performanceBoost: false,
         reduceTransparency: false,
@@ -2749,6 +2747,11 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         applyChromeAttrs(document.body)
         applyChromeAttrs(document.documentElement)
+        applyWallpaperBrowserChrome({
+            wallpaper: siteSettings.wallpaper,
+            colorMode: siteSettings.colorMode,
+            theme: document.body.className.includes('dark') ? 'dark' : 'light',
+        })
         cleanupCustomCursor()
     }, [siteSettings])
 

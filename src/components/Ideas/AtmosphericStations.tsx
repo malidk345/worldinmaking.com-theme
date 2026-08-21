@@ -13,7 +13,7 @@ const STATIONS = [
         name: 'Standard OS',
         description: 'The default World In Making experience. Clean, balanced, functional.',
         icon: <IconScreen className="size-5" />,
-        settings: { colorMode: 'light', theme: 'light', wallpaper: 'keyboard-garden' }
+        settings: { colorMode: 'light', theme: 'light', wallpaper: 'draft-world' }
     },
     {
         id: 'station-night-theory',

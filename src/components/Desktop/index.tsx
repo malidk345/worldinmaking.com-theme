@@ -173,7 +173,7 @@ function Desktop() {
                 >
                     <Wallpapers wallpaper={siteSettings.wallpaper} reduceMotion={siteSettings.performanceBoost} />
 
-                    <nav className="px-1" style={{ paddingTop: DESKTOP_TOP_OFFSET + 16 }}>
+                    <nav className="relative z-10 px-1" style={{ paddingTop: DESKTOP_TOP_OFFSET + 16 }}>
                         <ul className={mobileIconListClassName}>
                             {[...leftApps, ...rightApps].map((app) => (
                                 <DesktopIcon key={app.label} app={app} />
