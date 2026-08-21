@@ -958,7 +958,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('[ClaudeWorkspaceChat] Request aborted by user/system.');
+        // Request aborted by user/system.
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         

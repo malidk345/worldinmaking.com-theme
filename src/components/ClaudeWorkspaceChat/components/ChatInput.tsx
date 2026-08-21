@@ -1,3 +1,4 @@
+import { lemonToast } from 'components/LemonUI/LemonToast';
 import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
 import { StylePresetId, FileAttachment, ModelId, ModelOption } from '../types';
@@ -173,12 +174,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Voice input is not supported in this browser.');
+      lemonToast.warning('Voice input is not supported in this browser.');
       return;
     }
 
     if (isRecording) {
-      try { recognitionRef.current?.stop(); } catch (_) {}
+      try { recognitionRef.current?.stop(); } catch (_) { /* ignore */ }
       setIsRecording(false);
     } else {
       try {
