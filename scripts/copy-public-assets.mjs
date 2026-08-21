@@ -4,6 +4,7 @@ import path from 'path'
 const pairs = [
     ['static/philosophers', 'public/philosophers'],
     ['static/brand', 'public/brand'],
+    ['static/images/wallpapers', 'public/images/wallpapers'],
     ['static/robots.txt', 'public/robots.txt'],
     ['static/llms.txt', 'public/llms.txt'],
 ]

@@ -377,10 +377,59 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-268` | Stream 3 | Mobile browser tabs/chrome (`theme-color`) match current wallpaper | `src/lib/wallpaperChrome.ts`, `_document.tsx`, `App.tsx`, `theme-init.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-269` | Stream 3 | Draft world bang sits in the lower wallpaper band | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-270` | Stream 5 | Production AI key rotation: CF env is not enumerable; probe numbered secrets | `src/lib/bots/runtime-env.ts`, `ai-gateway.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-271` | Stream 3 | Add Keyboard garden wallpaper: cream field + dotted tile from wimpos | `Wallpapers.tsx`, `useTheme.tsx`, `wallpaperChrome.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-272` | Stream 3 | Keyboard garden dotted tile on a mint-green field (second wallpaper) | `Wallpapers.tsx`, `useTheme.tsx`, `wallpaperChrome.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-273` | Stream 3 | Recolor mint speckle + pixel-art green field (not sage wash) | `Wallpapers.tsx`, `keyboard-mint-dots-*.png` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-274` | Stream 3 | New neon-grass speckle PNG (not garden tile) + garish lawn field | `Wallpapers.tsx`, `keyboard-mint-dots-*.png` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-275` | Stream 3 | Replace Keyboard mint speckle with a green keycap mosaic | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-276` | Stream 3 | Keyboard mint = wimpos Keyboard garden grass field (no hedge) | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-277` | Stream 3 | Keyboard mint: inspired by wimpos grass, CSS layers not the photo | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 340 - Keyboard mint inspired by wimpos grass, not the photo (TSK-277)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Keyboard mint no longer uses the wimpos grass JPG. Pale felt lawn (`#D4E6B0→#B4CC84`), 1px grain, denser patches, sparse blade tufts — same idea as Keyboard garden’s field, own layers.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `static/scripts/theme-init.js`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 339 - Keyboard mint from wimpos grass field (TSK-276)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced invented mint scenes with the actual wimpos Keyboard garden field: cream `#FDEECD→#FFFEF4` plus `9000_bg` grass photos (desktop + mobile, light/dark). Hedge overlay omitted. Cream dotted Keyboard garden is unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `static/scripts/theme-init.js`, `public/images/wallpapers/keyboard-mint-field-*.jpg`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 338 - Keyboard mint as a green keycap mosaic (TSK-275)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Scrapped the speckle/neon-lawn approach. Keyboard mint is now a repeating 16px green keycap grid (plastic grass greens, bevelled faces). No PNG. Cream Keyboard garden is unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `static/scripts/theme-init.js`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 337 - Keyboard mint neon lawn, new speckle (TSK-274)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dropped the recolored garden PNG. Keyboard mint now uses a newly generated speckle tile and a garish neon grass field (`#39FF14`). Cream Keyboard garden is unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `static/scripts/theme-init.js`, `public/images/wallpapers/keyboard-mint-dots-*.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 336 - Keyboard mint pixel-art green (TSK-273)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Replaced the sage wash with a 1px pixel-art grass field (`#3ECB32` family) and recolored the dotted tile palette to matching dark/light greens. Cream Keyboard garden is unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `static/scripts/theme-init.js`, `public/images/wallpapers/keyboard-mint-dots-*.png`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 335 - Keyboard mint: same speckle on sage green (TSK-272)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added `keyboard-mint` — the same transparent dotted tile as Keyboard garden, stacked on a sage/mint field (`#C3D6A6→#DEEBC4`) so the brown specks read as soil on grass. Cream Keyboard garden is unchanged.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `src/context/App.tsx`, `tailwind.config.js`, `static/scripts/theme-init.js`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 334 - Keyboard garden cream + speckle wallpaper (TSK-271)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Added wimpos Keyboard garden as its own scene: cream field `#FDEECD→#FFFEF4` under the transparent dotted tile (100px light / 200px dark). No green grass, hedge, or keycap overlay.
+- **Modified Files:** `src/components/Desktop/Wallpapers.tsx`, `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `src/context/App.tsx`, `tailwind.config.js`, `static/scripts/theme-init.js`, `public/images/wallpapers/keyboard-garden-dots-*.png`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 333 - Production AI key rotation on Cloudflare (TSK-270)
 - **Date:** 2026-08-21

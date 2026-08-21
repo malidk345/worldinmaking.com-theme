@@ -994,9 +994,133 @@ const LawnScene = ({ tufts = false }: { tufts?: boolean }) => (
 const Lawn = () => <LawnScene />
 const LawnTuftsWallpaper = () => <LawnScene tufts />
 
+/** wimpos Keyboard garden field — cream, not the green grass photo. */
+const KeyboardGardenField = () => (
+    <>
+        <div
+            className={`absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+        />
+        <div className={`absolute inset-0 bg-[#1e1f23] opacity-0 dark:opacity-100 ${FADE_OPACITY}`} />
+    </>
+)
+
+/** Transparent speckle tile from wimpos Korean desktop (100px light / 200px dark). */
+const KeyboardGardenDots = () => (
+    <>
+        <div
+            className={`absolute inset-0 opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage: "url('/images/wallpapers/keyboard-garden-dots-light.png')",
+                backgroundSize: '100px 100px',
+                backgroundRepeat: 'repeat',
+            }}
+        />
+        <div
+            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage: "url('/images/wallpapers/keyboard-garden-dots-dark.png')",
+                backgroundSize: '200px 200px',
+                backgroundRepeat: 'repeat',
+            }}
+        />
+    </>
+)
+
+const KeyboardGarden = () => (
+    <div className="absolute inset-0 isolate">
+        <KeyboardGardenField />
+        <KeyboardGardenDots />
+    </div>
+)
+
+const MINT_FELT_LIGHT = draftGrainPlate(61, ['#D4D8CA', '#CCD2C2', '#C4CCB8', '#DCE0D2', '#C8D0C0', '#D0D6C6'])
+const MINT_FELT_DARK = draftGrainPlate(67, ['#141E18', '#18241C', '#121A14', '#1C2820', '#161E1A', '#101814'])
+
+const MINT_PATCHES =
+    'radial-gradient(ellipse 38% 28% at 62% 72%, rgba(74,84,64,0.16) 0%, rgba(74,84,64,0) 70%),' +
+    'radial-gradient(ellipse 24% 20% at 28% 58%, rgba(74,84,64,0.12) 0%, rgba(74,84,64,0) 68%),' +
+    'radial-gradient(ellipse 20% 16% at 78% 38%, rgba(74,84,64,0.1) 0%, rgba(74,84,64,0) 70%)'
+
+type MintBlade = { left: string; top: string; size: number; rotate: number }
+
+const MINT_BLADES: MintBlade[] = (() => {
+    const rand = mulberry32(47)
+    const blades: MintBlade[] = []
+    for (let i = 0; i < 42; i++) {
+        const nx = rand()
+        const ny = 0.22 + rand() * 0.74
+        const cluster = Math.exp(-((nx - 0.62) ** 2) / 0.18 - ((ny - 0.7) ** 2) / 0.22)
+        if (rand() > 0.28 + cluster * 0.7) continue
+        blades.push({
+            left: `${(nx * 94 + 2).toFixed(2)}%`,
+            top: `${(ny * 100).toFixed(2)}%`,
+            size: 10 + Math.floor(rand() * 16) + Math.floor(cluster * 8),
+            rotate: -22 + rand() * 44,
+        })
+    }
+    return blades
+})()
+
+const MintBlade = ({ size, rotate }: { size: number; rotate: number }) => (
+    <svg
+        width={size}
+        height={size * 1.2}
+        viewBox="0 0 12 14"
+        className="block"
+        style={{ transform: `rotate(${rotate}deg)` }}
+        aria-hidden
+    >
+        <path
+            d="M6 12.4 L4.2 3.1 M6 12.4 L6.15 1.4 M6 12.4 L7.9 3.2 M6 12.4 L2.8 6.2 M6 12.4 L9.2 5.9"
+            fill="none"
+            stroke="#4A5440"
+            className="dark:stroke-[#A8B89A]"
+            strokeWidth="1"
+            strokeLinecap="round"
+        />
+    </svg>
+)
+
+/**
+ * Inspired by wimpos Keyboard garden grass — pale felt lawn + sparse tufts.
+ * Own CSS layers, not the photo.
+ */
+const KeyboardMint = () => (
+    <div className="absolute inset-0 isolate">
+        <div
+            className={`absolute inset-0 bg-[linear-gradient(200deg,#D8DCCE_0%,#C9D0BE_48%,#BDC6B0_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+        />
+        <div
+            className={`absolute inset-0 bg-[linear-gradient(200deg,#141E18_0%,#18241C_52%,#121A14_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+        />
+        <div
+            className={`absolute inset-0 opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{ backgroundImage: MINT_FELT_LIGHT, backgroundSize: '64px 64px', backgroundRepeat: 'repeat' }}
+        />
+        <div
+            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{ backgroundImage: MINT_FELT_DARK, backgroundSize: '64px 64px', backgroundRepeat: 'repeat' }}
+        />
+        <div className={`absolute inset-0 opacity-100 dark:opacity-40 ${FADE_OPACITY}`} style={{ backgroundImage: MINT_PATCHES }} />
+        <div className="absolute inset-0">
+            {MINT_BLADES.map((blade, i) => (
+                <div
+                    key={i}
+                    className="absolute"
+                    style={{ left: blade.left, top: blade.top, width: blade.size, height: blade.size * 1.2 }}
+                >
+                    <MintBlade size={blade.size} rotate={blade.rotate} />
+                </div>
+            ))}
+        </div>
+    </div>
+)
+
 const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'cobalt', Scene: Cobalt, visible: 'wallpaper-cobalt:block' },
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
+    { key: 'keyboard-garden', Scene: KeyboardGarden, visible: 'wallpaper-keyboard-garden:block' },
+    { key: 'keyboard-mint', Scene: KeyboardMint, visible: 'wallpaper-keyboard-mint:block' },
     { key: 'draft-world', Scene: DraftWorldWallpaper, visible: 'wallpaper-draft-world:block' },
     { key: 'rain-embers', Scene: RainEmbersWallpaper, visible: 'wallpaper-rain-embers:block' },
     { key: 'plaza-bang', Scene: PlazaBangWallpaper, visible: 'wallpaper-plaza-bang:block' },
@@ -1010,6 +1134,8 @@ export interface WallpaperGlow {
 export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     cobalt: { light: '#4A9EE6', dark: '#2F7ED4' },
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
+    'keyboard-garden': { light: '#53FFCB', dark: '#49BAC5' },
+    'keyboard-mint': { light: '#8FA882', dark: '#6B8B70' },
     'draft-world': { light: '#C4A574', dark: '#9370F0' },
     'rain-embers': { light: '#7EB4D4', dark: '#D08A3A' },
     'plaza-bang': { light: '#CFC6B6', dark: '#9370F0' },

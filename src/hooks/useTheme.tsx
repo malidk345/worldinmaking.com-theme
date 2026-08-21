@@ -251,6 +251,56 @@ const iceThumb = (extra: 'field' | 'grain' | 'marks') => {
     )
 }
 
+const gardenThumb = (mode: 'light' | 'dark', field: 'cream' | 'mint') => {
+    if (field === 'mint') {
+        const top = mode === 'light' ? '#D8DCCE' : '#141E18'
+        const bot = mode === 'light' ? '#BDC6B0' : '#121A14'
+        const stroke = mode === 'light' ? '#4A5440' : '#A8B89A'
+        const tufts = `<g fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round">
+            <path d="M180 360 L168 300 M180 360 L182 288 M180 360 L194 308"/>
+            <path d="M420 400 L408 342 M420 400 L422 330 M420 400 L434 348"/>
+            <path d="M620 340 L608 286 M620 340 L622 274 M620 340 L634 292"/>
+        </g>`
+        return (
+            'data:image/svg+xml,' +
+            encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+                    <defs>
+                        <linearGradient id="mint-th-${mode}" x1="0" y1="0" x2="0.2" y2="1">
+                            <stop offset="0%" stop-color="${top}"/>
+                            <stop offset="100%" stop-color="${bot}"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#mint-th-${mode})"/>
+                    ${tufts}
+                </svg>`
+            )
+        )
+    }
+    const dot = mode === 'light' ? '#8C7358' : '#2A2E2A'
+    const speckle = Array.from({ length: 48 }, (_, i) => {
+        const x = (i * 97) % 800
+        const y = (i * 53) % 500
+        const s = 2 + (i % 3)
+        return `<rect x="${x}" y="${y}" width="${s}" height="${s}" fill="${dot}" fill-opacity="${0.35 + (i % 5) * 0.1}"/>`
+    }).join('')
+    return (
+        'data:image/svg+xml,' +
+        encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+                <defs>
+                    <linearGradient id="kg-cream-${mode}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${mode === 'light' ? '#FDEECD' : '#1e1f23'}"/>
+                        <stop offset="100%" stop-color="${mode === 'light' ? '#FFFEF4' : '#1e1f23'}"/>
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#kg-cream-${mode})"/>
+                ${speckle}
+            </svg>`
+        )
+    )
+}
+
 const plazaThumb = (mode: 'light' | 'dark', extra: 'field' | 'carpet' | 'bang') => {
     const bg = mode === 'light' ? '#E6DFD2' : '#141E40'
     const fg = mode === 'light' ? '#CFC6B6' : '#1E2C4A'
@@ -326,6 +376,26 @@ export const themeOptions: ThemeOption[] = [
                 dark: svgThumb('#2A1F5C'),
             },
             classes: 'wallpaper-hogzilla:bg-black/50 dark:wallpaper-hogzilla:bg-black/60',
+        },
+    },
+    {
+        label: 'Keyboard garden',
+        value: 'keyboard-garden',
+        background: {
+            thumb: {
+                light: gardenThumb('light', 'cream'),
+                dark: gardenThumb('dark', 'cream'),
+            },
+        },
+    },
+    {
+        label: 'Keyboard mint',
+        value: 'keyboard-mint',
+        background: {
+            thumb: {
+                light: gardenThumb('light', 'mint'),
+                dark: gardenThumb('dark', 'mint'),
+            },
         },
     },
     {

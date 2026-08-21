@@ -1,4 +1,11 @@
-export type WallpaperName = 'cobalt' | 'hogzilla' | 'draft-world' | 'rain-embers' | 'plaza-bang'
+export type WallpaperName =
+    | 'cobalt'
+    | 'hogzilla'
+    | 'keyboard-garden'
+    | 'keyboard-mint'
+    | 'draft-world'
+    | 'rain-embers'
+    | 'plaza-bang'
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -7,6 +14,8 @@ export const DEFAULT_WALLPAPER: WallpaperName = 'draft-world'
 export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
     'cobalt',
     'hogzilla',
+    'keyboard-garden',
+    'keyboard-mint',
     'draft-world',
     'rain-embers',
     'plaza-bang',
@@ -25,6 +34,8 @@ export interface WallpaperTone {
 export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
     cobalt: { light: '#2F7ED4', dark: '#1E5DAD' },
     hogzilla: { light: '#E3E1E4', dark: '#141E40' },
+    'keyboard-garden': { light: '#FDEECD', dark: '#1e1f23' },
+    'keyboard-mint': { light: '#C9D0BE', dark: '#141E18' },
     'draft-world': { light: '#F3EFE6', dark: '#141E40' },
     'rain-embers': { light: '#1A3350', dark: '#0F2236' },
     'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },

@@ -1488,7 +1488,14 @@ export interface SiteSettings {
     /** Stored theme; runtime may briefly pass broader strings from window.__onThemeChange. */
     theme: 'light' | 'dark' | string
     skinMode: 'modern' | 'classic'
-    wallpaper: 'cobalt' | 'hogzilla' | 'draft-world' | 'rain-embers' | 'plaza-bang'
+    wallpaper:
+        | 'cobalt'
+        | 'hogzilla'
+        | 'keyboard-garden'
+        | 'keyboard-mint'
+        | 'draft-world'
+        | 'rain-embers'
+        | 'plaza-bang'
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
     performanceBoost?: boolean
