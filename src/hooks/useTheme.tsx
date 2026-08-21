@@ -379,16 +379,6 @@ export const themeOptions: ThemeOption[] = [
         },
     },
     {
-        label: 'Keyboard garden',
-        value: 'keyboard-garden',
-        background: {
-            thumb: {
-                light: gardenThumb('light', 'cream'),
-                dark: gardenThumb('dark', 'cream'),
-            },
-        },
-    },
-    {
         label: 'Keyboard mint',
         value: 'keyboard-mint',
         background: {

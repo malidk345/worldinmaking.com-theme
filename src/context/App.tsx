@@ -1491,7 +1491,6 @@ export interface SiteSettings {
     wallpaper:
         | 'cobalt'
         | 'hogzilla'
-        | 'keyboard-garden'
         | 'keyboard-mint'
         | 'draft-world'
         | 'rain-embers'

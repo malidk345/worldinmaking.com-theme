@@ -385,10 +385,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-276` | Stream 3 | Keyboard mint = wimpos Keyboard garden grass field (no hedge) | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-277` | Stream 3 | Keyboard mint: inspired by wimpos grass, CSS layers not the photo | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-278` | Stream 5 | Live key rotation: 429 must walk remaining Groq keys, not jump family after 2 | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-279` | Stream 3 | Remove Keyboard garden from Display Options picker | `useTheme.tsx`, `wallpaperChrome.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 342 - Drop Keyboard garden from Display Options (TSK-279)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed Keyboard garden from the wallpaper picker. Saved `keyboard-garden` remaps to Draft world. Keyboard mint stays.
+- **Modified Files:** `src/hooks/useTheme.tsx`, `src/lib/wallpaperChrome.ts`, `src/context/App.tsx`, `static/scripts/theme-init.js`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 341 - Production Groq 429 walks every key (TSK-278)
 - **Date:** 2026-08-21
