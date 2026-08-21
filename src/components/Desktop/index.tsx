@@ -12,7 +12,7 @@ import { ClaudeWorkspaceChatPanel } from 'components/ClaudeWorkspaceChat'
 import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
-import { useToast } from '../../context/Toast'
+
 import { apps, useProductLinks } from './desktopApps'
 
 export { apps, useProductLinks }
@@ -23,9 +23,9 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
     const productLinks = useProductLinks()
-    const { setConfetti, updateSiteSettings, addWindow, updateWindow, handleSnapToSide } =
+    const { setConfetti, addWindow, updateWindow, handleSnapToSide } =
         useAppActions()
-    const { siteSettings, compact, isMobile } = useAppSettings()
+    const { siteSettings, isMobile } = useAppSettings()
     const { windows } = useAppWindows()
     const { confetti } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
