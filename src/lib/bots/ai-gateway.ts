@@ -1096,6 +1096,7 @@ async function tryGroqFamily(
             markFamilyCooling('groq')
             return null
         }
+        let quotaOrAuth = false
         for (const curModel of modelsToTry) {
             if (Date.now() >= params.deadline) return null
             const r = await withRetry(() => chatCompletions(
@@ -1126,15 +1127,20 @@ async function tryGroqFamily(
             if (isRateLimitDetail(r.detail)) {
                 markGroqKeyCooling(key)
                 attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
+                quotaOrAuth = true
                 break
-            } else if (isAuthDetail(r.detail)) {
+            }
+            if (isAuthDetail(r.detail)) {
                 markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS, false)
                 attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
+                quotaOrAuth = true
                 break
             }
             attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
         }
-        softFails += 1
+        if (!quotaOrAuth) softFails += 1
+        // 429/401 are per-key. Keep walking remaining Groq accounts in production
+        // (Gemini is usually also bound there, which used to abort after two misses).
         if (shouldLeaveFamily(params, softFails)) {
             markFamilyCooling('groq')
             return null
@@ -1202,9 +1208,10 @@ async function tryGeminiFamily(
             if (isAuthDetail(r.detail)) {
                 markFamilyKeyCooling('gemini', key, AUTH_KEY_COOLDOWN_MS, false)
                 skipRestOfKey = true
+                continue
             }
         }
-        softFails += 1
+        if (!skipRestOfKey) softFails += 1
         if (shouldLeaveFamily(params, softFails)) {
             markFamilyCooling('gemini')
             return null
@@ -1246,6 +1253,11 @@ export async function generateWithGateway(params: {
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
+    console.info('[gateway] generate rotation', {
+        groq: groqKeys.length,
+        gemini: geminiKeys.length,
+        groqLead: groqKeys[0] ? `…${keyId(groqKeys[0])}` : 'none',
+    })
     const familyDeadline = (hasOther: boolean) =>
         hasOther ? Math.min(deadline, started + (GATEWAY_TOTAL_TIMEOUT_MS - FAILOVER_RESERVE_MS)) : deadline
 
@@ -1347,6 +1359,11 @@ export async function streamWithGateway(params: {
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
+    console.info('[gateway] stream rotation', {
+        groq: groqKeys.length,
+        gemini: geminiKeys.length,
+        groqLead: groqKeys[0] ? `…${keyId(groqKeys[0])}` : 'none',
+    })
 
     for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
         if (Date.now() >= deadline) {
@@ -1392,9 +1409,10 @@ export async function streamWithGateway(params: {
                         markGroqKeyCooling(key)
                     } else if (isAuthDetail(r.detail)) {
                         markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
+                    } else {
+                        softFails += 1
                     }
                     attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
-                    softFails += 1
                     if (shouldLeaveFamily(groqParams, softFails)) {
                         markFamilyCooling('groq')
                         break
@@ -1454,7 +1472,7 @@ export async function streamWithGateway(params: {
                         skipRestOfKey = true
                     }
                 }
-                softFails += 1
+                if (!skipRestOfKey) softFails += 1
                 if (shouldLeaveFamily(geminiParams, softFails)) {
                     markFamilyCooling('gemini')
                     break

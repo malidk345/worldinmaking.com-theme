@@ -6,6 +6,8 @@
  * stays Edge-webpack-safe — no Function()/eval()/require().
  */
 const memoryCursors = new Map<string, number>()
+/** Per-isolate salt so concurrent Cloudflare isolates do not all start at key 0. */
+const isolateSalt = Math.floor(Math.random() * 10_000)
 
 type NodeFs = {
     existsSync: (path: string) => boolean
@@ -82,9 +84,10 @@ export function nextFamilyKeyStart(family: string, keyCount: number): number {
     } else if (memoryCursors.has(family)) {
         current = memoryCursors.get(family) || 0
     } else {
-        // Cloudflare isolates have no shared fs. A random first index stops
-        // every cold isolate from dumping TPM onto key 0.
-        current = Math.floor(Math.random() * keyCount)
+        // Cloudflare isolates have no shared fs. Mix wall-clock with a
+        // per-isolate salt so concurrent cold starts walk different keys,
+        // then memory advances for later requests on the same isolate.
+        current = (Math.floor(Date.now() / 3000) + isolateSalt) % keyCount
     }
     const start = ((current % keyCount) + keyCount) % keyCount
     const next = (start + 1) % keyCount

@@ -157,7 +157,7 @@ test.describe('Groq / Gemini rotation end to end', () => {
         }
     })
 
-    test('two Groq misses switch family instead of trying every Qwen key', async () => {
+    test('Groq 429s walk every account before Gemini', async () => {
         isolateCursors('two-strikes')
         const groqHits: string[] = []
         const original = globalThis.fetch
@@ -188,7 +188,7 @@ test.describe('Groq / Gemini rotation end to end', () => {
                 expect(result.text).toBe('switched-to-gemini')
                 expect(String(result.provider)).toContain('gemini')
             }
-            expect(groqHits.length).toBe(2)
+            expect(groqHits.length).toBe(4)
         } finally {
             globalThis.fetch = original
         }

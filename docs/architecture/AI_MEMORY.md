@@ -384,10 +384,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-275` | Stream 3 | Replace Keyboard mint speckle with a green keycap mosaic | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-276` | Stream 3 | Keyboard mint = wimpos Keyboard garden grass field (no hedge) | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-277` | Stream 3 | Keyboard mint: inspired by wimpos grass, CSS layers not the photo | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-278` | Stream 5 | Live key rotation: 429 must walk remaining Groq keys, not jump family after 2 | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 341 - Production Groq 429 walks every key (TSK-278)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Live rotation looked broken because Gemini is bound in production: after two Groq 429s the family aborted and remaining Groq accounts were never tried. Locally Gemini is often unset so every key was walked. 429/401 no longer count as family soft-fails. Cold Cloudflare isolates pick a time+salt start instead of always key 0.
+- **Modified Files:** `src/lib/bots/ai-gateway.ts`, `src/lib/bots/groq-key-cursor.ts`, `tests/gateway-rotation.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 38/38 Playwright (gateway-rotation, runtime-env, thinking-tags).
 
 ### Entry 340 - Keyboard mint inspired by wimpos grass, not the photo (TSK-277)
 - **Date:** 2026-08-21
