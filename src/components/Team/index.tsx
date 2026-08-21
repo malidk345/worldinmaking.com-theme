@@ -484,28 +484,38 @@ export default function Team({
     const hasUnderConsideration = !hideRoadmap && underConsideration?.length > 0
     const hasInProgress = !hideRoadmap && inProgress?.length > 0
     const hasBody = !!body
-    const heightToHedgehogs =
-        profiles?.data?.reduce((acc, curr) => acc + (curr?.attributes?.height || 0), 0) / hedgehogLengthInches || 0
-    const hedgehogPercentage =
-        (heightToHedgehogs % 1 !== 0 &&
-            Math.round(hedgehogImageWidth * (heightToHedgehogs - Math.floor(heightToHedgehogs)))) ||
-        0
 
-    const teamEmojis = emojis?.filter((emoji) => !!emoji?.name && !!emoji?.localFile?.publicURL)
+    // Bolt: Memoize expensive aggregations to prevent O(N) execution on every render
+    const { heightToHedgehogs, hedgehogPercentage } = useMemo(() => {
+        const height = profiles?.data?.reduce((acc: any, curr: any) => acc + (curr?.attributes?.height || 0), 0) / hedgehogLengthInches || 0
+        const percentage = (height % 1 !== 0 && Math.round(hedgehogImageWidth * (height - Math.floor(height)))) || 0
+        return { heightToHedgehogs: height, hedgehogPercentage: percentage }
+    }, [profiles])
+
+    // Bolt: Memoize array filter to prevent O(N) filtering on every render
+    const teamEmojis = useMemo(() => {
+        return emojis?.filter((emoji: any) => !!emoji?.name && !!emoji?.localFile?.publicURL)
+    }, [emojis])
 
     // Create a map of team names to crest data for quick lookup
-    const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
-        acc[team.name] = team.crest?.data?.attributes?.url
-        return acc
-    }, {})
+    // Bolt: Memoize object construction to prevent O(N) iteration and new reference allocation on every render
+    const teamCrestMap = useMemo(() => {
+        return (allTeams?.nodes || []).reduce((acc: any, team: any) => {
+            acc[team.name] = team.crest?.data?.attributes?.url
+            return acc
+        }, {})
+    }, [allTeams])
 
     // Filter jobs that are assigned to this team
-    const teamJobs = (allAshbyJobPosting?.nodes || []).filter((job: any) => {
-        const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
-        if (!teamsField) return false
-        const teams = JSON.parse(teamsField.value || '[]')
-        return teams.includes(name)
-    })
+    // Bolt: Memoize filter and JSON parse to prevent expensive O(N) parsing on every render
+    const teamJobs = useMemo(() => {
+        return (allAshbyJobPosting?.nodes || []).filter((job: any) => {
+            const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
+            if (!teamsField) return false
+            const teams = JSON.parse(teamsField.value || '[]')
+            return teams.includes(name)
+        })
+    }, [allAshbyJobPosting, name])
 
     const posthog = usePostHog()
 
