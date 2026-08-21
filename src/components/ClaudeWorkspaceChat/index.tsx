@@ -527,7 +527,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   useEffect(() => {
     const scroller = chatScrollRef.current
     if (!scroller) return
-    updateAwayFromBottom()
+    // New assistant rows grow the list. Measuring the gap here would look like
+    // the user scrolled away and skip the pin — that jumps the thread on mobile.
+    if (pinToBottomRef.current) {
+      scroller.scrollTop = scroller.scrollHeight
+      setIsAwayFromBottom(false)
+    } else {
+      updateAwayFromBottom()
+    }
     scroller.addEventListener('scroll', updateAwayFromBottom, { passive: true })
     const observer = new ResizeObserver(() => {
       requestAnimationFrame(keepPinnedIfNeeded)
@@ -538,7 +545,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.removeEventListener('scroll', updateAwayFromBottom)
       observer.disconnect()
     }
-  }, [activeChatId, activeChat?.messages.length, isStreaming])
+  }, [activeChatId, Boolean(activeChat?.messages.length)])
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onViewport = () => {
+      if (!pinToBottomRef.current) return
+      requestAnimationFrame(() => scrollChatToBottom('auto'))
+    }
+    vv.addEventListener('resize', onViewport)
+    vv.addEventListener('scroll', onViewport)
+    return () => {
+      vv.removeEventListener('resize', onViewport)
+      vv.removeEventListener('scroll', onViewport)
+    }
+  }, [])
 
   const lastStreamTick = (() => {
     const last = activeChat?.messages[activeChat.messages.length - 1]
@@ -1253,7 +1275,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         />
 
         {/* Chat Stream & Conversation Body */}
-        <main ref={chatScrollRef} className="flex-1 overflow-y-auto relative bg-primary [overflow-anchor:auto] overscroll-contain">
+        <main
+          ref={chatScrollRef}
+          className="flex-1 overflow-y-auto relative bg-primary overscroll-contain [overflow-anchor:none]"
+        >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
               <div className="mb-5 flex w-full flex-wrap justify-center gap-2">

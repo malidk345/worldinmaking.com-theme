@@ -386,10 +386,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-277` | Stream 3 | Keyboard mint: inspired by wimpos grass, CSS layers not the photo | `Wallpapers.tsx`, `useTheme.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-278` | Stream 5 | Live key rotation: 429 must walk remaining Groq keys, not jump family after 2 | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-279` | Stream 3 | Remove Keyboard garden from Display Options picker | `useTheme.tsx`, `wallpaperChrome.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-280` | Stream 2 | Mobile chat: stop page jump when the model starts a new reply | `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 343 - Mobile chat no longer jumps up when a reply starts (TSK-280)
+- **Date:** 2026-08-21
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** New assistant/thinking rows grew the thread by >120px and the scroller treated that as “user scrolled away,” so it skipped pinning and iOS overflow-anchor yanked the page up. Pin is no longer cleared on content growth; overflow-anchor is off; visualViewport resize re-snaps to the bottom while pinned.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 342 - Drop Keyboard garden from Display Options (TSK-279)
 - **Date:** 2026-08-21
