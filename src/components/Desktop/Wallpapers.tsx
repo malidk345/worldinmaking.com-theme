@@ -105,7 +105,7 @@ const speckleLayer = (mask: string, color: string): React.CSSProperties => ({
 /**
  * WIM Agora — Hogzilla field + clustered speckle (own scene; Hogzilla stays plain).
  */
-const Agora = () => (
+export const Agora = () => (
     <>
         <div
             className={`absolute inset-0 bg-[linear-gradient(268.63deg,#E3E1E4_0%,#FDFDFD_80%,#FDFDFD_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
@@ -292,8 +292,8 @@ const CobaltScene = ({ clouds = false, bang = false }: { clouds?: boolean; bang?
 )
 
 const Cobalt = () => <CobaltScene />
-const CobaltCloudsWallpaper = () => <CobaltScene clouds />
-const CobaltBangWallpaper = () => <CobaltScene clouds bang />
+export const CobaltCloudsWallpaper = () => <CobaltScene clouds />
+export const CobaltBangWallpaper = () => <CobaltScene clouds bang />
 
 const MeadowField = () => (
     <>
@@ -411,9 +411,9 @@ const MeadowScene = ({ grass = false, flowers = false }: { grass?: boolean; flow
     </div>
 )
 
-const Meadow = () => <MeadowScene />
-const MeadowGrassWallpaper = () => <MeadowScene grass />
-const MeadowFlowersWallpaper = () => <MeadowScene grass flowers />
+export const Meadow = () => <MeadowScene />
+export const MeadowGrassWallpaper = () => <MeadowScene grass />
+export const MeadowFlowersWallpaper = () => <MeadowScene grass flowers />
 
 const DraftField = () => (
     <>
@@ -525,8 +525,8 @@ const DraftScene = ({ grid = false, world = false }: { grid?: boolean; world?: b
     </div>
 )
 
-const Draft = () => <DraftScene />
-const DraftGridWallpaper = () => <DraftScene grid />
+export const Draft = () => <DraftScene />
+export const DraftGridWallpaper = () => <DraftScene grid />
 const DraftWorldWallpaper = () => <DraftScene grid world />
 
 const HaloField = () => (
@@ -593,9 +593,9 @@ const HaloScene = ({ disc = false, sparks = false }: { disc?: boolean; sparks?: 
     </div>
 )
 
-const Halo = () => <HaloScene />
-const HaloDiscWallpaper = () => <HaloScene disc />
-const HaloSparksWallpaper = () => <HaloScene disc sparks />
+export const Halo = () => <HaloScene />
+export const HaloDiscWallpaper = () => <HaloScene disc />
+export const HaloSparksWallpaper = () => <HaloScene disc sparks />
 
 const RainField = () => (
     <>
@@ -687,8 +687,8 @@ const RainScene = ({ fall = false, embers = false }: { fall?: boolean; embers?: 
     </div>
 )
 
-const Rain = () => <RainScene />
-const RainFallWallpaper = () => <RainScene fall />
+export const Rain = () => <RainScene />
+export const RainFallWallpaper = () => <RainScene fall />
 const RainEmbersWallpaper = () => <RainScene fall embers />
 
 const DawnField = () => (
@@ -771,9 +771,9 @@ const DawnScene = ({ grain = false, sun = false }: { grain?: boolean; sun?: bool
     </div>
 )
 
-const Dawn = () => <DawnScene />
-const DawnGrainWallpaper = () => <DawnScene grain />
-const DawnSunWallpaper = () => <DawnScene grain sun />
+export const Dawn = () => <DawnScene />
+export const DawnGrainWallpaper = () => <DawnScene grain />
+export const DawnSunWallpaper = () => <DawnScene grain sun />
 
 const IceField = () => (
     <>
@@ -853,9 +853,9 @@ const IceScene = ({ grain = false, marks = false }: { grain?: boolean; marks?: b
     </div>
 )
 
-const Ice = () => <IceScene />
-const IceGrainWallpaper = () => <IceScene grain />
-const IceMarksWallpaper = () => <IceScene grain marks />
+export const Ice = () => <IceScene />
+export const IceGrainWallpaper = () => <IceScene grain />
+export const IceMarksWallpaper = () => <IceScene grain marks />
 
 const plazaTile = (id: string, bg: string, fg: string) =>
     `url("data:image/svg+xml,${encodeURIComponent(
@@ -917,8 +917,8 @@ const PlazaScene = ({ carpet = false, bang = false }: { carpet?: boolean; bang?:
     </div>
 )
 
-const Plaza = () => <PlazaScene />
-const PlazaCarpetWallpaper = () => <PlazaScene carpet />
+export const Plaza = () => <PlazaScene />
+export const PlazaCarpetWallpaper = () => <PlazaScene carpet />
 const PlazaBangWallpaper = () => <PlazaScene carpet bang />
 
 const LawnField = () => (
@@ -991,8 +991,8 @@ const LawnScene = ({ tufts = false }: { tufts?: boolean }) => (
     </div>
 )
 
-const Lawn = () => <LawnScene />
-const LawnTuftsWallpaper = () => <LawnScene tufts />
+export const Lawn = () => <LawnScene />
+export const LawnTuftsWallpaper = () => <LawnScene tufts />
 
 /** wimpos Keyboard garden field — cream, not the green grass photo. */
 const KeyboardGardenField = () => (
