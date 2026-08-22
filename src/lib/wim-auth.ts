@@ -5,6 +5,7 @@
 import type { User } from 'hooks/useUser'
 import type { ProfileData } from 'lib/strapi'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
+import { rememberAuthNextPath } from 'lib/auth-callback'
 
 export type WimProfileRow = {
     id: string
@@ -303,6 +304,7 @@ export function authRedirectUrl(path: string): string | undefined {
 
 export async function signInWithGoogle(): Promise<{ error?: string }> {
     if (!isSupabaseConfigured) return { error: 'Supabase is not configured' }
+    rememberAuthNextPath()
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

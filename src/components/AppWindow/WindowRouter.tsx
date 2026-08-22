@@ -95,6 +95,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (/^\/tape-player|^\/mixtapes/.test(path)) {
         return <TapePlayer {...props} />
     }
+    if (/^\/auth(\/|$)/.test(path)) {
+        return null
+    }
     if (/^\/login|^\/signup/.test(path)) {
         return (
             <div className="flex min-h-full items-center justify-center bg-slate-950/90 p-6">

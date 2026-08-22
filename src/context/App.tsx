@@ -33,6 +33,7 @@ import {
     migrateAppearanceSettings,
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
+import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
@@ -1597,7 +1598,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 }
                 const r = routerRef.current
                 if (r && typeof r.push === 'function') {
-                    r.push(url, undefined, opts)
+                    const nav = r.push(url, undefined, opts)
+                    if (nav && typeof nav.catch === 'function') {
+                        nav.catch((err: unknown) => {
+                            if (!isCancelledRouteError(err)) throw err
+                        })
+                    }
                 } else if (typeof window !== 'undefined') {
                     window.location.href = url
                 }
@@ -2421,6 +2427,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (path === '/signup' || path.startsWith('/signup')) {
             setAuthModalView('sign-up')
             setIsAuthModalOpen(true)
+            return
+        }
+        if (path.startsWith('/auth')) {
             return
         }
 

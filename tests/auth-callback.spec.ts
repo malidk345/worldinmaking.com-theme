@@ -3,11 +3,14 @@ import { safeAuthNextPath, shouldIgnorePkceExchangeError } from '../src/lib/auth
 
 test.describe('auth callback', () => {
     test('only allows same-origin relative next paths', () => {
-        expect(safeAuthNextPath('/desktop')).toBe('/desktop')
         expect(safeAuthNextPath('/profile/me')).toBe('/profile/me')
-        expect(safeAuthNextPath('https://evil.example/phish')).toBe('/desktop')
-        expect(safeAuthNextPath('//evil.example')).toBe('/desktop')
-        expect(safeAuthNextPath(undefined)).toBe('/desktop')
+        expect(safeAuthNextPath('/questions/hello')).toBe('/questions/hello')
+        expect(safeAuthNextPath('/desktop')).toBe('/')
+        expect(safeAuthNextPath('/login')).toBe('/')
+        expect(safeAuthNextPath('/auth/callback')).toBe('/')
+        expect(safeAuthNextPath('https://evil.example/phish')).toBe('/')
+        expect(safeAuthNextPath('//evil.example')).toBe('/')
+        expect(safeAuthNextPath(undefined)).toBe('/')
     })
 
     test('ignores a consumed PKCE verifier when the session already exists', () => {

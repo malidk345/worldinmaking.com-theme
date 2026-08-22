@@ -393,10 +393,24 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-284` | Stream 2 | Close all in Active windows did not close windows | `ActiveWindowsPanel`, `TaskBarMenu`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-285` | Stream 2 | Active windows: row of previews on desktop, list-only on mobile | `mission-control-layout.ts`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-286` | Stream 3 | Published notebook live view matches a community post | `NotebookPublicView.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-287` | Stream 1 | Swallow Next.js Cancel rendering route overlay | `swallow-cancelled-route.ts`, `_app.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-288` | Stream 2 | Google OAuth no longer opens a flash auth window | `auth-callback.ts`, `callback.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 351 - Google sign-in no longer flashes an auth window (TSK-288)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** After Google OAuth the callback sent users to `/desktop`, which the shell opened as a centered AppWindow that then vanished. Return path is now `/` (or the page they left). `/auth/*` is not opened as a window.
+- **Modified Files:** `src/lib/auth-callback.ts`, `src/lib/wim-auth.ts`, `src/pages/auth/callback.tsx`, `src/context/App.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `tests/auth-callback.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 350 - Swallow Next.js Cancel rendering route overlay (TSK-287)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Overlapping window navigations reject the previous Pages Router render with `Cancel rendering route`. Dev overlay ignored `preventDefault` on the rejection. `Router.prototype.push/replace` now catch cancelled errors so they are not unhandled.
+- **Modified Files:** `src/lib/swallow-cancelled-route.ts`, `src/pages/_app.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
 
 ### Entry 349 - Published notebook looks like a community post (TSK-286)
 - **Date:** 2026-08-22

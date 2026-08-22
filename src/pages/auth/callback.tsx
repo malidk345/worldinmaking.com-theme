@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
-import { safeAuthNextPath, shouldIgnorePkceExchangeError } from 'lib/auth-callback'
+import { consumeAuthNextPath, safeAuthNextPath, shouldIgnorePkceExchangeError } from 'lib/auth-callback'
 import WimLogo from 'components/WimLogo'
 
 export default function AuthCallbackPage() {
@@ -20,7 +20,7 @@ export default function AuthCallbackPage() {
             }
 
             const code = typeof router.query.code === 'string' ? router.query.code : null
-            const next = safeAuthNextPath(router.query.next)
+            const next = consumeAuthNextPath() || safeAuthNextPath(router.query.next)
 
             const existing = await supabase.auth.getSession()
             if (!existing.data.session && code) {
@@ -34,7 +34,9 @@ export default function AuthCallbackPage() {
                 }
             }
 
-            router.replace(next)
+            // Hard navigation back to the OS shell — router.replace('/desktop')
+            // used to open a centered AppWindow that then vanished on world sync.
+            window.location.replace(next)
         }
 
         void finish()

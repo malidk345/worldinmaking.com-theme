@@ -24,19 +24,10 @@ import React from 'react'
 import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
 import SeoFromRoute from '../components/SeoFromRoute'
 import SeoDocument from '../components/SeoDocument'
+import { installCancelledRouteSwallow, isCancelledRouteError } from '../lib/swallow-cancelled-route'
 
-/** Next.js Pages Router rejects the previous render when a new one starts.
- *  That is expected (window focus, hash, overlapping safePush) — not a crash. */
-function isCancelledRouteError(reason: unknown): boolean {
-    const message =
-        typeof reason === 'string'
-            ? reason
-            : reason instanceof Error
-              ? reason.message
-              : typeof reason === 'object' && reason && 'message' in reason
-                ? String((reason as { message?: unknown }).message)
-                : ''
-    return message.includes('Cancel rendering route')
+if (typeof window !== 'undefined') {
+    installCancelledRouteSwallow()
 }
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -58,12 +49,12 @@ export default function App({ Component, pageProps }: AppProps) {
                 return
             }
         }
-        window.addEventListener('unhandledrejection', onRejection)
-        window.addEventListener('error', onError)
+        window.addEventListener('unhandledrejection', onRejection, true)
+        window.addEventListener('error', onError, true)
         router.events.on('routeChangeError', onRouteError)
         return () => {
-            window.removeEventListener('unhandledrejection', onRejection)
-            window.removeEventListener('error', onError)
+            window.removeEventListener('unhandledrejection', onRejection, true)
+            window.removeEventListener('error', onError, true)
             router.events.off('routeChangeError', onRouteError)
         }
     }, [router.events])

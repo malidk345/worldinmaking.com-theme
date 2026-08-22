@@ -4,6 +4,7 @@ import {
     DEFAULT_WALLPAPER,
     migrateAppearanceSettings,
 } from '../src/lib/wallpaperChrome'
+import { isCancelledRouteError } from '../src/lib/swallow-cancelled-route'
 import { createRoomToken, parseWorldSnapshot } from '../src/lib/world-snapshot'
 
 test.describe('world snapshot parse', () => {
@@ -81,6 +82,12 @@ test.describe('world snapshot parse', () => {
         })
         expect(kept.wallpaper).toBe('hogzilla')
         expect(kept.reduceTransparency).toBe(false)
+    })
+
+    test('cancelled Next.js route errors are recognized', () => {
+        expect(isCancelledRouteError(new Error('Cancel rendering route'))).toBe(true)
+        expect(isCancelledRouteError({ cancelled: true })).toBe(true)
+        expect(isCancelledRouteError(new Error('boom'))).toBe(false)
     })
 
     test('room tokens are unlisted-looking and long enough', () => {
