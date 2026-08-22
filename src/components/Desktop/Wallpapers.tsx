@@ -1141,7 +1141,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     'plaza-bang': { light: '#CFC6B6', dark: '#9370F0' },
 }
 
-export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['draft-world']
+export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-mint']
 
 export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW

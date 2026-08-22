@@ -18,7 +18,7 @@ import {
 import { useApp, useAppActions } from '../../context/App'
 
 import MenuBar, { MenuType } from 'components/RadixUI/MenuBar'
-import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
+
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useUser } from 'hooks/useUser'
@@ -370,7 +370,7 @@ function TaskBarMenu() {
                                 <div className="flex flex-col items-center gap-1 text-center p-0.5">
                                     <p suppressHydrationWarning className="text-sm font-semibold mb-0">Active Windows ({totalWindows})</p>
                                     <span suppressHydrationWarning className="text-xs text-secondary leading-tight">
-                                        {totalWindows === 0 ? 'No open windows' : 'Toggle Mission Control grid'}
+                                        {totalWindows === 0 ? 'No open windows' : 'List and arrange open windows'}
                                     </span>
                                 </div>
                             </Tooltip>
@@ -380,7 +380,6 @@ function TaskBarMenu() {
                     </div>
                 </div>
             </div>
-            <ActiveWindowsPanel />
         </>
     )
 }

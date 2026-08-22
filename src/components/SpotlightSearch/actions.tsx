@@ -203,12 +203,11 @@ export const useSpotlightActions = (): SpotlightAction[] => {
         },
         {
             id: 'copy-desktop',
-            label: 'Copy link to this desktop',
+            label: 'Copy link to this room',
             icon: <IconShare />,
-            keywords: ['share desktop', 'copy link', 'share', 'desktop'],
+            keywords: ['share desktop', 'copy link', 'share', 'desktop', 'room'],
             perform: () => {
                 copyDesktopParams()
-                toast(<IconShare className="size-5 inline-block mr-1" />, 'Desktop link copied to clipboard')
             },
         },
         {

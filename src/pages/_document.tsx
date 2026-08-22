@@ -1,8 +1,10 @@
 import { Html, Head, Main, NextScript } from 'next/document'
 import {
+    DEFAULT_REDUCE_TRANSPARENCY,
     DEFAULT_WALLPAPER,
     DEFAULT_WALLPAPER_THEME_COLOR,
     KEPT_WALLPAPERS,
+    SITE_APPEARANCE_DEFAULTS_VERSION,
     WALLPAPER_THEME_COLORS,
 } from '../lib/wallpaperChrome'
 
@@ -22,11 +24,22 @@ const themeScript = `(function () {
     var theme = colorMode === 'system' ? (darkQuery.matches ? 'dark' : 'light') : (preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme)
     if (colorMode === 'light' || colorMode === 'dark') theme = colorMode
     var skin = siteSettings.skinMode || siteSettings.skin || 'modern'
-    var wallpaper = siteSettings.wallpaper || ${JSON.stringify(DEFAULT_WALLPAPER)}
-    var reduceTransparency = siteSettings.reduceTransparency ? 'true' : 'false'
-    var THEME_COLORS = ${JSON.stringify(WALLPAPER_THEME_COLORS)}
+    var DEFAULT_WALLPAPER = ${JSON.stringify(DEFAULT_WALLPAPER)}
     var KEPT = ${JSON.stringify(KEPT_WALLPAPERS)}
-    if (KEPT.indexOf(wallpaper) === -1) wallpaper = ${JSON.stringify(DEFAULT_WALLPAPER)}
+    var DEFAULTS_VERSION = ${JSON.stringify(SITE_APPEARANCE_DEFAULTS_VERSION)}
+    var version = Number(siteSettings.siteDefaultsVersion || 0)
+    if (version < DEFAULTS_VERSION) {
+        if (!siteSettings.wallpaper || siteSettings.wallpaper === 'draft-world' || KEPT.indexOf(siteSettings.wallpaper) === -1) {
+            siteSettings.wallpaper = DEFAULT_WALLPAPER
+        }
+        siteSettings.reduceTransparency = ${JSON.stringify(DEFAULT_REDUCE_TRANSPARENCY)}
+        siteSettings.siteDefaultsVersion = DEFAULTS_VERSION
+        try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (err) {}
+    }
+    var wallpaper = siteSettings.wallpaper || DEFAULT_WALLPAPER
+    var reduceTransparency = siteSettings.reduceTransparency === false ? 'false' : 'true'
+    var THEME_COLORS = ${JSON.stringify(WALLPAPER_THEME_COLORS)}
+    if (KEPT.indexOf(wallpaper) === -1) wallpaper = DEFAULT_WALLPAPER
 
     function applyBrowserChrome(nextWallpaper, nextTheme, nextColorMode) {
         var head = document.head
@@ -146,7 +159,7 @@ export default function Document() {
                 <meta name="color-scheme" content="light dark" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
-            <body data-scheme="primary" data-skin="modern" data-wallpaper="draft-world" suppressHydrationWarning>
+            <body data-scheme="primary" data-skin="modern" data-wallpaper={DEFAULT_WALLPAPER} data-reduce-transparency="true" suppressHydrationWarning>
                 <Main />
                 <NextScript />
             </body>

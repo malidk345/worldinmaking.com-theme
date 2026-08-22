@@ -358,6 +358,16 @@ const lawnThumb = (mode: 'light' | 'dark', extra: 'field' | 'tufts' | 'bang') =>
 
 export const themeOptions: ThemeOption[] = [
     {
+        label: 'Keyboard mint',
+        value: 'keyboard-mint',
+        background: {
+            thumb: {
+                light: gardenThumb('light', 'mint'),
+                dark: gardenThumb('dark', 'mint'),
+            },
+        },
+    },
+    {
         label: 'Cobalt',
         value: 'cobalt',
         background: {
@@ -376,16 +386,6 @@ export const themeOptions: ThemeOption[] = [
                 dark: svgThumb('#2A1F5C'),
             },
             classes: 'wallpaper-hogzilla:bg-black/50 dark:wallpaper-hogzilla:bg-black/60',
-        },
-    },
-    {
-        label: 'Keyboard mint',
-        value: 'keyboard-mint',
-        background: {
-            thumb: {
-                light: gardenThumb('light', 'mint'),
-                dark: gardenThumb('dark', 'mint'),
-            },
         },
     },
     {

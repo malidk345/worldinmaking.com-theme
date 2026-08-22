@@ -22,6 +22,7 @@ import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
+import { ACTIVE_WINDOWS_PANEL_RESERVE, layoutMissionControlWindow } from '../../lib/mission-control-layout'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -82,6 +83,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         isActiveWindowsPanelOpen,
         addWindow,
         isMobile,
+        closingAllWindowsAnimation,
     } = useApp()
 
     const navigate = useCallback(
@@ -108,44 +110,48 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const size = item.size
     const position = item.position
 
-    const activePanelIndex = useMemo(() => windows.findIndex((w) => w.key === item.key), [windows, item.key])
-    const totalWindows = windows.length
+    const visibleWindows = useMemo(() => windows.filter((w) => !w.minimized), [windows])
+    const switcherIndex = useMemo(
+        () => visibleWindows.findIndex((w) => w.key === item.key),
+        [visibleWindows, item.key]
+    )
 
     const missionControlLayout = useMemo(() => {
-        if (!isActiveWindowsPanelOpen || activePanelIndex === -1 || typeof window === 'undefined') return null
+        if (
+            !isActiveWindowsPanelOpen ||
+            isMobile ||
+            compact ||
+            item.minimized ||
+            switcherIndex === -1 ||
+            typeof window === 'undefined'
+        ) {
+            return null
+        }
 
-        const screenWidth = window.innerWidth
-        const screenHeight = window.innerHeight
-        const padding = 80
-
-        const availableW = screenWidth - padding * 2
-        const availableH = screenHeight - padding * 2 - 80
-
-        const cols = Math.ceil(Math.sqrt(totalWindows))
-        const rows = Math.ceil(totalWindows / cols)
-
-        const cellW = availableW / cols
-        const cellH = availableH / rows
-
-        const col = activePanelIndex % cols
-        const row = Math.floor(activePanelIndex / cols)
-
-        const cx = padding + col * cellW + cellW / 2
-        const cy = padding + row * cellH + cellH / 2
-
-        const maxW = cellW * 0.85
-        const maxH = cellH * 0.85
-
-        const scaleX = maxW / size.width
-        const scaleY = maxH / size.height
-        let scale = Math.min(scaleX, scaleY, 0.45)
-        if (scale < 0.1) scale = 0.1
-
-        const targetX = cx - size.width / 2
-        const targetY = cy - size.height / 2
-
-        return { x: targetX, y: targetY, scale }
-    }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height])
+        return layoutMissionControlWindow({
+            index: switcherIndex,
+            count: visibleWindows.length,
+            size,
+            viewport: { width: window.innerWidth, height: window.innerHeight },
+            insets: {
+                top: Math.max(taskbarHeight, 48) + 12,
+                right: ACTIVE_WINDOWS_PANEL_RESERVE,
+                bottom: 24,
+                left: 24,
+            },
+        })
+    }, [
+        isActiveWindowsPanelOpen,
+        isMobile,
+        compact,
+        item.minimized,
+        switcherIndex,
+        visibleWindows.length,
+        size.width,
+        size.height,
+        taskbarHeight,
+    ])
+    const inSwitcher = !!missionControlLayout
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
     const [history, setHistory] = useState<string[]>([])
@@ -412,6 +418,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     }
 
     useEffect(() => {
+        if (closingAllWindowsAnimation && !closing) {
+            setClosing(true)
+        }
+    }, [closingAllWindowsAnimation, closing])
+
+    useEffect(() => {
         if (focusedWindow !== item || compact || isMobile) return
 
         const handleShortcut = (event: KeyboardEvent) => {
@@ -576,14 +588,14 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         // Any CSS transform on this node (incl. translate3d(0,0,0) / rotateX)
                         // makes backdrop-filter sample only this stacking context, so frosted
                         // glass never blurs the desktop wallpaper (unlike wimpos plain divs).
-                        zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
+                        zIndex: inSwitcher ? 10001 + switcherIndex : item.zIndex,
                         contentVisibility: inView ? 'visible' : 'auto',
                         containIntrinsicSize: `${Math.round(size.width)}px ${Math.round(size.height)}px`,
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
                         x: dragging ? motionX : undefined,
                         y: dragging ? motionY : undefined,
                         // 3D tilt only while dragging (brief transform is OK; rest must be transform-free)
-                        ...(dragging && !compact && !isActiveWindowsPanelOpen
+                        ...(dragging && !compact && !inSwitcher
                             ? {
                                   rotateX: tiltX,
                                   rotateY: tiltY,
@@ -602,7 +614,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     // At rest force transform:none so backdrop-filter can blur the desktop.
                     // Framer often leaves scale(1)/translate3d(0,0,0) which still kills glass.
                     transformTemplate={(_latest, generated) => {
-                        if (!isCompositorActive && !isActiveWindowsPanelOpen) {
+                        if (!isCompositorActive && !inSwitcher) {
                             return 'none'
                         }
                         return generated
@@ -617,16 +629,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     }}
                     animate={{
                         // Mission Control still uses scale; left/top stay layout properties
-                        scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                        scale: inSwitcher && missionControlLayout ? missionControlLayout.scale : 1,
                         opacity: 1,
-                        left:
-                            isActiveWindowsPanelOpen && missionControlLayout
-                                ? missionControlLayout.x
-                                : Math.round(position.x),
-                        top:
-                            isActiveWindowsPanelOpen && missionControlLayout
-                                ? missionControlLayout.y
-                                : Math.round(position.y),
+                        left: inSwitcher && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
+                        top: inSwitcher && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -646,7 +652,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                   ease: [0.16, 1, 0.3, 1],
                               }
                     }
-                    drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
+                    drag={inSwitcher ? false : !item.fixedSize}
                     dragControls={controls}
                     dragListener={false}
                     dragMomentum={false}
@@ -669,7 +675,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         onClose={handleClose}
                         onDoubleClick={handleDoubleClick}
                         onDragHandlePointerDown={(event) => {
-                            if (item.fixedSize || isActiveWindowsPanelOpen) return
+                            if (item.fixedSize || inSwitcher) return
                             controls.start(event)
                         }}
                     />

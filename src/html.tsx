@@ -43,8 +43,8 @@ export default function HTML(props: HTMLProps): JSX.Element {
             <body
                 {...props.bodyAttributes}
                 className="light"
-                data-wallpaper="draft-world"
-                data-reduce-transparency="false"
+                data-wallpaper="keyboard-mint"
+                data-reduce-transparency="true"
             >
                 {props.preBodyComponents}
                 {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml - Gatsby body content from build, not user input */}

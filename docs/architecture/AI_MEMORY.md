@@ -387,10 +387,48 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-278` | Stream 5 | Live key rotation: 429 must walk remaining Groq keys, not jump family after 2 | `ai-gateway.ts`, `groq-key-cursor.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-279` | Stream 3 | Remove Keyboard garden from Display Options picker | `useTheme.tsx`, `wallpaperChrome.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
 | `TSK-280` | Stream 2 | Mobile chat: stop page jump when the model starts a new reply | `ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-21 |
+| `TSK-281` | Stream 4 | Persist world to account + shareable rooms | `user_worlds`, `world_rooms`, `useWorldAccountSync` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-282` | Stream 3 | Default wallpaper Keyboard mint + reduce transparency on | `wallpaperChrome.ts`, `App.tsx`, `theme-init.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-283` | Stream 2 | Mobile Active windows panel sits under the browser chrome | `SidePanel/index.tsx`, `ActiveWindowsPanel` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-284` | Stream 2 | Close all in Active windows did not close windows | `ActiveWindowsPanel`, `TaskBarMenu`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-285` | Stream 2 | Active windows: row of previews on desktop, list-only on mobile | `mission-control-layout.ts`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 348 - Active windows switcher: row on desktop, list-only on mobile (TSK-285)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Desktop Mission Control is 1–3 windows in a single row, 4 as 2×2, 5–9 as 3 columns, laid out left of the side panel. Last-row leftovers are centered. Mobile no longer fans windows into a grid — the panel list is the switcher, so previews no longer cover the panel.
+- **Modified Files:** `src/lib/mission-control-layout.ts`, `src/components/AppWindow/index.tsx`, `src/components/SidePanel/index.tsx`, `src/components/TaskBarMenu/index.tsx`, `tests/mission-control-layout.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 4/4 Playwright (`tests/mission-control-layout.spec.ts`)
+
+### Entry 347 - Close all actually closes windows (TSK-284)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Close all only set an unused animation flag, so windows stayed open. It now calls `closeAllWindows`. Duplicate `ActiveWindowsPanel` in TaskBarMenu + Wrapper made the second panel’s outside-click unmount the button before `click`. Removed the duplicate; SidePanel outside-click only listens while open.
+- **Modified Files:** `src/components/ActiveWindowsPanel/index.tsx`, `src/components/TaskBarMenu/index.tsx`, `src/components/SidePanel/index.tsx`, `src/components/AppWindow/index.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 346 - Mobile Active windows panel no longer sits under the browser (TSK-283)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** SidePanel used `100vh`, which includes the area behind the mobile browser toolbar, so the share footer was clipped. Height now uses visual viewport / `100svh` plus safe-area. Share shortcut tip is desktop-only.
+- **Modified Files:** `src/components/SidePanel/index.tsx`, `src/components/ActiveWindowsPanel/index.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 345 - Keyboard mint is the default wallpaper; reduce transparency on (TSK-282)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Product default wallpaper is Keyboard mint (first in Display Options). Reduce transparency is on by default. Existing local `draft-world` + transparency-off sessions migrate once (`siteDefaultsVersion` 2); explicitly chosen wallpapers stay.
+- **Modified Files:** `src/lib/wallpaperChrome.ts`, `src/context/App.tsx`, `src/pages/_document.tsx`, `static/scripts/theme-init.js`, `src/html.tsx`, `src/hooks/useTheme.tsx`, `src/components/Desktop/Wallpapers.tsx`, `tests/world-snapshot.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** Playwright `tests/world-snapshot.spec.ts`
+
+### Entry 344 - Account world + shareable rooms (TSK-281)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Signed-in wallpaper, windows, and desktop pins upsert to `user_worlds`. Shift+C / Active windows “Share this room” mints an unlisted `/room/:token` snapshot (not a query-string URL). Visiting a room does not overwrite the account world; a banner restores the stashed home layout. Live SQL applied.
+- **Modified Files:** `supabase/migrations/20260822_user_worlds_and_rooms.sql`, `src/lib/world-snapshot.ts`, `src/lib/world-account.ts`, `src/hooks/useWorldAccountSync.ts`, `src/pages/api/rooms.ts`, `src/pages/api/rooms/[token].ts`, `src/pages/room/[token].tsx`, `src/context/App.tsx`, `src/components/ActiveWindowsPanel/index.tsx`, `src/components/Wrapper/index.tsx`, `src/components/SpotlightSearch/actions.tsx`, `scripts/apply-world-rooms-migration.mjs`, `tests/world-snapshot.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 4/4 Playwright (`tests/world-snapshot.spec.ts`). `typecheck:shell` still fails on pre-existing unused wallpaper scene bindings, not this change.
 
 ### Entry 343 - Mobile chat no longer jumps up when a reply starts (TSK-280)
 - **Date:** 2026-08-21

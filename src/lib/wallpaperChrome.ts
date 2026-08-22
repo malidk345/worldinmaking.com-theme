@@ -8,12 +8,16 @@ export type WallpaperName =
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
-export const DEFAULT_WALLPAPER: WallpaperName = 'draft-world'
+export const DEFAULT_WALLPAPER: WallpaperName = 'keyboard-mint'
+export const DEFAULT_REDUCE_TRANSPARENCY = true
+/** Bump when product appearance defaults change so existing local settings pick them up once. */
+export const SITE_APPEARANCE_DEFAULTS_VERSION = 2
+const PREVIOUS_DEFAULT_WALLPAPER: WallpaperName = 'draft-world'
 
 export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
+    'keyboard-mint',
     'cobalt',
     'hogzilla',
-    'keyboard-mint',
     'draft-world',
     'rain-embers',
     'plaza-bang',
@@ -44,6 +48,31 @@ export function resolveKeptWallpaper(wallpaper: string | null | undefined): Wall
     return KEPT_WALLPAPERS.includes(wallpaper as WallpaperName)
         ? (wallpaper as WallpaperName)
         : DEFAULT_WALLPAPER
+}
+
+export function migrateAppearanceSettings<T extends {
+    wallpaper?: string
+    reduceTransparency?: boolean
+    siteDefaultsVersion?: number
+}>(settings: T): T {
+    const version = Number(settings.siteDefaultsVersion || 0)
+    if (version >= SITE_APPEARANCE_DEFAULTS_VERSION) {
+        return {
+            ...settings,
+            wallpaper: resolveKeptWallpaper(settings.wallpaper),
+        }
+    }
+    const raw = settings.wallpaper
+    const wallpaper =
+        !raw || raw === PREVIOUS_DEFAULT_WALLPAPER || !KEPT_WALLPAPERS.includes(raw as WallpaperName)
+            ? DEFAULT_WALLPAPER
+            : resolveKeptWallpaper(raw)
+    return {
+        ...settings,
+        wallpaper,
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
+        siteDefaultsVersion: SITE_APPEARANCE_DEFAULTS_VERSION,
+    }
 }
 
 export function getWallpaperThemeColor(wallpaper: string, mode: ResolvedTheme): string {

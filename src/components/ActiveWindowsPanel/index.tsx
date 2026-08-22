@@ -15,10 +15,11 @@ export default function ActiveWindowsPanel() {
         bringToFront,
         closeWindow,
         animateClosingAllWindows,
-        desktopParams,
+        closeAllWindows,
         shareableDesktopURL,
         desktopCopied,
         copyDesktopParams,
+        visitingRoomToken,
     } = useApp()
 
     const closeActiveWindowsPanel = () => {
@@ -64,8 +65,10 @@ export default function ActiveWindowsPanel() {
                 windows.length > 0 && (
                     <OSButton
                         size="sm"
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation()
                             animateClosingAllWindows()
+                            closeAllWindows()
                             closeActiveWindowsPanel()
                         }}
                     >
@@ -75,8 +78,8 @@ export default function ActiveWindowsPanel() {
             }
             width="w-80"
         >
-            <div className="h-full flex flex-col">
-                <ScrollArea className="p-2">
+            <div className="h-full min-h-0 flex flex-col">
+                <ScrollArea className="p-2 flex-1 min-h-0">
                     <div className="flex flex-col gap-1">
                         {windows.map((window) => (
                             <OSButton
@@ -105,23 +108,26 @@ export default function ActiveWindowsPanel() {
                         {totalWindows === 0 && <div className="text-center text-secondary p-4">No active windows</div>}
                     </div>
                 </ScrollArea>
-                {totalWindows > 0 && (
-                    <div className="p-4 mt-auto border-t border-primary">
-                        <h3 className="text-sm font-semibold m-0 mb-0.5">Share your windows</h3>
+                <div className="p-4 mt-auto shrink-0 border-t border-primary">
+                        <h3 className="text-sm font-semibold m-0 mb-0.5">
+                            {visitingRoomToken ? 'This shared room' : 'Share this room'}
+                        </h3>
                         <p className="text-xs text-secondary m-0 mb-2 leading-relaxed">
-                            Copy the URL to share your open windows & layout.
+                            {visitingRoomToken
+                                ? 'Anyone with the link sees this wallpaper, windows, and pins. Unlisted — not on a public list.'
+                                : 'Creates an unlisted link with your wallpaper, open windows, and desktop pins.'}
                         </p>
                         <form onSubmit={handleCopyDesktopParams} className="flex gap-1">
                             <input
                                 disabled
                                 type="url"
                                 value={shareableDesktopURL}
+                                placeholder="Copy to create a room link"
                                 className="text-xs font-mono border border-primary rounded-md flex-grow bg-white dark:bg-dark"
                             />
                             <OSButton
                                 type="submit"
                                 size="sm"
-                                disabled={!desktopParams}
                                 className="shrink-0 !w-[34px] border border-primary rounded-md"
                             >
                                 {desktopCopied ? (
@@ -131,7 +137,7 @@ export default function ActiveWindowsPanel() {
                                 )}
                             </OSButton>
                         </form>
-                        <p className="text-xs text-secondary m-0 mt-2 flex items-center gap-1">
+                        <p className="hidden md:flex text-xs text-secondary m-0 mt-2 items-center gap-1">
                             <span>Tip: Press</span>
                             <div className="flex items-center gap-1">
                                 <KeyboardShortcut text="Shift" size="sm" />
@@ -140,7 +146,6 @@ export default function ActiveWindowsPanel() {
                             <span>to copy instantly.</span>
                         </p>
                     </div>
-                )}
             </div>
         </SidePanel>
     )

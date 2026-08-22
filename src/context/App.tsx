@@ -26,7 +26,23 @@ import { installSqueakFetchGuard } from 'lib/squeak'
 import { isForumPath } from 'components/AppWindow/WindowRouter'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
-import { applyWallpaperBrowserChrome, resolveKeptWallpaper } from '../lib/wallpaperChrome'
+import {
+    applyWallpaperBrowserChrome,
+    DEFAULT_REDUCE_TRANSPARENCY,
+    DEFAULT_WALLPAPER,
+    migrateAppearanceSettings,
+    resolveKeptWallpaper,
+} from '../lib/wallpaperChrome'
+import { getSessionAccessToken } from 'lib/wim-auth'
+import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
+import { createWorldRoom } from '../lib/world-account'
+import {
+    exitVisitingRoom,
+    isVisitingRoom,
+    readPinnedItems,
+    readVisitingRoomToken,
+    type WorldSnapshot,
+} from '../lib/world-snapshot'
 
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
@@ -125,6 +141,8 @@ interface AppContextType {
     copyDesktopParams: () => void
     desktopCopied: boolean
     shareableDesktopURL: string
+    visitingRoomToken: string | null
+    exitSharedRoom: () => void
     windowsInView: AppWindow[]
     searchOpen: boolean
     setSearchOpen: (isOpen: boolean) => void
@@ -267,8 +285,8 @@ export const Context = createContext<AppContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        wallpaper: 'draft-world',
-        reduceTransparency: false,
+        wallpaper: DEFAULT_WALLPAPER,
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
         performanceBoost: false,
     },
@@ -295,6 +313,8 @@ export const Context = createContext<AppContextType>({
     copyDesktopParams: () => {},
     desktopCopied: false,
     shareableDesktopURL: '',
+    visitingRoomToken: null,
+    exitSharedRoom: () => {},
     windowsInView: [],
     searchOpen: false,
     setSearchOpen: () => {},
@@ -358,8 +378,8 @@ export const SettingsContext = createContext<AppSettingsContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        wallpaper: 'draft-world',
-        reduceTransparency: false,
+        wallpaper: DEFAULT_WALLPAPER,
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
         performanceBoost: false,
     },
@@ -1498,6 +1518,7 @@ export interface SiteSettings {
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
     performanceBoost?: boolean
+    siteDefaultsVersion?: number
 }
 
 const isLabel = (item: any) => !item?.url && item?.name
@@ -1505,21 +1526,37 @@ const isLabel = (item: any) => !item?.url && item?.name
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 const getInitialSiteSettings = (): SiteSettings => {
-    const siteSettings: SiteSettings = {
+    let stored: Partial<SiteSettings> = {}
+    try {
+        stored =
+            typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteSettings') || '{}') : {}
+    } catch {
+        stored = {}
+    }
+
+    const siteSettings: SiteSettings = migrateAppearanceSettings({
         colorMode: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         theme: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         skinMode: 'modern',
-        wallpaper: 'draft-world',
+        wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,
-        reduceTransparency: false,
-        ...(typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteSettings') || '{}') : {}),
-    }
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
+        ...stored,
+    })
 
     siteSettings.wallpaper = resolveKeptWallpaper(siteSettings.wallpaper)
 
     // The classic skin has been retired; force anyone with it saved back to modern
     siteSettings.skinMode = 'modern'
+
+    if (typeof window !== 'undefined' && siteSettings.siteDefaultsVersion !== stored.siteDefaultsVersion) {
+        try {
+            localStorage.setItem('siteSettings', JSON.stringify(siteSettings))
+        } catch {
+            /* ignore */
+        }
+    }
 
     return siteSettings
 }
@@ -1581,14 +1618,18 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         colorMode: 'light',
         theme: 'light',
         skinMode: 'modern',
-        wallpaper: 'draft-world',
+        wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,
-        reduceTransparency: false,
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
     })
     const [taskbarHeight, setTaskbarHeight] = useState(59)
     const [lastClickedElementRect, setLastClickedElementRect] = useState<{ x: number; y: number } | null>(null)
     const [desktopCopied, setDesktopCopied] = useState(false)
+    const [pinEpoch, setPinEpoch] = useState(0)
+    const [visitingRoomToken, setVisitingRoomToken] = useState<string | null>(null)
+    const [lastRoomURL, setLastRoomURL] = useState('')
+    const copyingRoomRef = useRef(false)
     const [windowsInView, setWindowsInView] = useState<AppWindow[]>([])
     // Stable ref mirror of windowsInView so consumers that only need the latest value
     // lazily can read it without subscribing to the volatile context and re-rendering on every provider render.
@@ -1666,6 +1707,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     useEffect(() => {
         if (!hasMounted || isMobile || layoutRestoredRef.current) return
+        if (isVisitingRoom()) {
+            layoutRestoredRef.current = true
+            return
+        }
 
         try {
             const saved = JSON.parse(localStorage.getItem('worldinmaking-window-layout:v1') || '{}')
@@ -1702,7 +1747,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }, [hasMounted, isMobile])
 
     useEffect(() => {
-        if (!layoutRestoredRef.current || isMobile) return
+        if (!layoutRestoredRef.current || isMobile || isVisitingRoom()) return
 
         const layout = windows.reduce<Record<string, unknown>>((result, win) => {
             if (win.path.startsWith('/')) {
@@ -1775,10 +1820,141 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }, [windows, taskbarHeight, location, isSSR])
 
     const shareableDesktopURL = useMemo(() => {
-        if (isSSR || !desktopParams) return ''
-        const url = `${location.origin}${desktopParams}`
-        return url
-    }, [location, desktopParams, isSSR])
+        if (isSSR) return ''
+        const origin =
+            (typeof window !== 'undefined' && window.location.origin) ||
+            (typeof location?.origin === 'string' ? location.origin : '')
+        if (visitingRoomToken) return `${origin}/room/${visitingRoomToken}`
+        if (lastRoomURL) return lastRoomURL
+        return ''
+    }, [location, isSSR, visitingRoomToken, lastRoomURL])
+
+    const collectSnapshot = useCallback((): WorldSnapshot => {
+        const innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1280
+        const innerHeight = typeof window !== 'undefined' ? window.innerHeight : 800
+        const heightBudget = Math.max(1, innerHeight - taskbarHeight)
+        const savedWindows = [...windows]
+            .filter((win) => !win.minimized && win.path.startsWith('/'))
+            .sort((a, b) => a.zIndex - b.zIndex)
+            .slice(0, 12)
+            .map((win) => ({
+                path: win.path.slice(0, 200),
+                position: {
+                    x: (win.position.x / innerWidth) * 100,
+                    y: (win.position.y / heightBudget) * 100,
+                },
+                size: {
+                    width: (win.size.width / innerWidth) * 100,
+                    height: (win.size.height / innerHeight) * 100,
+                },
+                zIndex: win.zIndex,
+            }))
+        return {
+            v: 1,
+            wallpaper: resolveKeptWallpaper(siteSettings.wallpaper),
+            colorMode: siteSettings.colorMode,
+            reduceTransparency: !!siteSettings.reduceTransparency,
+            clickBehavior: siteSettings.clickBehavior === 'single' ? 'single' : 'double',
+            windows: savedWindows,
+            pinnedItems: readPinnedItems(),
+        }
+    }, [windows, siteSettings, taskbarHeight])
+
+    const applySnapshot = useCallback(
+        (snapshot: WorldSnapshot, opts?: { reopenWindows?: boolean }) => {
+            const visiting = isVisitingRoom()
+            const next: SiteSettings = {
+                ...siteSettings,
+                wallpaper: snapshot.wallpaper,
+                colorMode: snapshot.colorMode,
+                reduceTransparency: !!snapshot.reduceTransparency,
+                clickBehavior: snapshot.clickBehavior,
+            }
+            setSiteSettings(next)
+            if (!visiting) {
+                try {
+                    localStorage.setItem('siteSettings', JSON.stringify(next))
+                } catch {
+                    /* ignore */
+                }
+            }
+            if (snapshot.colorMode === 'dark' || snapshot.colorMode === 'light') {
+                try {
+                    window.__setPreferredTheme?.(snapshot.colorMode)
+                } catch {
+                    /* ignore */
+                }
+            }
+            if (visiting) {
+                setVisitingRoomToken(readVisitingRoomToken() || null)
+            }
+            if (!opts?.reopenWindows || snapshot.windows.length === 0) return
+
+            const innerWidth = window.innerWidth
+            const innerHeight = window.innerHeight
+            const isMobileClient =
+                innerWidth < 768 ||
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            const bounds = constraintsRef.current?.getBoundingClientRect()
+            const fullW = bounds ? bounds.width : innerWidth - 16
+            const fullH = bounds ? bounds.height : innerHeight - taskbarHeight - 16
+            layoutRestoredRef.current = true
+            setWindows(
+                snapshot.windows.map((win, i) => {
+                    const size = {
+                        width: (win.size.width / 100) * innerWidth,
+                        height: (win.size.height / 100) * innerHeight,
+                    }
+                    const position = {
+                        x: (win.position.x / 100) * innerWidth,
+                        y: (win.position.y / 100) * (innerHeight - taskbarHeight),
+                    }
+                    const label = win.path.split('/').filter(Boolean).pop() || 'Window'
+                    return {
+                        key: `${win.path}#${i}`,
+                        path: win.path,
+                        title: label,
+                        meta: { title: label },
+                        size: isMobileClient ? { width: fullW, height: fullH } : size,
+                        position: isMobileClient ? { x: 0, y: 0 } : position,
+                        previousSize: size,
+                        previousPosition: position,
+                        sizeConstraints: {
+                            min: { width: 280, height: 180 },
+                            max: { width: fullW, height: fullH },
+                        },
+                        fixedSize: false,
+                        element: null,
+                        zIndex: win.zIndex || i + 1,
+                        minimized: false,
+                        windowed: true,
+                        expanded: isMobileClient,
+                        snapped: false as const,
+                        fromHistory: false,
+                        props: { path: win.path },
+                    }
+                })
+            )
+        },
+        [siteSettings, taskbarHeight]
+    )
+
+    const worldEpoch = `${siteSettings.wallpaper}|${siteSettings.colorMode}|${
+        siteSettings.reduceTransparency ? '1' : '0'
+    }|${siteSettings.clickBehavior || 'double'}|${desktopParams || ''}|${pinEpoch}`
+
+    useWorldAccountSync({
+        worldEpoch,
+        collectSnapshot,
+        applySnapshot,
+    })
+
+    useEffect(() => {
+        setVisitingRoomToken(readVisitingRoomToken() || null)
+        const bump = () => setPinEpoch((n) => n + 1)
+        window.addEventListener('wimDesktopPinnedChanged', bump)
+        return () => window.removeEventListener('wimDesktopPinnedChanged', bump)
+    }, [])
 
     const injectDynamicChildren = useCallback((menu: Menu) => {
         return menu?.map((item) => {
@@ -2512,24 +2688,62 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     const closeAllWindows = () => {
         setWindows([])
+        setClosingAllWindowsAnimation(false)
     }
 
     const copyDesktopParams = () => {
-        if (!desktopParams) return
-        try {
-            navigator.clipboard.writeText(shareableDesktopURL)
-            setDesktopCopied(true)
-            setTimeout(() => {
-                setDesktopCopied(false)
-            }, 2000)
-        } catch (error) {
-            console.error(error)
-            addToast({
-                error: true,
-                description: 'Failed to copy desktop link to clipboard',
-                duration: 2000,
-            })
-        }
+        if (copyingRoomRef.current) return
+        copyingRoomRef.current = true
+        void (async () => {
+            try {
+                const visiting = readVisitingRoomToken()
+                const origin =
+                    (typeof window !== 'undefined' && window.location.origin) ||
+                    (typeof location?.origin === 'string' ? location.origin : '')
+                let url = visiting ? `${origin}/room/${visiting}` : lastRoomURL
+                if (!visiting) {
+                    const jwt = await getSessionAccessToken()
+                    const created = await createWorldRoom({
+                        snapshot: collectSnapshot(),
+                        title: 'Shared room',
+                        jwt,
+                    })
+                    if ('error' in created) {
+                        addToast({
+                            error: true,
+                            description:
+                                created.status === 503
+                                    ? 'Rooms are not ready yet. Apply the user_worlds migration.'
+                                    : created.error,
+                            duration: 2800,
+                        })
+                        return
+                    }
+                    url = `${origin}${created.urlPath}`
+                    setLastRoomURL(url)
+                }
+                await navigator.clipboard.writeText(url)
+                setDesktopCopied(true)
+                window.setTimeout(() => setDesktopCopied(false), 2000)
+                addToast({
+                    description: 'Room link copied',
+                    duration: 2000,
+                })
+            } catch (error) {
+                console.error(error)
+                addToast({
+                    error: true,
+                    description: 'Failed to copy room link',
+                    duration: 2000,
+                })
+            } finally {
+                copyingRoomRef.current = false
+            }
+        })()
+    }
+
+    const exitSharedRoom = () => {
+        exitVisitingRoom()
     }
 
     const updateTaskbarHeight = () => {
@@ -2706,12 +2920,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
             if (e.shiftKey && e.key === 'C') {
                 e.preventDefault()
-                if (!desktopParams) return
                 copyDesktopParams()
-                addToast({
-                    description: 'Desktop link copied to clipboard',
-                    duration: 2000,
-                })
             }
         }
 
@@ -3114,6 +3323,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                                 copyDesktopParams,
                                 desktopCopied,
                                 shareableDesktopURL,
+                                visitingRoomToken,
+                                exitSharedRoom,
                                 windowsInView,
                                 searchOpen,
                                 setSearchOpen,

@@ -10,7 +10,7 @@
     var preferredTheme
     var darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     var colorMode = 'light'
-    var wallpaper = 'draft-world'
+    var wallpaper = 'keyboard-mint'
     var THEME_COLORS = {
         cobalt: { light: '#2F7ED4', dark: '#1E5DAD' },
         hogzilla: { light: '#E3E1E4', dark: '#141E40' },
@@ -19,12 +19,12 @@
         'rain-embers': { light: '#1A3350', dark: '#0F2236' },
         'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },
     }
-    var KEPT = ['cobalt', 'hogzilla', 'keyboard-mint', 'draft-world', 'rain-embers', 'plaza-bang']
+    var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang']
 
     function applyBrowserChrome() {
         var head = document.head
         if (!head) return
-        var pair = THEME_COLORS[wallpaper] || THEME_COLORS['draft-world']
+        var pair = THEME_COLORS[wallpaper] || THEME_COLORS['keyboard-mint']
         var theme = window.__theme === 'dark' ? 'dark' : 'light'
         var existing = head.querySelectorAll('meta[name="theme-color"]')
         for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i])
@@ -84,13 +84,22 @@
         // The classic skin has been retired; always render the modern skin
         document.body.setAttribute('data-skin', 'modern')
         var siteSettings = JSON.parse(localStorage.getItem('siteSettings') || '{}')
-        wallpaper = siteSettings.wallpaper || 'draft-world'
-        if (KEPT.indexOf(wallpaper) === -1) wallpaper = 'draft-world'
+        var version = Number(siteSettings.siteDefaultsVersion || 0)
+        if (version < 2) {
+            if (!siteSettings.wallpaper || siteSettings.wallpaper === 'draft-world' || KEPT.indexOf(siteSettings.wallpaper) === -1) {
+                siteSettings.wallpaper = 'keyboard-mint'
+            }
+            siteSettings.reduceTransparency = true
+            siteSettings.siteDefaultsVersion = 2
+            try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (e) {}
+        }
+        wallpaper = siteSettings.wallpaper || 'keyboard-mint'
+        if (KEPT.indexOf(wallpaper) === -1) wallpaper = 'keyboard-mint'
         colorMode = siteSettings.colorMode || preferredTheme || 'light'
         document.body.setAttribute('data-wallpaper', wallpaper)
         document.body.setAttribute(
             'data-reduce-transparency',
-            siteSettings.reduceTransparency ? 'true' : 'false'
+            siteSettings.reduceTransparency === false ? 'false' : 'true'
         )
     } catch (err) {}
 

@@ -29,6 +29,7 @@ export default function SidePanel({
     const panelRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        if (!isOpen) return
         const handleClickOutside = (event: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
                 onClose()
@@ -40,7 +41,7 @@ export default function SidePanel({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [])
+    }, [isOpen, onClose])
 
     return (
         <Portal.Root>
@@ -59,7 +60,7 @@ export default function SidePanel({
                                 translateX: '100%',
                             }}
                             transition={{ duration: 0.3, type: 'tween' }}
-                            className={`fixed top-[calc(37px+1rem)] right-4 h-[calc(100vh-2rem-37px)] ${width} bg-primary border border-primary rounded shadow-xl z-50 text-primary ${className}`}
+                            className={`fixed top-[calc(37px+1rem)] right-4 h-[calc(var(--vv-height,100svh)-2rem-37px-env(safe-area-inset-bottom,0px))] max-h-[calc(100svh-2rem-37px-env(safe-area-inset-bottom,0px))] ${width} bg-primary border border-primary rounded shadow-xl z-[20050] text-primary ${className}`}
                         >
                             <div className="h-full flex flex-col">
                                 {title && (
