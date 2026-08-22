@@ -1,8 +1,8 @@
 {
-  "name": "posthog.com",
-  "description": "Official PostHog website.",
+  "name": "worldinmaking.com",
+  "description": "WorldInMaking web platform.",
   "version": "1.0.0",
-  "author": "PostHog",
+  "author": "WorldInMaking",
   "license": "MIT",
   "engines": {
     "node": "22.x"
