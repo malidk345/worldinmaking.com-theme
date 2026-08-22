@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
-import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
+import { fetchWithCache, clearSupabaseCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
 import { resolveUserOrPhilosopherAvatar } from './user-portraits'
 
-export { supabase, fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY }
+export { supabase, fetchWithCache, clearSupabaseCache, SUPABASE_URL, SUPABASE_ANON_KEY }
 
 export interface SupabaseCommunityPost {
     id: number | string
@@ -41,10 +41,11 @@ export async function fetchSupabaseCommunityPosts(
     options?: { authorId?: string; limit?: number }
 ): Promise<SupabaseCommunityPost[]> {
     let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,is_pinned,is_archived,resolved_reply_id,profiles!community_posts_author_id_fkey(id,username,avatar_url),community_post_votes(user_id,vote)&order=created_at.desc`
+    const isCleanForumSlug = !slug || /^\/?(?:questions|forum|community|desktop)(?:\/|$)/i.test(slug.trim())
     if (postId || (slug && !isNaN(Number(slug)))) {
         const idToUse = postId || slug
         url += `&id=eq.${idToUse}`
-    } else if (slug) {
+    } else if (slug && !isCleanForumSlug) {
         const words = slug.replace(/[^a-zA-Z0-9\s-]/g, '').split(/[-_\s]+/).filter((w) => w.length > 2).slice(0, 3).join('%')
         url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(words)}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
@@ -71,8 +72,13 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
         resolveUserOrPhilosopherAvatar(profileObj?.username, profileObj?.avatar_url) ||
         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
 
-    const isComment = post.title?.startsWith('comment_')
-    const displayTitle = isComment ? '' : (post.title || 'Community Discussion')
+    const isForumCommentPrefix =
+        post.title?.startsWith('comment_/questions_') ||
+        post.title?.startsWith('comment_/forum_') ||
+        post.title?.startsWith('comment_/community_')
+    const rawTitle = post.title ? post.title.replace(/^comment_\/(?:questions|forum|community)_/, '') : ''
+    const isComment = post.title?.startsWith('comment_') && !isForumCommentPrefix
+    const displayTitle = isComment ? '' : (rawTitle || 'Community Discussion')
 
     const votes = Array.isArray((post as any).community_post_votes) ? (post as any).community_post_votes : []
     const upvoteProfiles = votes
@@ -175,15 +181,19 @@ export async function postSupabaseCommunityQuestion(
             console.warn('[community] post requires signed-in Supabase session')
             return { ok: false, error: 'Not signed in' }
         }
+        const trimmedSlug = slug?.trim()
+        const isArticleComment = Boolean(
+            trimmedSlug && !/^\/?(?:questions|forum|community|desktop)(?:\/|$)/i.test(trimmedSlug)
+        )
         const payload: Record<string, unknown> = {
-            title: slug ? `comment_${slug}_${title}` : title,
+            title: isArticleComment ? `comment_${trimmedSlug}_${title}` : title,
             content,
             author_id: auth.userId,
             channel_id: channelId,
             created_at: new Date().toISOString(),
         }
-        if (slug) {
-            payload.post_slug = slug
+        if (isArticleComment) {
+            payload.post_slug = trimmedSlug
         }
         const headers = { ...auth.headers, Prefer: 'return=representation' }
         const res = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
@@ -198,6 +208,7 @@ export async function postSupabaseCommunityQuestion(
         }
         const rows = await res.json()
         const row = Array.isArray(rows) ? rows[0] : rows
+        clearSupabaseCache()
         if (row?.id) void requestForumBotFollowUp(row.id)
         return { ok: true, id: row?.id }
     } catch (e) {
@@ -234,6 +245,7 @@ export async function postSupabaseCommunityReply(
         }
         const rows = await res.json()
         const row = Array.isArray(rows) ? rows[0] : rows
+        clearSupabaseCache()
         if (row?.id) {
             const { persistForumMentions } = await import('./forum-mentions')
             await persistForumMentions({

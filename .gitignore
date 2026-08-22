@@ -50,3 +50,4 @@ pages-build-log.txt
 .tsbuildinfo*
 playwright-report/
 test-results/
+scratch/

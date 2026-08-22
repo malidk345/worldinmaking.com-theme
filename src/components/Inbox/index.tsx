@@ -444,7 +444,6 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
                     }
                 }}
                 initialView="question-form"
-                slug="/questions"
             />
         </div>
     )

@@ -26,7 +26,6 @@ export default function PostEditorWindow(): JSX.Element {
             <div className="bg-primary/5 p-6 rounded-lg border border-border-primary shadow-sm">
                 <QuestionForm
                     showTopicSelector={true}
-                    slug={typeof window !== 'undefined' ? window.location.pathname : ''}
                     initialView="question-form"
                     formType="question"
                     onSubmit={handleSubmit}

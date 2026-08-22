@@ -1,5 +1,7 @@
 import React, { useContext, useState } from 'react'
 import { useUser } from 'hooks/useUser'
+import { getSessionAccessToken } from 'lib/wim-auth'
+import { clearSupabaseCache } from 'lib/supabase-rest'
 import RichText from './RichText'
 import { useFormik } from 'formik'
 import transformValues from '../util/transformValues'
@@ -67,25 +69,27 @@ export default function EditWrapper({
             handleSetEditing(false)
 
             try {
-                await fetch(
-                    `${(process.env.NEXT_PUBLIC_SQUEAK_API_HOST || '')}/api/${
-                        type === 'reply' ? 'replies' : 'questions'
-                    }/${contentID}`,
-                    {
-                        method: 'PUT',
-                        headers: {
-                            'content-type': 'application/json',
-                            Authorization: `Bearer ${jwt}`,
-                        },
-                        body: JSON.stringify({
-                            data: {
-                                body: transformedValues.body,
-                            },
-                        }),
-                    }
-                )
+                const token = (await getSessionAccessToken()) || (await getJwt())
+                const res = await fetch('/api/forum/edit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({
+                        type,
+                        id: contentID,
+                        content: transformedValues.body,
+                    }),
+                })
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}))
+                    throw new Error(err.error || 'Failed to edit')
+                }
+                clearSupabaseCache()
                 await onSubmit()
-            } catch {
+            } catch (e) {
+                console.error('[EditWrapper] edit failed:', e)
                 if (mutate) await mutate()
             }
             setLoading(false)

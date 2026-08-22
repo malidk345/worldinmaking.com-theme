@@ -75,7 +75,9 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     const load = useCallback(async () => {
         setIsLoading(true)
         try {
-            const cleanSlug = options?.slug?.replace(/^\/posts\/?/, '').replace(/^\/questions\/?/, '')
+            const cleanSlug = options?.slug
+                ? options.slug.replace(/^\/posts\/?/, '').replace(/^\/questions\/?/, '').replace(/^\/forum\/?/, '').replace(/^\/community\/?/, '').replace(/^\/+/, '') || undefined
+                : undefined
             const authorId = options?.profileId != null ? String(options.profileId) : undefined
             const posts = await fetchSupabaseCommunityPosts(cleanSlug, undefined, {
                 authorId,

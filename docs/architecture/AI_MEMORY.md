@@ -246,7 +246,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-227` | Stream 3 / 5 | Compact WimInlinePill & Review Action Bar Sizing across Desktop & Mobile | `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-228` | Stream 3 / 5 | Mobile Long-Press (Basılı Tutma) Block Action Bar & Touch Reordering (Move Up/Down, Duplicate, Delete, Comment, AI) | `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-229` | Stream 3 / 5 | Unify Slash (/) and 3-Dot Block Menus with Site Profile Menu UI & Compact Scrollable Viewport | `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
-| `TSK-230` | Stream 3 / 5 | Pure Image Block Rendering with Edit Dialog (IconPencil) & Isolated Italic Caption Screen | `WimWritingBlocks.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-231` | Stream 4 / 2 | Fix Forum Topic Creation Missing from Listing (Inappropriate comment_ prefix, cache invalidation, slug handling) | `src/lib/supabaseCommunity.ts`, `src/components/Inbox/index.tsx`, `src/hooks/useQuestions.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-22 |
+| `TSK-232` | Stream 4 / 2 | Connect Forum Post & Reply Editing to Supabase (`/api/forum/edit`, `EditWrapper`, author id parity) | `src/pages/api/forum/edit.ts`, `src/components/Squeak/components/EditWrapper.tsx`, `Question.tsx`, `Reply.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-22 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -399,6 +400,27 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 353 - Connect Forum Post & Reply Editing to Supabase (TSK-232)
+- **Date:** 2026-08-22
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Enabled fully functional editing for forum posts (questions) and replies:
+  1. **API Endpoint (`src/pages/api/forum/edit.ts`):** Created secure edge API endpoint supporting post and reply edits. Verifies Supabase auth tokens, checks author ownership (`post.author_id === user.id`) or staff permissions, updates `content` and `updated_at` in Supabase `community_posts` / `community_replies`.
+  2. **EditWrapper Migration (`src/components/Squeak/components/EditWrapper.tsx`):** Replaced legacy Squeak/Strapi PUT requests with `/api/forum/edit` calls accompanied by live Supabase session JWT and automatic `clearSupabaseCache()` cache invalidation.
+  3. **Author Ownership Equality:** Hardened `isQuestionAuthor` and `isReplyAuthor` in `Question.tsx` and `Reply.tsx` to handle string UUID comparisons between user session ID, profile ID, and database author IDs so the edit pencil icon appears reliably for authors.
+- **Modified Files:** `src/pages/api/forum/edit.ts`, `src/components/Squeak/components/EditWrapper.tsx`, `src/components/Squeak/components/Question.tsx`, `src/components/Squeak/components/Reply.tsx`, `docs/architecture/AI_MEMORY.md`
+
+### Entry 352 - Fix Forum Topic Creation Missing from Listing & Detail Title Spacing (TSK-231)
+- **Date:** 2026-08-22
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed forum topics not appearing in the forum/community discussion list after posting and refined thread detail typography:
+  1. **Root Cause Diagnosis:** When creating a question from the forum window (`AskAQuestion` in `src/components/Inbox/index.tsx`), `slug="/questions"` was passed. `postSupabaseCommunityQuestion` erroneously treated any non-empty `slug` as a blog article comment and saved the title to Supabase as `comment_/questions_<title>`. In turn, the main forum queries filter out `title=not.ilike.comment_*`, which permanently hid new forum topics from the list.
+  2. **Slug Sanitization & Logic Fix:** Updated `postSupabaseCommunityQuestion`, `fetchSupabaseCommunityPosts`, and `useQuestions` to treat `/questions`, `/forum`, `/community`, and `/desktop` as top-level forum routes (not article comments), saving clean titles.
+  3. **In-Memory REST Cache Invalidation:** Added `clearSupabaseCache()` calls on successful question/reply mutations in `src/lib/supabaseCommunity.ts` so that cached GET lists immediately refresh without waiting 60s.
+  4. **Existing Data Migration:** Cleaned up existing affected database rows (e.g. post ID 274 `engel’s note`) and added resilient fallback in `formatSupabaseCommunityToStrapi` to strip legacy `comment_/questions_` prefixes.
+  5. **Forum Detail Title Spacing:** Added a subtle `!mt-2` top margin to the forum thread subject heading (`<h3>`) in `src/components/Squeak/components/Question.tsx` to give clean breathing room between the author profile row and the thread title exclusively on the entry content detail view.
+- **Modified Files:** `src/lib/supabaseCommunity.ts`, `src/components/Inbox/index.tsx`, `src/components/Community/PostEditorWindow.tsx`, `src/hooks/useQuestions.tsx`, `src/components/Squeak/components/Question.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** Verified via Supabase REST query that post 274 appears immediately at the top of the forum discussion list and title spacing renders with 8px margin from profile line.
 
 ### Entry 351 - Google sign-in no longer flashes an auth window (TSK-288)
 - **Date:** 2026-08-22

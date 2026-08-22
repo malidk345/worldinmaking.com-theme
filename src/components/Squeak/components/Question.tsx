@@ -232,8 +232,11 @@ export function Question(props: QuestionProps) {
     const archived = !!questionData?.attributes.archived
     const pinned = !!questionData?.attributes.pinned
     const slugs = questionData?.attributes?.slugs
-    const isQuestionAuthor = questionData?.attributes.profile?.data?.id === user?.profile?.id
     const publishedAt = questionData?.attributes?.publishedAt
+    const authorId = String(questionData?.attributes?.profile?.data?.id || '')
+    const isQuestionAuthor =
+        Boolean((user?.profile?.id && authorId === String(user.profile.id)) ||
+        (user?.id && authorId === String(user.id)))
 
     return (
         <CurrentQuestionContext.Provider
@@ -346,7 +349,7 @@ export function Question(props: QuestionProps) {
                             }`}
                         >
                             {questionData.attributes.subject && (
-                                <h3 className="text-base font-semibold !m-0 pb-1 leading-5 break-words">
+                                <h3 className="text-base font-semibold !mt-2 !mb-0 pb-1 leading-5 break-words">
                                     <Link href={`/questions/${questionData.attributes.permalink}`}
                                         className="!no-underline hover:!underline font-semibold"
                                     >

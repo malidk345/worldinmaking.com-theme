@@ -277,9 +277,14 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
     const toastCreatedAtRef = useRef<number | null>(null)
     const { addToast, removeToast } = useToast()
     const { user } = useUser()
-    const isModerator = user?.role?.type === 'moderator'
-    const isAuthor = user?.profile?.id === questionProfile?.data?.id
-    const isReplyAuthor = user?.profile?.id === profile?.data?.id
+    const replyAuthorId = String(profile?.data?.id || '')
+    const questionAuthorId = String(questionProfile?.data?.id || '')
+    const isAuthor =
+        Boolean((user?.profile?.id && questionAuthorId === String(user.profile.id)) ||
+        (user?.id && questionAuthorId === String(user.id)))
+    const isReplyAuthor =
+        Boolean((user?.profile?.id && replyAuthorId === String(user.profile.id)) ||
+        (user?.id && replyAuthorId === String(user.id)))
     const isTeamMember = profile?.data?.attributes?.teams?.data?.length > 0
     const resolvable =
         !resolved &&
