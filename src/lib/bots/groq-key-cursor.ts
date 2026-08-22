@@ -84,10 +84,9 @@ export function nextFamilyKeyStart(family: string, keyCount: number): number {
     } else if (memoryCursors.has(family)) {
         current = memoryCursors.get(family) || 0
     } else {
-        // Cloudflare isolates have no shared fs. Mix wall-clock with a
-        // per-isolate salt so concurrent cold starts walk different keys,
-        // then memory advances for later requests on the same isolate.
-        current = (Math.floor(Date.now() / 3000) + isolateSalt) % keyCount
+        // Cloudflare isolates have no shared fs. Pick a random initial start index
+        // so concurrent edge cold starts distribute evenly across all keys.
+        current = Math.floor(Math.random() * keyCount)
     }
     const start = ((current % keyCount) + keyCount) % keyCount
     const next = (start + 1) % keyCount

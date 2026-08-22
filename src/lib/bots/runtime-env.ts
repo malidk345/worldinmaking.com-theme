@@ -142,14 +142,19 @@ export function flattenEnvBindings(source: unknown): EnvStore {
 function getCfEnv(): EnvStore {
     try {
         const ctx = getCfRequestContext()
-        return flattenEnvBindings(ctx?.env)
+        const g = typeof globalThis !== 'undefined' ? (globalThis as any) : {}
+        const cfEnvObj = ctx?.env || g.__CF_PAGES_ENV__ || g.__env__ || g.env
+        return flattenEnvBindings(cfEnvObj)
     } catch {
         return {}
     }
 }
 
 export function getRuntimeEnv(): EnvStore {
-    const base = flattenEnvBindings(process.env)
+    const g = typeof globalThis !== 'undefined' ? (globalThis as any) : {}
+    const procEnv = typeof process !== 'undefined' ? process.env : undefined
+    const globalProcEnv = g.process?.env
+    const base = flattenEnvBindings(procEnv || globalProcEnv)
     const cfEnv = getCfEnv()
     return { ...base, ...cfEnv }
 }

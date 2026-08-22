@@ -112,22 +112,7 @@ export interface GenerateFailure {
     latencyMs: number
 }
 
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']
-
-/**
- * Provider-family cooldown registry. When a family (groq/gemini)
- * returns a 429/rate-limit/quota error across all of its keys, it's marked "cooling" for
- * 60s and pushed to the end of the rotation (still tried as a last resort, never dropped).
- * Resets when the Cloudflare isolate recycles — acceptable, same limitation as rate-limit.ts.
- */
-const PROVIDER_COOLDOWNS = new Map<string, number>()
-const COOLDOWN_MS = 60_000
-const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
-const GATEWAY_TOTAL_TIMEOUT_MS = 45_000
-/** Leave the other family enough time instead of burning the whole budget on Qwen keys. */
-const FAILOVER_RESERVE_MS = 16_000
-/** Same model on 3–4 accounts feels stuck. Two misses and we switch family. */
-const MAX_FAMILY_SOFT_FAILS = 2
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'] as const
 const MAX_SYSTEM_PROMPT_CHARS = 8_000
 const MAX_USER_PROMPT_CHARS = 24_000
 const DEFAULT_MAX_TOKENS = 4096
@@ -1074,29 +1059,16 @@ export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
 
 const GROQ_FALLBACK_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
 
-/** Groq — rotate through keys, first success wins. Two misses → other family. */
+/** Groq — rotate through all configured keys. If all fail or rate-limit, failover to Gemini. */
 async function tryGroqFamily(
     groqKeys: string[],
     model: string,
     params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
-    let softFails = 0
-    // Fast-path: If all keys in this family are currently cooling down, don't stall
-    const liveGroqKeys = groqKeys.filter((key) => !isGroqKeyCooling(key))
-    if (groqKeys.length > 0 && liveGroqKeys.length === 0 && params.otherFamilyAvailable) {
-        markFamilyCooling('groq')
-        attempts.push(`groq: fast-failover (all ${groqKeys.length} keys cooling)`)
-        return null
-    }
     const modelsToTry = Array.from(new Set([model, ...GROQ_FALLBACK_MODELS].filter(Boolean)))
     for (const key of groqKeys) {
         if (Date.now() >= params.deadline) return null
-        if (shouldLeaveFamily(params, softFails)) {
-            markFamilyCooling('groq')
-            return null
-        }
-        let quotaOrAuth = false
         for (const curModel of modelsToTry) {
             if (Date.now() >= params.deadline) return null
             const r = await withRetry(() => chatCompletions(
@@ -1127,23 +1099,14 @@ async function tryGroqFamily(
             if (isRateLimitDetail(r.detail)) {
                 markGroqKeyCooling(key)
                 attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
-                quotaOrAuth = true
                 break
             }
             if (isAuthDetail(r.detail)) {
                 markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS, false)
                 attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
-                quotaOrAuth = true
                 break
             }
             attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}](${curModel}): ${r.detail}`)
-        }
-        if (!quotaOrAuth) softFails += 1
-        // 429/401 are per-key. Keep walking remaining Groq accounts in production
-        // (Gemini is usually also bound there, which used to abort after two misses).
-        if (shouldLeaveFamily(params, softFails)) {
-            markFamilyCooling('groq')
-            return null
         }
     }
     if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
@@ -1152,26 +1115,14 @@ async function tryGroqFamily(
     return null
 }
 
-/** Gemini — rotate through keys × models. Two key misses → other family. */
+/** Gemini — rotate through all configured keys. If all fail or rate-limit, failover to Groq. */
 async function tryGeminiFamily(
     geminiKeys: string[],
     params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
-    let softFails = 0
-    // Fast-path: If all keys in this family are currently cooling down, don't stall
-    const liveGeminiKeys = geminiKeys.filter((key) => !isFamilyKeyCooling('gemini', key))
-    if (geminiKeys.length > 0 && liveGeminiKeys.length === 0 && params.otherFamilyAvailable) {
-        markFamilyCooling('gemini')
-        attempts.push(`gemini: fast-failover (all ${geminiKeys.length} keys cooling)`)
-        return null
-    }
     for (const key of geminiKeys) {
         if (Date.now() >= params.deadline) return null
-        if (shouldLeaveFamily(params, softFails)) {
-            markFamilyCooling('gemini')
-            return null
-        }
         const keyIdx = geminiKeys.indexOf(key) + 1
         let skipRestOfKey = false
         for (const model of GEMINI_MODELS) {
@@ -1211,11 +1162,6 @@ async function tryGeminiFamily(
                 continue
             }
         }
-        if (!skipRestOfKey) softFails += 1
-        if (shouldLeaveFamily(params, softFails)) {
-            markFamilyCooling('gemini')
-            return null
-        }
     }
     if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
         markFamilyCooling('gemini')
@@ -1224,9 +1170,7 @@ async function tryGeminiFamily(
 }
 
 /**
- * Run system+user prompts through available providers.
- * Family order is Groq ↔ Gemini. Cooling families move to the end.
- * OpenAI SDK remains an optional last resort.
+ * Run system+user prompts through available providers (Groq ↔ Gemini).
  */
 export async function generateWithGateway(params: {
     systemPrompt: string
@@ -1251,7 +1195,6 @@ export async function generateWithGateway(params: {
 
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
-    const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(runtimeEnv))
     console.info('[gateway] generate rotation', {
         groq: groqKeys.length,
@@ -1294,35 +1237,7 @@ export async function generateWithGateway(params: {
         }
     }
 
-    // OpenAI via AI SDK — last-resort bonus provider, outside the family rotation
-    // (not currently configured on Cloudflare; kept for optional local/dev use).
-    if (openaiKey && Date.now() < deadline) {
-        try {
-            const { createOpenAI } = await import('@ai-sdk/openai')
-            const { generateText } = await import('ai')
-            const openai = createOpenAI({ apiKey: openaiKey })
-            const { text } = await generateText({
-                model: openai('gpt-4o-mini'),
-                system: params.systemPrompt,
-                prompt: params.userPrompt,
-                temperature: params.temperature ?? 0.7,
-                maxOutputTokens: 1800,
-            })
-            if (text) {
-                return {
-                    ok: true,
-                    text,
-                    provider: 'openai-sdk',
-                    latencyMs: Date.now() - started,
-                }
-            }
-            attempts.push('openai-sdk: empty')
-        } catch (e: any) {
-            attempts.push(`openai-sdk: ${e?.message || 'error'}`)
-        }
-    }
-
-    const anyConfigured = configured.groq || configured.openai || configured.gemini
+    const anyConfigured = configured.groq || configured.gemini
 
     return {
         ok: false,
@@ -1334,6 +1249,7 @@ export async function generateWithGateway(params: {
             : 'No AI keys visible to this Function. Bind GROQ_API_KEYS and/or GEMINI_API_KEYS on Cloudflare Pages Production.',
         latencyMs: Date.now() - started,
     }
+}
 }
 
 export async function streamWithGateway(params: {
@@ -1372,73 +1288,45 @@ export async function streamWithGateway(params: {
         }
 
         if (family === 'groq' && groqKeys.length > 0) {
-            let softFails = 0
-            const groqParams: FamilyParams = {
-                systemPrompt,
-                userPrompt,
-                deadline,
-                switchBy: geminiKeys.length ? Math.min(deadline, started + (GATEWAY_TOTAL_TIMEOUT_MS - FAILOVER_RESERVE_MS)) : deadline,
-                otherFamilyAvailable: geminiKeys.length > 0,
-                thinkingDepth: params.thinkingDepth,
-                temperature: params.temperature,
-                history: params.history,
-            }
             for (const key of groqKeys) {
-                    if (Date.now() >= deadline || shouldLeaveFamily(groqParams, softFails)) break
-                    const r = await chatCompletionsStream(
-                        'https://api.groq.com/openai/v1/chat/completions',
-                        key,
-                        groqModel,
-                        systemPrompt,
-                        userPrompt,
-                        params.temperature,
-                        {},
-                        deadline,
-                        params.history,
-                        params.thinkingDepth,
-                    )
-                    if (r.ok) {
-                        resetKeyCooldownStreak('groq', key)
-                        console.info('[gateway] groq stream ok', {
-                            model: groqModel,
-                            key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
-                        })
-                        return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
-                    }
-                    if (isRateLimitDetail(r.detail)) {
-                        markGroqKeyCooling(key)
-                    } else if (isAuthDetail(r.detail)) {
-                        markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
-                    } else {
-                        softFails += 1
-                    }
-                    attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
-                    if (shouldLeaveFamily(groqParams, softFails)) {
-                        markFamilyCooling('groq')
-                        break
-                    }
+                if (Date.now() >= deadline) break
+                const r = await chatCompletionsStream(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    key,
+                    groqModel,
+                    systemPrompt,
+                    userPrompt,
+                    params.temperature,
+                    {},
+                    deadline,
+                    params.history,
+                    params.thinkingDepth,
+                )
+                if (r.ok) {
+                    resetKeyCooldownStreak('groq', key)
+                    console.info('[gateway] groq stream ok', {
+                        model: groqModel,
+                        key: `${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}`,
+                    })
+                    return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+                }
+                if (isRateLimitDetail(r.detail)) {
+                    markGroqKeyCooling(key)
+                } else if (isAuthDetail(r.detail)) {
+                    markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
+                }
+                attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
             }
             if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
                 markFamilyCooling('groq')
             }
-            if (softFails > 0 && geminiKeys.length > 0) preferPrimaryFamily('gemini')
+            if (geminiKeys.length > 0) preferPrimaryFamily('gemini')
             continue
         }
 
         if (family === 'gemini' && geminiKeys.length > 0) {
-            let softFails = 0
-            const geminiParams: FamilyParams = {
-                systemPrompt,
-                userPrompt,
-                deadline,
-                switchBy: groqKeys.length ? Math.min(deadline, started + (GATEWAY_TOTAL_TIMEOUT_MS - FAILOVER_RESERVE_MS)) : deadline,
-                otherFamilyAvailable: groqKeys.length > 0,
-                thinkingDepth: params.thinkingDepth,
-                temperature: params.temperature,
-                history: params.history,
-            }
             for (const key of geminiKeys) {
-                if (Date.now() >= deadline || shouldLeaveFamily(geminiParams, softFails)) break
+                if (Date.now() >= deadline) break
                 const keyIdx = geminiKeys.indexOf(key) + 1
                 let skipRestOfKey = false
                 for (const model of GEMINI_MODELS) {
@@ -1472,16 +1360,11 @@ export async function streamWithGateway(params: {
                         skipRestOfKey = true
                     }
                 }
-                if (!skipRestOfKey) softFails += 1
-                if (shouldLeaveFamily(geminiParams, softFails)) {
-                    markFamilyCooling('gemini')
-                    break
-                }
             }
             if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
                 markFamilyCooling('gemini')
             }
-            if (softFails > 0 && groqKeys.length > 0) preferPrimaryFamily('groq')
+            if (groqKeys.length > 0) preferPrimaryFamily('groq')
             continue
         }
     }
