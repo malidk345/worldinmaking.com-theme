@@ -79,6 +79,7 @@ import {
 import { splitInlineNodesAt } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineContent'
 import { getInlineText } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import type { NotebookTextBlockNode } from '../src/notebook-app/lib/components/MarkdownNotebook/types'
+import { documentMarkdown } from '../src/notebook-app/scenes/notebooks/notebookPublicMarkdown'
 
 test.describe('notebook frontend helpers', () => {
     test('list timeAgo uses hours between 1h and 24h', () => {
@@ -86,6 +87,12 @@ test.describe('notebook frontend helpers', () => {
         expect(seconds < 86400).toBe(true)
         expect(Math.floor(seconds / 3600)).toBe(2)
         expect(Math.floor(seconds / 86400)).toBe(0)
+    })
+
+    test('public notebook body drops editor blocks and a repeated title', () => {
+        expect(documentMarkdown('# Hello\n\nBody text', 'Hello')).toBe('Body text')
+        expect(documentMarkdown('<ph-query />\n\nKept', 'Other')).toBe('Kept')
+        expect(documentMarkdown('<ph-callout>hidden</ph-callout>\nVisible', 'T')).toBe('Visible')
     })
 
     test('publish is explicit — false does not stay live', () => {

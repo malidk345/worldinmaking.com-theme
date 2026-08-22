@@ -392,10 +392,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-283` | Stream 2 | Mobile Active windows panel sits under the browser chrome | `SidePanel/index.tsx`, `ActiveWindowsPanel` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-284` | Stream 2 | Close all in Active windows did not close windows | `ActiveWindowsPanel`, `TaskBarMenu`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-285` | Stream 2 | Active windows: row of previews on desktop, list-only on mobile | `mission-control-layout.ts`, `AppWindow` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-286` | Stream 3 | Published notebook live view matches a community post | `NotebookPublicView.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 349 - Published notebook looks like a community post (TSK-286)
+- **Date:** 2026-08-22
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The live `#/n/:id` notebook is no longer a PDF/LemonTable reader. It uses the forum thread chrome: avatar + name + time, title, body markdown, optional cover, and a comment box (`Questions` keyed to `/notebooks/n/:id`).
+- **Modified Files:** `src/notebook-app/scenes/notebooks/NotebookPublicView.tsx`, `src/notebook-app/scenes/notebooks/notebookPublicMarkdown.ts`, `src/notebook-app/App.tsx`, `tests/notebook-frontend.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 23/23 Playwright (`tests/notebook-frontend.spec.ts`)
 
 ### Entry 348 - Active windows switcher: row on desktop, list-only on mobile (TSK-285)
 - **Date:** 2026-08-22

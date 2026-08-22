@@ -702,7 +702,7 @@ export function App() {
       <main
         className={
           route.page === 'public'
-            ? 'flex-1 w-full p-3 sm:p-6 lg:p-8 pb-16 max-w-[1400px] mx-auto bg-transparent'
+            ? 'flex-1 w-full min-h-0 p-0 bg-primary text-primary'
             : route.page === 'editor'
               ? 'flex-1 w-full px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-3 sm:space-y-6'
               : 'flex-1 w-full p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'

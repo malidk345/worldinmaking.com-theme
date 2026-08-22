@@ -1,9 +1,20 @@
 import React, { useEffect, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import { LemonButton } from '~nb-lib/lemon-ui/index'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import type { StoredNotebook } from './notebookStorage'
 import { getNotebook, getNotebookPublicUrl } from './notebookStorage'
 import { pullPublishedNotebook } from './notebookRemote'
+import { documentMarkdown, notebookCommentSlug } from './notebookPublicMarkdown'
+import { Avatar, Questions } from 'components/Squeak'
+import Markdown from 'components/Squeak/components/Markdown'
+import Link from 'components/Link'
+import OSButton from 'components/OSButton'
+import { IconCopy, IconPencil, IconArrowLeft } from '@posthog/icons'
+import { ZoomImage } from 'components/ZoomImage'
+import { profileHref } from '../../../lib/profile-path'
+import { useToast } from '../../../context/Toast'
+
+dayjs.extend(relativeTime)
 
 interface NotebookPublicViewProps {
     notebook: StoredNotebook
@@ -11,150 +22,115 @@ interface NotebookPublicViewProps {
     onOpenEditor?: () => void
 }
 
-function authorLabel(notebook: StoredNotebook): string {
-    const person = notebook.created_by || notebook.last_modified_by
-    if (!person) return ''
-    return [person.first_name, person.last_name].filter(Boolean).join(' ') || person.username || ''
+function authorPerson(notebook: StoredNotebook) {
+    return notebook.created_by || notebook.last_modified_by
 }
 
-function wordCount(content: string): number {
-    const words = String(content || '')
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/[#>*_`~\-]+/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-    return words.length
-}
-
-function formatMetaDate(dateStr?: string): string {
-    if (!dateStr) return ''
-    const d = new Date(dateStr)
-    if (Number.isNaN(d.getTime())) return ''
-    return d.toLocaleDateString(undefined, { dateStyle: 'long' })
-}
-
-/** Plain document text: drop editor blocks and a repeated title heading. */
-function documentMarkdown(content: string, title: string): string {
-    let text = String(content || '').replace(/^\uFEFF/, '')
-    text = text.replace(/<ph-[^>]*\/>/gi, '')
-    text = text.replace(/<ph-[^>]*>[\s\S]*?<\/ph-[^>]+>/gi, '')
-    const match = text.match(/^#\s+(.+)\n?/)
-    if (match && match[1].trim().toLowerCase() === title.trim().toLowerCase()) {
-        text = text.slice(match[0].length)
-    }
-    return text.replace(/^\n+/, '').trim()
+function authorName(notebook: StoredNotebook): string {
+    const person = authorPerson(notebook)
+    if (!person) return 'Anonymous'
+    return [person.first_name, person.last_name].filter(Boolean).join(' ') || person.username || 'Anonymous'
 }
 
 /**
- * Public notebook as a PDF reader: meta outside, a LemonTable-framed
- * white page inside that scrolls. No editor blocks. Site fonts.
+ * Published notebook as a community thread: author row, title, markdown, comments.
  */
 export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookPublicViewProps): JSX.Element {
+    const { addToast } = useToast()
     const displayTitle = notebook.publish?.publicTitle || notebook.title
     const subtitle = notebook.publish?.subtitle
+    const coverUrl = notebook.publish?.coverUrl
     const category = notebook.publish?.category
-    const byline = authorLabel(notebook)
-    const canEdit = Boolean(getNotebook(notebook.id) || getNotebook(notebook.short_id))
+    const person = authorPerson(notebook)
+    const name = authorName(notebook)
+    const handle = person?.username || ''
+    const href = handle ? profileHref(handle) : ''
     const body = documentMarkdown(notebook.content, displayTitle)
-    const words = wordCount(notebook.content)
-    const updated = formatMetaDate(notebook.updatedAt)
+    const postedAt = notebook.createdAt || notebook.updatedAt
 
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(getNotebookPublicUrl(notebook))
+            addToast({ description: 'Link copied' })
         } catch {
-            /* ignore */
+            addToast({ description: 'Could not copy link', error: true })
         }
     }
 
-    const metaBits = [
-        `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'}`,
-        byline ? `By ${byline}` : null,
-        updated ? `Updated ${updated}` : null,
-        category || null,
-    ].filter(Boolean)
-
     return (
-        <div className="flex flex-col gap-4 min-h-0">
-            <div className="flex items-center justify-between gap-2 print:hidden">
-                <LemonButton size="small" type="stealth" onClick={onBack}>
-                    All notebooks
-                </LemonButton>
-                <div className="flex items-center gap-2">
-                    <LemonButton size="small" type="secondary" onClick={() => window.print()}>
-                        Print
-                    </LemonButton>
-                    <LemonButton size="small" type="secondary" onClick={() => void handleCopyLink()}>
-                        Copy link
-                    </LemonButton>
-                    {canEdit && onOpenEditor ? (
-                        <LemonButton size="small" type="primary" onClick={onOpenEditor}>
-                            Edit
-                        </LemonButton>
-                    ) : null}
-                </div>
-            </div>
-
-            <header className="space-y-1.5 print:mb-4">
-                <h1 className="m-0 text-2xl sm:text-3xl font-semibold leading-tight text-primary">{displayTitle}</h1>
-                {subtitle ? <p className="m-0 text-sm text-secondary leading-relaxed">{subtitle}</p> : null}
-                {metaBits.length ? <p className="m-0 text-xs text-muted">{metaBits.join(' · ')}</p> : null}
-            </header>
-
-            <div className="LemonTable notebook-pdf-frame min-h-0">
-                <div className="LemonTable__content overflow-y-auto h-[min(72vh,48rem)]">
-                    <article className="notebook-pdf-page bg-white text-[#1d1f27] mx-auto min-h-full max-w-[46rem] px-8 py-10 sm:px-14 sm:py-14">
-                        {body ? (
-                            <div className="notebook-pdf-prose">
-                                <ReactMarkdown>{body}</ReactMarkdown>
+        <div data-scheme="primary" className="bg-primary text-primary min-h-full">
+            <div className="flex flex-col w-full max-w-3xl mx-auto">
+                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
+                    {href ? (
+                        <Link className="flex items-center relative !no-underline hover:!underline" to={href}>
+                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
+                                <Avatar className="size-10" image={person?.avatar_url || null} />
                             </div>
-                        ) : (
-                            <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
-                        )}
-                    </article>
+                            <strong>{name}</strong>
+                        </Link>
+                    ) : (
+                        <span className="flex items-center">
+                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
+                                <Avatar className="size-10" image={person?.avatar_url || null} />
+                            </div>
+                            <strong>{name}</strong>
+                        </span>
+                    )}
+                    {postedAt ? (
+                        <span suppressHydrationWarning className="text-sm text-muted">
+                            {dayjs(postedAt).fromNow()}
+                        </span>
+                    ) : null}
+                    {category ? (
+                        <span className="text-xs text-secondary border border-primary rounded px-1.5 py-0.5">
+                            {category}
+                        </span>
+                    ) : null}
+                    <div className="!ml-auto flex items-center space-x-px shrink-0">
+                        <OSButton
+                            onClick={onBack}
+                            icon={<IconArrowLeft />}
+                            size="md"
+                            tooltip="All notebooks"
+                        />
+                        <OSButton onClick={() => void handleCopyLink()} icon={<IconCopy />} size="md" tooltip="Copy link" />
+                        {onOpenEditor ? (
+                            <OSButton
+                                onClick={onOpenEditor}
+                                icon={<IconPencil />}
+                                size="md"
+                                tooltip="Edit notebook"
+                            />
+                        ) : null}
+                    </div>
+                </div>
+
+                <div className="pb-4 min-w-0 max-w-full box-border pl-5 pr-8">
+                    <h3 className="text-base font-semibold !m-0 pb-1 leading-5 break-words">{displayTitle}</h3>
+                    {subtitle ? <p className="text-sm text-secondary m-0 mb-3 leading-relaxed">{subtitle}</p> : null}
+                    {coverUrl ? (
+                        <div className="mb-3">
+                            <ZoomImage>
+                                <img className="max-w-full max-h-96 rounded-md" src={coverUrl} alt="" />
+                            </ZoomImage>
+                        </div>
+                    ) : null}
+                    {body ? (
+                        <Markdown className="question-content">{body}</Markdown>
+                    ) : (
+                        <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
+                    )}
+                </div>
+
+                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 px-4 pb-8">
+                    <Questions
+                        slug={notebookCommentSlug(notebook.short_id || notebook.id)}
+                        subject={false}
+                        disclaimer={false}
+                        buttonText="Leave a comment"
+                    />
                 </div>
             </div>
-
-            <style>{`
-                .notebook-pdf-prose {
-                    font-size: 15px;
-                    line-height: 1.7;
-                }
-                .notebook-pdf-prose > *:first-child { margin-top: 0; }
-                .notebook-pdf-prose p { margin: 0 0 1em; }
-                .notebook-pdf-prose h1,
-                .notebook-pdf-prose h2,
-                .notebook-pdf-prose h3,
-                .notebook-pdf-prose h4 {
-                    margin: 1.4em 0 0.5em;
-                    line-height: 1.3;
-                    font-weight: 600;
-                }
-                .notebook-pdf-prose ul,
-                .notebook-pdf-prose ol { margin: 0 0 1em; padding-left: 1.4em; }
-                .notebook-pdf-prose blockquote {
-                    margin: 0 0 1em;
-                    padding-left: 1em;
-                    border-left: 2px solid var(--color-border-primary, #ddd);
-                    color: var(--text-secondary, #555);
-                }
-                .notebook-pdf-prose pre {
-                    margin: 0 0 1em;
-                    padding: 0.85em 1em;
-                    overflow-x: auto;
-                    background: #f5f5f6;
-                    border-radius: var(--radius, 6px);
-                    font-size: 0.9em;
-                }
-                .notebook-pdf-prose code { font-size: 0.9em; }
-                @media print {
-                    .notebook-pdf-frame { border: 0 !important; }
-                    .LemonTable__content { height: auto !important; overflow: visible !important; }
-                    .notebook-pdf-page { max-width: none; padding: 0; }
-                }
-            `}</style>
         </div>
     )
 }
@@ -209,7 +185,7 @@ export function NotebookPublicRoute({ notebookId, onBack, onOpenEditor }: Notebo
 
     if (loading) {
         return (
-            <div className="p-12 text-center text-muted space-y-2">
+            <div data-scheme="primary" className="p-12 text-center text-muted space-y-2 bg-primary text-primary">
                 <p className="text-lg m-0">Loading published notebook…</p>
                 <p className="text-sm m-0">Checking this device, then the public archive.</p>
             </div>
@@ -218,11 +194,9 @@ export function NotebookPublicRoute({ notebookId, onBack, onOpenEditor }: Notebo
 
     if (!notebook || missing) {
         return (
-            <div className="p-12 text-center text-muted space-y-4">
+            <div data-scheme="primary" className="p-12 text-center text-muted space-y-4 bg-primary text-primary">
                 <p className="text-lg">Published notebook not found ({notebookId})</p>
-                <LemonButton type="primary" onClick={onBack}>
-                    Back to notebooks
-                </LemonButton>
+                <OSButton onClick={onBack}>Back to notebooks</OSButton>
             </div>
         )
     }
