@@ -14,7 +14,8 @@ import {
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor, setFamilyKeyStart } from './groq-key-cursor'
 
-
+export const GATEWAY_TOTAL_TIMEOUT_MS = 28_000
+export const FAILOVER_RESERVE_MS = 9_000
 
 export interface StreamResult {
     ok: true
@@ -423,6 +424,10 @@ function resolveRequestTimeoutMs(model: string, deadline?: number): number {
     if (!deadline) return desired
     return Math.max(1, Math.min(desired, deadline - Date.now()))
 }
+
+const PROVIDER_COOLDOWNS = new Map<string, number>()
+const COOLDOWN_MS = 60_000
+const PROVIDER_REQUEST_TIMEOUT_MS = 18_000
 
 function isFamilyCooling(name: string): boolean {
     const coolUntil = PROVIDER_COOLDOWNS.get(name)
