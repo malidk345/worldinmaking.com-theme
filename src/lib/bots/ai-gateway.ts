@@ -1250,7 +1250,6 @@ export async function generateWithGateway(params: {
         latencyMs: Date.now() - started,
     }
 }
-}
 
 export async function streamWithGateway(params: {
     systemPrompt: string

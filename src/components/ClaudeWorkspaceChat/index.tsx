@@ -23,6 +23,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { ArtifactsPanel } from './components/ArtifactsPanel';
+import { ArtifactWindowContent } from './components/ArtifactWindowContent';
 import { SourcesPanel } from './components/SourcesPanel';
 import { SearchModal } from './components/SearchModal';
 import { ProjectModal } from './components/ProjectModal';
@@ -317,6 +318,27 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const openArtifact = (art: Artifact, opts?: { expand?: boolean; keepSize?: boolean; origin?: DOMRect | null }) => {
     closeSources()
     setActiveArtifact(art)
+
+    // Launch artifact as an OS Desktop AppWindow
+    if (app?.addWindow) {
+      app.addWindow({
+        key: `artifact-${art.id || encodeURIComponent(art.title)}`,
+        title: `${art.title || 'Component'}`,
+        path: `/artifact/${art.id || encodeURIComponent(art.title)}`,
+        size: {
+          width: 860,
+          height: 600,
+        },
+        element: (
+          <ArtifactWindowContent
+            artifact={art}
+            onInsertToNotebook={insertIntoNotebook}
+            onHealArtifact={handleHealArtifact}
+          />
+        ),
+      })
+    }
+
     setIsArtifactsOpen(true)
     if (opts?.origin || !artifactOrigin) {
       setArtifactOrigin(captureOrigin(opts?.origin))

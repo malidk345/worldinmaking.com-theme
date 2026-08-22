@@ -45,6 +45,13 @@ export interface WindowRouterProps {
 }
 
 function WindowRouterInner({ item }: WindowRouterProps) {
+    if (React.isValidElement(item.element)) {
+        return <>{item.element}</>
+    }
+    if (item.element && typeof (item.element as any).element !== 'undefined' && React.isValidElement((item.element as any).element)) {
+        return <>{(item.element as any).element}</>
+    }
+
     const rawPath: string = item.path || item.props?.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
     const props = item.props || {}
