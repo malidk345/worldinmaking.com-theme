@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Artifact } from '../types'
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block'
-import { Copy, Download, Check, FileInput, Code2, Play } from 'lucide-react'
+import { Copy, Download, Check, FileInput, Code2, Play, X } from 'lucide-react'
+import { useApp } from '../../../context/App'
+import { useWindow } from '../../../context/Window'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
@@ -55,6 +57,8 @@ export function ArtifactWindowContent({
   onInsertToNotebook,
   onHealArtifact,
 }: ArtifactWindowContentProps) {
+  const { closeWindow } = useApp()
+  const { appWindow } = useWindow()
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
 
@@ -193,6 +197,18 @@ export function ArtifactWindowContent({
           >
             <Download className="h-3.5 w-3.5 text-secondary" />
           </button>
+
+          {appWindow && (
+            <button
+              type="button"
+              onClick={() => closeWindow(appWindow)}
+              className="flex items-center justify-center rounded border border-primary/20 bg-primary p-1 text-xs text-secondary hover:bg-rose-500 hover:text-white cursor-pointer transition-colors ml-1"
+              title="Close window"
+              aria-label="Close window"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -315,11 +315,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setSourcesOrigin(captureOrigin(origin))
   }
 
-  const openArtifact = (art: Artifact, opts?: { expand?: boolean; keepSize?: boolean; origin?: DOMRect | null }) => {
+  const openArtifact = (art: Artifact, _opts?: { expand?: boolean; keepSize?: boolean; origin?: DOMRect | null }) => {
     closeSources()
     setActiveArtifact(art)
 
-    // Launch artifact as an OS Desktop AppWindow
+    // Launch artifact exclusively as a native OS Desktop AppWindow
     if (app?.addWindow) {
       app.addWindow({
         key: `artifact-${art.id || encodeURIComponent(art.title)}`,
@@ -338,18 +338,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         ),
       })
     }
-
-    setIsArtifactsOpen(true)
-    if (opts?.origin || !artifactOrigin) {
-      setArtifactOrigin(captureOrigin(opts?.origin))
-    }
-    const isUi = art.type === 'react' || art.type === 'html'
-    if (opts?.keepSize && !isUi) {
-      if (!isArtifactsOpen) setIsArtifactExpanded(false)
-      return
-    }
-    if (opts?.expand || isUi) setIsArtifactExpanded(true)
-    else setIsArtifactExpanded(false)
   }
 
   const closeArtifacts = () => {
@@ -993,10 +981,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           isTypingDone: true,
           osAction: detectedAction,
         });
-        const uiArtifact = extractedArtifacts.find((artifact) => artifact.type === 'react' || artifact.type === 'html')
-        if (uiArtifact) {
-          openArtifact(uiArtifact, { expand: true })
-        }
       }
 
       isStreamComplete = true; // successfully reached the end!
