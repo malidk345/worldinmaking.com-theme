@@ -3733,7 +3733,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
   - `src/context/App.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Next AI agents can claim `TSK-04` (Supabase Postgres FTS search) or `TSK-05` (Playwright smoke test script).
+### Entry 003 — AI Rotation Live Models, OS Artifact Windows & Auth Hardening
+- **Date:** 2026-08-23
+- **AI Agent:** Antigravity (Gemini)
+- **Summary:**
+  1. Configured live Groq (`qwen/qwen3.6-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`) and Gemini (`gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-3.6-flash`, `gemini-2.5-pro`, `gemini-3.7-flash`) models and restored missing timeout/cooldown constants. Verified live SSE generation with HTTP 200.
+  2. Integrated WIM AI artifacts to open cleanly as native OS AppWindows with preview/code tabs and explicit close controls without screen-locking overlays.
+  3. Hardened `mapSupabaseToUser` to grant admin/moderator privileges from `NEXT_PUBLIC_ADMIN_EMAIL` and auth user metadata.
+- **Modified Files:**
+  - `src/lib/bots/ai-gateway.ts` [UPDATED]
+  - `src/lib/wim-auth.ts` [UPDATED]
+  - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactWindowContent.tsx` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Pushed cleanly to `origin/main`. Dev server and live chat endpoints fully operational.
 
 ### Entry 002 — Enforce pnpm & Clean Lockfile (TSK-01)
 - **Date:** 2026-08-06
