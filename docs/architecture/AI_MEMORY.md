@@ -412,6 +412,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Summary:** Overlapping window navigations reject the previous Pages Router render with `Cancel rendering route`. Dev overlay ignored `preventDefault` on the rejection. `Router.prototype.push/replace` now catch cancelled errors so they are not unhandled.
 - **Modified Files:** `src/lib/swallow-cancelled-route.ts`, `src/pages/_app.tsx`, `src/context/App.tsx`, `docs/architecture/AI_MEMORY.md`
 
+### Entry 350 - Redesign About Page with Native Community Typography & Window Routing (TSK-287)
+- **Date:** 2026-08-22
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Redesigned the `/about` page with user's official manifesto copy, exact community markdown prose typography, and desktop window integration:
+  1. **User Profile & Centered Header:** Connected live Supabase profile avatar and name (`m. ali` / `@ali`) wrapped in a compact pill badge linking to `/profile/ali`.
+  2. **Community Typography & Tone:** Used exact `.markdown.prose` and Squeak post line-height/spacing rules (`text-[15px] leading-[1.5]`), inline navy blue manifesto link (`/posts/manifesto`), and standard punctuation.
+  3. **WindowRouter Integration (`src/components/AppWindow/WindowRouter.tsx`):** Exported `AboutContent` from `src/pages/about.tsx` and mapped `/about` in `WindowRouter` so desktop taskbar menu clicks render the full about page inside the OS window.
+- **Modified Files:** `src/pages/about.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 37/37 Playwright tests passed.
+
 ### Entry 349 - Published notebook looks like a community post (TSK-286)
 - **Date:** 2026-08-22
 - **AI Agent:** Grok 4.6 (xAI)

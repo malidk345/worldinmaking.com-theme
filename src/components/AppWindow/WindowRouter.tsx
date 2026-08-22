@@ -32,6 +32,7 @@ import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
 import ContactWindow from 'components/Contact/ContactWindow'
 import HomeWindow from 'components/Home/HomeWindow'
+import { AboutContent } from '../../pages/about'
 import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
@@ -47,6 +48,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     const rawPath: string = item.path || item.props?.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
     const props = item.props || {}
+
+    if (path === '/about') {
+        return <AboutContent />
+    }
 
     if (path === '/archive') {
         return <ArchiveWindow />
