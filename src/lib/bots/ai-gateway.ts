@@ -112,7 +112,13 @@ export interface GenerateFailure {
     latencyMs: number
 }
 
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'] as const
+const GEMINI_MODELS = [
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-3.6-flash',
+    'gemini-2.5-pro',
+    'gemini-3.7-flash',
+] as const
 const MAX_SYSTEM_PROMPT_CHARS = 8_000
 const MAX_USER_PROMPT_CHARS = 24_000
 const DEFAULT_MAX_TOKENS = 4096
@@ -1057,7 +1063,7 @@ export function takeGeminiKeyOrder(keys: string[], start?: number): string[] {
     return takeFamilyKeyOrder('gemini', keys, start)
 }
 
-const GROQ_FALLBACK_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
+const GROQ_FALLBACK_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'groq/compound'] as const
 
 /** Groq — rotate through all configured keys. If all fail or rate-limit, failover to Gemini. */
 async function tryGroqFamily(
