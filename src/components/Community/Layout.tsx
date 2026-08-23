@@ -43,7 +43,13 @@ export default function CommunityLayout({
     contentWidth,
 }: IProps) {
     return (
-        <Layout parent={parent || communityMenu} activeInternalMenu={activeInternalMenu || communityMenu.children[2]}>
+        <Layout
+            parent={parent || communityMenu}
+            activeInternalMenu={
+                activeInternalMenu ||
+                communityMenu.children.find(({ name }) => name.toLowerCase() === 'posts')
+            }
+        >
             <SEO title={title} />
             <Community menu={menu} title={title} tableOfContents={tableOfContents} contentWidth={contentWidth}>
                 {children}

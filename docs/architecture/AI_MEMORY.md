@@ -402,6 +402,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 357 - TSK-26 slice 3: slim nav mega-menu, prune window map, stub PlatformInstall
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Cut the leftover PostHog docs/handbook/pricing nav tree and dead window-size keys. Did **not** remove `kea` (notebook LemonUI still depends on it).
+  1. **`src/navs/index.js`:** replaced ~7800-line docs/handbook/pricing tree with WIM `communityMenu` / `companyMenu` plus empty `docsMenu` stub. Kept export names so Layout/templates still compile. Dropped "Why PostHog?" default entry and handbook child (404).
+  2. **`App.tsx`:** pruned `appSettings` to WIM window keys (~16 KB). Stopped loading CDP pipeline/source nav injectors (`useDataPipelinesNav` / `useSourcesNav`).
+  3. **`PlatformInstall`:** no-op default export so MDX shortcodes still compile; deleted installer UI/schema.
+  4. **Dead companions:** `src/hooks/docs/` (zero importers), `Home/CodeBlocks` (not used by HomeWindow), `navs/product-engineer.json`.
+  5. Blog/tutorial templates now resolve menu children by name, not fragile index.
+- **Left:** `kea.js` + notebook-app LemonUI kea usage; `src/navs/useDataPipelinesNav.ts` still imported by PostLayout.
+- **Modified Files:** `src/navs/index.js`, `src/context/App.tsx`, `src/components/PlatformInstall/index.tsx`, blog/community templates, deletions listed above, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 356 - TSK-26 slice 2: delete Pricing/Products graph after uncoupling Editor
 - **Date:** 2026-08-23
 - **AI Agent:** Grok 4.6 (xAI)

@@ -29,7 +29,10 @@ const BlogTag = ({
     const posts = allPostsFilter === 'popular' ? allPostsPopular : allPostsRecent
 
     return (
-        <Layout parent={companyMenu} activeInternalMenu={companyMenu.children[5]}>
+        <Layout
+            parent={companyMenu}
+            activeInternalMenu={companyMenu.children.find(({ name }) => name.toLowerCase() === 'blog')}
+        >
             <SEO title={`${tag} - PostHog`} />
 
             <PostLayout article={false} title="Blog" hideSidebar hideSurvey>

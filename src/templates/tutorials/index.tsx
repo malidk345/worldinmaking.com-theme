@@ -14,7 +14,10 @@ const Tutorials = ({
     pageContext: { numPages, currentPage, base },
 }) => {
     return (
-        <Layout parent={communityMenu} activeInternalMenu={communityMenu.children[2]}>
+        <Layout
+            parent={communityMenu}
+            activeInternalMenu={communityMenu.children.find(({ name }) => name.toLowerCase() === 'guides')}
+        >
             <SEO title={`All tutorials - PostHog`} />
 
             <PostLayout
