@@ -14,6 +14,8 @@ import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { apps, useProductLinks } from './desktopApps'
 import { extractNotebookId, notebookWindowPath } from '../../lib/window-path'
+import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
+import { getNotebooks, WIM_NOTEBOOKS_CHANGED_EVENT, WIM_NOTEBOOKS_HYDRATED_EVENT } from '../../notebook-app/scenes/notebooks/notebookStorage'
 
 export { apps, useProductLinks }
 
@@ -54,24 +56,21 @@ function Desktop() {
                 return
             }
 
-            let deletedIds: string[] = []
+            const deletedSet = new Set(readLocalDeletedNotebookIds())
             try {
-                deletedIds = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+                const legacyDeleted = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+                if (Array.isArray(legacyDeleted)) {
+                    for (const id of legacyDeleted) if (typeof id === 'string') deletedSet.add(id)
+                }
             } catch {
-                deletedIds = []
+                /* ignore */
             }
-            const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : [])
 
             let existingNotebookIds: Set<string> | null = null
             try {
-                const storedRaw = localStorage.getItem('wim_os_notebooks')
-                if (storedRaw) {
-                    const parsed = JSON.parse(storedRaw)
-                    if (Array.isArray(parsed)) {
-                        existingNotebookIds = new Set(
-                            parsed.flatMap((n: any) => [n?.id, n?.short_id].filter(Boolean))
-                        )
-                    }
+                const live = getNotebooks()
+                if (Array.isArray(live) && live.length) {
+                    existingNotebookIds = new Set(live.flatMap((n) => [n?.id, n?.short_id].filter(Boolean) as string[]))
                 }
             } catch {
                 existingNotebookIds = null
@@ -110,7 +109,13 @@ function Desktop() {
     useEffect(() => {
         loadPinnedApps()
         window.addEventListener('wimDesktopPinnedChanged', loadPinnedApps)
-        return () => window.removeEventListener('wimDesktopPinnedChanged', loadPinnedApps)
+        window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, loadPinnedApps)
+        window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, loadPinnedApps)
+        return () => {
+            window.removeEventListener('wimDesktopPinnedChanged', loadPinnedApps)
+            window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, loadPinnedApps)
+            window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, loadPinnedApps)
+        }
     }, [loadPinnedApps])
 
     const glow = getWallpaperGlow(siteSettings.wallpaper)

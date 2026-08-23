@@ -205,6 +205,7 @@ function mergeRemoteIntoLocal(
     remote: { notebooks: StoredNotebook[]; deletedIds: string[] },
     options: { pushMissing?: boolean } = {}
 ): void {
+    for (const id of remote.deletedIds) rememberDeletedNotebookId(id)
     const local = readLocalNotebooks()
     const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
     const merged = mergeNotebookLists(local, remote.notebooks, deletedIds)
@@ -249,6 +250,7 @@ function ensureRemoteHydrate(): void {
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
+            for (const id of remote.deletedIds) rememberDeletedNotebookId(id)
             const local = readLocalNotebooks()
             const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
             if (!remote.notebooks.length) {

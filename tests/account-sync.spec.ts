@@ -37,6 +37,17 @@ test.describe('account sync merge', () => {
         expect(merged[0].id).toBe('n1')
     })
 
+    test('a later empty cloud pull still honors local tombstones', () => {
+        const local = [
+            { id: 'n1', short_id: 'n1', title: 'Keep', content: '', createdAt: '', updatedAt: '2026-08-01', version: 1 },
+            { id: 'n2', short_id: 'n2', title: 'Dead', content: '', createdAt: '', updatedAt: '2026-08-02', version: 1 },
+        ]
+        const afterDeletePull = mergeNotebookLists(local as any, [], ['n2'])
+        expect(afterDeletePull.map((nb) => nb.id)).toEqual(['n1'])
+        const afterEmptyPull = mergeNotebookLists(afterDeletePull as any, [], ['n2'])
+        expect(afterEmptyPull.map((nb) => nb.id)).toEqual(['n1'])
+    })
+
     test('messages from both devices are kept', () => {
         const local = [chat('a', '2026-08-17T12:00:00.000Z')]
         local[0].messages = [

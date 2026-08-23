@@ -412,10 +412,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-302` | Stream 2 | Path-first window routing so F5 on posts/questions is not an empty shell | window-path.ts, WindowRouter, _app, post/question pages | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-303` | Stream 3 | Site-wide mobile writing: comments sit on the keyboard, no window jump/zoom | useKeyboardInset, global.css, Inbox, QuestionForm, WindowContent | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-304` | Stream 2 | Desktop-pinned notebooks must open that notebook, not the list | window-path, notebook-route, Desktop, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-305` | Stream 4 | Cross-device delete must tombstone notebooks (no resurrection); stop media wipe | notebooks-repo, notebookRemote, Desktop | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 375 - Notebook delete is a tombstone so other devices do not resurrect it (TSK-305)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Live DB had `deleted_at` on notebooks but delete was a hard row remove, so `deleted_ids` was always empty and another device could push the notebook back. Delete now sets `deleted_at` like chats. Remote tombstones are stored locally. Desktop pins use the same deleted-id list. Deleting a notebook no longer wipes all `notebook-media` for that owner.
+- **Modified Files:** `lib/notebooks-repo.ts`, `notebookStorage.ts`, `Desktop/index.tsx`, `ArchiveWindow.tsx`, `tests/account-sync.spec.ts`
+- **Verification:** `account-sync.spec.ts` 5/5; live REST: chats already had tombstones, notebooks had zero; `typecheck:shell` 0 gated errors.
 
 ### Entry 374 - Desktop-pinned notebooks open the notebook, not the list (TSK-304)
 - **Date:** 2026-08-23

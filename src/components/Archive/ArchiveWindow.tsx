@@ -8,6 +8,7 @@ import { Popover } from 'components/RadixUI/Popover'
 import { AppIcon, AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import { apps, useProductLinks } from 'components/Desktop/desktopApps'
 import { extractNotebookId, notebookWindowPath } from '../../lib/window-path'
+import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
 import { IconArchive, IconEllipsis } from '@posthog/icons'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -36,7 +37,13 @@ function loadPinnedApps(): AppItem[] {
         if (!Array.isArray(existing)) return []
         let deletedIds: string[] = []
         try {
-            deletedIds = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+            deletedIds = readLocalDeletedNotebookIds()
+            try {
+                const legacy = JSON.parse(localStorage.getItem('wim_os_deleted_notebook_ids') || '[]')
+                if (Array.isArray(legacy)) deletedIds = Array.from(new Set([...deletedIds, ...legacy.filter((id: unknown) => typeof id === 'string')]))
+            } catch {
+                /* keep namespaced list */
+            }
         } catch {
             deletedIds = []
         }
