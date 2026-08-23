@@ -1,4 +1,4 @@
-import { BuiltLogic, afterMount } from 'kea'
+import { BuiltLogic, afterMount } from 'lib/kea-stub'
 
 /**
  * Some kea logics are used heavily across multiple areas so we keep it mounted once loaded with this trick.

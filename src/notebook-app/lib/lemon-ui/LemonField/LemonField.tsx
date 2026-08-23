@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Field as KeaField, FieldProps as KeaFieldProps } from 'kea-forms/lib/components'
+import { Field as KeaField, FieldProps as KeaFieldProps } from 'lib/kea-stub'
 import { cloneElement, isValidElement, useId } from 'react'
 
 import { IconErrorOutline } from 'lib/lemon-ui/icons'

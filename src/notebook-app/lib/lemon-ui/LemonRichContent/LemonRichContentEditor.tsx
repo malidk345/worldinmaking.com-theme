@@ -4,7 +4,7 @@ import ExtensionDocument from '@tiptap/extension-document'
 import { Placeholder } from '@tiptap/extensions'
 import { EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useActions, useValues } from 'kea'
+import { useActions, useValues } from 'lib/kea-stub'
 import posthog from 'posthog-js'
 import { useRef, useState } from 'react'
 

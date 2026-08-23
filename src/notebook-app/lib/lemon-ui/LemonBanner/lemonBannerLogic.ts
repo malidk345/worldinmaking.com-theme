@@ -1,4 +1,4 @@
-import { MakeLogicType, actions, kea, key, path, props, reducers } from 'kea'
+import { MakeLogicType, actions, kea, key, path, props, reducers } from 'lib/kea-stub'
 
 export type LemonBannerLogicProps = {
     /** The key to be used for persisting the fact this modal is dismissed */

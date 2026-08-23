@@ -1,6 +1,6 @@
 
 import clsx from 'clsx'
-import { useActions, useValues } from 'kea'
+import { useActions, useValues } from 'lib/kea-stub'
 
 import { IconInfo, IconSparkles, IconWarning, IconX } from '@posthog/icons'
 

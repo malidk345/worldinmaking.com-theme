@@ -1,4 +1,4 @@
-import { useActions, useValues } from 'kea'
+import { useActions, useValues } from 'lib/kea-stub'
 import posthog from 'posthog-js'
 import React, { useCallback, useRef, useState } from 'react'
 

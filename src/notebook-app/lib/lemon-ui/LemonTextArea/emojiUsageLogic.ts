@@ -1,4 +1,4 @@
-import { MakeLogicType, actions, kea, path, reducers, selectors } from 'kea'
+import { MakeLogicType, actions, kea, path, reducers, selectors } from 'lib/kea-stub'
 
 import { now } from 'lib/dayjs'
 import { permanentlyMount } from 'lib/utils/kea-logic-builders'

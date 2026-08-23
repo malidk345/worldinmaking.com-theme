@@ -1,6 +1,6 @@
 
 import clsx from 'clsx'
-import { useValues } from 'kea'
+import { useValues } from 'lib/kea-stub'
 import { useCallback, useId, useRef } from 'react'
 import Modal from 'react-modal'
 

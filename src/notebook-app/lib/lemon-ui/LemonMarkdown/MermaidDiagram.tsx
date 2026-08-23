@@ -1,4 +1,4 @@
-import { useValues } from 'kea'
+import { useValues } from 'lib/kea-stub'
 import { useEffect, useId, useState } from 'react'
 
 import { CodeSnippet, Language } from 'lib/components/CodeSnippet'

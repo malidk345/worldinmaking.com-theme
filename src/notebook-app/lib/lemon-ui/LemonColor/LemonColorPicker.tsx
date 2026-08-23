@@ -1,4 +1,4 @@
-import { useValues } from 'kea'
+import { useValues } from 'lib/kea-stub'
 import { cloneElement, useEffect, useState } from 'react'
 
 import { LemonColorGlyph, LemonInput, LemonLabel, Popover } from '@posthog/lemon-ui'

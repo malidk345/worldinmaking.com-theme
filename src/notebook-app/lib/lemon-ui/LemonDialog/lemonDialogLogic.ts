@@ -1,6 +1,6 @@
-import { MakeLogicType, kea, key, path, props } from 'kea'
-import { forms } from 'kea-forms'
-import type { DeepPartial, DeepPartialMap, FieldName, ValidationErrorType } from 'kea-forms'
+import { MakeLogicType, kea, key, path, props } from 'lib/kea-stub'
+import { forms } from 'lib/kea-stub'
+import type { DeepPartial, DeepPartialMap, FieldName, ValidationErrorType } from 'lib/kea-stub'
 
 export type LemonDialogFormPropsType = {
     errors?: Record<string, (value: string) => string | undefined>

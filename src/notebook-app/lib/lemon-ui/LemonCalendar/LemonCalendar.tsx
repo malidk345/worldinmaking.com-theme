@@ -1,6 +1,6 @@
 
 import clsx from 'clsx'
-import { useValues } from 'kea'
+import { useValues } from 'lib/kea-stub'
 import { Ref, forwardRef, useEffect, useState } from 'react'
 
 import { IconChevronLeft, IconChevronRight } from '@posthog/icons'

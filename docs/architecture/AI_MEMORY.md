@@ -398,10 +398,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-288` | Stream 2 | Google OAuth no longer opens a flash auth window | `auth-callback.ts`, `callback.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-289` | Stream 1 | Delete verified leftover junk (kilo worktrees, one-shot scripts, Gatsby src/api) | `.kilo/worktrees`, `scripts/*` one-shots, `src/api/`, `replace_colors.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-290` | Stream 1 | Remove leftover kea/kea-loaders/kea-router packages (webpack already shims notebook) | `package.json`, `pnpm-lock.yaml`, `next.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-291` | Stream 1 | Retarget notebook kea imports to local stub; delete unused HelpMenu/oauth logics | `src/notebook-app/lib/kea-stub.ts`, LemonUI, HelpMenu, oauth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 360 - Notebook kea imports now use a local stub (TSK-291)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** No remaining `from 'kea'` in `src/`. Remaining LemonUI files import `lib/kea-stub` (no-op store). Deleted unused PostHog HelpMenu/oauth/eventUsage kea modules and kea-only tests/stories.
+- **Modified Files:** `src/notebook-app/lib/kea-stub.ts` [NEW]; 18 LemonUI/utils files retargeted; deletions under HelpMenu, oauth, eventUsageLogic, unused hooks/tests.
+- **Left:** webpack still remaps leftover `kea` strings as a backstop; `incidentStatus.ts` kept for LemonToast.
 
 ### Entry 359 - Remove leftover kea npm packages (TSK-290)
 - **Date:** 2026-08-23

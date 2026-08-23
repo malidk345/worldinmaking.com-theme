@@ -1,5 +1,5 @@
-import { useActions, useValues } from 'kea'
-import { router } from 'kea-router'
+import { useActions, useValues } from 'lib/kea-stub'
+import { router } from 'lib/kea-stub'
 import { useCallback, useMemo } from 'react'
 
 import { PaginationAuto, PaginationManual, PaginationState } from './types'

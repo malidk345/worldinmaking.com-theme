@@ -1,5 +1,5 @@
 
-import { useValues } from 'kea'
+import { useValues } from 'lib/kea-stub'
 
 import { DataColorToken } from 'lib/colors'
 import { dataThemeLogic } from 'lib/logic/dataThemeLogic'

@@ -1,5 +1,5 @@
 
-import { router } from 'kea-router'
+import { router } from 'lib/kea-stub'
 import React from 'react'
 
 import { IconExternal, IconSend } from '@posthog/icons'
