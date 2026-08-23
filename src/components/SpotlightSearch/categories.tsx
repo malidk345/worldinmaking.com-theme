@@ -19,7 +19,7 @@ type TypeConfig = {
     aliases: string[]
 }
 
-// Presentation and search aliases for categories already present in the Algolia index.
+// Presentation and search aliases for result categories.
 const typeConfig: TypeConfig[] = [
     { type: 'docs', label: 'Docs', icon: <IconBook />, aliases: ['docs', 'documentation', 'reference', 'manual'] },
     { type: 'apps', label: 'Apps', icon: <IconPuzzle />, aliases: ['apps'] },

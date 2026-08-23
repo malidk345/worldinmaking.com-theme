@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSearch } from 'components/Editor/SearchProvider'
-import { AlgoliaSearchResults } from 'components/Search/InlineSearch'
+import { SiteSearchResults } from 'components/Search/InlineSearch'
 
 interface OnPageMatch {
     id: string
@@ -63,7 +63,7 @@ const HighlightedSnippet = ({ text, query }: { text: string; query: string }): J
 
 /**
  * Search results shown in the Viewer sidebar while a query is active — "On this page" matches
- * (click to scroll the article to each) plus site-wide "Other pages" hits from the Algolia index.
+ * (click to scroll the article to each) plus site-wide "Other pages" hits from `/api/search`.
  * Reads the query from `components/Editor/SearchProvider` (the same context `InlineSearch` writes).
  */
 export function ViewerSearchResults({ contentRef }: { contentRef: React.RefObject<HTMLElement> }): JSX.Element | null {
@@ -144,7 +144,7 @@ export function ViewerSearchResults({ contentRef }: { contentRef: React.RefObjec
                 <h4 className="text-[11px] font-semibold text-muted uppercase tracking-wide m-0 mb-1 px-1">
                     Other pages
                 </h4>
-                <AlgoliaSearchResults currentPath={pathname} />
+                <SiteSearchResults currentPath={pathname} />
             </div>
         </div>
     )

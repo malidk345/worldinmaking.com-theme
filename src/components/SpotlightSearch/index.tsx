@@ -100,7 +100,7 @@ function SpotlightSearchContent({
         })
     }, [filterQuery])
 
-    // Group by category while preserving Algolia's ranked order. A category's
+    // Group by category while preserving ranked order. A category's
     // first hit determines where that category appears.
     const groups = useMemo(() => {
         const byType = new Map<string, SpotlightSearchResult[]>()

@@ -106,7 +106,7 @@ export const InlineSearch = ({
     )
 }
 
-export const AlgoliaSearchResults = ({
+export const SiteSearchResults = ({
     currentPath,
     facetFilters,
 }: {

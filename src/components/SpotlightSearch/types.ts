@@ -1,6 +1,6 @@
 import type { SpotlightAction } from './actions'
 
-export type AlgoliaRecord = {
+export type SearchRecord = {
     excerpt?: string
     fields?: { slug?: string }
     slug: string

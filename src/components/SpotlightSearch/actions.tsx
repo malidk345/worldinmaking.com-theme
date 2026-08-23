@@ -43,7 +43,7 @@ export type SpotlightAction = {
  * modes (Layout context, which isn't an ancestor of the overlay).
  *
  * Roadmap Early Access Features ARE here despite being navigations: they're
- * live API data, not pages, so Algolia never indexes them — search genuinely
+ * live API data, not pages, so local search does not index them — search genuinely
  * can't find them any other way. Each deep-links to its card (/roadmap#flag).
  */
 export const useSpotlightActions = (): SpotlightAction[] => {

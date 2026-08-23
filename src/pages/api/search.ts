@@ -1,5 +1,6 @@
 /**
- * Local InstantSearch-compatible search over Supabase posts.
+ * Local search over Supabase posts. Response shape (`hits`, `nbHits`, `facets`)
+ * is kept so existing clients stay compatible.
  * Cloudflare Pages (next-on-pages) requires Edge Runtime + Web Response API.
  */
 export const runtime = 'edge'
@@ -33,7 +34,7 @@ export default async function handler(req: Request) {
     }
 
     const url = new URL(req.url)
-    // InstantSearch sends both `q` (our client) and `query` (Algolia-style params)
+    // Accept both `q` (our client) and `query` (legacy param name)
     const query = String(url.searchParams.get('q') || url.searchParams.get('query') || '').trim()
     const facetFilters = getFacetValues(url.searchParams.getAll('facetFilters').length
         ? url.searchParams.getAll('facetFilters')
@@ -71,7 +72,7 @@ export default async function handler(req: Request) {
                 hits,
                 nbHits: hits.length,
                 facets: { type: { post: hits.length } },
-                // Hint for operators / future clients — does not change InstantSearch contract
+                // Hint for operators / future clients — does not change the JSON contract
                 engine: 'supabase-fts-or-ilike',
             },
             200,

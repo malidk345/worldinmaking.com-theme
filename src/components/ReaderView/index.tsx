@@ -659,8 +659,8 @@ const SidebarSearchResults = ({
 }) => {
     const { searchQuery } = useSearch()
     const [onPageMatches, setOnPageMatches] = useState<OnPageMatch[]>([])
-    const [algoliaHits, setAlgoliaHits] = useState<any[]>([])
-    const [algoliaLoading, setAlgoliaLoading] = useState(false)
+    const [searchHits, setSearchHits] = useState<any[]>([])
+    const [searchLoading, setSearchLoading] = useState(false)
 
     useEffect(() => {
         if (!searchQuery || searchQuery.length < 2 || !contentRef?.current) {
@@ -673,13 +673,13 @@ const SidebarSearchResults = ({
 
     useEffect(() => {
         if (!searchQuery || searchQuery.length < 2) {
-            setAlgoliaHits([])
-            setAlgoliaLoading(false)
+            setSearchHits([])
+            setSearchLoading(false)
             return
         }
 
         let cancelled = false
-        setAlgoliaLoading(true)
+        setSearchLoading(true)
 
         const doSearch = async () => {
             try {
@@ -691,11 +691,11 @@ const SidebarSearchResults = ({
                               return slug !== currentPath
                           })
                         : hits
-                    setAlgoliaHits(filtered)
-                    setAlgoliaLoading(false)
+                    setSearchHits(filtered)
+                    setSearchLoading(false)
                 }
             } catch {
-                if (!cancelled) setAlgoliaLoading(false)
+                if (!cancelled) setSearchLoading(false)
             }
         }
 
@@ -781,7 +781,7 @@ const SidebarSearchResults = ({
                 <h4 className="text-[11px] font-semibold text-muted uppercase tracking-wide m-0 mb-1 px-1">
                     Other pages
                 </h4>
-                {algoliaLoading ? (
+                {searchLoading ? (
                     <div className="px-2 py-3 space-y-2">
                         {[...Array(3)].map((_, i) => (
                             <div key={i} className="space-y-1">
@@ -790,9 +790,9 @@ const SidebarSearchResults = ({
                             </div>
                         ))}
                     </div>
-                ) : algoliaHits.length > 0 ? (
+                ) : searchHits.length > 0 ? (
                     <ul className="list-none m-0 p-0">
-                        {algoliaHits.map((hit: any) => (
+                        {searchHits.map((hit: any) => (
                             <li key={hit.objectID}>
                                 <Link href={hit.fields?.slug || `/${hit.slug}`}
                                     state={{ newWindow: true }}
