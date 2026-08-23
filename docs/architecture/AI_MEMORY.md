@@ -402,10 +402,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-292` | Stream 3 | Careful codebase optimize: drop dead deps/templates, isolate merch cart, restore WIM subprocessors | `package.json`, HeaderBar, unused templates, `subprocessors.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-293` | Stream 3 | Replace InstantSearch with local `/api/search` fetch; drop Algolia client packages | `useLocalSearch`, SpotlightSearch, SearchUI, package.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-295` | Stream 2 | Mobile long-press on a notebook block must not crash the editor | MarkdownNotebook, domSelection, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 364 - Mobile notebook long-press crash (TSK-295)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Long-pressing a notebook block on mobile crashed with "This notebook view hit an error".
+  1. **Root cause:** `MarkdownNotebookEditor` state is named `document`, which shadowed the DOM `document`. When the long-press bar activated, `document.addEventListener` threw `addEventListener is not a function`.
+  2. **Fix:** bind outside-dismiss listeners on `window.document`. Keep the action bar out of the row (fixed overlay) so iOS selection DOM is not mutated. Guard selection helpers (`getTextOffset`, `getSelectionRange`, restore, floating toolbar) against detached ranges.
+  3. **List:** notebook title links use `/notebooks?id=` instead of leftover `#/notebook/` hashes; coarse-pointer contextmenu is prevented on blocks.
+- **Modified Files:** `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts`, `domSelection.ts`, `NotebooksListScene.tsx`
+- **Verification:** notebooks page compiles; helper tests 23/23; long-press path no longer hits ErrorBoundary.
 
 ### Entry 363 - Conservative hygiene sequence (TSK-294)
 - **Date:** 2026-08-23

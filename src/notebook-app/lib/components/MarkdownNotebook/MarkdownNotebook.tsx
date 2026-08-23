@@ -442,7 +442,13 @@ function MarkdownNotebookEditor({
     const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
     const [blockMenuNodeId, setBlockMenuNodeId] = useState<string | null>(null)
     const [mobileActiveNodeId, setMobileActiveNodeId] = useState<string | null>(null)
-    const touchStartPosRef = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout> | null } | null>(null)
+    const [mobileBarAnchor, setMobileBarAnchor] = useState<{ top: number; left: number } | null>(null)
+    const touchStartPosRef = useRef<{
+        x: number
+        y: number
+        timer: ReturnType<typeof setTimeout> | null
+        row: HTMLElement | null
+    } | null>(null)
     const [inviteStatus, setInviteStatus] = useState<{ names: string[]; error?: string } | null>(null)
     const initialInsertMenuAppliedRef = useRef(false)
     const emptyNodeRef = useRef<NotebookTextBlockNode>(makeEmptyParagraph('initial-empty'))
@@ -568,21 +574,30 @@ function MarkdownNotebookEditor({
         // oxlint-disable-next-line exhaustive-deps
     }, [value])
 
+    const clearMobileBlockBar = useCallback((): void => {
+        setMobileActiveNodeId(null)
+        setMobileBarAnchor(null)
+    }, [])
+
     useEffect(() => {
         if (!mobileActiveNodeId) return
         const handleOutsideDismiss = (e: MouseEvent | TouchEvent) => {
             const target = e.target as HTMLElement | null
             if (!target?.closest('.MarkdownNotebook__mobile-block-bar') && !target?.closest('.MarkdownNotebook__row--mobile-active')) {
-                setMobileActiveNodeId(null)
+                clearMobileBlockBar()
             }
         }
-        document.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
-        document.addEventListener('mousedown', handleOutsideDismiss)
+        const handleScrollDismiss = () => clearMobileBlockBar()
+        const domDocument = window.document
+        domDocument.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
+        domDocument.addEventListener('mousedown', handleOutsideDismiss)
+        window.addEventListener('scroll', handleScrollDismiss, true)
         return () => {
-            document.removeEventListener('touchstart', handleOutsideDismiss)
-            document.removeEventListener('mousedown', handleOutsideDismiss)
+            domDocument.removeEventListener('touchstart', handleOutsideDismiss)
+            domDocument.removeEventListener('mousedown', handleOutsideDismiss)
+            window.removeEventListener('scroll', handleScrollDismiss, true)
         }
-    }, [mobileActiveNodeId])
+    }, [mobileActiveNodeId, clearMobileBlockBar])
 
     const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || isTitle) return
@@ -590,6 +605,7 @@ function MarkdownNotebookEditor({
         if (!touch) return
         const x = touch.clientX
         const y = touch.clientY
+        const row = event.currentTarget
 
         if (touchStartPosRef.current?.timer) {
             clearTimeout(touchStartPosRef.current.timer)
@@ -603,10 +619,12 @@ function MarkdownNotebookEditor({
                     // Ignore vibration errors
                 }
             }
+            const rect = row.getBoundingClientRect()
+            setMobileBarAnchor({ top: rect.top, left: rect.left + rect.width / 2 })
             setMobileActiveNodeId(nodeId)
         }, 420)
 
-        touchStartPosRef.current = { x, y, timer }
+        touchStartPosRef.current = { x, y, timer, row }
     }
 
     const handleRowTouchMove = (event: ReactTouchEvent<HTMLDivElement>): void => {
@@ -2416,7 +2434,14 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const selection = window.getSelection()
+        let selection: Selection | null = null
+        try {
+            selection = window.getSelection()
+        } catch {
+            floatingToolbarPositionLockRef.current = null
+            setFloatingToolbar(null)
+            return
+        }
         if (!selection || selection.rangeCount === 0) {
             if (isFormattingToolbarFocused()) {
                 return
@@ -2426,83 +2451,93 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const notebookElement = notebookRef.current
-        const selectedMarkdown = notebookElement
-            ? getSelectedNotebookMarkdown(
-                  selection,
-                  notebookElement,
-                  documentRef.current.nodes,
-                  blockRefs.current,
-                  listItemRefs.current
-              )
-            : null
-        const textRanges = getSelectedTextRanges(selection, documentRef.current.nodes, blockRefs.current)
-        const codeRanges = getSelectedCodeRanges(selection, documentRef.current.nodes, blockRefs.current)
-        const listItemRanges = getSelectedListItemRanges(selection, documentRef.current.nodes, listItemRefs.current)
-        if ((!textRanges.length && !codeRanges.length && !listItemRanges.length) || !selectedMarkdown) {
-            if (isFormattingToolbarFocused()) {
+        try {
+            const notebookElement = notebookRef.current
+            const selectedMarkdown = notebookElement
+                ? getSelectedNotebookMarkdown(
+                      selection,
+                      notebookElement,
+                      documentRef.current.nodes,
+                      blockRefs.current,
+                      listItemRefs.current
+                  )
+                : null
+            const textRanges = getSelectedTextRanges(selection, documentRef.current.nodes, blockRefs.current)
+            const codeRanges = getSelectedCodeRanges(selection, documentRef.current.nodes, blockRefs.current)
+            const listItemRanges = getSelectedListItemRanges(selection, documentRef.current.nodes, listItemRefs.current)
+            if ((!textRanges.length && !codeRanges.length && !listItemRanges.length) || !selectedMarkdown) {
+                if (isFormattingToolbarFocused()) {
+                    return
+                }
+                floatingToolbarPositionLockRef.current = null
+                setFloatingToolbar(null)
                 return
             }
+
+            if (selection.rangeCount === 0) {
+                floatingToolbarPositionLockRef.current = null
+                setFloatingToolbar(null)
+                return
+            }
+            const domRange = selection.getRangeAt(0)
+
+            const selectionRect = getSelectionClientRect(domRange)
+            if (!selectionRect) {
+                floatingToolbarPositionLockRef.current = null
+                setFloatingToolbar(null)
+                return
+            }
+
+            const firstSelectedNodeId = textRanges[0]?.node.id ?? codeRanges[0]?.node.id ?? listItemRanges[0]?.node.id
+            const firstSelectedElement = firstSelectedNodeId ? blockRefs.current[firstSelectedNodeId] : null
+            const lineHeight = firstSelectedElement ? getElementLineHeight(firstSelectedElement) : 24
+            const vv = window.visualViewport
+            const viewLeft = vv?.offsetLeft ?? 0
+            const viewTop = vv?.offsetTop ?? 0
+            const viewWidth = vv?.width ?? window.innerWidth
+            const viewHeight = vv?.height ?? window.innerHeight
+            const viewRight = viewLeft + viewWidth
+            const viewBottom = viewTop + viewHeight
+            const isNarrow = viewWidth < 640
+            const estimatedHeight = isNarrow ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
+            const shouldPlaceBelow = pointerAnchor
+                ? pointerAnchor.placement === 'below'
+                : selectionRect.top - viewTop < estimatedHeight + lineHeight
+            const pointerOverlapsSelection =
+                pointerAnchor && pointerAnchor.y >= selectionRect.top && pointerAnchor.y <= selectionRect.bottom
+            const rawTop = pointerAnchor
+                ? Math.round(
+                      shouldPlaceBelow
+                          ? pointerOverlapsSelection
+                              ? selectionRect.bottom + FLOATING_TOOLBAR_GAP
+                              : pointerAnchor.y + FLOATING_TOOLBAR_GAP
+                          : pointerOverlapsSelection
+                            ? selectionRect.top
+                            : pointerAnchor.y
+                  )
+                : Math.round(shouldPlaceBelow ? selectionRect.bottom + lineHeight : selectionRect.top)
+            const toolbarTop = Math.min(
+                viewBottom - estimatedHeight - 8,
+                Math.max(viewTop + 8, rawTop)
+            )
+            const toolbarLeft = pointerAnchor
+                ? Math.round(pointerAnchor.x)
+                : Math.round(selectionRect.left + selectionRect.width / 2)
+            const lockedPosition = floatingToolbarPositionLockRef.current
+
+            setFloatingToolbar({
+                textRanges,
+                codeRanges,
+                listItemRanges,
+                selectedMarkdown,
+                placement: lockedPosition?.placement ?? (shouldPlaceBelow ? 'below' : 'above'),
+                top: lockedPosition?.top ?? toolbarTop,
+                left: lockedPosition?.left ?? Math.min(viewRight - 16, Math.max(viewLeft + 16, toolbarLeft)),
+            })
+        } catch {
             floatingToolbarPositionLockRef.current = null
             setFloatingToolbar(null)
-            return
         }
-
-        const domRange = selection.getRangeAt(0)
-
-        const selectionRect = getSelectionClientRect(domRange)
-        if (!selectionRect) {
-            floatingToolbarPositionLockRef.current = null
-            setFloatingToolbar(null)
-            return
-        }
-
-        const firstSelectedNodeId = textRanges[0]?.node.id ?? codeRanges[0]?.node.id ?? listItemRanges[0]?.node.id
-        const firstSelectedElement = firstSelectedNodeId ? blockRefs.current[firstSelectedNodeId] : null
-        const lineHeight = firstSelectedElement ? getElementLineHeight(firstSelectedElement) : 24
-        const vv = window.visualViewport
-        const viewLeft = vv?.offsetLeft ?? 0
-        const viewTop = vv?.offsetTop ?? 0
-        const viewWidth = vv?.width ?? window.innerWidth
-        const viewHeight = vv?.height ?? window.innerHeight
-        const viewRight = viewLeft + viewWidth
-        const viewBottom = viewTop + viewHeight
-        const isNarrow = viewWidth < 640
-        const estimatedHeight = isNarrow ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
-        const shouldPlaceBelow = pointerAnchor
-            ? pointerAnchor.placement === 'below'
-            : selectionRect.top - viewTop < estimatedHeight + lineHeight
-        const pointerOverlapsSelection =
-            pointerAnchor && pointerAnchor.y >= selectionRect.top && pointerAnchor.y <= selectionRect.bottom
-        const rawTop = pointerAnchor
-            ? Math.round(
-                  shouldPlaceBelow
-                      ? pointerOverlapsSelection
-                          ? selectionRect.bottom + FLOATING_TOOLBAR_GAP
-                          : pointerAnchor.y + FLOATING_TOOLBAR_GAP
-                      : pointerOverlapsSelection
-                        ? selectionRect.top
-                        : pointerAnchor.y
-              )
-            : Math.round(shouldPlaceBelow ? selectionRect.bottom + lineHeight : selectionRect.top)
-        const toolbarTop = Math.min(
-            viewBottom - estimatedHeight - 8,
-            Math.max(viewTop + 8, rawTop)
-        )
-        const toolbarLeft = pointerAnchor
-            ? Math.round(pointerAnchor.x)
-            : Math.round(selectionRect.left + selectionRect.width / 2)
-        const lockedPosition = floatingToolbarPositionLockRef.current
-
-        setFloatingToolbar({
-            textRanges,
-            codeRanges,
-            listItemRanges,
-            selectedMarkdown,
-            placement: lockedPosition?.placement ?? (shouldPlaceBelow ? 'below' : 'above'),
-            top: lockedPosition?.top ?? toolbarTop,
-            left: lockedPosition?.left ?? Math.min(viewRight - 16, Math.max(viewLeft + 16, toolbarLeft)),
-        })
     }, [clearFloatingToolbarRevealTimeout, mode])
 
     const scheduleFloatingToolbarUpdateFromSelection = useCallback(
@@ -5443,117 +5478,13 @@ function MarkdownNotebookEditor({
                 onTouchMove={handleRowTouchMove}
                 onTouchEnd={handleRowTouchEnd}
                 onTouchCancel={handleRowTouchEnd}
+                onContextMenu={(event) => {
+                    if (mode !== 'edit' || isTitleRow) return
+                    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
+                        event.preventDefault()
+                    }
+                }}
             >
-                {mobileActiveNodeId === node.id && mode === 'edit' && !isTitleRow ? (
-                    <div className="MarkdownNotebook__mobile-block-bar" contentEditable={false}>
-                        {canCommentOnBlock ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__mobile-block-bar-btn"
-                                onClick={(event) => {
-                                    event.preventDefault()
-                                    event.stopPropagation()
-                                    setMobileActiveNodeId(null)
-                                    startBlockCommentForNode(node.id)
-                                }}
-                                title="Yorum yap"
-                            >
-                                <IconComment className="size-3.5" />
-                                <span>Yorum</span>
-                            </button>
-                        ) : null}
-
-                        {onAskAI && !isAIPromptOpen ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__mobile-block-bar-btn"
-                                onClick={(event) => {
-                                    event.preventDefault()
-                                    event.stopPropagation()
-                                    setMobileActiveNodeId(null)
-                                    runBlockMoreMenuAction(node.id, 'wim-ai')
-                                }}
-                                title="WIM AI"
-                            >
-                                <IconSparkles className="size-3.5 text-blue-400" />
-                                <span>AI</span>
-                            </button>
-                        ) : null}
-
-                        {index > 1 ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__mobile-block-bar-btn"
-                                onClick={(event) => {
-                                    event.preventDefault()
-                                    event.stopPropagation()
-                                    moveBlockUp(node.id)
-                                }}
-                                title="Yukarı taşı"
-                            >
-                                <ArrowUp className="size-3.5" />
-                                <span>Yukarı</span>
-                            </button>
-                        ) : null}
-
-                        {index < renderedNodes.length - 1 ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__mobile-block-bar-btn"
-                                onClick={(event) => {
-                                    event.preventDefault()
-                                    event.stopPropagation()
-                                    moveBlockDown(node.id)
-                                }}
-                                title="Aşağı taşı"
-                            >
-                                <ArrowDown className="size-3.5" />
-                                <span>Aşağı</span>
-                            </button>
-                        ) : null}
-
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__mobile-block-bar-btn"
-                            onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                duplicateBlock(node.id)
-                                setMobileActiveNodeId(null)
-                            }}
-                            title="Kopyala"
-                        >
-                            <IconCopy className="size-3.5" />
-                        </button>
-
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__mobile-block-bar-btn MarkdownNotebook__mobile-block-bar-btn--danger"
-                            onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                setMobileActiveNodeId(null)
-                                runBlockMoreMenuAction(node.id, 'delete')
-                            }}
-                            title="Sil"
-                        >
-                            <IconTrash className="size-3.5" />
-                        </button>
-
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__mobile-block-bar-btn"
-                            onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                setMobileActiveNodeId(null)
-                            }}
-                            title="Kapat"
-                        >
-                            <IconX className="size-3.5" />
-                        </button>
-                    </div>
-                ) : null}
                 {isDraggableRow ? (
                     <div
                         className="MarkdownNotebook__drag-handle"
@@ -5857,6 +5788,13 @@ function MarkdownNotebookEditor({
     }
 
     const firstTextGroupKey = renderedNodeGroups.find((group) => group.type === 'text')?.key
+    const mobileBarIndex = mobileActiveNodeId
+        ? renderedNodes.findIndex((node) => node.id === mobileActiveNodeId)
+        : -1
+    const mobileBarNode = mobileBarIndex > 0 ? renderedNodes[mobileBarIndex] : null
+    const showMobileBlockBar = mode === 'edit' && Boolean(mobileBarNode && mobileBarAnchor)
+    const mobileBarIsAIWriting = mobileBarIndex >= 0 && aiWritingNodeIndexSet.has(mobileBarIndex)
+    const mobileBarIsPrompt = Boolean(mobileBarNode && isPromptComponentNode(mobileBarNode))
 
     return (
         <NotebookAnnotationsContext.Provider value={document.annotations || EMPTY_ANNOTATIONS}>
@@ -5984,6 +5922,114 @@ function MarkdownNotebookEditor({
                             listItemRefs={listItemRefs}
                             containerRef={mainRef}
                         />
+                    ) : null}
+                    {showMobileBlockBar && mobileBarNode && mobileBarAnchor ? (
+                        <div
+                            className="MarkdownNotebook__mobile-block-bar MarkdownNotebook__mobile-block-bar--portal"
+                            contentEditable={false}
+                            style={{ top: mobileBarAnchor.top - 4, left: mobileBarAnchor.left }}
+                        >
+                            {!mobileBarIsPrompt && !mobileBarIsAIWriting && !isDiscussionCommentNode(mobileBarNode) ? (
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__mobile-block-bar-btn"
+                                    onClick={(event) => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                        clearMobileBlockBar()
+                                        startBlockCommentForNode(mobileBarNode.id)
+                                    }}
+                                    title="Yorum yap"
+                                >
+                                    <IconComment className="size-3.5" />
+                                    <span>Yorum</span>
+                                </button>
+                            ) : null}
+                            {onAskAI && !mobileBarIsPrompt ? (
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__mobile-block-bar-btn"
+                                    onClick={(event) => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                        clearMobileBlockBar()
+                                        runBlockMoreMenuAction(mobileBarNode.id, 'wim-ai')
+                                    }}
+                                    title="WIM AI"
+                                >
+                                    <IconSparkles className="size-3.5 text-blue-400" />
+                                    <span>AI</span>
+                                </button>
+                            ) : null}
+                            {mobileBarIndex > 1 ? (
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__mobile-block-bar-btn"
+                                    onClick={(event) => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                        moveBlockUp(mobileBarNode.id)
+                                    }}
+                                    title="Yukarı taşı"
+                                >
+                                    <ArrowUp className="size-3.5" />
+                                    <span>Yukarı</span>
+                                </button>
+                            ) : null}
+                            {mobileBarIndex < renderedNodes.length - 1 ? (
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__mobile-block-bar-btn"
+                                    onClick={(event) => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                        moveBlockDown(mobileBarNode.id)
+                                    }}
+                                    title="Aşağı taşı"
+                                >
+                                    <ArrowDown className="size-3.5" />
+                                    <span>Aşağı</span>
+                                </button>
+                            ) : null}
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    duplicateBlock(mobileBarNode.id)
+                                    clearMobileBlockBar()
+                                }}
+                                title="Kopyala"
+                            >
+                                <IconCopy className="size-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn MarkdownNotebook__mobile-block-bar-btn--danger"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    clearMobileBlockBar()
+                                    runBlockMoreMenuAction(mobileBarNode.id, 'delete')
+                                }}
+                                title="Sil"
+                            >
+                                <IconTrash className="size-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                className="MarkdownNotebook__mobile-block-bar-btn"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    clearMobileBlockBar()
+                                }}
+                                title="Kapat"
+                            >
+                                <IconX className="size-3.5" />
+                            </button>
+                        </div>
                     ) : null}
                     {floatingToolbar && mode === 'edit' ? (
                         <FormattingToolbar

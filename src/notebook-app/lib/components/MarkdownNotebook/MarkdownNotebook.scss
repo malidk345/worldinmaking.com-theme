@@ -3589,6 +3589,14 @@ button.MarkdownNotebook__component-title:focus-visible {
     left: 50%;
     transform: translateX(-50%);
     z-index: 70;
+
+    &--portal {
+        position: fixed;
+        bottom: auto;
+        transform: translate(-50%, -100%);
+        z-index: 80;
+        pointer-events: auto;
+    }
     display: flex;
     align-items: center;
     gap: 0.25rem;

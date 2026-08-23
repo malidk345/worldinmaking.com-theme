@@ -45,25 +45,29 @@ export function getElementLineHeight(element: HTMLElement): number {
 }
 
 export function getSelectionRange(element: HTMLElement, nodeId: string): NotebookTextSelectionRange | null {
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-        return null
-    }
+    try {
+        const selection = window.getSelection()
+        if (!selection || selection.rangeCount === 0) {
+            return null
+        }
 
-    const range = selection.getRangeAt(0)
-    if (!element.contains(range.commonAncestorContainer) && !rangeIntersectsNode(range, element)) {
-        return null
-    }
-    const textLength = element.textContent?.length ?? 0
+        const range = selection.getRangeAt(0)
+        if (!element.contains(range.commonAncestorContainer) && !rangeIntersectsNode(range, element)) {
+            return null
+        }
+        const textLength = element.textContent?.length ?? 0
 
-    return {
-        nodeId,
-        start: element.contains(range.startContainer)
-            ? getTextOffset(element, range.startContainer, range.startOffset)
-            : 0,
-        end: element.contains(range.endContainer)
-            ? getTextOffset(element, range.endContainer, range.endOffset)
-            : textLength,
+        return {
+            nodeId,
+            start: element.contains(range.startContainer)
+                ? getTextOffset(element, range.startContainer, range.startOffset)
+                : 0,
+            end: element.contains(range.endContainer)
+                ? getTextOffset(element, range.endContainer, range.endOffset)
+                : textLength,
+        }
+    } catch {
+        return null
     }
 }
 
@@ -104,10 +108,23 @@ export function getCollapsedSelectionRange(element: HTMLElement, nodeId: string)
 }
 
 export function getTextOffset(root: HTMLElement, container: Node, offset: number): number {
-    const range = document.createRange()
-    range.selectNodeContents(root)
-    range.setEnd(container, offset)
-    return range.toString().length
+    try {
+        if (container !== root && !root.contains(container)) {
+            return 0
+        }
+        const maxOffset =
+            container.nodeType === Node.TEXT_NODE
+                ? container.textContent?.length ?? 0
+                : container.childNodes.length
+        const safeOffset = Math.max(0, Math.min(offset, maxOffset))
+        const range = document.createRange()
+        range.selectNodeContents(root)
+        range.setEnd(container, safeOffset)
+        return range.toString().length
+    } catch {
+        // iOS long-press selections can point at detached or out-of-tree nodes.
+        return 0
+    }
 }
 
 export function restoreSelection(element: HTMLElement, start: number, end: number): void {
@@ -122,13 +139,17 @@ export function restoreSelection(element: HTMLElement, start: number, end: numbe
         return
     }
 
-    const range = document.createRange()
-    const startPosition = findTextPosition(element, start)
-    const endPosition = findTextPosition(element, end)
-    range.setStart(startPosition.node, startPosition.offset)
-    range.setEnd(endPosition.node, endPosition.offset)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    try {
+        const range = document.createRange()
+        const startPosition = findTextPosition(element, start)
+        const endPosition = findTextPosition(element, end)
+        range.setStart(startPosition.node, startPosition.offset)
+        range.setEnd(endPosition.node, endPosition.offset)
+        selection.removeAllRanges()
+        selection.addRange(range)
+    } catch {
+        // iOS long-press can leave a range that cannot be restored.
+    }
 }
 
 export function scrollNotebookElementIntoView(element: HTMLElement): void {

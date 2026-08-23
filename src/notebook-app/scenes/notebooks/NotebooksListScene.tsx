@@ -173,7 +173,8 @@ export function NotebooksListScene({
                             e.preventDefault()
                             onSelectNotebook(notebook.id)
                         }}
-                        href={`#/notebook/${notebook.id}`}
+                        onContextMenu={(e) => e.preventDefault()}
+                        href={`/notebooks?id=${notebook.id}`}
                     >
                         <span className="whitespace-normal break-words">{notebook.title || 'Untitled'}</span>
                         {notebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
