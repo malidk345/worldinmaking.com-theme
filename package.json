@@ -22,6 +22,7 @@
     "predev": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
     "prebuild": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
     "pages:build": "next-on-pages",
+    "grok": "node scripts/grok-cli.mjs",
     "start": "next start",
     "bot:worker": "node scripts/bot-worker.js",
     "supabase:bootstrap": "node scripts/wim-supabase-bootstrap.mjs",
