@@ -544,12 +544,56 @@
     }
 }
 
+html {
+    --browser-chrome: #c9d0be;
+}
+html.dark {
+    --browser-chrome: #141e18;
+}
+html[data-wallpaper='keyboard-mint'] {
+    --browser-chrome: #c9d0be;
+}
+html.dark[data-wallpaper='keyboard-mint'] {
+    --browser-chrome: #141e18;
+}
+html[data-wallpaper='cobalt'] {
+    --browser-chrome: #2f7ed4;
+}
+html.dark[data-wallpaper='cobalt'] {
+    --browser-chrome: #1e5dad;
+}
+html[data-wallpaper='hogzilla'] {
+    --browser-chrome: #e3e1e4;
+}
+html.dark[data-wallpaper='hogzilla'] {
+    --browser-chrome: #141e40;
+}
+html[data-wallpaper='draft-world'] {
+    --browser-chrome: #f3efe6;
+}
+html.dark[data-wallpaper='draft-world'] {
+    --browser-chrome: #141e40;
+}
+html[data-wallpaper='rain-embers'] {
+    --browser-chrome: #1a3350;
+}
+html.dark[data-wallpaper='rain-embers'] {
+    --browser-chrome: #0f2236;
+}
+html[data-wallpaper='plaza-bang'] {
+    --browser-chrome: #e6dfd2;
+}
+html.dark[data-wallpaper='plaza-bang'] {
+    --browser-chrome: #141e40;
+}
+
 html,
 body,
 #__next {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background-color: var(--browser-chrome);
 }
 
 body {
@@ -558,11 +602,9 @@ body {
     min-height: 100dvh;
     -webkit-text-size-adjust: 100%;
 }
-body.light {
-    background-color: var(--color-bg-3000-light);
-}
+body.light,
 body.dark {
-    background-color: var(--color-bg-3000-dark);
+    background-color: var(--browser-chrome);
 }
 
 #app-container {
@@ -571,6 +613,7 @@ body.dark {
     min-width: 0;
     overflow: hidden;
     overscroll-behavior: none;
+    background-color: var(--browser-chrome);
 }
 
 [data-app='AppWindow']:focus-visible {

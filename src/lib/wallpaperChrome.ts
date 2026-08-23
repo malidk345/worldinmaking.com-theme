@@ -79,6 +79,20 @@ export function getWallpaperThemeColor(wallpaper: string, mode: ResolvedTheme): 
     return WALLPAPER_THEME_COLORS[resolveKeptWallpaper(wallpaper)][mode]
 }
 
+export function resolveChromeTheme(colorMode: ColorMode, theme: ResolvedTheme, prefersDark = false): ResolvedTheme {
+    if (colorMode === 'system') return prefersDark ? 'dark' : 'light'
+    return theme === 'dark' ? 'dark' : 'light'
+}
+
+export function chromeColorFor(
+    wallpaper: string,
+    colorMode: ColorMode,
+    theme: ResolvedTheme,
+    prefersDark = false
+): string {
+    return getWallpaperThemeColor(wallpaper, resolveChromeTheme(colorMode, theme, prefersDark))
+}
+
 function hexLuminance(hex: string): number {
     const raw = hex.replace('#', '')
     const normalized = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw
@@ -90,7 +104,8 @@ function hexLuminance(hex: string): number {
     return (r * 299 + g * 587 + b * 114) / 1000
 }
 
-function upsertNamedMeta(name: string, content: string): void {
+function upsertNamedMeta(name: string, content: string): HTMLMetaElement | null {
+    if (typeof document === 'undefined') return null
     const head = document.head
     let meta = head.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
     if (!meta) {
@@ -99,6 +114,37 @@ function upsertNamedMeta(name: string, content: string): void {
         head.appendChild(meta)
     }
     meta.setAttribute('content', content)
+    return meta
+}
+
+function syncThemeColorMeta(color: string): void {
+    const head = document.head
+    const metas = Array.from(head.querySelectorAll('meta[name="theme-color"]')) as HTMLMetaElement[]
+    const keep = metas[0] || upsertNamedMeta('theme-color', color)
+    if (!keep) return
+    keep.removeAttribute('media')
+    keep.setAttribute('content', color)
+    for (const extra of metas.slice(1)) extra.remove()
+}
+
+let chromeGuard: MutationObserver | null = null
+let lastChromeColor = ''
+
+function startChromeGuard(): void {
+    if (typeof document === 'undefined' || chromeGuard) return
+    chromeGuard = new MutationObserver(() => {
+        if (!lastChromeColor) return
+        const metas = document.head.querySelectorAll('meta[name="theme-color"]')
+        const first = metas[0] as HTMLMetaElement | undefined
+        if (metas.length === 1 && first && !first.media && first.content === lastChromeColor) return
+        syncThemeColorMeta(lastChromeColor)
+    })
+    chromeGuard.observe(document.head, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['content', 'media', 'name'],
+    })
 }
 
 export function applyWallpaperBrowserChrome(opts: {
@@ -108,38 +154,19 @@ export function applyWallpaperBrowserChrome(opts: {
 }): void {
     if (typeof document === 'undefined') return
 
-    const pair = WALLPAPER_THEME_COLORS[resolveKeptWallpaper(opts.wallpaper)]
-    const head = document.head
-    head.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.remove())
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false
+    const active = chromeColorFor(opts.wallpaper, opts.colorMode, opts.theme, prefersDark)
+    lastChromeColor = active
 
-    const addThemeColor = (content: string, media?: string) => {
-        const meta = document.createElement('meta')
-        meta.setAttribute('name', 'theme-color')
-        meta.setAttribute('content', content)
-        if (media) meta.setAttribute('media', media)
-        head.appendChild(meta)
-    }
+    const root = document.documentElement
+    root.style.setProperty('--browser-chrome', active)
+    if (document.body) document.body.style.backgroundColor = active
 
-    if (opts.colorMode === 'system') {
-        addThemeColor(pair.light, '(prefers-color-scheme: light)')
-        addThemeColor(pair.dark, '(prefers-color-scheme: dark)')
-    } else {
-        addThemeColor(opts.theme === 'dark' ? pair.dark : pair.light)
-    }
-
-    const active =
-        opts.colorMode === 'system'
-            ? window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? pair.dark
-                : pair.light
-            : opts.theme === 'dark'
-              ? pair.dark
-              : pair.light
-
-    // iOS PWA status bar: translucent over dark fields, default (dark glyphs) on light paper.
+    syncThemeColorMeta(active)
     upsertNamedMeta(
         'apple-mobile-web-app-status-bar-style',
         hexLuminance(active) < 150 ? 'black-translucent' : 'default'
     )
     upsertNamedMeta('msapplication-navbutton-color', active)
+    startChromeGuard()
 }

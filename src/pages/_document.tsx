@@ -45,24 +45,21 @@ const themeScript = `(function () {
         var head = document.head
         if (!head) return
         var pair = THEME_COLORS[nextWallpaper] || THEME_COLORS[${JSON.stringify(DEFAULT_WALLPAPER)}]
-        var existing = head.querySelectorAll('meta[name="theme-color"]')
-        for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i])
-        function addThemeColor(content, media) {
-            var meta = document.createElement('meta')
-            meta.setAttribute('name', 'theme-color')
-            meta.setAttribute('content', content)
-            if (media) meta.setAttribute('media', media)
-            head.appendChild(meta)
-        }
-        if (nextColorMode === 'system') {
-            addThemeColor(pair.light, '(prefers-color-scheme: light)')
-            addThemeColor(pair.dark, '(prefers-color-scheme: dark)')
-        } else {
-            addThemeColor(nextTheme === 'dark' ? pair.dark : pair.light)
-        }
         var active = nextColorMode === 'system'
             ? (darkQuery.matches ? pair.dark : pair.light)
             : (nextTheme === 'dark' ? pair.dark : pair.light)
+        if (document.documentElement) document.documentElement.style.setProperty('--browser-chrome', active)
+        if (document.body) document.body.style.backgroundColor = active
+        var metas = head.querySelectorAll('meta[name="theme-color"]')
+        var keep = metas[0]
+        if (!keep) {
+            keep = document.createElement('meta')
+            keep.setAttribute('name', 'theme-color')
+            head.appendChild(keep)
+        }
+        keep.removeAttribute('media')
+        keep.setAttribute('content', active)
+        for (var i = 1; i < metas.length; i++) metas[i].parentNode.removeChild(metas[i])
         var n = parseInt(String(active).replace('#', ''), 16)
         var lum = isNaN(n) ? 255 : (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000
         var bar = head.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -145,16 +142,7 @@ export default function Document() {
                 />
                 <link rel="icon" href="/brand/wim-mark.png" type="image/png" />
                 <link rel="apple-touch-icon" href="/brand/wim-mark.png" />
-                <meta
-                    name="theme-color"
-                    media="(prefers-color-scheme: light)"
-                    content={DEFAULT_WALLPAPER_THEME_COLOR.light}
-                />
-                <meta
-                    name="theme-color"
-                    media="(prefers-color-scheme: dark)"
-                    content={DEFAULT_WALLPAPER_THEME_COLOR.dark}
-                />
+                <meta name="theme-color" content={DEFAULT_WALLPAPER_THEME_COLOR.light} />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <meta name="color-scheme" content="light dark" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />

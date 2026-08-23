@@ -2281,12 +2281,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         applyChromeAttrs(document.body)
         applyChromeAttrs(document.documentElement)
-        applyWallpaperBrowserChrome({
-            wallpaper: siteSettings.wallpaper,
-            colorMode: siteSettings.colorMode,
-            theme: document.body.className.includes('dark') ? 'dark' : 'light',
-        })
+        const paintChrome = () =>
+            applyWallpaperBrowserChrome({
+                wallpaper: siteSettings.wallpaper,
+                colorMode: siteSettings.colorMode,
+                theme: document.body.className.includes('dark') ? 'dark' : 'light',
+            })
+        paintChrome()
         cleanupCustomCursor()
+        if (siteSettings.colorMode !== 'system') return
+        const mq = window.matchMedia('(prefers-color-scheme: dark)')
+        const onScheme = () => paintChrome()
+        if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onScheme)
+        else if (typeof mq.addListener === 'function') mq.addListener(onScheme)
+        return () => {
+            if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onScheme)
+            else if (typeof mq.removeListener === 'function') mq.removeListener(onScheme)
+        }
     }, [siteSettings])
 
     useEffect(() => {

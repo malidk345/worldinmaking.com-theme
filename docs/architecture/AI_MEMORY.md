@@ -414,10 +414,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-304` | Stream 2 | Desktop-pinned notebooks must open that notebook, not the list | window-path, notebook-route, Desktop, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-305` | Stream 4 | Cross-device delete must tombstone notebooks (no resurrection); stop media wipe | notebooks-repo, notebookRemote, Desktop | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-306` | Stream 4 | Hard-delete chat/notebook rows in Supabase; keep tiny tombstones; fix WIM AI delete | chat-store, notebooks-repo, ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-307` | Stream 3 | Browser chrome / overscroll gaps must always match the wallpaper field color | wallpaperChrome.ts, global.css, _document, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 377 - Browser chrome and page gaps always match the wallpaper (TSK-307)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Status bar / overscroll sometimes showed the wallpaper color and sometimes the generic cream/navy page bg. `theme-color` used flaky media-query duplicates that Next could overwrite. Now a single `theme-color` is kept in place, `--browser-chrome` paints html/body/#app-container, and CSS per `data-wallpaper` covers the first paint. A head MutationObserver strips extra theme-color tags.
+- **Modified Files:** `src/lib/wallpaperChrome.ts`, `src/styles/global.css`, `src/pages/_document.tsx`, `src/context/App.tsx`, `static/scripts/theme-init.js`, `src/html.tsx`, `tests/world-snapshot.spec.ts`
+- **Verification:** `world-snapshot.spec.ts` 7/7; `typecheck:shell` 0 gated errors.
 
 ### Entry 376 - Hard-delete chats/notebooks in Supabase; WIM AI delete no longer comes back (TSK-306)
 - **Date:** 2026-08-23

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import {
+    chromeColorFor,
     DEFAULT_REDUCE_TRANSPARENCY,
     DEFAULT_WALLPAPER,
     migrateAppearanceSettings,
@@ -82,6 +83,13 @@ test.describe('world snapshot parse', () => {
         })
         expect(kept.wallpaper).toBe('hogzilla')
         expect(kept.reduceTransparency).toBe(false)
+    })
+
+    test('browser chrome color follows the wallpaper field, not a generic page bg', () => {
+        expect(chromeColorFor('cobalt', 'light', 'light')).toBe('#2F7ED4')
+        expect(chromeColorFor('cobalt', 'dark', 'dark')).toBe('#1E5DAD')
+        expect(chromeColorFor('keyboard-mint', 'system', 'light', true)).toBe('#141E18')
+        expect(chromeColorFor('keyboard-mint', 'system', 'light', false)).toBe('#C9D0BE')
     })
 
     test('cancelled Next.js route errors are recognized', () => {
