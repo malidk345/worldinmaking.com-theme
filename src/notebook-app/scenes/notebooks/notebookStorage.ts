@@ -505,12 +505,10 @@ export function getNotebook(id: string): StoredNotebook | undefined {
     return getNotebooks().find((n) => n.id === id || n.short_id === id)
 }
 
-/** Public share URL for a published notebook (hash route inside /notebooks). */
+/** Public share URL for a published notebook. */
 export function getNotebookPublicUrl(notebook: Pick<StoredNotebook, 'short_id' | 'id'>): string {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://worldinmaking.com'
-    const path = typeof window !== 'undefined' ? window.location.pathname : '/notebooks'
-    const base = path.includes('/notebooks') ? path.split('?')[0] : '/notebooks'
-    return `${origin}${base}#/n/${notebook.short_id || notebook.id}`
+    return `${origin}/notebooks/n/${notebook.short_id || notebook.id}`
 }
 
 export function getNotebookEditorUrl(notebook: Pick<StoredNotebook, 'id'>): string {

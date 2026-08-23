@@ -8,6 +8,8 @@ export type NotebookRoute =
     | { page: 'public'; notebookId: string }
 
 export function parseNotebookRoute(path: string, hash = '', search = ''): NotebookRoute {
+    const hashFromPath = path.includes('#') ? path.slice(path.indexOf('#')) : ''
+    const hashToUse = hashFromPath || hash
     const clean = stripPathNoise(path)
     const parts = clean.split('/').filter(Boolean)
     const query = search ? (search.startsWith('?') ? search : `?${search}`) : ''
@@ -21,7 +23,7 @@ export function parseNotebookRoute(path: string, hash = '', search = ''): Notebo
     const id = extractNotebookId(path) || extractNotebookId(`${clean}${query}`)
     if (id) return { page: 'editor', notebookId: id }
 
-    const h = String(hash || '').replace(/^#\/?/, '')
+    const h = String(hashToUse || '').replace(/^#\/?/, '')
     if (h.startsWith('notebook/')) return { page: 'editor', notebookId: h.replace('notebook/', '') }
     if (h.startsWith('n/')) return { page: 'public', notebookId: h.replace(/^n\//, '') }
     if (h === 'canvas') return { page: 'canvas' }

@@ -415,10 +415,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-305` | Stream 4 | Cross-device delete must tombstone notebooks (no resurrection); stop media wipe | notebooks-repo, notebookRemote, Desktop | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-306` | Stream 4 | Hard-delete chat/notebook rows in Supabase; keep tiny tombstones; fix WIM AI delete | chat-store, notebooks-repo, ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-307` | Stream 3 | Browser chrome / overscroll gaps must always match the wallpaper field color | wallpaperChrome.ts, global.css, _document, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-308` | Stream 2 | Profile published notebooks must open the public view, not the editor list | window-path, notebook-route, ProfileNotebookGrid | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 378 - Profile published notebooks open the public reader (TSK-308)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Profile cards linked to `/notebooks#/n/:id`. Window path stripped the hash, so the OS opened the notebooks list/editor. Cards and share URLs now use `/notebooks/n/:id`. Canonical path still maps leftover hash links to the public reader.
+- **Modified Files:** `src/lib/window-path.ts`, `src/lib/notebook-route.ts`, `ProfileNotebookGrid.tsx`, `notebookStorage.ts`, `tests/window-path.spec.ts`
+- **Verification:** `window-path.spec.ts` 5/5.
 
 ### Entry 377 - Browser chrome and page gaps always match the wallpaper (TSK-307)
 - **Date:** 2026-08-23

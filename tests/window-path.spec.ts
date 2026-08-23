@@ -3,8 +3,10 @@ import { parseNotebookRoute, notebookPathForRoute } from '../src/lib/notebook-ro
 import {
     canonicalWindowPath,
     extractNotebookId,
+    extractPublicNotebookId,
     isPathRoutedWindow,
     isPlaceholderPath,
+    notebookPublicPath,
     notebookWindowPath,
     repairWindowPath,
     stripPathNoise,
@@ -48,5 +50,18 @@ test.describe('window path', () => {
         })
         expect(parseNotebookRoute('/notebooks', '', '')).toEqual({ page: 'list' })
         expect(notebookPathForRoute({ page: 'editor', notebookId: 'nb-1' })).toBe('/notebooks/nb-1')
+    })
+
+    test('published notebook links open the public reader, not the editor list', () => {
+        expect(extractPublicNotebookId('/notebooks#/n/abc')).toBe('abc')
+        expect(extractPublicNotebookId('/notebooks/n/abc')).toBe('abc')
+        expect(extractNotebookId('/notebooks/n/abc')).toBeNull()
+        expect(canonicalWindowPath('/notebooks#/n/abc')).toBe('/notebooks/n/abc')
+        expect(canonicalWindowPath('/notebooks/n/abc')).toBe('/notebooks/n/abc')
+        expect(notebookPublicPath('abc')).toBe('/notebooks/n/abc')
+        expect(parseNotebookRoute('/notebooks/n/abc')).toEqual({ page: 'public', notebookId: 'abc' })
+        expect(parseNotebookRoute('/notebooks#/n/abc')).toEqual({ page: 'public', notebookId: 'abc' })
+        expect(notebookPathForRoute({ page: 'public', notebookId: 'abc' })).toBe('/notebooks/n/abc')
+        expect(repairWindowPath('/notebooks', '/notebooks/n/abc')).toBe('/notebooks/n/abc')
     })
 })

@@ -20,7 +20,7 @@ function formatCardDate(raw?: string): string {
 }
 
 function NotebookCard({ item }: { item: ProfileNotebookCard }) {
-    const href = `/notebooks#/n/${item.short_id || item.id}`
+    const href = `/notebooks/n/${item.short_id || item.id}`
     const dated = formatCardDate(item.updatedAt)
     const excerpt = String(item.excerpt || '').trim()
 

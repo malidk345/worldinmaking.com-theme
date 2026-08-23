@@ -16,6 +16,42 @@ export function stripPathNoise(path?: string | null): string {
     return withSlash.replace(/\/+$/, '') || '/'
 }
 
+/** Published reader: `/notebooks/n/:shortId` or leftover `#/n/:shortId`. */
+export function extractPublicNotebookId(input?: string | null): string | null {
+    const raw = String(input || '').trim()
+    if (!raw) return null
+    let pathname = raw
+    let hash = ''
+    try {
+        if (/^[a-z]+:\/\//i.test(raw)) {
+            const url = new URL(raw)
+            pathname = url.pathname
+            hash = url.hash.replace(/^#/, '')
+        } else {
+            const hashIdx = raw.indexOf('#')
+            if (hashIdx >= 0) {
+                hash = raw.slice(hashIdx + 1)
+                pathname = raw.slice(0, hashIdx)
+            }
+        }
+    } catch {
+        pathname = raw.split('#')[0]
+    }
+    const parts = stripPathNoise(pathname).split('/').filter(Boolean)
+    if (parts[0] === 'notebooks' && parts[1] === 'n' && parts[2]) return parts[2]
+    const h = hash.replace(/^\//, '')
+    if (h.startsWith('n/')) {
+        const id = h.slice(2).split(/[/?#]/)[0]
+        return id || null
+    }
+    return null
+}
+
+export function notebookPublicPath(id?: string | null): string {
+    const clean = String(id || '').trim()
+    return clean ? `/notebooks/n/${clean}` : '/notebooks'
+}
+
 /** Editor id from `/notebooks/:id` or legacy `?id=` / `?notebookId=` pins. */
 export function extractNotebookId(input?: string | null): string | null {
     const raw = String(input || '').trim()
@@ -54,6 +90,9 @@ export function notebookWindowPath(id?: string | null): string {
 
 export function livePathname(): string | null {
     if (typeof window === 'undefined') return null
+    const liveRaw = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const publicId = extractPublicNotebookId(liveRaw)
+    if (publicId) return notebookPublicPath(publicId)
     const notebookId = extractNotebookId(`${window.location.pathname}${window.location.search}`)
     if (notebookId) return notebookWindowPath(notebookId)
     const live = stripPathNoise(window.location.pathname)
@@ -62,6 +101,8 @@ export function livePathname(): string | null {
 
 /** Resolve a window path so F5 on /posts/foo is never `/posts/[slug]` or `/posts`. */
 export function canonicalWindowPath(input?: string | null): string {
+    const publicId = extractPublicNotebookId(input)
+    if (publicId) return notebookPublicPath(publicId)
     const notebookId = extractNotebookId(input)
     if (notebookId) return notebookWindowPath(notebookId)
     const stripped = stripPathNoise(input)
@@ -81,8 +122,12 @@ export function canonicalWindowPath(input?: string | null): string {
 }
 
 export function repairWindowPath(windowPath: string, live: string): string {
-    const liveNotebook = extractNotebookId(live)
-    if (liveNotebook && stripPathNoise(windowPath) === '/notebooks') return notebookWindowPath(liveNotebook)
+    if (stripPathNoise(windowPath) === '/notebooks') {
+        const livePublic = extractPublicNotebookId(live)
+        if (livePublic) return notebookPublicPath(livePublic)
+        const liveNotebook = extractNotebookId(live)
+        if (liveNotebook) return notebookWindowPath(liveNotebook)
+    }
     const current = stripPathNoise(windowPath)
     const livePath = stripPathNoise(live)
     if (isPlaceholderPath(current) && livePath !== '/') return livePath
