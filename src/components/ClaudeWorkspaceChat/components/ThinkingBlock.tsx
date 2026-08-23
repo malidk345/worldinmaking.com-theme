@@ -225,8 +225,8 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     ?.title;
 
   useEffect(() => {
-    setIsOpen(!!isLive);
-  }, [isLive, isLive ? segments.length : 0]);
+    if (isLive) setIsOpen(true)
+  }, [isLive])
 
   const handleScroll = () => {
     const el = scrollRef.current;

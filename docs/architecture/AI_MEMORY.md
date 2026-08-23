@@ -406,10 +406,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-296` | Stream 2 | Mobile block toolbar: English chrome, match format toolbar, stay in viewport | MarkdownNotebook.tsx/scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-297` | Stream 3 | Mobile typing: overlay keyboard, do not pan/resize windows or zoom | useKeyboardInset, useWindowResize, _document, global.css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-298` | Stream 3 | WIM AI chat: dock composer, stop feed/input jump while streaming | ClaudeWorkspaceChat/index.tsx, ChatInput.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-299` | Stream 3 | Streaming reply must stay pinned to latest line, not jump to mid-thread | ClaudeWorkspaceChat/index.tsx, ThinkingBlock.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 368 - Streaming chat stays on the latest line (TSK-299)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Growing the reply fired scroll events that looked like the user scrolled away, so pin dropped and the thread froze in the middle. Programmatic scrolls are ignored; unpin only on wheel/touch. Pin runs in `useLayoutEffect` before paint. Thinking panel no longer auto-collapses when the model finishes (that was snapping the feed).
+- **Modified Files:** `ClaudeWorkspaceChat/index.tsx`, `ThinkingBlock.tsx`
 
 ### Entry 367 - WIM AI composer stays docked; feed no longer jumps (TSK-298)
 - **Date:** 2026-08-23
