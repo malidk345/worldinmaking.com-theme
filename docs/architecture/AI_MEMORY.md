@@ -402,6 +402,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 356 - TSK-26 slice 2: delete Pricing/Products graph after uncoupling Editor
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed the PostHog product-catalog tree once `Editor` no longer needed it. `getProductName` / `useProduct()` in `Editor` were dead (defined, never called). Explorer product sidebars had zero importers (art-library uses generic Explorer only).
+  1. **Uncoupled:** dropped unused `useProduct` from `src/components/Editor/index.tsx`.
+  2. **Deleted:** `src/components/Pricing/`, `src/components/Products/`, `src/components/CustomerLogos/`, `src/components/ScriptInstallCallout/`, `src/hooks/productData/`, `src/hooks/featureDefinitions/`, `src/hooks/useProduct.ts`, `src/hooks/useProducts.tsx`, `src/hooks/useCustomers.tsx`, `src/components/Explorer/Product.tsx`, `ProductSidebar.tsx`.
+  3. **Kept:** `PlatformInstall` (MDX shortcode in `mdxGlobalComponents.ts`), `kea.js` (still used by layout/docs), `src/navs/index.js`, App.tsx window maps.
+- **Verification:** grep found no remaining imports of deleted modules.
+- **Modified Files:** `src/components/Editor/index.tsx`, deletions listed above, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 355 - TSK-26 slice 1: delete proven-dead PostHog marketing pages
 - **Date:** 2026-08-23
 - **AI Agent:** Grok 4.6 (xAI)
