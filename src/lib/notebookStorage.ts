@@ -174,7 +174,9 @@ export function unpinNotebookFromDesktop(id: string): void {
                 item.id !== id &&
                 item.notebookId !== id &&
                 item.url !== `/notebooks?id=${id}` &&
-                !String(item.url || '').endsWith(`=${id}`)
+                item.url !== `/notebooks/${id}` &&
+                !String(item.url || '').endsWith(`=${id}`) &&
+                !String(item.url || '').endsWith(`/notebooks/${id}`)
         )
         if (filtered.length !== existing.length) {
             localStorage.setItem(DESKTOP_PINNED_APPS_KEY, JSON.stringify(filtered))

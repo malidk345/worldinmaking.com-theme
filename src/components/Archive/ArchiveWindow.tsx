@@ -7,6 +7,7 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Popover } from 'components/RadixUI/Popover'
 import { AppIcon, AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import { apps, useProductLinks } from 'components/Desktop/desktopApps'
+import { extractNotebookId, notebookWindowPath } from '../../lib/window-path'
 import { IconArchive, IconEllipsis } from '@posthog/icons'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -47,11 +48,14 @@ function loadPinnedApps(): AppItem[] {
                 const targetId = item.notebookId || item.id
                 return !targetId || !deletedSet.has(targetId)
             })
-            .map((item: { label?: string; notebookId?: string; url?: string }) => ({
-                label: item.label || 'Notebook',
-                Icon: <AppIcon name="doc" />,
-                url: item.url || (item.notebookId ? `/notebooks?id=${item.notebookId}` : undefined),
-            }))
+            .map((item: { label?: string; notebookId?: string; url?: string }) => {
+                const notebookId = item.notebookId || extractNotebookId(item.url) || null
+                return {
+                    label: item.label || 'Notebook',
+                    Icon: <AppIcon name="doc" />,
+                    url: notebookId ? notebookWindowPath(notebookId) : item.url,
+                }
+            })
     } catch {
         return []
     }

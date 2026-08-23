@@ -136,7 +136,7 @@ export function NotebooksListScene({
             const newItem = {
                 id: notebook.id,
                 label: docTitle,
-                url: `/notebooks?id=${notebook.id}`,
+                url: `/notebooks/${notebook.id}`,
                 notebookId: notebook.id,
                 iconType: 'document',
                 pinnedAt: new Date().toISOString(),
@@ -174,7 +174,7 @@ export function NotebooksListScene({
                             onSelectNotebook(notebook.id)
                         }}
                         onContextMenu={(e) => e.preventDefault()}
-                        href={`/notebooks?id=${notebook.id}`}
+                        href={`/notebooks/${notebook.id}`}
                     >
                         <span className="whitespace-normal break-words">{notebook.title || 'Untitled'}</span>
                         {notebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}

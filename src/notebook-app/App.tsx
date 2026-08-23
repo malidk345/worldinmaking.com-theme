@@ -54,6 +54,8 @@ import { isNotebookImageFile, uploadNotebookImage } from '../lib/notebook-upload
 import { uuid } from './lib/utils/dom'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
 import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
+import { useWindow } from '../context/Window'
+import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
 
@@ -82,60 +84,59 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// ---- Hash Router ----
-type Route =
-  | { page: 'list' }
-  | { page: 'templates' }
-  | { page: 'canvas' }
-  | { page: 'editor'; notebookId: string }
-  | { page: 'public'; notebookId: string }
+type Route = NotebookRoute
 
-function parseHash(hash: string): Route {
-  if (typeof window !== 'undefined' && window.location.search) {
-    const params = new URLSearchParams(window.location.search)
-    const queryId = params.get('id') || params.get('notebookId')
-    if (queryId) {
-      return { page: 'editor', notebookId: queryId }
-    }
-  }
-
-  const h = hash.replace(/^#\/?/, '')
-  if (h.startsWith('notebook/')) {
-    return { page: 'editor', notebookId: h.replace('notebook/', '') }
-  }
-  // Public read view: #/n/:short_id
-  if (h.startsWith('n/')) {
-    return { page: 'public', notebookId: h.replace(/^n\//, '') }
-  }
-  if (h === 'canvas') return { page: 'canvas' }
-  if (h === 'templates') return { page: 'templates' }
-  return { page: 'list' }
+function readNotebookLocation(windowPath?: string): Route {
+  if (typeof window === 'undefined') return { page: 'list' }
+  return parseNotebookRoute(
+    windowPath || window.location.pathname,
+    window.location.hash,
+    window.location.search
+  )
 }
 
-function useHashRouter(): [Route, (route: Route) => void] {
-  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash))
+function useNotebookRouter(): [Route, (route: Route) => void] {
+  const { appWindow } = useWindow()
+  const { updateWindow } = useAppActions()
+  const [route, setRoute] = useState<Route>(() => readNotebookLocation(appWindow?.path))
 
   useEffect(() => {
-    const handleHashChange = () => setRoute(parseHash(window.location.hash))
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [])
+    const next = readNotebookLocation(appWindow?.path)
+    setRoute((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+  }, [appWindow?.path])
+
+  useEffect(() => {
+    const sync = () => setRoute(readNotebookLocation(appWindow?.path))
+    window.addEventListener('hashchange', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      window.removeEventListener('hashchange', sync)
+      window.removeEventListener('popstate', sync)
+    }
+  }, [appWindow?.path])
 
   const navigate = useCallback((newRoute: Route) => {
-    let hash = '#/'
-    if (newRoute.page === 'editor') hash = `#/notebook/${newRoute.notebookId}`
-    else if (newRoute.page === 'public') hash = `#/n/${newRoute.notebookId}`
-    else if (newRoute.page === 'canvas') hash = '#/canvas'
-    else if (newRoute.page === 'templates') hash = '#/templates'
-    window.location.hash = hash
-  }, [])
+    const nextPath = notebookPathForRoute(newRoute)
+    setRoute(newRoute)
+    if (appWindow) {
+      updateWindow(appWindow, {
+        path: nextPath,
+        props: { ...(appWindow.props || {}), path: nextPath },
+      })
+    }
+    try {
+      window.history.replaceState(window.history.state || {}, '', nextPath)
+    } catch {
+      /* ignore */
+    }
+  }, [appWindow, updateWindow])
 
   return [route, navigate]
 }
 
 // ---- App ----
 export function App() {
-  const [route, navigate] = useHashRouter()
+  const [route, navigate] = useNotebookRouter()
   // Host Display options light/dark → notebook shell (Lemon components untouched)
   const hostTheme = useSiteThemeSync()
 
@@ -247,6 +248,7 @@ export function App() {
   }, [])
 
   const appActions = useAppActions()
+  const { appWindow } = useWindow()
   const { windows } = useAppWindows()
   const { isMobile } = useAppSettings()
 
@@ -431,6 +433,9 @@ export function App() {
       setTitle(nb.title)
       setSyncStatus('saved')
       setShowHistory(false)
+      if (appWindow && nb.title) {
+        appActions.setWindowTitle(appWindow, nb.title)
+      }
     }
 
     const nb = getNotebook(route.notebookId)
@@ -446,7 +451,7 @@ export function App() {
     }
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
     return () => window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
-  }, [route])
+  }, [route, appWindow, appActions])
 
   useEffect(() => {
     if (route.page !== 'editor' || !currentNotebook) return

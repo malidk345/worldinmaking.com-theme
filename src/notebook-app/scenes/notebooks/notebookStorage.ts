@@ -513,9 +513,7 @@ export function getNotebookPublicUrl(notebook: Pick<StoredNotebook, 'short_id' |
 
 export function getNotebookEditorUrl(notebook: Pick<StoredNotebook, 'id'>): string {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://worldinmaking.com'
-    const path = typeof window !== 'undefined' ? window.location.pathname : '/notebooks'
-    const base = path.includes('/notebooks') ? path.split('?')[0] : '/notebooks'
-    return `${origin}${base}#/notebook/${notebook.id}`
+    return `${origin}/notebooks/${notebook.id}`
 }
 
 /**
@@ -634,7 +632,9 @@ export function unpinNotebookFromDesktop(id: string): void {
                 item.id !== id &&
                 item.notebookId !== id &&
                 item.url !== `/notebooks?id=${id}` &&
-                !String(item.url || '').endsWith(`=${id}`)
+                item.url !== `/notebooks/${id}` &&
+                !String(item.url || '').endsWith(`=${id}`) &&
+                !String(item.url || '').endsWith(`/notebooks/${id}`)
         )
         if (filtered.length !== existing.length) {
             localStorage.setItem(DESKTOP_PINNED_APPS_KEY, JSON.stringify(filtered))

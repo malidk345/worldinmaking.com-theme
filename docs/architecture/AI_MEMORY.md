@@ -411,10 +411,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-301` | Stream 5 | WIM AI: empty welcome, stop marks the reply, retry after stop | ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-302` | Stream 2 | Path-first window routing so F5 on posts/questions is not an empty shell | window-path.ts, WindowRouter, _app, post/question pages | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-303` | Stream 3 | Site-wide mobile writing: comments sit on the keyboard, no window jump/zoom | useKeyboardInset, global.css, Inbox, QuestionForm, WindowContent | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-304` | Stream 2 | Desktop-pinned notebooks must open that notebook, not the list | window-path, notebook-route, Desktop, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 374 - Desktop-pinned notebooks open the notebook, not the list (TSK-304)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Add to Desktop stored `/notebooks?id=…`, then window-path stripped the query so the icon opened the notebooks list. Pins and clicks now use `/notebooks/:id`. The notebook app reads that path (and still accepts old `?id=` / hash). Existing desktop pins are rewritten on load.
+- **Modified Files:** `src/lib/window-path.ts`, `src/lib/notebook-route.ts`, `src/notebook-app/App.tsx`, `NotebooksListScene.tsx`, `Desktop/index.tsx`, `ArchiveWindow.tsx`, `App.tsx`, notebookStorage unpin URLs, `tests/window-path.spec.ts`
+- **Verification:** `window-path.spec.ts` 4/4; `typecheck:shell` 0 gated errors.
 
 ### Entry 373 - Site-wide mobile writing sits on the overlay keyboard (TSK-303)
 - **Date:** 2026-08-23

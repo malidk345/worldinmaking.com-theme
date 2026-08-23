@@ -13,6 +13,7 @@ import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { apps, useProductLinks } from './desktopApps'
+import { extractNotebookId, notebookWindowPath } from '../../lib/window-path'
 
 export { apps, useProductLinks }
 
@@ -91,12 +92,15 @@ function Desktop() {
                 localStorage.setItem(customAppsKey, JSON.stringify(validItems))
             }
 
-            const mapped: AppItem[] = validItems.map((item: any) => ({
-                label: item.label,
-                Icon: <AppIcon name="doc" />,
-                url: item.url || (item.notebookId ? `/notebooks?id=${item.notebookId}` : '/notebooks'),
-                source: 'desktop',
-            }))
+            const mapped: AppItem[] = validItems.map((item: any) => {
+                const notebookId = item.notebookId || extractNotebookId(item.url) || null
+                return {
+                    label: item.label,
+                    Icon: <AppIcon name="doc" />,
+                    url: notebookId ? notebookWindowPath(notebookId) : item.url || '/notebooks',
+                    source: 'desktop' as const,
+                }
+            })
             setPinnedApps(mapped)
         } catch (e) {
             console.error('Failed to load pinned apps', e)

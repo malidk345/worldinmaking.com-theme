@@ -32,7 +32,7 @@ import {
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
 import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
-import { canonicalWindowPath, repairWindowPath } from '../lib/window-path'
+import { canonicalWindowPath, extractNotebookId, repairWindowPath } from '../lib/window-path'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
@@ -1755,11 +1755,33 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 ? { x: 0, y: 0 }
                 : snapRect?.position || item.position || getPositionDefaults(key, size, prev)
             const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+            const notebookId = extractNotebookId(path)
+            const lastSeg = path.split('/').pop() || 'Window'
+            const givenTitle = item.title && item.title !== notebookId && item.title !== lastSeg ? item.title : ''
+            const windowTitle =
+                givenTitle ||
+                (path === '/archive'
+                    ? 'Archive'
+                    : path === '/home' || path === '/'
+                    ? 'Home'
+                    : path === '/workspace-chat' || path.startsWith('/workspace-chat/')
+                    ? 'WIM AI'
+                    : path === '/posts' || path === '/blog'
+                    ? 'Posts'
+                    : path === '/login' || path === '/signup'
+                    ? 'Sign In'
+                    : path.startsWith('/profile')
+                    ? 'Profile'
+                    : notebookId
+                    ? 'Notebook'
+                    : path.startsWith('/notebooks')
+                    ? 'Notebooks'
+                    : lastSeg)
 
             const newWin: AppWindow = {
                 key,
                 path,
-                title: item.title || (path === '/archive' ? 'Archive' : path === '/home' || path === '/' ? 'Home' : path === '/workspace-chat' || path.startsWith('/workspace-chat/') ? 'WIM AI' : path === '/posts' || path === '/blog' ? 'Posts' : path === '/login' || path === '/signup' ? 'Sign In' : path.startsWith('/profile') ? 'Profile' : path.startsWith('/notebooks') ? 'Notebooks' : path.split('/').pop() || 'Window'),
+                title: windowTitle,
                 size,
                 position,
                 previousSize: item.size || { width: 900, height: 650 },
@@ -1770,7 +1792,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 },
                 fixedSize: item.fixedSize || false,
                 element: item.element,
-                meta: { title: item.title || path.split('/').pop() || 'Window' },
+                meta: { title: windowTitle },
                 zIndex: maxZ + 1,
                 minimized: false,
                 windowed: true,
