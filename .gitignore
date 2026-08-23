@@ -42,6 +42,7 @@ __pycache__
 
 .env*.local
 /.claude/worktrees/
+.kilo/
 .env*
 .next/
 

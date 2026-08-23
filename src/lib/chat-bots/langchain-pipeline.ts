@@ -2,7 +2,7 @@
  * LangChain / LangGraph experiment — NOT the live chat path.
  *
  * Live traffic: `/api/chat` → `orchestrate` → `ai-gateway` (plain fetch).
- * This file is only used by `scripts/verify-langchain.js` and similar.
+ * Unwired experiment — not imported by product APIs.
  * Do not call it from product APIs; it bypasses gateway failover, SSE, and quotas.
  */
 

@@ -32,7 +32,7 @@ export default function KBDShortcuts(): JSX.Element {
             title: 'Navigation',
             shortcuts: [
                 { keys: [[`${modifierKey}`, 'K', 'or', '/']], description: 'Open search' },
-                { keys: ['Shift', '?'], description: 'Open PostHog AI chat' },
+                { keys: ['Shift', '?'], description: 'Open WIM AI chat' },
                 { keys: [','], description: 'Open display options' },
             ],
         },
@@ -66,7 +66,7 @@ export default function KBDShortcuts(): JSX.Element {
 
     return (
         <>
-            <SEO title="Clicky clicky" description="Navigate PostHog.com faster with keyboard shortcuts" />
+            <SEO title="keyboard shortcuts" description="Navigate worldinmaking faster with keyboard shortcuts" />
             <div data-scheme="secondary" className="w-full h-full bg-primary text-primary">
                 <ScrollArea className="h-full">
                     <div className="p-4 max-w-4xl mx-auto">
@@ -78,8 +78,7 @@ export default function KBDShortcuts(): JSX.Element {
                         <div className="mb-6">
                             <h1 className="text-xl font-bold mb-2">Keyboard shortcuts</h1>
                             <p className="text-secondary text-sm">
-                                Navigate PostHog.com like an elite hacker with these intuitive keystrokes that are
-                                guaranteed to save you valuable milliseconds.
+                                Navigate worldinmaking with these keystrokes.
                             </p>
                             <p className="text-secondary text-sm">
                                 Open this page anytime with <KeyboardShortcut text="." size="sm" />
@@ -131,5 +130,3 @@ export default function KBDShortcuts(): JSX.Element {
         </>
     )
 }
-
-export { getStaticProps } from 'lib/legacyGone'

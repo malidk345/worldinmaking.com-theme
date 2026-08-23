@@ -76,7 +76,19 @@ test.describe('worldinmaking seo', () => {
     })
 
     test('unknown leftovers and junk paths are 404', async ({ request }) => {
-        for (const path of ['/mcp', '/customers', '/101', '/sparks-joy']) {
+        for (const path of [
+            '/mcp',
+            '/customers',
+            '/101',
+            '/sparks-joy',
+            '/posthug',
+            '/photobooth',
+            '/start',
+            '/wizard',
+            '/paint',
+            '/hogwatch',
+            '/handbook',
+        ]) {
             const res = await request.get(path)
             expect(res.status(), path).toBe(404)
         }

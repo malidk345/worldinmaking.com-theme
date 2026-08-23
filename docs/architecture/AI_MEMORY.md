@@ -77,7 +77,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
-| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
@@ -319,7 +319,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
-| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
@@ -396,10 +396,36 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-286` | Stream 3 | Published notebook live view matches a community post | `NotebookPublicView.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-287` | Stream 1 | Swallow Next.js Cancel rendering route overlay | `swallow-cancelled-route.ts`, `_app.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-288` | Stream 2 | Google OAuth no longer opens a flash auth window | `auth-callback.ts`, `callback.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
+| `TSK-289` | Stream 1 | Delete verified leftover junk (kilo worktrees, one-shot scripts, Gatsby src/api) | `.kilo/worktrees`, `scripts/*` one-shots, `src/api/`, `replace_colors.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 355 - TSK-26 slice 1: delete proven-dead PostHog marketing pages
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** First careful slice of `TSK-26`. Deleted pages that were either already 404 via `lib/legacyGone`, redirected away, or unlinked PostHog gimmick/product landings. Did **not** delete `Pricing/`, `Products/`, `CustomerLogos/`, `kea.js`, `App.tsx` window-size maps, or `src/navs/index.js` (still imported by App context).
+  1. **Pages removed:** `/101`, `/start`, `/why`, `/posthug`, `/photobooth`, `/sparks-joy/*`, `/r/*` product landings, `/paint`, `/wizard`, `/handbook`, `/chapters`, `/events`, `/event-comparison`, `/events-feedback-form`, `/newsletter-fbc`, `/partnerships`, `/places`, `/changelog-video`, `/code/*`, `/slack-invite`, `/services`, `/media`, `/hogwatch`, `/team-directory`, `/team-updates`, `/community/achievements`, `/community/reputation`, Gatsby stub `questions/topic/{SqueakTopic.slug}.tsx`.
+  2. **Exclusive components removed:** `HugHog`, `WhyPostHog`, `MSPaint`, `ProfessionalServices`, `PartnershipsSurvey`, `EventForm`, `EventGraphic`, `HogWatch`, `lib/hogwatch`, `navs/whyPostHog.ts`, `navs/handbook.json`, unused `DesktopPage/` (zero imports after TSK-02).
+  3. **Restored `/kbd`:** it is in the WIM More menu but had been force-404'd with `legacyGone`. Removed that export; copy now says worldinmaking / WIM AI.
+  4. **Moderator menu:** dropped HogWatch and Team directory links (those routes 404'd).
+  5. **SEO test:** extended the leftover-404 list.
+- **Left for later slices:** `Pricing/`, `Products/`, `CustomerLogos/`, `PlatformInstall`, `src/navs/index.js` handbook mega-menu, `kea` pricing logics, App.tsx dead window configs.
+- **Modified Files:** pages/components listed above; `src/pages/kbd/index.tsx`; `src/components/TaskBarMenu/index.tsx`; `src/navs/internalTools.ts`; `tests/seo.spec.ts`; `docs/architecture/AI_MEMORY.md`
+- **Verification:** grep found no remaining imports of deleted modules. Kept WIM routes (`/`, `/about`, `/kbd`, `/posts`, `/questions`, `/art-library`). `pnpm typecheck:shell` still has pre-existing Wallpaper/ai-gateway errors unrelated to this slice.
+
+### Entry 354 - Delete verified leftover junk (TSK-289)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed files that were unused after import/reference checks. Did **not** touch PostHog marketing pages/components (`TSK-26`), `kea.js`, `src/mdxGlobalComponents.js` (extensionless imports may resolve `.js` first), `node_modules`, or `.next`.
+  1. **Disk junk (~962 MB):** deleted `.kilo/worktrees` (6 full repo copies) and `.kilo/node_modules`. Added `.kilo/` to `.gitignore`. Also deleted gitignored `scratch/`, `playwright-report/`, `test-results/`.
+  2. **One-shot scripts:** `replace_colors.js`, `req.json`, `scripts/{count-posts,empty-safe-squeak-host,fix-notebook-encoding,inspect-post-content,list-squeak-refs,split-desktop-page,swap-beige-to-warm-gray,swap-cool-to-warm-gray,test_api,test_notebook,test_notebook_pure,verify-langchain,verify-notebook-coauthor}` + `scripts/templates/desktop-page-shell.tsx`.
+  3. **Gatsby leftover:** `src/api/` (`hubspot-form`, `signup-count`, `homepage-hits`, `contact-event`, `customer`) — Next routes live in `src/pages/api/`.
+  4. **Docs:** `NOTEBOOK_HANDOFF_REPORT.md`, `docs/architecture/COMPROMISES.md` (PostHog product HogFlow notes, not this site).
+- **Modified Files:** `.gitignore`, `src/lib/chat-bots/langchain-pipeline.ts` (comment only), `docs/architecture/AI_MEMORY.md`; deletions listed above.
+- **Verification:** `pnpm typecheck:shell` — 29 gated errors, all pre-existing (`Desktop/Wallpapers.tsx` unused exports, `ai-gateway.ts` / `groq-key-cursor.ts`). None in deleted paths. Kept scripts (`bot-worker`, `copy-public-assets`, `philosopher-cron`, `typecheck-shell`, `grok-cli`, migrations) still present.
+- **Not done:** `TSK-26` PostHog marketing quarantine (`/posthug`, `/sparks-joy`, `Pricing/`, `Products/`, `CustomerLogos/`, etc.). Needs a dedicated import-graph pass.
 
 ### Entry 353 - Connect Forum Post & Reply Editing to Supabase (TSK-232)
 - **Date:** 2026-08-22
