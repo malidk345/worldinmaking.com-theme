@@ -2,18 +2,42 @@ import { useEffect } from 'react'
 
 const KEYBOARD_THRESHOLD = 80
 
+export function measureKeyboardOverlay(
+    layoutHeight: number,
+    visualHeight: number,
+    offsetTop: number,
+    threshold = KEYBOARD_THRESHOLD
+): { inset: number; pan: number; open: boolean } {
+    const shrink = Math.max(0, Math.round(layoutHeight - visualHeight))
+    const pan = Math.max(0, Math.round(offsetTop))
+    const open = shrink > threshold || pan > threshold
+    return { inset: open ? Math.max(shrink, pan) : 0, pan: open ? pan : 0, open }
+}
+
 function scrollableParent(element: HTMLElement): HTMLElement | null {
     let current: HTMLElement | null = element.parentElement
-    while (current) {
+    while (current && current !== document.documentElement && current !== document.body) {
         const style = window.getComputedStyle(current)
         const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1
         if (canScroll) return current
         current = current.parentElement
     }
-    return (document.scrollingElement as HTMLElement | null) || document.documentElement
+    return null
 }
 
-/** Nudge the scroller so the caret stays above the keyboard — no page recenter. */
+/** Scroll an inner pane so `rect` stays in the visual viewport. Never pan the page. */
+function scrollRectIntoVisualViewport(rect: DOMRect, node: HTMLElement, bottomGutter = 16): void {
+    const vv = window.visualViewport
+    if (!vv) return
+    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
+    const top = 12
+    const bottom = vv.height - bottomGutter
+    if (rect.top >= top && rect.bottom <= bottom) return
+    const delta = rect.bottom > bottom ? rect.bottom - bottom : rect.top - top
+    const scroller = scrollableParent(node)
+    if (scroller) scroller.scrollTop += delta
+}
+
 function keepNotebookCaretInView(): void {
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) return
@@ -23,16 +47,7 @@ function keepNotebookCaretInView(): void {
             ? range.startContainer
             : range.startContainer.parentElement
     if (!node?.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) return
-    const rect = range.getBoundingClientRect()
-    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
-    const vv = window.visualViewport
-    if (!vv) return
-    const top = vv.offsetTop + 16
-    const bottom = vv.offsetTop + vv.height - 28
-    if (rect.top >= top && rect.bottom <= bottom) return
-    const delta = rect.bottom > bottom ? rect.bottom - bottom : rect.top - top
-    const scroller = scrollableParent(node)
-    if (scroller) scroller.scrollTop += delta
+    scrollRectIntoVisualViewport(range.getBoundingClientRect(), node, 28)
 }
 
 function isEditableTarget(target: EventTarget | null): target is HTMLElement {
@@ -46,21 +61,34 @@ function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     return target.isContentEditable
 }
 
-/** Keeps the OS shell at visual-viewport height and exposes --keyboard-inset. */
+function resetVisualPan(vv: VisualViewport | null | undefined): void {
+    try {
+        vv?.scrollTo(0, 0)
+    } catch {
+        /* older Safari */
+    }
+    if (window.scrollX !== 0 || window.scrollY !== 0) {
+        window.scrollTo(0, 0)
+    }
+}
+
+/** Overlay the keyboard. Keep the OS shell at layout size — no zoom, no window jump. */
 export function useKeyboardInset(): void {
     useEffect(() => {
         const root = document.documentElement
 
         const apply = (keepCaret = false) => {
             const vv = window.visualViewport
+            resetVisualPan(vv)
             const layoutH = window.innerHeight
             const visibleH = vv?.height ?? layoutH
             const offsetTop = vv?.offsetTop ?? 0
-            const inset = Math.max(0, Math.round(layoutH - visibleH - offsetTop))
-            const open = inset > KEYBOARD_THRESHOLD
+            const { inset, pan, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
 
-            root.style.setProperty('--keyboard-inset', `${open ? inset : 0}px`)
+            root.style.setProperty('--keyboard-inset', `${inset}px`)
             root.style.setProperty('--vv-height', `${Math.round(visibleH)}px`)
+            root.style.setProperty('--vv-offset-top', `${pan}px`)
+            root.style.setProperty('--app-shell-height', `${layoutH}px`)
 
             if (open) root.setAttribute('data-keyboard', 'open')
             else root.removeAttribute('data-keyboard')
@@ -80,18 +108,11 @@ export function useKeyboardInset(): void {
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
             const el = event.target
-            if (el.closest('[data-writing-dock], .keyboard-lift, .MarkdownNotebook, [data-markdown-notebook-editor]')) {
-                return
-            }
             window.setTimeout(() => {
-                const vv = window.visualViewport
-                if (vv) {
-                    const rect = el.getBoundingClientRect()
-                    const top = vv.offsetTop + 12
-                    const bottom = vv.offsetTop + vv.height - 12
-                    if (rect.top >= top && rect.bottom <= bottom) return
-                }
-                el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                apply(true)
+                if (el.closest('[data-writing-dock], .keyboard-lift')) return
+                if (el.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) return
+                scrollRectIntoVisualViewport(el.getBoundingClientRect(), el, 16)
             }, 280)
         }
 
@@ -110,6 +131,8 @@ export function useKeyboardInset(): void {
             document.removeEventListener('focusin', onFocusIn)
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')
+            root.style.removeProperty('--vv-offset-top')
+            root.style.removeProperty('--app-shell-height')
             root.removeAttribute('data-keyboard')
             root.removeAttribute('data-keyboard-surface')
         }

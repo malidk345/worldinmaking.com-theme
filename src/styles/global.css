@@ -3150,6 +3150,13 @@ article.reader-view-content-container:has(.quest-sidebar) {
 
 :root {
     --keyboard-inset: 0px;
+    --vv-offset-top: 0px;
+    --app-shell-height: 100dvh;
+}
+
+/* Keyboard overlays the shell. Cancel iOS visual-viewport pan so windows stay put. */
+html[data-keyboard='open'] #app-container {
+    transform: translateY(var(--vv-offset-top, 0px));
 }
 
 [data-writing-dock] {
@@ -3169,8 +3176,7 @@ article.reader-view-content-container:has(.quest-sidebar) {
     }
 }
 
-html[data-keyboard='open']:not([data-keyboard-surface='notebook']),
-html[data-keyboard='open']:not([data-keyboard-surface='notebook']) body {
+html[data-keyboard='open'] {
     overflow: hidden;
     overscroll-behavior: none;
 }

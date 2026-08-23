@@ -141,7 +141,7 @@ export default function Document() {
                 <meta charSet="utf-8" />
                 <meta
                     name="viewport"
-                    content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual"
+                    content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=overlays-content"
                 />
                 <link rel="icon" href="/brand/wim-mark.png" type="image/png" />
                 <link rel="apple-touch-icon" href="/brand/wim-mark.png" />

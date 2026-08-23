@@ -285,7 +285,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Write a message..."
           rows={1}
-          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[15px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-[1.5] font-sans"
+          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-base sm:text-[15px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-[1.5] font-sans"
         />
 
         {/* Hidden File Input */}

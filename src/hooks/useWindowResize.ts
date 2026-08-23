@@ -98,12 +98,12 @@ export function useWindowResize({
         }
 
         if (isSSR) return
+        // Layout resize only (orientation / browser chrome). The virtual keyboard
+        // fires visualViewport resize and must not move or shrink OS windows.
         window.addEventListener('resize', handleViewportResize)
-        window.visualViewport?.addEventListener('resize', handleViewportResize)
         handleViewportResize()
         return () => {
             window.removeEventListener('resize', handleViewportResize)
-            window.visualViewport?.removeEventListener('resize', handleViewportResize)
         }
     }, [constraintsRef, isSSR, item, position, size, taskbarHeight, updateWindow])
 

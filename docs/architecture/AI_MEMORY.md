@@ -404,10 +404,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-295` | Stream 2 | Mobile long-press on a notebook block must not crash the editor | MarkdownNotebook, domSelection, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-296` | Stream 2 | Mobile block toolbar: English chrome, match format toolbar, stay in viewport | MarkdownNotebook.tsx/scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-297` | Stream 3 | Mobile typing: overlay keyboard, do not pan/resize windows or zoom | useKeyboardInset, useWindowResize, _document, global.css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 366 - Mobile typing overlays the keyboard without jumping windows (TSK-297)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Typing on mobile no longer pans/resizes OS windows or zooms the page. Keyboard overlays the shell (`interactive-widget=overlays-content`). `visualViewport` no longer drives window geometry. iOS pan is cancelled (`translateY(--vv-offset-top)`). Composers lift with `--keyboard-inset`; carets scroll inside the pane, not the page. Inputs stay 16px on phones.
+- **Modified Files:** `useKeyboardInset.ts`, `useWindowResize.ts`, `useViewportMetrics.ts`, `_document.tsx`, `global.css`, ChatInput, chat dock, Inbox toolbar
+- **Verification:** `keyboard-overlay.spec.ts` 3/3.
 
 ### Entry 365 - Mobile block toolbar English + format-toolbar chrome (TSK-296)
 - **Date:** 2026-08-23

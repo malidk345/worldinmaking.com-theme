@@ -1350,7 +1350,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {activeChat && activeChat.messages.length > 0 && (
         <div
           data-writing-dock
-          className="absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-primary via-primary/95 to-transparent pt-14 pb-3"
+          className="keyboard-lift absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-primary via-primary/95 to-transparent pt-14 pb-3"
         >
           <ChatInput
             onSendMessage={handleSendMessage}

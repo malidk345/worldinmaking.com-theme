@@ -252,7 +252,7 @@ const QuestionToolbar = ({
 }: QuestionToolbarProps) => {
     const navigate = useDesktopNavigate()
     return (
-        <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
+        <div className="keyboard-lift bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
             <OSButton
                 variant="secondary"
                 size="xs"
