@@ -224,8 +224,8 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     .find((step) => !isDoneTitle(step.title) && !isPlaceholderStep(step) && String(step.title || '').trim())
     ?.title;
 
-  useEffect(() => {
-    if (isLive) setIsOpen(true)
+  useLayoutEffect(() => {
+    setIsOpen(!!isLive)
   }, [isLive])
 
   const handleScroll = () => {

@@ -413,6 +413,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 370 - Collapse thinking when the live pass ends
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Thinking panel opens while the model is live and closes as soon as `isLive` is false (layout effect, before paint). User can still re-open the finished trail. Feed pin + overflow-anchor stay in place so collapse should not dump the thread in the middle.
+- **Modified Files:** `ThinkingBlock.tsx`
+
 ### Entry 369 - Live reply jumps were typewriter + markdown, not just pin (TSK-300)
 - **Date:** 2026-08-23
 - **AI Agent:** Grok 4.6 (xAI)
