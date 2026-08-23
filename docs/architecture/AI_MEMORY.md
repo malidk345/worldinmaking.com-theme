@@ -401,6 +401,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-291` | Stream 1 | Retarget notebook kea imports to local stub; delete unused HelpMenu/oauth logics | `src/notebook-app/lib/kea-stub.ts`, LemonUI, HelpMenu, oauth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-292` | Stream 3 | Careful codebase optimize: drop dead deps/templates, isolate merch cart, restore WIM subprocessors | `package.json`, HeaderBar, unused templates, `subprocessors.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-293` | Stream 3 | Replace InstantSearch with local `/api/search` fetch; drop Algolia client packages | `useLocalSearch`, SpotlightSearch, SearchUI, package.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[IN PROGRESS by Grok 4.6 (xAI)]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 

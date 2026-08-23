@@ -6,8 +6,6 @@
  * stays Edge-webpack-safe — no Function()/eval()/require().
  */
 const memoryCursors = new Map<string, number>()
-/** Per-isolate salt so concurrent Cloudflare isolates do not all start at key 0. */
-const isolateSalt = Math.floor(Math.random() * 10_000)
 
 type NodeFs = {
     existsSync: (path: string) => boolean

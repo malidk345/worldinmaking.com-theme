@@ -1004,13 +1004,6 @@ type FamilyParams = {
     otherFamilyAvailable?: boolean
 }
 
-function shouldLeaveFamily(params: FamilyParams, softFails: number): boolean {
-    if (!params.otherFamilyAvailable) return false
-    if (softFails >= MAX_FAMILY_SOFT_FAILS) return true
-    if (params.switchBy && Date.now() >= params.switchBy) return true
-    return false
-}
-
 export function collectGroqKeys(store: EnvStore): string[] {
     const rawValues: Array<string | undefined> = readFamilyBindingValues(store, [
         'GROQ_API_KEY',
