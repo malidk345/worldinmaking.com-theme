@@ -401,11 +401,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-291` | Stream 1 | Retarget notebook kea imports to local stub; delete unused HelpMenu/oauth logics | `src/notebook-app/lib/kea-stub.ts`, LemonUI, HelpMenu, oauth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-292` | Stream 3 | Careful codebase optimize: drop dead deps/templates, isolate merch cart, restore WIM subprocessors | `package.json`, HeaderBar, unused templates, `subprocessors.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-293` | Stream 3 | Replace InstantSearch with local `/api/search` fetch; drop Algolia client packages | `useLocalSearch`, SpotlightSearch, SearchUI, package.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
-| `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[IN PROGRESS by Grok 4.6 (xAI)]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 363 - Conservative hygiene sequence (TSK-294)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Non-breaking hygiene only. Did not flip `ignoreBuildErrors`, StrictMode, Next 15, MDX shortcodes, App.tsx split, or People/HogMap/merch.
+  1. **Typecheck:** `pnpm typecheck:shell` 29 → 0. Removed unused Desktop bindings; deleted wallpaper scenes not in the picker (live SCENES unchanged); dropped unused `shouldLeaveFamily` / `isolateSalt`.
+  2. **Search names:** `algoliaHits` → `searchHits`; `AlgoliaSearchResults` → `SiteSearchResults`; comments no longer say InstantSearch. `/api/search` JSON shape unchanged.
+  3. **Metadata:** `package.json` `repository.url` → `https://github.com/malidk345/worldinmaking.com-theme.git`. `vercel.json`: dropped `/docs` and `/handbook` headers/rewrites and 866 dead redirects. Kept `/(.*)` security headers and `/posts` `/questions` `/blog` `/code` rules.
+  4. **Stories:** deleted 72 unused `notebook-app` `*.stories.tsx`. Kept `icons3000.stories.tsx` (imported by icon tests).
+  5. **Skipped after re-grep:** ContactSales (still opened from `App.tsx`), `lib/shopify` (merch store), People/HogMap.
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated). Did not enable global tsc on `next build`.
 
 ### Entry 362 - Local search without InstantSearch (TSK-293)
 - **Date:** 2026-08-23
