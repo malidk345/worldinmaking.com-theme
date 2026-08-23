@@ -372,7 +372,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const userDragRef = useRef(false);
   const isStreamingRef = useRef(false);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
-  isStreamingRef.current = isStreaming;
   const pendingEditMessageIdRef = useRef<string | null>(null);
   const persistChatIdRef = useRef<string | null>(null);
   const [composerDraft, setComposerDraft] = useState('');
@@ -474,6 +473,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const activeChat = chats.length > 0
     ? (chats.find((c) => c.id === activeChatId) || chats[0])
     : undefined;
+  isStreamingRef.current =
+    isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming)
 
   // Sync selected model when switching active chat
   useEffect(() => {
@@ -1299,7 +1300,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [overflow-anchor:none]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 select-none">
@@ -1317,7 +1318,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               </div>
             </div>
           ) : (
-            <div className="space-y-5 px-0 pt-3 pb-4">
+            <div className="space-y-5 px-0 pt-3 pb-4 [overflow-anchor:none]">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1341,7 +1342,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
-              <div ref={chatBottomRef} className="h-2" />
+              <div ref={chatBottomRef} className="h-px w-full [overflow-anchor:auto]" />
             </div>
           )}
         </main>

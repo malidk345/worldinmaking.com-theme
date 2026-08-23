@@ -98,7 +98,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   }, [message.content])
 
   useEffect(() => {
-    if (skipPace || typewriterSpeed === 'off') {
+    if (skipPace || typewriterSpeed === 'off' || message.isStreaming) {
       revealedRef.current = message.content
       setRevealed(message.content)
       return
@@ -128,13 +128,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     }, tickMs)
 
     return () => window.clearInterval(timer)
-  }, [message.content, message.isTypingDone, skipPace, typewriterSpeed])
+  }, [message.content, message.isStreaming, message.isTypingDone, skipPace, typewriterSpeed])
 
-  const displayedText = revealed
-  const isRevealing = !isUser && revealed.length < message.content.length
-  const isLiveAnswer = !isUser && (isRevealing || (!!message.isStreaming && !message.isTypingDone))
-  const fadeMs =
-    typewriterSpeed === 'off' ? 0 : typewriterSpeed === 'slow' ? 220 : typewriterSpeed === 'fast' ? 90 : 160
+  const displayedText = message.isStreaming || skipPace || typewriterSpeed === 'off' ? message.content : revealed
+  const isLiveAnswer = !isUser && (!!message.isStreaming || (!message.isTypingDone && revealed.length < message.content.length))
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -232,11 +229,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           {/* Response Text with Community matching font and sizing */}
           <div
             className="font-sans text-[15px] leading-[1.5] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere]"
-            style={
-              isLiveAnswer && fadeMs > 0
-                ? { animation: `wim-token-fade ${fadeMs}ms ease-out` }
-                : undefined
-            }
           >
             {displayedText ? (
             <ReactMarkdown

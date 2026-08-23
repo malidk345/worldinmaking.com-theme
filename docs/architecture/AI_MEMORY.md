@@ -407,10 +407,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-297` | Stream 3 | Mobile typing: overlay keyboard, do not pan/resize windows or zoom | useKeyboardInset, useWindowResize, _document, global.css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-298` | Stream 3 | WIM AI chat: dock composer, stop feed/input jump while streaming | ClaudeWorkspaceChat/index.tsx, ChatInput.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-299` | Stream 3 | Streaming reply must stay pinned to latest line, not jump to mid-thread | ClaudeWorkspaceChat/index.tsx, ThinkingBlock.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-300` | Stream 3 | Live AI reply: no typewriter lag / whole-block fade; CSS overflow-anchor | ChatMessage.tsx, ClaudeWorkspaceChat/index.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 369 - Live reply jumps were typewriter + markdown, not just pin (TSK-300)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The feed still jumped to the middle because the typewriter lagged behind the stream and re-parsed half-finished markdown (headings/lists popping in above the caret). Whole-message `wim-token-fade` also restarted every token. Live answers now render `message.content` immediately. Message list uses `overflow-anchor: none` with an auto-anchor sentinel at the bottom so the browser keeps the latest line in view.
+- **Modified Files:** `ChatMessage.tsx`, `ClaudeWorkspaceChat/index.tsx`
 
 ### Entry 368 - Streaming chat stays on the latest line (TSK-299)
 - **Date:** 2026-08-23
