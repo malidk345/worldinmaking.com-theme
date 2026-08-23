@@ -15,8 +15,12 @@ type QuestionSeo = {
 
 export default function QuestionDetailPage() {
     const router = useRouter()
-    const permalink = String(router.query.permalink || '').trim()
-    const [question, setQuestion] = useState<QuestionSeo | null | undefined>(undefined)
+    const livePermalink =
+        typeof window !== 'undefined'
+            ? window.location.pathname.replace(/^\/(?:questions|forum)\//, '').split('/')[0].split('?')[0]
+            : ''
+    const permalink = String(router.query.permalink || livePermalink || '').trim()
+    const [question, setQuestion] = useState<QuestionSeo | null>(null)
 
     useEffect(() => {
         if (!permalink || !/^\d+$/.test(permalink)) return
@@ -37,32 +41,32 @@ export default function QuestionDetailPage() {
         })
     }, [permalink])
 
-    const path = `/questions/${permalink}`
-
-    if (!permalink || question === undefined || question === null) return null
+    const path = permalink ? `/questions/${permalink}` : '/questions'
 
     return (
         <>
-            <SEO
-                title={question.title}
-                description={formatSeoDescription(question.content)}
-                article
-                structuredData={[
-                    buildDiscussionJsonLd({
-                        title: question.title,
-                        description: formatSeoDescription(question.content),
-                        url: pageCanonical(path),
-                        datePublished: question.created_at,
-                        author: question.author,
-                    }),
-                    buildBreadcrumbJsonLd([
-                        { name: 'worldinmaking', path: '/' },
-                        { name: 'questions', path: '/questions' },
-                        { name: question.title, path },
-                    ]),
-                ]}
-            />
-            <Inbox path={path} permalink={permalink} />
+            {question ? (
+                <SEO
+                    title={question.title}
+                    description={formatSeoDescription(question.content)}
+                    article
+                    structuredData={[
+                        buildDiscussionJsonLd({
+                            title: question.title,
+                            description: formatSeoDescription(question.content),
+                            url: pageCanonical(path),
+                            datePublished: question.created_at,
+                            author: question.author,
+                        }),
+                        buildBreadcrumbJsonLd([
+                            { name: 'worldinmaking', path: '/' },
+                            { name: 'questions', path: '/questions' },
+                            { name: question.title, path },
+                        ]),
+                    ]}
+                />
+            ) : null}
+            <Inbox path={path} permalink={permalink || undefined} />
         </>
     )
 }

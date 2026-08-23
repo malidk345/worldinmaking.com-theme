@@ -32,6 +32,7 @@ import {
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
 import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
+import { canonicalWindowPath, repairWindowPath } from '../lib/window-path'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
@@ -1554,7 +1555,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const el = element as any
         const keyToUse = getKey(el?.key)
         const targetLocation = el?.props?.location || location
-        const targetPath = targetLocation?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+        const targetPath = canonicalWindowPath(
+            targetLocation?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+        )
         const targetState = targetLocation?.state || {}
 
         const size = targetState?.size || el?.props?.size || getInitialSize(keyToUse)
@@ -1644,7 +1647,11 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     const updatePages = (element: WindowElement) => {
-        const targetPath = element?.props?.location?.pathname || location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+        const targetPath = canonicalWindowPath(
+            element?.props?.location?.pathname ||
+                location?.pathname ||
+                (typeof window !== 'undefined' ? window.location.pathname : '/')
+        )
         const targetLocation = element?.props?.location || location
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
@@ -1684,7 +1691,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }
 
         const key = item.key || item.path
-        const path = item.path || '/'
+        const path = canonicalWindowPath(item.path || '/')
         if (path === '/login' || path.startsWith('/login')) {
             setAuthModalView('sign-in')
             setIsAuthModalOpen(true)
@@ -2029,6 +2036,21 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             setTaskbarHeight((prev) => (prev !== newHeight ? newHeight : prev))
         }
     }
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const live = window.location.pathname
+        setWindows((prev) => {
+            let changed = false
+            const next = prev.map((w) => {
+                const fixed = repairWindowPath(w.path || '', live)
+                if (fixed === (w.path || '')) return w
+                changed = true
+                return { ...w, path: fixed, props: { ...w.props, path: fixed } }
+            })
+            return changed ? next : prev
+        })
+    }, [location?.pathname])
 
     useEffect(() => {
         if (!location?.href) return

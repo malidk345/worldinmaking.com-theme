@@ -59,6 +59,15 @@ export default function App({ Component, pageProps }: AppProps) {
         }
     }, [router.events])
     const [location, setLocation] = React.useState(() => {
+        if (typeof window !== 'undefined') {
+            return {
+                pathname: window.location.pathname,
+                search: window.location.search,
+                hash: window.location.hash,
+                state: null,
+                key: 'default',
+            }
+        }
         const asPath = router?.asPath || ''
         const pathname = asPath.split('?')[0].split('#')[0] || '/'
         const search = asPath.includes('?') ? '?' + asPath.split('?')[1].split('#')[0] : ''

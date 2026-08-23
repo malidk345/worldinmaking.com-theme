@@ -37,6 +37,7 @@ import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
+import { canonicalWindowPath, isPathRoutedWindow } from '../../lib/window-path'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 
@@ -45,16 +46,27 @@ export interface WindowRouterProps {
 }
 
 function WindowRouterInner({ item }: WindowRouterProps) {
-    if (React.isValidElement(item.element)) {
-        return <>{item.element}</>
-    }
-    if (item.element && typeof (item.element as any).element !== 'undefined' && React.isValidElement((item.element as any).element)) {
-        return <>{(item.element as any).element}</>
-    }
-
     const rawPath: string = item.path || item.props?.path || ''
-    const path: string = rawPath.replace(/\/+$/, '') || '/'
-    const props = item.props || {}
+    const path: string = canonicalWindowPath(rawPath)
+    const props = { ...(item.props || {}), path }
+
+    // Path-first for posts/questions: F5 passes the Next.js page as `item.element`,
+    // which renders an empty shell until router.query hydrates. In-app addWindow
+    // already uses path. Always resolve those routes from path.
+    const preferPath = isPathRoutedWindow(path)
+
+    if (!preferPath) {
+        if (React.isValidElement(item.element)) {
+            return <>{item.element}</>
+        }
+        if (
+            item.element &&
+            typeof (item.element as any).element !== 'undefined' &&
+            React.isValidElement((item.element as any).element)
+        ) {
+            return <>{(item.element as any).element}</>
+        }
+    }
 
     if (path === '/about') {
         return <AboutContent />
@@ -80,30 +92,27 @@ function WindowRouterInner({ item }: WindowRouterProps) {
         return <AdminDashboard />
     }
 
-    // 1. If item.element is a valid React Element (e.g. <MyComponent />)
-    if (React.isValidElement(item.element)) {
-        return item.element
-    }
-
-    // 2. If item.element is a component function or class (e.g. item.element = Component)
-    if (typeof item.element === 'function') {
-        const Component = item.element as React.ComponentType<any>
-        return <Component {...props} />
-    }
-
-    // 3. If item.element is an object containing nested element ({ element: <Component /> })
-    if (item.element && typeof item.element === 'object') {
-        const innerElement = (item.element as any).element
-        if (React.isValidElement(innerElement)) {
-            return innerElement
+    if (!preferPath) {
+        if (React.isValidElement(item.element)) {
+            return item.element
         }
-        if (typeof innerElement === 'function') {
-            const Component = innerElement as React.ComponentType<any>
+        if (typeof item.element === 'function') {
+            const Component = item.element as React.ComponentType<any>
             return <Component {...props} />
         }
+        if (item.element && typeof item.element === 'object') {
+            const innerElement = (item.element as any).element
+            if (React.isValidElement(innerElement)) {
+                return innerElement
+            }
+            if (typeof innerElement === 'function') {
+                const Component = innerElement as React.ComponentType<any>
+                return <Component {...props} />
+            }
+        }
     }
 
-    // 4. Route-based resolution
+    // Route-based resolution
     if (/^\/tape-player|^\/mixtapes/.test(path)) {
         return <TapePlayer {...props} />
     }
@@ -199,7 +208,7 @@ export const isBlogPath = (p: string): boolean => typeof p === 'string' && /^\/(
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => {
-    const path = props.item?.path || props.item?.props?.path || ''
+    const path = canonicalWindowPath(props.item?.path || props.item?.props?.path || '')
     const fillHeight = isForumPath(path) || isAskAiPath(path) || isBlogPath(path)
     // Forum / Ask AI / blog: fill the window so chrome (sidebar pin, settings)
     // stays on the pane. Notebooks still grow and scroll the window.

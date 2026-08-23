@@ -5,16 +5,21 @@ import { normalizePostSlug } from 'lib/supabaseBlog'
 
 export default function BlogSlugPage() {
     const router = useRouter()
+    const livePath =
+        typeof window !== 'undefined' && window.location.pathname.startsWith('/blog/')
+            ? window.location.pathname.split('?')[0].split('#')[0]
+            : ''
     const rawQuerySlug = router.query.slug
-    const routerSlug = normalizePostSlug(Array.isArray(rawQuerySlug) ? rawQuerySlug.join('/') : String(rawQuerySlug || ''))
-    
-    let path = '/blog'
+    const routerSlug = normalizePostSlug(
+        Array.isArray(rawQuerySlug) ? rawQuerySlug.join('/') : String(rawQuerySlug || '')
+    )
+    const asPath = (router.asPath || '').split('?')[0].split('#')[0]
+
+    let path = livePath || '/blog'
     if (routerSlug && !routerSlug.startsWith('[')) {
         path = `/blog/${routerSlug}`
-    } else if (router.asPath && !router.asPath.includes('[') && router.asPath.startsWith('/blog/')) {
-        path = router.asPath.split('?')[0].split('#')[0]
-    } else if (typeof window !== 'undefined' && window.location.pathname.startsWith('/blog/')) {
-        path = window.location.pathname
+    } else if (asPath.startsWith('/blog/') && !asPath.includes('[')) {
+        path = asPath
     }
 
     return <BlogPost path={path} key={path} />

@@ -409,10 +409,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-299` | Stream 3 | Streaming reply must stay pinned to latest line, not jump to mid-thread | ClaudeWorkspaceChat/index.tsx, ThinkingBlock.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-300` | Stream 3 | Live AI reply: no typewriter lag / whole-block fade; CSS overflow-anchor | ChatMessage.tsx, ClaudeWorkspaceChat/index.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-301` | Stream 5 | WIM AI: empty welcome, stop marks the reply, retry after stop | ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-302` | Stream 2 | Path-first window routing so F5 on posts/questions is not an empty shell | window-path.ts, WindowRouter, _app, post/question pages | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 372 - Path-first windows so F5 on posts/questions is not empty (TSK-302)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Reload of a blog post or forum thread opened an empty window because WindowRouter rendered the Next.js page element (router.query still empty / `[slug]`) instead of routing by path. Windows now canonicalize the live URL, skip the page shell for posts/blog/questions, and repair placeholder paths on mount. Question pages always mount Inbox instead of returning null while SEO loads.
+- **Modified Files:** `src/lib/window-path.ts`, `WindowRouter.tsx`, `App.tsx`, `_app.tsx`, `posts/[slug]`, `blog/[slug]`, `questions/[permalink].tsx`
+- **Verification:** `window-path.spec.ts` 3/3.
 
 ### Entry 371 - WIM AI empty welcome + stop/retry (TSK-301)
 - **Date:** 2026-08-23
