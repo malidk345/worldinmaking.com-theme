@@ -403,10 +403,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-293` | Stream 3 | Replace InstantSearch with local `/api/search` fetch; drop Algolia client packages | `useLocalSearch`, SpotlightSearch, SearchUI, package.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-294` | Stream 1 / 3 | Conservative hygiene: shell typecheck green, search names, repo URL, dead stories | Desktop, Wallpapers, ai-gateway, ReaderView, package.json, vercel.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-295` | Stream 2 | Mobile long-press on a notebook block must not crash the editor | MarkdownNotebook, domSelection, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-296` | Stream 2 | Mobile block toolbar: English chrome, match format toolbar, stay in viewport | MarkdownNotebook.tsx/scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 365 - Mobile block toolbar English + format-toolbar chrome (TSK-296)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Long-press block bar now matches the English format toolbar: icon-only Comment / Ask AI / Move up / Move down / Duplicate / Delete / Close. Uses site surface tokens instead of a dark overlay. Positions above the block when there is room, below when the block is near the top, and clamps horizontally to the viewport.
+- **Modified Files:** `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts`
 
 ### Entry 364 - Mobile notebook long-press crash (TSK-295)
 - **Date:** 2026-08-23

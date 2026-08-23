@@ -442,7 +442,11 @@ function MarkdownNotebookEditor({
     const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
     const [blockMenuNodeId, setBlockMenuNodeId] = useState<string | null>(null)
     const [mobileActiveNodeId, setMobileActiveNodeId] = useState<string | null>(null)
-    const [mobileBarAnchor, setMobileBarAnchor] = useState<{ top: number; left: number } | null>(null)
+    const [mobileBarAnchor, setMobileBarAnchor] = useState<{
+        top: number
+        left: number
+        placement: 'above' | 'below'
+    } | null>(null)
     const touchStartPosRef = useRef<{
         x: number
         y: number
@@ -620,7 +624,22 @@ function MarkdownNotebookEditor({
                 }
             }
             const rect = row.getBoundingClientRect()
-            setMobileBarAnchor({ top: rect.top, left: rect.left + rect.width / 2 })
+            const vv = window.visualViewport
+            const viewTop = vv?.offsetTop ?? 0
+            const viewLeft = vv?.offsetLeft ?? 0
+            const viewWidth = vv?.width ?? window.innerWidth
+            const viewHeight = vv?.height ?? window.innerHeight
+            const estimatedHeight = 48
+            const margin = 10
+            const placeBelow = rect.top - viewTop < estimatedHeight + margin + 12
+            const left = Math.min(
+                viewLeft + viewWidth - margin,
+                Math.max(viewLeft + margin, rect.left + rect.width / 2)
+            )
+            const top = placeBelow
+                ? Math.min(viewTop + viewHeight - estimatedHeight - margin, rect.bottom)
+                : Math.max(viewTop + margin, rect.top)
+            setMobileBarAnchor({ top, left, placement: placeBelow ? 'below' : 'above' })
             setMobileActiveNodeId(nodeId)
         }, 420)
 
@@ -5925,9 +5944,18 @@ function MarkdownNotebookEditor({
                     ) : null}
                     {showMobileBlockBar && mobileBarNode && mobileBarAnchor ? (
                         <div
-                            className="MarkdownNotebook__mobile-block-bar MarkdownNotebook__mobile-block-bar--portal"
+                            className={clsx(
+                                'MarkdownNotebook__mobile-block-bar',
+                                `MarkdownNotebook__mobile-block-bar--${mobileBarAnchor.placement}`
+                            )}
                             contentEditable={false}
-                            style={{ top: mobileBarAnchor.top - 4, left: mobileBarAnchor.left }}
+                            role="toolbar"
+                            aria-label="Block actions"
+                            data-scheme="primary"
+                            style={{
+                                top: mobileBarAnchor.top,
+                                left: mobileBarAnchor.left,
+                            }}
                         >
                             {!mobileBarIsPrompt && !mobileBarIsAIWriting && !isDiscussionCommentNode(mobileBarNode) ? (
                                 <button
@@ -5939,10 +5967,10 @@ function MarkdownNotebookEditor({
                                         clearMobileBlockBar()
                                         startBlockCommentForNode(mobileBarNode.id)
                                     }}
-                                    title="Yorum yap"
+                                    title="Comment"
+                                    aria-label="Comment"
                                 >
-                                    <IconComment className="size-3.5" />
-                                    <span>Yorum</span>
+                                    <IconComment className="size-4" />
                                 </button>
                             ) : null}
                             {onAskAI && !mobileBarIsPrompt ? (
@@ -5955,10 +5983,10 @@ function MarkdownNotebookEditor({
                                         clearMobileBlockBar()
                                         runBlockMoreMenuAction(mobileBarNode.id, 'wim-ai')
                                     }}
-                                    title="WIM AI"
+                                    title="Ask AI"
+                                    aria-label="Ask AI"
                                 >
-                                    <IconSparkles className="size-3.5 text-blue-400" />
-                                    <span>AI</span>
+                                    <IconSparkles className="size-4 text-blue-400" />
                                 </button>
                             ) : null}
                             {mobileBarIndex > 1 ? (
@@ -5970,10 +5998,10 @@ function MarkdownNotebookEditor({
                                         event.stopPropagation()
                                         moveBlockUp(mobileBarNode.id)
                                     }}
-                                    title="Yukarı taşı"
+                                    title="Move up"
+                                    aria-label="Move up"
                                 >
-                                    <ArrowUp className="size-3.5" />
-                                    <span>Yukarı</span>
+                                    <ArrowUp className="size-4" />
                                 </button>
                             ) : null}
                             {mobileBarIndex < renderedNodes.length - 1 ? (
@@ -5985,10 +6013,10 @@ function MarkdownNotebookEditor({
                                         event.stopPropagation()
                                         moveBlockDown(mobileBarNode.id)
                                     }}
-                                    title="Aşağı taşı"
+                                    title="Move down"
+                                    aria-label="Move down"
                                 >
-                                    <ArrowDown className="size-3.5" />
-                                    <span>Aşağı</span>
+                                    <ArrowDown className="size-4" />
                                 </button>
                             ) : null}
                             <button
@@ -6000,9 +6028,10 @@ function MarkdownNotebookEditor({
                                     duplicateBlock(mobileBarNode.id)
                                     clearMobileBlockBar()
                                 }}
-                                title="Kopyala"
+                                title="Duplicate"
+                                aria-label="Duplicate"
                             >
-                                <IconCopy className="size-3.5" />
+                                <IconCopy className="size-4" />
                             </button>
                             <button
                                 type="button"
@@ -6013,9 +6042,10 @@ function MarkdownNotebookEditor({
                                     clearMobileBlockBar()
                                     runBlockMoreMenuAction(mobileBarNode.id, 'delete')
                                 }}
-                                title="Sil"
+                                title="Delete"
+                                aria-label="Delete"
                             >
-                                <IconTrash className="size-3.5" />
+                                <IconTrash className="size-4" />
                             </button>
                             <button
                                 type="button"
@@ -6025,9 +6055,10 @@ function MarkdownNotebookEditor({
                                     event.stopPropagation()
                                     clearMobileBlockBar()
                                 }}
-                                title="Kapat"
+                                title="Close"
+                                aria-label="Close"
                             >
-                                <IconX className="size-3.5" />
+                                <IconX className="size-4" />
                             </button>
                         </div>
                     ) : null}
