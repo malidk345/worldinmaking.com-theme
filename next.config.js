@@ -28,7 +28,6 @@ const nextConfig = {
     },
     trailingSlash: false,
     reactStrictMode: false,
-    experimental: { serverComponentsExternalPackages: ['kea'] },
 
     webpack: (config) => {
         // ── Standard posthog.com aliases ──────────────────────────────────────────

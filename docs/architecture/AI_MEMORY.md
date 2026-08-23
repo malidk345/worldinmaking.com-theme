@@ -397,10 +397,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-287` | Stream 1 | Swallow Next.js Cancel rendering route overlay | `swallow-cancelled-route.ts`, `_app.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-288` | Stream 2 | Google OAuth no longer opens a flash auth window | `auth-callback.ts`, `callback.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-22 |
 | `TSK-289` | Stream 1 | Delete verified leftover junk (kilo worktrees, one-shot scripts, Gatsby src/api) | `.kilo/worktrees`, `scripts/*` one-shots, `src/api/`, `replace_colors.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-290` | Stream 1 | Remove leftover kea/kea-loaders/kea-router packages (webpack already shims notebook) | `package.json`, `pnpm-lock.yaml`, `next.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 359 - Remove leftover kea npm packages (TSK-290)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Dropped `kea`, `kea-loaders`, and `kea-router` from `package.json` / lockfile. Notebook still imports those names; webpack + `src/notebook-app/tsconfig.json` already map them to `lemon-ui.tsx`. Removed unused `experimental.serverComponentsExternalPackages: ['kea']`. `pnpm install` reported Packages: -6. `node_modules/kea` gone.
+- **Modified Files:** `package.json`, `pnpm-lock.yaml`, `next.config.js`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** no `"kea` in package.json; no `kea@` / `kea-loaders@` / `kea-router@` lockfile keys; webpack shim for notebook-app kept.
 
 ### Entry 358 - TSK-26 slice 4: drop site-level kea and PostLayout pipeline nav
 - **Date:** 2026-08-23
