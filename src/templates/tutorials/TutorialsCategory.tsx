@@ -5,7 +5,7 @@ import Layout from 'components/Layout'
 import { Posts, PostToggle } from 'components/Blog'
 import Pagination from 'components/Pagination'
 import { NewsletterForm } from 'components/NewsletterForm'
-import { capitalize } from 'instantsearch.js/es/lib/utils'
+import { capitalizeFirstLetter } from '../../utils'
 
 const TutorialsCategory = ({
     data: {
@@ -29,17 +29,17 @@ const TutorialsCategory = ({
 
     return (
         <Layout>
-            <SEO title={`Tutorials - ${capitalize(activeFilter)} - PostHog`} />
+            <SEO title={`Tutorials - ${capitalizeFirstLetter(activeFilter)} - PostHog`} />
 
             <PostLayout
-                breadcrumb={[{ name: 'Tutorials', url: '/tutorials' }, { name: capitalize(activeFilter) }]}
+                breadcrumb={[{ name: 'Tutorials', url: '/tutorials' }, { name: capitalizeFirstLetter(activeFilter) }]}
                 article={false}
                 title="Tutorials"
                 hideSidebar
                 hideSurvey
             >
                 <Posts
-                    title={capitalize(activeFilter)}
+                    title={capitalizeFirstLetter(activeFilter)}
                     posts={posts.slice(0, 4)}
                     action={<PostToggle checked={allPostsFilter === 'popular'} onChange={handleToggleChange} />}
                 />

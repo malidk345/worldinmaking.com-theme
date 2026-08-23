@@ -5,7 +5,7 @@ import Link from 'components/Link'
 import { useSearch } from 'components/Editor/SearchProvider'
 import Mark from 'mark.js'
 import debounce from 'lodash/debounce'
-import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
+import { fetchLocalSearch } from 'lib/localSearch'
 
 export const InlineSearch = ({
     contentRef,
@@ -129,11 +129,13 @@ export const AlgoliaSearchResults = ({
 
         const doSearch = async () => {
             try {
-                const index = algoliaSearchClient.initIndex(algoliaIndexName)
-                const { hits } = await index.search(searchQuery, {
-                    hitsPerPage: 8,
-                    ...(facetFilters ? { facetFilters } : {}),
-                })
+                const typeFilter =
+                    typeof facetFilters === 'string' && facetFilters.startsWith('type:')
+                        ? facetFilters.slice('type:'.length)
+                        : Array.isArray(facetFilters)
+                          ? String(facetFilters.find((f) => String(f).startsWith('type:')) || '').replace('type:', '')
+                          : null
+                const { hits } = await fetchLocalSearch(searchQuery, typeFilter || null)
                 if (!cancelled) {
                     const filtered = currentPath
                         ? hits.filter((h: any) => {
@@ -145,7 +147,7 @@ export const AlgoliaSearchResults = ({
                     setLoading(false)
                 }
             } catch (err) {
-                console.error('[AlgoliaSearchResults]', err)
+                console.error('[search]', err)
                 if (!cancelled) setLoading(false)
             }
         }

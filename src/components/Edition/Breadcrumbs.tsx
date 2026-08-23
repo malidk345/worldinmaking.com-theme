@@ -1,5 +1,5 @@
 import Link from 'components/Link'
-import { capitalize } from 'instantsearch.js/es/lib/utils'
+import { capitalizeFirstLetter } from '../../utils'
 import React from 'react'
 import slugify from 'slugify'
 
@@ -25,7 +25,7 @@ export default function Breadcrumbs({ category, tags }: Props): JSX.Element {
                 </li>
                 {hasTags && (
                     <li className="!text-base font-semibold overflow-hidden text-ellipsis">
-                        {tags.map((tag) => capitalize(tag)).join(', ')}
+                        {tags.map((tag) => capitalizeFirstLetter(tag)).join(', ')}
                     </li>
                 )}
             </ul>

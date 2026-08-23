@@ -5,7 +5,7 @@ import Layout from '../Layout'
 import { SEO } from '../seo'
 import slugify from 'slugify'
 import { NewsletterForm } from 'components/NewsletterForm'
-import { capitalize } from 'instantsearch.js/es/lib/utils'
+import { capitalizeFirstLetter } from '../../utils'
 import { Posts } from 'components/Blog'
 
 const Tutorials = ({
@@ -35,7 +35,7 @@ const Tutorials = ({
                     return (
                         <Posts
                             key={category}
-                            title={capitalize(category)}
+                            title={capitalizeFirstLetter(category)}
                             posts={edges}
                             action={<Link href={url}>View all</Link>}
                         />

@@ -9,7 +9,7 @@ import { SEO } from '../seo'
 import slugify from 'slugify'
 import { NewsletterForm } from 'components/NewsletterForm'
 import { homeCategories } from './constants/categories'
-import { capitalize } from 'instantsearch.js/es/lib/utils'
+import { capitalizeFirstLetter } from '../../utils'
 import CommunityCTA from 'components/CommunityCTA'
 import { CallToAction } from 'components/CallToAction'
 
@@ -163,7 +163,7 @@ const Blog = ({
                 <h1 className="mb-6 mt-0">Blog</h1>
                 <Posts
                     titleBorder
-                    title={`${capitalize(allPostsFilter)} articles`}
+                    title={`${capitalizeFirstLetter(allPostsFilter)} articles`}
                     posts={allPostsFilter === 'popular' ? allPostsPopular : allPostsRecent}
                     action={
                         <Link href="/blog/all"

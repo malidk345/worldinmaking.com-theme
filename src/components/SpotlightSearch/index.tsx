@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Dialog as RadixDialog } from 'radix-ui'
-import { InstantSearch, useConfigure, useHits, useInstantSearch, useSearchBox } from 'react-instantsearch-hooks-web'
 import usePostHog from 'hooks/usePostHog'
-import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
+import { useLocalSearch } from '../../hooks/useLocalSearch'
 import { useApp, useAppActions } from '../../context/App'
 import { useSpotlightActions } from './actions'
 import type { SpotlightAction } from './actions'
@@ -14,7 +13,7 @@ import SearchFooter from './SearchFooter'
 import SearchInput from './SearchInput'
 import { spotlightOptionId } from './SpotlightRow'
 import SuggestionList from './SuggestionList'
-import type { AlgoliaRecord, NavItem, SpotlightSearchResult, SuggestionItem } from './types'
+import type { NavItem, SpotlightSearchResult, SuggestionItem } from './types'
 import { sanitizeNavigationUrl } from 'lib/utils'
 
 // Actions only make sense for short trigger-word queries ("dark mode",
@@ -72,11 +71,7 @@ function SpotlightSearchContent({
 
     const trimmedQuery = query.trim()
     const queryWordCount = trimmedQuery.split(/\s+/).filter(Boolean).length
-    const { refine } = useSearchBox()
-    const { hits } = useHits<AlgoliaRecord>()
-    const { status } = useInstantSearch()
-    const loading = status === 'loading' || status === 'stalled'
-    useConfigure({ facetFilters: activeFilter ? [`type:${activeFilter}`] : [] })
+    const { hits, loading } = useLocalSearch(query, activeFilter, open)
     const results = useMemo(
         () =>
             hits.map((hit) => ({
@@ -87,10 +82,6 @@ function SpotlightSearchContent({
             })),
         [hits]
     )
-
-    useEffect(() => {
-        refine(query)
-    }, [query, refine])
 
     const actions = useSpotlightActions()
     const matchedActions = matchActions(query, actions)
@@ -513,13 +504,18 @@ export default function SpotlightSearch(props: {
         if (props.open) setHasOpened(true)
     }, [props.open])
 
-    // Keep the mounted instance after its first use so the close animation can
-    // finish, but avoid initializing InstantSearch on pages where Spotlight is never opened.
     if (!props.open && !hasOpened) return null
 
+    return <SpotlightSearchContent {...props} />
+}
+
+export const SearchOverlay = () => {
+    const { searchOpen, setSearchOpen, searchInitialFilter } = useApp()
     return (
-        <InstantSearch searchClient={algoliaSearchClient} indexName={algoliaIndexName} stalledSearchDelay={750}>
-            <SpotlightSearchContent {...props} />
-        </InstantSearch>
+        <SpotlightSearch
+            open={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            initialFilter={searchInitialFilter || undefined}
+        />
     )
 }

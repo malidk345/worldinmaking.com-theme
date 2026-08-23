@@ -108,7 +108,7 @@ import * as OSIcons from 'components/OSIcons/Icons'
 import { getLogo, getDarkClassForLogo } from 'constants/logos'
 import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch } from 'components/Search/InlineSearch'
-import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
+import { fetchLocalSearch } from 'lib/localSearch'
 import { isMarkdownContentPath } from '../../constants'
 
 import { PANEL_BG } from 'constants/frostedSurfaces'
@@ -683,8 +683,7 @@ const SidebarSearchResults = ({
 
         const doSearch = async () => {
             try {
-                const index = algoliaSearchClient.initIndex(algoliaIndexName)
-                const { hits } = await index.search(searchQuery, { hitsPerPage: 8 })
+                const { hits } = await fetchLocalSearch(searchQuery)
                 if (!cancelled) {
                     const filtered = currentPath
                         ? hits.filter((h: any) => {

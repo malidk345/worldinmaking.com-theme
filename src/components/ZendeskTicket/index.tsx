@@ -2,7 +2,7 @@ import { Listbox } from '@headlessui/react'
 import { IconChevronDown, IconSearch } from '@posthog/icons'
 import Link from 'components/Link'
 import { useUser } from 'hooks/useUser'
-import { capitalize } from 'instantsearch.js/es/lib/utils'
+import { capitalizeFirstLetter } from '../../utils'
 import React, { useEffect, useState } from 'react'
 
 const priorities = ['low', 'normal', 'high', 'urgent']
@@ -22,7 +22,7 @@ const PriorityDropdown = ({ priority, ticketID, setTicket }) => {
         <div className="relative">
             <Listbox value={priority} onChange={handleChange}>
                 <Listbox.Button className="text-sm flex items-center font-bold">
-                    <span>{priority ? capitalize(priority) : 'None'}</span>
+                    <span>{priority ? capitalizeFirstLetter(priority) : 'None'}</span>
                     <span>
                         <IconChevronDown className="w-5" />
                     </span>
@@ -31,7 +31,7 @@ const PriorityDropdown = ({ priority, ticketID, setTicket }) => {
                     {priorities.map((priority) => {
                         return (
                             <Listbox.Option key={priority} className="px-2 py-1 text-sm" value={priority}>
-                                {capitalize(priority)}
+                                {capitalizeFirstLetter(priority)}
                             </Listbox.Option>
                         )
                     })}
@@ -113,7 +113,7 @@ const StatusDropdown = ({ status, ticketID, setTicket }) => {
         <div className="relative">
             <Listbox value={status} onChange={handleChange}>
                 <Listbox.Button className="text-sm flex items-center font-bold">
-                    <span>{capitalize(status)}</span>
+                    <span>{capitalizeFirstLetter(status)}</span>
                     <span>
                         <IconChevronDown className="w-5" />
                     </span>

@@ -400,10 +400,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-290` | Stream 1 | Remove leftover kea/kea-loaders/kea-router packages (webpack already shims notebook) | `package.json`, `pnpm-lock.yaml`, `next.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-291` | Stream 1 | Retarget notebook kea imports to local stub; delete unused HelpMenu/oauth logics | `src/notebook-app/lib/kea-stub.ts`, LemonUI, HelpMenu, oauth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-292` | Stream 3 | Careful codebase optimize: drop dead deps/templates, isolate merch cart, restore WIM subprocessors | `package.json`, HeaderBar, unused templates, `subprocessors.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-293` | Stream 3 | Replace InstantSearch with local `/api/search` fetch; drop Algolia client packages | `useLocalSearch`, SpotlightSearch, SearchUI, package.json | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 362 - Local search without InstantSearch (TSK-293)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Spotlight/inline/reader search now call `/api/search` via `fetchLocalSearch` / `useLocalSearch`. Removed `InstantSearch` wrapper, `SearchUI` Algolia UI, and `algoliaSearch.ts`. Replaced `instantsearch.js` `capitalize` helper with `capitalizeFirstLetter`. Dropped `instantsearch.js` and `react-instantsearch-hooks-web`.
+- **Modified Files:** `src/lib/localSearch.ts`, `src/hooks/useLocalSearch.ts`, SpotlightSearch, Wrapper, ReaderView, InlineSearch, Blog/Tutorials/Zendesk capitalize call sites, `package.json`, `pnpm-lock.yaml`, deleted SearchUI + algoliaSearch.ts
 
 ### Entry 361 - Careful bundle/codebase optimize (TSK-292)
 - **Date:** 2026-08-23

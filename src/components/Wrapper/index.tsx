@@ -10,7 +10,7 @@ import { TooltipProvider } from 'components/RadixUI/Tooltip'
 
 import { AnimatePresence } from 'framer-motion'
 
-const SearchOverlay = dynamic(() => import('components/SearchUI').then((module) => module.SearchOverlay), {
+const SearchOverlay = dynamic(() => import('components/SpotlightSearch').then((module) => module.SearchOverlay), {
     ssr: false,
 })
 const ActiveWindowsPanel = dynamic(() => import('components/ActiveWindowsPanel'), { ssr: false })
