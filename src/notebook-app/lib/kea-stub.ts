@@ -44,13 +44,13 @@ export const router = {
 
 export const urlToAction = (map: any) => map
 
-export function Form({ children }: { children?: React.ReactNode }): JSX.Element {
-    return <>{children}</>
+export function Form({ children }: { children?: React.ReactNode }): React.ReactElement {
+    return React.createElement(React.Fragment, null, children)
 }
 
-export function Field({ children, ...rest }: any): JSX.Element {
+export function Field({ children, ...rest }: any): React.ReactElement {
     if (typeof children === 'function') {
         return children({ value: undefined, onChange: () => {}, ...rest })
     }
-    return <>{children}</>
+    return React.createElement(React.Fragment, null, children)
 }
