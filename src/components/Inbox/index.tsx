@@ -252,7 +252,7 @@ const QuestionToolbar = ({
 }: QuestionToolbarProps) => {
     const navigate = useDesktopNavigate()
     return (
-        <div className="keyboard-lift bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
+        <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
             <OSButton
                 variant="secondary"
                 size="xs"
@@ -828,6 +828,24 @@ export default function Inbox(props) {
                                 {permalink ? (
                                         <div
                                             ref={bottomContainerRef}
+                                            data-keyboard-frame
+                                            onFocusCapture={(event) => {
+                                                if (!isMobile) return
+                                                const target = event.target
+                                                if (!(target instanceof HTMLElement)) return
+                                                const tag = target.tagName
+                                                const editable =
+                                                    tag === 'TEXTAREA' ||
+                                                    target.isContentEditable ||
+                                                    (tag === 'INPUT' &&
+                                                        !['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'color', 'hidden'].includes(
+                                                            (target as HTMLInputElement).type
+                                                        ))
+                                                if (!editable) return
+                                                const box = containerRef.current?.getBoundingClientRect()
+                                                if (!box || box.height < 120) return
+                                                setBottomHeight(box.height)
+                                            }}
                                             className={`relative min-h-0 min-w-0 flex flex-col overflow-hidden bg-primary ${
                                                 !isDragging ? 'transition-[height,width] duration-200 ease-out' : ''
                                             } ${

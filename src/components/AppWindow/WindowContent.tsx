@@ -24,6 +24,7 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
 
     return (
         <div
+            data-window-content
             onPointerDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
             className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overscroll-contain ${

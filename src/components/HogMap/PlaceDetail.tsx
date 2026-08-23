@@ -200,7 +200,7 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
                                         </div>
                                     </div>
 
-                                    <div className="mb-3">
+                                    <div className="mb-3" data-writing-surface>
                                         <label className="text-[13px] text-secondary mb-1 block">
                                             Your review
                                             <span className="text-[11px] text-muted ml-2">(⌘+Enter to submit)</span>

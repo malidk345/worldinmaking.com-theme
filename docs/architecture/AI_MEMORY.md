@@ -410,10 +410,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-300` | Stream 3 | Live AI reply: no typewriter lag / whole-block fade; CSS overflow-anchor | ChatMessage.tsx, ClaudeWorkspaceChat/index.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-301` | Stream 5 | WIM AI: empty welcome, stop marks the reply, retry after stop | ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-302` | Stream 2 | Path-first window routing so F5 on posts/questions is not an empty shell | window-path.ts, WindowRouter, _app, post/question pages | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-303` | Stream 3 | Site-wide mobile writing: comments sit on the keyboard, no window jump/zoom | useKeyboardInset, global.css, Inbox, QuestionForm, WindowContent | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 373 - Site-wide mobile writing sits on the overlay keyboard (TSK-303)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Comment/reply fields at the bottom of a thread were covered by the overlay keyboard because there was no extra scroll room and the short forum split pane sat under the keys. The shell now pads the window (or a marked frame) by `--keyboard-inset` when a field is focused, scrolls the writing surface into the overlay-safe band (Radix viewports included), expands the mobile forum thread while composing, and keeps docked chat/notebook composers on their existing padding. 16px anti-zoom is unchanged; windows still do not jump.
+- **Modified Files:** `src/hooks/useKeyboardInset.ts`, `src/styles/global.css`, `WindowContent.tsx`, `Inbox/index.tsx`, `QuestionForm.tsx`, `Authentication.tsx`, `ClaudeWorkspaceChat/index.tsx`, `CommandPalette`, `PlaceDetail`, `ProfileView`, `EphemeralTransmissions`, `NotebookAIWriterModal`, `ContactWindow`, `Share/index.tsx`, `tests/keyboard-overlay.spec.ts`
+- **Verification:** `keyboard-overlay.spec.ts` 7/7; `window-path.spec.ts` 3/3; `typecheck:shell` 0 gated errors.
 
 ### Entry 372 - Path-first windows so F5 on posts/questions is not empty (TSK-302)
 - **Date:** 2026-08-23

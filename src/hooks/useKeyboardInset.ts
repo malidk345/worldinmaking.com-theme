@@ -1,6 +1,11 @@
 import { useEffect } from 'react'
 
 const KEYBOARD_THRESHOLD = 80
+const PADDED_ATTR = 'data-keyboard-padded'
+const FRAME_ATTR = 'data-keyboard-frame'
+const WINDOW_CONTENT_ATTR = 'data-window-content'
+const WRITING_DOCK = '[data-writing-dock], .keyboard-lift'
+const NOTEBOOK_EDITOR = '.MarkdownNotebook, [data-markdown-notebook-editor]'
 
 export function measureKeyboardOverlay(
     layoutHeight: number,
@@ -14,31 +19,94 @@ export function measureKeyboardOverlay(
     return { inset: open ? Math.max(shrink, pan) : 0, pan: open ? pan : 0, open }
 }
 
+/** Layout-viewport Y of the last pixel still above the overlay keyboard. */
+export function overlaySafeBottom(layoutHeight: number, inset: number, gutter = 12): number {
+    return Math.max(48, Math.round(layoutHeight - Math.max(0, inset) - gutter))
+}
+
+/** How far to scroll so `rect` sits in the overlay-safe band. 0 = already visible. */
+export function keyboardRevealDelta(
+    rect: { top: number; bottom: number },
+    safeTop: number,
+    safeBottom: number
+): number {
+    if (rect.top >= safeTop && rect.bottom <= safeBottom) return 0
+    if (rect.bottom > safeBottom) return rect.bottom - safeBottom
+    return rect.top - safeTop
+}
+
+/** Pad a frame only when the keyboard actually covers it and the frame is tall enough. */
+export function shouldPadWritingFrame(
+    frame: { height: number; bottom: number },
+    layoutHeight: number,
+    inset: number
+): boolean {
+    if (inset < KEYBOARD_THRESHOLD) return false
+    if (frame.height < inset + 96) return false
+    return frame.bottom > layoutHeight - inset + 8
+}
+
+function isScroller(element: HTMLElement): boolean {
+    if (element.hasAttribute('data-radix-scroll-area-viewport')) return true
+    if (element.classList.contains('app-scroll-viewport')) return true
+    const overflowY = window.getComputedStyle(element).overflowY
+    return /(auto|scroll|overlay)/.test(overflowY)
+}
+
 function scrollableParent(element: HTMLElement): HTMLElement | null {
     let current: HTMLElement | null = element.parentElement
     while (current && current !== document.documentElement && current !== document.body) {
-        const style = window.getComputedStyle(current)
-        const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1
-        if (canScroll) return current
+        if (isScroller(current)) return current
         current = current.parentElement
     }
     return null
 }
 
-/** Scroll an inner pane so `rect` stays in the visual viewport. Never pan the page. */
-function scrollRectIntoVisualViewport(rect: DOMRect, node: HTMLElement, bottomGutter = 16): void {
-    const vv = window.visualViewport
-    if (!vv) return
-    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
-    const top = 12
-    const bottom = vv.height - bottomGutter
-    if (rect.top >= top && rect.bottom <= bottom) return
-    const delta = rect.bottom > bottom ? rect.bottom - bottom : rect.top - top
-    const scroller = scrollableParent(node)
-    if (scroller) scroller.scrollTop += delta
+function pickWritingFrame(element: HTMLElement, inset: number): HTMLElement | null {
+    const layoutHeight = window.innerHeight
+    const seen = new Set<HTMLElement>()
+    const candidates: HTMLElement[] = []
+    const push = (node: HTMLElement | null) => {
+        if (!node || seen.has(node)) return
+        seen.add(node)
+        candidates.push(node)
+    }
+    push(element.closest(`[${FRAME_ATTR}]`))
+    push(element.closest(`[${WINDOW_CONTENT_ATTR}]`))
+    push(element.closest('[data-app="AppWindow"]'))
+    push(scrollableParent(element))
+
+    for (const frame of candidates) {
+        if (shouldPadWritingFrame(frame.getBoundingClientRect(), layoutHeight, inset)) return frame
+    }
+    return null
 }
 
-function keepNotebookCaretInView(): void {
+function clearWritingPad(): void {
+    document.querySelectorAll(`[${PADDED_ATTR}]`).forEach((node) => {
+        node.removeAttribute(PADDED_ATTR)
+    })
+}
+
+function padWritingFrame(frame: HTMLElement | null): void {
+    clearWritingPad()
+    if (frame) frame.setAttribute(PADDED_ATTR, '')
+}
+
+/** Scroll an inner pane so `rect` stays above the overlay keyboard. Never pan the page. */
+function scrollRectIntoOverlay(rect: DOMRect, node: HTMLElement, inset: number, bottomGutter = 16): void {
+    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
+    const delta = keyboardRevealDelta(rect, 12, overlaySafeBottom(window.innerHeight, inset, bottomGutter))
+    if (delta === 0) return
+    const scroller = scrollableParent(node)
+    if (scroller) {
+        scroller.scrollTop += delta
+        return
+    }
+    node.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+}
+
+function keepNotebookCaretInView(inset: number): void {
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) return
     const range = selection.getRangeAt(0)
@@ -46,8 +114,21 @@ function keepNotebookCaretInView(): void {
         range.startContainer instanceof HTMLElement
             ? range.startContainer
             : range.startContainer.parentElement
-    if (!node?.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) return
-    scrollRectIntoVisualViewport(range.getBoundingClientRect(), node, 28)
+    if (!node?.closest(NOTEBOOK_EDITOR)) return
+    scrollRectIntoOverlay(range.getBoundingClientRect(), node, inset, 28)
+}
+
+function writingSurface(element: HTMLElement): HTMLElement {
+    return (element.closest('[data-writing-surface]') as HTMLElement) || element
+}
+
+function revealWritingSurface(element: HTMLElement, inset: number): void {
+    if (element.closest(WRITING_DOCK)) {
+        if (element.closest(NOTEBOOK_EDITOR)) keepNotebookCaretInView(inset)
+        return
+    }
+    const surface = writingSurface(element)
+    scrollRectIntoOverlay(surface.getBoundingClientRect(), surface, inset, 12)
 }
 
 function isEditableTarget(target: EventTarget | null): target is HTMLElement {
@@ -93,27 +174,49 @@ export function useKeyboardInset(): void {
             if (open) root.setAttribute('data-keyboard', 'open')
             else root.removeAttribute('data-keyboard')
 
-            const active = document.activeElement
-            const inNotebook =
-                active instanceof HTMLElement &&
-                Boolean(active.closest('.MarkdownNotebook, [data-markdown-notebook-editor]'))
-            if (inNotebook) {
-                root.setAttribute('data-keyboard-surface', 'notebook')
-                if (keepCaret && open) keepNotebookCaretInView()
+            const focused = document.activeElement
+            const active = isEditableTarget(focused) ? focused : null
+            const inNotebook = Boolean(active?.closest(NOTEBOOK_EDITOR))
+            const inDock = Boolean(active?.closest(WRITING_DOCK))
+
+            if (inNotebook) root.setAttribute('data-keyboard-surface', 'notebook')
+            else if (active && open) root.setAttribute('data-keyboard-surface', 'write')
+            else root.removeAttribute('data-keyboard-surface')
+
+            if (open && active && !inDock) {
+                const frame = pickWritingFrame(active, inset)
+                if (frame) padWritingFrame(frame)
+                else clearWritingPad()
             } else {
-                root.removeAttribute('data-keyboard-surface')
+                clearWritingPad()
+            }
+
+            if (keepCaret && open && active) {
+                const field = active
+                requestAnimationFrame(() => revealWritingSurface(field, inset))
             }
         }
 
+        const timers: number[] = []
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
-            const el = event.target
-            window.setTimeout(() => {
-                apply(true)
-                if (el.closest('[data-writing-dock], .keyboard-lift')) return
-                if (el.closest('.MarkdownNotebook, [data-markdown-notebook-editor]')) return
-                scrollRectIntoVisualViewport(el.getBoundingClientRect(), el, 16)
-            }, 280)
+            timers.push(window.setTimeout(() => apply(true), 50))
+            timers.push(window.setTimeout(() => apply(true), 300))
+        }
+        const onFocusOut = () => {
+            timers.push(window.setTimeout(() => apply(false), 0))
+        }
+        let selectionRaf = 0
+        const onSelectionChange = () => {
+            if (!root.hasAttribute('data-keyboard')) return
+            if (selectionRaf) return
+            selectionRaf = requestAnimationFrame(() => {
+                selectionRaf = 0
+                const active = document.activeElement
+                if (!isEditableTarget(active) || !active.isContentEditable) return
+                const inset = Number.parseFloat(root.style.getPropertyValue('--keyboard-inset')) || 0
+                revealWritingSurface(active, inset)
+            })
         }
 
         const applyVars = () => apply(false)
@@ -123,12 +226,19 @@ export function useKeyboardInset(): void {
         window.visualViewport?.addEventListener('scroll', applyVars)
         window.addEventListener('resize', applyAndKeepCaret)
         document.addEventListener('focusin', onFocusIn)
+        document.addEventListener('focusout', onFocusOut)
+        document.addEventListener('selectionchange', onSelectionChange)
 
         return () => {
+            timers.forEach((id) => window.clearTimeout(id))
+            if (selectionRaf) cancelAnimationFrame(selectionRaf)
             window.visualViewport?.removeEventListener('resize', applyAndKeepCaret)
             window.visualViewport?.removeEventListener('scroll', applyVars)
             window.removeEventListener('resize', applyAndKeepCaret)
             document.removeEventListener('focusin', onFocusIn)
+            document.removeEventListener('focusout', onFocusOut)
+            document.removeEventListener('selectionchange', onSelectionChange)
+            clearWritingPad()
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')
             root.style.removeProperty('--vv-offset-top')

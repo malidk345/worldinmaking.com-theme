@@ -1367,7 +1367,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           )}
         </main>
 
-        <div className="relative z-20 shrink-0 bg-primary pt-2 [padding-bottom:calc(0.75rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]">
+        <div
+          data-writing-dock
+          className="relative z-20 shrink-0 bg-primary pt-2 [padding-bottom:calc(0.75rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]"
+        >
           <ChatInput
             onSendMessage={handleSendMessage}
             onStopStreaming={handleStopStreaming}

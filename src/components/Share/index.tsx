@@ -247,7 +247,7 @@ const EmailGenerator = ({ url }: { url: string }) => {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                             <div className="text-sm text-muted mb-2 font-semibold">Your generated email:</div>
-                            <div className="space-y-2">
+                            <div className="space-y-2" data-writing-surface>
                                 <div>
                                     <div className="text-xs text-muted">Subject:</div>
                                     <input
@@ -536,7 +536,7 @@ const TweetGenerator = ({ url }: { url: string }) => {
             <div className="space-y-2">
                 <div className="bg-accent px-4 py-2 rounded-md border border-primary relative">
                     <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
+                        <div className="flex-1" data-writing-surface>
                             <div className="text-sm text-muted mb-2 font-semibold">Your generated tweet:</div>
                             <textarea
                                 value={currentTweet}
@@ -759,7 +759,7 @@ URL: ${url}
                             </div>
 
                             {/* Message content */}
-                            <div className="mb-2">
+                            <div className="mb-2" data-writing-surface>
                                 <div className="font-bold mb-2">MESSAGE:</div>
                                 <textarea
                                     value={currentFax.message}

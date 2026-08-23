@@ -3164,6 +3164,23 @@ html[data-keyboard='open'] #app-container {
     transition: padding-bottom 0.16s ease-out;
 }
 
+[data-writing-surface] {
+    scroll-margin-bottom: calc(var(--keyboard-inset, 0px) + 12px);
+    scroll-margin-top: 12px;
+}
+
+/* Shrink the window/panel above the overlay keyboard so bottom composers sit on it. */
+html[data-keyboard='open'] [data-keyboard-padded] {
+    padding-bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box;
+}
+
+/* Compact tall comment editors so the field + Post stay above the keyboard. */
+html[data-keyboard='open'] [data-writing-surface] [contenteditable='true'] {
+    min-height: 4.5rem !important;
+    max-height: min(9rem, calc(var(--vv-height, 50dvh) - 8rem)) !important;
+}
+
 /* iOS zooms any focused field under 16px. Keep writing surfaces at 16px on phones. */
 @media (max-width: 767px) {
     input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not([type='submit']):not(

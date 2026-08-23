@@ -1078,7 +1078,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             {(isEditing || profile.biography) && (
                                 <Block title="Bio">
                                     {isEditing ? (
-                                        <div className="space-y-1">
+                                        <div className="space-y-1" data-writing-surface>
                                             <textarea
                                                 name="biography"
                                                 value={values.biography || ''}

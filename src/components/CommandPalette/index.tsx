@@ -173,7 +173,7 @@ export default function CommandPalette() {
                             <input
                                 ref={inputRef}
                                 type="text"
-                                className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-secondary"
+                                className="w-full bg-transparent text-base font-semibold outline-none placeholder:text-secondary"
                                 placeholder="Type a command or search articles... (Esc to exit)"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}

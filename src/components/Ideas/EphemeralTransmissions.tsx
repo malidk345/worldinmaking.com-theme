@@ -113,7 +113,10 @@ export default function EphemeralTransmissions() {
             </div>
 
             {/* Input Composer Area */}
-            <div className="p-4 border-t border-black/5 dark:border-white/5 bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl shrink-0">
+            <div
+                data-writing-surface
+                className="p-4 border-t border-black/5 dark:border-white/5 bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl shrink-0"
+            >
                 <div className="max-w-7xl mx-auto flex gap-3 items-center">
                     <textarea
                         value={input}

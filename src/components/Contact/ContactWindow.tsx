@@ -138,7 +138,7 @@ export default function ContactWindow() {
                         </div>
                     ) : (
                         /* Contact Form */
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit} data-writing-surface className="space-y-5">
                             {error && (
                                 <div className="p-3 rounded bg-red/10 border border-red/30 text-red text-sm flex items-center gap-2">
                                     <IconWarning className="size-4 shrink-0" />

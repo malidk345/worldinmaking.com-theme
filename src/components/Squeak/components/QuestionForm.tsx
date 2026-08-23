@@ -404,7 +404,7 @@ export const QuestionForm = ({
     }, [slug])
 
     return (
-        <div>
+        <div data-writing-surface>
             {view ? (
                 {
                     'question-form': (
