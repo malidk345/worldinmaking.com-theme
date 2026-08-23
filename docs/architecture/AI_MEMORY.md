@@ -413,10 +413,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-303` | Stream 3 | Site-wide mobile writing: comments sit on the keyboard, no window jump/zoom | useKeyboardInset, global.css, Inbox, QuestionForm, WindowContent | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-304` | Stream 2 | Desktop-pinned notebooks must open that notebook, not the list | window-path, notebook-route, Desktop, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-305` | Stream 4 | Cross-device delete must tombstone notebooks (no resurrection); stop media wipe | notebooks-repo, notebookRemote, Desktop | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-306` | Stream 4 | Hard-delete chat/notebook rows in Supabase; keep tiny tombstones; fix WIM AI delete | chat-store, notebooks-repo, ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 376 - Hard-delete chats/notebooks in Supabase; WIM AI delete no longer comes back (TSK-306)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Deleted chats still sat in `wim_chats`/`wim_chat_messages` (soft `deleted_at`) and the sidebar delete used a stale list plus hover-only trash on mobile. Delete now writes a tiny `wim_sync_tombstones` row, then hard-deletes the chat (messages cascade) and notebook (+ history). Other devices still drop the id. Local delete writes cache immediately and will not re-push. Live leftover soft-deleted chats were purged.
+- **Modified Files:** `lib/sync-tombstones.ts`, `chat-store.ts`, `notebooks-repo.ts`, `chat-remote.ts`, `ClaudeWorkspaceChat/index.tsx`, `Sidebar.tsx`, `supabase/migrations/20260823_sync_tombstones.sql`
+- **Verification:** `account-sync.spec.ts` 6/6; live SQL 201; leftover soft chats 4→0; `typecheck:shell` 0 gated errors.
 
 ### Entry 375 - Notebook delete is a tombstone so other devices do not resurrect it (TSK-305)
 - **Date:** 2026-08-23

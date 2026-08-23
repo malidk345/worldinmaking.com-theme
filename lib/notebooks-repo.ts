@@ -3,6 +3,7 @@
  * Used only by API routes — never import from client components.
  */
 import { supabaseAdmin } from './supabase-admin'
+import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
 
 export type NotebookPublishMeta = {
     publicTitle?: string
@@ -190,11 +191,18 @@ export async function listNotebooksByOwner(ownerKey: string, userId?: string): P
 }
 
 export async function listDeletedNotebookIds(ownerKey: string, userId?: string): Promise<string[]> {
-    let query = supabaseAdmin.from('wim_notebooks').select('id').not('deleted_at', 'is', null)
+    const fromLedger = await listSyncTombstoneIds('notebook', ownerKey, userId)
+    let query = supabaseAdmin.from('wim_notebooks').select('id, owner_key, auth_user_id').not('deleted_at', 'is', null)
     query = applyOwnerScope(query, ownerKey, userId)
     const { data, error } = await query.limit(500)
     if (error) throw error
-    return ((data as { id: string }[] | null) || []).map((row) => row.id)
+    const leftover = (data as { id: string; owner_key: string; auth_user_id: string | null }[] | null) || []
+    for (const row of leftover) {
+        await recordSyncTombstone('notebook', row.id, row.owner_key, row.auth_user_id)
+        await supabaseAdmin.from('wim_notebook_history').delete().eq('notebook_id', row.id)
+        await supabaseAdmin.from('wim_notebooks').delete().eq('id', row.id)
+    }
+    return Array.from(new Set([...fromLedger, ...leftover.map((row) => row.id)]))
 }
 
 export async function getNotebookByIdOrShort(
@@ -268,6 +276,11 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): P
             err.status = 410
             throw err
         }
+        if (await hasSyncTombstone('notebook', nb.id)) {
+            const err = new Error('Notebook was deleted') as Error & { status?: number }
+            err.status = 410
+            throw err
+        }
 
         const currentDbVersion = Number((existing as { version?: number }).version || 1)
         const incomingVersion = Number(nb.version || 0)
@@ -286,6 +299,11 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): P
         // Auto-increment version for successful updates
         nb.version = currentDbVersion + 1
     } else {
+        if (await hasSyncTombstone('notebook', nb.id)) {
+            const err = new Error('Notebook was deleted') as Error & { status?: number }
+            err.status = 410
+            throw err
+        }
         nb.version = Math.max(1, Number(nb.version || 1))
     }
 
@@ -318,11 +336,8 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
                 err.status = 403
                 throw err
             }
-            if ((existing as { deleted_at?: string | null }).deleted_at) {
-                const err = new Error('Notebook was deleted') as Error & { status?: number }
-                err.status = 410
-                throw err
-            }
+            if ((existing as { deleted_at?: string | null }).deleted_at) continue
+            if (await hasSyncTombstone('notebook', nb.id)) continue
             const currentDbVersion = Number((existing as { version?: number }).version || 1)
             const incomingVersion = Number(nb.version || 0)
 
@@ -337,6 +352,7 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
             }
             nb.version = currentDbVersion + 1
         } else {
+            if (await hasSyncTombstone('notebook', nb.id)) continue
             nb.version = Math.max(1, Number(nb.version || 1))
         }
         updatedRows.push(dtoToRow(nb, ownerKey))
@@ -371,37 +387,34 @@ export async function replaceHistoryForOwner(
 export async function deleteNotebook(idOrShort: string, ownerKey: string, userId?: string): Promise<boolean> {
     const { data: existing, error: findError } = await supabaseAdmin
         .from('wim_notebooks')
-        .select('id, owner_key, auth_user_id, deleted_at')
+        .select('id, short_id, owner_key, auth_user_id, deleted_at')
         .or(`id.eq.${idOrShort},short_id.eq.${idOrShort}`)
         .limit(1)
         .maybeSingle()
     if (findError) throw findError
-    if (!existing) return false
-    const row = existing as { id: string; owner_key: string; auth_user_id: string | null; deleted_at: string | null }
 
-    // Already deleted — finish any partial cleanup and return success
-    if (row.deleted_at) {
-        await purgeNotebookData(row.id, row.owner_key).catch(() => {})
+    if (!existing) {
+        await recordSyncTombstone('notebook', idOrShort, ownerKey, userId)
         return true
     }
 
+    const row = existing as {
+        id: string
+        short_id: string
+        owner_key: string
+        auth_user_id: string | null
+        deleted_at: string | null
+    }
     const allowed = row.owner_key === ownerKey || Boolean(userId && row.auth_user_id === userId)
     if (!allowed) return false
 
-    // Soft-delete: keep the row so other devices receive a tombstone instead of
-    // re-uploading the notebook from localStorage.
-    const { error: delError } = await supabaseAdmin
-        .from('wim_notebooks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', row.id)
-        .is('deleted_at', null)
-
+    await recordSyncTombstone('notebook', row.id, row.owner_key, row.auth_user_id)
+    if (row.short_id && row.short_id !== row.id) {
+        await recordSyncTombstone('notebook', row.short_id, row.owner_key, row.auth_user_id)
+    }
+    await purgeNotebookData(row.id).catch((e) => console.error('[deleteNotebook] purge error', e))
+    const { error: delError } = await supabaseAdmin.from('wim_notebooks').delete().eq('id', row.id)
     if (delError) throw delError
-
-    await purgeNotebookData(row.id).catch((e) =>
-        console.error('[deleteNotebook] purge error', e)
-    )
-
     return true
 }
 

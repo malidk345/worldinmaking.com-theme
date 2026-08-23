@@ -3,6 +3,7 @@
  * Used only by API routes and getServerSideProps — never import from client.
  */
 import { supabaseAdmin } from '../../lib/supabase-admin'
+import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from '../../lib/sync-tombstones'
 import type { Artifact, Chat, FileAttachment, Message, ThinkingBudget, WebCitation } from '../components/ClaudeWorkspaceChat/types'
 
 
@@ -168,11 +169,17 @@ export async function listChatsByOwner(ownerKey: string, userId?: string): Promi
 }
 
 export async function listDeletedChatIds(ownerKey: string, userId?: string): Promise<string[]> {
-    let query = supabaseAdmin.from('wim_chats').select('id').not('deleted_at', 'is', null)
+    const fromLedger = await listSyncTombstoneIds('chat', ownerKey, userId)
+    let query = supabaseAdmin.from('wim_chats').select('id, owner_key, auth_user_id').not('deleted_at', 'is', null)
     query = applyOwnerScope(query, ownerKey, userId)
     const { data, error } = await query.limit(500)
     if (error) throw error
-    return ((data as { id: string }[] | null) || []).map((row) => row.id)
+    const leftover = (data as { id: string; owner_key: string; auth_user_id: string | null }[] | null) || []
+    for (const row of leftover) {
+        await recordSyncTombstone('chat', row.id, row.owner_key, row.auth_user_id)
+        await supabaseAdmin.from('wim_chats').delete().eq('id', row.id)
+    }
+    return Array.from(new Set([...fromLedger, ...leftover.map((row) => row.id)]))
 }
 
 export async function listChatsWithMessages(ownerKey: string, userId?: string): Promise<Chat[]> {
@@ -287,6 +294,9 @@ export async function upsertChatWithMessages(
     if (existing && (existing as ChatRow).deleted_at) {
         throw Object.assign(new Error('Chat was deleted'), { status: 410 })
     }
+    if (await hasSyncTombstone('chat', chatId)) {
+        throw Object.assign(new Error('Chat was deleted'), { status: 410 })
+    }
 
     if (existing) {
         // Preserve an already-issued share token unless the client is explicitly sharing.
@@ -357,15 +367,27 @@ export async function setMessageLiked(chatId: string, ownerKey: string, messageI
 }
 
 export async function deleteChatForOwner(chatId: string, ownerKey: string): Promise<boolean> {
-    const { data, error } = await supabaseAdmin
+    const { data: existing, error: findError } = await supabaseAdmin
         .from('wim_chats')
-        .update({ deleted_at: new Date().toISOString(), is_shared: false })
+        .select('id, owner_key, auth_user_id, deleted_at')
         .eq('id', chatId)
-        .eq('owner_key', ownerKey)
-        .is('deleted_at', null)
-        .select('id')
+        .maybeSingle()
+    if (findError) throw findError
+
+    if (!existing) {
+        const already = await hasSyncTombstone('chat', chatId)
+        if (already) return true
+        await recordSyncTombstone('chat', chatId, ownerKey)
+        return true
+    }
+
+    const row = existing as ChatRow
+    if (row.owner_key !== ownerKey) return false
+
+    await recordSyncTombstone('chat', row.id, row.owner_key, row.auth_user_id)
+    const { error } = await supabaseAdmin.from('wim_chats').delete().eq('id', row.id)
     if (error) throw error
-    return Array.isArray(data) && data.length > 0
+    return true
 }
 
 export function createShareToken(): string {

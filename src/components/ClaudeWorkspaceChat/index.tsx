@@ -464,15 +464,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const chatId = persistChatIdRef.current
     persistChatIdRef.current = null
     const chat = chats.find((item) => item.id === chatId)
-    if (chat && chat.messages.some((message) => !message.isStreaming)) {
+    if (chat && chat.messages.some((message) => !message.isStreaming) && !readLocalDeletedChatIds().includes(chat.id)) {
       void pushChatToRemote(chat)
     }
   }, [chats, isStreaming]);
 
-  // Active chat object — nullable if chats array is empty (e.g. localStorage cleared)
-  const activeChat = chats.length > 0
-    ? (chats.find((c) => c.id === activeChatId) || chats[0])
-    : undefined;
+  const activeChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
   isStreamingRef.current =
     isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming)
 
@@ -1089,13 +1086,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const handleDeleteChat = (id: string) => {
     rememberDeletedChatId(id)
-    setChats((prev) => prev.filter((c) => c.id !== id));
-    void deleteChatOnRemote(id);
-    if (activeChatId === id) {
-      const remaining = chats.filter((c) => c.id !== id);
-      setActiveChatId(remaining[0]?.id || '');
-    }
-  };
+    if (persistChatIdRef.current === id) persistChatIdRef.current = null
+    setChats((prev) => {
+      const next = prev.filter((c) => c.id !== id)
+      writeLocalChats(next)
+      if (activeChatId === id) setActiveChatId(next[0]?.id || '')
+      return next
+    })
+    void deleteChatOnRemote(id)
+  }
 
   const handleEditPrompt = (text: string, messageId: string) => {
     if (isStreaming) return;

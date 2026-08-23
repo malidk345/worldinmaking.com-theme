@@ -107,7 +107,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
             }`}
         >
             <span className="truncate pr-7">{chat.title || 'New chat'}</span>
-            <div className="absolute right-1 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute right-1 flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                     onClick={onDelete}
                     className="p-1 rounded text-muted hover:text-rose-600 hover:bg-primary/10 transition-colors cursor-pointer"

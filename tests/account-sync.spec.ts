@@ -68,6 +68,12 @@ test.describe('account sync merge', () => {
         ])
     })
 
+    test('deleted chats stay gone even if the remote copy is still in the pull', () => {
+        const local = [chat('keep', '2026-08-17T12:00:00.000Z')]
+        const remote = [chat('gone', '2026-08-17T14:00:00.000Z'), chat('keep', '2026-08-17T11:00:00.000Z')]
+        expect(mergeChats(local, remote, ['gone']).map((item) => item.id).sort()).toEqual(['keep'])
+    })
+
     test('claim keys reject junk', () => {
         expect(isSafeOwnerKey('15e06f59-7d51-46c7-bd10-287f91a8e4ee')).toBe(true)
         expect(isSafeOwnerKey('owner_1786815367503_mhsfyb35')).toBe(true)

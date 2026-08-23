@@ -172,6 +172,7 @@ export async function pullChatsFromRemote(): Promise<{ chats: Chat[]; deletedIds
 
 export async function pushChatToRemote(chat: Chat): Promise<Chat | null> {
     if (typeof window === 'undefined') return null
+    if (readLocalDeletedChatIds().includes(chat.id)) return null
     try {
         const res = await fetch('/api/chats', {
             method: 'POST',
@@ -197,7 +198,7 @@ export async function deleteChatOnRemote(chatId: string): Promise<boolean> {
             method: 'DELETE',
             headers: await chatAuthHeadersFresh(),
         })
-        return res.ok
+        return res.ok || res.status === 404
     } catch {
         return false
     }
