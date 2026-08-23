@@ -19,9 +19,8 @@ import {
     useState,
 } from 'react'
 
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import {
-    IconArrowDown,
-    IconArrowUp,
     IconComment,
     IconCopy,
     IconDrag,
@@ -5492,7 +5491,7 @@ function MarkdownNotebookEditor({
                                 }}
                                 title="Yukarı taşı"
                             >
-                                <IconArrowUp className="size-3.5" />
+                                <ArrowUp className="size-3.5" />
                                 <span>Yukarı</span>
                             </button>
                         ) : null}
@@ -5508,7 +5507,7 @@ function MarkdownNotebookEditor({
                                 }}
                                 title="Aşağı taşı"
                             >
-                                <IconArrowDown className="size-3.5" />
+                                <ArrowDown className="size-3.5" />
                                 <span>Aşağı</span>
                             </button>
                         ) : null}

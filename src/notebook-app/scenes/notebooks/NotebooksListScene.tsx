@@ -10,12 +10,12 @@ import {
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import { notebookMatchesQuery } from './notebookPreview'
+import { Download } from 'lucide-react'
 import {
     IconEllipsis,
     IconPlus,
     IconTrash,
     IconCopy,
-    IconExport,
 } from '@posthog/icons'
 import { useToast } from '../../../context/Toast'
 import {
@@ -250,7 +250,7 @@ export function NotebooksListScene({
                         items={[
                             {
                                 label: 'Add to Desktop',
-                                icon: <IconExport />,
+                                icon: <Download className="size-4" />,
                                 onClick: () => handlePinToDesktop(notebook),
                             },
                             {

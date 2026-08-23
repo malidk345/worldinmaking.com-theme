@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 import { KeyboardEvent, MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 
+import { ArrowUp } from 'lucide-react'
 import {
     IconPlus,
-    IconArrowUp,
     IconCheck,
     IconX,
     IconSparkles,
@@ -421,7 +421,7 @@ export function EditablePromptComponent({
                     disabled={!question.trim() || isAIPromptSubmitDisabled || mode !== 'edit'}
                     title="Submit (Enter)"
                 >
-                    <IconArrowUp className="size-3.5 stroke-[2.5]" />
+                    <ArrowUp className="size-3.5 stroke-[2.5]" />
                 </button>
             </div>
             {error ? <p className="WimInlinePill__error">{error}</p> : null}
