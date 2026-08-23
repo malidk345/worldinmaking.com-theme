@@ -1,5 +1,5 @@
 import React from 'react'
-import { Avatar } from 'components/MainNav'
+import { Avatar } from 'components/Avatar'
 import Stickers from 'components/ProfileStickers'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
 import Markdown from 'components/Squeak/components/Markdown'

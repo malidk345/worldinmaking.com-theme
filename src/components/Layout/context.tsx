@@ -4,8 +4,6 @@ import menu, { docsMenu } from '../../navs'
 import { IMenu } from 'components/PostLayout/types'
 import { usePathname } from 'next/navigation'
 import { isSafeInternalPath } from 'lib/utils'
-import { useActions } from 'kea'
-import { layoutLogic } from 'logic/layoutLogic'
 
 export const Context = createContext<any>(undefined)
 
@@ -35,8 +33,8 @@ export interface IProps {
 }
 
 export const LayoutProvider = ({ children, ...other }: IProps) => {
+    const router = useRouter()
     const { pathname, search } = usePathname()
-    const { setWebsiteTheme } = useActions(layoutLogic)
     const [compact, setCompact] = useState(false)
     const [fullWidthContent, setFullWidthContent] = useState<boolean>(false)
     const [hedgehogModeEnabled, _setHedgehogModeEnabled] = useState<boolean>(false)
@@ -111,12 +109,6 @@ export const LayoutProvider = ({ children, ...other }: IProps) => {
     }, [activeInternalMenu])
 
     useEffect(() => {
-        if (window) {
-            setWebsiteTheme(window.__theme)
-            window.__onThemeChange = () => {
-                setWebsiteTheme(window.__theme)
-            }
-        }
         if (compact) {
             // nosemgrep: javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration - intentional for docs embedding, parent origin unknown, non-sensitive ready signal
             window.parent.postMessage(

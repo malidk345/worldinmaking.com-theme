@@ -77,7 +77,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
-| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
@@ -319,7 +319,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
-| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[IN PROGRESS by Grok 4.6]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
@@ -401,6 +401,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 358 - TSK-26 slice 4: drop site-level kea and PostLayout pipeline nav
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Site no longer imports kea. Notebook-app kea imports stay (webpack already shims them to `lemon-ui.tsx`). `kea` remains in package.json for that shim/tests.
+  1. **PostLayout:** removed CDP pipeline/source nav injection; deleted `navs/useDataPipelinesNav.ts` and `useSourcesNav.ts`.
+  2. **Kea uncouple:** unused `layoutLogic` imports in CodeBlock; InternalSidebarLink no longer reports via `scrollspyCaptureLogic`; LayoutProvider no longer writes `layoutLogic` theme.
+  3. **Deleted unused kea consumers:** `src/logic/*`, `kea.js`, `Screenshot`, `ContributorSearch`, merch `MainNav` (Avatar extracted to `components/Avatar.tsx`).
+- **Verification:** `from 'kea'` remains only under `src/notebook-app/` (shimmed). No remaining `useDataPipelinesNav` / `useSourcesNav` / `logic/layoutLogic` imports.
+- **Modified Files:** PostLayout/Layout/CodeBlock/InternalSidebarLink/Team Profile/Avatar; deletions listed above; `docs/architecture/AI_MEMORY.md`
 
 ### Entry 357 - TSK-26 slice 3: slim nav mega-menu, prune window map, stub PlatformInstall
 - **Date:** 2026-08-23

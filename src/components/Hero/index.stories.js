@@ -1,15 +1,9 @@
 import { CallToAction } from 'components/CallToAction'
-import { getContext } from 'kea'
 import React from 'react'
-import { Provider } from 'react-redux'
 import { Hero as HeroComponent } from '.'
 
 export default {
-    component: (
-        <Provider store={getContext().store}>
-            <HeroComponent />
-        </Provider>
-    ),
+    component: HeroComponent,
     title: 'Components/Hero',
     argTypes: {
         ctas: {
