@@ -183,7 +183,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     } else {
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'tr-TR';
+        recognition.lang = 'en-US';
         recognition.continuous = true;
         recognition.interimResults = true;
         recognitionRef.current = recognition;

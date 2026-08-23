@@ -405,10 +405,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-295` | Stream 2 | Mobile long-press on a notebook block must not crash the editor | MarkdownNotebook, domSelection, NotebooksListScene | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-296` | Stream 2 | Mobile block toolbar: English chrome, match format toolbar, stay in viewport | MarkdownNotebook.tsx/scss | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-297` | Stream 3 | Mobile typing: overlay keyboard, do not pan/resize windows or zoom | useKeyboardInset, useWindowResize, _document, global.css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-298` | Stream 3 | WIM AI chat: dock composer, stop feed/input jump while streaming | ClaudeWorkspaceChat/index.tsx, ChatInput.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 367 - WIM AI composer stays docked; feed no longer jumps (TSK-298)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chat input is always in a bottom flex dock (Claude/iMessage layout). Empty-state no longer mounts a second centered composer, so starting a thread does not teleport the field. Removed `keyboard-lift` / `data-writing-dock` overlay and visualViewport scroll-to-bottom (they fought the keyboard overlay). Keyboard inset pads the dock once. Stream pin still uses ResizeObserver + last token.
+- **Modified Files:** `ClaudeWorkspaceChat/index.tsx`, `ChatInput.tsx` (voice `en-US`)
 
 ### Entry 366 - Mobile typing overlays the keyboard without jumping windows (TSK-297)
 - **Date:** 2026-08-23

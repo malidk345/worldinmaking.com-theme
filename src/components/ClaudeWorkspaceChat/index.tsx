@@ -557,21 +557,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [activeChatId, Boolean(activeChat?.messages.length)])
 
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const onViewport = () => {
-      if (!pinToBottomRef.current) return
-      requestAnimationFrame(() => scrollChatToBottom('auto'))
-    }
-    vv.addEventListener('resize', onViewport)
-    vv.addEventListener('scroll', onViewport)
-    return () => {
-      vv.removeEventListener('resize', onViewport)
-      vv.removeEventListener('scroll', onViewport)
-    }
-  }, [])
-
   const lastStreamTick = (() => {
     const last = activeChat?.messages[activeChat.messages.length - 1]
     if (!last) return `${activeChatId}:empty`
@@ -1283,11 +1268,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="flex-1 overflow-y-auto relative bg-primary overscroll-contain [overflow-anchor:none]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [overflow-anchor:none]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
-            <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
-              <div className="mb-5 flex w-full flex-wrap justify-center gap-2">
+            <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 select-none">
+              <div className="flex w-full flex-wrap justify-center gap-2">
                 {EMPTY_STARTERS.map((starter) => (
                   <button
                     key={starter.label}
@@ -1299,26 +1284,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   </button>
                 ))}
               </div>
-              <div className="w-full pointer-events-auto">
-                <ChatInput
-                  onSendMessage={handleSendMessage}
-                  onStopStreaming={handleStopStreaming}
-                  isStreaming={isStreaming}
-                  selectedStylePreset={selectedStylePreset}
-                  onChangeStylePreset={setSelectedStylePreset}
-                  onScrollToBottom={scrollToBottom}
-                  showScrollToBottom={false}
-                  models={models}
-                  selectedModelId={selectedModelId}
-                  onSelectModel={handleSelectModel}
-                  draftPrompt={composerDraft}
-                  draftNonce={composerDraftNonce}
-                  menuPlacement="bottom-start"
-                />
-              </div>
             </div>
           ) : (
-            <div className="pt-3 pb-36 space-y-5">
+            <div className="space-y-5 px-0 pt-3 pb-4">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1342,16 +1310,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
-              <div ref={chatBottomRef} className="h-4" />
+              <div ref={chatBottomRef} className="h-2" />
             </div>
           )}
         </main>
 
-        {activeChat && activeChat.messages.length > 0 && (
-        <div
-          data-writing-dock
-          className="keyboard-lift absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-primary via-primary/95 to-transparent pt-14 pb-3"
-        >
+        <div className="relative z-20 shrink-0 bg-primary pt-2 [padding-bottom:calc(0.75rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]">
           <ChatInput
             onSendMessage={handleSendMessage}
             onStopStreaming={handleStopStreaming}
@@ -1359,7 +1323,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             selectedStylePreset={selectedStylePreset}
             onChangeStylePreset={setSelectedStylePreset}
             onScrollToBottom={scrollToBottom}
-            showScrollToBottom={isAwayFromBottom}
+            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
             models={models}
             selectedModelId={selectedModelId}
             onSelectModel={handleSelectModel}
@@ -1368,7 +1332,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             menuPlacement="top-start"
           />
         </div>
-        )}
 
       {isSourcesOpen && activeSources && (
         <SourcesPanel
