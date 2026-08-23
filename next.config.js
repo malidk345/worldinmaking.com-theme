@@ -66,7 +66,6 @@ const nextConfig = {
         // ── NormalModuleReplacementPlugin ─────────────────────────────────────────
         // Intercepts imports FROM notebook-app files only and redirects:
         //   lib/*        → src/notebook-app/lib/*  (via ~nb-lib alias)
-        //   kea, kea-*   → src/notebook-app/lib/lemon-ui.tsx  (empty shim)
         //   scenes/*     → src/notebook-app/lib/lemon-ui.tsx
         //   posthog-js   → src/notebook-app/lib/lemon-ui.tsx
         //   ~/...        → src/notebook-app/lib/lemon-ui.tsx
@@ -93,14 +92,8 @@ const nextConfig = {
                         return
                     }
 
-                    // kea, kea-loaders, kea-router, posthog-js, scenes/*, ~/* → shim
-                    if (
-                        req === 'kea' ||
-                        req.startsWith('kea-') ||
-                        req === 'posthog-js' ||
-                        req.startsWith('scenes/') ||
-                        req.startsWith('~/')
-                    ) {
+                    // leftover PostHog notebook imports: posthog-js, scenes/*, ~/* → shim
+                    if (req === 'posthog-js' || req.startsWith('scenes/') || req.startsWith('~/')) {
                         resource.request = nbShim
                         return
                     }

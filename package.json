@@ -12,7 +12,7 @@
     "url": "https://github.com/PostHog/posthog.com"
   },
   "keywords": [
-    "gatsby"
+    "worldinmaking"
   ],
   "private": true,
   "scripts": {
@@ -30,8 +30,6 @@
     "test:smoke": "playwright test",
     "typecheck:shell": "node scripts/typecheck-shell.mjs",
     "format": "prettier --write \"**/*.{html,js,ts,tsx,json,yml,css,scss}\"",
-    "storybook": "start-storybook -s ./static -p 6006",
-    "build-storybook": "build-storybook",
     "postinstall": "node scripts/patch-radix.js"
   },
   "devDependencies": {
@@ -201,8 +199,6 @@
     "react-textarea-autosize": "^8.4.0",
     "react-toastify": "^11.1.0",
     "react-transition-group": "^4.4.5",
-    "react-tsparticles": "^2.11.0",
-    "react-webcam": "^7.2.0",
     "react-window": "^2.3.0",
     "react-zoom-pan-pinch": "^3.7.0",
     "rehype-raw": "^7.0.0",
@@ -217,7 +213,6 @@
     "swr": "^2.0.0",
     "tailwind-merge": "2.5.2",
     "tailwindcss-animated": "^2.1.0",
-    "tsparticles-preset-stars": "^2.11.0",
     "unist-util-visit": "^1.4.0",
     "yup": "^0.32.11",
     "zustand": "^4.4.5"
@@ -243,9 +238,7 @@
       "phantomjs-prebuilt",
       "postinstall-postinstall",
       "puppeteer",
-      "react-tsparticles",
-      "sharp",
-      "tsparticles-engine"
+      "sharp"
     ]
   }
 }

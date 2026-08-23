@@ -399,10 +399,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-289` | Stream 1 | Delete verified leftover junk (kilo worktrees, one-shot scripts, Gatsby src/api) | `.kilo/worktrees`, `scripts/*` one-shots, `src/api/`, `replace_colors.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-290` | Stream 1 | Remove leftover kea/kea-loaders/kea-router packages (webpack already shims notebook) | `package.json`, `pnpm-lock.yaml`, `next.config.js` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-291` | Stream 1 | Retarget notebook kea imports to local stub; delete unused HelpMenu/oauth logics | `src/notebook-app/lib/kea-stub.ts`, LemonUI, HelpMenu, oauth | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-292` | Stream 3 | Careful codebase optimize: drop dead deps/templates, isolate merch cart, restore WIM subprocessors | `package.json`, HeaderBar, unused templates, `subprocessors.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 361 - Careful bundle/codebase optimize (TSK-292)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Removed proven-dead deps and unused PostHog templates without touching MDX shortcodes or Algolia InstantSearch (still used by SearchUI).
+  1. **HeaderBar:** merch `useCartStore` no longer loads on every window; cart UI extracted to `HeaderCartButton` (only mounted when `showCart`).
+  2. **Deps:** dropped `react-tsparticles`, `tsparticles-preset-stars`, `react-webcam` (photobooth gone). Removed dead storybook scripts. `pnpm install` Packages: -11.
+  3. **Templates:** deleted unused Handbook/Team/Home/Event/Pipeline/Plain/App/Template/ApiEndpoint/WorkflowTemplate/sdk.
+  4. **Legal:** replaced 404 `legacyGone` subprocessors page with WIM `Legal` wrapper; deleted PostHog `subprocessors.json`.
+  5. **Webpack:** stopped remapping `kea` (package gone).
+- **Left:** MDX shortcodes, merch store (still used if cart shown), InstantSearch packages, HogMap/amcharts via leftover People/Docs.
 
 ### Entry 360 - Notebook kea imports now use a local stub (TSK-291)
 - **Date:** 2026-08-23
