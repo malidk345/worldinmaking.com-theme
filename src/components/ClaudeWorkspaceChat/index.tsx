@@ -1003,7 +1003,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('[ClaudeWorkspaceChat] Request aborted by user/system.');
+        const stoppedText = sanitizePublicAssistantText(accumulatedContent)
+        updateAssistantMessage(targetChatId, assistantMessageId, {
+          content: stoppedText,
+          thinkingProcess: { ...currentThinkingProcess },
+          isStreaming: false,
+          isTypingDone: true,
+          stopped: true,
+        })
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
@@ -1048,11 +1055,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
   const handleStopStreaming = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsStreaming(false);
+    abortControllerRef.current?.abort()
+    setIsStreaming(false)
+    const chatId = activeChat?.id
+    const last = activeChat?.messages.at(-1)
+    if (chatId && last?.role === 'assistant' && last.isStreaming) {
+      updateAssistantMessage(chatId, last.id, {
+        isStreaming: false,
+        isTypingDone: true,
+        stopped: true,
+      })
     }
-  };
+  }
 
   const executeOSAction = (msgId: string, action: OSActionCardType) => {
     try {
@@ -1304,6 +1318,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 select-none">
+              <h1 className="m-0 mb-1 text-center text-[22px] font-semibold tracking-tight text-primary">
+                How can I help?
+              </h1>
+              <p className="m-0 mb-5 max-w-sm text-center text-[13px] leading-snug text-muted">
+                Ask anything. A philosopher answers in this window.
+              </p>
               <div className="flex w-full flex-wrap justify-center gap-2">
                 {EMPTY_STARTERS.map((starter) => (
                   <button

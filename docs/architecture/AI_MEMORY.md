@@ -408,10 +408,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-298` | Stream 3 | WIM AI chat: dock composer, stop feed/input jump while streaming | ClaudeWorkspaceChat/index.tsx, ChatInput.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-299` | Stream 3 | Streaming reply must stay pinned to latest line, not jump to mid-thread | ClaudeWorkspaceChat/index.tsx, ThinkingBlock.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-300` | Stream 3 | Live AI reply: no typewriter lag / whole-block fade; CSS overflow-anchor | ChatMessage.tsx, ClaudeWorkspaceChat/index.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-301` | Stream 5 | WIM AI: empty welcome, stop marks the reply, retry after stop | ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 371 - WIM AI empty welcome + stop/retry (TSK-301)
+- **Date:** 2026-08-23
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Empty chat now has “How can I help?” plus a one-line prompt, then the starter chips. Stop aborts the request and marks the live assistant message `stopped` (content kept). The bubble shows “Stopped” and Retry. Stop button is labeled “Stop generating”.
+- **Modified Files:** `types.ts`, `ClaudeWorkspaceChat/index.tsx`, `ChatInput.tsx`, `ChatMessage.tsx`
 
 ### Entry 370 - Collapse thinking when the live pass ends
 - **Date:** 2026-08-23

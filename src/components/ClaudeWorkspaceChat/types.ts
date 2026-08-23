@@ -99,6 +99,7 @@ export interface Message {
   attachments?: FileAttachment[]
   isStreaming?: boolean
   isTypingDone?: boolean
+  stopped?: boolean
   liked?: boolean | null
   editedFromId?: string
   osAction?: OSActionCard

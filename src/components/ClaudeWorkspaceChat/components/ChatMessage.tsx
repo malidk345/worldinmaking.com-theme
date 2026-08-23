@@ -303,7 +303,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
-          {!isLiveAnswer && message.isTypingDone && (
+          {message.stopped ? (
+            <p className="m-0 pt-1 text-[12px] text-muted">Stopped</p>
+          ) : null}
+
+          {!isLiveAnswer && (message.isTypingDone || message.stopped) && (
             <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
               <button
                 onClick={handleCopy}
