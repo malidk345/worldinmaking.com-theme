@@ -58,6 +58,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-06` | Stream 3 | Enable Next Image optimization strategy | `next.config.js` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-07` | Stream 5 | Audit & add rate-limiting for philosopher bots | `src/pages/api/*bot*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-29` | Stream 5 | Notebook Co-Authoring Assistant (Invite multi-bot feedback into documents) | `src/notebook-app/`, `src/lib/chat-bots/` | `[PLANNED]` | - | - |
+| `TSK-106` | Stream 5 | Upgrade AI chat endpoint to zero-buffer live TTFT streaming (passthrough) | `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity | 2026-08-23 |
 | `TSK-30` | Stream 5 | Agent Network Visualizer app (Interactive 2D/3D memory node graph) | `src/components/AgentNetwork/`, `src/pages/` | `[PLANNED]` | - | - |
 | `TSK-08` | Stream 1 | Enable TypeScript allowlist check for core shell | `tsconfig.shell.json`, `scripts/typecheck-shell.mjs` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-09` | Stream 4 | Audit & clean up leftover Strapi/Squeak auth handlers | `src/lib/squeak.ts`, `src/lib/wim-auth.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
@@ -3954,6 +3955,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
   - `src/context/App.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
+### Entry 004 — True Live TTFT Streaming (Passthrough) & Reasoning Demux (TSK-106)
+- **Date:** 2026-08-23
+- **AI Agent:** Antigravity (Gemini)
+- **Summary:**
+  1. Upgraded `/api/chat` from blocking `runBotTurn` + artificial chunk playback to true live `streamBotTurn` with zero-buffer token streaming and instant TTFT.
+  2. Integrated `ThinkingStreamDemux` for real-time separation of `<think>` reasoning blocks into incremental `thinking_step` SSE events.
+  3. Preserved full chart and UI sandbox artifact extraction upon completion without breaking client SSE event contracts.
+  4. Fixed undefined icon imports (`IconArrowUp`, `IconArrowDown`, `IconExport`) in `MarkdownNotebook.tsx`, `EditablePromptComponent.tsx`, and `NotebooksListScene.tsx`.
+- **Modified Files:**
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx` [UPDATED]
+  - `src/notebook-app/scenes/notebooks/NotebooksListScene.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Verified with live SSE automated tests for TTFT and artifact extraction. Streaming responses are fast, reactive, and fully compatible with the desktop shell.
+
 ### Entry 003 — AI Rotation Live Models, OS Artifact Windows & Auth Hardening
 - **Date:** 2026-08-23
 - **AI Agent:** Antigravity (Gemini)

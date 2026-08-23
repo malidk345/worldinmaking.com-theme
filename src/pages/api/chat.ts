@@ -9,7 +9,7 @@
  */
 export const runtime = 'edge'
 
-import { runBotTurn } from 'lib/bots/orchestrate'
+import { streamBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
@@ -18,7 +18,6 @@ import { resolveSearchIntent } from 'lib/bots/intent-router'
 import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
-import { playbackChunks, wait } from 'lib/ai/playback'
 import { isNotebookTask, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { extractUiScreenSource, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../../lib/ai/design-request'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
@@ -270,18 +269,41 @@ export default async function handler(req: Request) {
                 ]
                     .filter(Boolean)
                     .join('\n\n')
-                const result = await runBotTurn({
-                    question: prompt,
-                    philosopher,
-                    taskType: 'autonomous_assistant',
-                    thinkingDepth: 'brief',
-                    context,
-                    messages: history,
-                    env: getRuntimeEnv(),
-                    scope: notebookTask ? 'notebook_coauthor' : 'site_wide',
-                    trustedInstruction: trustedInstruction || undefined,
-                    onLifecycle: (event) => send({ type: 'phase', phase: event }),
-                })
+                let livePublicTokensCount = 0
+                let liveThinkingAcc = ''
+
+                const result = await streamBotTurn(
+                    {
+                        question: prompt,
+                        philosopher,
+                        taskType: 'autonomous_assistant',
+                        thinkingDepth: 'brief',
+                        context,
+                        messages: history,
+                        env: getRuntimeEnv(),
+                        scope: notebookTask ? 'notebook_coauthor' : 'site_wide',
+                        trustedInstruction: trustedInstruction || undefined,
+                        onLifecycle: (event) => send({ type: 'phase', phase: event }),
+                    },
+                    (token) => {
+                        livePublicTokensCount += 1
+                        send({ type: 'token', text: token })
+                    },
+                    (thinkingChunk) => {
+                        liveThinkingAcc += thinkingChunk
+                        send({
+                            type: 'thinking_step',
+                            step: {
+                                id: 'stream-think',
+                                stepNumber: 1,
+                                title: 'Thinking',
+                                detail: liveThinkingAcc,
+                                completed: false,
+                                source: 'model_summary',
+                            },
+                        })
+                    }
+                )
 
                 clearInterval(heartbeat)
 
@@ -297,6 +319,27 @@ export default async function handler(req: Request) {
                     })
                     controller.close()
                     return
+                }
+
+                if (liveThinkingAcc) {
+                    send({
+                        type: 'thinking_step',
+                        step: {
+                            id: 'stream-think',
+                            stepNumber: 1,
+                            title: 'Thinking',
+                            detail: liveThinkingAcc,
+                            completed: true,
+                            source: 'model_summary',
+                        },
+                    })
+                }
+
+                const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+
+                // Safety fallback: if no live tokens were streamed during generation, flush visible reply
+                if (livePublicTokensCount === 0 && visibleReply) {
+                    send({ type: 'token', text: visibleReply })
                 }
 
                 const extractedCharts = extractChartArtifacts(result.reply, prompt)
@@ -324,73 +367,6 @@ export default async function handler(req: Request) {
                         version: 1,
                         createdAt: new Date().toISOString(),
                     } as unknown as typeof chartArtifacts[number])
-                }
-                const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
-                const stages = result.thinking.stages.filter((stage) => stage.text?.trim())
-                if (stages.length > 0) {
-                    for (let index = 0; index < stages.length; index++) {
-                        const stage = stages[index]
-                        let acc = ''
-                        for (const chunk of playbackChunks(stage.text, 42)) {
-                            acc += chunk
-                            send({
-                                type: 'thinking_step',
-                                step: {
-                                    id: stage.id || `stage-${index + 1}`,
-                                    stepNumber: index + 1,
-                                    title: stage.label || `Step ${index + 1}`,
-                                    detail: acc,
-                                    completed: false,
-                                    source: stage.source || 'model_summary',
-                                },
-                            })
-                            await wait(16)
-                        }
-                        send({
-                            type: 'thinking_step',
-                            step: {
-                                id: stage.id || `stage-${index + 1}`,
-                                stepNumber: index + 1,
-                                title: stage.label || `Step ${index + 1}`,
-                                detail: acc,
-                                completed: true,
-                                source: stage.source || 'model_summary',
-                            },
-                        })
-                    }
-                } else if (result.thought?.trim()) {
-                    let thinkingAcc = ''
-                    for (const chunk of playbackChunks(result.thought, 42)) {
-                        thinkingAcc += chunk
-                        send({
-                            type: 'thinking_step',
-                            step: {
-                                id: 'auto-1',
-                                stepNumber: 1,
-                                title: 'Analyzing',
-                                detail: thinkingAcc,
-                                completed: false,
-                                source: 'model_summary',
-                            },
-                        })
-                        await wait(16)
-                    }
-                    send({
-                        type: 'thinking_step',
-                        step: {
-                            id: 'auto-1',
-                            stepNumber: 1,
-                            title: 'Analyzing',
-                            detail: thinkingAcc,
-                            completed: true,
-                            source: 'model_summary',
-                        },
-                    })
-                }
-
-                for (const chunk of playbackChunks(visibleReply)) {
-                    send({ type: 'token', text: chunk })
-                    await wait(12)
                 }
 
                 if (chartArtifacts.length > 0) {
