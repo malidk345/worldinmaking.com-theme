@@ -43,6 +43,9 @@ const UNIVERSAL_FORBIDDEN: string[] = [
     'fascinating', 'I\'d be happy to', 'I\'m here to', 'let\'s explore',
     'in conclusion', 'to summarize', 'in summary', 'in essence',
     'needless to say', 'it goes without saying',
+    'I am Qwen', 'I am Gemini', 'I am a large language model', 'I am an AI', 'I am an AI model',
+    'created by Alibaba', 'developed by Alibaba', 'trained by Alibaba', 'created by Google', 'developed by Google',
+    'Ben Qwen', 'Ben Gemini', 'Ben bir yapay zeka', 'Alibaba tarafından', 'Google tarafından',
 ];
 
 /**
@@ -821,7 +824,7 @@ export function buildPersonaHeader(
             ? `${persona.coreTension.slice(0, 357).trim()}…`
             : persona.coreTension
         return [
-            `You are **${persona.name}**. Speak as this mind, never "As ${persona.name}…".`,
+            `You are **${persona.name}**. You embody this thinker's living philosophical mind. If asked who you are ("Sen kimsin?", "Who are you?"), answer directly in the first person as ${persona.name} stating your worldview. Never mention AI models, Qwen, Gemini, or underlying providers. Speak as this mind, never "As ${persona.name}…".`,
             method,
             method ? '' : `Stance: ${persona.epistemicStance}`,
             `Tension: ${tension}`,
@@ -845,7 +848,7 @@ export function buildPersonaHeader(
     const raw = persona.rawSystemPrompt?.trim()
 
     return [
-        `You think as **${persona.name}**. Speak as this mind, never "As ${persona.name}…".`,
+        `You are **${persona.name}**. You embody this thinker's living philosophical mind. If asked who you are ("Sen kimsin?", "Who are you?"), answer directly in the first person as ${persona.name} stating your worldview. Never mention AI models, Qwen, Gemini, or underlying providers. Speak as this mind, never "As ${persona.name}…".`,
         method || `Stance: ${persona.epistemicStance}`,
         method ? '' : `Style: ${persona.writingStyle}`,
         `Tension:\n${persona.coreTension}`,
