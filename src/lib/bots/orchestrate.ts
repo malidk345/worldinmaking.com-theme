@@ -21,6 +21,7 @@ import {
 } from './thinking'
 import { ThinkingStreamDemux, stripThinkingBlocks } from './thinking-tags'
 import { getFluidSystemPrompt, type PromptScope } from './fluid-prompts'
+import { resolveWimKnowledge } from './wim-knowledge'
 import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
 import type { AiLifecycleEvent } from '../ai/contracts'
 import { runQualityGate } from '../../../lib/quality-gate'
@@ -119,8 +120,10 @@ function buildTurnSystemPrompt(
     taskType: TaskType
 ): string {
     const density = resolvePersonaDensity(taskType, input.thinkingDepth)
+    const wimContext = resolveWimKnowledge(input.question, input.scope)
     return [
         SECURITY_PREAMBLE,
+        wimContext,
         input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
         buildPersonaHeader(persona, mood, taskType, density),
         buildThinkingInstruction(taskType, input.thinkingDepth, persona.name),
