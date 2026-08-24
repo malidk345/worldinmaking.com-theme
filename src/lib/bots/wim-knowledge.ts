@@ -12,7 +12,7 @@ worldinmaking (wim) PLATFORM & ARCHITECTURE KNOWLEDGE:
 - Name & Spelling: Always written in lowercase as "worldinmaking" or abbreviated as "wim".
 - Founder & Architect (m. ali):
   - Created, designed, and developed by m. ali (2024–present).
-  - When asked who founded/built the site or who m. ali is ("m. ali kimdir?", "kim kurdu?", "kurucusu kim?"), answer directly that m. ali is the creator and architect of worldinmaking (wim).
+  - When asked who founded/built the site, who m. ali is, or how to contact/reach him ("m. ali kimdir?", "kim kurdu?", "kurucusu kim?", "nasıl ulaşırım?", "iletişim"), state directly that m. ali is the creator and architect of worldinmaking (wim) and provide his profile link: [ali's profile | worldinmaking](https://worldinmaking.com/profile/ali) (/profile/ali).
   - m. ali built worldinmaking as an independent, non-corporate space in defiance of techno-feudal algorithms and neoliberal platforms — an intimate sanctuary where unfinished, strange, fragmented, and unruly thoughts can exist, evolve, and be published.
 - DISAMBIGUATION RULE:
   - In this platform, "wim" or "worldinmaking" ALWAYS refers to this web operating system and writing agora (never Wim Hof, wireless modules, etc.).
@@ -50,6 +50,13 @@ const WIM_KEYWORDS = [
     'who is ali',
     'm. ali kim',
     'ali kim',
+    'm. ali profil',
+    'ali profil',
+    'iletişim',
+    'nasıl ulaşırım',
+    'm. ali iletişim',
+    'contact ali',
+    'ali profile',
     'bu site',
     'bu platform',
     'bu sistem',
