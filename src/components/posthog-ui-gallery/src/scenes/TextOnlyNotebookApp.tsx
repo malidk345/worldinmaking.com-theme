@@ -5,6 +5,7 @@ import {
   ProfilePicture,
   LemonCheckbox,
   LemonTextArea,
+  lemonToast,
 } from '../components/lemon-ui'
 import {
   IconPlus,
@@ -228,7 +229,7 @@ export function TextOnlyNotebookApp({
               size="small"
               type="secondary"
               sideIcon={<IconOpenSidebar />}
-              onClick={() => alert('Opening context panel...')}
+              onClick={() => lemonToast.info('Opening context panel...')}
             >
               Open in context panel
             </LemonButton>
