@@ -59,6 +59,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-07` | Stream 5 | Audit & add rate-limiting for philosopher bots | `src/pages/api/*bot*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-29` | Stream 5 | Notebook Co-Authoring Assistant (Invite multi-bot feedback into documents) | `src/notebook-app/`, `src/lib/chat-bots/` | `[PLANNED]` | - | - |
 | `TSK-106` | Stream 5 | Upgrade AI chat endpoint to zero-buffer live TTFT streaming (passthrough) | `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity | 2026-08-23 |
+| `TSK-107` | Stream 3 / 5 | Bidirectional Notebook WikiLinks & Hybrid Semantic Memory Search | `src/notebook-app/`, `src/pages/api/search.ts`, `src/components/SpotlightSearch/` | `[COMPLETED]` | Antigravity | 2026-08-24 |
 | `TSK-30` | Stream 5 | Agent Network Visualizer app (Interactive 2D/3D memory node graph) | `src/components/AgentNetwork/`, `src/pages/` | `[PLANNED]` | - | - |
 | `TSK-08` | Stream 1 | Enable TypeScript allowlist check for core shell | `tsconfig.shell.json`, `scripts/typecheck-shell.mjs` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-09` | Stream 4 | Audit & clean up leftover Strapi/Squeak auth handlers | `src/lib/squeak.ts`, `src/lib/wim-auth.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |

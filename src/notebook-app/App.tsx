@@ -13,6 +13,8 @@ import {
 import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
+import { BacklinksPanel } from './lib/components/MarkdownNotebook/BacklinksPanel'
+import { computeBacklinks } from './lib/components/MarkdownNotebook/wikilinks'
 
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
 import { playInlineEditorMarkdown, playInlineSelectionMarkdown } from './lib/wimai-typewriter'
@@ -846,6 +848,15 @@ export function App() {
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}
+                    />
+
+                    {/* Bidirectional Backlinks Panel */}
+                    <BacklinksPanel
+                      backlinks={computeBacklinks(
+                        { id: currentNotebook.id, title: currentNotebook.title || title },
+                        getNotebooks()
+                      )}
+                      currentNotebookTitle={currentNotebook.title || title}
                     />
                   </div>
                 </div>

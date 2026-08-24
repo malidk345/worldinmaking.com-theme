@@ -21,6 +21,18 @@ type TypeConfig = {
 
 // Presentation and search aliases for result categories.
 const typeConfig: TypeConfig[] = [
+    {
+        type: 'notebook',
+        label: 'Notebooks',
+        icon: <IconBook />,
+        aliases: ['notebooks', 'notebook', 'defter', 'defterler', 'notes', 'thoughts', 'düşünceler'],
+    },
+    {
+        type: 'post',
+        label: 'Posts & Essays',
+        icon: <IconNewspaper />,
+        aliases: ['posts', 'post', 'makale', 'yazı', 'essays', 'articles'],
+    },
     { type: 'docs', label: 'Docs', icon: <IconBook />, aliases: ['docs', 'documentation', 'reference', 'manual'] },
     { type: 'apps', label: 'Apps', icon: <IconPuzzle />, aliases: ['apps'] },
     {
