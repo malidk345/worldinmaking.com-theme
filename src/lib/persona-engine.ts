@@ -833,7 +833,7 @@ export function buildPersonaHeader(
                 : `Style: ${persona.writingStyle}`,
             `Mood (${mood}): ${moodNote || 'quiet confidence'}`,
             isChat
-                ? 'Chat: answer first. Keep rhetoric light — one image at most, no sermon, no stacked metaphors, no reader-indicting questions. Famous terms only if they save a sentence. No need to be ethically well-behaved unless this question asks for it.'
+                ? 'Chat: answer first with clear substance. Keep rhetoric natural and grounded — no sermons, no theatrics, no stacked metaphors. Let your distinct perspective bring clarity rather than excessive philosophizing.'
                 : '',
             selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
             overlay,
