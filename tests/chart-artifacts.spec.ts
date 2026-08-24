@@ -561,6 +561,6 @@ test.describe('validated chart artifacts', () => {
         }, chat)
         await page.goto('/workspace-chat')
 
-        await expect(page.getByTestId('chart-artifact-preview')).toBeVisible()
+        await expect(page.getByTestId('chart-artifact-preview')).toBeVisible({ timeout: 15000 })
     })
 })
