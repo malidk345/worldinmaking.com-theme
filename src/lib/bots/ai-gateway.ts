@@ -114,11 +114,9 @@ export interface GenerateFailure {
 }
 
 const GEMINI_MODELS = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
     'gemini-3.6-flash',
-    'gemini-2.5-pro',
-    'gemini-3.7-flash',
 ] as const
 const MAX_SYSTEM_PROMPT_CHARS = 8_000
 const MAX_USER_PROMPT_CHARS = 24_000
@@ -379,8 +377,10 @@ function geminiGenerationConfig(model: string, thinkingDepth?: ThinkingDepth, te
     return config
 }
 
+const GEMINI_REQUEST_TIMEOUT_MS = 10_000
+
 function geminiRequestTimeoutMs(model: string, thinkingDepth?: ThinkingDepth, deadline?: number): number {
-    const desired = usesGeminiNativeThinking(model, thinkingDepth) ? 25_000 : PROVIDER_REQUEST_TIMEOUT_MS
+    const desired = usesGeminiNativeThinking(model, thinkingDepth) ? 14_000 : GEMINI_REQUEST_TIMEOUT_MS
     if (!deadline) return desired
     return Math.max(1, Math.min(desired, deadline - Date.now()))
 }
