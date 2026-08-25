@@ -406,6 +406,25 @@ export function parseInlineMarkdown(markdown: string, marks: NotebookInlineMark[
         }
 
         if (character === '[') {
+            if (markdown.startsWith('[[', index)) {
+                const wikiCloser = markdown.indexOf(']]', index + 2)
+                if (wikiCloser !== -1) {
+                    const rawInside = markdown.slice(index + 2, wikiCloser)
+                    const [target, customLabel] = rawInside.split('|').map((s) => s.trim())
+                    const label = customLabel || target
+                    if (target) {
+                        nodes.push(
+                            ...parseInlineMarkdown(label, [
+                                ...marks,
+                                { type: 'link', href: `#wikilink:${encodeURIComponent(target)}` },
+                            ])
+                        )
+                        index = wikiCloser + 2
+                        continue
+                    }
+                }
+            }
+
             const link = parseInlineLink(markdown, index)
             if (link) {
                 nodes.push(
@@ -1541,12 +1560,15 @@ function wrapInlineText(text: string, mark: NotebookInlineMark, marks: NotebookI
     if (mark.type === 'mention') {
         return mark.id ? `<mention id=${JSON.stringify(mark.id)}>${text}</mention>` : text
     }
-    if (mark.type === 'ref') {
-        if (!mark.id) return text
-        return `<ref id=${JSON.stringify(mark.id)}>${text}</ref>`
+    if (mark.type === 'link') {
+        if (mark.href?.startsWith('#wikilink:')) {
+            const target = decodeURIComponent(mark.href.replace('#wikilink:', ''))
+            return target === text ? `[[${text}]]` : `[[${target}|${text}]]`
+        }
+        const href = sanitizeNotebookLinkHref(mark.href)
+        return href ? `[${text}](${escapeMarkdownLinkHref(href)})` : text
     }
-    const href = sanitizeNotebookLinkHref(mark.href)
-    return href ? `[${text}](${escapeMarkdownLinkHref(href)})` : text
+    return text
 }
 
 // Emphasis delimiters are not recognized next to whitespace, so boundary whitespace is
@@ -1692,11 +1714,15 @@ function wrapHtmlText(html: string, mark: NotebookInlineMark, _annotations?: Not
         // contenteditable rewrite loop throws at `element.innerHTML = renderedHtml`.
         return `<span class="MarkdownNotebook__ref" data-notebook-ref="${escapeAttribute(mark.id)}">${html}</span>`
     }
-    if (mark.type === 'mention') {
-        return `<span class="MarkdownNotebook__mention" data-notebook-mention="${escapeAttribute(mark.id)}">${html}</span>`
+    if (mark.type === 'link') {
+        if (mark.href?.startsWith('#wikilink:')) {
+            const target = decodeURIComponent(mark.href.replace('#wikilink:', ''))
+            return `<span class="MarkdownNotebook__wikilink" data-wikilink-target="${escapeAttribute(target)}">[[${html}]]</span>`
+        }
+        const href = sanitizeNotebookLinkHref(mark.href)
+        return href ? `<a href="${escapeAttribute(href)}">${html}</a>` : html
     }
-    const href = sanitizeNotebookLinkHref(mark.href)
-    return href ? `<a href="${escapeAttribute(href)}">${html}</a>` : html
+    return html
 }
 
 // Escapes every character sequence the inline parser would interpret, so that

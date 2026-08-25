@@ -15,6 +15,7 @@ export type MarkdownNotebookInsertMenuApi = {
 export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): InsertCommand[] {
     if (!api) return []
     const commands: InsertCommand[] = [
+
         {
             key: 'page-subpage',
             label: 'Page',

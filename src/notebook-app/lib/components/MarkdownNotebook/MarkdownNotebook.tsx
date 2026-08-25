@@ -32,6 +32,9 @@ import {
 } from '@posthog/icons'
 import { LemonMenu } from '@posthog/lemon-ui'
 
+import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
+import { openNotebookWindow } from '../../../../lib/open-notebook-window'
+import { getNotebooks } from '../../scenes/notebooks/notebookStorage'
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
 import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 import {
@@ -326,6 +329,37 @@ function MarkdownNotebookEditor({
     const canvasDragOriginRef = useRef(false)
     const [selectedComponentNodeIds, setSelectedComponentNodeIds] = useState<Set<string>>(() => new Set())
     const [componentPanelCache, setComponentPanelCache] = useState<Record<string, ComponentPanelCacheEntry>>({})
+
+    const { addWindow, updateWindow } = useAppActions()
+    const { windows } = useAppWindows()
+    const { isMobile } = useAppSettings()
+
+    const handleMainClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+        const target = (event.target as HTMLElement).closest('.MarkdownNotebook__wikilink') as HTMLElement | null
+        if (target) {
+            const wikiTarget = target.getAttribute('data-wikilink-target')
+            if (wikiTarget) {
+                event.preventDefault()
+                event.stopPropagation()
+                const all = getNotebooks()
+                const found = all.find(
+                    (nb) =>
+                        nb.id === wikiTarget ||
+                        (nb.title && nb.title.trim().toLowerCase() === wikiTarget.trim().toLowerCase())
+                )
+                if (found) {
+                    openNotebookWindow({
+                        notebookId: found.id,
+                        notebookTitle: found.title,
+                        windows,
+                        isMobile,
+                        addWindow,
+                        updateWindow,
+                    })
+                }
+            }
+        }
+    }, [windows, isMobile, addWindow, updateWindow])
 
     const insertMenuDomId = useId()
     const notebookRef = useRef<HTMLDivElement | null>(null)
@@ -5832,7 +5866,7 @@ function MarkdownNotebookEditor({
             onKeyDownCapture={handleNotebookKeyDown}
         >
             <div className="MarkdownNotebook__debug-layout">
-                <div className="MarkdownNotebook__main" ref={mainRef} onMouseDown={handleMainMouseDown}>
+                <div className="MarkdownNotebook__main" ref={mainRef} onMouseDown={handleMainMouseDown} onClick={handleMainClick}>
                     {document.errors.length ? (
                         <div className="MarkdownNotebook__parse-errors">
                             {document.errors.map((error) => (

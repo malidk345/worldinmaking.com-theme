@@ -488,12 +488,26 @@ html.dark .MarkdownNotebook,
     display: none !important;
 }
 
-.MarkdownNotebook__comment-gutter,
-.MarkdownNotebook__comment-thread,
-.MarkdownNotebook__comment-threads,
-.MarkdownNotebook__inline-comment-mark {
-    display: none !important;
+.MarkdownNotebook__wikilink {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    margin: 0 2px;
+    border-radius: 4px;
+    background: rgba(var(--primary-rgb, 120, 120, 120), 0.12);
+    color: var(--primary, #000);
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: rgba(var(--primary-rgb, 120, 120, 120), 0.24);
+        text-decoration-style: solid;
+    }
 }
+
 
 
 
