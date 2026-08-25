@@ -1504,11 +1504,11 @@ function serializePropValue(value: NotebookPropValue): string {
 
 function serializeImageNode(node: NotebookComponentBlockNode): string {
     const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : (typeof node.props.caption === 'string' ? node.props.caption : '')
-    const caption = typeof node.props.caption === 'string' && node.props.caption !== alt ? node.props.caption : ''
+    const caption = typeof node.props.caption === 'string' ? node.props.caption.trim() : ''
+    const alt = typeof node.props.alt === 'string' ? node.props.alt.trim() : caption
 
     if (caption) {
-        return `![${escapeMarkdownImageAlt(alt)}](${escapeMarkdownImageSrc(src)} "${escapeMarkdownImageAlt(caption)}")`
+        return `![${escapeMarkdownImageAlt(alt || caption)}](${escapeMarkdownImageSrc(src)} "${escapeMarkdownImageAlt(caption)}")`
     }
     return `![${escapeMarkdownImageAlt(alt)}](${escapeMarkdownImageSrc(src)})`
 }
