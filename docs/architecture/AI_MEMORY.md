@@ -3988,6 +3988,28 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Pushed cleanly to `origin/main`. Dev server and live chat endpoints fully operational.
 
+### Entry 014 — SEO Enhancements, Glassmorphic Auth, Knowledge Gating & Mobile Scroll Fixes
+- **Date:** 2026-08-25
+- **AI Agent:** Antigravity
+- **Summary:**
+  1. **Google Sitelinks & SEO:** Added `SiteNavigationElement` JSON-LD schema, `SoftwareApplication` structured data, and PWA `manifest.webmanifest` with Cloudinary `preconnect` & `dns-prefetch`.
+  2. **Glassmorphic Auth Modal:** Redesigned `AuthModal.tsx` into a frosted glassmorphic panel with PostHog LemonButton/OSButton styling and consistent `rounded-md` corners.
+  3. **AI Knowledge Base Gating:** Strictly gated `wim-knowledge.ts` so bots only mention worldinmaking/m. ali when explicitly asked, preventing unprompted lore insertions on general topics.
+  4. **Mobile Chat Scroll Stability:** Overhauled scroll tracking in `ClaudeWorkspaceChat/index.tsx` by eliminating arbitrary `isStreaming` overrides and inertia gesture resets, ending all unwanted bottom-snapping and scroll jitter.
+- **Modified Files:**
+  - `src/lib/seo.ts` [UPDATED]
+  - `src/components/SeoFromRoute.tsx` [UPDATED]
+  - `src/pages/desktop.tsx` [UPDATED]
+  - `static/manifest.webmanifest` [NEW]
+  - `public/manifest.webmanifest` [NEW]
+  - `scripts/copy-public-assets.mjs` [UPDATED]
+  - `src/pages/_document.tsx` [UPDATED]
+  - `src/components/Auth/AuthModal.tsx` [UPDATED]
+  - `src/lib/bots/wim-knowledge.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Typecheck passing with 0 shell errors. All changes pushed to `origin/main`.
+
 ### Entry 002 — Enforce pnpm & Clean Lockfile (TSK-01)
 - **Date:** 2026-08-06
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
