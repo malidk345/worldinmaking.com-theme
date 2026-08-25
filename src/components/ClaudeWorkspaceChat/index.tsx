@@ -369,7 +369,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const chatScrollRef = useRef<HTMLElement>(null);
   const pinToBottomRef = useRef(true);
   const ignoreScrollRef = useRef(false);
-  const userDragRef = useRef(false);
   const isStreamingRef = useRef(false);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
   const pendingEditMessageIdRef = useRef<string | null>(null);
@@ -491,7 +490,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
 
-  const AWAY_GAP = 80
+  const AWAY_GAP = 40
 
   const readGap = () => {
     const scroller = chatScrollRef.current
@@ -509,21 +508,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     })
   }
 
-  const setAway = (away: boolean) => {
-    pinToBottomRef.current = !away
-    setIsAwayFromBottom((prev) => (prev === away ? prev : away))
-  }
-
-  const updateAwayFromBottom = () => {
+  const handleScroll = () => {
     if (ignoreScrollRef.current) return
-    // Layout/stream growth fires scroll events. Only unpin on a real user gesture.
-    if (isStreamingRef.current && !userDragRef.current) return
     const scroller = chatScrollRef.current
-    if (!scroller) {
-      setAway(false)
-      return
+    if (!scroller) return
+    const gap = readGap()
+    if (gap > AWAY_GAP) {
+      pinToBottomRef.current = false
+      setIsAwayFromBottom(true)
+    } else if (gap <= 15) {
+      pinToBottomRef.current = true
+      setIsAwayFromBottom(false)
     }
-    setAway(readGap() > AWAY_GAP)
   }
 
   const keepPinnedIfNeeded = () => {
@@ -535,7 +531,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const scroller = chatScrollRef.current
     if (!scroller) return
     pinToBottomRef.current = true
-    setAway(false)
+    setIsAwayFromBottom(false)
     if (behavior === 'auto') {
       pinNow()
     } else {
@@ -543,7 +539,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' })
       window.setTimeout(() => {
         ignoreScrollRef.current = false
-      }, 320)
+      }, 350)
     }
   }
 
@@ -556,33 +552,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!scroller) return
     if (pinToBottomRef.current) pinNow()
 
-    const markUser = () => {
-      userDragRef.current = true
-    }
-    const clearUser = () => {
-      window.setTimeout(() => {
-        userDragRef.current = false
-      }, 160)
-    }
-
-    scroller.addEventListener('scroll', updateAwayFromBottom, { passive: true })
-    scroller.addEventListener('wheel', markUser, { passive: true })
-    scroller.addEventListener('touchstart', markUser, { passive: true })
-    scroller.addEventListener('pointerdown', markUser)
-    scroller.addEventListener('touchend', clearUser, { passive: true })
-    scroller.addEventListener('pointerup', clearUser)
+    scroller.addEventListener('scroll', handleScroll, { passive: true })
     const observer = new ResizeObserver(() => {
       requestAnimationFrame(keepPinnedIfNeeded)
     })
     observer.observe(scroller)
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
     return () => {
-      scroller.removeEventListener('scroll', updateAwayFromBottom)
-      scroller.removeEventListener('wheel', markUser)
-      scroller.removeEventListener('touchstart', markUser)
-      scroller.removeEventListener('pointerdown', markUser)
-      scroller.removeEventListener('touchend', clearUser)
-      scroller.removeEventListener('pointerup', clearUser)
+      scroller.removeEventListener('scroll', handleScroll)
       observer.disconnect()
     }
   }, [activeChatId, Boolean(activeChat?.messages.length)])
