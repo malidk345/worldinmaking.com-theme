@@ -1,0 +1,32 @@
+{
+  "name": "worldinmaking",
+  "short_name": "wim",
+  "description": "A sovereign spatial Web OS and AI-powered markdown notebook for unfinished thoughts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1e1f23",
+  "theme_color": "#1e1f23",
+  "categories": ["productivity", "utilities", "social"],
+  "icons": [
+    {
+      "src": "/brand/wim-mark.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/wim-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/wim-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

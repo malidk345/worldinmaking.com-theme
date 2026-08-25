@@ -8,6 +8,7 @@ const pairs = [
     ['static/robots.txt', 'public/robots.txt'],
     ['static/llms.txt', 'public/llms.txt'],
     ['static/llms-full.txt', 'public/llms-full.txt'],
+    ['static/manifest.webmanifest', 'public/manifest.webmanifest'],
 ]
 
 function copyPath(src, dst) {

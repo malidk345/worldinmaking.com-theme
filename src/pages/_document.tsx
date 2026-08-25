@@ -142,8 +142,13 @@ export default function Document() {
                 />
                 <link rel="icon" href="/brand/wim-mark.png" type="image/png" />
                 <link rel="apple-touch-icon" href="/brand/wim-mark.png" />
+                <link rel="manifest" href="/manifest.webmanifest" />
+                <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://res.cloudinary.com" />
                 <meta name="theme-color" content={DEFAULT_WALLPAPER_THEME_COLOR.light} />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="application-name" content="worldinmaking" />
                 <meta name="color-scheme" content="light dark" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
