@@ -88,50 +88,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const skipPace = useRef(isUser || !!message.isTypingDone || typewriterSpeed === 'off').current
-  const contentRef = useRef(message.content)
-  const revealedRef = useRef(skipPace ? message.content : '')
-  const [revealed, setRevealed] = useState(skipPace ? message.content : '')
-
-  useEffect(() => {
-    contentRef.current = message.content
-  }, [message.content])
-
-  useEffect(() => {
-    if (skipPace || typewriterSpeed === 'off' || message.isStreaming) {
-      revealedRef.current = message.content
-      setRevealed(message.content)
-      return
-    }
-
-    const tickMs = typewriterSpeed === 'slow' ? 58 : typewriterSpeed === 'fast' ? 28 : 46
-    const stepChars = typewriterSpeed === 'slow' ? 1 : typewriterSpeed === 'fast' ? 3 : 2
-
-    const timer = window.setInterval(() => {
-      const target = contentRef.current
-      const prev = revealedRef.current
-      if (prev.length >= target.length) {
-        if (message.isTypingDone && prev !== target) {
-          revealedRef.current = target
-          setRevealed(target)
-        }
-        return
-      }
-
-      let next = Math.min(prev.length + stepChars, target.length)
-      const remainder = target.slice(next)
-      const wordEnd = remainder.search(/[\s.,;:!?]/)
-      if (wordEnd > 0 && wordEnd < 10) next += wordEnd + 1
-      const nextText = target.slice(0, next)
-      revealedRef.current = nextText
-      setRevealed(nextText)
-    }, tickMs)
-
-    return () => window.clearInterval(timer)
-  }, [message.content, message.isStreaming, message.isTypingDone, skipPace, typewriterSpeed])
-
-  const displayedText = message.isStreaming || skipPace || typewriterSpeed === 'off' ? message.content : revealed
-  const isLiveAnswer = !isUser && (!!message.isStreaming || (!message.isTypingDone && revealed.length < message.content.length))
+  const displayedText = message.content;
+  const isLiveAnswer = !isUser && !!message.isStreaming;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);

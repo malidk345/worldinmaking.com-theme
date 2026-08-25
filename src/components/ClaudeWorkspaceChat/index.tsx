@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   Chat,
   Message,
@@ -491,50 +491,60 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const autoScrollRef = useRef(true);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
-  const scrollToBottomInstant = () => {
-    const scroller = chatScrollRef.current;
-    if (!scroller) return;
-    scroller.scrollTop = scroller.scrollHeight;
-  };
+  const scrollToBottomInstant = useCallback(() => {
+    if (chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+    } else if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, []);
 
-  const scrollChatToBottom = (behavior: ScrollBehavior = 'auto') => {
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     autoScrollRef.current = true;
     setIsAwayFromBottom(false);
     if (behavior === 'auto') {
-      scroller.scrollTop = scroller.scrollHeight;
+      if (chatBottomRef.current) {
+        chatBottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+      } else {
+        scroller.scrollTop = scroller.scrollHeight;
+      }
     } else {
-      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+      if (chatBottomRef.current) {
+        chatBottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else {
+        scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+      }
     }
-  };
+  }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     scrollChatToBottom('smooth');
-  };
+  }, [scrollChatToBottom]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
 
     if (userInteractingRef.current) {
-      if (distanceToBottom > 70) {
+      if (distanceToBottom > 80) {
         autoScrollRef.current = false;
         setIsAwayFromBottom(true);
-      } else if (distanceToBottom <= 20) {
+      } else if (distanceToBottom <= 25) {
         autoScrollRef.current = true;
         setIsAwayFromBottom(false);
       }
     } else {
-      if (distanceToBottom > 70) {
+      if (distanceToBottom > 80) {
         setIsAwayFromBottom(true);
-      } else if (distanceToBottom <= 20) {
+      } else if (distanceToBottom <= 25) {
         autoScrollRef.current = true;
         setIsAwayFromBottom(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const scroller = chatScrollRef.current;
@@ -551,7 +561,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const onTouchEnd = () => {
       touchTimeout = setTimeout(() => {
         userInteractingRef.current = false;
-      }, 600);
+      }, 700);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -595,7 +605,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (touchTimeout) clearTimeout(touchTimeout);
       observer.disconnect();
     };
-  }, [activeChatId, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, handleScroll, scrollToBottomInstant, Boolean(activeChat?.messages.length)]);
 
   const lastStreamTick = (() => {
     const last = activeChat?.messages[activeChat.messages.length - 1];
@@ -607,7 +617,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (autoScrollRef.current) {
       scrollToBottomInstant();
     }
-  }, [lastStreamTick]);
+  }, [lastStreamTick, scrollToBottomInstant]);
 
   // Auto-open artifact when switching chats
   useEffect(() => {
@@ -1324,7 +1334,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
@@ -1348,7 +1358,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               </div>
             </div>
           ) : (
-            <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40 [overflow-anchor:none]">
+            <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1372,7 +1382,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
-              <div ref={chatBottomRef} className="h-px w-full [overflow-anchor:auto]" />
+              <div ref={chatBottomRef} className="h-px w-full" />
             </div>
           )}
         </main>
