@@ -9,6 +9,7 @@ import {
     buildCollectionJsonLd,
     buildDiscussionJsonLd,
     buildOrganizationJsonLd,
+    buildSiteNavigationElementJsonLd,
     buildSoftwareApplicationJsonLd,
     buildWebSiteJsonLd,
     formatSeoDescription,
@@ -49,7 +50,12 @@ export default function SeoFromRoute({
             <SEO
                 title="worldinmaking"
                 description={SITE.defaultDescription}
-                structuredData={[buildWebSiteJsonLd(), buildOrganizationJsonLd(), buildSoftwareApplicationJsonLd()]}
+                structuredData={[
+                    buildWebSiteJsonLd(),
+                    buildOrganizationJsonLd(),
+                    buildSoftwareApplicationJsonLd(),
+                    buildSiteNavigationElementJsonLd(),
+                ]}
             />
         )
     }

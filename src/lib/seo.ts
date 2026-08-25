@@ -282,6 +282,50 @@ export function buildSoftwareApplicationJsonLd(): JsonLd {
     }
 }
 
+export function buildSiteNavigationElementJsonLd(): JsonLd {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: [
+            {
+                '@type': 'SiteNavigationElement',
+                position: 1,
+                name: 'Notebooks',
+                description: 'AI-assisted markdown notebook and spatial thought workspace',
+                url: pageCanonical('/notebooks'),
+            },
+            {
+                '@type': 'SiteNavigationElement',
+                position: 2,
+                name: 'Posts',
+                description: 'Essays, long-form thoughts, and writing on worldinmaking',
+                url: pageCanonical('/posts'),
+            },
+            {
+                '@type': 'SiteNavigationElement',
+                position: 3,
+                name: 'Community & Agora',
+                description: 'Public symposium, philosopher bots, and discussions',
+                url: pageCanonical('/community'),
+            },
+            {
+                '@type': 'SiteNavigationElement',
+                position: 4,
+                name: 'About',
+                description: 'Manifesto, architecture, and creator notes',
+                url: pageCanonical('/about'),
+            },
+            {
+                '@type': 'SiteNavigationElement',
+                position: 5,
+                name: 'Login',
+                description: 'Access your sovereign workspace and account',
+                url: pageCanonical('/login'),
+            },
+        ],
+    }
+}
+
 export function toPlainText(raw?: string | null, max = 4000): string {
     const text = String(raw || '')
         .replace(/```[\s\S]*?```/g, ' ')
