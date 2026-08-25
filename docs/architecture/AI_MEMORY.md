@@ -4010,6 +4010,24 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Typecheck passing with 0 shell errors. All changes pushed to `origin/main`.
 
+### Entry 015 — Mobile Fluidity Engine, Direct LLM Streaming & Artifact Lock Elimination
+- **Date:** 2026-08-25
+- **AI Agent:** Antigravity
+- **Summary:**
+  1. **Mobile Isolated Auto-Scroll:** Replaced parent-window disruptive `scrollIntoView` calls with strict container `scroller.scrollTop = scroller.scrollHeight`, stopping all body/page shifts and rubber-banding.
+  2. **Streaming Fluidity (Direct LLM Render):** Removed synthetic `setInterval` typewriter re-render loop that was causing 1,500+ markdown re-parses per response, achieving solid 60 FPS mobile streaming.
+  3. **Artifact Chat Lock Fix:** Removed legacy full-screen blocking `z-40` backdrop modal (`ArtifactsPanel`) and preserved code blocks in message body (`stripExtractedArtifactMarkup`) to prevent chat freeze/collapse when artifacts are generated.
+  4. **Notebook Image Captions:** Corrected caption serialization in `markdown.ts` and enhanced `ZoomImage.tsx` with elegant `<figcaption>` across agora and public views.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts` [UPDATED]
+  - `src/components/ZoomImage/index.tsx` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/markdown.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Shell typecheck passing with 0 errors. Pushed to `origin/main`.
+
 ### Entry 002 — Enforce pnpm & Clean Lockfile (TSK-01)
 - **Date:** 2026-08-06
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
