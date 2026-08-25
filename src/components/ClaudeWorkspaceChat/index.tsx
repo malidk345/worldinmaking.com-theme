@@ -600,7 +600,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const lastStreamTick = (() => {
     const last = activeChat?.messages[activeChat.messages.length - 1];
     if (!last) return `${activeChatId}:empty`;
-    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}`;
+    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}:${last.artifacts?.length || 0}:${last.osAction ? 1 : 0}`;
   })();
 
   useLayoutEffect(() => {
@@ -1406,6 +1406,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           citations={activeSources}
           origin={sourcesOrigin}
           onClose={closeSources}
+        />
+      )}
+
+      {isArtifactsOpen && (
+        <ArtifactsPanel
+          artifact={activeArtifact}
+          expanded={isArtifactExpanded}
+          contained={layout === 'window'}
+          origin={artifactOrigin}
+          onToggleExpand={() => setIsArtifactExpanded((value) => !value)}
+          onClose={closeArtifacts}
+          allArtifacts={
+            activeChat?.messages
+              ? activeChat.messages.flatMap((m) => m.artifacts || [])
+              : []
+          }
+          onSelectArtifact={(art) => openArtifact(art, { keepSize: true })}
+          onHealArtifact={handleHealArtifact}
+          onInsertToNotebook={insertIntoNotebook}
         />
       )}
       </div>
