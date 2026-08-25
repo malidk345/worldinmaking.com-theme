@@ -7,6 +7,7 @@ const pairs = [
     ['static/images/wallpapers', 'public/images/wallpapers'],
     ['static/robots.txt', 'public/robots.txt'],
     ['static/llms.txt', 'public/llms.txt'],
+    ['static/llms-full.txt', 'public/llms-full.txt'],
 ]
 
 function copyPath(src, dst) {

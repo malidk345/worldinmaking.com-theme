@@ -1,0 +1,56 @@
+# worldinmaking (wim) — Full System Specification & Architecture
+
+worldinmaking (abbreviated as "wim", always lowercase) is an open, sovereign spatial Web OS and intellectual workstation. It bridges the gap between private, unfinished note-taking and dialectical public publishing.
+
+---
+
+## 1. Product Identity & Category
+- **Category:** Spatial Web Operating System, AI Note-Taking & Markdown Notebook, Personal Knowledge Management (PKM), Dialectical Agora.
+- **Architect & Founder:** m. ali ([ali's profile](https://worldinmaking.com/profile/ali)).
+- **Founding Date:** 2024.
+- **Tagline:** *"A sovereign spatial workspace for unfinished thought."*
+
+---
+
+## 2. Key Differentiators vs Traditional Tools
+1. **Spatial Multi-Window Web OS vs Tab Clutter:** Run multiple notebooks, AI dialogues, live artifact sandboxes, and forum debates simultaneously in draggable, resizable desktop windows.
+2. **Resident AI Philosophers vs Bland Chatbots:** 16 distinct conceptual thought partners that argue from primary frameworks rather than echoing generic consensus.
+3. **Bidirectional Knowledge Graphing:** First-class `[[WikiLink]]` support with automatic backlinks panel and contextual snippet previews.
+4. **Live Artifact Execution:** Chat with AI to produce self-contained interactive React components and data charts that run live inside isolated windows.
+5. **Hybrid Semantic Memory:** Cross-document search combining TF-IDF lexical vectors and semantic cosine similarity.
+
+---
+
+## 3. The 16 Resident Philosopher Minds
+1. **Karl Marx:** Historical materialism, alienated labor, commodity fetishism, structural critique.
+2. **Friedrich Nietzsche:** Will to power, master-slave morality, overcoming ressentiment, aphoristic courage.
+3. **Jean-Paul Sartre:** Radical freedom, anguish of choice, bad faith (mauvaise foi), existential responsibility.
+4. **G.W.F. Hegel:** Dialectical sublation (Aufhebung), master-slave dialectic, historical unfolding of Geist.
+5. **Baruch Spinoza:** Monist substance, conatus, ethics of joy and active affect, intellectual love of God.
+6. **Gilles Deleuze:** Immanence, rhizomatic assemblages, deterritorialization, lines of flight.
+7. **Martin Heidegger:** Dasein, Being-in-the-world, thrownness (Geworfenheit), critique of enframing technology.
+8. **Jean Baudrillard:** Simulacra and simulation, hyperreality, the precession of images.
+9. **Louis Althusser:** Ideological state apparatuses, interpellation, structural causality.
+10. **Jacques Derrida:** Deconstruction, différance, trace, haunting presence.
+11. **Max Weber:** Disenchantment of the world, iron cage of rationalization, ethics of conviction vs responsibility.
+12. **Theodor W. Adorno:** Negative dialectics, culture industry, critique of instrumental reason.
+13. **Slavoj Žižek:** Hegelian-Lacanian critique, ideology as lived fantasy, sublime objects.
+14. **V.I. Lenin:** Imperialism as highest stage of capitalism, tactical pragmatism, party discipline.
+15. **Hannah Arendt:** The human condition (vita activa), banality of evil, the public sphere of action.
+16. **Ayn Rand:** Objectivism, rational self-interest, heroic individualism.
+
+---
+
+## 4. Technical Architecture
+- **Front-End:** Next.js 14 Pages Router + React 18 + Tailwind CSS 3.
+- **Window Management:** Single-purpose `WindowRouter` and decoupled global state with coordinate persistence.
+- **Authentication & Database:** Supabase Auth and PostgreSQL.
+- **Bot Safety & Resilience:** Rate limiting, payload validation, non-blocking background workers.
+
+---
+
+## 5. Official Resources
+- Website: https://worldinmaking.com/
+- Notebooks: https://worldinmaking.com/notebooks
+- Agora / Community: https://worldinmaking.com/community
+- Founder: https://worldinmaking.com/profile/ali
