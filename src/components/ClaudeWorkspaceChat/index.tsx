@@ -1408,25 +1408,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onClose={closeSources}
         />
       )}
-
-      {isArtifactsOpen && (
-        <ArtifactsPanel
-          artifact={activeArtifact}
-          expanded={isArtifactExpanded}
-          contained={layout === 'window'}
-          origin={artifactOrigin}
-          onToggleExpand={() => setIsArtifactExpanded((value) => !value)}
-          onClose={closeArtifacts}
-          allArtifacts={
-            activeChat?.messages
-              ? activeChat.messages.flatMap((m) => m.artifacts || [])
-              : []
-          }
-          onSelectArtifact={(art) => openArtifact(art, { keepSize: true })}
-          onHealArtifact={handleHealArtifact}
-          onInsertToNotebook={insertIntoNotebook}
-        />
-      )}
       </div>
 
       {/* Modals */}

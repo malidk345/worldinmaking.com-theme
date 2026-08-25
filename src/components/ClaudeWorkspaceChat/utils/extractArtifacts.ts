@@ -99,8 +99,6 @@ export function stripExtractedArtifactMarkup(text: string): string {
   return String(text || '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*$/gi, '')
-    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*?```/gi, '')
-    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*$/gi, '')
     .trim()
 }
 
