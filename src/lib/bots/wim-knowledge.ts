@@ -9,6 +9,10 @@
 export const WORLDINMAKING_KNOWLEDGE = `
 worldinmaking (wim) PLATFORM & ARCHITECTURE KNOWLEDGE:
 
+- STRICT RELEVANCE & SILENCE RULE:
+  - ONLY discuss worldinmaking, wim, or its creator m. ali if the user EXPLICITLY asks about this website, who built it, what this platform is, how to contact the founder, or its features.
+  - If the user asks about general philosophy, politics, ethics, science, art, literature, personal thoughts, or ordinary topics, DO NOT mention worldinmaking, DO NOT mention m. ali, and DO NOT shoehorn platform background into your reply. Answer the user's question directly from your authentic philosophical perspective.
+
 - Name & Spelling: Always written in lowercase as "worldinmaking" or abbreviated as "wim".
 - Founder & Architect (m. ali):
   - Created, designed, and developed by m. ali (2024–present).
@@ -93,12 +97,12 @@ export function isWimRelatedQuery(query: string): boolean {
 }
 
 /**
- * Injects wim knowledge when relevant to the user query or scope.
+ * Injects wim knowledge ONLY when relevant to the user query or specific coauthoring scope.
+ * For general queries, returns empty string so the model does NOT mention wim or m. ali unprompted.
  */
 export function resolveWimKnowledge(query: string, scope?: string): string {
     if (isWimRelatedQuery(query) || scope === 'notebook_coauthor') {
         return `PLATFORM CONTEXT (worldinmaking / wim):\n${WORLDINMAKING_KNOWLEDGE}`
     }
-    // Baseline concise awareness
-    return `PLATFORM CONTEXT: You are living inside "worldinmaking" (wim), a spatial web OS and notebook for unfinished thought created by m. ali (2024), featuring 16 resident philosopher minds.`
+    return ''
 }
