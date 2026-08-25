@@ -367,10 +367,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
-  const pinToBottomRef = useRef(true);
-  const ignoreScrollRef = useRef(false);
   const isStreamingRef = useRef(false);
-  const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
   const pendingEditMessageIdRef = useRef<string | null>(null);
   const persistChatIdRef = useRef<string | null>(null);
   const [composerDraft, setComposerDraft] = useState('');
@@ -490,90 +487,127 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
 
-  const AWAY_GAP = 40
+  const userInteractingRef = useRef(false);
+  const autoScrollRef = useRef(true);
+  const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
-  const readGap = () => {
-    const scroller = chatScrollRef.current
-    if (!scroller) return 0
-    return scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight)
-  }
-
-  const pinNow = () => {
-    const scroller = chatScrollRef.current
-    if (!scroller) return
-    ignoreScrollRef.current = true
-    scroller.scrollTop = scroller.scrollHeight
-    requestAnimationFrame(() => {
-      ignoreScrollRef.current = false
-    })
-  }
-
-  const handleScroll = () => {
-    if (ignoreScrollRef.current) return
-    const scroller = chatScrollRef.current
-    if (!scroller) return
-    const gap = readGap()
-    if (gap > AWAY_GAP) {
-      pinToBottomRef.current = false
-      setIsAwayFromBottom(true)
-    } else if (gap <= 15) {
-      pinToBottomRef.current = true
-      setIsAwayFromBottom(false)
-    }
-  }
-
-  const keepPinnedIfNeeded = () => {
-    if (!pinToBottomRef.current) return
-    pinNow()
-  }
+  const scrollToBottomInstant = () => {
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+    scroller.scrollTop = scroller.scrollHeight;
+  };
 
   const scrollChatToBottom = (behavior: ScrollBehavior = 'auto') => {
-    const scroller = chatScrollRef.current
-    if (!scroller) return
-    pinToBottomRef.current = true
-    setIsAwayFromBottom(false)
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+    autoScrollRef.current = true;
+    setIsAwayFromBottom(false);
     if (behavior === 'auto') {
-      pinNow()
+      scroller.scrollTop = scroller.scrollHeight;
     } else {
-      ignoreScrollRef.current = true
-      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' })
-      window.setTimeout(() => {
-        ignoreScrollRef.current = false
-      }, 350)
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
     }
-  }
+  };
 
   const scrollToBottom = () => {
-    scrollChatToBottom('smooth')
-  }
+    scrollChatToBottom('smooth');
+  };
+
+  const handleScroll = () => {
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+    const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
+
+    if (userInteractingRef.current) {
+      if (distanceToBottom > 70) {
+        autoScrollRef.current = false;
+        setIsAwayFromBottom(true);
+      } else if (distanceToBottom <= 20) {
+        autoScrollRef.current = true;
+        setIsAwayFromBottom(false);
+      }
+    } else {
+      if (distanceToBottom > 70) {
+        setIsAwayFromBottom(true);
+      } else if (distanceToBottom <= 20) {
+        autoScrollRef.current = true;
+        setIsAwayFromBottom(false);
+      }
+    }
+  };
 
   useEffect(() => {
-    const scroller = chatScrollRef.current
-    if (!scroller) return
-    if (pinToBottomRef.current) pinNow()
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+    if (autoScrollRef.current) scrollToBottomInstant();
 
-    scroller.addEventListener('scroll', handleScroll, { passive: true })
+    let touchTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const onTouchStart = () => {
+      userInteractingRef.current = true;
+      if (touchTimeout) clearTimeout(touchTimeout);
+    };
+
+    const onTouchEnd = () => {
+      touchTimeout = setTimeout(() => {
+        userInteractingRef.current = false;
+      }, 600);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      userInteractingRef.current = true;
+      if (e.deltaY < 0) {
+        autoScrollRef.current = false;
+        setIsAwayFromBottom(true);
+      } else if (e.deltaY > 0) {
+        const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
+        if (distanceToBottom <= 30) {
+          autoScrollRef.current = true;
+          setIsAwayFromBottom(false);
+        }
+      }
+      if (touchTimeout) clearTimeout(touchTimeout);
+      touchTimeout = setTimeout(() => {
+        userInteractingRef.current = false;
+      }, 300);
+    };
+
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroller.addEventListener('touchend', onTouchEnd, { passive: true });
+    scroller.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    scroller.addEventListener('wheel', onWheel, { passive: true });
+
     const observer = new ResizeObserver(() => {
-      requestAnimationFrame(keepPinnedIfNeeded)
-    })
-    observer.observe(scroller)
-    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
+      if (autoScrollRef.current) {
+        scrollToBottomInstant();
+      }
+    });
+    observer.observe(scroller);
+    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
+
     return () => {
-      scroller.removeEventListener('scroll', handleScroll)
-      observer.disconnect()
-    }
-  }, [activeChatId, Boolean(activeChat?.messages.length)])
+      scroller.removeEventListener('scroll', handleScroll);
+      scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchend', onTouchEnd);
+      scroller.removeEventListener('touchcancel', onTouchEnd);
+      scroller.removeEventListener('wheel', onWheel);
+      if (touchTimeout) clearTimeout(touchTimeout);
+      observer.disconnect();
+    };
+  }, [activeChatId, Boolean(activeChat?.messages.length)]);
 
   const lastStreamTick = (() => {
-    const last = activeChat?.messages[activeChat.messages.length - 1]
-    if (!last) return `${activeChatId}:empty`
-    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}`
-  })()
+    const last = activeChat?.messages[activeChat.messages.length - 1];
+    if (!last) return `${activeChatId}:empty`;
+    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}`;
+  })();
 
   useLayoutEffect(() => {
-    if (!pinToBottomRef.current) return
-    pinNow()
-  }, [lastStreamTick])
+    if (autoScrollRef.current) {
+      scrollToBottomInstant();
+    }
+  }, [lastStreamTick]);
 
   // Auto-open artifact when switching chats
   useEffect(() => {
@@ -705,9 +739,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     );
 
     setIsStreaming(true);
-    pinToBottomRef.current = true
-    setIsAwayFromBottom(false)
-    requestAnimationFrame(() => scrollChatToBottom('auto'))
+    autoScrollRef.current = true;
+    setIsAwayFromBottom(false);
+    requestAnimationFrame(() => scrollChatToBottom('auto'));
     abortControllerRef.current = new AbortController();
 
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);

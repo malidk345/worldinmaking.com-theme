@@ -210,7 +210,7 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
 };
 
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false, model, timestamp }) => {
-  const [isOpen, setIsOpen] = useState(isLive);
+  const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
 
@@ -223,10 +223,6 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     .reverse()
     .find((step) => !isDoneTitle(step.title) && !isPlaceholderStep(step) && String(step.title || '').trim())
     ?.title;
-
-  useLayoutEffect(() => {
-    setIsOpen(!!isLive)
-  }, [isLive])
 
   const handleScroll = () => {
     const el = scrollRef.current;
