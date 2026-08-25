@@ -1293,7 +1293,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
-            <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 select-none">
+            <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
               <h1 className="m-0 mb-1 text-center text-[22px] font-semibold tracking-tight text-primary">
                 How can I help?
               </h1>
@@ -1314,7 +1314,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               </div>
             </div>
           ) : (
-            <div className="space-y-5 px-0 pt-3 pb-4 [overflow-anchor:none]">
+            <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40 [overflow-anchor:none]">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -1343,25 +1343,28 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           )}
         </main>
 
+        {/* Floating Input Dock with smooth fade allowing messages to flow underneath */}
         <div
           data-writing-dock
-          className="relative z-20 shrink-0 bg-primary pt-2 [padding-bottom:calc(0.75rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-2.5 [padding-bottom:calc(0.65rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]"
         >
-          <ChatInput
-            onSendMessage={handleSendMessage}
-            onStopStreaming={handleStopStreaming}
-            isStreaming={isStreaming}
-            selectedStylePreset={selectedStylePreset}
-            onChangeStylePreset={setSelectedStylePreset}
-            onScrollToBottom={scrollToBottom}
-            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
-            models={models}
-            selectedModelId={selectedModelId}
-            onSelectModel={handleSelectModel}
-            draftPrompt={composerDraft}
-            draftNonce={composerDraftNonce}
-            menuPlacement="top-start"
-          />
+          <div className="pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4">
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              onStopStreaming={handleStopStreaming}
+              isStreaming={isStreaming}
+              selectedStylePreset={selectedStylePreset}
+              onChangeStylePreset={setSelectedStylePreset}
+              onScrollToBottom={scrollToBottom}
+              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+              models={models}
+              selectedModelId={selectedModelId}
+              onSelectModel={handleSelectModel}
+              draftPrompt={composerDraft}
+              draftNonce={composerDraftNonce}
+              menuPlacement="top-start"
+            />
+          </div>
         </div>
 
       {isSourcesOpen && activeSources && (

@@ -228,7 +228,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-md border bg-primary px-2.5 py-1.5 transition-all duration-200 ${
+        className={`pointer-events-auto relative rounded-md border bg-primary/95 backdrop-blur-lg px-2.5 py-1.5 transition-all duration-200 ${
           isDragging
             ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/40 shadow-[0_0_22px_rgba(30,58,138,0.35)] bg-accent'
             : prompt.trim().length > 0
