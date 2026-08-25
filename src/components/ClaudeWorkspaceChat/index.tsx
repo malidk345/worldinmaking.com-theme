@@ -492,11 +492,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
   const scrollToBottomInstant = useCallback(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-    } else if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-    }
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+    scroller.scrollTop = scroller.scrollHeight;
   }, []);
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
@@ -505,17 +503,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     autoScrollRef.current = true;
     setIsAwayFromBottom(false);
     if (behavior === 'auto') {
-      if (chatBottomRef.current) {
-        chatBottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-      } else {
-        scroller.scrollTop = scroller.scrollHeight;
-      }
+      scroller.scrollTop = scroller.scrollHeight;
     } else {
-      if (chatBottomRef.current) {
-        chatBottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      } else {
-        scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-      }
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
     }
   }, []);
 
