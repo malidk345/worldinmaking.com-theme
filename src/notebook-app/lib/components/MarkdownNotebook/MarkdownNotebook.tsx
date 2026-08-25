@@ -34,7 +34,7 @@ import { LemonMenu } from '@posthog/lemon-ui'
 
 import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
-import { getNotebooks } from '../../scenes/notebooks/notebookStorage'
+import { getNotebooks } from '../../../scenes/notebooks/notebookStorage'
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
 import { resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 import {
