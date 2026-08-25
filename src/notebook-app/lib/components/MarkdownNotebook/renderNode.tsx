@@ -256,12 +256,12 @@ export function renderNode({
     }
 
     if (node.type === 'code') {
-        // Render mermaid fences as diagrams in view mode; edit mode keeps the source editable.
-        if (mode === 'view' && isMermaidCodeBlock(node)) {
-            return <NotebookMermaidBlock node={node} setBlockRef={setBlockRef} />
-        }
-        if (mode === 'view' && isNotebookLiveCodeBlock(node)) {
+        // Render live preview blocks (charts, react/html UI, mermaid, svg) in all notebook modes
+        if (isNotebookLiveCodeBlock(node)) {
             return <NotebookWimCodeBlock node={node} setBlockRef={setBlockRef} />
+        }
+        if (isMermaidCodeBlock(node)) {
+            return <NotebookMermaidBlock node={node} setBlockRef={setBlockRef} />
         }
 
         return (

@@ -57,14 +57,14 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
     if (artifact.type === 'mermaid') {
         return [title, fence('mermaid', body)].filter(Boolean).join('\n\n')
     }
-    if (artifact.type === 'react') {
+    if (artifact.type === 'react' || artifact.language === 'tsx' || artifact.language === 'jsx') {
         return [title, fence('react', body)].filter(Boolean).join('\n\n')
     }
-    if (artifact.type === 'html') {
-        return [title, fence('wim-html', body)].filter(Boolean).join('\n\n')
+    if (artifact.type === 'html' || artifact.language === 'html') {
+        return [title, fence('html', body)].filter(Boolean).join('\n\n')
     }
-    if (artifact.type === 'svg') {
-        return body.startsWith('<svg') ? [title, body].filter(Boolean).join('\n\n') : [title, fence('svg', body)].filter(Boolean).join('\n\n')
+    if (artifact.type === 'svg' || artifact.language === 'svg') {
+        return [title, fence('svg', body)].filter(Boolean).join('\n\n')
     }
     if (artifact.type === 'json') {
         const asChart = parseChartSpec(body)
@@ -72,6 +72,35 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
         const table = jsonToMarkdownTable(body)
         if (table) return [title, table].filter(Boolean).join('\n\n')
         return [title, fence('json', body)].filter(Boolean).join('\n\n')
+    }
+    if (artifact.type === 'code') {
+        const lang = String(artifact.language || '').toLowerCase()
+        if (
+            lang === 'mermaid' ||
+            /^(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|mindmap|timeline)\s/m.test(
+                body
+            )
+        ) {
+            return [title, fence('mermaid', body)].filter(Boolean).join('\n\n')
+        }
+        if (lang === 'svg' || body.startsWith('<svg')) {
+            return [title, fence('svg', body)].filter(Boolean).join('\n\n')
+        }
+        if (lang === 'html' || /<!DOCTYPE\s+html|<html|<div|<p/i.test(body)) {
+            return [title, fence('html', body)].filter(Boolean).join('\n\n')
+        }
+        if (
+            lang === 'react' ||
+            lang === 'tsx' ||
+            lang === 'jsx' ||
+            /import\s+React|export\s+default|<[A-Z][A-Za-z0-9]*/.test(body)
+        ) {
+            return [title, fence('react', body)].filter(Boolean).join('\n\n')
+        }
+        return [title, fence(artifact.language || 'react', body)].filter(Boolean).join('\n\n')
+    }
+    if (artifact.type === 'markdown') {
+        return [title, body].filter(Boolean).join('\n\n')
     }
     return [title, body].filter(Boolean).join('\n\n')
 }
@@ -97,7 +126,15 @@ export function isNotebookReactFence(language?: string): boolean {
 }
 
 export function isNotebookHtmlFence(language?: string): boolean {
-    return /^(wim-html)$/i.test(language || '')
+    return /^(html|wim-html)$/i.test(language || '')
+}
+
+export function isNotebookMermaidFence(language?: string): boolean {
+    return /^(mermaid)$/i.test(language || '')
+}
+
+export function isNotebookSvgFence(language?: string): boolean {
+    return /^(svg)$/i.test(language || '')
 }
 
 export function chartSpecFromFence(text: string): ChartSpec | null {

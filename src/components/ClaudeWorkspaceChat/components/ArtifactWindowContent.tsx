@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Artifact } from '../types'
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block'
-import { Copy, Download, Check, FileInput, Code2, Play, X } from 'lucide-react'
-import { useApp } from '../../../context/App'
-import { useWindow } from '../../../context/Window'
+import { Copy, Check, FileInput, Code2, Play } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
@@ -15,35 +13,18 @@ const ChartArtifactRenderer = dynamic(
   { ssr: false }
 )
 
+import { Spinner } from '../../../notebook-app/lib/lemon-ui/Spinner'
+
+const LazyMermaidDiagram = React.lazy(() => import('../../../notebook-app/lib/lemon-ui/LemonMarkdown/MermaidDiagram'))
+
 const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
-  const ref = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const render = async () => {
-      try {
-        const mermaid = (await import('mermaid')).default
-        mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' })
-        const id = `mermaid-${Date.now()}`
-        const { svg } = await mermaid.render(id, chart.trim())
-        if (!cancelled && ref.current) {
-          ref.current.innerHTML = svg
-        }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Diagram could not be rendered.')
-      }
-    }
-    render()
-    return () => { cancelled = true }
-  }, [chart])
-
-  if (error) return (
-    <div className="p-4 text-rose-600 text-sm font-mono bg-rose-50 rounded-lg border border-rose-200">
-      {error}
+  return (
+    <div className="w-full flex justify-center overflow-auto py-4">
+      <React.Suspense fallback={<div className="p-4 flex justify-center"><Spinner /></div>}>
+        <LazyMermaidDiagram code={chart} naturalWidth />
+      </React.Suspense>
     </div>
   )
-  return <div ref={ref} className="w-full flex justify-center overflow-auto py-4" />
 }
 
 interface ArtifactWindowContentProps {
@@ -57,46 +38,18 @@ export function ArtifactWindowContent({
   onInsertToNotebook,
   onHealArtifact,
 }: ArtifactWindowContentProps) {
-  const { closeWindow } = useApp()
-  const { appWindow } = useWindow()
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
 
+  // Always show Preview first when opened or switched
   useEffect(() => {
-    if (artifact?.type === 'react' || artifact?.type === 'html' || artifact?.type === 'chart' || artifact?.type === 'svg') {
-      setActiveTab('preview')
-    } else {
-      setActiveTab('code')
-    }
+    setActiveTab('preview')
   }, [artifact?.id, artifact?.type])
 
   const handleCopy = () => {
     navigator.clipboard.writeText(artifact.content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
-
-  const getArtifactExtension = (art: Artifact) => {
-    if (art.language) return art.language.toLowerCase()
-    switch (art.type) {
-      case 'react': return 'tsx'
-      case 'html': return 'html'
-      case 'svg': return 'svg'
-      case 'json': return 'json'
-      case 'markdown': return 'md'
-      default: return 'txt'
-    }
-  }
-
-  const handleDownload = () => {
-    const ext = getArtifactExtension(artifact)
-    const blob = new Blob([artifact.content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${artifact.title.replace(/\s+/g, '_').toLowerCase()}.${ext}`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   const isMermaidContent =
@@ -128,88 +81,46 @@ export function ArtifactWindowContent({
     return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`
   }
 
-  const formatLabel = isMermaidContent ? 'MERMAID' : getArtifactExtension(artifact).toUpperCase()
-
   return (
-    <div className="flex h-full w-full flex-col bg-primary text-primary overflow-hidden font-sans">
-      {/* Top action toolbar */}
-      <div className="flex shrink-0 items-center justify-between border-b border-primary/20 bg-accent/40 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary border border-primary/20">
-            {formatLabel}
-          </span>
-          <h3 className="text-xs font-semibold line-clamp-1 m-0 text-primary">{artifact.title}</h3>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {/* Tab Switcher */}
-          <div className="flex rounded-md border border-primary/20 bg-primary p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('preview')}
-              className={`flex items-center gap-1 rounded px-2 py-0.5 transition-colors cursor-pointer ${
-                activeTab === 'preview' ? 'bg-accent font-semibold text-primary shadow-xs' : 'text-secondary hover:text-primary'
-              }`}
-            >
-              <Play className="h-3 w-3" />
-              <span>Preview</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('code')}
-              className={`flex items-center gap-1 rounded px-2 py-0.5 transition-colors cursor-pointer ${
-                activeTab === 'code' ? 'bg-accent font-semibold text-primary shadow-xs' : 'text-secondary hover:text-primary'
-              }`}
-            >
-              <Code2 className="h-3 w-3" />
-              <span>Code</span>
-            </button>
-          </div>
-
-          {/* Action buttons */}
-          {onInsertToNotebook && (
-            <button
-              type="button"
-              onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
-              className="flex items-center gap-1 rounded border border-primary/20 bg-primary px-2 py-1 text-xs text-primary hover:bg-accent cursor-pointer transition-colors"
-              title="Add to notebook as a block"
-            >
-              <FileInput className="h-3.5 w-3.5 text-secondary" />
-              <span>Notebook</span>
-            </button>
-          )}
-
+    <div className="relative flex h-full w-full flex-col bg-primary text-primary overflow-hidden font-sans">
+      {/* Minimalist Floating Controls Dock */}
+      <div className="flex shrink-0 items-center justify-between border-b border-primary/20 bg-primary/80 backdrop-blur-md px-3 py-1.5 z-10">
+        {/* Tab Switcher: Preview & Code */}
+        <div className="flex items-center gap-1 bg-accent/60 rounded-md p-0.5 border border-primary/20 text-xs">
           <button
             type="button"
-            onClick={handleCopy}
-            className="flex items-center gap-1 rounded border border-primary/20 bg-primary px-2 py-1 text-xs text-primary hover:bg-accent cursor-pointer transition-colors"
-            title="Copy source code"
+            onClick={() => setActiveTab('preview')}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-medium transition-colors cursor-pointer ${
+              activeTab === 'preview' ? 'bg-primary text-primary shadow-2xs' : 'text-secondary hover:text-primary'
+            }`}
           >
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-secondary" />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <Play className="h-3 w-3" />
+            <span>Preview</span>
           </button>
-
           <button
             type="button"
-            onClick={handleDownload}
-            className="flex items-center gap-1 rounded border border-primary/20 bg-primary px-2 py-1 text-xs text-primary hover:bg-accent cursor-pointer transition-colors"
-            title="Download file"
+            onClick={() => setActiveTab('code')}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-medium transition-colors cursor-pointer ${
+              activeTab === 'code' ? 'bg-primary text-primary shadow-2xs' : 'text-secondary hover:text-primary'
+            }`}
           >
-            <Download className="h-3.5 w-3.5 text-secondary" />
+            <Code2 className="h-3 w-3" />
+            <span>Code</span>
           </button>
-
-          {appWindow && (
-            <button
-              type="button"
-              onClick={() => closeWindow(appWindow)}
-              className="flex items-center justify-center rounded border border-primary/20 bg-primary p-1 text-xs text-secondary hover:bg-rose-500 hover:text-white cursor-pointer transition-colors ml-1"
-              title="Close window"
-              aria-label="Close window"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
         </div>
+
+        {/* Action: Add to notebook */}
+        {onInsertToNotebook && (
+          <button
+            type="button"
+            onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
+            className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1 text-xs font-medium text-primary hover:bg-accent cursor-pointer transition-colors shadow-2xs"
+            title="Add to notebook as a block"
+          >
+            <FileInput className="h-3.5 w-3.5 text-secondary" />
+            <span>Add to notebook</span>
+          </button>
+        )}
       </div>
 
       {/* Main content body */}
@@ -252,11 +163,26 @@ export function ArtifactWindowContent({
             )}
           </div>
         ) : (
-          <pre className="p-4 font-mono text-xs leading-relaxed overflow-auto h-full m-0 bg-accent/20 text-primary selection:bg-accent">
-            <code>{artifact.content}</code>
-          </pre>
+          <div className="relative h-full flex flex-col">
+            <div className="flex items-center justify-end px-3 py-1.5 bg-accent/30 border-b border-primary/20">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-xs text-secondary hover:text-primary transition-colors cursor-pointer"
+                title="Copy code"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? 'Copied' : 'Copy code'}</span>
+              </button>
+            </div>
+            <pre className="p-4 font-mono text-xs leading-relaxed overflow-auto flex-1 m-0 bg-accent/20 text-primary selection:bg-accent">
+              <code>{artifact.content}</code>
+            </pre>
+          </div>
         )}
       </div>
     </div>
   )
 }
+
+export default ArtifactWindowContent
