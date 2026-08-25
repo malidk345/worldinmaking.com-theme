@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'components/Link'
 import SEO from 'components/seo'
-import { SITE, buildOrganizationJsonLd, buildWebSiteJsonLd } from 'lib/seo'
+import { SITE, buildOrganizationJsonLd, buildSoftwareApplicationJsonLd, buildWebSiteJsonLd } from 'lib/seo'
 import Editor from 'components/Editor'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
 import CloudinaryImage from 'components/CloudinaryImage'
@@ -567,7 +567,7 @@ export default function Home() {
             <SEO
                 title="worldinmaking"
                 description={SITE.defaultDescription}
-                structuredData={[buildWebSiteJsonLd(), buildOrganizationJsonLd()]}
+                structuredData={[buildWebSiteJsonLd(), buildOrganizationJsonLd(), buildSoftwareApplicationJsonLd()]}
             />
             <Editor slug="/" maxWidth="100%" hasPadding={false} disableFormatting>
                 <div className="@container not-prose font-rounded">

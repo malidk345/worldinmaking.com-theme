@@ -248,6 +248,40 @@ export function buildCollectionJsonLd(name: string, path: string, description?: 
     }
 }
 
+export function buildSoftwareApplicationJsonLd(): JsonLd {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'worldinmaking (wim)',
+        alternateName: ['worldinmaking', 'wim', 'wim OS'],
+        applicationCategory: 'NoteTakingApplication',
+        operatingSystem: 'Web Browser, Any OS (macOS, Windows, Linux, iOS, Android)',
+        url: SITE.url,
+        description:
+            'A sovereign spatial Web OS and AI-powered markdown notebook for unfinished thoughts, personal computing, resident philosopher co-authoring, live interactive artifacts, and public agora publishing.',
+        creator: {
+            '@type': 'Person',
+            name: 'm. ali',
+            url: `${SITE.url}/profile/ali`,
+        },
+        offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+        },
+        featureList: [
+            'Spatial Web OS Desktop Workspace with Draggable Multi-Windows',
+            'AI Markdown Notebook with Live Typewriter Streaming & Co-Authoring',
+            '16 Resident Philosopher AI Co-Authors (Marx, Nietzsche, Sartre, Deleuze, Spinoza, etc.)',
+            'Bidirectional WikiLinks & Dynamic Backlinks Panel',
+            'Hybrid Semantic & Vector Memory Search',
+            'Live Interactive Artifacts (React TSX Sandboxes, JSON Charts, Markdown Docs)',
+            'Public Agora & Community Symposium Discussions',
+            'Offline-First Sync & Sovereign Personal Computing',
+        ],
+    }
+}
+
 export function toPlainText(raw?: string | null, max = 4000): string {
     const text = String(raw || '')
         .replace(/```[\s\S]*?```/g, ' ')
