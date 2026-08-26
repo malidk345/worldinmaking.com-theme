@@ -18,7 +18,7 @@ test('chat packs only the selected philosopher, compact by default', () => {
     expect(compact).not.toMatch(/Marx|Hegel|Sartre/)
     expect(compact.length).toBeLessThan(full.length)
     expect(compact).not.toContain('RAW PERSONA DIRECTIVE')
-    expect(compact).toMatch(/Keep rhetoric light/)
+    expect(compact).toMatch(/Keep rhetoric natural/)
     expect(compact).not.toMatch(/available move/)
     expect(compact.toLowerCase()).not.toContain('indict the reader')
 })
