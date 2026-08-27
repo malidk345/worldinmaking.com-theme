@@ -494,18 +494,18 @@ export default function Team({
     const teamEmojis = emojis?.filter((emoji) => !!emoji?.name && !!emoji?.localFile?.publicURL)
 
     // Create a map of team names to crest data for quick lookup
-    const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
+    const teamCrestMap = useMemo(() => (allTeams?.nodes || []).reduce((acc: any, team: any) => {
         acc[team.name] = team.crest?.data?.attributes?.url
         return acc
-    }, {})
+    }, {}), [allTeams?.nodes])
 
     // Filter jobs that are assigned to this team
-    const teamJobs = (allAshbyJobPosting?.nodes || []).filter((job: any) => {
+    const teamJobs = useMemo(() => (allAshbyJobPosting?.nodes || []).filter((job: any) => {
         const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
         if (!teamsField) return false
         const teams = JSON.parse(teamsField.value || '[]')
         return teams.includes(name)
-    })
+    }), [allAshbyJobPosting?.nodes, name])
 
     const posthog = usePostHog()
 
