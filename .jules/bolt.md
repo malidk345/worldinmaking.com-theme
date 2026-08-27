@@ -16,3 +16,7 @@
 ## 2024-12-04 - Memoizing Array Aggregations
 **Learning:** In the `Places` component (`src/pages/places/index.tsx`), computing the `placesByType` map using `places.reduce` without `useMemo` forces the JavaScript engine to perform an O(N) array traversal and allocate a new object on every render. For components with frequent state updates (like toggling map layers or selecting places), this introduces unnecessary main thread overhead and garbage collection pressure.
 **Action:** Always wrap array aggregations (like `.reduce` or `Object.fromEntries`) in `useMemo` when they depend on props or state arrays that change infrequently, especially in components that re-render often due to internal state changes.
+
+## 2024-05-19 - [Memoize teamCrestMap computation]
+**Learning:** Found multiple places (`src/components/People/index.tsx`, `src/components/Team/index.tsx`, `src/hooks/useTeamCrestMap.ts`) where a dictionary map `teamCrestMap` is constructed via array `.reduce()` inside the component/hook body during render, causing it to run repeatedly on every single render.
+**Action:** Use the `useMemo` hook to memoize the dictionary construction so it only recalculates when `allTeams?.nodes` changes, preventing unnecessary O(N) evaluations and memory allocation during re-renders.

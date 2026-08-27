@@ -17,6 +17,8 @@ import Start from 'components/Start'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - qs lacks proper typings in this workspace
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
