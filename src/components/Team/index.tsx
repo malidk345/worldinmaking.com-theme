@@ -484,28 +484,38 @@ export default function Team({
     const hasUnderConsideration = !hideRoadmap && underConsideration?.length > 0
     const hasInProgress = !hideRoadmap && inProgress?.length > 0
     const hasBody = !!body
-    const heightToHedgehogs =
-        profiles?.data?.reduce((acc, curr) => acc + (curr?.attributes?.height || 0), 0) / hedgehogLengthInches || 0
+    // ⚡ Bolt Performance Optimization:
+    // Wrap array aggregations in useMemo to prevent O(N) evaluation on every render
+    const heightToHedgehogs = useMemo(() => {
+        return profiles?.data?.reduce((acc: any, curr: any) => acc + (curr?.attributes?.height || 0), 0) / hedgehogLengthInches || 0
+    }, [profiles?.data])
+
     const hedgehogPercentage =
         (heightToHedgehogs % 1 !== 0 &&
             Math.round(hedgehogImageWidth * (heightToHedgehogs - Math.floor(heightToHedgehogs)))) ||
         0
 
-    const teamEmojis = emojis?.filter((emoji) => !!emoji?.name && !!emoji?.localFile?.publicURL)
+    const teamEmojis = useMemo(() => {
+        return emojis?.filter((emoji) => !!emoji?.name && !!emoji?.localFile?.publicURL)
+    }, [emojis])
 
     // Create a map of team names to crest data for quick lookup
-    const teamCrestMap = (allTeams?.nodes || []).reduce((acc: any, team: any) => {
-        acc[team.name] = team.crest?.data?.attributes?.url
-        return acc
-    }, {})
+    const teamCrestMap = useMemo(() => {
+        return (allTeams?.nodes || []).reduce((acc: any, team: any) => {
+            acc[team.name] = team.crest?.data?.attributes?.url
+            return acc
+        }, {})
+    }, [allTeams?.nodes])
 
     // Filter jobs that are assigned to this team
-    const teamJobs = (allAshbyJobPosting?.nodes || []).filter((job: any) => {
-        const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
-        if (!teamsField) return false
-        const teams = JSON.parse(teamsField.value || '[]')
-        return teams.includes(name)
-    })
+    const teamJobs = useMemo(() => {
+        return (allAshbyJobPosting?.nodes || []).filter((job: any) => {
+            const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
+            if (!teamsField) return false
+            const teams = JSON.parse(teamsField.value || '[]')
+            return teams.includes(name)
+        })
+    }, [allAshbyJobPosting?.nodes, name])
 
     const posthog = usePostHog()
 
