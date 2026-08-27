@@ -11,6 +11,8 @@ const nextConfig = {
         '@ai-sdk/provider-utils',
         '@codesandbox/sandpack-react',
         '@codesandbox/sandpack-client',
+        'mermaid',
+        '@mermaid-js/parser',
     ],
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
@@ -115,12 +117,9 @@ const nextConfig = {
                         return
                     }
 
-                    // @posthog/react, use-resize-observer, mermaid → shim
-                    if (
-                        req === '@posthog/react' ||
-                        req === 'use-resize-observer' ||
-                        req === 'mermaid'
-                    ) {
+                    // @posthog/react, use-resize-observer → shim
+                    // mermaid must resolve to the real package (see src/lib/mermaid-loader.ts)
+                    if (req === '@posthog/react' || req === 'use-resize-observer') {
                         resource.request = nbShim
                         return
                     }

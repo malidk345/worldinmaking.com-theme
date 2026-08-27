@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { SandpackPreview, SandpackProvider, useErrorMessage } from '@codesandbox/sandpack-react'
 import { WIM_UI_SOURCE } from './wimUiSource'
-import { SHADCN_THEME_CSS } from './shadcnTheme'
+import { chromeStylesheet, readHostChrome } from '../../../lib/chrome'
 import { jsxSourceLooksBroken, prepareSandpackSource } from './reactPreview'
 import { ensureSubtleDigest } from './ensureSubtleDigest'
 import { LocalPreviewIframe } from './LocalPreviewIframe'
@@ -65,7 +65,7 @@ export function SandpackPreviewFrame({
         () => ({
             '/App.tsx': prepared,
             '/wim-ui.tsx': WIM_UI_SOURCE,
-            '/shadcn.css': SHADCN_THEME_CSS,
+            '/shadcn.css': chromeStylesheet(readHostChrome()),
         }),
         [prepared]
     )
@@ -110,14 +110,14 @@ export function SandpackPreviewFrame({
 
     if (gate !== 'ok') {
         return (
-            <div className="flex h-full items-center justify-center bg-white px-4 text-[13px] text-slate-500">
+            <div className="flex h-full items-center justify-center bg-[#fdfdfd] px-4 text-[13px] text-[#646464]">
                 Preparing preview…
             </div>
         )
     }
 
     return (
-        <div className={className || 'h-full w-full bg-white'}>
+        <div className={className || 'h-full w-full bg-[#fdfdfd]'}>
             <SandpackProvider
                 template="react-ts"
                 theme="light"
@@ -140,7 +140,7 @@ export function SandpackPreviewFrame({
                 <SandpackPreview
                     showNavigator={false}
                     showOpenInCodeSandbox={false}
-                    showRefreshButton
+                    showRefreshButton={false}
                     showRestartButton={false}
                     style={{ height: '100%', width: '100%', border: 'none' }}
                 />

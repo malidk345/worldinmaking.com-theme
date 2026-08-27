@@ -32,7 +32,7 @@ import {
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
 import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
-import { canonicalWindowPath, extractNotebookId, repairWindowPath } from '../lib/window-path'
+import { canonicalWindowPath, extractNotebookId, isArtifactWindowPath, repairWindowPath } from '../lib/window-path'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
@@ -1734,7 +1734,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const existing = prev.find((w) => w.key === key || w.path === path)
             if (existing) {
                 const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
-                return prev.map((w) => (w.key === existing.key ? { ...w, zIndex: maxZ + 1, minimized: false } : w))
+                const refreshPreview = isArtifactWindowPath(path)
+                return prev.map((w) =>
+                    w.key === existing.key
+                        ? {
+                              ...w,
+                              zIndex: maxZ + 1,
+                              minimized: false,
+                              ...(refreshPreview
+                                  ? {
+                                        element: item.element ?? w.element,
+                                        title: item.title || w.title,
+                                        props: { ...w.props, ...(item.props || {}) },
+                                    }
+                                  : {}),
+                          }
+                        : w
+                )
             }
 
             const isMobileClient =

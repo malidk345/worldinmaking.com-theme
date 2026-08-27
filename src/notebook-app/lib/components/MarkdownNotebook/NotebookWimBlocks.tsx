@@ -1,6 +1,9 @@
-import React, { Suspense, lazy } from 'react'
+import React from 'react'
 import dynamic from 'next/dynamic'
 import { parseChartSpec } from '../../../../lib/ai/chart-artifacts'
+import { looksLikeReactSource } from '../../../../lib/ai/design-request'
+import { wrapHtmlArtifactDocument } from '../../../../lib/wim-artifact-theme'
+import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-loader'
 import {
     isNotebookChartFence,
     isNotebookHtmlFence,
@@ -8,7 +11,6 @@ import {
     isNotebookReactFence,
     isNotebookSvgFence,
 } from '../../../../lib/notebook-artifact-block'
-import { Spinner } from '../../lemon-ui/Spinner'
 import { NotebookCodeBlockNode } from './types'
 
 const ChartArtifactRenderer = dynamic(
@@ -27,16 +29,22 @@ const ReactPreviewIframe = dynamic(
     { ssr: false }
 )
 
-const LazyMermaidDiagram = lazy(() => import('../../lemon-ui/LemonMarkdown/MermaidDiagram'))
+const MermaidPreview = dynamic(
+    () => import('../../../../components/MermaidPreview').then((module) => module.MermaidPreview),
+    { ssr: false }
+)
 
 export function isNotebookLiveCodeBlock(node: NotebookCodeBlockNode): boolean {
-    return (
-        isNotebookChartFence(node.language) ||
-        isNotebookReactFence(node.language) ||
-        isNotebookHtmlFence(node.language) ||
-        isNotebookMermaidFence(node.language) ||
-        isNotebookSvgFence(node.language)
-    )
+    const lang = (node.language || '').toLowerCase().trim()
+    const text = (node.text || '').trim()
+
+    if (isNotebookChartFence(lang) || parseChartSpec(text)) return true
+    if (isNotebookMermaidFence(lang) || isMermaidLanguage(lang) || isMermaidSource(text)) return true
+    if (isNotebookSvgFence(lang) || (text.startsWith('<svg') && text.includes('</svg>'))) return true
+    if (isNotebookReactFence(lang) || looksLikeReactSource(text)) return true
+    if (isNotebookHtmlFence(lang) || /<!DOCTYPE\s+html|<html[\s>]/i.test(text)) return true
+
+    return false
 }
 
 export function NotebookWimCodeBlock({
@@ -46,8 +54,14 @@ export function NotebookWimCodeBlock({
     node: NotebookCodeBlockNode
     setBlockRef: (element: HTMLElement | null) => void
 }): JSX.Element {
-    const language = node.language || ''
-    const spec = isNotebookChartFence(language) ? parseChartSpec(node.text) : null
+    const language = (node.language || '').toLowerCase().trim()
+    const text = (node.text || '').trim()
+    const spec = isNotebookChartFence(language) ? parseChartSpec(node.text) : parseChartSpec(text)
+    const isMermaid = isNotebookMermaidFence(language) || isMermaidLanguage(language) || isMermaidSource(text)
+    const isSvg = isNotebookSvgFence(language) || (text.startsWith('<svg') && text.includes('</svg>'))
+    const isHtml =
+        isNotebookHtmlFence(language) || /<!DOCTYPE\s+html|<html[\s>]/i.test(text)
+    const isReact = !isHtml && (isNotebookReactFence(language) || looksLikeReactSource(text))
 
     return (
         <div
@@ -60,23 +74,36 @@ export function NotebookWimCodeBlock({
                 <div data-testid="notebook-chart-block" className="py-2">
                     <ChartArtifactRenderer spec={{ ...spec, title: undefined }} chrome={false} />
                 </div>
-            ) : isNotebookMermaidFence(language) ? (
-                <div className="flex justify-center p-3">
-                    <Suspense fallback={<div className="p-4 flex justify-center"><Spinner /></div>}>
-                        <LazyMermaidDiagram code={node.text} naturalWidth />
-                    </Suspense>
+            ) : isMermaid ? (
+                <div className="flex justify-center p-3 overflow-auto" data-testid="notebook-mermaid-block">
+                    <MermaidPreview code={node.text} naturalWidth />
                 </div>
-            ) : isNotebookSvgFence(language) ? (
+            ) : isSvg ? (
                 <div
                     className="p-2 flex items-center justify-center overflow-auto"
                     dangerouslySetInnerHTML={{ __html: node.text }}
                 />
-            ) : isNotebookReactFence(language) || isNotebookHtmlFence(language) ? (
-                <div className="h-[380px] w-full rounded-xl overflow-hidden border border-border bg-white" data-testid="notebook-ui-block">
+            ) : isReact ? (
+                <div
+                    className="relative h-[380px] w-full overflow-hidden rounded-xl border border-primary bg-primary"
+                    data-testid="notebook-ui-block"
+                >
                     <ReactPreviewIframe
                         title="Preview"
                         source={node.text}
-                        className="h-full w-full border-none"
+                        className="absolute inset-0 h-full w-full border-none"
+                    />
+                </div>
+            ) : isHtml ? (
+                <div
+                    className="relative h-[380px] w-full overflow-hidden rounded-xl border border-primary bg-primary"
+                    data-testid="notebook-ui-block"
+                >
+                    <iframe
+                        title="Preview"
+                        srcDoc={wrapHtmlArtifactDocument(node.text)}
+                        className="absolute inset-0 h-full w-full border-none bg-primary"
+                        sandbox="allow-scripts"
                     />
                 </div>
             ) : (

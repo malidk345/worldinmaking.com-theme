@@ -1,9 +1,10 @@
 /**
  * Small, dependency-light UI registry exposed to generated React artifacts.
- * It follows shadcn/ui component names and ergonomics without allowing the
- * artifact to import arbitrary application modules or install packages.
+ * Component names stay shadcn-like; class names are rewritten to host OS tokens.
  */
-export const WIM_UI_SOURCE = String.raw`
+import { rewriteArtifactChrome } from '../../../lib/chrome'
+
+const WIM_UI_SOURCE_RAW = String.raw`
 import React from 'react'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -15,7 +16,7 @@ export function cn(...inputs: Array<string | false | null | undefined>): string 
 type ClassProps = { className?: string }
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
-  return <div className={cn('rounded-xl border border-border bg-card text-card-foreground shadow-sm', className)} {...props} />
+  return <div className={cn('rounded border border-border bg-card text-card-foreground', className)} {...props} />
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
@@ -45,11 +46,11 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({ className, variant = 'default', size = 'default', ...props }: ButtonProps): JSX.Element {
   const variants = {
-    default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
+    default: 'bg-primary text-primary-foreground hover:bg-primary/90',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    outline: 'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
+    outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
     ghost: 'hover:bg-accent hover:text-accent-foreground',
-    destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
     link: 'text-primary underline-offset-4 hover:underline',
   }
   const sizes = {
@@ -72,10 +73,10 @@ type BadgeProps = React.HTMLAttributes<HTMLDivElement> & {
 
 export function Badge({ className, variant = 'default', ...props }: BadgeProps): JSX.Element {
   const variants = {
-    default: 'border-transparent bg-primary text-primary-foreground shadow',
+    default: 'border-transparent bg-primary text-primary-foreground',
     secondary: 'border-transparent bg-secondary text-secondary-foreground',
-    outline: 'text-foreground',
-    destructive: 'border-transparent bg-destructive text-destructive-foreground shadow',
+    outline: 'text-foreground border-border',
+    destructive: 'border-transparent bg-destructive text-destructive-foreground',
   }
   return <div className={cn('inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors', variants[variant], className)} {...props} />
 }
@@ -334,6 +335,8 @@ export function AccordionContent({ className, ...props }: React.HTMLAttributes<H
 }
 `
 
+export const WIM_UI_SOURCE = rewriteArtifactChrome(WIM_UI_SOURCE_RAW)
+
 const SANDBOX_UI_IMPORT = /from\s+(['"])(?:@\/components\/ui(?:\/[^'"]+)?|@wim\/ui)\1/g
 const SANDBOX_UTILS_IMPORT = /from\s+(['"])@\/lib\/utils\1/g
 
@@ -358,16 +361,16 @@ export function normalizeSandboxReactSource(source: string): string {
         .replace(SANDBOX_UTILS_IMPORT, "from './wim-ui'")
         .trim()
 
-    if (/export\s+default\s+/.test(next)) return next
+    if (/export\s+default\s+/.test(next)) return rewriteArtifactChrome(next)
 
     const named =
         next.match(/export\s+(?:function|const)\s+([A-Z][A-Za-z0-9]*)/) ||
         next.match(/function\s+([A-Z][A-Za-z0-9]*)\s*\(/) ||
         next.match(/const\s+([A-Z][A-Za-z0-9]*)\s*=\s*(?:\(|async\s*\(|function)/)
 
-    if (named?.[1]) return `${next}\n\nexport default ${named[1]}\n`
-    if (/^\s*</.test(next)) {
-        return `export default function App() {\n  return (\n    ${next}\n  )\n}\n`
+    if (named?.[1]) next = `${next}\n\nexport default ${named[1]}\n`
+    else if (/^\s*</.test(next)) {
+        next = `export default function App() {\n  return (\n    ${next}\n  )\n}\n`
     }
-    return next
+    return rewriteArtifactChrome(next)
 }

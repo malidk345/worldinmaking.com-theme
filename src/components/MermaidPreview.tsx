@@ -1,14 +1,10 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { CodeSnippet, Language } from 'lib/components/CodeSnippet'
-import { Spinner } from 'lib/lemon-ui/Spinner'
-import { renderMermaidSvg } from '../../../../lib/mermaid-loader'
+import { renderMermaidSvg } from '../lib/mermaid-loader'
 
-export interface MermaidDiagramProps {
+export interface MermaidPreviewProps {
     code: string
     className?: string
-    /** Render at the diagram's intrinsic width instead of shrinking to fit the container.
-     * Use inside a horizontally scrollable wrapper so wide diagrams scroll rather than becoming unreadably small. */
     naturalWidth?: boolean
 }
 
@@ -21,7 +17,7 @@ function hostIsDark(): boolean {
     )
 }
 
-export function MermaidDiagram({ code, className, naturalWidth = false }: MermaidDiagramProps): JSX.Element {
+export function MermaidPreview({ code, className, naturalWidth = true }: MermaidPreviewProps): JSX.Element {
     const [svg, setSvg] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
@@ -42,6 +38,7 @@ export function MermaidDiagram({ code, className, naturalWidth = false }: Mermai
             .catch((err: unknown) => {
                 if (cancelled) return
                 setError(err instanceof Error ? err.message : 'Unable to render diagram')
+                setSvg(null)
             })
             .finally(() => {
                 if (!cancelled) setLoading(false)
@@ -54,31 +51,40 @@ export function MermaidDiagram({ code, className, naturalWidth = false }: Mermai
 
     if (error) {
         return (
-            <div className={className} data-attr="mermaid-error">
-                <div className="mb-1 text-xs text-danger">Could not render Mermaid diagram: {error}</div>
-                <CodeSnippet language={Language.Text} compact wrap>
+            <div
+                className={className}
+                data-attr="mermaid-error"
+                data-testid="mermaid-error"
+            >
+                <div className="mb-2 text-xs text-rose-700">Could not render Mermaid diagram: {error}</div>
+                <pre className="m-0 overflow-auto whitespace-pre-wrap rounded-lg border border-rose-200 bg-rose-50 p-3 font-mono text-[12px] text-rose-900">
                     {code}
-                </CodeSnippet>
+                </pre>
             </div>
         )
     }
 
     if (loading && !svg) {
         return (
-            <div className={`flex items-center justify-center p-4 ${className ?? ''}`} data-attr="mermaid-loading">
-                <Spinner />
+            <div
+                className={`flex items-center justify-center p-6 text-xs text-secondary ${className ?? ''}`}
+                data-attr="mermaid-loading"
+                data-testid="mermaid-loading"
+            >
+                Rendering diagram…
             </div>
         )
     }
 
     return (
         <div
-            className={`LemonMarkdown__mermaid ${className ?? ''}`}
+            className={`LemonMarkdown__mermaid w-full overflow-auto ${className ?? ''}`}
             data-attr="mermaid-rendered"
-            // mermaid sanitizes output via securityLevel: 'strict'
+            data-testid="mermaid-rendered"
+            // mermaid sanitizes via securityLevel: 'strict'
             dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
         />
     )
 }
 
-export default MermaidDiagram
+export default MermaidPreview

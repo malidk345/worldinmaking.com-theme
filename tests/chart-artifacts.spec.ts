@@ -150,7 +150,7 @@ test.describe('validated chart artifacts', () => {
         assertPreviewParses(repaired)
 
         const prepared = prepareSandpackSource(source)
-        expect(prepared).toContain('className="border-b hover:bg-slate-50"')
+        expect(prepared).toContain('className="border-b hover:bg-primary"')
         assertPreviewParses(prepared)
     })
 

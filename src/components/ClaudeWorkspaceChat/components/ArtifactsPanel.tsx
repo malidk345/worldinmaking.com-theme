@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Artifact, ArtifactOrigin } from '../types';
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block';
+import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-loader';
+import { WIM_PAPER, wrapHtmlArtifactDocument } from '../../../lib/wim-artifact-theme';
 import { X, Eye, Copy, Download, Check, ChevronDown, FileInput, Maximize2, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -45,6 +47,11 @@ const ChartArtifactRenderer = dynamic(
   { ssr: false }
 );
 
+const MermaidPreview = dynamic(
+  () => import('../../MermaidPreview').then((module) => module.MermaidPreview),
+  { ssr: false }
+);
+
 interface ArtifactsPanelProps {
   artifact: Artifact | null;
   expanded?: boolean;
@@ -61,38 +68,6 @@ interface ArtifactsPanelProps {
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
-
-// ─── Mermaid Renderer ────────────────────────────────────────────────────────
-const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const render = async () => {
-      try {
-        const mermaid = (await import('mermaid')).default;
-         mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' });
-        const id = `mermaid-${Date.now()}`;
-        const { svg } = await mermaid.render(id, chart.trim());
-        if (!cancelled && ref.current) {
-          ref.current.innerHTML = svg;
-        }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Diagram could not be rendered.');
-      }
-    };
-    render();
-    return () => { cancelled = true; };
-  }, [chart]);
-
-  if (error) return (
-    <div className="p-4 text-rose-600 text-sm font-mono bg-rose-50 rounded-lg border border-rose-200">
-      {error}
-    </div>
-  );
-  return <div ref={ref} className="w-full flex justify-center overflow-auto py-4" />;
-};
 
 export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   artifact,
@@ -132,7 +107,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   }, [])
 
   useEffect(() => {
-    if (artifact?.type === 'react' || artifact?.type === 'html') setActiveTab('preview')
+    setActiveTab('preview')
   }, [artifact?.id, artifact?.type])
 
   if (!artifact) return null;
@@ -151,6 +126,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
       case 'svg': return 'svg';
       case 'json': return 'json';
       case 'markdown': return 'md';
+      case 'mermaid': return 'mmd';
       default: return 'txt';
     }
   };
@@ -166,36 +142,21 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Detect if content is a Mermaid diagram (for code artifacts with mermaid lang, or explicit mermaid blocks)
-  const isMermaidContent =
-    artifact.type === 'mermaid' ||
-    artifact.language === 'mermaid' ||
-    /^```mermaid\n/.test(artifact.content.trim()) ||
-    (artifact.type === 'code' && /^(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|mindmap|timeline|sankey-beta|xychart-beta)\s/m.test(artifact.content.trim()));
-
-  const mermaidSource = artifact.content
-    .replace(/^```mermaid\n/, '')
-    .replace(/\n```$/, '')
-    .trim();
+  const isMermaidContent = artifactLooksLikeMermaid(artifact)
+  const mermaidSource = cleanMermaidSource(artifact.content)
 
   // Safe HTML preview generator for interactive components
   const getIframeSrcDoc = () => {
     if (artifact.type === 'svg') {
-      return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#fff;">${artifact.content}</body></html>`;
+      return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:${WIM_PAPER};">${artifact.content}</body></html>`;
     }
     if (artifact.type === 'html') {
-      // Inject Tailwind CDN if the HTML doesn't already have it
-      const hasTailwind = artifact.content.includes('tailwind');
-      const tailwindScript = hasTailwind ? '' : '<script src="https://cdn.tailwindcss.com"></script>';
-      if (artifact.content.includes('</head>')) {
-        return artifact.content.replace('</head>', `${tailwindScript}</head>`);
-      }
-      return `<!DOCTYPE html><html><head><meta charset="utf-8"/>${tailwindScript}</head><body>${artifact.content}</body></html>`;
+      return wrapHtmlArtifactDocument(artifact.content);
     }
     if (artifact.type === 'react') {
-      return '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:16px">Loading preview…</body></html>';
+      return `<!DOCTYPE html><html><body style="font-family:RoundHog,system-ui,sans-serif;padding:16px;background:${WIM_PAPER};color:#111">Loading preview…</body></html>`;
     }
-    return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`;
+    return `<!DOCTYPE html><html><body style="font-family:RoundHog,system-ui,sans-serif;padding:20px;background:${WIM_PAPER};"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`;
   };
 
   const versionList = allArtifacts.filter((a) => {
@@ -425,9 +386,8 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             )}
           </div>
         ) : isMermaidContent ? (
-          /* Mermaid Diagram Preview */
-          <div className="min-h-full overflow-auto bg-white p-3 sm:p-6">
-            <MermaidDiagram chart={mermaidSource} />
+          <div className="min-h-full overflow-auto bg-white p-3 sm:p-6" data-testid="artifact-mermaid-preview">
+            <MermaidPreview code={mermaidSource} naturalWidth />
           </div>
         ) : activeTab === 'preview' && artifact.type === 'react' ? (
           <div className={`flex h-full min-h-0 w-full min-w-0 flex-col bg-white ${stage ? 'p-0' : 'p-2 sm:p-3'}`}>

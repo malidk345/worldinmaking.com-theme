@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
+import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
 import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
@@ -47,18 +48,7 @@ function textForSpeech(value: string): string {
 }
 
 function artifactCardMeta(art: Artifact): string {
-  const kinds: Record<Artifact['type'], string> = {
-    table: 'Table',
-    chart: 'Chart',
-    react: 'Component',
-    html: 'HTML',
-    svg: 'SVG',
-    mermaid: 'Diagram',
-    markdown: 'Document',
-    json: 'JSON',
-    code: 'Code',
-  }
-  const kind = kinds[art.type] || 'Document'
+  const kind = getRenderer(art.type).label.replace(/^\w/, (c) => c.toUpperCase())
   return art.version > 1 ? `${kind} · v${art.version}` : kind
 }
 

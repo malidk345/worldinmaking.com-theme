@@ -60,6 +60,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-29` | Stream 5 | Notebook Co-Authoring Assistant (Invite multi-bot feedback into documents) | `src/notebook-app/`, `src/lib/chat-bots/` | `[PLANNED]` | - | - |
 | `TSK-106` | Stream 5 | Upgrade AI chat endpoint to zero-buffer live TTFT streaming (passthrough) | `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity | 2026-08-23 |
 | `TSK-107` | Stream 3 / 5 | Bidirectional Notebook WikiLinks & Hybrid Semantic Memory Search | `src/notebook-app/`, `src/pages/api/search.ts`, `src/components/SpotlightSearch/` | `[COMPLETED]` | Antigravity | 2026-08-24 |
+| `TSK-108` | Stream 3 | Programmatic 1:1 UI Video Demo with Remotion (`demo-video/`) | `demo-video/*` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-27 |
 | `TSK-30` | Stream 5 | Agent Network Visualizer app (Interactive 2D/3D memory node graph) | `src/components/AgentNetwork/`, `src/pages/` | `[PLANNED]` | - | - |
 | `TSK-08` | Stream 1 | Enable TypeScript allowlist check for core shell | `tsconfig.shell.json`, `scripts/typecheck-shell.mjs` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-09` | Stream 4 | Audit & clean up leftover Strapi/Squeak auth handlers | `src/lib/squeak.ts`, `src/lib/wim-auth.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
@@ -418,10 +419,63 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-306` | Stream 4 | Hard-delete chat/notebook rows in Supabase; keep tiny tombstones; fix WIM AI delete | chat-store, notebooks-repo, ClaudeWorkspaceChat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-307` | Stream 3 | Browser chrome / overscroll gaps must always match the wallpaper field color | wallpaperChrome.ts, global.css, _document, App.tsx | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
 | `TSK-308` | Stream 2 | Profile published notebooks must open the public view, not the editor list | window-path, notebook-route, ProfileNotebookGrid | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-23 |
+| `TSK-309` | Stream 5 / 3 | Chat artifact mermaid: live SVG preview, extract as diagram, notebook insert | `mermaid-loader.ts`, `MermaidPreview.tsx`, `extractArtifacts.ts`, ArtifactWindowContent, ArtifactsPanel, NotebookWimBlocks | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-310` | Stream 3 / 5 | Generated artifacts use WorldInMaking chrome (navy/paper/6px), not zinc shadcn | `wim-artifact-theme.ts`, `shadcnTheme.ts`, `wimUiSource.ts`, mermaid-loader, fluid-prompts, design-request | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-311` | Stream 3 / 5 | Artifact chrome architecture: host tokens, class rewrite adapter, single inject | `src/lib/chrome/*`, `wimUiSource.ts`, mermaid-loader, sandbox preview, tests/chrome.spec.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-312` | Stream 5 | Artifact kernel: exclusive intent, one contract per turn, server canonicalize | `src/lib/artifacts/*`, `chat.ts`, `fluid-prompts.ts`, workspace chat, tests/artifacts-kernel.spec.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-313` | Stream 2 / 5 | Artifact preview fills the window; stale/truncated opens refresh; no 100vh half-frame | ArtifactWindowContent, WindowRouter/Content, addWindow, LocalPreviewIframe, chrome css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-314` | Stream 5 | Notebook live UI preview uses the same local iframe as the artifact window | `ReactPreviewIframe.tsx`, `NotebookWimBlocks.tsx`, `LocalPreviewIframe.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 384 - Notebook sandbox uses the same iframe path as the OS window (TSK-314)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Artifact windows worked after switching to `LocalPreviewIframe`; notebook blocks still loaded Sandpack via `ReactPreviewIframe` and stayed blank / stuck on “Preparing sandbox”. Notebook now compiles in-parent like the window. HTML fences use `wrapHtmlArtifactDocument` instead of the React compiler. Preview frame is a fixed 380px box with `absolute inset-0`.
+- **Modified Files:** `ReactPreviewIframe.tsx`, `NotebookWimBlocks.tsx`, `LocalPreviewIframe.tsx`
+- **Handoff:** Hard-refresh, insert a `react` fence or Add-to-notebook a UI artifact. The live block should fill the 380px frame.
+
+### Entry 383 - Artifact preview fills the window and refreshes on reopen (TSK-313)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Preview often sat at the iframe default height (~150–300px) because `/artifact/*` windows used `h-auto` + `overflow-y-auto`, so `h-full` iframes collapsed — looked like a half screen. `min-h-screen` inside the iframe was `100vh` of the desktop. Reopening the same artifact also reused a frozen (often truncated) React element. Artifact windows now lock to pane height like Ask AI; preview uses an `absolute inset-0` frame and local iframe (no Sandpack chrome bar); `addWindow` replaces the element on the same key; chrome maps `min-h-screen` → `100%`.
+- **Modified Files:** `WindowRouter.tsx`, `WindowContent.tsx`, `App.tsx`, `ArtifactWindowContent.tsx`, `ChartArtifactRenderer.tsx`, `window-path.ts`, `chrome/css.ts`, `chrome/rewrite.ts`, `SandpackPreviewFrame.tsx`
+- **Verification:** window-path + chrome rewrite tests; preview height is layout-level (needs a live window to eyeball).
+- **Handoff:** Hard-refresh, open a React/mermaid/chart artifact. The live surface should fill the window. Click the card again after the stream finishes if an early click stored a truncated body.
+
+### Entry 382 - Artifact kernel: intent → contract → canonicalize (TSK-312)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Production is no longer "stuff every artifact rule into the system prompt and scrape the reply on the client." `src/lib/artifacts` classifies one exclusive intent (mermaid > table > chart > markdown > react_ui > code > chat), injects only that contract as `APPLICATION TASK` on `/api/chat` (and notebook co-author), and `finalizeArtifactTurn` is the shared server/client canonicalizer (extract + visible bubble + renderer labels). Fluid prompts no longer dump chart+mermaid+UI together.
+- **Modified Files:** `src/lib/artifacts/*` [NEW], `design-request.ts`, `chat.ts`, `co-author.ts`, `fluid-prompts.ts`, `ClaudeWorkspaceChat/index.tsx`, `ChatMessage.tsx`, `notebook-artifact-block.ts`, `tests/artifacts-kernel.spec.ts` [NEW]
+- **Verification:** `tests/artifacts-kernel.spec.ts` plus existing extract/mermaid/chrome/chart unit tests.
+- **Handoff:** Next: AST-validate React instead of regex healers; move `extractArtifacts.ts` into `lib/artifacts/parse`. Do not add more prompt-soup rules — add a contract in `artifacts/contracts.ts` and an intent in `intent.ts`.
+
+### Entry 381 - Artifact chrome is a host contract, not a painted shadcn kit (TSK-311)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The previous theme file remapped zinc CSS and leftover slate/violet utilities — a second design system. Architecture is now three layers: (1) host token snapshot (`--bg`, `--border`, `--text-primary`, navy) read from the live document, (2) `rewriteArtifactChrome` adapter (shadcn/slate/violet → `bg-primary` / `bg-navy` / `text-primary`), (3) one stylesheet + HTML wrap. `@wim/ui` and LLM source go through the adapter. Mermaid vars are derived from the same snapshot. `wim-artifact-theme.ts` is a compatibility facade.
+- **Modified Files:** `src/lib/chrome/*` [NEW], `wim-artifact-theme.ts`, `wimUiSource.ts`, `reactPreview.ts`, `SandpackPreviewFrame.tsx`, `mermaid-loader.ts`, `tests/chrome.spec.ts` [NEW], `tests/mermaid-artifacts.spec.ts`
+- **Verification:** `tests/chrome.spec.ts` + mermaid/extract/chart unit tests.
+- **Handoff:** Host `bg-primary` is paper. Brand fill is `bg-navy`. Do not add more CSS class overrides — extend `rewrite.ts` or host tokens.
+
+### Entry 380 - Generated designs use WorldInMaking chrome (TSK-310)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Sandbox artifacts were zinc/shadcn (near-black primary, 8px radius, drop shadows). All generated surfaces now share `wim-artifact-theme.ts`: paper `#FDFDFD`, ink `#111`, navy `#1D4ED8`, 6px radius, borders over shadows. React iframe + Sandpack + HTML artifacts inject that CSS (slate/violet utilities remapped to navy/paper). Mermaid initializes `theme: base` with the same palette. Model prompts forbid slate-900 / violet dashboards and require `@wim/ui`.
+- **Modified Files:** `src/lib/wim-artifact-theme.ts` [NEW], `shadcnTheme.ts`, `wimUiSource.ts`, `reactPreview.ts`, `SandpackPreviewFrame.tsx`, `mermaid-loader.ts`, `ArtifactWindowContent.tsx`, `ArtifactsPanel.tsx`, `fluid-prompts.ts`, `design-request.ts`, `tests/mermaid-artifacts.spec.ts`
+- **Verification:** mermaid + extract + chart unit tests; theme assertions for navy/paper CSS and HTML wrap.
+- **Handoff:** Hard-refresh, ask for a dashboard and a mermaid diagram. Expect navy buttons / paper cards, not a slate-900 kit.
+
+### Entry 379 - Chat mermaid artifacts render as live diagrams (TSK-309)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Mermaid in the chat artifact window/panel and notebook was failing because notebook-app webpack remapped `import('mermaid')` to the Lemon UI stub, diagram prompts were classified as charts/UI screens, and three copy-pasted renderers used Kea/`innerHTML`. There is now one loader (`src/lib/mermaid-loader.ts`) and one preview (`MermaidPreview`). Fences and `<antArtifact type="mermaid">` extract as diagram artifacts, the preview shows SVG (source on parse error), and Add to notebook inserts a ` ```mermaid ` fence that the notebook renders live. Webpack no longer shims mermaid.
+- **Modified Files:** `src/lib/mermaid-loader.ts`, `src/components/MermaidPreview.tsx`, `extractArtifacts.ts`, `ArtifactWindowContent.tsx`, `ArtifactsPanel.tsx`, `NotebookWimBlocks.tsx`, `NotebookMermaidBlock.tsx`, `MermaidDiagram.tsx`, `notebook-artifact-block.ts`, `fluid-prompts.ts`, `chart-artifacts.ts`, `design-request.ts`, `next.config.js`, `tests/extract-artifacts.spec.ts`, `tests/mermaid-artifacts.spec.ts`
+- **Verification:** `extract-artifacts.spec.ts` + `mermaid-artifacts.spec.ts` + chart unit tests 37/37. Chart canvas browser test skipped (needs `pnpm dev`).
+- **Handoff:** Hard-refresh, ask WIM AI `/diagram` or “bir akış şeması çiz”. Expect a Diagram card, SVG in the artifact window, and a live diagram after Add to notebook.
 
 ### Entry 378 - Profile published notebooks open the public reader (TSK-308)
 - **Date:** 2026-08-23
@@ -4009,24 +4063,6 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Typecheck passing with 0 shell errors. All changes pushed to `origin/main`.
-
-### Entry 015 — Mobile Fluidity Engine, Direct LLM Streaming & Artifact Lock Elimination
-- **Date:** 2026-08-25
-- **AI Agent:** Antigravity
-- **Summary:**
-  1. **Mobile Isolated Auto-Scroll:** Replaced parent-window disruptive `scrollIntoView` calls with strict container `scroller.scrollTop = scroller.scrollHeight`, stopping all body/page shifts and rubber-banding.
-  2. **Streaming Fluidity (Direct LLM Render):** Removed synthetic `setInterval` typewriter re-render loop that was causing 1,500+ markdown re-parses per response, achieving solid 60 FPS mobile streaming.
-  3. **Artifact Chat Lock Fix:** Removed legacy full-screen blocking `z-40` backdrop modal (`ArtifactsPanel`) and preserved code blocks in message body (`stripExtractedArtifactMarkup`) to prevent chat freeze/collapse when artifacts are generated.
-  4. **Notebook Image Captions:** Corrected caption serialization in `markdown.ts` and enhanced `ZoomImage.tsx` with elegant `<figcaption>` across agora and public views.
-- **Modified Files:**
-  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
-  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` [UPDATED]
-  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` [UPDATED]
-  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts` [UPDATED]
-  - `src/components/ZoomImage/index.tsx` [UPDATED]
-  - `src/notebook-app/lib/components/MarkdownNotebook/markdown.ts` [UPDATED]
-  - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Shell typecheck passing with 0 errors. Pushed to `origin/main`.
 
 ### Entry 002 — Enforce pnpm & Clean Lockfile (TSK-01)
 - **Date:** 2026-08-06

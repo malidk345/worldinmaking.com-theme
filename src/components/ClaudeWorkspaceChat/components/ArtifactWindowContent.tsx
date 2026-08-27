@@ -1,31 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Artifact } from '../types'
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block'
+import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-loader'
+import { WIM_PAPER, wrapHtmlArtifactDocument } from '../../../lib/wim-artifact-theme'
 import { Copy, Check, FileInput, Code2, Play } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
-import { ReactPreviewIframe } from '../sandbox/ReactPreviewIframe'
+import { LocalPreviewIframe } from '../sandbox/LocalPreviewIframe'
 
 const ChartArtifactRenderer = dynamic(
   () => import('./ChartArtifactRenderer').then((module) => module.ChartArtifactRenderer),
   { ssr: false }
 )
 
-import { Spinner } from '../../../notebook-app/lib/lemon-ui/Spinner'
-
-const LazyMermaidDiagram = React.lazy(() => import('../../../notebook-app/lib/lemon-ui/LemonMarkdown/MermaidDiagram'))
-
-const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
-  return (
-    <div className="w-full flex justify-center overflow-auto py-4">
-      <React.Suspense fallback={<div className="p-4 flex justify-center"><Spinner /></div>}>
-        <LazyMermaidDiagram code={chart} naturalWidth />
-      </React.Suspense>
-    </div>
-  )
-}
+const MermaidPreview = dynamic(
+  () => import('../../MermaidPreview').then((module) => module.MermaidPreview),
+  { ssr: false }
+)
 
 interface ArtifactWindowContentProps {
   artifact: Artifact
@@ -41,7 +34,6 @@ export function ArtifactWindowContent({
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
 
-  // Always show Preview first when opened or switched
   useEffect(() => {
     setActiveTab('preview')
   }, [artifact?.id, artifact?.type])
@@ -52,40 +44,28 @@ export function ArtifactWindowContent({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const isMermaidContent =
-    artifact.type === 'mermaid' ||
-    artifact.language === 'mermaid' ||
-    /^```mermaid\n/.test(artifact.content.trim()) ||
-    (artifact.type === 'code' &&
-      /^(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|mindmap|timeline|sankey-beta|xychart-beta)\s/m.test(
-        artifact.content.trim()
-      ))
+  const content = String(artifact?.content || '').trim()
+  const lang = String(artifact?.language || '').toLowerCase().trim()
 
-  const mermaidSource = artifact.content
-    .replace(/^```mermaid\n/, '')
-    .replace(/\n```$/, '')
-    .trim()
+  const isMermaid = artifactLooksLikeMermaid(artifact)
+  const isChart = artifact.type === 'chart' || Boolean(artifact.chartSpec)
+  const isReact = artifact.type === 'react' || ['react', 'tsx', 'jsx', 'wim-ui'].includes(lang)
+  const isHtml =
+    artifact.type === 'html' ||
+    artifact.type === 'svg' ||
+    ['html', 'wim-html', 'svg'].includes(lang)
+  const mermaidSrc = cleanMermaidSource(content)
 
   const getIframeSrcDoc = () => {
-    if (artifact.type === 'svg') {
-      return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#fff;">${artifact.content}</body></html>`
+    if (artifact.type === 'svg' || lang === 'svg') {
+      return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:${WIM_PAPER};">${content}</body></html>`
     }
-    if (artifact.type === 'html') {
-      const hasTailwind = artifact.content.includes('tailwind')
-      const tailwindScript = hasTailwind ? '' : '<script src="https://cdn.tailwindcss.com"></script>'
-      if (artifact.content.includes('</head>')) {
-        return artifact.content.replace('</head>', `${tailwindScript}</head>`)
-      }
-      return `<!DOCTYPE html><html><head><meta charset="utf-8"/>${tailwindScript}</head><body>${artifact.content}</body></html>`
-    }
-    return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`
+    return wrapHtmlArtifactDocument(content)
   }
 
   return (
     <div className="relative flex h-full w-full flex-col bg-primary text-primary overflow-hidden font-sans">
-      {/* Minimalist Floating Controls Dock */}
       <div className="flex shrink-0 items-center justify-between border-b border-primary/20 bg-primary/80 backdrop-blur-md px-3 py-1.5 z-10">
-        {/* Tab Switcher: Preview & Code */}
         <div className="flex items-center gap-1 bg-accent/60 rounded-md p-0.5 border border-primary/20 text-xs">
           <button
             type="button"
@@ -109,13 +89,11 @@ export function ArtifactWindowContent({
           </button>
         </div>
 
-        {/* Action: Add to notebook */}
         {onInsertToNotebook && (
           <button
             type="button"
             onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
             className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1 text-xs font-medium text-primary hover:bg-accent cursor-pointer transition-colors shadow-2xs"
-            title="Add to notebook as a block"
           >
             <FileInput className="h-3.5 w-3.5 text-secondary" />
             <span>Add to notebook</span>
@@ -123,41 +101,43 @@ export function ArtifactWindowContent({
         )}
       </div>
 
-      {/* Main content body */}
-      <div className="flex-1 min-h-0 overflow-auto bg-primary">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-primary">
         {activeTab === 'preview' ? (
-          <div className="h-full w-full">
-            {artifact.type === 'chart' ? (
-              <div className="h-full p-4 overflow-auto">
-                <ChartArtifactRenderer spec={artifact.chartSpec || artifact.content} />
+          <div className="absolute inset-0 min-h-0 w-full">
+            {isChart ? (
+              <div className="h-full min-h-0 p-4 overflow-auto">
+                <div className="h-full min-h-[280px]">
+                  <ChartArtifactRenderer spec={artifact.chartSpec || artifact.content} />
+                </div>
               </div>
-            ) : isMermaidContent ? (
-              <div className="h-full p-4 overflow-auto">
-                <MermaidDiagram chart={mermaidSource} />
+            ) : isMermaid ? (
+              <div className="h-full min-h-0 overflow-auto p-4" data-testid="artifact-mermaid-preview">
+                <MermaidPreview code={mermaidSrc} naturalWidth />
               </div>
-            ) : artifact.type === 'react' ? (
-              <div className="h-full w-full">
-                <ReactPreviewIframe
-                  title={artifact.title}
-                  source={artifact.content}
-                  onHealed={(nextSource) => onHealArtifact?.(artifact, nextSource)}
-                />
-              </div>
-            ) : artifact.type === 'html' || artifact.type === 'svg' ? (
+            ) : isReact ? (
+              <LocalPreviewIframe
+                title={artifact.title}
+                source={artifact.content}
+                className="absolute inset-0 h-full w-full border-0 bg-primary"
+                onHealed={(nextSource) => onHealArtifact?.(artifact, nextSource)}
+              />
+            ) : isHtml ? (
               <iframe
                 title={artifact.title}
                 srcDoc={getIframeSrcDoc()}
-                className="h-full w-full border-0 bg-white"
+                className="absolute inset-0 h-full w-full border-0 bg-white"
                 sandbox="allow-scripts allow-same-origin"
               />
-            ) : artifact.type === 'markdown' ? (
-              <div className="p-6 max-w-3xl mx-auto prose dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                  {artifact.content}
-                </ReactMarkdown>
+            ) : artifact.type === 'markdown' || artifact.type === 'table' ? (
+              <div className="h-full overflow-auto p-6">
+                <div className="mx-auto max-w-3xl prose dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                    {artifact.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             ) : (
-              <pre className="p-4 font-mono text-xs overflow-auto h-full m-0 bg-accent/20">
+              <pre className="h-full m-0 overflow-auto bg-accent/20 p-4 font-mono text-xs">
                 {artifact.content}
               </pre>
             )}
@@ -169,7 +149,6 @@ export function ArtifactWindowContent({
                 type="button"
                 onClick={handleCopy}
                 className="flex items-center gap-1 text-xs text-secondary hover:text-primary transition-colors cursor-pointer"
-                title="Copy code"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy code'}</span>

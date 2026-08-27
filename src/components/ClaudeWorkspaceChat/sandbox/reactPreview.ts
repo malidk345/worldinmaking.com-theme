@@ -1,5 +1,5 @@
 import { normalizeSandboxReactSource, WIM_UI_SOURCE } from './wimUiSource'
-import { SHADCN_THEME_CSS } from './shadcnTheme'
+import { chromeStylesheet, readHostChrome } from '../../../lib/chrome'
 
 const WIM_UI_EXPORTS = [
     'cn',
@@ -1152,11 +1152,6 @@ function compileTsx(babel: BabelStandalone, code: string, filename: string): str
 }
 
 const SLATE_CSS = `
-.bg-slate-50{background-color:#f8fafc}.bg-slate-100{background-color:#f1f5f9}.bg-slate-200{background-color:#e2e8f0}
-.bg-slate-700{background-color:#334155}.bg-slate-800{background-color:#1e293b}.bg-slate-900{background-color:#0f172a}.bg-slate-950{background-color:#020617}
-.text-slate-400{color:#94a3b8}.text-slate-500{color:#64748b}.text-slate-600{color:#475569}.text-slate-700{color:#334155}
-.text-slate-800{color:#1e293b}.text-slate-900{color:#0f172a}.text-slate-950{color:#020617}
-.border-slate-200{border-color:#e2e8f0}.border-slate-300{border-color:#cbd5e1}
 .min-h-screen{min-height:100vh}.min-h-0{min-height:0}.min-w-0{min-width:0}
 `
 
@@ -1217,7 +1212,7 @@ export function needsRecharts(source: string): boolean {
 }
 
 export function buildLoadingSrcDoc(): string {
-    return `<!DOCTYPE html><html><body style="margin:0;font:13px system-ui,sans-serif;color:#64748b;padding:16px">Preparing preview…</body></html>`
+    return `<!DOCTYPE html><html><body style="margin:0;font:13px RoundHog,system-ui,sans-serif;color:#646464;background:#fdfdfd;padding:16px">Preparing preview…</body></html>`
 }
 
 export async function buildReactPreviewSrcDoc(source: string): Promise<string> {
@@ -1235,10 +1230,8 @@ export async function buildReactPreviewSrcDoc(source: string): Promise<string> {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
-  <style>${SHADCN_THEME_CSS}
+  <style>${chromeStylesheet(readHostChrome())}
 ${SLATE_CSS}
-    html, body, #root { margin: 0; min-height: 100%; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
   </style>
 </head>
 <body>

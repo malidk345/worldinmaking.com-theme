@@ -83,6 +83,11 @@ export function extractNotebookId(input?: string | null): string | null {
     return parts[1]
 }
 
+export function isArtifactWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/artifact' || p.startsWith('/artifact/')
+}
+
 export function notebookWindowPath(id?: string | null): string {
     const clean = String(id || '').trim()
     return clean ? `/notebooks/${clean}` : '/notebooks'

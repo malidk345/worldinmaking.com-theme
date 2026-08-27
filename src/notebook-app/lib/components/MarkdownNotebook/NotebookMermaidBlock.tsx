@@ -1,14 +1,17 @@
-import { Suspense, lazy } from 'react'
+import dynamic from 'next/dynamic'
 
-import { Spinner } from 'lib/lemon-ui/Spinner'
-
+import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-loader'
 import { NotebookCodeBlockNode } from './types'
 
-// Loaded on demand so the mermaid library ships in its own chunk rather than the notebook bundle.
-const LazyMermaidDiagram = lazy(() => import('lib/lemon-ui/LemonMarkdown/MermaidDiagram'))
+const MermaidPreview = dynamic(
+    () => import('../../../../components/MermaidPreview').then((module) => module.MermaidPreview),
+    { ssr: false }
+)
 
 export function isMermaidCodeBlock(node: NotebookCodeBlockNode): boolean {
-    return node.language?.toLowerCase() === 'mermaid'
+    const lang = (node.language || '').toLowerCase().trim()
+    const text = (node.text || '').trim()
+    return isMermaidLanguage(lang) || isMermaidSource(text)
 }
 
 export function NotebookMermaidBlock({
@@ -20,20 +23,13 @@ export function NotebookMermaidBlock({
 }): JSX.Element {
     return (
         <div
-            className="MarkdownNotebook__mermaid-block"
+            className="MarkdownNotebook__mermaid-block my-3 flex justify-center overflow-auto"
             ref={setBlockRef}
             contentEditable={false}
             data-markdown-notebook-node-id={node.id}
+            data-testid="notebook-mermaid-block"
         >
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center p-4">
-                        <Spinner />
-                    </div>
-                }
-            >
-                <LazyMermaidDiagram code={node.text} naturalWidth />
-            </Suspense>
+            <MermaidPreview code={node.text} naturalWidth />
         </div>
     )
 }

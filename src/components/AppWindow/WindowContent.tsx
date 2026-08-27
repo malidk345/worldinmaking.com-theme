@@ -1,5 +1,6 @@
 import React from 'react'
 import type { AppWindow } from '../../context/Window'
+import { isArtifactWindowPath } from '../../lib/window-path'
 import WindowErrorBoundary from './WindowErrorBoundary'
 
 interface WindowContentProps {
@@ -20,7 +21,7 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
             !path.startsWith('/community/profiles') &&
             !path.startsWith('/community/achievements'))
     const isBlogShell = /^\/(blog|posts)(\/|$)/.test(path)
-    const lockToWindow = isForumShell || isBlogShell
+    const lockToWindow = isForumShell || isBlogShell || isArtifactWindowPath(path)
 
     return (
         <div

@@ -72,27 +72,28 @@ export function LocalPreviewIframe({ source, title, className, onHealed }: Local
         }
     }, [source, retryKey])
 
+    const frameClass = className || 'h-full w-full border-none bg-primary'
+
     if (status === 'healing' || status === 'loading') {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-2 bg-white px-6 text-center">
-                <p className="m-0 text-[13px] text-slate-600">
+            <div className={`flex flex-col items-center justify-center gap-2 bg-primary px-6 text-center ${frameClass}`}>
+                <p className="m-0 text-[13px] text-secondary">
                     {status === 'healing' ? 'Fixing the interface…' : 'Preparing preview…'}
                 </p>
-                <p className="m-0 text-[12px] text-slate-400">Repairing the code instead of showing a compiler dump.</p>
             </div>
         )
     }
 
     if (status === 'failed') {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 bg-white px-6 text-center">
-                <p className="m-0 text-[14px] font-medium text-slate-800">Preview could not be built</p>
-                <p className="m-0 max-w-sm text-[13px] text-slate-500">
+            <div className={`flex flex-col items-center justify-center gap-3 bg-primary px-6 text-center ${frameClass}`}>
+                <p className="m-0 text-[14px] font-medium text-primary">Preview could not be built</p>
+                <p className="m-0 max-w-sm text-[13px] text-secondary">
                     The generated UI did not compile. Retry and we will simplify the same screen.
                 </p>
                 <button
                     type="button"
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] text-slate-800 hover:bg-slate-50"
+                    className="rounded border border-primary bg-primary px-3 py-1.5 text-[13px] text-primary hover:bg-accent"
                     onClick={() => setRetryKey((value) => value + 1)}
                 >
                     Try again
@@ -105,7 +106,7 @@ export function LocalPreviewIframe({ source, title, className, onHealed }: Local
         <iframe
             title={title}
             srcDoc={srcDoc}
-            className={className || 'h-full w-full border-none bg-white'}
+            className={frameClass}
             sandbox="allow-scripts"
             referrerPolicy="no-referrer"
         />

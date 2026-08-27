@@ -216,7 +216,7 @@ export function ChartArtifactRenderer({
     }
 
     const plotBox = (
-        <div className="h-[260px] w-full min-w-0" data-testid="chart-artifact-preview">
+        <div className="h-full min-h-[280px] w-full min-w-0" data-testid="chart-artifact-preview">
             {plot}
         </div>
     )
@@ -224,11 +224,11 @@ export function ChartArtifactRenderer({
     if (!chrome) return plotBox
 
     return (
-        <div className="overflow-hidden rounded-lg border border-primary bg-primary">
+        <div className="flex h-full min-h-[280px] flex-col overflow-hidden rounded-lg border border-primary bg-primary">
             {spec.title ? (
-                <div className="px-3 pt-2.5 text-[13px] font-semibold text-primary">{spec.title}</div>
+                <div className="shrink-0 px-3 pt-2.5 text-[13px] font-semibold text-primary">{spec.title}</div>
             ) : null}
-            <div className="px-2 pb-2 pt-1">{plotBox}</div>
+            <div className="min-h-0 flex-1 px-2 pb-2 pt-1">{plotBox}</div>
         </div>
     )
 }

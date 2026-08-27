@@ -15,11 +15,11 @@ import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { formatSearchResults, searchWebSources } from 'lib/bots/web-search'
 import { resolveSearchIntent } from 'lib/bots/intent-router'
-import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
+import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
+import { classifyIntent, contractForIntent, finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
-import { extractUiScreenSource, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../../lib/ai/design-request'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
@@ -262,9 +262,9 @@ export default async function handler(req: Request) {
                 })
 
                 const notebookTask = body.notebookBound === true && isNotebookTask(prompt)
-                const designRequest = isUiDesignRequest(prompt)
+                const artifactIntent = classifyIntent(prompt)
                 const trustedInstruction = [
-                    designRequest ? UI_DESIGN_INSTRUCTION : '',
+                    contractForIntent(artifactIntent),
                     notebookTask ? NOTEBOOK_EDITOR_INSTRUCTION : '',
                 ]
                     .filter(Boolean)
@@ -335,49 +335,24 @@ export default async function handler(req: Request) {
                     })
                 }
 
-                const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+                const turn = finalizeArtifactTurn(prompt, result.reply)
+                const visibleReply =
+                    turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
 
                 // Safety fallback: if no live tokens were streamed during generation, flush visible reply
                 if (livePublicTokensCount === 0 && visibleReply) {
                     send({ type: 'token', text: visibleReply })
                 }
 
-                const extractedCharts = extractChartArtifacts(result.reply, prompt)
-                const chartArtifacts = extractedCharts.map((artifact, index) => ({
-                    id: `art-${Date.now()}-${index + 1}`,
-                    title: artifact.title,
-                    type: 'chart' as const,
-                    language: 'json',
-                    content: artifact.content,
-                    chartSpec: artifact.chartSpec,
-                    description: artifact.description,
-                    version: 1,
-                    createdAt: new Date().toISOString(),
-                }))
-                const uiScreen = extractUiScreenSource(result.reply)
-                if (uiScreen) {
-                    chartArtifacts.push({
-                        id: `art-${Date.now()}-ui`,
-                        title: uiScreen.title,
-                        type: 'react' as const,
-                        language: 'react',
-                        content: uiScreen.content,
-                        chartSpec: undefined,
-                        description: 'Sandbox screen',
-                        version: 1,
-                        createdAt: new Date().toISOString(),
-                    } as unknown as typeof chartArtifacts[number])
-                }
-
-                if (chartArtifacts.length > 0) {
-                    send({ type: 'artifacts', artifacts: chartArtifacts })
+                if (turn.artifacts.length > 0) {
+                    send({ type: 'artifacts', artifacts: turn.artifacts })
                 }
 
                 send({
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
-                    artifacts: chartArtifacts,
+                    artifacts: turn.artifacts,
                     latencyMs: result.latencyMs,
                 })
                 controller.close()

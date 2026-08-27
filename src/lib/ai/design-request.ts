@@ -1,38 +1,11 @@
-import { isChartRequest } from './chart-artifacts'
+import { classifyIntent, isAdminNavigationRequest } from '../artifacts/intent'
+import { WIM_UI_CHROME_PROMPT } from '../wim-artifact-theme'
 
-const BUILD_VERB =
-    /(yap\b|yapar m[ıi]s[ıi]n|yapabilir misin|oluştur|olustur|kur\b|çiz\b|ciz\b|tasarla|hazırla|hazirla|kodla|üret|uret|\bbuild\b|\bmake\b|\bcreate\b|\bdesign\b|\bgenerate\b|\bimplement\b|\bdraw\b|\bmock\b|code me|write me|put together|whip up|spin up|set up|craft)/i
+export { isAdminNavigationRequest }
 
-const SOFT_ASK =
-    /(\bi want\b|\bi need\b|\bshow me\b|\bgive me\b|\bcan you\b|\bcould you\b|\bplease\b|\bwanna\b|\blet's\b|\blets\b)/i
-
-const ASK_ONLY =
-    /(nedir|neden|ne demek|nasıl çalış|nasil calis|anlat\b|açıkla|acikla|yorumla|tartış|tartis|\bexplain\b|\bsummarize\b|\bdiscuss\b|\bwhat is\b|\bwhy is\b|\bhow does\b|\btell me about\b|\bwhat does\b)/i
-
-const DOC_ONLY =
-    /(belge|doküman|dokuman|\bdocument\b|dilekçe|dilekce|sözleşme|sozlesme|rapor yaz|write a (?:report|letter|essay|contract))/i
-
-const TABLE_ONLY = /\b(tablo|table|karşılaştırma|karsilastirma|comparison)/i
-
-const SCREEN_HINT =
-    /(ekran|arayüz|arayuz|sayfa tasarla|\bui\b|\bux\b|dashboard|widget|oyun|\bgame\b|landing|login screen|mockup|wireframe|interface|screen|calculator|todo|kanban|quiz|gallery|calendar|portfolio|\bapp\b|timer|clock|weather|navbar|homepage)/i
-
-const ADMIN_NAV_PATTERN = /(open admin|admin os|admin panelini aç|\/admin\b)/i
-
-/** Any "make this on screen" ask — game, form, map, widget — not just dashboards. */
+/** Any "make this on screen" ask — exclusive of mermaid / chart / table / document intents. */
 export function isUiDesignRequest(prompt: string): boolean {
-    const text = String(prompt || '').trim()
-    if (!text) return false
-    if (ADMIN_NAV_PATTERN.test(text)) return false
-    if (DOC_ONLY.test(text)) return false
-    if (TABLE_ONLY.test(text) && !SCREEN_HINT.test(text)) return false
-    if (isChartRequest(text) && !SCREEN_HINT.test(text)) return false
-    if (ASK_ONLY.test(text) && !BUILD_VERB.test(text)) return false
-    return BUILD_VERB.test(text) || (SOFT_ASK.test(text) && SCREEN_HINT.test(text)) || SCREEN_HINT.test(text)
-}
-
-export function isAdminNavigationRequest(prompt: string): boolean {
-    return ADMIN_NAV_PATTERN.test(String(prompt || ''))
+    return classifyIntent(prompt) === 'react_ui'
 }
 
 const UI_LANG = /^(tsx|jsx|react|javascript|js|typescript|ts)?$/i
@@ -118,7 +91,8 @@ They asked for something on screen (anything: game, form, map, widget, page — 
 Reply with NOTHING except one complete <antArtifact identifier="ui-1" type="react" title="Specific 2-8 word title">...</antArtifact>.
 No greeting, no philosophy, no explanation, no markdown outside the tag. Code only. Build what they asked for.
 - Do not send them to Admin or /admin.
-- export default function ScreenName() { ... }. Tailwind + shadcn tokens (bg-background, text-muted-foreground, bg-primary). Import Card, Button, Badge, Tabs, Input, Table, Alert, Dialog, Sheet, Avatar, Switch, Checkbox, DropdownMenu from @wim/ui or @/components/ui/*. lucide-react and recharts are allowed.
+- export default function ScreenName() { ... }. ${WIM_UI_CHROME_PROMPT}
+- Import Card, Button, Badge, Tabs, Input, Table, Alert, Dialog, Sheet, Avatar, Switch, Checkbox, DropdownMenu from @wim/ui or @/components/ui/*. lucide-react and recharts are allowed.
 - Invent labeled sample data if none was given.
 - Declare every const/let ABOVE return. Never put JS statements inside JSX.
 - Keep each className="..." on one line. Close every tag with > or /> on that same opening tag.

@@ -1,6 +1,13 @@
 import { Artifact, ArtifactType } from '../types';
 import { extractChartArtifacts, isChartRequest, parseChartSpec } from 'lib/ai/chart-artifacts';
 import { extractUiScreenSource, isUiDesignRequest, looksLikeReactSource } from 'lib/ai/design-request';
+import {
+  artifactLooksLikeMermaid,
+  cleanMermaidSource,
+  isDiagramRequest,
+  isMermaidLanguage,
+  isMermaidSource,
+} from 'lib/mermaid-loader';
 
 /**
  * Extracts Artifact objects from assistant response text or user prompt directives.
@@ -99,6 +106,8 @@ export function stripExtractedArtifactMarkup(text: string): string {
   return String(text || '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*$/gi, '')
+    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*?```/gi, '')
+    .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*$/gi, '')
     .trim()
 }
 
@@ -144,9 +153,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     // Chart envelopes are parsed by the shared, validated chart parser above.
     if (rawType === 'chart' || rawType === 'visualization') continue;
 
-    const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
-      ? rawType
-      : 'markdown') as ArtifactType;
+    const type: ArtifactType = classifyArtifactType(rawType, langMatch?.[1], artContent);
     const title = resolveArtifactTitle(titleMatch?.[1], artContent, userPrompt, 'Untitled');
 
     if (artContent) {
@@ -155,9 +162,9 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
         identifier: identifierMatch?.[1],
         title,
         type,
-        language: langMatch ? langMatch[1] : undefined,
-        content: artContent,
-        description: type === 'markdown' || type === 'table' ? 'Document' : 'Generated artifact',
+        language: type === 'mermaid' ? 'mermaid' : langMatch ? langMatch[1] : undefined,
+        content: type === 'mermaid' ? cleanMermaidSource(artContent) : artContent,
+        description: type === 'mermaid' ? 'Diagram' : type === 'markdown' || type === 'table' ? 'Document' : 'Generated artifact',
         version: 1,
         createdAt: now,
       });
@@ -173,18 +180,16 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
       const langMatch = unclosed.attrs.match(/language=["']([^"']+)["']/i)
       const rawType = (typeMatch ? typeMatch[1] : 'react').toLowerCase()
       if (rawType !== 'chart' && rawType !== 'visualization') {
-        const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
-          ? rawType
-          : 'react') as ArtifactType
         const artContent = unclosed.body.replace(/^```[a-z0-9_-]*[ \t]*\r?\n?/i, '').trim()
+        const type: ArtifactType = classifyArtifactType(rawType, langMatch?.[1], artContent)
         artifacts.push({
           id: `art-${Date.now()}-open`,
           identifier: identifierMatch?.[1],
           title: resolveArtifactTitle(titleMatch?.[1], artContent, userPrompt, 'Untitled'),
           type,
-          language: langMatch ? langMatch[1] : undefined,
-          content: artContent,
-          description: 'Generated artifact',
+          language: type === 'mermaid' ? 'mermaid' : langMatch ? langMatch[1] : undefined,
+          content: type === 'mermaid' ? cleanMermaidSource(artContent) : artContent,
+          description: type === 'mermaid' ? 'Diagram' : 'Generated artifact',
           version: 1,
           createdAt: now,
         })
@@ -192,100 +197,20 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     }
   }
 
-  if (artifacts.length > 0) {
-    const merged = promoteUiArtifacts(dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt))
+  const hadTaggedArtifacts = artifacts.length > 0
+  extractFencedArtifacts(content, artifacts, chartArtifacts, userPrompt, now, hadTaggedArtifacts)
+
+  if (hadTaggedArtifacts) {
+    const merged = finalizeArtifacts([...chartArtifacts, ...artifacts], userPrompt)
     const hasUi = merged.some((item) => item.type === 'react' || item.type === 'html')
     if (hasUi || !isUiDesignRequest(userPrompt)) return merged
   }
 
-  // 2. Code block & Document extraction (```html, ```react, ```svg, ```markdown, etc.)
+  // 2. Remaining fallbacks when no tagged artifact was produced.
   // "tablo" is NOT a document request — it used to wrap the whole assistant
   // reply as a second markdown artifact next to the real table.
   const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor)/i.test(userPrompt);
   const isTableRequested = /\b(tablo|table|karşılaştırma|karsilastirma|comparison)\b/i.test(userPrompt);
-
-  const codeBlockRegex = /```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*?)```/gi;
-  let codeMatch: RegExpExecArray | null;
-  let blockCount = 0;
-
-  while ((codeMatch = codeBlockRegex.exec(content)) !== null) {
-    const lang = (codeMatch[1] || 'markdown').toLowerCase();
-    const blockContent = codeMatch[2]?.trim();
-
-    if (!blockContent || blockContent.length < 20) continue;
-
-    const chartSpec = parseChartSpec(blockContent);
-    const isChartBlock =
-      ['chart', 'chartjson'].includes(lang) ||
-      (lang === 'json' && isChartRequest(userPrompt) && Boolean(chartSpec));
-    if (isChartBlock && chartSpec && !chartArtifacts.some((artifact) => artifact.content === JSON.stringify(chartSpec))) {
-      chartArtifacts.push({
-        id: `art-${Date.now()}-chart-${chartArtifacts.length + 1}`,
-        title: chartSpec.title || titleFromArtifactContent(blockContent, 'Chart'),
-        type: 'chart',
-        language: 'json',
-        content: JSON.stringify(chartSpec),
-        chartSpec,
-        description: 'Chart JSON converted to a validated artifact',
-        version: 1,
-        createdAt: now,
-      });
-    }
-    if (isChartBlock) continue;
-
-    let artType: ArtifactType = 'markdown';
-
-    // Check if the content has strong React/UI signatures
-    const isUI = blockContent.includes('import React') || blockContent.includes("from 'react'") || blockContent.includes('from "react"') || blockContent.includes('export default function') || blockContent.includes('className=');
-
-    if (['html', 'htm'].includes(lang)) artType = 'html';
-    else if (['jsx', 'tsx', 'react'].includes(lang) || isUI || looksLikeReactSource(blockContent)) artType = 'react';
-    else if (['svg'].includes(lang)) artType = 'svg';
-    else if (['mermaid'].includes(lang)) artType = 'mermaid';
-    else if (['json'].includes(lang)) artType = 'json';
-    else if (['csv', 'table'].includes(lang)) artType = 'table';
-    else if (['js', 'ts', 'py', 'sh', 'bash', 'css', 'sql', 'python', 'javascript', 'typescript'].includes(lang)) {
-      artType = 'code';
-    }
-
-    const title = resolveArtifactTitle(undefined, blockContent, userPrompt, lang ? `${lang} artifact` : 'Untitled')
-
-    artifacts.push({
-      id: `art-${Date.now()}-${blockCount + 1}`,
-      title,
-      type: artType,
-      language: lang,
-      content: blockContent,
-      description: `Generated Artifact (${lang})`,
-      version: 1,
-      createdAt: now,
-    });
-    blockCount++;
-  }
-
-  if (blockCount === 0) {
-    const openFence = content.match(/```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*)$/i)
-    const openBody = openFence?.[2]?.trim() || ''
-    if (openBody.length >= 20 && !openBody.includes('```')) {
-      const lang = (openFence?.[1] || 'jsx').toLowerCase()
-      const isUI =
-        ['jsx', 'tsx', 'react'].includes(lang) ||
-        looksLikeReactSource(openBody) ||
-        openBody.includes('export default function') ||
-        openBody.includes('className=')
-      artifacts.push({
-        id: `art-${Date.now()}-open-fence`,
-        title: resolveArtifactTitle(undefined, openBody, userPrompt, lang ? `${lang} artifact` : 'Untitled'),
-        type: isUI ? 'react' : 'code',
-        language: lang,
-        content: openBody,
-        description: `Generated Artifact (${lang})`,
-        version: 1,
-        createdAt: now,
-      })
-      blockCount++
-    }
-  }
 
   // 3. A markdown table in the visible reply is at most one table artifact.
   if (artifacts.length === 0 && isTableRequested) {
@@ -299,6 +224,23 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
         language: 'markdown',
         content: tables[0],
         description: 'Document',
+        version: 1,
+        createdAt: now,
+      })
+    }
+  }
+
+  if (!artifacts.some((item) => item.type === 'mermaid') && isDiagramRequest(userPrompt)) {
+    const body = cleanMermaidSource(content)
+    if (isMermaidSource(body)) {
+      artifacts.push({
+        id: `art-${Date.now()}-mermaid`,
+        identifier: 'diagram-1',
+        title: resolveArtifactTitle(undefined, body, userPrompt, 'Diagram'),
+        type: 'mermaid',
+        language: 'mermaid',
+        content: body,
+        description: 'Diagram',
         version: 1,
         createdAt: now,
       })
@@ -339,12 +281,129 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     });
   }
 
-  return promoteUiArtifacts(dropPromptEchoes(dedupeArtifacts([...chartArtifacts, ...artifacts]), userPrompt));
+  return finalizeArtifacts([...chartArtifacts, ...artifacts], userPrompt);
+}
+
+function classifyArtifactType(rawType: string, language: string | undefined, content: string): ArtifactType {
+  const known: ArtifactType[] = ['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid']
+  let type: ArtifactType = (known.includes(rawType as ArtifactType) ? rawType : 'markdown') as ArtifactType
+  if (type === 'mermaid' || isMermaidLanguage(language) || isMermaidSource(content)) return 'mermaid'
+  if (type === 'code' && looksLikeReactSource(content)) return 'react'
+  return type
+}
+
+function extractFencedArtifacts(
+  content: string,
+  artifacts: Artifact[],
+  chartArtifacts: Artifact[],
+  userPrompt: string,
+  now: string,
+  mermaidOnly: boolean
+): void {
+  const codeBlockRegex = /```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*?)```/gi
+  let codeMatch: RegExpExecArray | null
+  let blockCount = 0
+
+  while ((codeMatch = codeBlockRegex.exec(content)) !== null) {
+    const lang = (codeMatch[1] || 'markdown').toLowerCase()
+    const blockContent = (codeMatch[2] || '').trim()
+    const isMermaidBlock = isMermaidLanguage(lang) || isMermaidSource(blockContent)
+    const minLength = isMermaidBlock ? 8 : 20
+    if (!blockContent || blockContent.length < minLength) continue
+
+    const chartSpec = parseChartSpec(blockContent)
+    const isChartBlock =
+      ['chart', 'chartjson'].includes(lang) ||
+      (lang === 'json' && isChartRequest(userPrompt) && Boolean(chartSpec))
+    if (isChartBlock && chartSpec && !chartArtifacts.some((artifact) => artifact.content === JSON.stringify(chartSpec))) {
+      chartArtifacts.push({
+        id: `art-${Date.now()}-chart-${chartArtifacts.length + 1}`,
+        title: chartSpec.title || titleFromArtifactContent(blockContent, 'Chart'),
+        type: 'chart',
+        language: 'json',
+        content: JSON.stringify(chartSpec),
+        chartSpec,
+        description: 'Chart JSON converted to a validated artifact',
+        version: 1,
+        createdAt: now,
+      })
+    }
+    if (isChartBlock) continue
+    if (mermaidOnly && !isMermaidBlock) continue
+
+    let artType: ArtifactType = classifyArtifactType(lang, lang, blockContent)
+    if (['html', 'htm'].includes(lang)) artType = 'html'
+    else if (['jsx', 'tsx', 'react'].includes(lang) || looksLikeReactSource(blockContent)) artType = 'react'
+    else if (['svg'].includes(lang)) artType = 'svg'
+    else if (isMermaidBlock) artType = 'mermaid'
+    else if (['json'].includes(lang)) artType = 'json'
+    else if (['csv', 'table'].includes(lang)) artType = 'table'
+    else if (['js', 'ts', 'py', 'sh', 'bash', 'css', 'sql', 'python', 'javascript', 'typescript'].includes(lang)) {
+      artType = 'code'
+    }
+
+    artifacts.push({
+      id: `art-${Date.now()}-${blockCount + 1}`,
+      title: resolveArtifactTitle(undefined, blockContent, userPrompt, artType === 'mermaid' ? 'Diagram' : lang ? `${lang} artifact` : 'Untitled'),
+      type: artType,
+      language: artType === 'mermaid' ? 'mermaid' : lang,
+      content: artType === 'mermaid' ? cleanMermaidSource(blockContent) : blockContent,
+      description: artType === 'mermaid' ? 'Diagram' : `Generated Artifact (${lang})`,
+      version: 1,
+      createdAt: now,
+    })
+    blockCount++
+  }
+
+  if (blockCount === 0) {
+    const openFence = content.match(/```([a-z0-9_-]*)[ \t]*\r?\n([\s\S]*)$/i)
+    const openBody = openFence?.[2]?.trim() || ''
+    const lang = (openFence?.[1] || '').toLowerCase()
+    const isMermaidBlock = isMermaidLanguage(lang) || isMermaidSource(openBody)
+    if (openBody.length >= (isMermaidBlock ? 8 : 20) && !openBody.includes('```')) {
+      if (mermaidOnly && !isMermaidBlock) return
+      const isUI =
+        ['jsx', 'tsx', 'react'].includes(lang) ||
+        looksLikeReactSource(openBody) ||
+        openBody.includes('export default function') ||
+        openBody.includes('className=')
+      const type: ArtifactType = isMermaidBlock ? 'mermaid' : isUI ? 'react' : 'code'
+      artifacts.push({
+        id: `art-${Date.now()}-open-fence`,
+        title: resolveArtifactTitle(undefined, openBody, userPrompt, type === 'mermaid' ? 'Diagram' : lang ? `${lang} artifact` : 'Untitled'),
+        type,
+        language: type === 'mermaid' ? 'mermaid' : lang || 'jsx',
+        content: type === 'mermaid' ? cleanMermaidSource(openBody) : openBody,
+        description: type === 'mermaid' ? 'Diagram' : `Generated Artifact (${lang})`,
+        version: 1,
+        createdAt: now,
+      })
+    }
+  }
+}
+
+function promoteMermaidArtifacts(items: Artifact[]): Artifact[] {
+  return items.map((item) => {
+    if (item.type === 'mermaid' || artifactLooksLikeMermaid(item)) {
+      return {
+        ...item,
+        type: 'mermaid',
+        language: 'mermaid',
+        content: cleanMermaidSource(item.content),
+        description: 'Diagram',
+      }
+    }
+    return item
+  })
+}
+
+function finalizeArtifacts(items: Artifact[], userPrompt: string): Artifact[] {
+  return promoteMermaidArtifacts(promoteUiArtifacts(dropPromptEchoes(dedupeArtifacts(items), userPrompt)))
 }
 
 function promoteUiArtifacts(items: Artifact[]): Artifact[] {
   return items.map((item) => {
-    if (item.type === 'react' || item.type === 'html') return item
+    if (item.type === 'react' || item.type === 'html' || item.type === 'mermaid') return item
     if ((item.type === 'code' || item.type === 'markdown') && looksLikeReactSource(item.content)) {
       return {
         ...item,

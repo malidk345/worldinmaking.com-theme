@@ -16,6 +16,7 @@ import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 
 import { formatSearchResults, searchWebSources } from '../../../lib/bots/web-search'
 import { resolveSearchIntent } from '../../../lib/bots/intent-router'
+import { classifyIntent, contractForIntent } from '../../../lib/artifacts'
 import { extractChartArtifacts, stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
 import { checkRateLimit } from '../../../lib/bots/rate-limit'
@@ -201,7 +202,9 @@ export default async function handler(req: Request) {
                     thinkingDepth: 'deep',
                     context,
                     scope: 'notebook_coauthor',
-                    trustedInstruction: modeInstruction,
+                    trustedInstruction: [modeInstruction, contractForIntent(classifyIntent(nodeContent))]
+                        .filter(Boolean)
+                        .join('\n\n'),
                     onLifecycle: (event) => send({ type: 'phase', phase: event }),
                     onAnalysisSummary: (thinking) => {
                         thinking.stages.forEach((stage, index) => send({

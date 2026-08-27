@@ -42,8 +42,9 @@ import {
   readNotebookSelection,
 } from '../../lib/notebook-chat-bind';
 import { messageToNotebookMarkdown } from '../../lib/notebook-artifact-block';
+import { finalizeArtifactTurn } from '../../lib/artifacts';
 import type { OSActionCard as OSActionCardType } from './types';
-import { dedupeArtifacts, extractArtifactsFromContent, stripExtractedArtifactMarkup } from './utils/extractArtifacts';
+import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
@@ -959,11 +960,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       let extractedArtifacts: Artifact[] = [];
+      let visibleMessageText = finalCleanContent;
       try {
-        const rawArtifacts = dedupeArtifacts([
-          ...streamedArtifacts,
-          ...extractArtifactsFromContent(finalCleanContent, promptText),
-        ]);
+        const turn = finalizeArtifactTurn(promptText, finalCleanContent)
+        const rawArtifacts = dedupeArtifacts([...streamedArtifacts, ...turn.artifacts]);
         if (rawArtifacts.length > 0) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
           for (const rawArt of rawArtifacts) {
@@ -975,25 +975,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             );
           }
         }
+        visibleMessageText = turn.visibleText || finalCleanContent
       } catch (artifactError) {
         console.error('[workspace chat] artifact extract failed', artifactError)
-      }
-
-      // Clean chat message text — strip ALL artifact content so it doesn't duplicate inside the chat bubble.
-      // This handles both <antArtifact>...</antArtifact> XML tags AND markdown code blocks (```html, ```react, etc.)
-      // that were successfully extracted into Artifact objects by extractArtifactsFromContent.
-      let visibleMessageText = finalCleanContent;
-      if (extractedArtifacts.length > 0) {
-        visibleMessageText = stripExtractedArtifactMarkup(visibleMessageText)
-      }
-      if (!visibleMessageText && extractedArtifacts.length > 0) {
-        const first = extractedArtifacts[0]
-        const isScreen = first.type === 'react' || first.type === 'html'
-        const artifactLabel =
-          first.type === 'chart' ? 'chart' : isScreen ? 'screen' : 'document'
-        visibleMessageText = isScreen
-          ? `Opened **"${first.title}"** in the preview workspace.`
-          : `Created **"${first.title}"** (${artifactLabel} v${first.version || 1}). Open the card below to review it.`;
       }
 
       // If we had a backend error, do not overwrite the assistant message again with empty content!

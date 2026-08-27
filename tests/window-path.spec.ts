@@ -4,6 +4,7 @@ import {
     canonicalWindowPath,
     extractNotebookId,
     extractPublicNotebookId,
+    isArtifactWindowPath,
     isPathRoutedWindow,
     isPlaceholderPath,
     notebookPublicPath,
@@ -25,6 +26,12 @@ test.describe('window path', () => {
         expect(repairWindowPath('/questions', '/questions/42')).toBe('/questions/42')
         expect(repairWindowPath('/notebooks', '/notebooks/nb-1')).toBe('/notebooks/nb-1')
         expect(repairWindowPath('/posts/kept', '/posts/other')).toBe('/posts/kept')
+    })
+
+    test('artifact preview windows are recognized by path', () => {
+        expect(isArtifactWindowPath('/artifact/art-1')).toBe(true)
+        expect(isArtifactWindowPath('/artifact')).toBe(true)
+        expect(isArtifactWindowPath('/notebooks')).toBe(false)
     })
 
     test('canonical path is a clean pathname', () => {

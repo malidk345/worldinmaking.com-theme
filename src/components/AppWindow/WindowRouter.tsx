@@ -37,7 +37,7 @@ import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
-import { canonicalWindowPath, isPathRoutedWindow } from '../../lib/window-path'
+import { canonicalWindowPath, isArtifactWindowPath, isPathRoutedWindow } from '../../lib/window-path'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 
@@ -186,11 +186,15 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 }
 
 const WindowRouterMemo = React.memo(WindowRouterInner, (prev, next) => {
-    return (
+    const sameShell =
         prev.item.path === next.item.path &&
         prev.item.key === next.item.key &&
         JSON.stringify(prev.item.props) === JSON.stringify(next.item.props)
-    )
+    if (!sameShell) return false
+    if (isArtifactWindowPath(prev.item.path || '')) {
+        return prev.item.element === next.item.element && prev.item.children === next.item.children
+    }
+    return true
 })
 WindowRouterMemo.displayName = 'WindowRouterInner'
 
@@ -209,7 +213,7 @@ export const isBlogPath = (p: string): boolean => typeof p === 'string' && /^\/(
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => {
     const path = canonicalWindowPath(props.item?.path || props.item?.props?.path || '')
-    const fillHeight = isForumPath(path) || isAskAiPath(path) || isBlogPath(path)
+    const fillHeight = isForumPath(path) || isAskAiPath(path) || isBlogPath(path) || isArtifactWindowPath(path)
     // Forum / Ask AI / blog: fill the window so chrome (sidebar pin, settings)
     // stays on the pane. Notebooks still grow and scroll the window.
     return (

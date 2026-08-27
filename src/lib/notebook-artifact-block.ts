@@ -1,4 +1,6 @@
 import { parseChartSpec, type ChartSpec } from './ai/chart-artifacts'
+import { getRenderer } from './artifacts'
+import { artifactLooksLikeMermaid, cleanMermaidSource } from './mermaid-loader'
 import type { Artifact, Message } from '../components/ClaudeWorkspaceChat/types'
 
 function fence(language: string, body: string): string {
@@ -45,6 +47,7 @@ function asMarkdownTable(content: string): string {
 export function artifactToNotebookMarkdown(artifact: Artifact): string {
     const title = heading(artifact.title || '')
     const body = String(artifact.content || '').trim()
+    const renderer = getRenderer(artifact.type)
 
     if (artifact.type === 'table') {
         return [title, asMarkdownTable(body)].filter(Boolean).join('\n\n')
@@ -52,13 +55,20 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
     if (artifact.type === 'chart') {
         const spec = artifact.chartSpec || parseChartSpec(body)
         const json = spec ? JSON.stringify(spec, null, 2) : body
-        return [title, fence('chart', json)].filter(Boolean).join('\n\n')
+        return [title, fence(renderer.notebookFence || 'chart', json)].filter(Boolean).join('\n\n')
     }
-    if (artifact.type === 'mermaid') {
-        return [title, fence('mermaid', body)].filter(Boolean).join('\n\n')
+    if (
+        artifact.type === 'mermaid' ||
+        (artifact.type !== 'react' &&
+            artifact.type !== 'html' &&
+            artifact.type !== 'chart' &&
+            artifact.type !== 'table' &&
+            artifactLooksLikeMermaid(artifact))
+    ) {
+        return [title, fence(renderer.notebookFence || 'mermaid', cleanMermaidSource(body))].filter(Boolean).join('\n\n')
     }
     if (artifact.type === 'react' || artifact.language === 'tsx' || artifact.language === 'jsx') {
-        return [title, fence('react', body)].filter(Boolean).join('\n\n')
+        return [title, fence(renderer.notebookFence || 'react', body)].filter(Boolean).join('\n\n')
     }
     if (artifact.type === 'html' || artifact.language === 'html') {
         return [title, fence('html', body)].filter(Boolean).join('\n\n')

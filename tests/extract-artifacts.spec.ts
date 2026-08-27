@@ -132,4 +132,58 @@ test.describe('workspace artifact extraction', () => {
         expect(visible).not.toContain('className=')
         expect(visible).not.toContain('SimpleDashboard')
     })
+
+    test('a mermaid fence becomes a mermaid artifact, not a code dump', () => {
+        const prompt = 'Draw a mermaid diagram of the login flow'
+        const content = [
+            'Here is the flow.',
+            '',
+            '```mermaid',
+            'flowchart TD',
+            '  A[Login] --> B{Valid?}',
+            '  B -->|Yes| C[Home]',
+            '  B -->|No| A',
+            '```',
+        ].join('\n')
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('mermaid')
+        expect(artifacts[0].language).toBe('mermaid')
+        expect(artifacts[0].content).toContain('flowchart TD')
+        expect(artifacts[0].content).not.toContain('```')
+        expect(stripExtractedArtifactMarkup(content)).not.toContain('flowchart TD')
+    })
+
+    test('promotes a mermaid antArtifact even when wrapped as markdown', () => {
+        const prompt = 'bir akış şeması çiz'
+        const content = [
+            '<antArtifact identifier="diagram-1" type="markdown" title="Login Flow">',
+            'flowchart TD',
+            '  Start --> End',
+            '</antArtifact>',
+        ].join('\n')
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('mermaid')
+        expect(artifacts[0].title).toBe('Login Flow')
+        expect(artifacts[0].content).toContain('flowchart TD')
+    })
+
+    test('a mermaid antArtifact is not treated as a React screen', () => {
+        const prompt = 'Draw a mermaid diagram of checkout'
+        const content = [
+            '<antArtifact identifier="diagram-1" type="mermaid" title="Checkout">',
+            'sequenceDiagram',
+            '  User->>API: POST /checkout',
+            '  API-->>User: 200',
+            '</antArtifact>',
+        ].join('\n')
+
+        const artifacts = extractArtifactsFromContent(content, prompt)
+        expect(artifacts).toHaveLength(1)
+        expect(artifacts[0].type).toBe('mermaid')
+        expect(artifacts[0].content).toContain('sequenceDiagram')
+    })
 })
