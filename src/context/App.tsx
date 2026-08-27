@@ -17,6 +17,7 @@ import Start from 'components/Start'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
+// @ts-ignore
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
