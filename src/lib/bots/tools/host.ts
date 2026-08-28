@@ -1,0 +1,242 @@
+import { fetchSupabasePostBySlug, searchSupabasePosts } from '../../supabaseBlog'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../supabase-rest'
+
+export type HostWindow = { path?: string; title?: string }
+
+export type HostSnapshot = {
+    path?: string
+    windows?: HostWindow[]
+    notebookId?: string
+    notebookTitle?: string
+    selection?: string
+    notebooks?: Array<{ id: string; title: string }>
+}
+
+export type HostOsAction = {
+    type: 'open_window' | 'create_notebook' | 'create_forum_topic' | 'insert_notebook_block'
+    title: string
+    description: string
+    payload: { path?: string; title?: string; content?: string; notebookId?: string }
+}
+
+/** Shared by /api/chat and notebook co-author. */
+export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
+    if (!raw || typeof raw !== 'object') return undefined
+    const snap = raw as Record<string, unknown>
+    const path = typeof snap.path === 'string' ? snap.path.slice(0, 200) : undefined
+    const notebookId = typeof snap.notebookId === 'string' ? snap.notebookId.slice(0, 80) : undefined
+    const notebookTitle = typeof snap.notebookTitle === 'string' ? snap.notebookTitle.slice(0, 120) : undefined
+    const selection = typeof snap.selection === 'string' ? snap.selection.slice(0, 2500) : undefined
+    const notebooks: NonNullable<HostSnapshot['notebooks']> = []
+    if (Array.isArray(snap.notebooks)) {
+        for (const notebook of snap.notebooks.slice(0, 20)) {
+            if (!notebook || typeof notebook !== 'object') continue
+            const item = notebook as { id?: unknown; title?: unknown }
+            if (typeof item.id !== 'string') continue
+            notebooks.push({
+                id: item.id.slice(0, 80),
+                title: typeof item.title === 'string' ? item.title.slice(0, 120) : '',
+            })
+        }
+    }
+    const windows: HostSnapshot['windows'] = []
+    if (Array.isArray(snap.windows)) {
+        for (const window of snap.windows.slice(0, 12)) {
+            if (!window || typeof window !== 'object') continue
+            const item = window as { path?: unknown; title?: unknown }
+            windows.push({
+                path: typeof item.path === 'string' ? item.path.slice(0, 200) : undefined,
+                title: typeof item.title === 'string' ? item.title.slice(0, 80) : undefined,
+            })
+        }
+    }
+    if (!path && !notebookId && !notebooks.length && !windows.length && !selection) return undefined
+    return { path, notebookId, notebookTitle, selection, windows, notebooks }
+}
+
+export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }> = [
+    { name: 'Home', path: '/home', aliases: ['desktop', 'ana sayfa'] },
+    { name: 'Community', path: '/community', aliases: ['forum', 'questions', 'community'] },
+    { name: 'Notebooks', path: '/notebooks', aliases: ['notes', 'notebook'] },
+    { name: 'WIM AI', path: '/workspace-chat', aliases: ['ask ai', 'chat', 'wim ai'] },
+    { name: 'Posts', path: '/posts', aliases: ['blog', 'yazılar', 'posts'] },
+    { name: 'Archive', path: '/archive', aliases: ['arsiv'] },
+    { name: 'Contact', path: '/contact', aliases: ['iletişim', 'contact'] },
+    { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
+    { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
+]
+
+const ALLOWED_PATHS = new Set(SITE_APPS.map((app) => app.path))
+
+function clip(value: string, max: number): string {
+    const text = String(value || '')
+    return text.length <= max ? text : text.slice(0, max)
+}
+
+export function resolveOpenPath(raw: string): string | null {
+    const value = String(raw || '').trim()
+    if (!value) return null
+    const asPath = value.startsWith('/') ? value.split('?')[0].replace(/\/+$/, '') || '/' : ''
+    if (asPath && ALLOWED_PATHS.has(asPath)) return asPath
+    const needle = value.toLowerCase()
+    const match = SITE_APPS.find(
+        (app) => app.path === asPath || app.name.toLowerCase() === needle || app.aliases.some((alias) => alias === needle)
+    )
+    return match?.path || null
+}
+
+export function describeWorkspace(host?: HostSnapshot): string {
+    const windows = (host?.windows || [])
+        .slice(0, 12)
+        .map((window) => `- ${window.title || 'Window'} (${window.path || '/'})`)
+        .join('\n')
+    const apps = SITE_APPS.map((app) => `${app.name}: ${app.path}`).join('\n')
+    return [
+        `Current path: ${host?.path || '/'}`,
+        host?.notebookId ? `Bound notebook: ${host.notebookTitle || host.notebookId} (${host.notebookId})` : 'No notebook bound',
+        host?.notebooks?.length
+            ? `Notebooks (${host.notebooks.length}): ${host.notebooks
+                  .slice(0, 8)
+                  .map((item) => item.title || item.id)
+                  .join(', ')}`
+            : '',
+        host?.selection ? `Selection: ${clip(host.selection, 400)}` : '',
+        windows ? `Open windows:\n${windows}` : 'No other OS windows reported',
+        `Apps:\n${apps}`,
+    ]
+        .filter(Boolean)
+        .join('\n\n')
+}
+
+export async function executeGetWorkspace(host?: HostSnapshot): Promise<{ ok: boolean; result: string }> {
+    return { ok: true, result: clip(describeWorkspace(host), 4_000) }
+}
+
+export async function executeOpenPath(rawPath: string): Promise<{
+    ok: boolean
+    result: string
+    action?: HostOsAction
+}> {
+    const path = resolveOpenPath(rawPath)
+    if (!path) {
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: 'path is not an allowed OS app', allowed: SITE_APPS.map((app) => app.path) }),
+        }
+    }
+    const app = SITE_APPS.find((item) => item.path === path)
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, path, name: app?.name || path }),
+        action: {
+            type: 'open_window',
+            title: `Open ${app?.name || path}`,
+            description: `Open ${path} in the OS`,
+            payload: { path },
+        },
+    }
+}
+
+async function searchCommunityTopics(query: string): Promise<string[]> {
+    try {
+        const encoded = encodeURIComponent(`*${query}*`)
+        const url = `${SUPABASE_URL}/rest/v1/community_posts?or=(title.ilike.${encoded},content.ilike.${encoded})&title=not.ilike.comment_*&select=id,title,created_at&order=created_at.desc&limit=6`
+        const res = await fetch(url, {
+            headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+        })
+        if (!res.ok) return []
+        const rows = (await res.json()) as Array<{ id?: string; title?: string }>
+        if (!Array.isArray(rows)) return []
+        return rows.map((row) => `- ${row.title || 'Untitled'} (/community?id=${row.id})`)
+    } catch {
+        return []
+    }
+}
+
+export async function executeSearchSite(query: string): Promise<{ ok: boolean; result: string }> {
+    const q = clip(query.trim(), 200)
+    if (q.length < 2) return { ok: false, result: JSON.stringify({ ok: false, error: 'query required' }) }
+    const posts = await searchSupabasePosts(q)
+    const postLines = posts.slice(0, 8).map((post, index) => {
+        return `${index + 1}. ${post.title || 'Untitled'}\n   /posts/${post.slug}\n   ${String(post.excerpt || '').slice(0, 180)}`
+    })
+    const forumLines = await searchCommunityTopics(q)
+    const parts = [
+        postLines.length ? `Posts:\n${postLines.join('\n\n')}` : 'No posts matched.',
+        forumLines.length ? `Forum:\n${forumLines.join('\n')}` : 'No forum threads matched.',
+    ]
+    return { ok: true, result: clip(`Site search for "${q}":\n${parts.join('\n\n')}`, 4_000) }
+}
+
+export async function executeReadPost(slug: string): Promise<{ ok: boolean; result: string }> {
+    const post = await fetchSupabasePostBySlug(clip(slug, 180))
+    if (!post) return { ok: false, result: JSON.stringify({ ok: false, error: 'post not found' }) }
+    return {
+        ok: true,
+        result: clip(`# ${post.title}\n/posts/${post.slug}\n\n${post.excerpt || ''}\n\n${String(post.content || '').slice(0, 2500)}`, 4_000),
+    }
+}
+
+export function executeListNotebooks(host?: HostSnapshot): { ok: boolean; result: string } {
+    const notebooks = host?.notebooks || []
+    if (!notebooks.length) {
+        return { ok: true, result: 'No notebooks in the workspace snapshot. Ask the user to open Notebooks or bind one.' }
+    }
+    return {
+        ok: true,
+        result: notebooks.map((item) => `- ${item.title || 'Untitled'} (${item.id})`).join('\n'),
+    }
+}
+
+export function executeCreateNotebook(title: string, content?: string): {
+    ok: boolean
+    result: string
+    action: HostOsAction
+} {
+    const name = clip(title.trim() || 'AI notes', 80)
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, title: name }),
+        action: {
+            type: 'create_notebook',
+            title: `Create notebook: ${name}`,
+            description: 'Save and open a workspace notebook',
+            payload: { title: name, content: clip(content || '', 8_000) },
+        },
+    }
+}
+
+export function executeInsertNotebookBlock(
+    host: HostSnapshot | undefined,
+    content: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const body = clip(content.trim(), 8_000)
+    if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
+            }),
+        }
+    }
+    const known = host?.notebooks?.find((item) => item.id === targetId)
+    const title = known?.title || host?.notebookTitle || 'Notebook'
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        action: {
+            type: 'insert_notebook_block',
+            title: `Insert into ${title}`,
+            description: 'Append a block to the notebook',
+            payload: { notebookId: targetId, title, content: body },
+        },
+    }
+}

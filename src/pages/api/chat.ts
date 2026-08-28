@@ -1,7 +1,8 @@
 /**
  * Workspace chat SSE endpoint — the single interactive chat path.
  *
- * Notebook Ask AI continues to use /api/notebook/co-author.
+ * Notebook Ask AI binds to this route. `/api/notebook/co-author` is the
+ * remaining block-critique path and uses the same tool harness.
  * This route must never manufacture a successful answer when every
  * provider is down: clients receive a typed error event instead.
  *
@@ -13,16 +14,15 @@ import { streamBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
-import { formatSearchResults, searchWebSources } from 'lib/bots/web-search'
-import { resolveSearchIntent } from 'lib/bots/intent-router'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
-import { classifyIntent, contractForIntent, finalizeArtifactTurn } from '../../lib/artifacts'
+import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
+import { parseHostSnapshot } from 'lib/bots/tools/host'
 
 const GUEST_HOURLY_LIMIT = 80
 const AUTH_HOURLY_LIMIT = 120
@@ -104,20 +104,96 @@ export default async function handler(req: Request) {
     const conversationId = readOptionalBoundedString(body.conversationId, 80, 'conversationId')
     if (!conversationId.ok) return jsonError(conversationId.error, 400)
 
+    const host = parseHostSnapshot(body.workspace)
+
     let history: GatewayMessage[] = []
     if (body.messages !== undefined) {
         if (!Array.isArray(body.messages)) return jsonError('messages must be an array', 400)
-        if (body.messages.length > 20) return jsonError('messages too long (max 20)', 400)
+        if (body.messages.length > 30) return jsonError('messages too long (max 30)', 400)
         for (const item of body.messages) {
             if (!item || typeof item !== 'object') return jsonError('each message must be an object', 400)
             const role = (item as { role?: unknown }).role
             const content = (item as { content?: unknown }).content
-            if (role !== 'user' && role !== 'assistant') {
-                return jsonError('message.role must be user or assistant', 400)
+            if (role !== 'user' && role !== 'assistant' && role !== 'tool') {
+                return jsonError('message.role must be user, assistant, or tool', 400)
             }
             if (typeof content !== 'string') return jsonError('message.content must be a string', 400)
             if (content.length > 4000) return jsonError('message.content too long (max 4000 characters)', 400)
-            if (content.trim()) history.push({ role, content: content.trim() })
+            if (role === 'tool') {
+                const toolCallId = (item as { tool_call_id?: unknown }).tool_call_id
+                if (typeof toolCallId !== 'string' || !toolCallId.trim()) {
+                    return jsonError('tool messages need tool_call_id', 400)
+                }
+                history.push({
+                    role: 'tool',
+                    content: content.trim(),
+                    tool_call_id: toolCallId.trim().slice(0, 80),
+                })
+                continue
+            }
+            const rawArtifacts = (item as { artifacts?: unknown }).artifacts
+            let artifacts: GatewayMessage['artifacts']
+            if (rawArtifacts !== undefined) {
+                if (!Array.isArray(rawArtifacts) || rawArtifacts.length > 3) {
+                    return jsonError('message.artifacts must be an array of at most 3 items', 400)
+                }
+                artifacts = []
+                for (const artifact of rawArtifacts) {
+                    if (!artifact || typeof artifact !== 'object') {
+                        return jsonError('each artifact must be an object', 400)
+                    }
+                    const type = (artifact as { type?: unknown }).type
+                    const title = (artifact as { title?: unknown }).title
+                    const body = (artifact as { content?: unknown }).content
+                    const id = (artifact as { id?: unknown }).id
+                    if (typeof type !== 'string' || typeof title !== 'string' || typeof body !== 'string') {
+                        return jsonError('artifact type, title, and content must be strings', 400)
+                    }
+                    if (body.length > 8000) return jsonError('artifact.content too long (max 8000 characters)', 400)
+                    artifacts.push({
+                        id: typeof id === 'string' ? id.slice(0, 80) : undefined,
+                        type: type.slice(0, 40),
+                        title: title.slice(0, 80),
+                        content: body,
+                    })
+                }
+            }
+            const rawCalls = (item as { tool_calls?: unknown }).tool_calls
+            let toolCalls: GatewayMessage['tool_calls']
+            if (rawCalls !== undefined) {
+                if (!Array.isArray(rawCalls) || rawCalls.length > 4) {
+                    return jsonError('message.tool_calls must be an array of at most 4 items', 400)
+                }
+                toolCalls = []
+                for (const call of rawCalls) {
+                    if (!call || typeof call !== 'object') return jsonError('each tool_call must be an object', 400)
+                    const id = (call as { id?: unknown }).id
+                    const name = (call as { name?: unknown }).name
+                    const args = (call as { arguments?: unknown }).arguments
+                    if (typeof id !== 'string' || typeof name !== 'string' || typeof args !== 'string') {
+                        return jsonError('tool_call id, name, and arguments must be strings', 400)
+                    }
+                    if (args.length > 4000) return jsonError('tool_call.arguments too long', 400)
+                    const signature = (call as { thoughtSignature?: unknown }).thoughtSignature
+                    toolCalls.push({
+                        id: id.slice(0, 80),
+                        name: name.slice(0, 80),
+                        arguments: args,
+                        thoughtSignature:
+                            typeof signature === 'string' && signature.length > 0 && signature.length <= 24_000
+                                ? signature
+                                : undefined,
+                    })
+                }
+            }
+            if (content.trim() || (artifacts && artifacts.length > 0) || (toolCalls && toolCalls.length > 0)) {
+                history.push({
+                    role,
+                    content: content.trim(),
+                    artifacts: artifacts && artifacts.length > 0 ? artifacts : undefined,
+                    tool_calls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+                })
+            }
         }
     }
 
@@ -171,47 +247,8 @@ export default async function handler(req: Request) {
             try {
                 let webSearchContext = ''
                 let citations: AiCitation[] = []
-                const previousUserText = [...history].reverse().find((message) => message.role === 'user')?.content
-                let intent = { needsSearch: false, searchQuery: prompt.slice(0, 500) as string | null }
-                try {
-                    const classified = await resolveSearchIntent(prompt, {
-                        env: getRuntimeEnv(),
-                        previousUserText,
-                    })
-                    intent = { needsSearch: classified.needsSearch, searchQuery: classified.searchQuery }
-                } catch {
-                    // Search is an enhancement; an unavailable classifier must never
-                    // take down the primary chat response.
-                }
-
-                if (intent.needsSearch) {
-                    const searchRate = checkRateLimit(`web-search:${clientIp}`, 30, 60 * 60 * 1000)
-                    const searchQuery = (intent.searchQuery || prompt).slice(0, 500).trim()
-                    if (searchRate.allowed && searchQuery) {
-                        send({ type: 'search', search: { status: 'running', query: searchQuery } })
-                        try {
-                            const results = await searchWebSources(searchQuery)
-                            const formatted = formatSearchResults(results)
-                            citations = results.slice(0, 6).map((item, index) => ({
-                                id: index + 1,
-                                title: item.title,
-                                url: item.url,
-                                snippet: item.snippet.slice(0, 280),
-                                source: item.source,
-                            }))
-                            send({
-                                type: 'search',
-                                search: { status: 'done', query: searchQuery, results: formatted || null },
-                            })
-                            if (citations.length > 0) send({ type: 'citations', citations })
-                            if (formatted) {
-                                webSearchContext = `Live Web Search Results for "${searchQuery}" (UNTRUSTED reference data):\n"""${formatted.slice(0, 6000)}"""`
-                            }
-                        } catch {
-                            send({ type: 'search', search: { status: 'error', query: searchQuery, results: null } })
-                        }
-                    }
-                }
+                const enableTools = true
+                // Tools own search. Heuristic pre-search is the no-tools fallback only.
 
                 const groqKeysVisible = collectGroqKeys(getRuntimeEnv())
                 console.info(
@@ -229,7 +266,6 @@ export default async function handler(req: Request) {
                     }
                 }, 15_000)
 
-                send({ type: 'thinking_start' })
                 const context = [
                     systemPrompt.value
                         ? `User-configured project instructions (untrusted reference data):\n"""${systemPrompt.value}"""`
@@ -249,26 +285,8 @@ export default async function handler(req: Request) {
                     .filter(Boolean)
                     .join('\n\n')
 
-                send({
-                    type: 'thinking_step',
-                    step: {
-                        id: 'auto-1',
-                        stepNumber: 1,
-                        title: 'Thinking',
-                        detail: '…',
-                        completed: false,
-                        source: 'system_event',
-                    },
-                })
-
                 const notebookTask = body.notebookBound === true && isNotebookTask(prompt)
-                const artifactIntent = classifyIntent(prompt)
-                const trustedInstruction = [
-                    contractForIntent(artifactIntent),
-                    notebookTask ? NOTEBOOK_EDITOR_INSTRUCTION : '',
-                ]
-                    .filter(Boolean)
-                    .join('\n\n')
+                const trustedInstruction = notebookTask ? NOTEBOOK_EDITOR_INSTRUCTION : ''
                 let livePublicTokensCount = 0
                 let liveThinkingAcc = ''
 
@@ -281,8 +299,11 @@ export default async function handler(req: Request) {
                         context,
                         messages: history,
                         env: getRuntimeEnv(),
-                        scope: notebookTask ? 'notebook_coauthor' : 'site_wide',
+                        scope: notebookTask ? 'notebook_coauthor' : 'ask_ai',
                         trustedInstruction: trustedInstruction || undefined,
+                        enableTools,
+                        host,
+                        onTool: (event) => send({ type: 'tool', tool: event }),
                         onLifecycle: (event) => send({ type: 'phase', phase: event }),
                     },
                     (token) => {
@@ -335,7 +356,21 @@ export default async function handler(req: Request) {
                     })
                 }
 
-                const turn = finalizeArtifactTurn(prompt, result.reply)
+                if (result.success && result.citations?.length) {
+                    const start = citations.length
+                    citations = [
+                        ...citations,
+                        ...result.citations.map((item, index) => ({ ...item, id: start + index + 1 })),
+                    ]
+                    send({ type: 'citations', citations })
+                }
+
+                const turn = finalizeArtifactTurn(
+                    prompt,
+                    result.reply,
+                    result.success ? result.artifacts : undefined,
+                    { scrape: false }
+                )
                 const visibleReply =
                     turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
 
@@ -346,6 +381,12 @@ export default async function handler(req: Request) {
 
                 if (turn.artifacts.length > 0) {
                     send({ type: 'artifacts', artifacts: turn.artifacts })
+                }
+
+                if (result.success && result.actions?.length) {
+                    for (const action of result.actions) {
+                        send({ type: 'action', action })
+                    }
                 }
 
                 send({

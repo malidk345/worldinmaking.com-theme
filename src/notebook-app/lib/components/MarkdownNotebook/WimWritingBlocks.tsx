@@ -494,3 +494,68 @@ function DatabaseCell({
 export function getDefaultDatabaseProps(): ReturnType<typeof databaseContentToProps> {
     return databaseContentToProps(makeDefaultDatabaseContent(() => uuid()))
 }
+
+export function SubPageBlock({
+    props,
+    updateProps,
+    editable = true,
+}: NotebookComponentRenderProps<{
+    notebookId?: string
+    title?: string
+    description?: string
+    coverGradient?: string
+}>): JSX.Element {
+    const title = parseStringProp(props.title, 'Untitled page')
+    const notebookId = parseStringProp(props.notebookId, '')
+    const description = parseStringProp(props.description, 'Linked sub-document')
+    const coverGradient = parseStringProp(props.coverGradient, 'from-purple-900/40 via-indigo-900/20 to-slate-900/40')
+
+    const handleClick = () => {
+        if (notebookId) {
+            openNotebookHash(notebookId)
+        }
+    }
+
+    return (
+        <div className="MarkdownNotebook__subpage-card my-3">
+            <div
+                onClick={handleClick}
+                className="group/card relative w-full rounded-2xl border border-primary bg-primary hover:border-yellow/50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer select-none"
+            >
+                <div
+                    className={`h-20 w-full bg-gradient-to-r ${coverGradient} relative p-3 flex items-end justify-between border-b border-primary/50`}
+                >
+                    <div className="w-8 h-8 rounded-lg bg-primary/90 border border-primary/80 flex items-center justify-center text-yellow shadow-md">
+                        <IconDocument className="w-4 h-4" />
+                    </div>
+                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-primary/80 text-secondary border border-primary/60">
+                        Sub-page
+                    </span>
+                </div>
+                <div className="p-3">
+                    <h4 className="text-sm font-bold text-primary m-0 group-hover/card:text-yellow transition-colors">
+                        {title}
+                    </h4>
+                    <p className="text-xs text-secondary m-0 mt-1 line-clamp-1">{description}</p>
+                </div>
+            </div>
+            {editable ? (
+                <div className="mt-2 flex gap-2">
+                    <LemonInput
+                        size="small"
+                        value={title}
+                        placeholder="Page title"
+                        onChange={(next) => updateProps({ title: next })}
+                    />
+                    <LemonInput
+                        size="small"
+                        value={notebookId}
+                        placeholder="Notebook ID or slug"
+                        onChange={(next) => updateProps({ notebookId: next })}
+                    />
+                </div>
+            ) : null}
+        </div>
+    )
+}
+

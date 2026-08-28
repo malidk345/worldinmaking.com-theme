@@ -170,6 +170,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   source: 'none',
                 }
               }
+              toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
             />
           </div>
@@ -242,13 +243,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {/* OS Action Card */}
-          {message.osAction && (
+          {message.osAction && !message.osAction.executed ? (
             <OSActionCard
               action={message.osAction}
               onExecute={() => onExecuteOSAction?.(message.id, message.osAction!)}
             />
-          )}
+          ) : null}
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
           {message.stopped ? (

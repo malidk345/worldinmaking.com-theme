@@ -18,7 +18,7 @@ type NodePath = { join: (...parts: string[]) => string }
 function nodeBuiltin<T>(_name: string): T | null {
     // Next.js Edge runtime does not support process.getBuiltinModule and will error
     // even if it's behind a type check. We must avoid it completely.
-    return null;
+    return null
 }
 
 function cursorEnvName(family: string): string {

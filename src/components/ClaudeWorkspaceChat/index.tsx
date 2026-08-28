@@ -8,6 +8,7 @@ import {
   StylePresetId,
   Artifact,
   ArtifactOrigin,
+  ToolTrace,
   WebCitation,
   UserSettings,
   FileAttachment,
@@ -33,7 +34,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
-import { getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
+import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
   type NotebookChatBind,
@@ -47,8 +48,9 @@ import type { OSActionCard as OSActionCardType } from './types';
 import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
+import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
-import { isAdminNavigationRequest, isUiDesignRequest } from 'lib/ai/design-request';
+
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
@@ -72,10 +74,10 @@ import {
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 
 const EMPTY_STARTERS = [
-  { label: 'What’s at stake?', prompt: 'What’s actually at stake here? Give me the conflict in plain language, then one implication.' },
-  { label: 'Make a table', prompt: 'Make a clear comparison table of the main options, with a short note on each tradeoff.' },
-  { label: 'Explain plainly', prompt: 'Explain this as plainly as you can. No jargon unless you define it in one line.' },
-  { label: 'Give me a plan', prompt: 'Give me a short practical plan with the next three steps, in order.' },
+  { label: 'What’s open?', prompt: 'Which windows are open right now, and what can I do next in this OS?' },
+  { label: 'Search the site', prompt: 'Search this site for notebooks and writing about unfinished work.' },
+  { label: 'Today’s AI news', prompt: 'Bugün yapay zeka haberlerinde öne çıkan 3 gelişmeyi kaynaklarıyla yaz.' },
+  { label: 'Draw a flow', prompt: 'Draw a mermaid diagram of a checkout flow: cart, pay, done.' },
 ]
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
@@ -162,7 +164,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return '';
   }, [appWindows, notebookBind]);
 
-  const insertIntoNotebook = (content: string) => {
+  const insertIntoNotebook = (content: string, notebookId?: string) => {
     const text = String(content || '').trim()
     if (!text) return
     const notebookOpen = appWindows.some(
@@ -174,7 +176,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           detail: {
             text,
             mode: 'append',
-            notebookId: notebookBind?.notebookId,
+            notebookId: notebookId || notebookBind?.notebookId,
           },
         })
       )
@@ -371,6 +373,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const isStreamingRef = useRef(false);
   const pendingEditMessageIdRef = useRef<string | null>(null);
   const persistChatIdRef = useRef<string | null>(null);
+  const executedActionsRef = useRef(new Set<string>());
   const [composerDraft, setComposerDraft] = useState('');
   const [composerDraftNonce, setComposerDraftNonce] = useState(0);
 
@@ -749,6 +752,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const activeProjectObj = projects.find((p) => p.id === activeProjectId);
 
     let accumulatedContent = '';
+    const thinkStartedAt = Date.now();
     let currentThinkingProcess = {
       durationSeconds: 0,
       tokenCount: 0,
@@ -756,6 +760,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       summary: '',
     };
     let streamedArtifacts: Artifact[] = [];
+    let streamedAction: OSActionCardType | undefined;
+    let streamedToolTrace: ToolTrace[] = [];
     const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
       if (!incoming || incoming.length === 0) return;
       const next = incoming.map(toWorkspaceArtifact);
@@ -783,14 +789,38 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         .slice(0, 8000);
       const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
 
-      const conversationHistory = baseMessages
-        .filter((message) => message.role === 'user' || message.role === 'assistant')
-        .slice(-6)
-        .map((message) => ({
-          role: message.role as 'user' | 'assistant',
+      const conversationHistory: Array<Record<string, unknown>> = []
+      for (const message of baseMessages.filter((item) => item.role === 'user' || item.role === 'assistant').slice(-6)) {
+        conversationHistory.push({
+          role: message.role,
           content: message.content.slice(0, 1200),
-        }))
-        .filter((message) => message.content.trim().length > 0)
+          artifacts:
+            message.role === 'assistant' && message.artifacts?.length
+              ? message.artifacts.slice(0, 2).map((artifact) => ({
+                  id: artifact.id,
+                  type: artifact.type,
+                  title: (artifact.title || 'Untitled').slice(0, 80),
+                  content: (artifact.content || '').slice(0, 4000),
+                }))
+              : undefined,
+          tool_calls: message.toolTrace?.length
+            ? message.toolTrace.slice(0, 4).map((trace) => ({
+                id: trace.id,
+                name: trace.name,
+                arguments: (trace.arguments || '{}').slice(0, 4000),
+                thoughtSignature: trace.thoughtSignature,
+              }))
+            : undefined,
+        })
+        for (const trace of message.toolTrace || []) {
+          if (trace.status === 'running') continue
+          conversationHistory.push({
+            role: 'tool',
+            tool_call_id: trace.id,
+            content: (trace.result || trace.detail || '{"ok":true}').slice(0, 4000),
+          })
+        }
+      }
 
       const sseRes = await fetch('/api/chat', {
         method: 'POST',
@@ -806,6 +836,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           notebookContext: activeNotebookContext,
           notebookBound: Boolean(notebookBind?.notebookId),
           conversationId: targetChatId,
+          workspace: {
+            path: typeof window !== 'undefined' ? window.location.pathname : '/',
+            windows: (appWindows || []).slice(0, 12).map((item) => ({
+              path: item.path,
+              title: item.title || item.meta?.title || item.path,
+            })),
+            notebookId: notebookBind?.notebookId,
+            notebookTitle: notebookBind?.title,
+            selection: readNotebookSelection(),
+            notebooks: getNotebooks()
+              .slice(0, 20)
+              .map((notebook) => ({ id: notebook.id, title: notebook.title || 'Untitled' })),
+          },
         }),
       });
 
@@ -837,6 +880,45 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           const parsed = parseAiSseEvent(frame);
           if (!parsed) continue;
 
+          if (parsed.type === 'tool') {
+            const toolTitle = toolStatusLabel(parsed.tool.name, parsed.tool.status);
+            const toolStep = {
+              id: `tool-${parsed.tool.id}`,
+              stepNumber: 0,
+              title: toolTitle,
+              detail: parsed.tool.detail || '',
+              completed: parsed.tool.status !== 'running',
+              source: 'system_event' as const,
+            };
+            const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === toolStep.id);
+            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = toolStep;
+            else currentThinkingProcess.steps.push(toolStep);
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            if (parsed.tool.status === 'running') currentThinkingProcess.summary = toolTitle;
+            const nextTrace: ToolTrace = {
+              id: parsed.tool.id,
+              name: parsed.tool.name,
+              status: parsed.tool.status,
+              arguments: parsed.tool.arguments,
+              result: parsed.tool.result,
+              detail: parsed.tool.detail,
+              thoughtSignature: parsed.tool.thoughtSignature,
+            };
+            const traceIdx = streamedToolTrace.findIndex((item) => item.id === nextTrace.id);
+            if (traceIdx >= 0) {
+              streamedToolTrace[traceIdx] = {
+                ...streamedToolTrace[traceIdx],
+                ...nextTrace,
+                thoughtSignature: nextTrace.thoughtSignature || streamedToolTrace[traceIdx].thoughtSignature,
+              }
+            } else streamedToolTrace.push(nextTrace);
+            streamedToolTrace = [...streamedToolTrace];
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              thinkingProcess: { ...currentThinkingProcess },
+              toolTrace: streamedToolTrace,
+            });
+          }
+
           if (parsed.type === 'search') {
             const searchTitle =
               parsed.search.status === 'running'
@@ -854,11 +936,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             };
             const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
             if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = searchStep;
-            else currentThinkingProcess.steps.unshift(searchStep);
+            else currentThinkingProcess.steps.push(searchStep);
             currentThinkingProcess.steps = [...currentThinkingProcess.steps];
             currentThinkingProcess.summary = parsed.search.status === 'running' ? searchTitle : '';
+            const searchTrace: ToolTrace = {
+              id: 'host-search',
+              name: 'web_search',
+              status: parsed.search.status === 'error' ? 'error' : parsed.search.status === 'done' ? 'done' : 'running',
+              detail: searchTitle,
+              result: parsed.search.results || undefined,
+            };
+            const searchTraceIdx = streamedToolTrace.findIndex((item) => item.id === searchTrace.id);
+            if (searchTraceIdx >= 0) streamedToolTrace[searchTraceIdx] = { ...streamedToolTrace[searchTraceIdx], ...searchTrace };
+            else streamedToolTrace.push(searchTrace);
+            streamedToolTrace = [...streamedToolTrace];
             updateAssistantMessage(targetChatId, assistantMessageId, {
               thinkingProcess: { ...currentThinkingProcess },
+              toolTrace: streamedToolTrace,
             });
           }
 
@@ -872,6 +966,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'thinking_start') {
             currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
             currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
+          }
+
+          if (parsed.type === 'action') {
+            const applied = executeOSAction(assistantMessageId, parsed.action, targetChatId);
+            streamedAction = { ...parsed.action, executed: applied };
+            if (!applied) {
+              updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
+            }
           }
 
           if (parsed.type === 'artifacts') {
@@ -926,43 +1028,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
-      if (!finalCleanContent && !backendError) {
+      if (!finalCleanContent && !backendError && streamedArtifacts.length === 0) {
         throw new Error('AI returned no content');
-      }
-
-      // OS Intent Detection
-      let detectedAction: OSActionCardType | undefined;
-      const lowerText = (promptText + ' ' + finalCleanContent).toLowerCase();
-
-      if (lowerText.includes('create notebook') || lowerText.includes('new notebook') || promptText.startsWith('/notebook')) {
-        const titleMatch = promptText.match(/(?:notebook|on|about)\s+([a-zA-Z0-9\s]+)/i);
-        const title = titleMatch ? titleMatch[1].trim() : 'AI Generated Notes';
-        detectedAction = {
-          type: 'create_notebook',
-          title: `Create Notebook: "${title}"`,
-          description: 'Save and open a new workspace notebook',
-          payload: { title, content: finalCleanContent },
-        };
-      } else if (lowerText.includes('forum topic') || lowerText.includes('start debate') || lowerText.includes('community post')) {
-        detectedAction = {
-          type: 'create_forum_topic',
-          title: `Start Forum Topic: "${promptText.slice(0, 30)}..."`,
-          description: 'Publish thread to community forum',
-          payload: { title: promptText, content: finalCleanContent },
-        };
-      } else if (isAdminNavigationRequest(promptText) && !isUiDesignRequest(promptText)) {
-        detectedAction = {
-          type: 'open_window',
-          title: 'Open Admin OS Dashboard',
-          description: 'Navigate to system moderation dashboard',
-          payload: { path: '/admin' },
-        };
       }
 
       let extractedArtifacts: Artifact[] = [];
       let visibleMessageText = finalCleanContent;
       try {
-        const turn = finalizeArtifactTurn(promptText, finalCleanContent)
+        const turn = finalizeArtifactTurn(promptText, finalCleanContent, streamedArtifacts, { scrape: false })
         const rawArtifacts = dedupeArtifacts([...streamedArtifacts, ...turn.artifacts]);
         if (rawArtifacts.length > 0) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
@@ -982,13 +1055,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       // If we had a backend error, do not overwrite the assistant message again with empty content!
       if (!backendError) {
+        currentThinkingProcess.durationSeconds = Math.max(
+          currentThinkingProcess.durationSeconds,
+          (Date.now() - thinkStartedAt) / 1000
+        );
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: visibleMessageText || finalCleanContent || 'Response ready.',
           thinkingProcess: { ...currentThinkingProcess },
+          toolTrace: streamedToolTrace.length > 0 ? streamedToolTrace : undefined,
           artifacts: extractedArtifacts.length > 0 ? extractedArtifacts : undefined,
           isStreaming: false,
           isTypingDone: true,
-          osAction: detectedAction,
+          osAction: streamedAction,
         });
       }
 
@@ -999,6 +1077,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: stoppedText,
           thinkingProcess: { ...currentThinkingProcess },
+          toolTrace: streamedToolTrace.length > 0 ? streamedToolTrace : undefined,
           isStreaming: false,
           isTypingDone: true,
           stopped: true,
@@ -1060,10 +1139,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }
 
-  const executeOSAction = (msgId: string, action: OSActionCardType) => {
+  const executeOSAction = (msgId: string, action: OSActionCardType, chatId = activeChatId) => {
+    const key = `${chatId}:${msgId}:${action.type}:${JSON.stringify(action.payload || {}).slice(0, 200)}`;
+    if (action.executed || executedActionsRef.current.has(key)) {
+      if (!action.executed) {
+        updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
+      }
+      return true;
+    }
+    executedActionsRef.current.add(key);
     try {
       if (action.type === 'create_notebook') {
         createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+      } else if (action.type === 'insert_notebook_block') {
+        insertIntoNotebook(action.payload.content || '', action.payload.notebookId);
         if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'create_forum_topic') {
         if (app?.addWindow) app.addWindow({ path: '/community' });
@@ -1071,11 +1161,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }
 
-      updateAssistantMessage(activeChatId, msgId, {
+      updateAssistantMessage(chatId, msgId, {
         osAction: { ...action, executed: true },
       });
+      return true;
     } catch (e) {
+      executedActionsRef.current.delete(key);
       console.warn('[Ask AI] Action execution error:', e);
+      return false;
     }
   };
 
@@ -1316,7 +1409,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 How can I help?
               </h1>
               <p className="m-0 mb-5 max-w-sm text-center text-[13px] leading-snug text-muted">
-                Ask anything. A philosopher answers in this window.
+                Looks at this OS and the web. You ask; it chooses the tools.
               </p>
               <div className="flex w-full flex-wrap justify-center gap-2">
                 {EMPTY_STARTERS.map((starter) => (

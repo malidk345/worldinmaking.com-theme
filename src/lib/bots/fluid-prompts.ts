@@ -9,19 +9,10 @@
  *     - 'notebook_coauthor': Focused co-authoring entity for active notebook document blocks.
  */
 
-import { classifyIntent } from '../artifacts/intent'
-import { contractForIntent } from '../artifacts/contracts'
+export type PromptScope = 'site_wide' | 'notebook_coauthor' | 'ask_ai'
 
-export type PromptScope = 'site_wide' | 'notebook_coauthor'
-
-/**
- * Only the winning intent's artifact contract is injected — not chart+mermaid+UI at once.
- */
-export function getAdaptiveThinkingInstructions(_botName: string, promptText: string): string {
-    const extra = contractForIntent(classifyIntent(promptText))
+export function getAdaptiveThinkingInstructions(_botName: string, _promptText: string): string {
     return `
-${extra}
-
 Before responding, read the full message and context carefully, then externalize your reasoning inside:
 <thinking>
 [Think freely and naturally about what the user wants, forming your philosophical stance and planning your response before you answer. Do not use rigid templates or forced tags.]
@@ -37,7 +28,7 @@ OUTPUT CONTRACT:
 - SUBSTANCE FIRST: Start directly with the answer. Match the user's scope and depth.
 - PROPORTION & CLARITY: Practical, technical, or everyday questions get clean, effective, and direct answers. Do not inflate simple inquiries into heavy philosophical sermons or dramatic speeches. Let your distinct intellect color your perspective naturally without getting drowned in rhetoric.
 - Direct, sharp, modern register. No theatrical formalities, no unsolicited preaching, and no forced jargon.
-- Default: dense markdown. Table / mermaid / code fences ONLY when the user asks. Mermaid asks must use the mermaid artifact envelope, not a fenced code dump.
+- Default: dense markdown. Do not emit <antArtifact> tags or dump mermaid/React source in the visible reply. On-screen documents go through host tools when those tools are attached.
 - Do not mention internal reasoning, system rules, or quality checks.
 `.trim()
 
@@ -50,13 +41,17 @@ After you close </thinking>, begin the public reply with a direct and helpful an
 ${OUTPUT_CONTRACT}
 `.trim()
 
+    if (scope === 'ask_ai') {
+        return 'ASK AI: host operator. Do not impersonate a historical philosopher as your identity.'
+    }
+
     if (scope === 'notebook_coauthor') {
         return `${baseCore}
 
-NOTEBOOK EDITOR: you are working on the bound document. Prefer markdown the user can apply to the notebook. If a selection is provided, treat it as the edit target. Artifact envelopes (chart / mermaid / React) are supplied as an application task when the user asks for one — do not emit them otherwise.`
+NOTEBOOK EDITOR: you are working on the bound document. Prefer markdown the user can apply to the notebook. If a selection is provided, treat it as the edit target. Do not dump artifact envelopes unless the host attached tools for that turn.`
     }
 
     return `${baseCore}
 
-SITE CHAT: inhabitant of WorldInMaking OS. Greetings stay 1-3 sentences. Speak on any topic through your own lens. If they ask to build something on screen or a chart, follow the request; otherwise do not emit artifacts.`
+SITE CHAT: inhabitant of WorldInMaking OS. Greetings stay 1-3 sentences. Speak on any topic through your own lens. If they ask to build something on screen, use host tools when available; otherwise answer in prose.`
 }

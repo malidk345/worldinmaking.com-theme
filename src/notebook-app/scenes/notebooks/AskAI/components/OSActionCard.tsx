@@ -9,7 +9,7 @@ interface OSActionCardProps {
 
 /**
  * Renders an executable OS action card below an AI reply.
- * Supports create_notebook, create_forum_topic, open_window.
+ * Supports create_notebook, insert_notebook_block, create_forum_topic, open_window.
  */
 export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Element {
     return (
@@ -26,18 +26,24 @@ export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Elem
                         </span>
                     </div>
                 </div>
-                <LemonButton
-                    size="xsmall"
-                    type={action.executed ? 'tertiary' : 'primary'}
-                    icon={action.executed ? <IconCheck /> : <IconPlus />}
-                    disabled={action.executed}
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onExecute()
-                    }}
-                >
-                    {action.executed ? 'Executed' : 'Run Action'}
-                </LemonButton>
+                {action.executed ? (
+                    <span className="inline-flex items-center gap-1 shrink-0 text-[11px] font-medium text-emerald-700">
+                        <IconCheck className="size-3.5" />
+                        Done
+                    </span>
+                ) : (
+                    <LemonButton
+                        size="xsmall"
+                        type="primary"
+                        icon={<IconPlus />}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onExecute()
+                        }}
+                    >
+                        Run
+                    </LemonButton>
+                )}
             </div>
         </div>
     )

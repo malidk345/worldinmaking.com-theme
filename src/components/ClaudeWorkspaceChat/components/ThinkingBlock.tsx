@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ModelOption, ThinkingProcess, ThinkingStep } from '../types';
+import { ModelOption, ThinkingProcess, ThinkingStep, ToolTrace } from '../types';
+import { toolStatusLabel } from '../../../lib/bots/tools/labels';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import {
@@ -35,6 +36,7 @@ function formatExactTime(ts?: string): string {
 
 interface ThinkingBlockProps {
   thinking: ThinkingProcess;
+  toolTrace?: ToolTrace[];
   isLive?: boolean;
   model?: ModelOption;
   timestamp?: string;
@@ -68,11 +70,17 @@ function isPlaceholderStep(step: ThinkingStep): boolean {
   return false
 }
 
-function flattenThoughtStream(steps: ThinkingStep[]): ThoughtSegment[] {
+function isToolChromeStep(step: ThinkingStep): boolean {
+  const id = String(step.id || '');
+  return id.startsWith('tool-') || id === 'search-step';
+}
+
+function flattenThoughtStream(steps: ThinkingStep[], hideToolChrome: boolean): ThoughtSegment[] {
   const segments: ThoughtSegment[] = [];
 
   steps.forEach((step, index) => {
     if (isDoneTitle(step.title) || isPlaceholderStep(step)) return;
+    if (hideToolChrome && isToolChromeStep(step)) return;
 
     const title = String(step.title || '').trim();
     const detail = String(step.detail || '').trim();
@@ -154,7 +162,8 @@ function getStepIcon(title?: string) {
     heading.includes('table') ||
     heading.includes('şema') ||
     heading.includes('diagram') ||
-    heading.includes('mermaid')
+    heading.includes('mermaid') ||
+    heading.includes('notebook')
   ) {
     return FileText;
   }
@@ -199,6 +208,12 @@ const ThinkingLeadIcon: React.FC<{ live?: boolean }> = ({ live = false }) => {
   );
 };
 
+function clipTraceDetail(value?: string): string {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  return text.length <= 220 ? text : `${text.slice(0, 217)}…`;
+}
+
 const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, className = '' }) => {
   const Icon = getStepIcon(title);
   return (
@@ -209,13 +224,15 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
   );
 };
 
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false, model, timestamp }) => {
+export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
 
+  const traces = toolTrace || [];
+  const hasTools = traces.length > 0;
   const rawSteps = thinking?.steps || [];
-  const segments = useMemo(() => flattenThoughtStream(rawSteps), [rawSteps]);
+  const segments = useMemo(() => flattenThoughtStream(rawSteps, hasTools), [rawSteps, hasTools]);
   const hasThoughtText = segments.some((segment) => segment.text.length > 0);
   const durationSeconds = thinking?.durationSeconds || 0;
 
@@ -236,11 +253,23 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
     if (isLive && pinnedToBottom.current) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [segments, isLive, isOpen]);
+  }, [segments, traces, isLive, isOpen]);
 
   const formattedTime = formatExactTime(timestamp);
   const surname = philosopherSurname(model?.name);
-  const showThinkingTrigger = isLive || hasThoughtText;
+  const liveStage = traces.find((trace) => trace.status === 'running');
+  const headerStage = liveStage
+    ? toolStatusLabel(liveStage.name, 'running')
+    : activeStage && !/^(thinking|thought|think)$/i.test(activeStage)
+      ? activeStage
+      : traces.length
+        ? toolStatusLabel(traces[traces.length - 1].name, traces[traces.length - 1].status)
+        : undefined;
+  const showThinkingTrigger = isLive || hasThoughtText || hasTools;
+
+  useEffect(() => {
+    if (isLive && (hasTools || hasThoughtText)) setIsOpen(true);
+  }, [isLive, hasTools, hasThoughtText]);
 
   if (!model && !showThinkingTrigger) return null;
 
@@ -268,7 +297,6 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
           </div>
         ) : <div />}
 
-        {/* Thinking trigger on the same row */}
         {showThinkingTrigger && (
           <button
             type="button"
@@ -280,16 +308,16 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
             {isLive ? (
               <>
                 <span className="wim-think-sheen shrink-0 leading-tight">Thinking</span>
-                {activeStage && !/^(thinking|thought|think)$/i.test(activeStage) && (
+                {headerStage && (
                   <>
                     <span className="shrink-0 text-stone-400 dark:text-stone-500">·</span>
-                    <StageTitle title={activeStage} className="text-[13px] font-normal" />
+                    <StageTitle title={headerStage} className="text-[13px] font-normal" />
                   </>
                 )}
               </>
             ) : (
               <span className="truncate leading-tight">
-                {formatDoneHeader(durationSeconds, activeStage)}
+                {formatDoneHeader(durationSeconds, headerStage)}
               </span>
             )}
             <ChevronDown
@@ -301,8 +329,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
         )}
       </div>
 
-      {/* Expanded Full-Width Thinking Panel */}
-      {isOpen && hasThoughtText && (
+      {isOpen && (hasTools || hasThoughtText) && (
         <div className="relative mt-1 min-w-0 w-full mb-2">
           <div
             ref={scrollRef}
@@ -311,6 +338,24 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
             style={VIEWPORT_MASK}
           >
             <div className="space-y-1.5 py-3 text-[13px] leading-[1.55] text-stone-500 dark:text-stone-400">
+              {traces.map((trace) => {
+                const title = toolStatusLabel(trace.name, trace.status);
+                const detail = clipTraceDetail(trace.detail || (trace.status === 'error' ? trace.result : ''));
+                const showDetail = detail && detail !== title;
+                return (
+                  <div key={trace.id} className="pt-1 first:pt-0">
+                    <StageTitle
+                      title={title}
+                      className="text-[11px] font-medium tracking-[0.01em] text-stone-400 dark:text-stone-500"
+                    />
+                    {showDetail ? (
+                      <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[12px] text-stone-400 dark:text-stone-500">
+                        {detail}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
               {segments.map((segment) =>
                 segment.kind === 'stage' ? (
                   <div key={segment.id} className="pt-1 first:pt-0">

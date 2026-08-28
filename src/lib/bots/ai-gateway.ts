@@ -33,8 +33,16 @@ export type GatewayProvider =
     | 'none'
 
 export type GatewayMessage = {
-    role: 'system' | 'user' | 'assistant'
+    role: 'system' | 'user' | 'assistant' | 'tool'
     content: string
+    tool_call_id?: string
+    tool_calls?: Array<{ id: string; name: string; arguments: string; thoughtSignature?: string }>
+    artifacts?: Array<{
+        id?: string
+        type: string
+        title: string
+        content: string
+    }>
 }
 
 type PromptCaps = {

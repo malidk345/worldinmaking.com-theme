@@ -812,6 +812,28 @@ export function repairUnclosedJsxOpeningTags(source: string): string {
     return out.join('\n')
 }
 
+export function needsReactHeal(source: string): boolean {
+    const text = String(source || '')
+    if (!text.trim()) return false
+    if (jsxSourceLooksBroken(text)) return true
+    if (/className=["']\s*\n/.test(text)) return true
+    if (/className=["'][^"']*$/m.test(text)) return true
+    if (/(?:return\s*\(?|=>\s*\(?)\s*<[\s\S]{0,1200}\b(?:const|let|var)\s+/.test(text)) return true
+    if (/['"]#[0-9a-fA-F]{0,8}\s*$/m.test(text)) return true
+    if (/<[A-Za-z][^>]*$/.test(text.trim())) return true
+    return false
+}
+
+function healReactSource(source: string): string {
+    return closeTruncatedJsx(
+        hoistJsxEmbeddedStatements(
+            liftDataDeclarations(
+                repairUnclosedJsxOpeningTags(repairUnterminatedJsStrings(repairJsxAttributeStrings(source)))
+            )
+        )
+    )
+}
+
 export function jsxSourceLooksBroken(source: string): boolean {
     const lines = String(source || '').split(/\r?\n/)
     let awaitingTagClose = false
@@ -1051,17 +1073,10 @@ export function closeTruncatedJsx(source: string): string {
     return `${nextSource}${nextSource.endsWith('\n') ? '' : '\n'}${closers.join('\n')}\n`
 }
 
-/** Repair invalid LLM TSX, keep ESM so Sandpack can bundle it. */
+/** Repair invalid LLM TSX, keep ESM so Sandpack can bundle it. Healers run only when source looks broken. */
 export function prepareSandpackSource(source: string): string {
-    const next = closeTruncatedJsx(
-        hoistJsxEmbeddedStatements(
-            liftDataDeclarations(
-                repairUnclosedJsxOpeningTags(
-                    repairUnterminatedJsStrings(repairJsxAttributeStrings(normalizeSandboxReactSource(source)))
-                )
-            )
-        )
-    ).trim()
+    const normalized = normalizeSandboxReactSource(source)
+    const next = (needsReactHeal(normalized) ? healReactSource(normalized) : normalized).trim()
     if (!next || /shadcn\.css/.test(next)) return next
     return `import './shadcn.css'\n${next}`
 }
@@ -1081,17 +1096,8 @@ export function preparePreviewSource(source: string): { code: string; rootName: 
         .replace(/export\s+function\s+/g, 'function ')
         .replace(/export\s+const\s+/g, 'const ')
         .replace(/<\/script/gi, '<\\/script')
-    next = injectMissingRecharts(
-        injectMissingHooks(
-            closeTruncatedJsx(
-                hoistJsxEmbeddedStatements(
-                    liftDataDeclarations(
-                        repairUnclosedJsxOpeningTags(repairUnterminatedJsStrings(repairJsxAttributeStrings(next)))
-                    )
-                )
-            )
-        )
-    )
+    if (needsReactHeal(next)) next = healReactSource(next)
+    next = injectMissingRecharts(injectMissingHooks(next))
     return { code: next.trim(), rootName }
 }
 

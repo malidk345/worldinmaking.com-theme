@@ -5,6 +5,7 @@ import {
     inferSearchIntent,
     isNewsQuery,
     looksLikeFollowUp,
+    needsLiveWeb,
 } from '../src/lib/bots/search-intent'
 
 test.describe('search intent heuristic', () => {
@@ -37,5 +38,7 @@ test.describe('search intent heuristic', () => {
         expect(expandSearchQuery('latest tesla stock price today', 'ignore this')).toBe('latest tesla stock price today')
         expect(isNewsQuery('güncel dolar kuru')).toBe(true)
         expect(isNewsQuery('who is Spinoza')).toBe(false)
+        expect(needsLiveWeb('Bugün yapay zeka haberlerinde öne çıkan 3 gelişmeyi kaynaklarıyla yaz.')).toBe(true)
+        expect(needsLiveWeb('Sen kimsin?')).toBe(false)
     })
 })

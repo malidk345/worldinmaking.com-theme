@@ -69,6 +69,18 @@ export type AiSseEvent =
           }
       }
     | {
+          type: 'tool'
+          tool: {
+              id: string
+              name: string
+              status: 'running' | 'done' | 'error'
+              detail?: string
+              arguments?: string
+              result?: string
+              thoughtSignature?: string
+          }
+      }
+    | {
           type: 'token'
           text: string
       }
@@ -83,6 +95,15 @@ export type AiSseEvent =
     | {
           type: 'artifacts'
           artifacts: AiArtifact[]
+      }
+    | {
+          type: 'action'
+          action: {
+              type: 'open_window' | 'create_notebook' | 'create_forum_topic' | 'insert_notebook_block'
+              title: string
+              description: string
+              payload: { path?: string; title?: string; content?: string; notebookId?: string }
+          }
       }
     | {
           type: 'done'

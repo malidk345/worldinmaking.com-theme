@@ -5,6 +5,7 @@
 import { supabaseAdmin } from '../../lib/supabase-admin'
 import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from '../../lib/sync-tombstones'
 import type { Artifact, Chat, FileAttachment, Message, ThinkingBudget, WebCitation } from '../components/ClaudeWorkspaceChat/types'
+import { packMessageThinking, unpackMessageThinking } from './chat-thinking'
 
 
 const MAX_CHATS = 80
@@ -119,13 +120,15 @@ function rowToChat(row: ChatRow, messages: Message[] = []): Chat {
 
 function rowToMessage(row: MessageRow): Message {
     const timestamp = new Date(row.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    const unpacked = unpackMessageThinking(row.thinking_process)
     return {
         id: row.id,
         role: row.role === 'assistant' || row.role === 'system' ? row.role : 'user',
         content: row.content || '',
         timestamp,
         modelUsed: row.model_used || undefined,
-        thinkingProcess: row.thinking_process || undefined,
+        thinkingProcess: unpacked.thinkingProcess,
+        toolTrace: unpacked.toolTrace,
         artifacts: row.artifacts || undefined,
         citations: row.citations || undefined,
         attachments: row.attachments || undefined,
@@ -144,7 +147,7 @@ function messageToRow(chatId: string, message: Message, sortIndex: number): Mess
         role: message.role,
         content: clampText(message.content),
         model_used: message.modelUsed ? clampText(message.modelUsed, 80) : null,
-        thinking_process: sanitizeJson(message.thinkingProcess),
+        thinking_process: sanitizeJson(packMessageThinking(message)),
         artifacts: sanitizeJson(message.artifacts),
         citations: sanitizeJson(message.citations),
         attachments: sanitizeJson(sanitizeAttachments(message.attachments)),

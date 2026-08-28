@@ -76,15 +76,26 @@ export interface FileAttachment {
 }
 
 export interface OSActionCard {
-  type: 'create_notebook' | 'create_forum_topic' | 'open_window'
+  type: 'create_notebook' | 'create_forum_topic' | 'open_window' | 'insert_notebook_block'
   title: string
   description: string
   payload: {
       title?: string
       content?: string
       path?: string
+      notebookId?: string
   }
   executed?: boolean
+}
+
+export interface ToolTrace {
+  id: string
+  name: string
+  status: 'running' | 'done' | 'error'
+  arguments?: string
+  result?: string
+  detail?: string
+  thoughtSignature?: string
 }
 
 export interface Message {
@@ -95,6 +106,7 @@ export interface Message {
   modelUsed?: ModelId
   thinkingProcess?: ThinkingProcess
   artifacts?: Artifact[]
+  toolTrace?: ToolTrace[]
   citations?: WebCitation[]
   attachments?: FileAttachment[]
   isStreaming?: boolean

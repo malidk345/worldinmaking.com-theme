@@ -5,7 +5,7 @@
  * Comma-separated keys rotate and fail over on 429/5xx. Missing keys are skipped.
  */
 
-import { getRuntimeEnv, readFamilyBindingValues } from './runtime-env'
+import { getRuntimeEnv, readFamilyBindingValues, type EnvStore } from './runtime-env'
 import { isNewsQuery } from './search-intent'
 import { collectApiKeys, rotateKeys } from './search-keys'
 
@@ -96,7 +96,6 @@ async function searchWithKeyFailover(
         try {
             const attempt = await search(apiKey)
             if (attempt.hits.length > 0) return attempt.hits
-            if (!attempt.retryable) return []
         } catch {
             /* next key */
         }
@@ -104,44 +103,89 @@ async function searchWithKeyFailover(
     return []
 }
 
+function tavilyHitsFromPayload(data: {
+    results?: Array<{ title?: string; url?: string; content?: string; raw_content?: string }>
+}): SearchResultItem[] {
+    const hits: SearchResultItem[] = []
+    for (const row of data.results || []) {
+        if (!row.title || !row.url) continue
+        pushUnique(hits, {
+            title: row.title,
+            url: row.url,
+            snippet: row.content || row.raw_content || '',
+            source: 'Tavily',
+        })
+    }
+    return hits
+}
+
+function recencyWindow(days = 14): { start_date: string; end_date: string } {
+    const end = new Date()
+    const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000)
+    return {
+        start_date: start.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+    }
+}
+
 async function searchTavily(query: string, apiKey: string): Promise<SearchAttempt> {
-    const topics: Array<'news' | 'general'> = isNewsQuery(query) ? ['news', 'general'] : ['general']
+    const news = isNewsQuery(query)
+    const topics: Array<'news' | 'general'> = news ? ['news', 'general'] : ['general']
+    const window = recencyWindow(news ? 14 : 30)
+    let retryable = false
     try {
         for (const topic of topics) {
+            const payload: Record<string, unknown> = {
+                api_key: apiKey,
+                query,
+                search_depth: 'advanced',
+                max_results: 6,
+                include_answer: false,
+                topic,
+                start_date: window.start_date,
+                end_date: window.end_date,
+            }
             const res = await fetch('https://api.tavily.com/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${apiKey}`,
                 },
-                body: JSON.stringify({
-                    query,
-                    search_depth: 'basic',
-                    max_results: 5,
-                    include_answer: false,
-                    topic,
-                }),
-                signal: AbortSignal.timeout(5000),
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(12_000),
             })
             if (!res.ok) {
-                if (topic === 'news') continue
-                return { hits: [], retryable: isRetryableSearchStatus(res.status) }
-            }
-            const data = (await res.json()) as { results?: Array<{ title?: string; url?: string; content?: string }> }
-            const hits: SearchResultItem[] = []
-            for (const row of data.results || []) {
-                if (row.title && row.url) {
-                    pushUnique(hits, {
-                        title: row.title,
-                        url: row.url,
-                        snippet: row.content || '',
-                        source: 'Tavily',
+                retryable = retryable || isRetryableSearchStatus(res.status)
+                if (res.status === 400 && payload.start_date) {
+                    delete payload.start_date
+                    delete payload.end_date
+                    payload.search_depth = 'basic'
+                    const retry = await fetch('https://api.tavily.com/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${apiKey}`,
+                        },
+                        body: JSON.stringify(payload),
+                        signal: AbortSignal.timeout(12_000),
                     })
+                    if (retry.ok) {
+                        const retried = (await retry.json()) as {
+                            results?: Array<{ title?: string; url?: string; content?: string; raw_content?: string }>
+                        }
+                        const hits = tavilyHitsFromPayload(retried)
+                        if (hits.length > 0) return { hits, retryable: false }
+                    }
                 }
+                continue
             }
-            return { hits, retryable: false }
+            const data = (await res.json()) as {
+                results?: Array<{ title?: string; url?: string; content?: string; raw_content?: string }>
+            }
+            const hits = tavilyHitsFromPayload(data)
+            if (hits.length > 0) return { hits, retryable: false }
         }
-        return { hits: [], retryable: true }
+        return { hits: [], retryable }
     } catch {
         return { hits: [], retryable: true }
     }
@@ -289,13 +333,23 @@ async function searchDuckDuckGoLite(query: string): Promise<SearchResultItem[]> 
 /**
  * Multi-tier web search. Returns structured hits for citations + LLM context.
  */
-export async function searchWebSources(query: string): Promise<SearchResultItem[]> {
+export async function searchWebSources(query: string, envStore?: EnvStore): Promise<SearchResultItem[]> {
     const cleanQuery = query.trim()
     if (!cleanQuery) return []
 
-    const env = getRuntimeEnv()
-    const tavilyKeys = collectApiKeys(...readFamilyBindingValues(env, ['TAVILY_API_KEY', 'TAVILY_KEY']))
-    const braveKeys = collectApiKeys(...readFamilyBindingValues(env, ['BRAVE_SEARCH_API_KEY', 'BRAVE_API_KEY']))
+    const env = envStore ?? getRuntimeEnv()
+    const tavilyKeys = collectApiKeys(
+        ...readFamilyBindingValues(env, ['TAVILY_API_KEY', 'TAVILY_KEY']),
+        typeof process !== 'undefined' ? process.env.TAVILY_API_KEYS : undefined,
+        typeof process !== 'undefined' ? process.env.TAVILY_API_KEY : undefined,
+        typeof process !== 'undefined' ? process.env.TAVILY_KEY : undefined
+    )
+    const braveKeys = collectApiKeys(
+        ...readFamilyBindingValues(env, ['BRAVE_SEARCH_API_KEY', 'BRAVE_API_KEY']),
+        typeof process !== 'undefined' ? process.env.BRAVE_SEARCH_API_KEY : undefined,
+        typeof process !== 'undefined' ? process.env.BRAVE_API_KEY : undefined
+    )
+    console.info('[search] providers', { tavily: tavilyKeys.length, brave: braveKeys.length, query: cleanQuery.slice(0, 80) })
     const results: SearchResultItem[] = []
 
     if (tavilyKeys.length > 0) {

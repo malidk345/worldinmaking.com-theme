@@ -5,13 +5,14 @@ import { useApp } from '../../../context/App'
 import { createNotebook } from './notebookStorage'
 
 export interface OSActionCardData {
-    type: 'create_notebook' | 'create_forum_topic' | 'open_window'
+    type: 'create_notebook' | 'create_forum_topic' | 'open_window' | 'insert_notebook_block'
     title: string
     description: string
     payload: {
         title?: string
         content?: string
         path?: string
+        notebookId?: string
     }
     executed?: boolean
 }
@@ -40,6 +41,17 @@ export function OSActionCardView({ action, onActionCompleted }: OSActionCardView
             } else if (action.type === 'open_window') {
                 const winId = action.payload.path || 'home'
                 app?.openWindow?.(winId)
+            } else if (action.type === 'insert_notebook_block') {
+                window.dispatchEvent(
+                    new CustomEvent('wimNotebookInsertText', {
+                        detail: {
+                            text: action.payload.content || '',
+                            mode: 'append',
+                            notebookId: action.payload.notebookId,
+                        },
+                    })
+                )
+                app?.openWindow?.('notebooks')
             }
             setIsDone(true)
             action.executed = true

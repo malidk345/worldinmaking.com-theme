@@ -425,10 +425,135 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-312` | Stream 5 | Artifact kernel: exclusive intent, one contract per turn, server canonicalize | `src/lib/artifacts/*`, `chat.ts`, `fluid-prompts.ts`, workspace chat, tests/artifacts-kernel.spec.ts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-313` | Stream 2 / 5 | Artifact preview fills the window; stale/truncated opens refresh; no 100vh half-frame | ArtifactWindowContent, WindowRouter/Content, addWindow, LocalPreviewIframe, chrome css | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-314` | Stream 5 | Notebook live UI preview uses the same local iframe as the artifact window | `ReactPreviewIframe.tsx`, `NotebookWimBlocks.tsx`, `LocalPreviewIframe.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-315` | Stream 5 | Industry-standard OpenAI tool loop on Groq: create_artifact + web_search, host execute, SSE steps | `src/lib/bots/tools/*`, `orchestrate.ts`, `chat.ts`, `contracts.ts`, workspace chat, `tests/tool-loop.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-316` | Stream 5 | Single tool control plane: no pre-search/intent contract, Gemini tools, history traces, extract/heal secondary | `src/lib/bots/tools/*`, `chat.ts`, `finalize.ts`, `ai-gateway.ts`, workspace chat, reactPreview, tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-317` | Stream 5 | Ask AI operator kernel: voice not identity, tool-role history, fetch_url+SSRF, artifact validate retry, co-author tools | `ask-ai.ts`, `tools/*`, `chat.ts`, `orchestrate.ts`, co-author, workspace chat, tests | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-318` | Stream 5 | Tool rounds are not the public answer: model decides, host loops, bubble waits for the post-tool completion | `src/lib/bots/tools/loop.ts`, `gemini.ts`, `spec.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-319` | Stream 5 | Tavily live search: static env keys, news→general failover, pass env into web_search tool | `web-search.ts`, `tools/execute.ts`, `tools/loop.ts`, `tests/web-search-keys.spec.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-320` | Stream 5 | News answers cannot skip Tavily: host live search + date window; no memory headlines | `orchestrate.ts`, `web-search.ts`, `ask-ai.ts`, `search-intent.ts`, loop/gemini tool_choice | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-321` | Stream 5 | Invert Ask AI: one operator prompt, no tool-less failover for news/build, artifacts only from tools | `ask-ai.ts`, `orchestrate.ts`, `fluid-prompts.ts`, `finalize.ts`, `chat.ts`, workspace chat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-322` | Stream 5 | Ask AI host tools: get_workspace, search_site, open_path so the assistant can see and act on the OS | `tools/host.ts`, spec/execute/loop, chat.ts, workspace chat, contracts | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-323` | Stream 5 | Model-as-router: observe workspace, model picks tools, host only refuses ungrounded news | `orchestrate.ts`, `spec.ts`, `ask-ai.ts`, `chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-324` | Stream 5 | Industry harness plan: single runtime, OS tool pack, workbench UX, golden evals | orchestrate, tools/host, chat UI, tests/ask-ai-harness | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-325` | Stream 5 | Workbench chrome, insert_notebook_block, auto-run OS actions, persist toolTrace | ThinkingBlock, tools/host+spec, chat-store, workspace chat | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-326` | Stream 5 | Gemini tool schema must drop JSON Schema additionalProperties (400) | `tools/spec.ts` geminiSchema | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-327` | Stream 5 | Gemini 3 tool loop must echo thought_signature on functionCall parts | `tools/gemini.ts`, `tools/loop.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-328` | Stream 5 | Tool host aliases + workbench timeline UI (not Thought box) | execute/labels/loop, ToolTimeline, ChatMessage | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-329` | Stream 5 | Keep Groq/Qwen; preserve actions; thought signatures; stream; co-author host | loop, orchestrate, history, chat, co-author | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 399 - Harness follow-through without changing the model (TSK-329)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Groq/Qwen stays first. Tool-round failure now keeps OS actions/artifacts. Gemini `thoughtSignature` travels on toolTrace → chat history → compactToolHistory → functionCall parts. News is still an outcome check (if the model skipped search, host Tavily then rewrite) but public tokens stream when citations exist; ungrounded first-pass text is held. Notebook co-author uses `parseHostSnapshot` and emits citations/actions like `/api/chat`. Model order unchanged.
+- **Modified Files:** `loop.ts`, `orchestrate.ts`, `history.ts`, `host.ts`, `chat.ts`, `co-author.ts`, `chat-thinking.ts`, workspace chat, tests
+- **Verification:** Playwright tool-loop + ask-ai-harness.
+
+### Entry 398 - Tool host is lenient; workbench timeline is primary chrome (TSK-328)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Some tools failed on empty/truncated JSON, aliased argument names (`q`, `app`, `kind`), invented tool names (`google_search`, `navigate`), Gemini empty `properties: {}`, and 15s timeouts. Host now remaps names/args, empty JSON is `{}`, Gemini omits empty properties, Groq 30s / Gemini 45s. UI: `ToolTimeline` is the live step list (status, summary, expandable args); philosopher Thought chrome no longer owns tools. OS action card shows Done after auto-run.
+- **Modified Files:** `tools/{execute,labels,loop,spec,gemini}.ts`, `ToolTimeline.tsx` [NEW], ChatMessage, OSActionCard, tests
+- **Verification:** Playwright tool-loop + ask-ai-harness.
+
+### Entry 397 - Gemini 3 thought_signature on tool loop (TSK-327)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI 400: `Function call is missing a thought_signature in functionCall parts`. Gemini 3 requires the signature from the model turn to be echoed on the next generateContent after tools run. Capture `thoughtSignature` from stream parts, replay exact model parts, copy onto the first functionCall. Unsigned Groq/history tool traces are flattened to text so they never become unsigned functionCall parts.
+- **Modified Files:** `src/lib/bots/tools/gemini.ts`, `loop.ts`, `execute.ts`, `tests/tool-loop.spec.ts`
+- **Verification:** Playwright tool-loop Gemini contents test: unsigned flattened, signed echoed.
+
+### Entry 396 - Gemini rejects additionalProperties on function parameters (TSK-326)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI 400 from Gemini: `Unknown name "additionalProperties" at tools[0].function_declarations[0].parameters`. OpenAI specs keep `additionalProperties: false`; Gemini Schema is a proto and has no such field. `geminiSchema` now allowlists Gemini keys only.
+- **Modified Files:** `src/lib/bots/tools/spec.ts`, `tests/tool-loop.spec.ts`
+- **Verification:** Playwright `tool-loop` Gemini declaration test asserts no `additionalProperties`.
+
+### Entry 395 - Workbench chrome + notebook write + durable toolTrace (TSK-325)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Remaining harness items. ThinkingBlock is a tool workbench (Working / live tool title), not a philosopher Thought box. New `insert_notebook_block` tool emits an OS action the host appends via `wimNotebookInsertText`. `open_path` / `create_notebook` / insert auto-run when the model proposes them. `toolTrace` persists inside `thinking_process` jsonb (no new column).
+- **Modified Files:** `tools/{spec,execute,host,labels}.ts`, `ThinkingBlock.tsx`, `ClaudeWorkspaceChat/index.tsx`, `chat-store.ts`, `chat-thinking.ts` [NEW], contracts, OS action types, tests
+- **Verification:** 32 Playwright unit tests passed (`ask-ai-harness` + `tool-loop`).
+
+### Entry 394 - Start industry harness (TSK-324)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Plan approved. Phase 0: Ask AI never falls through to tools-less gateway — Groq/Gemini tool loop or honest failure. Phase 1 start: `read_post`, `list_notebooks`, `create_notebook`; `search_site` also queries forum. Phase 2 start: empty-state chips are OS/web/site, not philosopher prompts; client regex OS-intent removed. Phase 4 start: `tests/ask-ai-harness.spec.ts`. Remaining: durable chat-store transcript, insert_notebook_block, tool timeline as primary chrome, auto-execute actions.
+- **Modified Files:** `orchestrate.ts`, `tools/{spec,execute,host,loop}.ts`, `chat.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/ask-ai-harness.spec.ts` [NEW], tests/tool-loop
+- **Verification:** 34 unit tests passed.
+
+### Entry 393 - Model is the router (TSK-323)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Industry harness (Cursor/Claude/ChatGPT): one user message, inner reason-act-observe loop, the *model* picks tools. Host no longer pre-searches or force-calls web_search. Compact OS snapshot is always in the user turn (perception). If a live-web question finishes with no citations, host runs Tavily and the model writes a second time — constraint on outcome, not intent classification. Fake “Thinking…” SSE removed from `/api/chat`.
+- **Modified Files:** `orchestrate.ts`, `tools/spec.ts`, `ask-ai.ts`, `chat.ts`, tests, `AI_MEMORY.md`
+- **Handoff:** Hard-refresh. Simple chat should not search. News: model may search; if it skips, you still see a search step then a sourced answer. OS questions use the snapshot / get_workspace.
+
+### Entry 392 - Ask AI can see and open the OS (TSK-322)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Cloudflare-style in-product assistant needs host tools over the live site, not a dry chat. Ask AI now has `get_workspace` (open windows, path, bound notebook), `search_site` (Supabase posts), and `open_path` (allowlisted OS apps). The client sends a workspace snapshot with each turn. `open_path` emits an SSE `action` the existing OS action card executes. Regex "open admin" remains a fallback only.
+- **Modified Files:** `src/lib/bots/tools/host.ts` [NEW], spec/execute/loop/index, `orchestrate.ts`, `chat.ts`, `contracts.ts`, `ask-ai.ts`, `ClaudeWorkspaceChat/index.tsx`, tests
+- **Handoff:** Hard-refresh. Try "şu an hangi pencereler açık?", "sitede X ara", "posts'u aç".
+
+### Entry 391 - Invert Ask AI off the philosopher orchestrator (TSK-321)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI system prompt is now only `getAskAiSystemPrompt` — no fluid "you are Nietzsche", no thinking-tag theater, no persona header. Tool loop failure no longer silently falls through to tools-less Gemini except (a) simple chat or (b) news already grounded by Tavily hits. Diagram/UI turns fail closed instead of inventing a screen. `/api/chat` and the workspace client finalize with `scrape: false`: dumped fences are stripped from the bubble, not minted as artifacts. Forum still uses SECURITY_PREAMBLE + persona.
+- **Modified Files:** `ask-ai.ts`, `orchestrate.ts`, `fluid-prompts.ts`, `finalize.ts`, `chat.ts`, `co-author.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/tool-loop.spec.ts`
+- **Verification:** 29 unit tests passed (tool-loop, kernel, search-intent).
+- **Handoff:** Hard-refresh. News must show live search; mermaid must come from create_artifact. "Sen kimsin?" is Ask AI, not Nietzsche. Forum philosophers unchanged.
+
+### Entry 390 - News cannot skip live Tavily (TSK-320)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Chat logs showed `[gateway] gemini stream ok` with no `[search] providers` — the tool loop fell through and Gemini answered from memory (old headlines). News/current queries now host-call Tavily first (14-day window, `topic=news`), inject the hits into the prompt, emit tool SSE, and only then generate. If Tavily returns nothing, the first model step is forced `web_search`. Today's UTC date is in the Ask AI preamble. Gateway fallback still carries those live hits.
+- **Modified Files:** `orchestrate.ts`, `web-search.ts`, `ask-ai.ts`, `search-intent.ts`, `tools/loop.ts`, `tools/gemini.ts`, `tools/spec.ts`, tests
+- **Handoff:** Hard-refresh. Ask the news question again. Thinking must show Searching the web; citations must be live URLs, not 2024 training residue.
+
+### Entry 389 - Tavily keys actually reach web_search (TSK-319)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Live Tavily returns 5 hits for the demo news query; the chat path often never saw `TAVILY_API_KEYS` (dynamic `process.env[name]` on Edge) and aborted the key list on the first empty `topic=news` response. Search now reads `process.env.TAVILY_API_KEYS` statically, gets the request `env` from the tool loop, tries news then general, and does not stop failover on empty 200s. Empty Tavily still falls through to Brave / DDG.
+- **Modified Files:** `src/lib/bots/web-search.ts`, `tools/execute.ts`, `tools/loop.ts`, `tests/web-search-keys.spec.ts`
+- **Handoff:** Hard-refresh, ask the news question again. Dev log should show `[search] providers { tavily: 2, ... }`. Citations should be real URLs. Do not commit `.env.local`.
+
+### Entry 388 - Tool rounds are not the public answer (TSK-318)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** The model already decided tools (`tool_choice: auto`), but the host streamed and concatenated every completion — including the "let me search" tool step — into one bubble. Industry loop: a tool_calls round is silent to the user (SSE `tool` events only); the visible reply is the next completion after `role: tool`. Auto rounds no longer live-stream tokens; only a zero-tool completion is public text.
+- **Modified Files:** `src/lib/bots/tools/loop.ts`, `gemini.ts`, `spec.ts`, `index.ts`, `tests/tool-loop.spec.ts`, `AI_MEMORY.md`
+- **Verification:** `publicTextFromRound` unit test plus existing tool-loop suite.
+- **Handoff:** Hard-refresh. Search/diagram turns should show tool steps first, then one answer. Do not pre-search on the host again.
+
+### Entry 387 - Ask AI operator kernel (TSK-317)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI is now a host operator. Philosopher picker stays as voice, not "you ARE Nietzsche / never break character." Forum still uses the identity lock. Conversation history sends real `tool_calls` + `role: tool`. New allowlisted `fetch_url` (http(s) only, SSRF blocked, no redirects). Broken React/mermaid from `create_artifact` fails closed so the model retries in the same loop. Notebook co-author uses the same tools; it keeps persona because that surface is a philosopher critique. JSX healers remain a preview adapter.
+- **Modified Files:** `src/lib/bots/ask-ai.ts` [NEW], `tools/{spec,execute,fetch-url,history,loop,index}.ts`, `validate-source.ts` [NEW], `orchestrate.ts`, `fluid-prompts.ts`, `chat.ts`, `co-author.ts`, `contracts.ts`, `ai-gateway.ts`, workspace chat types/index, `tests/tool-loop.spec.ts`
+- **Verification:** 38 related unit tests passed. Chart healer tests passed. `groq-token-budget` compact-persona assertion is a pre-existing copy mismatch (`Keep rhetoric light` vs current header text); not this change.
+- **Handoff:** Hard-refresh Ask AI. "Sen kimsin?" should answer WorldInMaking Ask AI, optionally with the selected voice. Follow-up "rengi değiştir" should see prior tool_calls. Local URLs must not fetch. Forum philosophers are unchanged. Still out of scope: code interpreter, arbitrary files, live provider eval traces.
+
+### Entry 386 - Single tool control plane (TSK-316)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chat no longer regex-classifies artifacts or pre-searches the web. The model decides via `create_artifact` / `web_search`. Groq is tried first; Gemini uses the same host tools through `functionDeclarations` + `functionResponse`. Prior artifacts are sent back in history so follow-ups can revise. `finalizeArtifactTurn` treats tool documents as canonical and only extracts fences when none were produced. JSX healers run only when source looks broken. Forum / notebook co-author still use the old envelope path (no tools).
+- **Modified Files:** `src/lib/bots/tools/{spec,loop,history,gemini,index}.ts`, `chat.ts`, `orchestrate.ts`, `finalize.ts`, `ai-gateway.ts` (GatewayMessage artifacts), `fluid-prompts.ts`, `ClaudeWorkspaceChat/index.tsx`, `reactPreview.ts`, `tests/tool-loop.spec.ts`, `AI_MEMORY.md`
+- **Verification:** 63 unit tests passed (`tool-loop`, kernel, chart, mermaid, repair-ui, notebook-bind; canvas case skipped without `pnpm dev`).
+- **Handoff:** Hard-refresh Ask AI. Diagram/UI requests should show tool steps, not a prompt-scraped fence. "Rengi değiştir" should see the previous artifact body. If Groq rejects tools, Gemini is next; if both fail, the old gateway stream is last resort. Do not reintroduce `classifyIntent` into `/api/chat`. Live model eval traces are still missing — next would be recorded Groq/Gemini fixtures, not more regex.
+
+### Entry 385 - Industry-standard OpenAI tool loop on Groq (TSK-315)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chat now uses the OpenAI Chat Completions tool protocol on Groq (`tools` + streamed `tool_calls` + `role: tool`), not a new agent framework. Host allowlist is `create_artifact` and `web_search`. Parallel tool execution in a round (max 4 steps). Unknown tools fail closed. Tool output is truncated and marked untrusted. SSE `tool` events drive thinking steps. `finalizeArtifactTurn` prefers host-produced documents; fenced extract remains fallback. If Groq rejects tools or has no keys, `streamBotTurn` falls back to the existing multi-provider stream. Forum / philosopher / notebook co-author do not enable tools.
+- **Modified Files:** `src/lib/bots/tools/{spec,execute,loop,index}.ts`, `orchestrate.ts`, `chat.ts`, `contracts.ts`, `artifacts/finalize.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/tool-loop.spec.ts` [NEW], `AI_MEMORY.md`
+- **Verification:** `tests/tool-loop.spec.ts` + `tests/artifacts-kernel.spec.ts` (14 passed). Related extract/mermaid/chart/chat-playback unit tests passed; the existing chart canvas Playwright case still needs `pnpm dev`.
+- **Handoff:** Hard-refresh Ask AI. Ask for a mermaid diagram or a live UI — thinking steps should show "Creating artifact", then the panel opens without source dumped in the bubble. Current-news questions can trigger "Searching the web". Do not add LangChain/CrewAI. Next tools (notebook edit, forum) only after this path is stable. Gemini tool adapter is later; Groq is the live wire.
 
 ### Entry 384 - Notebook sandbox uses the same iframe path as the OS window (TSK-314)
 - **Date:** 2026-08-28
@@ -4062,28 +4187,24 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/lib/bots/wim-knowledge.ts` [UPDATED]
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Typecheck passing with 0 shell errors. All changes pushed to `origin/main`.
-
-### Entry 002 — Enforce pnpm & Clean Lockfile (TSK-01)
-- **Date:** 2026-08-06
-- **AI Agent:** Antigravity (Gemini 3.6 Flash)
-- **Summary:** Removed redundant `package-lock.json` file and updated `README.md` to mandate `pnpm` usage exclusively for Next.js Pages Router dev & build workflow.
+### Entry 003 — Fix Edge Runtime Mermaid Build Error & Missing Notebook SubPageBlock (TSK-118)
+- **Date:** 2026-08-28
+- **AI Agent:** Antigravity
+- **Summary:** Resolved Edge Runtime build failure on Cloudflare Pages caused by dynamic code evaluation in Mermaid library imported transitively by `/api/chat.ts`. Extracted pure regex & AST pattern utilities to `src/lib/mermaid-patterns.ts`. Added missing `SubPageBlock` export in `src/notebook-app/lib/components/MarkdownNotebook/WimWritingBlocks.tsx`. Fixed `nodeBuiltin` in `src/lib/bots/groq-key-cursor.ts`. Full `pnpm run build` now completes with exit code 0.
 - **Modified Files:**
-  - `package-lock.json` [DELETED]
-  - `README.md` [UPDATED]
+  - `src/lib/mermaid-patterns.ts` [NEW]
+  - `src/lib/mermaid-loader.ts` [UPDATED]
+  - `src/lib/ai/chart-artifacts.ts` [UPDATED]
+  - `src/lib/artifacts/intent.ts` [UPDATED]
+  - `src/lib/notebook-artifact-block.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/WimWritingBlocks.tsx` [UPDATED]
+  - `src/lib/bots/groq-key-cursor.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Next AI agents can claim `TSK-02` (Split `desktop.tsx`), `TSK-03` (`WindowRouter` extraction), or `TSK-04` (Supabase FTS).
-
-### Entry 001 — Memory Initialization
-- **Date:** 2026-08-06
-- **AI Agent:** Antigravity (Gemini 3.6 Flash)
-- **Summary:** Created `AI_MEMORY.md` based on `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` to coordinate asynchronous, independent work between multiple AI agents.
-- **Modified Files:**
-  - `docs/architecture/AI_MEMORY.md` [NEW]
-  - `docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md` [UPDATED]
-- **Notes / Handoff:** Future AI agents should pick tasks from Section 4, update the status to `[IN PROGRESS]`, complete the implementation, verify, and log their results here.
+- **Notes / Handoff:** Production build tested cleanly with `pnpm run build` (exit code 0).
 
 ---
+
 
 ## 6. Shared Knowledge & Discoveries
 

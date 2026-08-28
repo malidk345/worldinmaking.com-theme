@@ -1,4 +1,4 @@
-import { isDiagramRequest } from '../mermaid-loader'
+import { isDiagramRequest } from '../mermaid-patterns'
 
 export const CHART_KINDS = ['line', 'bar', 'pie', 'doughnut', 'scatter'] as const
 

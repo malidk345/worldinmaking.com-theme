@@ -18,7 +18,7 @@ export interface ResolvedSearchIntent extends IntentResult {
 export const DEFAULT_INTENT: IntentResult = { needsSearch: false, searchQuery: null, formatRequest: 'none' }
 
 const SEARCH_HINT =
-    /\b(araştır|arastir|internette|güncel|guncel|haber(ler)?|son durum|son dakika|kimdir|ne zaman|hava durumu|seçim|secim|dolar|euro|borsa|skor|fiyat[ıi]?)\b|\b(search|look up|looked up|google|latest|breaking|headline|news|who is|who was|who won|when did|when is|where is|how much|price of|right now|today'?s)\b|\b(20(2\d|3\d)|president|başkan|baskan|ceo|weather|stock|crypto|bitcoin|election|winner)\b/i
+    /haber|\b(araştır|arastir|internette|güncel|guncel|son durum|son dakika|kimdir|ne zaman|hava durumu|seçim|secim|dolar|euro|borsa|skor|fiyat[ıi]?)\b|\b(search|look up|looked up|google|latest|breaking|headline|news|who is|who was|who won|when did|when is|where is|how much|price of|right now|today'?s)\b|\b(20(2\d|3\d)|president|başkan|baskan|ceo|weather|stock|crypto|bitcoin|election|winner)\b/i
 
 const NO_SEARCH_HINT =
     /^(hi|hey|hello|thanks|thank you|merhaba|selam|nasılsın|nasilsin|teşekkür|tesekkurler?)([!.\s]|$)/i
@@ -42,7 +42,7 @@ const DEICTIC_HINT =
     /\b(ya|peki|bu|şu|su|o|it|this|that|those|them|orada|aynı|ayni|same|there)\b/i
 
 const NEWS_HINT =
-    /\b(haber(ler)?|son dakika|son durum|güncel|guncel|breaking|headline|news|latest|today'?s|right now)\b/i
+    /(haber|son dakika|son durum|güncel|guncel|breaking|headline|\bnews\b|latest|today'?s|right now|bugün|bugun)/i
 
 export function inferFormat(text: string): IntentResult['formatRequest'] {
     if (/\b(to-?do|yapılacak|yapilacak|checklist)\b/i.test(text)) return 'todo'
@@ -61,6 +61,14 @@ export function extractSearchQuery(text: string): string {
 
 export function isNewsQuery(text: string): boolean {
     return NEWS_HINT.test(text)
+}
+
+/** Headlines, prices, "today" — must hit live search, not model memory. */
+export function needsLiveWeb(text: string): boolean {
+    const value = String(text || '')
+    if (!value.trim()) return false
+    if (SELF_HINT.test(value) || NO_SEARCH_HINT.test(value)) return false
+    return isNewsQuery(value) || SEARCH_HINT.test(value)
 }
 
 export function looksLikeFollowUp(text: string): boolean {
