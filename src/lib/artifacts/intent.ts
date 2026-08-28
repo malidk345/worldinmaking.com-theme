@@ -1,5 +1,5 @@
 import { isChartRequest } from '../ai/chart-artifacts'
-import { isDiagramRequest } from '../mermaid-loader'
+import { isDiagramRequest } from '../mermaid-utils'
 import type { ArtifactIntent } from './kinds'
 
 const BUILD_VERB =

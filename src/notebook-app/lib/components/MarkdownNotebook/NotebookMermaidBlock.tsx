@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic'
 
-import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-loader'
+import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-utils'
 import { NotebookCodeBlockNode } from './types'
 
 const MermaidPreview = dynamic(

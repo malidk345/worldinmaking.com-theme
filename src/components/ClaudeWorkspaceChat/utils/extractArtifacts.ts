@@ -7,7 +7,7 @@ import {
   isDiagramRequest,
   isMermaidLanguage,
   isMermaidSource,
-} from 'lib/mermaid-loader';
+} from 'lib/mermaid-utils';
 
 /**
  * Extracts Artifact objects from assistant response text or user prompt directives.

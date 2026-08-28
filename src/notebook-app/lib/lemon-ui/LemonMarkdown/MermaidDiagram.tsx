@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { CodeSnippet, Language } from 'lib/components/CodeSnippet'
 import { Spinner } from 'lib/lemon-ui/Spinner'
-import { renderMermaidSvg } from '../../../../lib/mermaid-loader'
+import { renderMermaidSvg } from '../../../../lib/mermaid-utils'
 
 export interface MermaidDiagramProps {
     code: string
