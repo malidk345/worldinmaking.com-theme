@@ -10,6 +10,7 @@ import {
   IconChevronDown,
   IconArrowRight,
 } from '@posthog/icons';
+import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
@@ -34,6 +35,7 @@ interface ChatInputProps {
   draftPrompt?: string;
   draftNonce?: number;
   menuPlacement?: 'top-start' | 'bottom-start';
+  incomingAttachments?: FileAttachment[];
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -48,16 +50,34 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   draftPrompt = '',
   draftNonce = 0,
   menuPlacement = 'top-start',
+  incomingAttachments,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+
+  useEffect(() => {
+    if (incomingAttachments && incomingAttachments.length > 0) {
+      setAttachments((prev) => [...prev, ...incomingAttachments]);
+    }
+  }, [incomingAttachments]);
   const [slashIndex, setSlashIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeSelection, setActiveSelection] = useState('');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    const checkSel = () => {
+      const sel = readNotebookSelection();
+      setActiveSelection(sel);
+    };
+    checkSel();
+    const interval = setInterval(checkSel, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (draftNonce > 0) {
@@ -183,7 +203,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     } else {
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
+        const navLang = typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-US';
+        recognition.lang = navLang.toLowerCase().startsWith('tr') ? 'tr-TR' : navLang;
         recognition.continuous = true;
         recognition.interimResults = true;
         recognitionRef.current = recognition;
@@ -277,6 +298,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ))}
           </div>
         )}
+
+        {/* Active Notebook Selection Badge */}
+        {activeSelection && (
+          <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/70 border border-primary px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
+            <div className="flex items-center gap-1.5 min-w-0 truncate">
+              <span className="shrink-0 font-medium text-[#1E3A8A] dark:text-blue-400">📌 Selection Context:</span>
+              <span className="truncate italic text-muted">"{activeSelection.slice(0, 75)}..."</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveSelection('')}
+              className="text-muted hover:text-primary p-0.5 rounded transition-colors cursor-pointer"
+              title="Dismiss selection context"
+            >
+              <IconX className="size-3" />
+            </button>
+          </div>
+        )}
+
         {/* Textarea Placeholder: "Write a message..." */}
         <textarea
           ref={textareaRef}

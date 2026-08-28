@@ -117,6 +117,99 @@ function openaiToolChoice(choice: 'auto' | 'none' | 'web_search') {
     return choice
 }
 
+async function openaiCompletion(params: {
+    apiKey: string
+    model: string
+    messages: ChatMessage[]
+    toolChoice: 'auto' | 'none' | 'web_search'
+    onToken?: (text: string) => void
+}): Promise<
+    | { ok: true; content: string; toolCalls: ToolCall[] }
+    | { ok: false; detail: string; status?: number }
+> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${params.apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+                model: params.model || 'gpt-4o',
+                messages: toGroqMessages(params.messages),
+                temperature: 0.6,
+                max_tokens: MAX_TOKENS,
+                stream: true,
+                tools: OPENAI_CHAT_TOOLS,
+                tool_choice: openaiToolChoice(params.toolChoice),
+            }),
+        })
+        if (!res.ok) {
+            const raw = await res.text()
+            return { ok: false, detail: `${res.status} ${raw.slice(0, 220)}`, status: res.status }
+        }
+        if (!res.body) return { ok: false, detail: 'No response body' }
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+        let content = ''
+        let sawToolCall = false
+        const buckets = new Map<number, { id: string; name: string; arguments: string }>()
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                buffer += decoder.decode(value, { stream: true })
+                const lines = buffer.split('\n')
+                buffer = lines.pop() || ''
+                for (let line of lines) {
+                    line = line.trim()
+                    if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue
+                    try {
+                        const data = JSON.parse(line.slice(6)) as {
+                            choices?: Array<{
+                                delta?: {
+                                    content?: string | null
+                                    tool_calls?: Array<{
+                                        index?: number
+                                        id?: string
+                                        function?: { name?: string; arguments?: string }
+                                    }>
+                                }
+                            }>
+                        }
+                        const delta = data.choices?.[0]?.delta
+                        for (const call of delta?.tool_calls || []) {
+                            sawToolCall = true
+                            applyToolCallDelta(buckets, call)
+                        }
+                        const piece = delta?.content
+                        if (typeof piece === 'string' && piece) {
+                            content += piece
+                            if (!sawToolCall) params.onToken?.(piece)
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock()
+        }
+
+        return { ok: true, content, toolCalls: assembleToolCalls(buckets) }
+    } catch (error) {
+        return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
+    } finally {
+        clearTimeout(timer)
+    }
+}
+
 async function groqCompletion(params: {
     apiKey: string
     model: string
@@ -429,6 +522,38 @@ export async function runToolLoop(params: {
     ]
 
     let lastError = ''
+
+    const byokOpenai = envFrom(env, 'OPENAI_API_KEY', 'OPENAI_KEY').trim()
+    const openaiModel = envFrom(env, 'OPENAI_MODEL', 'OPENAI_TOOL_MODEL') || 'gpt-4o'
+
+    if (byokOpenai) {
+        const step = await runToolSteps({
+            provider: 'openai',
+            env,
+            host: params.host,
+            forceWebSearch: params.forceWebSearch,
+            holdPublicUntilCitations: params.holdPublicUntilCitations,
+            baseMessages,
+            onToken: params.onToken,
+            onTool: params.onTool,
+            complete: ({ messages, toolChoice, onToken }) =>
+                openaiCompletion({ apiKey: byokOpenai, model: openaiModel, messages, toolChoice, onToken }),
+        })
+        if (step.kind === 'done') return step.result
+        if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+            return {
+                ok: true,
+                usedTools: step.usedTools,
+                usedWebSearch: step.usedWebSearch,
+                text: step.text,
+                artifacts: step.artifacts,
+                citations: step.citations,
+                actions: step.actions,
+                provider: 'openai',
+            }
+        }
+        lastError = step.error
+    }
 
     for (const apiKey of groqKeys) {
         let skipKey = false

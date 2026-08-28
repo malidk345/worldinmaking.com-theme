@@ -255,6 +255,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-234` | Stream 3 / 5 | Ask AI to Notebook Insert Ergonomics: Smooth Glow Animation, Auto-Scroll to Target Block & Tactile Button Feedback | `src/notebook-app/App.tsx`, `EditableTextBlock.tsx`, `MarkdownNotebook.scss`, `ChatMessage.tsx`, `ArtifactsPanel.tsx`, `ArtifactWindowContent.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-28 |
 | `TSK-235` | Stream 5 / 3 | Full Agentic Notebook Authority for WIM AI: Full-Document Rewrite, Selection Replace, Title Auto-Update, Section Insert | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/host.ts`, `src/lib/notebook-chat-bind.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/notebook-app/App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-28 |
 | `TSK-236` | Stream 5 / 3 | Cross-Notebook Full Read/Search Tool for WIM AI (`read_notebook` by ID/Title across all workspace documents) | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
+| `TSK-237` | Stream 5 / 3 | Full AI UX & Friction Polish: Streaming Cursor, Code Copy Feedback, Window Drag Dropzone, Dynamic Voice Lang, Selection Badge | `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `ChatInput.tsx`, `ThinkingBlock.tsx`, `index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
+| `TSK-238` | Stream 5 / 3 | Connect & Fully Wire BYOK (OpenAI, Gemini, Groq, Anthropic execution in tool loop, bypass rate limits, verify test endpoint) | `src/lib/bots/tools/loop.ts`, `src/pages/api/byok/verify.ts`, `src/components/ApiKeysModal/index.tsx`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -451,6 +453,20 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 408 - Full BYOK Integration & Verification Endpoint (TSK-238)
+- **Date:** 2026-08-29
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fully wired and operationalized BYOK (Bring Your Own Key) architecture: (1) Added `openaiCompletion` in `src/lib/bots/tools/loop.ts` and prioritized user-provided private OpenAI / Gemini / Groq API keys at the top of the execution tier plan. (2) Built `/api/byok/verify` edge endpoint testing client-provided private API keys with a lightweight 1-token probe. (3) Upgraded `ApiKeysModal/index.tsx` with live "Test Et" verification buttons, instant feedback badges ("Doğrulandı ✓" / "Hata"), and automatic key activation upon successful verification.
+- **Modified Files:** `src/lib/bots/tools/loop.ts`, `src/pages/api/byok/verify.ts`, `src/components/ApiKeysModal/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors).
+
+### Entry 407 - Full AI UX & Friction Polish (TSK-237)
+- **Date:** 2026-08-29
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Elevated WIM AI workspace UX according to site style guide: (1) Added smooth streaming pulsating cursor (`animate-pulse`) and live formulation indicator in `ChatMessage.tsx`. (2) Upgraded inline markdown code blocks with `ChatMessageCodeBlock` featuring tactile `"Copied ✓"` green feedback badge. (3) Added full window-level drag & drop overlay in `ClaudeWorkspaceChat/index.tsx` preventing browser page hijack and accepting multi-file drops anywhere on screen. (4) Dynamic speech recognition locale fallback (`tr-TR` / `navigator.language`) in `ChatInput.tsx`. (5) Added dynamic `📌 Selection Context` badge above chat composer to give instant visual feedback when the AI is reading a specific notebook passage.
+- **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors).
 
 ### Entry 406 - Cross-Notebook Read & Search Tool for WIM AI (TSK-236)
 - **Date:** 2026-08-29

@@ -47,19 +47,46 @@ function textForSpeech(value: string): string {
     .trim()
 }
 
-function artifactCardMeta(art: Artifact): string {
-  const kind = getRenderer(art.type).label.replace(/^\w/, (c) => c.toUpperCase())
-  return art.version > 1 ? `${kind} · v${art.version}` : kind
+function ChatMessageCodeBlock({ language, code }: { language: string; code: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="my-3 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-sm">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-400 font-mono">
+        <span className="font-semibold text-stone-300">{language}</span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-0.5 rounded ${
+            copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'hover:text-stone-200'
+          }`}
+          title="Copy code"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-emerald-400" />
+              <span>Copied ✓</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto font-mono text-xs leading-relaxed">{code}</pre>
+    </div>
+  );
 }
 
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  if (!('speechSynthesis' in window)) return undefined
-  const voices = window.speechSynthesis.getVoices()
-  const prefix = lang.toLowerCase().slice(0, 2)
-  return (
-    voices.find((voice) => voice.lang.replace('_', '-').toLowerCase() === lang.toLowerCase()) ||
-    voices.find((voice) => voice.lang.toLowerCase().startsWith(prefix))
-  )
+function artifactCardMeta(art: Artifact): string {
+  const kind = getRenderer(art.type).label.replace(/^\w/, (c) => c.toUpperCase());
+  return art.version > 1 ? `${kind} · v${art.version}` : kind;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -176,43 +203,49 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             />
           </div>
 
+          {/* Live Thinking Status while text is still generating */}
+          {isLiveAnswer && !displayedText && (
+            <div className="flex items-center gap-2 py-1 text-xs text-secondary font-sans animate-pulse">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1E3A8A] dark:bg-blue-400" />
+              <span>Thinking & formulating response…</span>
+            </div>
+          )}
+
           {/* Response Text with Community matching font and sizing */}
           <div
             className="font-sans text-[15px] leading-[1.5] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere]"
           >
             {displayedText ? (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-               rehypePlugins={[rehypeSanitize]}
-              components={{
-                p: ({ children }: any) => (
-                  <p className="mb-2.5 last:mb-0 leading-[1.5] break-words">{children}</p>
-                ),
-                code({ node, inline, className, children, ...props }: any) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <div className="my-3 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans">
-                      <div className="flex items-center justify-between px-3 py-1.5 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-400 font-mono">
-                        <span>{match[1]}</span>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
-                          className="flex items-center gap-1 hover:text-stone-200 transition-colors"
-                        >
-                          <Copy className="h-3 w-3" /> Copy
-                        </button>
-                      </div>
-                      <pre className="p-3 overflow-x-auto font-mono text-xs">{children}</pre>
-                    </div>
-                  ) : (
-                    <code className="bg-light-3 text-primary border border-primary px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-              }}
-            >
-              {displayedText}
-            </ReactMarkdown>
+              <>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeSanitize]}
+                  components={{
+                    p: ({ children }: any) => (
+                      <p className="mb-2.5 last:mb-0 leading-[1.5] break-words">{children}</p>
+                    ),
+                    code({ node, inline, className, children, ...props }: any) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const codeContent = String(children).replace(/\n$/, '');
+                      return !inline && match ? (
+                        <ChatMessageCodeBlock language={match[1]} code={codeContent} />
+                      ) : (
+                        <code className="bg-light-3 text-primary border border-primary px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {displayedText}
+                </ReactMarkdown>
+                {isLiveAnswer && (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block w-1.5 h-4 ml-1 -mb-0.5 bg-primary/70 dark:bg-primary/90 animate-pulse rounded-xs"
+                  />
+                )}
+              </>
             ) : null}
           </div>
 

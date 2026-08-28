@@ -42,6 +42,7 @@ import {
   readNotebookChatBind,
   readNotebookSelection,
 } from '../../lib/notebook-chat-bind';
+import { IconDocument } from '@posthog/icons';
 import { messageToNotebookMarkdown } from '../../lib/notebook-artifact-block';
 import { finalizeArtifactTurn } from '../../lib/artifacts';
 import type { OSActionCard as OSActionCardType } from './types';
@@ -382,6 +383,71 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const executedActionsRef = useRef(new Set<string>());
   const [composerDraft, setComposerDraft] = useState('');
   const [composerDraftNonce, setComposerDraftNonce] = useState(0);
+  const [isWindowDragging, setIsWindowDragging] = useState(false);
+  const [incomingAttachments, setIncomingAttachments] = useState<FileAttachment[]>([]);
+  const dragCounterRef = useRef(0);
+
+  const processIncomingFiles = (fileList: FileList | File[]) => {
+    Array.from(fileList).forEach((file) => {
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+      const isCode = /\.(js|ts|tsx|jsx|py|html|css|json|sql|sh|rs|go|c|cpp|md)$/i.test(file.name);
+      const type: 'image' | 'text' | 'pdf' | 'code' = isImage ? 'image' : isPdf ? 'pdf' : isCode ? 'code' : 'text';
+      const id = `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const sizeStr = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${(file.size / 1024).toFixed(1)} KB`;
+
+      const reader = new FileReader();
+      if (isImage) {
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          setIncomingAttachments((prev) => [...prev, { id, name: file.name, type, size: sizeStr, url: dataUrl, content: dataUrl }]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        reader.onload = () => {
+          const textContent = reader.result as string;
+          setIncomingAttachments((prev) => [...prev, { id, name: file.name, type, size: sizeStr, content: textContent, contentPreview: textContent.slice(0, 200) }]);
+        };
+        reader.readAsText(file);
+      }
+    });
+  };
+
+  const handleWindowDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsWindowDragging(true);
+    }
+  };
+
+  const handleWindowDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsWindowDragging(false);
+    }
+  };
+
+  const handleWindowDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleWindowDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsWindowDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processIncomingFiles(e.dataTransfer.files);
+    }
+  };
 
   const fillComposer = (text: string) => {
     setComposerDraft(text)
@@ -1475,7 +1541,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       />
 
       {/* Main Workspace Area */}
-      <div ref={workspaceRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-primary text-primary">
+      <div
+        ref={workspaceRef}
+        onDragEnter={handleWindowDragEnter}
+        onDragLeave={handleWindowDragLeave}
+        onDragOver={handleWindowDragOver}
+        onDrop={handleWindowDrop}
+        className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-primary text-primary"
+      >
+        {/* Full Window Drag & Drop Overlay */}
+        {isWindowDragging && (
+          <div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center bg-primary/90 backdrop-blur-sm transition-all animate-fadeIn border-2 border-dashed border-[#1E3A8A] m-2 rounded-xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1E3A8A]/15 text-[#1E3A8A] dark:text-blue-400 mb-2.5 shadow-inner">
+              <IconDocument className="size-7" />
+            </div>
+            <p className="text-sm font-semibold text-primary m-0">Drop files to add to conversation</p>
+            <p className="text-xs text-muted m-0 mt-0.5">Documents, PDFs, code files, and images supported</p>
+          </div>
+        )}
+
         {/* Top Header Bar */}
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -1562,6 +1646,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               onSelectModel={handleSelectModel}
               draftPrompt={composerDraft}
               draftNonce={composerDraftNonce}
+              incomingAttachments={incomingAttachments}
               menuPlacement="top-start"
             />
           </div>
