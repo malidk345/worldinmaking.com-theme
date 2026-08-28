@@ -5,7 +5,7 @@ import {
     cleanMermaidSource,
     isDiagramRequest,
     isMermaidSource,
-} from '../src/lib/mermaid-loader'
+} from '../src/lib/mermaid-utils'
 import { isChartRequest } from '../src/lib/ai/chart-artifacts'
 import { isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../src/lib/ai/design-request'
 import {

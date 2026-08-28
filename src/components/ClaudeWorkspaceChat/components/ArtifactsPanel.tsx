@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Artifact, ArtifactOrigin } from '../types';
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block';
-import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-loader';
+import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-utils';
 import { WIM_PAPER, wrapHtmlArtifactDocument } from '../../../lib/wim-artifact-theme';
 import { X, Eye, Copy, Download, Check, ChevronDown, FileInput, Maximize2, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';

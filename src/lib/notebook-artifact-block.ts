@@ -1,6 +1,6 @@
 import { parseChartSpec, type ChartSpec } from './ai/chart-artifacts'
 import { getRenderer } from './artifacts'
-import { artifactLooksLikeMermaid, cleanMermaidSource } from './mermaid-loader'
+import { artifactLooksLikeMermaid, cleanMermaidSource } from './mermaid-utils'
 import type { Artifact, Message } from '../components/ClaudeWorkspaceChat/types'
 
 function fence(language: string, body: string): string {

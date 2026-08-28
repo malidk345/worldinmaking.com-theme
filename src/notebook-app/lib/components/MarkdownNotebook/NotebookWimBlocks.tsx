@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic'
 import { parseChartSpec } from '../../../../lib/ai/chart-artifacts'
 import { looksLikeReactSource } from '../../../../lib/ai/design-request'
 import { wrapHtmlArtifactDocument } from '../../../../lib/wim-artifact-theme'
-import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-loader'
+import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-utils'
 import {
     isNotebookChartFence,
     isNotebookHtmlFence,
