@@ -21,6 +21,7 @@ import {
     namespacedStorageKey,
 } from '../../../lib/wim-identity'
 import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
+import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
 
 export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
 export const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
@@ -575,6 +576,13 @@ export function saveNotebook(
     }
     writeAll(notebooks)
     schedulePushNotebook(next)
+    // Local-First IndexedDB Persistence & Snapshots
+    if (typeof window !== 'undefined') {
+        persistNotebookLocal(next.id, next.title, next.content).catch(() => {})
+        if (shouldSnapshot && (contentChanged || options.snapshot)) {
+            createDocumentSnapshot(next.id, next.title, next.content, options.snapshotLabel).catch(() => {})
+        }
+    }
     return next
 }
 

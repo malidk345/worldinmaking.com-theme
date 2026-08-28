@@ -1,31 +1,43 @@
 /**
- * Notebook RAG (Retrieval-Augmented Generation) Helper — WorldInMaking
+ * Notebook & Document RAG (Retrieval-Augmented Generation) Engine — WorldInMaking
  *
- * Edge-compatible semantic chunking and relevance search module over user notebooks.
- * Allows Ask AI Chat to pull relevant excerpts across the user's workspace into the chat context.
+ * Edge-compatible semantic chunking, BM25-like relevance scoring, and citation generator
+ * across user notebooks and uploaded research documents.
  */
 
-export interface NotebookChunk {
-    notebookId: string
+import type { AiCitation } from '../ai/contracts'
+import type { ParsedDocument } from '../document-parser'
+
+export interface RAGChunk {
+    documentId: string
     title: string
     heading?: string
     text: string
     score?: number
+    sourceType: 'notebook' | 'document' | 'upload'
+    url?: string
+}
+
+export interface RAGSearchResult {
+    contextText: string
+    citations: AiCitation[]
+    chunks: RAGChunk[]
 }
 
 /**
- * Splits a markdown document into logical chunks based on headings and paragraphs.
+ * Splits a markdown or plain text document into logical semantic chunks based on headings & paragraph bounds.
  */
-export function chunkNotebookContent(
-    notebookId: string,
+export function chunkDocumentContent(
+    documentId: string,
     title: string,
     content: string,
+    sourceType: 'notebook' | 'document' | 'upload' = 'notebook',
     maxChunkChars = 800
-): NotebookChunk[] {
+): RAGChunk[] {
     const raw = String(content || '').trim()
     if (!raw) return []
 
-    const chunks: NotebookChunk[] = []
+    const chunks: RAGChunk[] = []
     const lines = raw.split('\n')
 
     let currentHeading = ''
@@ -35,26 +47,27 @@ export function chunkNotebookContent(
         const text = currentBuffer.join('\n').trim()
         if (text.length > 20) {
             if (text.length > maxChunkChars) {
-                // Slicing very long paragraphs into maxChunkChars bounds
                 let pos = 0
                 while (pos < text.length) {
                     const slice = text.slice(pos, pos + maxChunkChars).trim()
                     if (slice.length > 20) {
                         chunks.push({
-                            notebookId,
+                            documentId,
                             title,
                             heading: currentHeading || undefined,
                             text: slice,
+                            sourceType,
                         })
                     }
-                    pos += maxChunkChars - 100
+                    pos += maxChunkChars - 120 // 120 chars overlap for semantic continuity
                 }
             } else {
                 chunks.push({
-                    notebookId,
+                    documentId,
                     title,
                     heading: currentHeading || undefined,
                     text,
+                    sourceType,
                 })
             }
         }
@@ -80,11 +93,16 @@ export function chunkNotebookContent(
 }
 
 /**
+ * Legacy compatibility alias for notebook chunking.
+ */
+export const chunkNotebookContent = chunkDocumentContent
+
+/**
  * Tokenizes text into normalized lower-case search terms (ignoring common stop words).
  */
-function extractSearchTerms(query: string): string[] {
+export function extractSearchTerms(query: string): string[] {
     const stopWords = new Set([
-        'and', 'the', 'is', 'in', 'at', 'of', 'for', 'to', 'a', 'an', 've', 'bir', 'bu', 'da', 'de', 'ile', 'ne', 'için', 'icin'
+        'and', 'the', 'is', 'in', 'at', 'of', 'for', 'to', 'a', 'an', 've', 'bir', 'bu', 'da', 'de', 'ile', 'ne', 'için', 'icin', 'hakkında', 'nedir', 'nelerdir', 'what', 'how', 'why'
     ])
     return String(query || '')
         .toLowerCase()
@@ -94,77 +112,126 @@ function extractSearchTerms(query: string): string[] {
 }
 
 /**
- * Searches across all notebooks in the workspace and returns the top relevant RAG chunks.
+ * Searches across notebooks and uploaded documents, ranking by term frequency and heading match.
+ */
+export function searchKnowledgeWorkspace(
+    query: string,
+    sources: {
+        notebooks?: Array<{ id: string; title: string; content: string }>
+        documents?: ParsedDocument[]
+    },
+    maxResults = 5
+): RAGSearchResult {
+    const terms = extractSearchTerms(query)
+    const allChunks: RAGChunk[] = []
+
+    // 1. Process notebooks
+    if (sources.notebooks?.length) {
+        for (const nb of sources.notebooks) {
+            const chunks = chunkDocumentContent(nb.id, nb.title || 'Notebook', nb.content, 'notebook')
+            allChunks.push(...chunks)
+        }
+    }
+
+    // 2. Process uploaded parsed documents
+    if (sources.documents?.length) {
+        for (const doc of sources.documents) {
+            for (const sec of doc.sections) {
+                const chunks = chunkDocumentContent(doc.id, doc.filename, sec.content, 'document')
+                for (const c of chunks) {
+                    if (!c.heading && sec.heading) c.heading = sec.heading
+                    allChunks.push(c)
+                }
+            }
+        }
+    }
+
+    if (!terms.length || !allChunks.length) {
+        return { contextText: '', citations: [], chunks: [] }
+    }
+
+    // 3. Score chunks
+    for (const chunk of allChunks) {
+        let score = 0
+        const lowerText = chunk.text.toLowerCase()
+        const lowerTitle = chunk.title.toLowerCase()
+        const lowerHeading = (chunk.heading || '').toLowerCase()
+
+        for (const term of terms) {
+            if (lowerTitle.includes(term)) score += 6
+            if (lowerHeading.includes(term)) score += 5
+            
+            let pos = lowerText.indexOf(term)
+            let occurrences = 0
+            while (pos !== -1 && occurrences < 10) {
+                occurrences++
+                score += 2
+                pos = lowerText.indexOf(term, pos + term.length)
+            }
+        }
+
+        chunk.score = score
+    }
+
+    // 4. Sort and deduplicate top results
+    const ranked = allChunks.filter(c => (c.score || 0) > 0).sort((a, b) => (b.score || 0) - (a.score || 0))
+    const topChunks: RAGChunk[] = []
+    const seen = new Set<string>()
+
+    for (const chunk of ranked) {
+        const key = `${chunk.documentId}:${chunk.text.slice(0, 50)}`
+        if (!seen.has(key)) {
+            seen.add(key)
+            topChunks.push(chunk)
+            if (topChunks.length >= maxResults) break
+        }
+    }
+
+    // 5. Generate formatted context & citations
+    const citations: AiCitation[] = topChunks.map((chunk, idx) => ({
+        id: idx + 1,
+        title: chunk.heading ? `${chunk.title} › ${chunk.heading}` : chunk.title,
+        url: chunk.sourceType === 'notebook' ? `/notebooks#${chunk.documentId}` : `#doc-${chunk.documentId}`,
+        snippet: chunk.text.length > 200 ? `${chunk.text.slice(0, 197)}...` : chunk.text,
+        source: chunk.sourceType === 'notebook' ? 'Workspace Notebook' : 'Uploaded Research Document',
+    }))
+
+    const contextLines: string[] = ['### Verified Workspace & Document Context (RAG):']
+    topChunks.forEach((chunk, idx) => {
+        const citationId = idx + 1
+        const header = `[Source ${citationId}] "${chunk.title}"${chunk.heading ? ` > ${chunk.heading}` : ''} (${chunk.sourceType}):`
+        contextLines.push(`${header}\n"""\n${chunk.text}\n"""`)
+    })
+
+    return {
+        contextText: contextLines.join('\n\n'),
+        citations,
+        chunks: topChunks,
+    }
+}
+
+/**
+ * Backward-compatible helper for legacy notebook workspace search.
  */
 export function searchNotebookWorkspace(
     query: string,
     notebooks: Array<{ id: string; title: string; content: string }>,
     maxResults = 4
-): NotebookChunk[] {
-    const terms = extractSearchTerms(query)
-    if (!terms.length || !notebooks.length) return []
-
-    const allChunks: NotebookChunk[] = []
-
-    for (const nb of notebooks) {
-        const chunks = chunkNotebookContent(nb.id, nb.title || 'Untitled', nb.content)
-        for (const chunk of chunks) {
-            let score = 0
-            const lowerText = chunk.text.toLowerCase()
-            const lowerTitle = chunk.title.toLowerCase()
-            const lowerHeading = (chunk.heading || '').toLowerCase()
-
-            for (const term of terms) {
-                if (lowerTitle.includes(term)) score += 5
-                if (lowerHeading.includes(term)) score += 4
-                // Count occurrences in chunk body
-                let pos = lowerText.indexOf(term)
-                while (pos !== -1) {
-                    score += 2
-                    pos = lowerText.indexOf(term, pos + term.length)
-                }
-            }
-
-            if (score > 0) {
-                allChunks.push({ ...chunk, score })
-            }
-        }
-    }
-
-    // Sort by relevance score descending
-    allChunks.sort((a, b) => (b.score || 0) - (a.score || 0))
-
-    // Deduplicate near-identical chunks
-    const result: NotebookChunk[] = []
-    const seen = new Set<string>()
-
-    for (const chunk of allChunks) {
-        const key = `${chunk.notebookId}:${chunk.text.slice(0, 40)}`
-        if (!seen.has(key)) {
-            seen.add(key)
-            result.push(chunk)
-            if (result.length >= maxResults) break
-        }
-    }
-
-    return result
+) {
+    const result = searchKnowledgeWorkspace(query, { notebooks }, maxResults)
+    return result.chunks.map(c => ({
+        notebookId: c.documentId,
+        title: c.title,
+        heading: c.heading,
+        text: c.text,
+        score: c.score,
+    }))
 }
 
-/**
- * Formats RAG search results into a clean prompt context block for Ask AI Chat.
- */
 export function buildNotebookRAGContext(
     query: string,
     notebooks: Array<{ id: string; title: string; content: string }>
 ): string {
-    const hits = searchNotebookWorkspace(query, notebooks, 4)
-    if (!hits.length) return ''
-
-    const lines: string[] = ['Related Notebook Workspace Context (RAG):']
-    for (const hit of hits) {
-        lines.push(`--- Notebook: "${hit.title}"${hit.heading ? ` > ${hit.heading}` : ''} ---`)
-        lines.push(`"""\n${hit.text}\n"""`)
-    }
-
-    return lines.join('\n\n')
+    const res = searchKnowledgeWorkspace(query, { notebooks }, 4)
+    return res.contextText
 }

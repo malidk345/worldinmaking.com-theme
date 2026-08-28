@@ -184,6 +184,85 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'rewrite_notebook_document',
+            description:
+                'Completely rewrite, reformat, restructure, or replace the entire content of the bound notebook. Use when the user asks to rewrite the whole document, format all notes, reorganize with a table of contents, or overhaul the note.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    content: { type: 'string', description: 'Complete new markdown content for the notebook.' },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Optional notebook id. Defaults to the bound notebook in the workspace snapshot.',
+                    },
+                },
+                required: ['content'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'replace_notebook_selection',
+            description:
+                'Replace the currently selected text/passage in the bound notebook with new rewritten markdown. Use when the user asks to edit, revise, improve, or replace a specific selection in the notebook.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    content: { type: 'string', description: 'Replacement markdown for the selected text.' },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Optional notebook id. Defaults to the bound notebook in the workspace snapshot.',
+                    },
+                },
+                required: ['content'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'update_notebook_title',
+            description:
+                'Update the title of the bound notebook (or specific notebook_id). Use when the user asks to rename the notebook or when providing an appropriate title for the content.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    title: { type: 'string', description: 'New title for the notebook.' },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Optional notebook id. Defaults to the bound notebook in the workspace snapshot.',
+                    },
+                },
+                required: ['title'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'read_notebook',
+            description:
+                'Read the full markdown content of any notebook by its id or title from list_notebooks. Use when the user asks about another notebook or asks to reference/compare multiple notes.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Notebook id or notebook title to read.',
+                    },
+                },
+                required: ['notebook_id'],
+            },
+        },
+    },
 ]
 
 export const TOOL_PROTOCOL = `
@@ -198,7 +277,14 @@ TOOL USE:
 - search_site: search this site's posts. web_search is the public internet; search_site is WorldInMaking.
 - open_path: open an allowed OS window. Do not invent paths.
 - read_post: read one site post by slug after search_site.
-- list_notebooks / create_notebook / insert_notebook_block: notebooks in this OS. create_notebook and insert_notebook_block are applied by the host. insert_notebook_block writes into the bound notebook (or notebook_id). Do not dump the same notes in the bubble after a successful insert.
+- Notebook Tools (Full Authority):
+  * list_notebooks: see all notebooks in this OS.
+  * create_notebook: create a brand new notebook.
+  * insert_notebook_block: append content to the bound notebook.
+  * rewrite_notebook_document: full-document rewrite/overhaul of the bound notebook.
+  * replace_notebook_selection: replace the active user selection in the notebook.
+  * update_notebook_title: rename or set title for the bound notebook.
+  * All notebook modifications are applied live by the host with automatic time-travel snapshotting. Do not dump the same markdown in the bubble after calling a notebook tool.
 - If a tool returns an error, fix the arguments and call it again. Do not dump the failed source in the bubble.
 - If you need a tool, emit only the tool call. Do not write the user-visible answer in the same step. After the host returns the result, write the answer.
 - If no tool is needed, answer normally.

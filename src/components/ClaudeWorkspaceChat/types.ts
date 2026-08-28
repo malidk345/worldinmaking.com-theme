@@ -76,7 +76,14 @@ export interface FileAttachment {
 }
 
 export interface OSActionCard {
-  type: 'create_notebook' | 'create_forum_topic' | 'open_window' | 'insert_notebook_block'
+  type:
+    | 'create_notebook'
+    | 'create_forum_topic'
+    | 'open_window'
+    | 'insert_notebook_block'
+    | 'rewrite_notebook_document'
+    | 'replace_notebook_selection'
+    | 'update_notebook_title'
   title: string
   description: string
   payload: {

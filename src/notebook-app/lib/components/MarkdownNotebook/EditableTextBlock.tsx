@@ -41,6 +41,7 @@ import {
 import { splitInlineNodesAt } from './inlineContent'
 import { editableHtmlMatches, noteChipsAreCurrent, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
+import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
 
@@ -675,7 +676,8 @@ export function EditableTextBlock({
                 showInlineInsertMenuButton &&
                     isInlineInsertMenuButtonVisible &&
                     'MarkdownNotebook__text-row--inline-menu-visible',
-                isAIShimmering && 'MarkdownNotebook__text-row--ai-shimmer'
+                isAIShimmering && 'MarkdownNotebook__text-row--ai-shimmer',
+                wasNotebookNodeJustInserted(node.id) && 'MarkdownNotebook__text-row--inserted-glow'
             )}
         >
             {showInlineInsertMenuButton ? (

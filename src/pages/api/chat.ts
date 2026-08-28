@@ -294,6 +294,17 @@ export default async function handler(req: Request) {
                 let livePublicTokensCount = 0
                 let liveThinkingAcc = ''
 
+                const byokEnv: Record<string, string> = {}
+                const byokGroq = req.headers.get('x-byok-groq')
+                const byokGemini = req.headers.get('x-byok-gemini')
+                const byokOpenai = req.headers.get('x-byok-openai')
+                const byokAnthropic = req.headers.get('x-byok-anthropic')
+                if (byokGroq) byokEnv.GROQ_API_KEY = byokGroq
+                if (byokGemini) byokEnv.GEMINI_API_KEY = byokGemini
+                if (byokOpenai) byokEnv.OPENAI_API_KEY = byokOpenai
+                if (byokAnthropic) byokEnv.ANTHROPIC_API_KEY = byokAnthropic
+                const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
+
                 const result = await streamBotTurn(
                     {
                         question: prompt,
@@ -302,7 +313,7 @@ export default async function handler(req: Request) {
                         thinkingDepth: 'brief',
                         context,
                         messages: history,
-                        env: getRuntimeEnv(),
+                        env: activeEnv,
                         scope: notebookTask ? 'notebook_coauthor' : 'ask_ai',
                         trustedInstruction: trustedInstruction || undefined,
                         enableTools,

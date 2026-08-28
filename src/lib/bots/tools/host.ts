@@ -9,14 +9,21 @@ export type HostSnapshot = {
     notebookId?: string
     notebookTitle?: string
     selection?: string
-    notebooks?: Array<{ id: string; title: string }>
+    notebooks?: Array<{ id: string; title: string; content?: string }>
     artifactId?: string
     artifactTitle?: string
     artifactType?: string
 }
 
 export type HostOsAction = {
-    type: 'open_window' | 'create_notebook' | 'create_forum_topic' | 'insert_notebook_block'
+    type:
+        | 'open_window'
+        | 'create_notebook'
+        | 'create_forum_topic'
+        | 'insert_notebook_block'
+        | 'rewrite_notebook_document'
+        | 'replace_notebook_selection'
+        | 'update_notebook_title'
     title: string
     description: string
     payload: { path?: string; title?: string; content?: string; notebookId?: string }
@@ -37,11 +44,12 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
     if (Array.isArray(snap.notebooks)) {
         for (const notebook of snap.notebooks.slice(0, 20)) {
             if (!notebook || typeof notebook !== 'object') continue
-            const item = notebook as { id?: unknown; title?: unknown }
+            const item = notebook as { id?: unknown; title?: unknown; content?: unknown }
             if (typeof item.id !== 'string') continue
             notebooks.push({
                 id: item.id.slice(0, 80),
                 title: typeof item.title === 'string' ? item.title.slice(0, 120) : '',
+                content: typeof item.content === 'string' ? item.content.slice(0, 15_000) : undefined,
             })
         }
     }
@@ -200,6 +208,32 @@ export function executeListNotebooks(host?: HostSnapshot): { ok: boolean; result
     }
 }
 
+export function executeReadNotebook(
+    host: HostSnapshot | undefined,
+    idOrTitle: string
+): { ok: boolean; result: string } {
+    const query = clip(idOrTitle.trim(), 120).toLowerCase()
+    if (!query) return { ok: false, result: JSON.stringify({ ok: false, error: 'notebook_id or title required' }) }
+    const notebooks = host?.notebooks || []
+    const match = notebooks.find(
+        (n) => n.id.toLowerCase() === query || n.title.toLowerCase() === query || n.title.toLowerCase().includes(query)
+    )
+    if (!match) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: `Notebook "${idOrTitle}" not found. Call list_notebooks to see available notebooks.`,
+            }),
+        }
+    }
+    const content = match.content ? match.content.trim() : '(Notebook is empty)'
+    return {
+        ok: true,
+        result: clip(`# ${match.title || 'Untitled'} (${match.id})\n\n${content}`, 8_000),
+    }
+}
+
 export function executeCreateNotebook(title: string, content?: string): {
     ok: boolean
     result: string
@@ -246,6 +280,100 @@ export function executeInsertNotebookBlock(
             title: `Insert into ${title}`,
             description: 'Append a block to the notebook',
             payload: { notebookId: targetId, title, content: body },
+        },
+    }
+}
+
+export function executeRewriteNotebookDocument(
+    host: HostSnapshot | undefined,
+    content: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const body = clip(content.trim(), 20_000)
+    if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
+            }),
+        }
+    }
+    const known = host?.notebooks?.find((item) => item.id === targetId)
+    const title = known?.title || host?.notebookTitle || 'Notebook'
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        action: {
+            type: 'rewrite_notebook_document',
+            title: `Rewrite ${title}`,
+            description: 'Rewrite and restructure the entire notebook content',
+            payload: { notebookId: targetId, title, content: body },
+        },
+    }
+}
+
+export function executeReplaceNotebookSelection(
+    host: HostSnapshot | undefined,
+    content: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const body = clip(content.trim(), 8_000)
+    if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
+            }),
+        }
+    }
+    const known = host?.notebooks?.find((item) => item.id === targetId)
+    const title = known?.title || host?.notebookTitle || 'Notebook'
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        action: {
+            type: 'replace_notebook_selection',
+            title: `Replace selection in ${title}`,
+            description: 'Replace the active user selection with rewritten text',
+            payload: { notebookId: targetId, title, content: body },
+        },
+    }
+}
+
+export function executeUpdateNotebookTitle(
+    host: HostSnapshot | undefined,
+    title: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const name = clip(title.trim(), 120)
+    if (!name) return { ok: false, result: JSON.stringify({ ok: false, error: 'title required' }) }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
+            }),
+        }
+    }
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, notebookId: targetId, title: name }),
+        action: {
+            type: 'update_notebook_title',
+            title: `Rename notebook: ${name}`,
+            description: 'Update the notebook title',
+            payload: { notebookId: targetId, title: name },
         },
     }
 }

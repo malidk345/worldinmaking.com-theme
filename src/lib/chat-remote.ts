@@ -87,10 +87,14 @@ export function rememberDeletedChatId(chatId: string): void {
     }
 }
 
+import { getActiveByokHeaders } from './byok-vault'
+
 export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()): HeadersInit {
+    const byokHeaders = getActiveByokHeaders()
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
+        ...byokHeaders,
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
     try {

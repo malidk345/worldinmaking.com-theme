@@ -100,7 +100,7 @@ export function publicTextFromRound(content: string, toolCallCount: number): str
 }
 
 export function assembleToolCalls(buckets: Map<number, ToolCallBucket>): ToolCall[] {
-    return [...buckets.entries()]
+    return Array.from(buckets.entries())
         .sort((a, b) => a[0] - b[0])
         .map(([, value]) => ({
             id: value.id || `call-${Math.random().toString(36).slice(2, 9)}`,

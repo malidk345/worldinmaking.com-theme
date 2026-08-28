@@ -99,7 +99,14 @@ export type AiSseEvent =
     | {
           type: 'action'
           action: {
-              type: 'open_window' | 'create_notebook' | 'create_forum_topic' | 'insert_notebook_block'
+              type:
+                  | 'open_window'
+                  | 'create_notebook'
+                  | 'create_forum_topic'
+                  | 'insert_notebook_block'
+                  | 'rewrite_notebook_document'
+                  | 'replace_notebook_selection'
+                  | 'update_notebook_title'
               title: string
               description: string
               payload: { path?: string; title?: string; content?: string; notebookId?: string }

@@ -76,6 +76,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+  const [addedToNotebook, setAddedToNotebook] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const displayedText = message.content;
@@ -268,12 +269,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
                 <button
                   type="button"
-                  onClick={() => onAddToNotebook(message)}
-                  className="flex items-center gap-1 px-1 py-0.5 text-[12px] hover:text-primary transition-colors cursor-pointer"
+                  onClick={() => {
+                    onAddToNotebook(message)
+                    setAddedToNotebook(true)
+                    setTimeout(() => setAddedToNotebook(false), 2000)
+                  }}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-all cursor-pointer ${
+                    addedToNotebook ? 'text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/40' : 'hover:text-primary'
+                  }`}
                   title="Add to notebook"
                 >
-                  <FileInput className="h-3.5 w-3.5" />
-                  <span>Add</span>
+                  {addedToNotebook ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Added ✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileInput className="h-3.5 w-3.5" />
+                      <span>Add</span>
+                    </>
+                  )}
                 </button>
               )}
 

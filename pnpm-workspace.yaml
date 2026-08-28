@@ -1,6 +1,7 @@
 packages:
     - .
     - plugins/*
+    - demo-video
 
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:

@@ -10,6 +10,8 @@ import {
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
+import { parseMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebook/freshlyInserted'
 import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
@@ -633,12 +635,90 @@ export function App() {
       setCurrentNotebook(target)
       setTitle(target.title)
       setMarkdown(next)
-      setMarkdownVersion((value) => value + 1)
-      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Inserted artifact' })
+      const label = mode === 'replace' ? 'Full document rewrite' : 'Inserted artifact'
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: label })
+
+      // Mark the newly inserted nodes to trigger smooth highlight glow
+      try {
+        const parsed = parseMarkdownNotebook(next)
+        const insertedDoc = parseMarkdownNotebook(text)
+        if (insertedDoc.nodes.length > 0) {
+          if (mode === 'prepend') {
+            parsed.nodes.slice(0, insertedDoc.nodes.length).forEach((n) => markNotebookNodeFreshlyInserted(n.id))
+          } else if (mode === 'replace') {
+            parsed.nodes.forEach((n) => markNotebookNodeFreshlyInserted(n.id))
+          } else {
+            parsed.nodes.slice(-insertedDoc.nodes.length).forEach((n) => markNotebookNodeFreshlyInserted(n.id))
+          }
+        }
+      } catch {
+        /* ignore parse */
+      }
+
+      // Smooth scroll target block into view
+      if (typeof window !== 'undefined') {
+        window.setTimeout(() => {
+          const glows = document.querySelectorAll('.MarkdownNotebook__text-row--inserted-glow, [data-markdown-notebook-node-id]')
+          const targetEl = glows[glows.length - 1]
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }
+        }, 80)
+      }
     }
+
+    const handleSetTitle = (event: Event) => {
+      const customEvent = event as CustomEvent<{ title: string; notebookId?: string }>
+      const newTitle = String(customEvent.detail?.title || '').trim()
+      if (!newTitle) return
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+      setTitle(newTitle)
+      const updated = { ...target, title: newTitle }
+      setCurrentNotebook(updated)
+      saveNotebook(updated, { snapshot: true, snapshotLabel: `Rename: ${newTitle}` })
+      if (appWindow) {
+        appActions.setWindowTitle(appWindow, newTitle)
+      }
+    }
+
+    const handleReplaceSelection = (event: Event) => {
+      const customEvent = event as CustomEvent<{ text: string; notebookId?: string }>
+      const text = String(customEvent.detail?.text || '').trim()
+      if (!text) return
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+      const current = markdownRef.current || target.content || ''
+      const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
+      let next = current
+      if (selection && current.includes(selection)) {
+        next = current.replace(selection, text)
+      } else {
+        next = current.trim() ? `${current.trim()}\n\n${text}\n` : `${text}\n`
+      }
+      setCurrentNotebook(target)
+      setMarkdown(next)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
+    }
+
     window.addEventListener('wimNotebookInsertText', handleInsertText)
-    return () => window.removeEventListener('wimNotebookInsertText', handleInsertText)
-  }, [navigate])
+    window.addEventListener('wimNotebookSetTitle', handleSetTitle)
+    window.addEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+    return () => {
+      window.removeEventListener('wimNotebookInsertText', handleInsertText)
+      window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
+      window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+    }
+  }, [navigate, appWindow])
 
   const handleHistoryRestored = useCallback(
     (payload: { content: string; title: string }) => {

@@ -251,6 +251,10 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-229` | Stream 3 / 5 | Unify Slash (/) and 3-Dot Block Menus with Site Profile Menu UI & Compact Scrollable Viewport | `MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-231` | Stream 4 / 2 | Fix Forum Topic Creation Missing from Listing (Inappropriate comment_ prefix, cache invalidation, slug handling) | `src/lib/supabaseCommunity.ts`, `src/components/Inbox/index.tsx`, `src/hooks/useQuestions.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-22 |
 | `TSK-232` | Stream 4 / 2 | Connect Forum Post & Reply Editing to Supabase (`/api/forum/edit`, `EditWrapper`, author id parity) | `src/pages/api/forum/edit.ts`, `src/components/Squeak/components/EditWrapper.tsx`, `Question.tsx`, `Reply.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-22 |
+| `TSK-233` | Stream 5 / 3 / 4 | Enterprise AI Research & Knowledge Workstation Phase 1 (Document RAG & Citations, BYOK Vault, Local-First IndexedDB Persistence & Time-Travel Version History) | `src/lib/document-parser.ts`, `src/lib/bots/notebook-rag.ts`, `src/lib/byok-vault.ts`, `src/lib/indexeddb-storage.ts`, `src/components/ApiKeysModal/`, `src/notebook-app/scenes/notebooks/VersionHistoryModal.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-28 |
+| `TSK-234` | Stream 3 / 5 | Ask AI to Notebook Insert Ergonomics: Smooth Glow Animation, Auto-Scroll to Target Block & Tactile Button Feedback | `src/notebook-app/App.tsx`, `EditableTextBlock.tsx`, `MarkdownNotebook.scss`, `ChatMessage.tsx`, `ArtifactsPanel.tsx`, `ArtifactWindowContent.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-28 |
+| `TSK-235` | Stream 5 / 3 | Full Agentic Notebook Authority for WIM AI: Full-Document Rewrite, Selection Replace, Title Auto-Update, Section Insert | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/host.ts`, `src/lib/notebook-chat-bind.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/notebook-app/App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-28 |
+| `TSK-236` | Stream 5 / 3 | Cross-Notebook Full Read/Search Tool for WIM AI (`read_notebook` by ID/Title across all workspace documents) | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -447,6 +451,34 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 406 - Cross-Notebook Read & Search Tool for WIM AI (TSK-236)
+- **Date:** 2026-08-29
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Added multi-document reading and search capabilities across all workspace notebooks: (1) Added `read_notebook` tool in `src/lib/bots/tools/spec.ts`, `host.ts`, `execute.ts` allowing WIM AI to read any closed/open notebook by ID or Title. (2) Enhanced workspace snapshot in `ClaudeWorkspaceChat/index.tsx` to include `content` for all local notebooks. (3) Updated `HostSnapshot` typing.
+- **Modified Files:** `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors).
+
+### Entry 405 - Full Agentic Notebook Authority for WIM AI (TSK-235)
+- **Date:** 2026-08-28
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Granted WIM AI full agentic authority over the bound notebook while keeping the inline editor block-specific as requested: (1) Added new tool specifications and host executors in `src/lib/bots/tools/spec.ts`, `host.ts`, `execute.ts`: `rewrite_notebook_document`, `replace_notebook_selection`, `update_notebook_title`. (2) Updated `AiStreamChunk` action types in `src/lib/ai/contracts.ts` and `OSActionCard` in `ClaudeWorkspaceChat/types.ts`. (3) In `src/notebook-app/App.tsx`, wired custom events `wimNotebookSetTitle` and `wimNotebookReplaceSelection` alongside `wimNotebookInsertText` with automatic time-travel snapshotting and node highlight glow. (4) Updated system agent instructions in `notebook-chat-bind.ts` to instruct WIM AI on calling full-authority document tools instead of raw chat dumps.
+- **Modified Files:** `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/ai/contracts.ts`, `src/lib/notebook-chat-bind.ts`, `src/components/ClaudeWorkspaceChat/types.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/notebook-app/App.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors).
+
+### Entry 404 - Ask AI to Notebook Insert Ergonomics (TSK-234)
+- **Date:** 2026-08-28
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Elevated Ask AI ↔ Notebook block insertion ergonomics: (1) Added smooth 2.2s `@keyframes wimInsertedGlow` pulse in `MarkdownNotebook.scss` with `MarkdownNotebook__text-row--inserted-glow` attached via `wasNotebookNodeJustInserted`. (2) In `App.tsx` `handleInsertText`, parsed inserted markdown nodes, marked them as fresh insertions, and scheduled smooth auto-scroll to the target block. (3) Added delightful tactile button feedback ("Add" -> "Added ✓" with green check and background pulse) across `ChatMessage.tsx`, `ArtifactWindowContent.tsx`, and `ArtifactsPanel.tsx`.
+- **Modified Files:** `src/notebook-app/App.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `src/notebook-app/styles/bundleCss.ts`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/components/ArtifactWindowContent.tsx`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run build:notebook-styles` and `pnpm run typecheck:shell` PASS (0 gated errors).
+
+### Entry 403 - Enterprise AI Research & Knowledge Workstation Phase 1 (TSK-233)
+- **Date:** 2026-08-28
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Built enterprise-grade knowledge workstation foundations: (1) Multi-format document parser (`document-parser.ts`) & verifiable RAG citation engine (`notebook-rag.ts`) with `AiCitation` popover and source attribution. (2) Client-side encrypted BYOK Vault (`byok-vault.ts`) & API Keys Management Modal (`ApiKeysModal/index.tsx`) supporting private Gemini, Groq, OpenAI, and Anthropic keys with zero-server persistence. (3) Local-First IndexedDB persistence (`indexeddb-storage.ts`) and time-travel document snapshots with full visual diff & restore modal (`VersionHistoryModal.tsx`). (4) Fixed MapIterator TS2802 loop iteration in `tools/loop.ts`. Gated shell allowlist passes 100% with 0 errors.
+- **Modified Files:** `src/lib/document-parser.ts`, `src/lib/bots/notebook-rag.ts`, `src/lib/byok-vault.ts`, `src/lib/indexeddb-storage.ts`, `src/components/ApiKeysModal/index.tsx`, `src/notebook-app/scenes/notebooks/VersionHistoryModal.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/components/TaskBarMenu/index.tsx`, `src/pages/api/chat.ts`, `src/lib/chat-remote.ts`, `src/lib/bots/tools/loop.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors in core shell allowlist).
 
 ### Entry 402 - Mobile chat no longer jumps while streaming (TSK-332)
 - **Date:** 2026-08-28

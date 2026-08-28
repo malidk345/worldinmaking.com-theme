@@ -83,6 +83,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
+  const [inserted, setInserted] = useState(false);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null)
@@ -279,12 +280,27 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             {onInsertToNotebook ? (
               <button
                 type="button"
-                onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
-                className="flex items-center gap-1.5 px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
+                onClick={() => {
+                  onInsertToNotebook(artifactToNotebookMarkdown(artifact))
+                  setInserted(true)
+                  setTimeout(() => setInserted(false), 2000)
+                }}
+                className={`flex items-center gap-1.5 px-2.5 text-[13px] cursor-pointer transition-colors ${
+                  inserted ? 'text-emerald-600 font-semibold bg-emerald-50' : 'text-[#3d3d3d] hover:bg-[#fafafa]'
+                }`}
                 title="Add to notebook as a block"
               >
-                <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
-                <span>Add to notebook</span>
+                {inserted ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Added ✓</span>
+                  </>
+                ) : (
+                  <>
+                    <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                    <span>Add to notebook</span>
+                  </>
+                )}
               </button>
             ) : (
               <button

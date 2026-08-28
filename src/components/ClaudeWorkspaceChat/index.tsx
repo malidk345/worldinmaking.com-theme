@@ -888,7 +888,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             selection: readNotebookSelection(),
             notebooks: getNotebooks()
               .slice(0, 20)
-              .map((notebook) => ({ id: notebook.id, title: notebook.title || 'Untitled' })),
+              .map((notebook) => ({
+                id: notebook.id,
+                title: notebook.title || 'Untitled',
+                content: notebook.content ? notebook.content.slice(0, 10_000) : '',
+              })),
             artifactId: activeArtifact?.id,
             artifactTitle: activeArtifact?.title,
             artifactType: activeArtifact?.type,
@@ -1203,6 +1207,37 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'insert_notebook_block') {
         insertIntoNotebook(action.payload.content || '', action.payload.notebookId);
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+      } else if (action.type === 'rewrite_notebook_document') {
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookInsertText', {
+            detail: {
+              text: action.payload.content || '',
+              mode: 'replace',
+              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+            },
+          })
+        );
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+      } else if (action.type === 'replace_notebook_selection') {
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookReplaceSelection', {
+            detail: {
+              text: action.payload.content || '',
+              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+            },
+          })
+        );
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+      } else if (action.type === 'update_notebook_title') {
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookSetTitle', {
+            detail: {
+              title: action.payload.title || '',
+              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+            },
+          })
+        );
         if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'create_forum_topic') {
         if (app?.addWindow) app.addWindow({ path: '/community' });

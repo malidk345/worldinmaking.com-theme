@@ -11,8 +11,12 @@ import {
     executeInsertNotebookBlock,
     executeListNotebooks,
     executeOpenPath,
+    executeReadNotebook,
     executeReadPost,
+    executeReplaceNotebookSelection,
+    executeRewriteNotebookDocument,
     executeSearchSite,
+    executeUpdateNotebookTitle,
     type HostOsAction,
     type HostSnapshot,
 } from './host'
@@ -67,6 +71,28 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         text: 'content',
         markdown: 'content',
         body: 'content',
+        notebookId: 'notebook_id',
+        id: 'notebook_id',
+        notebook: 'notebook_id',
+    },
+    rewrite_notebook_document: {
+        text: 'content',
+        markdown: 'content',
+        body: 'content',
+        notebookId: 'notebook_id',
+        id: 'notebook_id',
+        notebook: 'notebook_id',
+    },
+    replace_notebook_selection: {
+        text: 'content',
+        markdown: 'content',
+        body: 'content',
+        notebookId: 'notebook_id',
+        id: 'notebook_id',
+        notebook: 'notebook_id',
+    },
+    update_notebook_title: {
+        name: 'title',
         notebookId: 'notebook_id',
         id: 'notebook_id',
         notebook: 'notebook_id',
@@ -234,6 +260,11 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     add_notebook_block: 'insert_notebook_block',
     append_notebook: 'insert_notebook_block',
     write_notebook: 'insert_notebook_block',
+    rewrite_notebook: 'rewrite_notebook_document',
+    rewrite_document: 'rewrite_notebook_document',
+    replace_selection: 'replace_notebook_selection',
+    rename_notebook: 'update_notebook_title',
+    set_notebook_title: 'update_notebook_title',
     artifact: 'create_artifact',
 }
 
@@ -292,6 +323,10 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             const executed = executeListNotebooks(host)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
+        if (name === 'read_notebook') {
+            const executed = executeReadNotebook(host, asText(args.notebook_id || args.notebookId || args.title || args.query, 120))
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
         if (name === 'create_notebook') {
             const executed = executeCreateNotebook(asText(args.title, 80), asText(args.content, 8_000))
             return { ...base, ...executed, summary: executed.action.title }
@@ -300,6 +335,42 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             const executed = executeInsertNotebookBlock(
                 host,
                 asText(args.content, 8_000),
+                asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'rewrite_notebook_document') {
+            const executed = executeRewriteNotebookDocument(
+                host,
+                asText(args.content, 20_000),
+                asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'replace_notebook_selection') {
+            const executed = executeReplaceNotebookSelection(
+                host,
+                asText(args.content, 8_000),
+                asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'update_notebook_title') {
+            const executed = executeUpdateNotebookTitle(
+                host,
+                asText(args.title, 120),
                 asText(args.notebook_id || args.notebookId, 80)
             )
             return {

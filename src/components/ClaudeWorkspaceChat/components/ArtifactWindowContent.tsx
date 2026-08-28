@@ -33,6 +33,7 @@ export function ArtifactWindowContent({
 }: ArtifactWindowContentProps) {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
+  const [inserted, setInserted] = useState(false)
 
   useEffect(() => {
     setActiveTab('preview')
@@ -42,6 +43,13 @@ export function ArtifactWindowContent({
     navigator.clipboard.writeText(artifact.content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleInsert = () => {
+    if (!onInsertToNotebook) return
+    onInsertToNotebook(artifactToNotebookMarkdown(artifact))
+    setInserted(true)
+    setTimeout(() => setInserted(false), 2000)
   }
 
   const content = String(artifact?.content || '').trim()
@@ -92,11 +100,24 @@ export function ArtifactWindowContent({
         {onInsertToNotebook && (
           <button
             type="button"
-            onClick={() => onInsertToNotebook(artifactToNotebookMarkdown(artifact))}
-            className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1 text-xs font-medium text-primary hover:bg-accent cursor-pointer transition-colors shadow-2xs"
+            onClick={handleInsert}
+            className={`flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium cursor-pointer transition-all shadow-2xs ${
+              inserted
+                ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-semibold'
+                : 'border-primary/30 bg-primary text-primary hover:bg-accent'
+            }`}
           >
-            <FileInput className="h-3.5 w-3.5 text-secondary" />
-            <span>Add to notebook</span>
+            {inserted ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Added to notebook ✓</span>
+              </>
+            ) : (
+              <>
+                <FileInput className="h-3.5 w-3.5 text-secondary" />
+                <span>Add to notebook</span>
+              </>
+            )}
           </button>
         )}
       </div>

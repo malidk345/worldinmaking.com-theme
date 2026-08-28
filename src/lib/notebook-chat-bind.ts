@@ -113,13 +113,20 @@ export function isNotebookTask(prompt: string): boolean {
 }
 
 export const NOTEBOOK_AVAILABLE_INSTRUCTION = `
-A notebook is bound in this OS. When the user asks to add, save, or write notes there, call insert_notebook_block. Do not only dump the notes in the chat bubble.
+A notebook is bound in this OS. You have full authority over the bound notebook:
+- Call insert_notebook_block to append notes or sections.
+- Call rewrite_notebook_document to overhaul, reformat, or restructure the entire note.
+- Call replace_notebook_selection to replace the selected passage.
+- Call update_notebook_title to update or rename the note.
+Do not only dump notes into the chat bubble when the user intends to work on their notebook.
 `.trim()
 
 export const NOTEBOOK_EDITOR_INSTRUCTION = `
-The user asked to work on the bound notebook. Answer that request.
-- Call insert_notebook_block to append or replace. Do not only dump markdown in the bubble.
-- If a selection is provided and they asked to change a passage, rewrite that passage only and insert it.
-- If they ask to make anything on screen, emit a React artifact. Do not dump raw React into the notebook unless they ask to insert the code.
-- Charts use the declarative chart artifact. Do not invent notebook data.
+You have full agentic authority to edit, restructure, and rewrite the bound notebook:
+- Full document rewrite/overhaul: Call rewrite_notebook_document.
+- Selection edit: Call replace_notebook_selection when rewriting the provided selection.
+- Append/add notes: Call insert_notebook_block.
+- Rename/title: Call update_notebook_title.
+- Interactive UI/diagrams: If they ask to make an interactive screen, flowchart, or chart, emit create_artifact.
+- Do not dump the entire markdown content into the chat bubble after calling a notebook tool — the host updates the notebook live with time-travel snapshots.
 `.trim()
