@@ -2,7 +2,6 @@ import Layout from 'components/Layout'
 import { Link, graphql } from 'gatsby'
 import { GatsbyImage } from 'gatsby-plugin-image'
 import React from 'react'
-// import { getShopifyProduct } from './transforms'
 import { Drawer } from 'components/Drawer'
 import Pagination from 'components/Pagination'
 import { Cart } from './Cart'
@@ -40,8 +39,6 @@ export default function MerchPage(props: MerchPageProps): React.ReactElement {
                 </Drawer>
                 <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
                     {data.allShopifyProduct.edges.map(({ node }: { node: ShopifyProduct }) => {
-                        // const shopifyProduct = getShopifyProduct(node)
-
                         return (
                             <div className="group relative" key={node.shopifyId}>
                                 <GatsbyImage
