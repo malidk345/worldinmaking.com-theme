@@ -10,6 +10,9 @@ export type HostSnapshot = {
     notebookTitle?: string
     selection?: string
     notebooks?: Array<{ id: string; title: string }>
+    artifactId?: string
+    artifactTitle?: string
+    artifactType?: string
 }
 
 export type HostOsAction = {
@@ -27,6 +30,9 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
     const notebookId = typeof snap.notebookId === 'string' ? snap.notebookId.slice(0, 80) : undefined
     const notebookTitle = typeof snap.notebookTitle === 'string' ? snap.notebookTitle.slice(0, 120) : undefined
     const selection = typeof snap.selection === 'string' ? snap.selection.slice(0, 2500) : undefined
+    const artifactId = typeof snap.artifactId === 'string' ? snap.artifactId.slice(0, 80) : undefined
+    const artifactTitle = typeof snap.artifactTitle === 'string' ? snap.artifactTitle.slice(0, 120) : undefined
+    const artifactType = typeof snap.artifactType === 'string' ? snap.artifactType.slice(0, 40) : undefined
     const notebooks: NonNullable<HostSnapshot['notebooks']> = []
     if (Array.isArray(snap.notebooks)) {
         for (const notebook of snap.notebooks.slice(0, 20)) {
@@ -50,8 +56,8 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
             })
         }
     }
-    if (!path && !notebookId && !notebooks.length && !windows.length && !selection) return undefined
-    return { path, notebookId, notebookTitle, selection, windows, notebooks }
+    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId) return undefined
+    return { path, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType }
 }
 
 export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }> = [
@@ -101,6 +107,9 @@ export function describeWorkspace(host?: HostSnapshot): string {
                   .join(', ')}`
             : '',
         host?.selection ? `Selection: ${clip(host.selection, 400)}` : '',
+        host?.artifactId
+            ? `Open artifact: ${host.artifactTitle || host.artifactId} (${host.artifactType || 'document'}). Revise with create_artifact using the same title.`
+            : '',
         windows ? `Open windows:\n${windows}` : 'No other OS windows reported',
         `Apps:\n${apps}`,
     ]

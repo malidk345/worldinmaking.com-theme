@@ -4,9 +4,10 @@ import { PanelLeft } from 'lucide-react'
 interface HeaderProps {
     onToggleSidebar: () => void
     activeChatTitle?: string
+    boundNotebookTitle?: string
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, activeChatTitle }) => {
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, activeChatTitle, boundNotebookTitle }) => {
     return (
         <header className="flex h-9 shrink-0 items-center gap-0.5 px-2 pr-24">
             <button
@@ -20,6 +21,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, activeChatTitle
 
             <div className="min-w-0 flex-1 truncate px-1 text-[13px] text-secondary">
                 {activeChatTitle || 'New chat'}
+                {boundNotebookTitle ? (
+                    <span className="text-muted"> · {boundNotebookTitle}</span>
+                ) : null}
             </div>
         </header>
     )

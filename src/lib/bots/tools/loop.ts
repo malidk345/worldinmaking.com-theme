@@ -21,10 +21,19 @@ import { executeToolCall, resolveToolName, type ToolCall } from './execute'
 import type { HostOsAction, HostSnapshot } from './host'
 import { geminiToolCompletion, type GeminiPart } from './gemini'
 import { compactToolHistory, type HistoryTurn } from './history'
+import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provider-errors'
 import { toolResultSummary, toolStatusLabel } from './labels'
 import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL } from './spec'
 
 const GEMINI_TOOL_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash'] as const
+const GROQ_TOOL_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'] as const
+
+/** Ask AI tool loop only. Forum / gateway keep Qwen. */
+export function resolveGroqToolModels(env?: EnvStore): string[] {
+    const configured = envFrom(env ?? getRuntimeEnv(), 'GROQ_TOOL_MODEL').trim()
+    if (configured) return [configured, ...GROQ_TOOL_MODELS.filter((model) => model !== configured)]
+    return [...GROQ_TOOL_MODELS]
+}
 
 export type ToolEvent = {
     id: string
@@ -57,6 +66,7 @@ const MAX_TOKENS = 4_096
 export type ToolLoopResult = {
     ok: boolean
     usedTools: boolean
+    usedWebSearch: boolean
     text: string
     artifacts: ArtifactDocument[]
     citations: AiCitation[]
@@ -135,6 +145,7 @@ async function groqCompletion(params: {
                 stream: true,
                 tools: OPENAI_CHAT_TOOLS,
                 tool_choice: openaiToolChoice(params.toolChoice),
+                ...(params.model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
             }),
         })
         if (!res.ok) {
@@ -242,6 +253,7 @@ async function runToolSteps(params: {
           kind: 'failed'
           error: string
           usedTools: boolean
+          usedWebSearch: boolean
           artifacts: ArtifactDocument[]
           citations: AiCitation[]
           actions: HostOsAction[]
@@ -253,6 +265,7 @@ async function runToolSteps(params: {
     const actions: HostOsAction[] = []
     const working: ChatMessage[] = params.baseMessages.map((item) => ({ ...item }))
     let usedTools = false
+    let usedWebSearch = false
     let publicText = ''
 
     for (let step = 0; step < MAX_STEPS; step += 1) {
@@ -277,20 +290,23 @@ async function runToolSteps(params: {
             },
         })
         if (!round.ok) {
-            if (
-                round.status === 400 &&
-                /tool|function.?call/i.test(round.detail) &&
-                !/thought_signature|additionalProperties/i.test(round.detail)
-            ) {
+            if (round.status === 400 && isToolProtocolReject(round.detail)) {
                 return { kind: 'tools-rejected', error: round.detail }
             }
-            if (round.status === 429 || round.status === 401 || round.status === 403) {
+            if (
+                round.status === 429 ||
+                round.status === 401 ||
+                round.status === 403 ||
+                isRateLimitDetail(round.detail) ||
+                isAuthDetail(round.detail)
+            ) {
                 return { kind: 'auth', error: round.detail }
             }
             return {
                 kind: 'failed',
                 error: round.detail,
                 usedTools,
+                usedWebSearch,
                 artifacts,
                 citations,
                 actions,
@@ -307,6 +323,7 @@ async function runToolSteps(params: {
                 result: {
                     ok: Boolean(publicText.trim()) || usedTools || artifacts.length > 0 || citations.length > 0,
                     usedTools,
+                    usedWebSearch,
                     text: publicText,
                     artifacts,
                     citations,
@@ -349,6 +366,7 @@ async function runToolSteps(params: {
             if (executed.artifact) artifacts.push(executed.artifact)
             if (executed.citations?.length) citations.push(...executed.citations)
             if (executed.action) actions.push(executed.action)
+            if (executed.name === 'web_search') usedWebSearch = true
             params.onTool?.({
                 id: call.id,
                 name: executed.name,
@@ -373,6 +391,7 @@ async function runToolSteps(params: {
         result: {
             ok: Boolean(publicText.trim()) || artifacts.length > 0 || citations.length > 0,
             usedTools,
+            usedWebSearch,
             text: publicText,
             artifacts,
             citations,
@@ -395,7 +414,7 @@ export async function runToolLoop(params: {
 }): Promise<ToolLoopResult> {
     const env = params.env ?? getRuntimeEnv()
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(env)).filter((key) => !isGroqKeyCooling(key))
-    const groqModel = envFrom(env, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
+    const groqModels = resolveGroqToolModels(env)
     const geminiKeys = takeGeminiKeyOrder(collectGeminiKeys(env)).filter((key) => !isFamilyKeyCooling('gemini', key))
     const configuredGemini = envFrom(env, 'GEMINI_MODEL', 'GEMINI_PRIMARY_MODEL')
     const geminiModels = configuredGemini
@@ -412,31 +431,40 @@ export async function runToolLoop(params: {
     let lastError = ''
 
     for (const apiKey of groqKeys) {
-        const step = await runToolSteps({
-            provider: 'groq',
-            env,
-            host: params.host,
-            forceWebSearch: params.forceWebSearch,
-            holdPublicUntilCitations: params.holdPublicUntilCitations,
-            baseMessages,
-            onToken: params.onToken,
-            onTool: params.onTool,
-            complete: ({ messages, toolChoice, onToken }) =>
-                groqCompletion({ apiKey, model: groqModel, messages, toolChoice, onToken }),
-        })
-        if (step.kind === 'done') return step.result
-        lastError = step.error
-        if (step.kind === 'tools-rejected') break
-        if (step.kind === 'auth') markGroqKeyCooling(apiKey)
-        if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-            return {
-                ok: true,
-                usedTools: step.usedTools,
-                text: step.text,
-                artifacts: step.artifacts,
-                citations: step.citations,
-                actions: step.actions,
+        let skipKey = false
+        for (const groqModel of groqModels) {
+            if (skipKey) break
+            const step = await runToolSteps({
                 provider: 'groq',
+                env,
+                host: params.host,
+                forceWebSearch: params.forceWebSearch,
+                holdPublicUntilCitations: params.holdPublicUntilCitations,
+                baseMessages,
+                onToken: params.onToken,
+                onTool: params.onTool,
+                complete: ({ messages, toolChoice, onToken }) =>
+                    groqCompletion({ apiKey, model: groqModel, messages, toolChoice, onToken }),
+            })
+            if (step.kind === 'done') return step.result
+            lastError = step.error
+            if (step.kind === 'tools-rejected') continue
+            if (step.kind === 'auth') {
+                markGroqKeyCooling(apiKey)
+                skipKey = true
+                break
+            }
+            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                return {
+                    ok: true,
+                    usedTools: step.usedTools,
+                    usedWebSearch: step.usedWebSearch,
+                    text: step.text,
+                    artifacts: step.artifacts,
+                    citations: step.citations,
+                    actions: step.actions,
+                    provider: 'groq',
+                }
             }
         }
     }
@@ -477,6 +505,7 @@ export async function runToolLoop(params: {
                 return {
                     ok: true,
                     usedTools: step.usedTools,
+                    usedWebSearch: step.usedWebSearch,
                     text: step.text,
                     artifacts: step.artifacts,
                     citations: step.citations,
@@ -490,6 +519,7 @@ export async function runToolLoop(params: {
     return {
         ok: false,
         usedTools: false,
+        usedWebSearch: false,
         text: '',
         artifacts: [],
         citations: [],

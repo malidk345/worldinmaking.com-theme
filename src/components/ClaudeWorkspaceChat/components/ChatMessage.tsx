@@ -172,6 +172,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               }
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
+              provider={message.provider}
             />
           </div>
 

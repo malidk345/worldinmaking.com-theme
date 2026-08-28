@@ -496,7 +496,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             })
         let loop = await runLoop({ holdUntilCitations: liveWeb })
         // Model decides first. If it skipped live search, host runs Tavily and the model writes again.
-        if (liveWeb && loop.citations.length === 0 && hostCitations.length === 0) {
+        if (liveWeb && loop.citations.length === 0 && hostCitations.length === 0 && !loop.usedWebSearch) {
             const searchQuery = extractSearchQuery(input.question) || input.question.slice(0, 300)
             input.onTool?.({ id: 'host-search', name: 'web_search', status: 'running', detail: searchQuery })
             try {

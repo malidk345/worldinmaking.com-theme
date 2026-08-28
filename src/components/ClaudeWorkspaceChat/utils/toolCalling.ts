@@ -39,12 +39,15 @@ export interface SSESearchEvent {
  */
 export function processArtifactRevision(
   existingArtifacts: Artifact[],
-  newArtData: Omit<Artifact, 'id' | 'version' | 'createdAt'>
+  newArtData: Omit<Artifact, 'id' | 'version' | 'createdAt'> & { id?: string },
+  opts?: { preferId?: string }
 ): { artifacts: Artifact[]; activeArtifact: Artifact } {
   const now = new Date().toISOString();
   const normalizedNewTitle = (newArtData.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
 
   const matchingIndex = existingArtifacts.findIndex((a) => {
+    if (opts?.preferId && a.id === opts.preferId) return true
+    if (newArtData.id && a.id === newArtData.id) return true
     if (newArtData.identifier && a.identifier && newArtData.identifier === a.identifier) return true
     const normalizedExistingTitle = (a.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
     return (

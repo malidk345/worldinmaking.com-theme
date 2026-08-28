@@ -13,6 +13,7 @@ import {
 } from './runtime-env'
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor, setFamilyKeyStart } from './groq-key-cursor'
+import { isAuthDetail, isRateLimitDetail, isRequestTooLargeDetail } from './provider-errors'
 
 export const GATEWAY_TOTAL_TIMEOUT_MS = 28_000
 export const FAILOVER_RESERVE_MS = 9_000
@@ -136,10 +137,7 @@ const MIN_GROQ_COMPLETION_TOKENS = 256
 const HEAVY_THINKING_COOLDOWN_MS = 25_000
 
 export function isRequestTooLarge(detail: string): boolean {
-    const d = detail.toLowerCase()
-    // 429 TPM/TPD is per-account quota — other Groq keys must still be tried.
-    if (d.startsWith('429')) return false
-    return d.startsWith('413') || d.includes('request too large')
+    return isRequestTooLargeDetail(detail)
 }
 
 function isQwen36(model: string): boolean {
@@ -449,29 +447,6 @@ function isFamilyCooling(name: string): boolean {
 
 function markFamilyCooling(name: string, ms = COOLDOWN_MS): void {
     PROVIDER_COOLDOWNS.set(name, Date.now() + ms)
-}
-
-function isRateLimitDetail(detail: string): boolean {
-    const d = detail.toLowerCase()
-    return (
-        d.startsWith('429') ||
-        d.includes('rate limit') ||
-        d.includes('rate_limit') ||
-        d.includes('quota') ||
-        d.includes('resource_exhausted') ||
-        d.includes('too many requests')
-    )
-}
-
-function isAuthDetail(detail: string): boolean {
-    const d = detail.toLowerCase()
-    return (
-        d.startsWith('401') ||
-        d.startsWith('403') ||
-        d.includes('invalid_api_key') ||
-        d.includes('unauthorized') ||
-        d.includes('forbidden')
-    )
 }
 
 const PRIMARY_FAMILIES = ['groq', 'gemini'] as const

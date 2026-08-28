@@ -7,6 +7,7 @@ export {
     applyToolCallDelta,
     assembleToolCalls,
     publicTextFromRound,
+    resolveGroqToolModels,
     runToolLoop,
     type ToolEvent,
     type ToolLoopResult,

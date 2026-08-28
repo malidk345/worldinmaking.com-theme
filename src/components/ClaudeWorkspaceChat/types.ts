@@ -115,6 +115,7 @@ export interface Message {
   liked?: boolean | null
   editedFromId?: string
   osAction?: OSActionCard
+  provider?: string
 }
 
 export interface ProjectSpace {

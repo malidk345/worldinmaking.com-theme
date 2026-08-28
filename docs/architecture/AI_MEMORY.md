@@ -440,10 +440,26 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-327` | Stream 5 | Gemini 3 tool loop must echo thought_signature on functionCall parts | `tools/gemini.ts`, `tools/loop.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-328` | Stream 5 | Tool host aliases + workbench timeline UI (not Thought box) | execute/labels/loop, ToolTimeline, ChatMessage | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-329` | Stream 5 | Keep Groq/Qwen; preserve actions; thought signatures; stream; co-author host | loop, orchestrate, history, chat, co-author | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-330` | Stream 5 | Ask AI tool loop Groq model: gpt-oss-120b (forum stays Qwen) | `tools/loop.ts`, runtime-env, .env.example | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-331` | Stream 5 | Golden tours, shared provider errors, notebook insert, artifact revise, runtime label | golden.ts, provider-errors, host, chat, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 401 - Ask AI product follow-through (TSK-331)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Eight golden tours as protocol tests. Groq/Gemini error classification is shared (`provider-errors.ts`). Host Tavily only if the model skipped `web_search`. Bound notebook always in context; insert is the write tool. Open canvas artifact is the revision target. Thinking chrome shows Groq/Gemini, not the philosopher identity. No new agent framework.
+- **Modified Files:** `provider-errors.ts`, `tools/golden.ts`, loop/orchestrate/host/execute, chat.ts, notebook-chat-bind, workspace chat, tests/ask-ai-golden.spec.ts
+- **Verification:** Playwright golden + harness.
+
+### Entry 400 - Ask AI tool loop uses gpt-oss-120b (TSK-330)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ask AI Groq tool router is `openai/gpt-oss-120b` then `openai/gpt-oss-20b`. Override with `GROQ_TOOL_MODEL`. Does not read `GROQ_MODEL`/`QWEN_MODEL`, so forum gateway stays Qwen. gpt-oss requests use `reasoning_effort: low`.
+- **Modified Files:** `tools/loop.ts`, `runtime-env.ts`, `.env.example`, `tests/ask-ai-harness.spec.ts`
+- **Verification:** Playwright ask-ai-harness default model test.
 
 ### Entry 399 - Harness follow-through without changing the model (TSK-329)
 - **Date:** 2026-08-28

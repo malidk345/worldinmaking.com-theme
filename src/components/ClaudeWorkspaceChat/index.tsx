@@ -80,6 +80,12 @@ const EMPTY_STARTERS = [
   { label: 'Draw a flow', prompt: 'Draw a mermaid diagram of a checkout flow: cart, pay, done.' },
 ]
 
+const NOTEBOOK_STARTERS = [
+  { label: 'Add a section', prompt: 'Bu deftere kısa bir saha notları bölümü ekle.' },
+  { label: 'Summarize this', prompt: 'Bu notebook’u kısaca özetle ve özeti deftere ekle.' },
+  { label: 'Draw the outline', prompt: 'Bu defterin outline’ından bir mermaid diyagramı çiz.' },
+]
+
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
 
@@ -761,6 +767,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     };
     let streamedArtifacts: Artifact[] = [];
     let streamedAction: OSActionCardType | undefined;
+    let streamedProvider: string | undefined;
     let streamedToolTrace: ToolTrace[] = [];
     const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
       if (!incoming || incoming.length === 0) return;
@@ -848,6 +855,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebooks: getNotebooks()
               .slice(0, 20)
               .map((notebook) => ({ id: notebook.id, title: notebook.title || 'Untitled' })),
+            artifactId: activeArtifact?.id,
+            artifactTitle: activeArtifact?.title,
+            artifactType: activeArtifact?.type,
           },
         }),
       });
@@ -1022,7 +1032,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               artifacts: streamedArtifacts,
               citations: streamedCitations,
               thinkingProcess: { ...currentThinkingProcess },
+              provider: parsed.provider,
             });
+            if (parsed.provider) streamedProvider = parsed.provider;
           }
         }
       }
@@ -1040,7 +1052,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (rawArtifacts.length > 0) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
           for (const rawArt of rawArtifacts) {
-            const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt);
+            const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt, {
+              preferId: activeArtifact?.id,
+            });
             extractedArtifacts.push(
               revisedArt.type === 'react'
                 ? { ...revisedArt, content: prepareSandpackSource(revisedArt.content) }
@@ -1067,6 +1081,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           isStreaming: false,
           isTypingDone: true,
           osAction: streamedAction,
+          provider: streamedProvider,
         });
       }
 
@@ -1396,6 +1411,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
+          boundNotebookTitle={notebookBind?.title}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -1409,10 +1425,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 How can I help?
               </h1>
               <p className="m-0 mb-5 max-w-sm text-center text-[13px] leading-snug text-muted">
-                Looks at this OS and the web. You ask; it chooses the tools.
+                {notebookBind?.title
+                  ? `Writing in ${notebookBind.title}. You ask; it chooses the tools.`
+                  : 'Looks at this OS and the web. You ask; it chooses the tools.'}
               </p>
               <div className="flex w-full flex-wrap justify-center gap-2">
-                {EMPTY_STARTERS.map((starter) => (
+                {(notebookBind?.notebookId ? NOTEBOOK_STARTERS : EMPTY_STARTERS).map((starter) => (
                   <button
                     key={starter.label}
                     type="button"

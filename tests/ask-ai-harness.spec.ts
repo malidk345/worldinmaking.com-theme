@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { getAskAiSystemPrompt } from '../src/lib/bots/ask-ai'
 import { needsLiveWeb } from '../src/lib/bots/search-intent'
 import { ALLOWED_TOOL_NAMES, TOOL_PROTOCOL } from '../src/lib/bots/tools/spec'
-import { publicTextFromRound } from '../src/lib/bots/tools/loop'
+import { publicTextFromRound, resolveGroqToolModels } from '../src/lib/bots/tools/loop'
 import { describeWorkspace, parseHostSnapshot, resolveOpenPath } from '../src/lib/bots/tools/host'
 import { toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels'
 import { finalizeArtifactTurn } from '../src/lib/artifacts'
@@ -10,6 +10,14 @@ import { executeToolCall } from '../src/lib/bots/tools/execute'
 import { packMessageThinking, unpackMessageThinking } from '../src/lib/chat-thinking'
 
 test.describe('Ask AI harness', () => {
+    test('Ask AI Groq tool loop defaults to gpt-oss, not Qwen', () => {
+        expect(resolveGroqToolModels({})).toEqual(['openai/gpt-oss-120b', 'openai/gpt-oss-20b'])
+        expect(resolveGroqToolModels({ GROQ_TOOL_MODEL: 'openai/gpt-oss-20b' })[0]).toBe('openai/gpt-oss-20b')
+        expect(resolveGroqToolModels({ GROQ_MODEL: 'qwen/qwen3.6-27b', QWEN_MODEL: 'qwen/qwen3.6-27b' })[0]).toBe(
+            'openai/gpt-oss-120b'
+        )
+    })
+
     test('tool catalog is the capability surface', () => {
         expect([...ALLOWED_TOOL_NAMES]).toEqual(
             expect.arrayContaining([

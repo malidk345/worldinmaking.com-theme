@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ModelOption, ThinkingProcess, ThinkingStep, ToolTrace } from '../types';
 import { toolStatusLabel } from '../../../lib/bots/tools/labels';
+import { runtimeLabel } from '../../../lib/bots/provider-errors';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import {
@@ -40,6 +41,7 @@ interface ThinkingBlockProps {
   isLive?: boolean;
   model?: ModelOption;
   timestamp?: string;
+  provider?: string;
 }
 
 type ThoughtSegment = {
@@ -224,7 +226,7 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
   );
 };
 
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
+export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp, provider }) => {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
@@ -294,6 +296,9 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrac
             <span className="text-sm text-muted relative cursor-default" suppressHydrationWarning>
               {formattedTime}
             </span>
+            {runtimeLabel(provider) ? (
+              <span className="text-[11px] text-muted/80">{runtimeLabel(provider)}</span>
+            ) : null}
           </div>
         ) : <div />}
 

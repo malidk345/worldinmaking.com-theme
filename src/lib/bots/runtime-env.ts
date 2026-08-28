@@ -43,6 +43,7 @@ const SECRET_NAME_BASES = [
     'BOT_ACT_SECRET',
     'GROQ_MODEL',
     'GROQ_PRIMARY_MODEL',
+    'GROQ_TOOL_MODEL',
     'QWEN_MODEL',
 ] as const
 

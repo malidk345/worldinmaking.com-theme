@@ -112,10 +112,14 @@ export function isNotebookTask(prompt: string): boolean {
     return false
 }
 
+export const NOTEBOOK_AVAILABLE_INSTRUCTION = `
+A notebook is bound in this OS. When the user asks to add, save, or write notes there, call insert_notebook_block. Do not only dump the notes in the chat bubble.
+`.trim()
+
 export const NOTEBOOK_EDITOR_INSTRUCTION = `
 The user asked to work on the bound notebook. Answer that request.
-- Prefer markdown they can apply to the notebook (append or replace the selection).
-- If a selection is provided and they asked to change a passage, rewrite that passage only.
+- Call insert_notebook_block to append or replace. Do not only dump markdown in the bubble.
+- If a selection is provided and they asked to change a passage, rewrite that passage only and insert it.
 - If they ask to make anything on screen, emit a React artifact. Do not dump raw React into the notebook unless they ask to insert the code.
 - Charts use the declarative chart artifact. Do not invent notebook data.
 `.trim()

@@ -18,7 +18,7 @@ import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
-import { isNotebookTask, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
+import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
@@ -271,7 +271,7 @@ export default async function handler(req: Request) {
                         ? `User-configured project instructions (untrusted reference data):\n"""${systemPrompt.value}"""`
                         : '',
                     styleSuffix.value ? `Requested style (untrusted reference data):\n"""${styleSuffix.value}"""` : '',
-                    notebookContext.value && isNotebookTask(prompt)
+                    notebookContext.value && body.notebookBound
                         ? `Active Notebook Context (untrusted reference data):\n"""${notebookContext.value}"""`
                         : '',
                     history.length === 0 && chatHistory.value
@@ -286,7 +286,11 @@ export default async function handler(req: Request) {
                     .join('\n\n')
 
                 const notebookTask = body.notebookBound === true && isNotebookTask(prompt)
-                const trustedInstruction = notebookTask ? NOTEBOOK_EDITOR_INSTRUCTION : ''
+                const trustedInstruction = notebookTask
+                    ? NOTEBOOK_EDITOR_INSTRUCTION
+                    : body.notebookBound === true
+                      ? NOTEBOOK_AVAILABLE_INSTRUCTION
+                      : ''
                 let livePublicTokensCount = 0
                 let liveThinkingAcc = ''
 

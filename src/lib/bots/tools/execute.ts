@@ -149,9 +149,12 @@ function languageFor(type: ArtifactKind): string | undefined {
     return undefined
 }
 
-async function executeCreateArtifact(args: Record<string, unknown>): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
-    const type = String(args.type || '').toLowerCase() as ArtifactToolType
-    const title = asText(args.title, MAX_TITLE).trim() || 'Untitled'
+async function executeCreateArtifact(
+    args: Record<string, unknown>,
+    host?: HostSnapshot
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const type = String(args.type || host?.artifactType || '').toLowerCase() as ArtifactToolType
+    const title = asText(args.title, MAX_TITLE).trim() || asText(host?.artifactTitle, MAX_TITLE).trim() || 'Untitled'
     const content = asText(args.content, MAX_ARTIFACT_BODY).trim()
     if (!ARTIFACT_TOOL_TYPES.includes(type) || content.length < 8) {
         return { ok: false, result: JSON.stringify({ ok: false, error: 'type and content are required' }) }
@@ -162,8 +165,8 @@ async function executeCreateArtifact(args: Record<string, unknown>): Promise<Omi
     }
 
     const artifact: ArtifactDocument = {
-        id: `art-tool-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        identifier: `${type}-1`,
+        id: host?.artifactId || `art-tool-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        identifier: host?.artifactId || `${type}-1`,
         title,
         type: type as ArtifactKind,
         language: languageFor(type as ArtifactKind),
@@ -248,7 +251,7 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
     const args = normalizeArgs(name, parseArgs(call.argumentsJson))
     try {
         if (name === 'create_artifact') {
-            const executed = await executeCreateArtifact(args)
+            const executed = await executeCreateArtifact(args, host)
             return { ...base, ...executed, summary: executed.artifact?.title || toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'web_search') {
