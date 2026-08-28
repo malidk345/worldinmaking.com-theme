@@ -442,10 +442,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-329` | Stream 5 | Keep Groq/Qwen; preserve actions; thought signatures; stream; co-author host | loop, orchestrate, history, chat, co-author | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-330` | Stream 5 | Ask AI tool loop Groq model: gpt-oss-120b (forum stays Qwen) | `tools/loop.ts`, runtime-env, .env.example | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-331` | Stream 5 | Golden tours, shared provider errors, notebook insert, artifact revise, runtime label | golden.ts, provider-errors, host, chat, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-332` | Stream 3 / 5 | Mobile Ask AI feed must not jump up while streaming | ClaudeWorkspaceChat/index.tsx, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 402 - Mobile chat no longer jumps while streaming (TSK-332)
+- **Date:** 2026-08-28
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Streaming pin ignores touch (no scrollTop under a finger). Content growth no longer toggles the jump-to-bottom chip. rAF + visualViewport keep the latest line pinned. Thinking detail panel does not auto-expand on mobile (header still shows the live stage).
+- **Modified Files:** `ClaudeWorkspaceChat/index.tsx`, `ThinkingBlock.tsx`
+- **Verification:** Manual mobile; unit tests unchanged.
 
 ### Entry 401 - Ask AI product follow-through (TSK-331)
 - **Date:** 2026-08-28

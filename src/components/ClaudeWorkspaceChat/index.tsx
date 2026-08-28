@@ -501,16 +501,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const autoScrollRef = useRef(true);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
-  const scrollToBottomInstant = useCallback(() => {
+  const pinChatToBottom = useCallback(() => {
+    if (!autoScrollRef.current || userInteractingRef.current) return;
     const scroller = chatScrollRef.current;
     if (!scroller) return;
-    scroller.scrollTop = scroller.scrollHeight;
+    const next = scroller.scrollHeight - scroller.clientHeight;
+    if (Math.abs(scroller.scrollTop - next) > 1) scroller.scrollTop = next;
   }, []);
+
+  const scrollToBottomInstant = useCallback(() => {
+    pinChatToBottom();
+  }, [pinChatToBottom]);
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     autoScrollRef.current = true;
+    userInteractingRef.current = false;
     setIsAwayFromBottom(false);
     if (behavior === 'auto') {
       scroller.scrollTop = scroller.scrollHeight;
@@ -528,21 +535,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!scroller) return;
     const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
 
-    if (userInteractingRef.current) {
-      if (distanceToBottom > 80) {
-        autoScrollRef.current = false;
-        setIsAwayFromBottom(true);
-      } else if (distanceToBottom <= 25) {
+    if (!userInteractingRef.current) {
+      if (autoScrollRef.current) return;
+      if (distanceToBottom <= 25) {
         autoScrollRef.current = true;
         setIsAwayFromBottom(false);
       }
-    } else {
-      if (distanceToBottom > 80) {
-        setIsAwayFromBottom(true);
-      } else if (distanceToBottom <= 25) {
-        autoScrollRef.current = true;
-        setIsAwayFromBottom(false);
-      }
+      return;
+    }
+
+    if (distanceToBottom > 48) {
+      autoScrollRef.current = false;
+      setIsAwayFromBottom(true);
+    } else if (distanceToBottom <= 25) {
+      autoScrollRef.current = true;
+      setIsAwayFromBottom(false);
     }
   }, []);
 
@@ -558,10 +565,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (touchTimeout) clearTimeout(touchTimeout);
     };
 
+    const onTouchMove = () => {
+      userInteractingRef.current = true;
+      const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
+      if (distanceToBottom > 48) {
+        autoScrollRef.current = false;
+        setIsAwayFromBottom(true);
+      }
+    };
+
     const onTouchEnd = () => {
       touchTimeout = setTimeout(() => {
         userInteractingRef.current = false;
-      }, 700);
+        if (autoScrollRef.current) pinChatToBottom();
+      }, 280);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -584,14 +601,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     scroller.addEventListener('scroll', handleScroll, { passive: true });
     scroller.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroller.addEventListener('touchmove', onTouchMove, { passive: true });
     scroller.addEventListener('touchend', onTouchEnd, { passive: true });
     scroller.addEventListener('touchcancel', onTouchEnd, { passive: true });
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      if (autoScrollRef.current) {
-        scrollToBottomInstant();
-      }
+      pinChatToBottom();
     });
     observer.observe(scroller);
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
@@ -599,25 +615,43 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return () => {
       scroller.removeEventListener('scroll', handleScroll);
       scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchmove', onTouchMove);
       scroller.removeEventListener('touchend', onTouchEnd);
       scroller.removeEventListener('touchcancel', onTouchEnd);
       scroller.removeEventListener('wheel', onWheel);
       if (touchTimeout) clearTimeout(touchTimeout);
       observer.disconnect();
     };
-  }, [activeChatId, handleScroll, scrollToBottomInstant, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, handleScroll, pinChatToBottom, Boolean(activeChat?.messages.length)]);
 
   const lastStreamTick = (() => {
     const last = activeChat?.messages[activeChat.messages.length - 1];
     if (!last) return `${activeChatId}:empty`;
-    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}:${last.artifacts?.length || 0}:${last.osAction ? 1 : 0}`;
+    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}:${last.toolTrace?.length || 0}:${last.artifacts?.length || 0}:${last.osAction ? 1 : 0}`;
   })();
 
   useLayoutEffect(() => {
-    if (autoScrollRef.current) {
-      scrollToBottomInstant();
-    }
-  }, [lastStreamTick, scrollToBottomInstant]);
+    pinChatToBottom();
+  }, [lastStreamTick, pinChatToBottom]);
+
+  useEffect(() => {
+    if (!isStreaming) return;
+    let frame = 0;
+    const tick = () => {
+      pinChatToBottom();
+      frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    const viewport = window.visualViewport;
+    const onViewport = () => pinChatToBottom();
+    viewport?.addEventListener('resize', onViewport);
+    viewport?.addEventListener('scroll', onViewport);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      viewport?.removeEventListener('resize', onViewport);
+      viewport?.removeEventListener('scroll', onViewport);
+    };
+  }, [isStreaming, pinChatToBottom]);
 
   // Auto-open artifact when switching chats
   useEffect(() => {
@@ -1417,7 +1451,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
+          className={`relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [overflow-anchor:none] ${
+            isStreaming ? '' : '[-webkit-overflow-scrolling:touch]'
+          }`}
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
@@ -1485,7 +1521,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
-              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom && !isStreaming}
               models={models}
               selectedModelId={selectedModelId}
               onSelectModel={handleSelectModel}

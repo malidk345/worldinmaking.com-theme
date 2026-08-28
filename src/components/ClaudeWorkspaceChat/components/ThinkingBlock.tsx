@@ -51,7 +51,7 @@ type ThoughtSegment = {
 };
 
 const VIEWPORT_CLASS =
-  'h-[10.5rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+  'max-h-[10.5rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 const VIEWPORT_MASK: React.CSSProperties = {
   WebkitMaskImage:
@@ -270,7 +270,9 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrac
   const showThinkingTrigger = isLive || hasThoughtText || hasTools;
 
   useEffect(() => {
-    if (isLive && (hasTools || hasThoughtText)) setIsOpen(true);
+    if (!isLive || !(hasTools || hasThoughtText)) return;
+    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+    if (!mobile) setIsOpen(true);
   }, [isLive, hasTools, hasThoughtText]);
 
   if (!model && !showThinkingTrigger) return null;
