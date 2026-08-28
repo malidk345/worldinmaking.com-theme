@@ -77,8 +77,14 @@ let renderChain: Promise<unknown> = Promise.resolve()
 let diagramSeq = 0
 
 export async function loadMermaidApi(): Promise<MermaidApi> {
+    if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
+        throw new Error('Mermaid is not supported in the Edge Runtime.');
+    }
+
     if (!cached) {
-        cached = import('mermaid')
+        // Trick Next.js bundler to not trace this in Edge environments
+        const m = 'mer' + 'maid';
+        cached = import(/* webpackIgnore: true */ m)
             .then((mod) => {
                 const api = resolveApi(mod)
                 if (!api) throw new Error('mermaid render function not found in module exports')
