@@ -28,7 +28,6 @@ import KeyboardShortcut from 'components/KeyboardShortcut'
 import AmbientPlayer from 'components/AmbientPlayer'
 import Link from 'components/Link'
 import WimLogo from 'components/WimLogo'
-import { ApiKeysModal } from 'components/ApiKeysModal'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
 
 function TaskBarMenu() {
@@ -46,7 +45,6 @@ function TaskBarMenu() {
     } = useApp()
     const totalWindows = windows.length
     const [isAnimating, setIsAnimating] = useState(false)
-    const [isApiKeysOpen, setIsApiKeysOpen] = useState(false)
 
     const { user, notifications, logout, isModerator } = useUser()
     const menuData = useMenuData()
@@ -180,12 +178,6 @@ function TaskBarMenu() {
                               icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
                           },
                           {
-                              type: 'item' as const,
-                              label: 'AI API Keys (BYOK)',
-                              onClick: () => setIsApiKeysOpen(true),
-                              icon: <IconCode className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
                               type: 'separator' as const,
                           },
                       ]
@@ -194,12 +186,6 @@ function TaskBarMenu() {
                               type: 'item' as const,
                               label: 'Account',
                               disabled: true,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'AI API Keys (BYOK)',
-                              onClick: () => setIsApiKeysOpen(true),
-                              icon: <IconCode className="opacity-50 group-hover/item:opacity-75 size-4" />,
                           },
                           {
                               type: 'item' as const,
@@ -380,7 +366,6 @@ function TaskBarMenu() {
                     </div>
                 </div>
             </div>
-            <ApiKeysModal isOpen={isApiKeysOpen} onClose={() => setIsApiKeysOpen(false)} />
         </>
     )
 }

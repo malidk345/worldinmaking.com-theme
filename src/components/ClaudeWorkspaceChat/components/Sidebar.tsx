@@ -1,6 +1,7 @@
 import React from 'react'
 import { Chat } from '../types'
 import { Plus, Trash2 } from 'lucide-react'
+import { ByokSidebarPanel } from './ByokSidebarPanel'
 
 interface SidebarProps {
     isOpen: boolean
@@ -79,6 +80,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         ))
                     )}
                 </div>
+
+                {/* BYOK Custom Keys Panel */}
+                <ByokSidebarPanel />
             </aside>
         </>
     )
