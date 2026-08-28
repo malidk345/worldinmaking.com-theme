@@ -24,7 +24,7 @@ import {
     CalloutBlock,
     DatabaseTableBlock,
     ImageUploadBlock,
-    SubPageBlock,
+    SubpageBlock,
     ToggleBlock,
     getDefaultDatabaseProps,
 } from './WimWritingBlocks'
@@ -140,8 +140,8 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             defaultProps: { notebookId: '', title: 'Untitled page' },
             hideModeActions: true,
             exclusiveEditPanel: true,
-            ViewComponent: SubPageBlock,
-            EditComponent: SubPageBlock,
+            ViewComponent: SubpageBlock,
+            EditComponent: SubpageBlock,
         }),
         makeDefinition({
             tagName: 'Divider',

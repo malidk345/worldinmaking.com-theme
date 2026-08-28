@@ -173,7 +173,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Voice input is not supported in this browser.');
+      console.error('Voice input is not supported in this browser.');
       return;
     }
 
