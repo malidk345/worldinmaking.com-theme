@@ -16,16 +16,9 @@ type NodeOs = { tmpdir: () => string }
 type NodePath = { join: (...parts: string[]) => string }
 
 function nodeBuiltin<T>(name: string): T | null {
-    try {
-        if (typeof process === 'undefined') return null
-        if (process.env.NEXT_RUNTIME === 'edge') return null
-        const getter = (process as NodeJS.Process & { getBuiltinModule?: (id: string) => unknown })
-            .getBuiltinModule
-        if (typeof getter !== 'function') return null
-        return getter(name) as T
-    } catch {
-        return null
-    }
+    // Next.js Edge runtime does not support process.getBuiltinModule and will error
+    // even if it's behind a type check. We must avoid it completely.
+    return null;
 }
 
 function cursorEnvName(family: string): string {
