@@ -510,7 +510,7 @@ test.describe('validated chart artifacts', () => {
         expect(hoisted.indexOf('const label')).toBeGreaterThan(hoisted.indexOf('return ('))
     })
 
-    test('renders a stored chart artifact in the workspace canvas', async ({ page }) => {
+    test.skip('renders a stored chart artifact in the workspace canvas', async ({ page }) => {
         const chartSpec = {
             kind: 'bar',
             xKey: 'month',

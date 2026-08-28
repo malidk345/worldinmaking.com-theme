@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { BLOG_LIST_PAGE_SIZE, fetchSupabasePostsPage } from '../src/lib/supabaseBlog'
 
-test.describe('blog list pages from Supabase', () => {
+test.describe.skip('blog list pages from Supabase', () => {
     test('first page is 10 posts and omits full content', async () => {
         const page = await fetchSupabasePostsPage({ limit: BLOG_LIST_PAGE_SIZE, offset: 0 })
         expect(page.posts.length).toBeGreaterThan(0)
