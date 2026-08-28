@@ -10,6 +10,7 @@ import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } fro
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
 import { useRouter } from 'next/router'
+
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
@@ -17,6 +18,8 @@ import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/wi
 import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
+import { useWindowHistory } from 'hooks/useWindowHistory'
+import { useWindowShortcuts } from 'hooks/useWindowShortcuts'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
@@ -154,8 +157,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const inSwitcher = !!missionControlLayout
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
-    const [history, setHistory] = useState<string[]>([])
-    const [activeHistoryIndex, setActiveHistoryIndex] = useState(0)
     const windowRef = useRef<HTMLDivElement>(null)
     const [dragging, setDragging] = useState(false)
     const [pageOptions, setPageOptions] = useState<MenuItemType[]>()
@@ -302,32 +303,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         toggleExpanded()
     }
 
-    const canGoBack = history.length > 0 && activeHistoryIndex > 0
-    const canGoForward = activeHistoryIndex < history.length - 1
-
-    useEffect(() => {
-        if (!item?.fromHistory) {
-            setHistory((prev) => [...prev, item.path])
-            setActiveHistoryIndex(history.length)
-        }
-        setActiveInternalMenu(getActiveInternalMenu())
-    }, [item?.path])
-
+    const { canGoBack, canGoForward, goBack, goForward } = useWindowHistory(item, getActiveInternalMenu, setActiveInternalMenu)
     const router = useRouter()
-
-    const goBack = useCallback(() => {
-        if (canGoBack) {
-            setActiveHistoryIndex(activeHistoryIndex - 1)
-            router.push(history[activeHistoryIndex - 1])
-        }
-    }, [canGoBack, activeHistoryIndex, history])
-
-    const goForward = useCallback(() => {
-        if (canGoForward) {
-            setActiveHistoryIndex(activeHistoryIndex + 1)
-            router.push(history[activeHistoryIndex + 1])
-        }
-    }, [canGoForward, activeHistoryIndex, history])
 
     const handleMouseDown = () => {
         if (focusedWindow === item) return
@@ -398,56 +375,17 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
     }, [item.key])
 
-    useEffect(() => {
-        if (!item.appSettings?.closeOnEscape || focusedWindow !== item || closing) return
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape' || event.defaultPrevented) return
-
-            event.preventDefault()
-            setClosing(true)
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [closing, focusedWindow, item])
-
-    const handleClose = () => {
-        setClosing(true)
-    }
-
-    useEffect(() => {
-        if (closingAllWindowsAnimation && !closing) {
-            setClosing(true)
-        }
-    }, [closingAllWindowsAnimation, closing])
-
-    useEffect(() => {
-        if (focusedWindow !== item || compact || isMobile) return
-
-        const handleShortcut = (event: KeyboardEvent) => {
-            const key = event.key.toLowerCase()
-            const modifier = event.metaKey || event.ctrlKey
-
-            if ((modifier && key === 'w') || (event.shiftKey && key === 'w')) {
-                event.preventDefault()
-                handleClose()
-            } else if (event.shiftKey && event.key === 'ArrowUp') {
-                event.preventDefault()
-                expandWindow(item)
-            } else if (event.shiftKey && event.key === 'ArrowLeft') {
-                event.preventDefault()
-                handleSnapToSide('left')
-            } else if (event.shiftKey && event.key === 'ArrowRight') {
-                event.preventDefault()
-                handleSnapToSide('right')
-            }
-        }
-
-        window.addEventListener('keydown', handleShortcut)
-        return () => window.removeEventListener('keydown', handleShortcut)
-    }, [focusedWindow, item, compact, isMobile, expandWindow, handleSnapToSide])
+    const { handleClose } = useWindowShortcuts({
+        item,
+        focusedWindow,
+        compact,
+        isMobile,
+        closingAllWindowsAnimation,
+        expandWindow,
+        handleSnapToSide,
+        closing,
+        setClosing,
+    })
 
     const onAnimationStart = () => {
         animationStartTimeRef.current = performance.now()
@@ -569,7 +507,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-black/5 dark:border-white/5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded
@@ -641,7 +579,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         opacity: 0,
                         transition: {
                             duration: compact ? 0.05 : 0.15,
-                            ease: [0.32, 0, 0.67, 0],
+                            ease: [0.16, 1, 0.3, 1],
                         },
                     }}
                     transition={

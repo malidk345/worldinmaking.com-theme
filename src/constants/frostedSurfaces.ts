@@ -4,7 +4,7 @@
 
 /** App windows — frosted by default; solid when reduce transparency is on */
 export const WINDOW_BG =
-    'bg-primary/75 backdrop-blur-3xl transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
+    'bg-primary/40 backdrop-blur-[25px] backdrop-saturate-[190%] transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
 
 /** Reader sidebar overlays */
 export const PANEL_BG =
