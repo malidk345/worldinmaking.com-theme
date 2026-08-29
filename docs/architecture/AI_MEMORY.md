@@ -1138,6 +1138,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 323 - Direct Link & Reload Fix for WIM AI Chat (/workspace-chat) (TSK-259)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Fixed the bug where accessing `/workspace-chat` via direct link or browser reload (F5) resulted in a perpetual loading spinner:
+  1. **Direct Component Mounting (`src/pages/workspace-chat.tsx`):** Replaced the legacy redirect dummy element (`router.replace('/desktop?open=chat')` with `Opening…` spinner) with direct dynamic import of `AskAiWindow`.
+  2. **Path-Routed Window Flag (`src/lib/window-path.ts`):** Added `/workspace-chat` to `isPathRoutedWindow(path)` so `WindowRouter` immediately mounts `AskAiWindow` on direct URL navigation and reload without stalling on placeholder Next.js page elements.
+  3. **Regression Tests (`tests/window-path.spec.ts`):** Added test coverage asserting `isPathRoutedWindow('/workspace-chat')` is true.
+- **Modified Files:** `src/pages/workspace-chat.tsx`, `src/lib/window-path.ts`, `tests/window-path.spec.ts`, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 322 - 100% English Prompt Standardization, Deduplication & Pragmatic Technical Execution (TSK-258)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
