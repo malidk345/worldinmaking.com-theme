@@ -16,3 +16,7 @@
 ## 2024-12-04 - Memoizing Array Aggregations
 **Learning:** In the `Places` component (`src/pages/places/index.tsx`), computing the `placesByType` map using `places.reduce` without `useMemo` forces the JavaScript engine to perform an O(N) array traversal and allocate a new object on every render. For components with frequent state updates (like toggling map layers or selecting places), this introduces unnecessary main thread overhead and garbage collection pressure.
 **Action:** Always wrap array aggregations (like `.reduce` or `Object.fromEntries`) in `useMemo` when they depend on props or state arrays that change infrequently, especially in components that re-render often due to internal state changes.
+
+## 2025-01-20 - Memoizing Array Aggregations and Complex Filters
+**Learning:** In React components like `Team` and `People` (and custom hooks like `useTeamCrestMap`), performing array aggregations with `.reduce()` or complex filtering with `JSON.parse()` on every render without `useMemo` introduces unnecessary main thread overhead and O(N) re-evaluations. For components with frequent state updates (like forms or toggling tabs), this causes cascading re-renders and CPU spikes.
+**Action:** Always wrap array aggregations (like `.reduce`) and expensive operations (like `.filter()` with nested `JSON.parse()`) in `useMemo` when they depend on arrays or state that change infrequently, to prevent main thread blocking and garbage collection pressure.
