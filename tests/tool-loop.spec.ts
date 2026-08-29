@@ -34,8 +34,12 @@ test.describe('OpenAI tool protocol', () => {
             'insert_notebook_block',
             'list_notebooks',
             'open_path',
+            'read_notebook',
             'read_post',
+            'replace_notebook_selection',
+            'rewrite_notebook_document',
             'search_site',
+            'update_notebook_title',
             'web_search',
         ])
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
@@ -238,8 +242,12 @@ test.describe('OpenAI tool protocol', () => {
             'insert_notebook_block',
             'list_notebooks',
             'open_path',
+            'read_notebook',
             'read_post',
+            'replace_notebook_selection',
+            'rewrite_notebook_document',
             'search_site',
+            'update_notebook_title',
             'web_search',
         ])
         expect(declarations[0].parameters.type).toBe('OBJECT')
