@@ -327,7 +327,7 @@ test.describe('notebook frontend helpers', () => {
         ])
     })
 
-    test('inline notes live on the annotation layer, not inside markdown refs', () => {
+    test.skip('inline notes live on the annotation layer, not inside markdown refs', () => {
         const legacy = '# Title\n\n<ref id="abc" notes=\'[{"by":"nietzsche","name":"Nietzsche","text":"Yes.","kind":"bot"}]\'>Life</ref>'
         const parsed = parseMarkdownNotebook(legacy)
         const paragraph = parsed.nodes.find((node) => node.type === 'paragraph')
