@@ -156,7 +156,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const inSwitcher = !!missionControlLayout
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
-    const { history, canGoBack, canGoForward, goBack, goForward } = useWindowHistory(item)
+    useWindowHistory(item)
+    const router = useRouter()
     const windowRef = useRef<HTMLDivElement>(null)
     const [dragging, setDragging] = useState(false)
     const [pageOptions, setPageOptions] = useState<MenuItemType[]>()
@@ -462,7 +463,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     <div
                         // Ignore scroll-end ghost clicks (common on mobile after touchmove)
                         onPointerDown={(e) => {
-                            ;(e.currentTarget as HTMLElement).dataset.pointerY = String(e.clientY)
+                            (e.currentTarget as HTMLElement).dataset.pointerY = String(e.clientY)
                             ;(e.currentTarget as HTMLElement).dataset.pointerX = String(e.clientX)
                         }}
                         onClick={(e) => {
