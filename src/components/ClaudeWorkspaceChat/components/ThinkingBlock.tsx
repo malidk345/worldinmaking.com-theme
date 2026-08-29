@@ -440,9 +440,6 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
                         <div className="flex items-center gap-1.5 text-[12px] font-medium text-stone-700 dark:text-stone-300">
                           <Icon className="size-3.5 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
                           <span>{displayTitle}</span>
-                          {node.status === 'running' && (
-                            <span className="inline-block size-1.5 rounded-full bg-amber-500 animate-pulse ml-0.5" />
-                          )}
                         </div>
                       )}
                       {node.detail && (
@@ -457,7 +454,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
 
               {isLive && (
                 <div className="relative flex items-center gap-2">
-                  <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-amber-500 animate-ping" />
+                  <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
                   <span
                     aria-hidden="true"
                     className="inline-block h-[0.85em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
