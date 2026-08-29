@@ -196,14 +196,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             />
           </div>
 
-          {/* Live Thinking Status while text is still generating */}
-          {isLiveAnswer && !displayedText && (
-            <div className="flex items-center gap-2 py-1 text-xs text-secondary font-sans animate-pulse">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1E3A8A] dark:bg-blue-400" />
-              <span>Thinking & formulating response…</span>
-            </div>
-          )}
-
           {/* Response Text with Community matching font and sizing */}
           <div
             className="font-sans text-[15px] leading-[1.5] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.5] [&_p]:mb-2.5 [&_li]:leading-[1.5] [&_a]:font-semibold break-words [overflow-wrap:anywhere]"

@@ -308,15 +308,9 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
           >
             <ThinkingLeadIcon live={isLive} />
             {isLive ? (
-              <>
-                <span className="wim-think-sheen shrink-0 leading-tight">Thinking</span>
-                {headerStage && (
-                  <>
-                    <span className="shrink-0 text-stone-400 dark:text-stone-500">·</span>
-                    <StageTitle title={headerStage} className="text-[13px] font-normal" />
-                  </>
-                )}
-              </>
+              <span className="wim-think-sheen truncate leading-tight font-medium">
+                {headerStage || 'Thinking…'}
+              </span>
             ) : (
               <span className="truncate leading-tight">
                 {formatDoneHeader(durationSeconds, headerStage)}
