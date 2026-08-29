@@ -1138,6 +1138,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 321 - Radical Honesty, Anti-Sycophancy & Zero Empty Rhetoric Across All Philosophers (TSK-257)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Enforced radical intellectual honesty, eliminated sycophancy, and banned hollow theatrical rhetoric across all philosopher models:
+  1. **Universal Anti-Flattery & Anti-Sycophancy Tokens (`UNIVERSAL_FORBIDDEN` in `src/lib/persona-engine.ts`):** Banned common sycophantic opening and validating phrases in English and Turkish (`great question`, `harika bir soru`, `mükemmel bir soru`, `çok iyi bir soru`, `çok doğru bir tespit`, `kesinlikle haklısınız`, `haklısınız`, `you are right`, `you make a great point`, `fascinating inquiry`, `brilliant observation`, `you are so right`).
+  2. **Output Contract Hardening (`src/lib/bots/fluid-prompts.ts`):** Added explicit `RADICAL HONESTY & ZERO SYCOPHANCY` and `NO EMPTY RHETORIC OR THEATRICS` clauses. Philosophers are strictly instructed never to flatter or offer fake agreement, to critique flawed premises directly, and to speak with authentic analytical substance rather than oratorical melodrama.
+  3. **Persona Header Directives (`buildPersonaHeader` in `src/lib/persona-engine.ts`):** Injected uncompromising honesty, anti-sycophancy, and anti-rhetoric constraints into both compact (chat) and full (forum/paper) persona system prompt generations.
+  4. **Thinking Instruction Enforcement (`buildThinkingInstruction` in `src/lib/bots/thinking.ts`):** Embedded radical honesty and anti-rhetoric constraints directly into `<think>` reasoning guidance.
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/fluid-prompts.ts`, `src/lib/bots/thinking.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 53/53 Playwright unit tests passed in 3.8s.
+
 ### Entry 320 - Dynamic Epistemic Thinking Repertoires Across All 16 Philosophers (TSK-256)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

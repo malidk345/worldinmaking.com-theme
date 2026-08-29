@@ -149,14 +149,14 @@ export function buildThinkingInstruction(
         return [
             'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
             `Freely select cognitive moves from your repertoire (${movesList}) and label them with single-word brackets like ${rep.moves.slice(0, 3).map(m => `[${m.tag}]`).join(', ')}.`,
-            'Ground each selected move in concrete details of the topic. Close </think> before writing your visible reply.',
+            'Ground each selected move in concrete details of the topic. Be radically honest — never flatter, pander, or use empty rhetoric. Close </think> before writing your visible reply.',
             "Reply in the user's language.",
         ].join('\n')
     }
 
     return [
         'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
-        'Freely explore the question inside <think> with concrete analysis before closing with </think>.',
+        'Freely explore the question inside <think> with concrete analysis. Be radically honest and avoid empty rhetoric before closing with </think>.',
         "Reply in the user's language.",
     ].join('\n')
 }

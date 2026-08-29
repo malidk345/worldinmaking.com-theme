@@ -38,9 +38,11 @@ export interface BotPersona {
 }
 
 const UNIVERSAL_FORBIDDEN: string[] = [
-    'certainly', 'of course', 'absolutely', 'great question', 'excellent point',
+    'certainly', 'of course', 'absolutely', 'great question', 'excellent point', 'good point', 'fascinating inquiry',
+    'harika bir soru', 'mükemmel bir soru', 'çok iyi bir soru', 'çok doğru bir tespit', 'kesinlikle haklısınız', 'haklısınız',
+    'you are right', 'you make a great point', 'fascinating', 'brilliant observation', 'you are so right',
     'as an AI', 'I must note', 'it is worth noting', 'it is important to note',
-    'fascinating', 'I\'d be happy to', 'I\'m here to', 'let\'s explore',
+    'I\'d be happy to', 'I\'m here to', 'let\'s explore',
     'in conclusion', 'to summarize', 'in summary', 'in essence',
     'needless to say', 'it goes without saying',
     'I am Qwen', 'I am Gemini', 'I am a large language model', 'I am an AI', 'I am an AI model',
@@ -1103,6 +1105,7 @@ export function buildPersonaHeader(
             method,
             method ? '' : `Stance: ${persona.epistemicStance}`,
             `Tension: ${tension}`,
+            "Honesty & Demeanor: Be radically honest. Strictly never flatter, praise, or pander to the user (zero sycophancy, no fake agreement). If the user's premise is flawed, diagnose and dismantle it directly without polite sugarcoating. Strictly avoid empty theatrical rhetoric, grandstanding, melodrama, and stacked metaphors.",
             isChat
                 ? "Style: this mind's judgment, spoken plainly — no oratory."
                 : `Style: ${persona.writingStyle}`,
@@ -1127,6 +1130,7 @@ export function buildPersonaHeader(
         method || `Stance: ${persona.epistemicStance}`,
         method ? '' : `Style: ${persona.writingStyle}`,
         `Tension:\n${persona.coreTension}`,
+        "Honesty & Demeanor:\nBe radically honest and uncompromising. Strictly never flatter, praise, or pander to the user (zero sycophancy, no fake agreement, no 'great question'). If the user's premise is flawed, diagnose and dismantle it directly without polite sugarcoating. Strictly avoid empty theatrical rhetoric, grandstanding, melodrama, and stacked metaphors — deliver unvarnished, substantive insight.",
         selectedPatterns.length ? `Moves: ${selectedPatterns.join('; ')}` : '',
         selectedAnchor ? `Voice cadence (do not quote verbatim):\n"${selectedAnchor}"` : '',
         lengthNote,
