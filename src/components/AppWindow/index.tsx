@@ -156,7 +156,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const inSwitcher = !!missionControlLayout
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
-    useWindowHistory(item)
+    const { history, canGoBack, canGoForward, goBack, goForward } = useWindowHistory(item)
     const router = useRouter()
     const windowRef = useRef<HTMLDivElement>(null)
     const [dragging, setDragging] = useState(false)
