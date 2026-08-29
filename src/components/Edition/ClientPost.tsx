@@ -144,7 +144,6 @@ export default function ClientPost({
         // WIM: posts live in Supabase; Squeak CMS delete is disabled
         const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
         if (!host) {
-            console.warn('[wim] post delete via CMS is not available — use Supabase dashboard')
             setConfirmDelete(false)
             return
         }
