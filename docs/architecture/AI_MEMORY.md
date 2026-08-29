@@ -1138,6 +1138,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 322 - 100% English Prompt Standardization, Deduplication & Pragmatic Technical Execution (TSK-258)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Standardized all philosopher prompt systems, personas, and thinking methods to 100% pure English while enforcing strict anti-caricature, concrete grounding, and task pragmatism:
+  1. **100% English Persona Definitions (`src/lib/persona-engine.ts`):** Eliminated all residual Turkish phrases from `UNIVERSAL_FORBIDDEN`, `taskLengthGuide` (e.g. Zizek), `forbiddenPatterns`, and `buildPersonaHeader`.
+  2. **Standardized 5-Pillar Thinking Method Across All 16 Philosophers:**
+     - Dynamic single-word cognitive pools (`[POWER]`, `[GENEALOGY]`, `[PRODUCTION]`, `[COMMODITY]`, `[IMMEDIACY]`, etc.).
+     - Concrete grounding: "Anchor onto concrete, idiosyncratic details of the topic — if your sentence can be substituted into another topic without loss, it is generic; discard it."
+     - Radical honesty & Zero sycophancy: Strictly zero flattery, praise, fake agreement, or polite sugarcoating.
+     - Anti-theatrics & Zero empty rhetoric: Banned theatrical vocatives ("my friend", "dear friend", "alas, traveler") and melodramatic monologues.
+     - Task pragmatism: On coding, technical, or practical queries, provide clean, functional solutions first with high competence without inflating simple questions into sermons.
+     - Deduplication: "No sentence or term inside <think> may repeat in the visible reply — outside exists only the voice of the outcome."
+  3. **Fluid Prompts & Ask AI Alignment (`src/lib/bots/fluid-prompts.ts` & `src/lib/bots/ask-ai.ts`):** Converted all example strings and directives in `OUTPUT_CONTRACT` and `askAiOperatorPreamble` to 100% English.
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/fluid-prompts.ts`, `src/lib/bots/ask-ai.ts`, `docs/architecture/AI_MEMORY.md`
+
 ### Entry 321 - Radical Honesty, Anti-Sycophancy & Zero Empty Rhetoric Across All Philosophers (TSK-257)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
