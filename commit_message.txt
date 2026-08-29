@@ -1,0 +1,3 @@
+refactor: extract AppWindow hooks
+
+Extract useWindowHistory and useWindowShortcuts hooks from AppWindow/index.tsx to reduce component bloat and separate navigation and shortcut key concerns.
