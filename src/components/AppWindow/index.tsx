@@ -222,25 +222,28 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         return coveredArea / currentArea < 0.8
     }, [windows, item, position, size])
 
-    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
-    const parent =
-        safeAppMenu.find(({ children, url }: any) => {
-            const currentURL = item?.path
-            return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
-        }) ||
-        safeAppMenu.find(({ url }: any) => url === `/${item?.path?.split('/')[1]}`) ||
-        safeAppMenu.find(({ name }: any) => name === 'Docs')
+    const { parent, internalMenu, activeInternalMenu: initialActiveInternalMenu } = useMemo(() => {
+        const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
+        const currentURL = item?.path
+        const foundParent =
+            safeAppMenu.find(({ children, url }: any) => {
+                return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
+            }) ||
+            safeAppMenu.find(({ url }: any) => url === `/${currentURL?.split('/')[1]}`) ||
+            safeAppMenu.find(({ name }: any) => name === 'Docs')
 
-    const internalMenu = parent?.children || []
+        const foundInternalMenu = foundParent?.children || []
 
-    const getActiveInternalMenu = useCallback(() => {
-        return internalMenu?.find((menuItem: MenuItem) => {
-            const currentURL = item?.path
+        const active = foundInternalMenu?.find((menuItem: MenuItem) => {
             return currentURL === menuItem.url?.split('?')[0] || recursiveSearch(menuItem.children, currentURL)
         })
-    }, [internalMenu, item])
 
-    const [activeInternalMenu, setActiveInternalMenu] = useState<MenuItem | undefined>(getActiveInternalMenu())
+        return { parent: foundParent, internalMenu: foundInternalMenu, activeInternalMenu: active }
+    }, [appMenu, item?.path])
+
+    const getActiveInternalMenu = useCallback(() => initialActiveInternalMenu, [initialActiveInternalMenu])
+
+    const [activeInternalMenu, setActiveInternalMenu] = useState<MenuItem | undefined>(initialActiveInternalMenu)
 
     useEffect(() => {
         setMenu?.(internalMenu)

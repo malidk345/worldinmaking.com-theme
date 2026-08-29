@@ -1,0 +1,4 @@
+refactor(architecture): optimize memoization and remove unused console logs
+
+- Wrapped nested map evaluations in AppWindow, Team, and People components inside `useMemo` hooks to prevent repeated O(N) recalculations on component renders.
+- Cleaned up unused and stray `console.warn` statements in Edition and Sticker components that were not functionally reporting actionable errors.
