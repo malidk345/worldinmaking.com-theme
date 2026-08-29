@@ -151,6 +151,7 @@ export function repairWindowPath(windowPath: string, live: string): string {
 export function isPathRoutedWindow(path: string): boolean {
     const p = canonicalWindowPath(path)
     return (
+        /^\/workspace-chat(\/|$)/.test(p) ||
         /^\/notebooks(\/|$)/.test(p) ||
         /^\/(posts|blog)(\/|$)/.test(p) ||
         /^\/(questions|forum)(\/|$)/.test(p) ||

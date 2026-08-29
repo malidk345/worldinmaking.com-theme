@@ -36,6 +36,7 @@ test.describe('window path', () => {
 
     test('canonical path is a clean pathname', () => {
         expect(canonicalWindowPath('/questions/99/?a=1')).toBe('/questions/99')
+        expect(isPathRoutedWindow('/workspace-chat')).toBe(true)
     })
 
     test('desktop-pinned notebooks keep their id instead of collapsing to the list', () => {
