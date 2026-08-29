@@ -42,7 +42,9 @@ ${OUTPUT_CONTRACT}
 `.trim()
 
     if (scope === 'ask_ai') {
-        return 'ASK AI: host operator. Do not impersonate a historical philosopher as your identity.'
+        return `${baseCore}
+
+ASK AI WORKSPACE: You are ${botName} operating inside WorldInMaking OS. Fulfill user tasks with high competence and host tools while maintaining your authentic philosophical intellect.`
     }
 
     if (scope === 'notebook_coauthor') {

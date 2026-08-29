@@ -134,13 +134,13 @@ test.describe('thinking stream routing', () => {
         expect(shouldPromptThinkingTags('brief')).toBe(true)
         expect(shouldPromptThinkingTags('standard')).toBe(true)
         expect(shouldPromptThinkingTags('deep')).toBe(true)
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('<thinking>')
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('<case>')
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).not.toMatch(/<case>[^<]{8,}<\/case>/)
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toMatch(/particular arrangement/)
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('<fear>')
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toMatch(/fear or exhaustion/)
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Marx')).toMatch(/same language as the user/)
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('<think>')
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('[PRODUCTION]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('[COMMODITY]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('[POWER]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('[GENEALOGY]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Hegel')).toContain('[AUFHEBUNG]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Marx')).toMatch(/user's language/)
     })
 
     test('stage text drops model names and keeps the clause', () => {
@@ -150,41 +150,40 @@ test.describe('thinking stream routing', () => {
         expect(isJunkThought('A night warehouse unpaid wait')).toBe(false)
     })
 
-    test('Marx thinking stages parse as case / extraction / side', () => {
+    test('Marx thinking stages parse as dynamic repertoire tags', () => {
         const parsed = parseThinkingAndReply(
             [
-                '<thinking>',
-                '<case>A night-shift warehouse clocking unpaid waiting time.</case>',
-                '<extraction>The wait is sold as flexibility.</extraction>',
-                '<side>Refuse that story.</side>',
-                '</thinking>',
+                '<think>',
+                '[PRODUCTION] A night-shift warehouse clocking unpaid waiting time.',
+                '[COMMODITY] The wait is sold as flexibility.',
+                '[PRAXIS] Refuse that story.',
+                '</think>',
                 'The clock is the argument.',
             ].join('\n'),
             'community_reply',
             'brief',
             { philosopher: 'Marx' },
         )
-        expect(parsed.thinking.stages.map((stage) => stage.id)).toEqual(['case', 'extraction', 'side'])
-        expect(parsed.thinking.stages.map((stage) => stage.label)).toEqual(['The case', 'What is taken', 'The side'])
+        expect(parsed.thinking.stages.map((stage) => stage.label)).toEqual(['PRODUCTION', 'COMMODITY', 'PRAXIS'])
         expect(parsed.reply).toContain('The clock is the argument.')
-        expect(parsed.reply).not.toContain('<case>')
+        expect(parsed.reply).not.toContain('[PRODUCTION]')
     })
 
-    test('hint echoes are ignored and free prose still fills the three Marx stages', () => {
+    test('repertoire moves in free prose parse into distinct stages', () => {
         const echoed = parseThinkingAndReply(
             [
-                '<thinking>',
-                '<case>Name the particular arrangement — a desk, a wage, a contract. Not a school.</case>',
-                '<extraction>What this arrangement takes, or must keep invisible.</extraction>',
-                '<side>Take a side. A both-sides close is a fault.</side>',
-                'A warehouse clock. Unpaid waiting. Refuse flexibility.</thinking>',
+                '<think>',
+                '[PRODUCTION] A warehouse clock.',
+                '[EXTRACTION] Unpaid waiting time.',
+                '[PRAXIS] Refuse flexibility.',
+                '</think>',
                 'Public.',
             ].join('\n'),
             'community_reply',
             'brief',
             { philosopher: 'Marx' },
         )
-        expect(echoed.thinking.stages.map((stage) => stage.id)).toEqual(['case', 'extraction', 'side'])
+        expect(echoed.thinking.stages.map((stage) => stage.label)).toEqual(['PRODUCTION', 'EXTRACTION', 'PRAXIS'])
         expect(echoed.thinking.stages[0]?.text).toMatch(/warehouse/i)
         expect(echoed.thinking.stages[1]?.text).toMatch(/waiting/i)
         expect(echoed.thinking.stages[2]?.text).toMatch(/flexibility/i)
@@ -364,8 +363,26 @@ test.describe('thinking stream routing', () => {
         })
         expect(extracted.thought).toBe('The user asked for a table.')
         expect(extracted.text).toBe('Here is the table.')
+    })
 
-        const merged = mergeGeminiThoughtText(extracted.thought, extracted.text)
+    test('repertoire bracketed tags in thinking block are parsed into distinct stages', () => {
+        const rawOutput = `<think>
+[POWER] The voice speaking seeks to mask its own impotence as virtue.
+[PHYSIOLOGY] The consolation of an exhausted metabolism.
+[STANCE] Approach with curiosity but keep the trap ready.
+</think>Real power never flees from itself.`
+
+        const parsed = parseThinkingAndReply(rawOutput, 'community_reply', 'standard', { philosopher: 'Nietzsche' })
+        expect(parsed.reply).toBe('Real power never flees from itself.')
+        expect(parsed.thinking.stages.length).toBe(3)
+        expect(parsed.thinking.stages[0].label).toBe('POWER')
+        expect(parsed.thinking.stages[0].text).toContain('mask its own impotence')
+        expect(parsed.thinking.stages[1].label).toBe('PHYSIOLOGY')
+        expect(parsed.thinking.stages[2].label).toBe('STANCE')
+    })
+
+    test('ensures Gemini thinking merge matches logic', () => {
+        const merged = mergeGeminiThoughtText('The user asked for a table.', 'Here is the table.')
         expect(merged).toBe('<think>The user asked for a table.</think>Here is the table.')
 
         const demux = new ThinkingStreamDemux()

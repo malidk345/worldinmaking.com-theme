@@ -34,8 +34,12 @@ test.describe('OpenAI tool protocol', () => {
             'insert_notebook_block',
             'list_notebooks',
             'open_path',
+            'read_notebook',
             'read_post',
+            'replace_notebook_selection',
+            'rewrite_notebook_document',
             'search_site',
+            'update_notebook_title',
             'web_search',
         ])
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
@@ -238,8 +242,12 @@ test.describe('OpenAI tool protocol', () => {
             'insert_notebook_block',
             'list_notebooks',
             'open_path',
+            'read_notebook',
             'read_post',
+            'replace_notebook_selection',
+            'rewrite_notebook_document',
             'search_site',
+            'update_notebook_title',
             'web_search',
         ])
         expect(declarations[0].parameters.type).toBe('OBJECT')
@@ -365,15 +373,12 @@ test.describe('OpenAI tool protocol', () => {
         expect(publicTextFromRound('Here is what I found.', 0)).toBe('Here is what I found.')
     })
 
-    test('Ask AI operator prompt is not a philosopher identity lock', () => {
+    test('Ask AI operator prompt preserves philosopher identity and capabilities', () => {
         const operator = askAiOperatorPreamble('Nietzsche')
-        expect(operator).toContain('WorldInMaking Ask AI')
-        expect(operator).not.toContain('You ARE the assigned philosopher')
-        expect(SECURITY_PREAMBLE).toContain('You ARE the assigned philosopher')
+        expect(operator).toContain('You are Nietzsche')
+        expect(operator).toContain('WorldInMaking OS')
         const system = getAskAiSystemPrompt({ voiceName: 'Nietzsche', wimContext: 'wim' })
-        expect(system).toContain('WorldInMaking Ask AI')
-        expect(system).not.toContain('living, self-aware contemporary mind')
-        expect(system).not.toContain('Ben Karl Marx')
+        expect(system).toContain('You are Nietzsche')
     })
 
     test('fetch_url blocks private and non-http URLs', async () => {

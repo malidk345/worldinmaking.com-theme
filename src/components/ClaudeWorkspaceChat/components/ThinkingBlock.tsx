@@ -2,16 +2,26 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { ModelOption, ThinkingProcess, ThinkingStep, ToolTrace } from '../types';
 import { toolStatusLabel } from '../../../lib/bots/tools/labels';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import {
+  Activity,
   Brain,
   Check,
   ChevronDown,
   Clock,
   Code,
   Compass,
+  Eye,
   FileText,
+  Flame,
   Globe,
+  Key,
+  Layers,
+  Scale,
+  Shield,
+  Sparkles,
+  Split,
+  Target,
+  TrendingUp,
   Zap,
 } from 'lucide-react';
 
@@ -36,20 +46,23 @@ function formatExactTime(ts?: string): string {
 
 interface ThinkingBlockProps {
   thinking: ThinkingProcess;
+
   toolTrace?: ToolTrace[];
   isLive?: boolean;
   model?: ModelOption;
   timestamp?: string;
 }
 
-type ThoughtSegment = {
+type ThreadNode = {
   id: string;
-  kind: 'stage' | 'prose';
-  text: string;
+  title: string;
+  detail?: string;
+  isTool?: boolean;
+  status?: 'running' | 'done' | 'error';
 };
 
 const VIEWPORT_CLASS =
-  'max-h-[10.5rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+  'max-h-[14rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 const VIEWPORT_MASK: React.CSSProperties = {
   WebkitMaskImage:
@@ -63,11 +76,11 @@ function isDoneTitle(title?: string): boolean {
 }
 
 function isPlaceholderStep(step: ThinkingStep): boolean {
-  const title = String(step.title || '').trim()
-  const detail = String(step.detail || '').trim()
-  if (step.source === 'system_event' && /^(thinking|thought|think)$/i.test(title)) return true
-  if (/^[.…]+$/.test(detail) && /^(thinking|thought|think|analyzing)$/i.test(title)) return true
-  return false
+  const title = String(step.title || '').trim();
+  const detail = String(step.detail || '').trim();
+  if (step.source === 'system_event' && /^(thinking|thought|think)$/i.test(title)) return true;
+  if (/^[.…]+$/.test(detail) && /^(thinking|thought|think|analyzing)$/i.test(title)) return true;
+  return false;
 }
 
 function isToolChromeStep(step: ThinkingStep): boolean {
@@ -75,8 +88,79 @@ function isToolChromeStep(step: ThinkingStep): boolean {
   return id.startsWith('tool-') || id === 'search-step';
 }
 
-function flattenThoughtStream(steps: ThinkingStep[], hideToolChrome: boolean): ThoughtSegment[] {
-  const segments: ThoughtSegment[] = [];
+function formatStageTitle(rawTitle: string): string {
+  const cleaned = rawTitle.replace(/[\[\]_:\-]+/g, ' ').trim();
+  if (!cleaned) return '';
+  if (/^auto-\d+$/i.test(cleaned) || /^tag-\d+$/i.test(cleaned) || /^repertoire-\d+$/i.test(cleaned)) {
+    return 'Thought';
+  }
+  const upper = cleaned.toUpperCase();
+  if (upper === 'GÜÇ' || upper === 'GÜÇ OKUMASI' || upper === 'GÜÇ-OKUMASI' || upper === 'POWER') {
+    return 'Power';
+  }
+  if (upper === 'GENEALOJİ' || upper === 'GENEALOGY') {
+    return 'Genealogy';
+  }
+  if (upper === 'KARŞITLIK' || upper === 'KARŞITLIK KIRILMASI' || upper === 'KARŞITLIK-KIRILMASI' || upper === 'OPPOSITION') {
+    return 'Opposition';
+  }
+  if (upper === 'FİZYOLOJİ' || upper === 'PHYSIOLOGY') {
+    return 'Physiology';
+  }
+  if (upper === 'TAVIR' || upper === 'STANCE') {
+    return 'Stance';
+  }
+  if (upper === 'ÖZ ÇELİŞKİ' || upper === 'ÖZ-ÇELİŞKİ' || upper === 'ÇELİŞKİ' || upper === 'CONTRADICTION') {
+    return 'Contradiction';
+  }
+  if (upper === 'ÖZ AŞMA' || upper === 'ÖZ-AŞMA' || upper === 'AŞMA' || upper === 'OVERCOMING') {
+    return 'Overcoming';
+  }
+  if (cleaned === cleaned.toUpperCase() && cleaned.length > 2) {
+    return cleaned.charAt(0) + cleaned.slice(1).toLowerCase();
+  }
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function parseBracketedSegments(raw: string): Array<{ title: string; detail: string }> {
+  const bracketRegex = /(?:^|\n|\s*)\[([A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+)\]\s*[:—\-]?\s*([\s\S]*?)(?=(?:\n\s*\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]|$))/g;
+  const matches = Array.from(raw.matchAll(bracketRegex));
+  if (matches.length > 0) {
+    const results: Array<{ title: string; detail: string }> = [];
+    const firstMatchIdx = raw.search(/\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]/);
+    if (firstMatchIdx > 0) {
+      const preamble = raw.slice(0, firstMatchIdx).replace(/^\[+|\]+$/g, '').trim();
+      if (preamble) {
+        results.push({ title: 'Analysis', detail: preamble });
+      }
+    }
+    for (const m of matches) {
+      const tag = m[1].trim();
+      const text = m[2].trim().replace(/^\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]\s*[:—\-]?\s*/, '');
+      results.push({
+        title: formatStageTitle(tag),
+        detail: text,
+      });
+    }
+    return results;
+  }
+  return [];
+}
+
+function buildThreadNodes(steps: ThinkingStep[], traces: ToolTrace[], hideToolChrome: boolean): ThreadNode[] {
+  const nodes: ThreadNode[] = [];
+
+  traces.forEach((trace) => {
+    const title = toolStatusLabel(trace.name, trace.status);
+    const detail = clipTraceDetail(trace.detail || (trace.status === 'error' ? trace.result : ''));
+    nodes.push({
+      id: `trace-${trace.id}`,
+      title,
+      detail: detail && detail !== title ? detail : undefined,
+      isTool: true,
+      status: trace.status,
+    });
+  });
 
   steps.forEach((step, index) => {
     if (isDoneTitle(step.title) || isPlaceholderStep(step)) return;
@@ -84,26 +168,36 @@ function flattenThoughtStream(steps: ThinkingStep[], hideToolChrome: boolean): T
 
     const title = String(step.title || '').trim();
     const detail = String(step.detail || '').trim();
-    const genericTitle = /^(thinking|thought|think|native reasoning|analyzing)$/i.test(title);
+    const genericTitle = /^(thinking|thought|think|native reasoning)$/i.test(title);
 
-    if (title && !genericTitle) {
-      segments.push({
-        id: `${step.id || index}-stage`,
-        kind: 'stage',
-        text: title,
+    const bracketSegments = parseBracketedSegments(detail);
+    if (bracketSegments.length > 0) {
+      bracketSegments.forEach((seg, sIdx) => {
+        nodes.push({
+          id: `step-${step.id || index}-seg-${sIdx}`,
+          title: seg.title,
+          detail: seg.detail,
+          isTool: false,
+        });
       });
+      return;
     }
 
-    if (detail && detail !== title && !/^[.…]+$/.test(detail)) {
-      segments.push({
-        id: `${step.id || index}-prose`,
-        kind: 'prose',
-        text: detail,
+    const displayTitle = !genericTitle ? formatStageTitle(title) : '';
+    let displayDetail = detail && detail !== title && !/^[.…]+$/.test(detail) ? detail : '';
+    displayDetail = displayDetail.replace(/^\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]\s*[:—\-]?\s*/, '');
+
+    if (displayTitle || displayDetail) {
+      nodes.push({
+        id: `step-${step.id || index}`,
+        title: displayTitle || 'Analysis',
+        detail: displayDetail,
+        isTool: false,
       });
     }
   });
 
-  return segments;
+  return nodes;
 }
 
 function formatDoneHeader(durationSeconds: number, activeStage?: string): string {
@@ -116,11 +210,6 @@ function formatDoneHeader(durationSeconds: number, activeStage?: string): string
   return activeStage || 'Thought';
 }
 
-/**
- * Same mapping as the previous timeline: Brain only for an explicit Thinking
- * title, Clock for ordinary reasoning (Analyzing / Reflecting / Concluding),
- * Globe / File / Code / Zap / Compass when the title actually says so.
- */
 function titleTokens(title?: string): string[] {
   return String(title || '')
     .toLowerCase()
@@ -136,63 +225,73 @@ function getStepIcon(title?: string) {
   const heading = String(title || '').trim().toLowerCase();
   const tokens = titleTokens(heading);
 
-  if (
-    heading === 'thinking' ||
-    heading === 'think' ||
-    heading === 'thought' ||
-    heading === 'intent' ||
-    heading === 'native reasoning'
-  ) {
-    return Brain;
+  if (hasAnyToken(tokens, ['power', 'güç', 'praxis', 'energy', 'cadre', 'force', 'vitality', 'axiom'])) {
+    return Zap;
+  }
+  if (hasAnyToken(tokens, ['genealogy', 'genealoji', 'being', 'clearing', 'origin', 'history', 'ancestry', 'vita'])) {
+    return Compass;
+  }
+  if (hasAnyToken(tokens, ['opposition', 'karşıtlık', 'binary', 'split', 'dualism', 'parallax', 'rupture', 'aporia', 'supplement'])) {
+    return Split;
+  }
+  if (hasAnyToken(tokens, ['physiology', 'fizyoloji', 'health', 'body', 'metabolism', 'conatus', 'affect'])) {
+    return Activity;
+  }
+  if (hasAnyToken(tokens, ['stance', 'tavır', 'posture', 'attitude', 'gaze', 'focus', 'interpellation', 'judgment'])) {
+    return Target;
+  }
+  if (hasAnyToken(tokens, ['contradiction', 'çelişki', 'öz-çelişki', 'tension', 'paradox', 'clash', 'negation', 'damage', 'symptom', 'anguish'])) {
+    return Flame;
+  }
+  if (hasAnyToken(tokens, ['overcoming', 'öz-aşma', 'surpass', 'transcend', 'sublime', 'aufhebung', 'becoming', 'bliss', 'natality', 'project', 'concluding'])) {
+    return TrendingUp;
+  }
+  if (hasAnyToken(tokens, ['production', 'commodity', 'extraction', 'apparatus', 'structure', 'cage', 'industry', 'producer', 'equipment', 'practice'])) {
+    return Layers;
+  }
+  if (hasAnyToken(tokens, ['simulation', 'hyperreality', 'consumption', 'obscenity', 'seduction', 'fatal', 'fantasy', 'cynicism'])) {
+    return Sparkles;
+  }
+  if (hasAnyToken(tokens, ['rationality', 'legitimacy', 'polytheism', 'disenchantment', 'charisma', 'rights', 'justice'])) {
+    return Scale;
+  }
+  if (hasAnyToken(tokens, ['freedom', 'badfaith', 'situation', 'falling', 'temporality', 'frame', 'defense', 'shield'])) {
+    return Shield;
+  }
+  if (hasAnyToken(tokens, ['reason', 'trader', 'sacrifice', 'timing', 'concrete', 'opportunism', 'substance', 'adequacy', 'causality'])) {
+    return Key;
+  }
+  if (hasAnyToken(tokens, ['nonidentity', 'aesthetic', 'real', 'inversion', 'plurality', 'banality', 'immanence', 'intensity', 'desire', 'assemblage', 'territory'])) {
+    return Eye;
+  }
+  if (hasAnyToken(tokens, ['search', 'searching', 'ara', 'find', 'referans', 'kaynak', 'web', 'scan', 'fetch_url', 'totality', 'imperialism', 'public', 'global'])) {
+    return Globe;
+  }
+  if (hasAnyToken(tokens, ['read', 'write', 'code', 'file', 'terminal', 'script', 'tool', 'kod', 'dosya', 'typo', 'orchestrator']) ||
+      heading.includes('agent-') ||
+      heading.includes('.ts') ||
+      heading.includes('.tsx') ||
+      heading.includes('.js')) {
+    return Code;
+  }
+  if (heading.includes('structur') ||
+      heading.includes('create_artifact') ||
+      heading.includes('belge') ||
+      heading.includes('document') ||
+      heading.includes('tablo') ||
+      heading.includes('table') ||
+      heading.includes('şema') ||
+      heading.includes('diagram') ||
+      heading.includes('mermaid') ||
+      heading.includes('notebook') ||
+      hasAnyToken(tokens, ['logocentrism', 'différance', 'differance', 'trace', 'mediation', 'immediacy'])) {
+    return FileText;
   }
   if (hasAnyToken(tokens, ['done', 'completed', 'tamamlandı', 'tamamlandi'])) {
     return Check;
   }
-  if (
-    hasAnyToken(tokens, ['search', 'searching', 'ara', 'find', 'referans', 'kaynak', 'web', 'scan'])
-  ) {
-    return Globe;
-  }
-  if (
-    heading.includes('structur') ||
-    heading.includes('create_artifact') ||
-    heading.includes('belge') ||
-    heading.includes('document') ||
-    heading.includes('tablo') ||
-    heading.includes('table') ||
-    heading.includes('şema') ||
-    heading.includes('diagram') ||
-    heading.includes('mermaid') ||
-    heading.includes('notebook')
-  ) {
-    return FileText;
-  }
-  if (
-    hasAnyToken(tokens, ['read', 'write', 'code', 'file', 'terminal', 'script', 'tool', 'kod', 'dosya', 'typo', 'orchestrator']) ||
-    heading.includes('agent-') ||
-    heading.includes('.ts') ||
-    heading.includes('.tsx') ||
-    heading.includes('.js')
-  ) {
-    return Code;
-  }
-  if (
-    heading.includes('tension') ||
-    heading.includes('contradiction') ||
-    heading.includes('negative_dialectics') ||
-    heading.includes('immanent') ||
-    heading.includes('çelişki')
-  ) {
-    return Zap;
-  }
-  if (
-    heading.includes('genealogy') ||
-    heading.includes('deconstruction') ||
-    heading.includes('materialist') ||
-    heading.includes('substance') ||
-    heading.includes('compass')
-  ) {
-    return Compass;
+  if (hasAnyToken(tokens, ['thinking', 'think', 'thought', 'intent', 'native reasoning', 'analyzing', 'analysis'])) {
+    return Brain;
   }
   return Clock;
 }
@@ -214,16 +313,6 @@ function clipTraceDetail(value?: string): string {
   return text.length <= 220 ? text : `${text.slice(0, 217)}…`;
 }
 
-const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, className = '' }) => {
-  const Icon = getStepIcon(title);
-  return (
-    <span className={`inline-flex min-w-0 items-center gap-1 ${className}`}>
-      <Icon className="h-3 w-3 shrink-0 stroke-[1.5] text-stone-400 dark:text-stone-500" />
-      <span className="truncate">{title}</span>
-    </span>
-  );
-};
-
 const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -232,8 +321,8 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
   const traces = toolTrace || [];
   const hasTools = traces.length > 0;
   const rawSteps = thinking?.steps || [];
-  const segments = useMemo(() => flattenThoughtStream(rawSteps, hasTools), [rawSteps, hasTools]);
-  const hasThoughtText = segments.some((segment) => segment.text.length > 0);
+  const nodes = useMemo(() => buildThreadNodes(rawSteps, traces, hasTools), [rawSteps, traces, hasTools]);
+  const hasThoughtText = nodes.length > 0;
   const durationSeconds = thinking?.durationSeconds || 0;
 
   const activeStage = [...rawSteps]
@@ -244,7 +333,8 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    pinnedToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 28;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    pinnedToBottom.current = distanceToBottom <= 24;
   };
 
   useLayoutEffect(() => {
@@ -253,7 +343,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
     if (isLive && pinnedToBottom.current) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [segments, traces, isLive, isOpen]);
+  }, [nodes, isLive, isOpen]);
 
   const formattedTime = formatExactTime(timestamp);
   const surname = philosopherSurname(model?.name);
@@ -261,11 +351,11 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
   const headerStage = liveStage
     ? toolStatusLabel(liveStage.name, 'running')
     : activeStage && !/^(thinking|thought|think)$/i.test(activeStage)
-      ? activeStage
+      ? formatStageTitle(activeStage)
       : traces.length
         ? toolStatusLabel(traces[traces.length - 1].name, traces[traces.length - 1].status)
         : undefined;
-  const showThinkingTrigger = isLive || hasThoughtText || hasTools;
+  const showThinkingTrigger = isLive || hasThoughtText;
 
   useEffect(() => {
     if (!isLive || !(hasTools || hasThoughtText)) return;
@@ -277,7 +367,6 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
 
   return (
     <div className="w-full max-w-full select-none font-sans text-secondary">
-      {/* Header Row: Philosopher Profile (Left) + Thinking Trigger (Right on same line) */}
       <div className="flex items-center justify-between gap-2 w-full min-w-0 flex-wrap pb-1">
         {model ? (
           <div className="flex items-center gap-2 min-w-0">
@@ -325,7 +414,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
         )}
       </div>
 
-      {isOpen && (hasTools || hasThoughtText) && (
+      {isOpen && (
         <div className="relative mt-1 min-w-0 w-full mb-2">
           <div
             ref={scrollRef}
@@ -333,44 +422,47 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
             className={VIEWPORT_CLASS}
             style={VIEWPORT_MASK}
           >
-            <div className="space-y-1.5 py-3 text-[13px] leading-[1.55] text-stone-500 dark:text-stone-400">
-              {traces.map((trace) => {
-                const title = toolStatusLabel(trace.name, trace.status);
-                const detail = clipTraceDetail(trace.detail || (trace.status === 'error' ? trace.result : ''));
-                const showDetail = detail && detail !== title;
+            <div className="relative pl-5 py-2 space-y-3.5">
+              {/* Vertical Thread Connector */}
+              <div className="absolute left-[5px] top-2.5 bottom-2.5 w-[1px] bg-stone-200/80 dark:bg-stone-800" />
+
+              {nodes.map((node) => {
+                const Icon = getStepIcon(node.title);
+                const displayTitle = formatStageTitle(node.title);
+
                 return (
-                  <div key={trace.id} className="pt-1 first:pt-0">
-                    <StageTitle
-                      title={title}
-                      className="text-[11px] font-medium tracking-[0.01em] text-stone-400 dark:text-stone-500"
-                    />
-                    {showDetail ? (
-                      <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[12px] text-stone-400 dark:text-stone-500">
-                        {detail}
-                      </p>
-                    ) : null}
+                  <div key={node.id} className="relative group/node">
+                    {/* Subtle bullet on connector */}
+                    <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
+
+                    <div className="min-w-0">
+                      {displayTitle && (
+                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-stone-700 dark:text-stone-300">
+                          <Icon className="size-3.5 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
+                          <span>{displayTitle}</span>
+                          {node.status === 'running' && (
+                            <span className="inline-block size-1.5 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+                          )}
+                        </div>
+                      )}
+                      {node.detail && (
+                        <p className="m-0 mt-0.5 text-[13px] leading-[1.6] text-stone-600 dark:text-stone-400 font-sans whitespace-pre-wrap break-words">
+                          {node.detail}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
-              {segments.map((segment) =>
-                segment.kind === 'stage' ? (
-                  <div key={segment.id} className="pt-1 first:pt-0">
-                    <StageTitle
-                      title={segment.text}
-                      className="text-[11px] font-medium tracking-[0.01em] text-stone-400 dark:text-stone-500"
-                    />
-                  </div>
-                ) : (
-                  <p key={segment.id} className="m-0 whitespace-pre-wrap break-words">
-                    {segment.text}
-                  </p>
-                )
-              )}
+
               {isLive && (
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-[0.85em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
-                />
+                <div className="relative flex items-center gap-2">
+                  <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-amber-500 animate-ping" />
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-[0.85em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
+                  />
+                </div>
               )}
             </div>
           </div>

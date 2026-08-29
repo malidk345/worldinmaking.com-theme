@@ -7,10 +7,10 @@
 import type { TaskType } from 'lib/persona-engine'
 import { stripThinkingBlocks, THINKING_TAG_NAMES } from './thinking-tags'
 import {
+    allRepertoireTags,
     allThinkingStageIds,
-    stageDefById,
-    thinkingSchemaFor,
-    type PersonaThinkingSchema,
+    repertoireFor,
+    type PhilosopherRepertoire,
 } from './thinking-schemas'
 
 export type ThinkingDepth = 'brief' | 'standard' | 'deep'
@@ -140,24 +140,24 @@ function isHintEcho(text: string, hint: string): boolean {
  */
 export function buildThinkingInstruction(
     _taskType: TaskType,
-    depth?: ThinkingDepth,
+    _depth?: ThinkingDepth,
     philosopher?: string,
 ): string {
-    const schema = thinkingSchemaFor(philosopher)
-    const words = depth === 'deep' ? 90 : 70
-    const jobs = schema
-        ? schema.stages.map((stage, index) => `${index + 1}. ${stage.label} (${stage.id}): ${stage.hint}`).join('\n')
-        : thinkingCueFor(philosopher)
-    const template = schema
-        ? ['<thinking>', ...schema.stages.map((stage) => `<${stage.id}>…</${stage.id}>`), '</thinking>'].join('\n')
-        : '<thinking>…</thinking>'
+    const rep = repertoireFor(philosopher)
+    if (rep) {
+        const movesList = rep.moves.map((m) => `[${m.tag}]`).join(', ')
+        return [
+            'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
+            `Freely select cognitive moves from your repertoire (${movesList}) and label them with single-word brackets like ${rep.moves.slice(0, 3).map(m => `[${m.tag}]`).join(', ')}.`,
+            'Ground each selected move in concrete details of the topic. Close </think> before writing your visible reply.',
+            "Reply in the user's language.",
+        ].join('\n')
+    }
+
     return [
-        'THINKING PROCESS (mandatory). Your first characters MUST be <thinking>.',
-        `Fill every tag with a concrete clause about THIS user message (6–16 words). Never leave … in a tag. Never copy the job text.`,
-        jobs,
-        `Exact shape:\n${template}`,
-        `Stay under ${words} words across the three tags, then close </thinking>.`,
-        'Then write the public reply in the same language as the user. Tag names stay English.',
+        'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
+        'Freely explore the question inside <think> with concrete analysis before closing with </think>.',
+        "Reply in the user's language.",
     ].join('\n')
 }
 
@@ -259,20 +259,7 @@ function extractAnyKnownStages(block: string): ThinkingStage[] {
     return stages
 }
 
-function stagesFromInner(inner: string, philosopher?: string): ThinkingStage[] {
-    const schema = thinkingSchemaFor(philosopher)
-    if (schema) {
-        const staged = extractSchemaStages(inner, schema)
-        if (staged.length >= 2) return staged
-        const filled = fillSchemaFromProse(inner, schema)
-        if (filled.length) {
-            const byId = new Map(staged.map((stage) => [stage.id, stage]))
-            return filled.map((stage) => byId.get(stage.id) || stage)
-        }
-        if (staged.length) return staged
-    }
-    const any = extractAnyKnownStages(inner)
-    if (any.length) return any
+function stagesFromInner(inner: string, _philosopher?: string): ThinkingStage[] {
     return stagesFromBlock(inner)
 }
 
@@ -280,6 +267,26 @@ function stagesFromBlock(inner: string): ThinkingStage[] {
     const tagPattern = new RegExp(`</?(?:${THINKING_TAG_NAMES.join('|')})(?:\\s[^>]*)?>`, 'gi')
     const raw = cleanAIOutput(inner.replace(tagPattern, '').trim())
     if (!raw) return []
+
+    // 1. Check for bracketed cognitive tags like [GÜÇ-OKUMASI], [GENEALOJİ], [FİZYOLOJİ], etc.
+    const bracketRegex = /(?:^|\n|\s*)\[([A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+)\]\s*[:—\-]?\s*([\s\S]*?)(?=(?:\n\s*\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]|$))/g
+    const bracketMatches = Array.from(raw.matchAll(bracketRegex))
+    if (bracketMatches.length >= 1) {
+        const stages: ThinkingStage[] = []
+        let idx = 1
+        for (const m of bracketMatches) {
+            const label = m[1].trim()
+            const text = m[2].trim()
+            if (text) {
+                stages.push({
+                    id: `repertoire-${idx++}`,
+                    label,
+                    text,
+                })
+            }
+        }
+        if (stages.length) return stages
+    }
 
     // Split by multiple newlines to create natural chunks
     const paragraphs = raw.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)

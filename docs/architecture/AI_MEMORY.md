@@ -257,7 +257,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-236` | Stream 5 / 3 | Cross-Notebook Full Read/Search Tool for WIM AI (`read_notebook` by ID/Title across all workspace documents) | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-237` | Stream 5 / 3 | Full AI UX & Friction Polish: Streaming Cursor, Code Copy Feedback, Window Drag Dropzone, Dynamic Voice Lang, Selection Badge | `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `ChatInput.tsx`, `ThinkingBlock.tsx`, `index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-238` | Stream 5 / 3 | Connect & Fully Wire BYOK (OpenAI, Gemini, Groq, Anthropic execution in tool loop, bypass rate limits, verify test endpoint) | `src/lib/bots/tools/loop.ts`, `src/pages/api/byok/verify.ts`, `src/components/ApiKeysModal/index.tsx`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
-| `TSK-239` | Stream 5 / 1 | Philosopher Epistemic Reasoning & Thinking Methodologies (Custom cognitive frameworks per philosopher) | `src/lib/persona-engine.ts`, `src/lib/bots/thinking-schemas.ts`, `src/lib/bots/thinking.ts` | `[CLAIMED - PENDING USER FILE]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
+| `TSK-239` | Stream 5 / 1 | Philosopher Epistemic Reasoning & Thinking Methodologies (Custom cognitive frameworks per philosopher - Nietzsche initial integration) | `src/lib/persona-engine.ts`, `src/lib/bots/thinking-schemas.ts`, `src/lib/bots/thinking.ts` | `[IN PROGRESS by Antigravity (Gemini 3.7 Flash)]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -1138,6 +1138,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 320 - Dynamic Epistemic Thinking Repertoires Across All 16 Philosophers (TSK-256)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Implemented dynamic epistemic cognitive repertoires with single-word English identifiers across all 16 resident philosophers:
+  1. **Single-Word English Cognitive Repertoires (`src/lib/bots/thinking-schemas.ts`):** Defined distinct cognitive pools with uppercase single-word tags (`[POWER]`, `[GENEALOGY]`, `[OPPOSITION]`, `[PHYSIOLOGY]`, `[STANCE]`, `[CONTRADICTION]`, `[OVERCOMING]` for Nietzsche; `[PRODUCTION]`, `[COMMODITY]`, `[CLASS]`, `[EXTRACTION]`, `[CONTRADICTION]`, `[PRAXIS]` for Marx; `[IMMEDIACY]`, `[NEGATION]`, `[MEDIATION]`, `[SUBSTANCE]`, `[AUFHEBUNG]`, `[TOTALITY]` for Hegel; `[FREEDOM]`, `[BADFAITH]`, `[GAZE]`, `[ANGUISH]`, `[SITUATION]`, `[PROJECT]` for Sartre; `[BEING]`, `[FALLING]`, `[EQUIPMENT]`, `[TEMPORALITY]`, `[CLEARING]`, `[FRAME]` for Heidegger; `[INTENSITY]`, `[DESIRE]`, `[ASSEMBLAGE]`, `[TERRITORY]`, `[BECOMING]`, `[IMMANENCE]` for Deleuze; `[SUBSTANCE]`, `[CONATUS]`, `[AFFECT]`, `[ADEQUACY]`, `[CAUSALITY]`, `[BLISS]` for Spinoza; `[SIMULATION]`, `[HYPERREALITY]`, `[CONSUMPTION]`, `[OBSCENITY]`, `[SEDUCTION]`, `[FATAL]` for Baudrillard; `[APPARATUS]`, `[INTERPELLATION]`, `[OVERDETERMINATION]`, `[PRACTICE]`, `[RUPTURE]`, `[STRUCTURE]` for Althusser; `[LOGOCENTRISM]`, `[OPPOSITION]`, `[SUPPLEMENT]`, `[DIFFÉRANCE]`, `[APORIA]`, `[TRACE]` for Derrida; `[RATIONALITY]`, `[CAGE]`, `[DISENCHANTMENT]`, `[CHARISMA]`, `[LEGITIMACY]`, `[POLYTHEISM]` for Weber; `[NONIDENTITY]`, `[INDUSTRY]`, `[TOTALITY]`, `[IMMANENCE]`, `[AESTHETIC]`, `[DAMAGE]` for Adorno; `[SYMPTOM]`, `[FANTASY]`, `[REAL]`, `[CYNICISM]`, `[PARALLAX]`, `[INVERSION]` for Žižek; `[CONCRETE]`, `[OPPORTUNISM]`, `[CADRE]`, `[IMPERIALISM]`, `[POWER]`, `[TIMING]` for Lenin; `[VITA]`, `[PLURALITY]`, `[PUBLIC]`, `[BANALITY]`, `[NATALITY]`, `[JUDGMENT]` for Arendt; `[AXIOM]`, `[SACRIFICE]`, `[PRODUCER]`, `[REASON]`, `[RIGHTS]`, `[TRADER]` for Rand).
+  2. **Persona Engine Integration (`src/lib/persona-engine.ts`):** Equipped every philosopher with an authentic, unconstrained `thinkingMethod` instructing the model to pass through their dynamic repertoire inside `<think>` tags before answering in the user's exact language.
+  3. **Thinking Stream Routing (`src/lib/bots/thinking.ts` & `src/lib/bots/thinking-tags.ts`):** Updated `buildThinkingInstruction` and `stagesFromInner` to emit and parse custom repertoires cleanly across all 16 minds.
+  4. **Thread UI Rendering (`src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`):** Mapped philosophical tokens to bespoke Lucide icons (`Eye`, `Layers`, `Scale`, `Shield`, `Sparkles`, `Key`, `Zap`, `Compass`, `Split`, `Flame`, `TrendingUp`) in clean flowing thread nodes with zero brackets.
+- **Modified Files:** `src/lib/bots/thinking-schemas.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/thinking-tags.ts`, `src/lib/persona-engine.ts`, `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 53/53 Playwright unit tests passed in 5.8s.
+
 ### Entry 319 - Chat Polish: Surnames, Exact Clock Times, Inline Thinking Trigger & Navy Glow (TSK-255)
 - **Date:** 2026-08-20
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
@@ -1282,6 +1293,26 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   4. **Core State & Constants:** Cleaned up `screensaverDisabled`, `screensaverPreviewActive`, `INACTIVITY_TIMEOUTS`, and context definitions in `src/context/App.tsx` and `src/constants/index.ts`.
 - **Modified Files:** `src/components/DisplayOptions/index.tsx`, `src/components/Desktop/index.tsx`, `src/components/SpotlightSearch/actions.tsx`, `src/pages/kbd/index.tsx`, `src/context/App.tsx`, `src/constants/index.ts`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 3.3s.
+
+### Entry 306 - English Single-Word Repertoire Tags & Visual Thinking Thread Timeline (TSK-239)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Standardized all system prompts to English single-word cognitive tags and overhauled ThinkingBlock into a visual thread/timeline:
+  1. **English Single-Word Repertoire:** Standardized Nietzsche prompt in `src/lib/persona-engine.ts` and `src/lib/bots/thinking.ts` with single-word tags (`[POWER]`, `[GENEALOGY]`, `[OPPOSITION]`, `[PHYSIOLOGY]`, `[STANCE]`, `[CONTRADICTION]`, `[OVERCOMING]`), maintaining prompt hygiene entirely in English while enforcing response in user's detected language.
+  2. **Visual Thinking Thread UI:** Completely overhauled `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` into an interconnected thread/timeline with a continuous vertical rail, distinct circular icon node bullets for each cognitive move (`Zap` for power, `Compass` for genealogy, `Split` for opposition, `Activity` for physiology, `Target` for stance, `Flame` for contradiction, `TrendingUp` for overcoming), and uppercase tag badges.
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/thinking.ts`, `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `tests/thinking-tags.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 29/29 Playwright unit tests passed in 4.6s.
+
+### Entry 305 - Philosopher Cognitive Repertoire & Nietzsche Epistemic Thinking Integration (TSK-239)
+- **Date:** 2026-08-29
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Integrated dynamic epistemic repertuar & thinking methodology for Nietzsche with full UI tag rendering:
+  1. **Nietzsche Epistemic Thinking Method:** Updated `src/lib/persona-engine.ts` with user-designed cognitive repertoire (`[GÜÇ-OKUMASI]`, `[GENEALOJİ]`, `[KARŞITLIK-KIRILMASI]`, `[FİZYOLOJİ]`, `[TAVIR]`, `[ÖZ-ÇELİŞKİ]`, `[ÖZ-AŞMA]`), anti-cliché guardrails, substitutability concrete anchors, broken rhythm constraints, and `<think>` internal isolation.
+  2. **Bracketed Tag Parsing in Thinking Engine:** Enhanced `stagesFromBlock` and `stagesFromInner` in `src/lib/bots/thinking.ts` to detect bracketed `[TAG]` markers and promote them as individual named stages in `ThinkingProcess`.
+  3. **Thinking UI Tag Badges & Icons:** Updated `ThinkingBlock.tsx` (`getStepIcon`) to recognize cognitive tags (`güç`, `genealoji`, `fizyoloji`, `karşıtlık`, `tavır`, `öz-aşma`, `öz-çelişki`) and render them with styled headers and icons.
+  4. **Meta-Prompt Restriction Removal & Philosopher Identity Restoration:** Removed legacy restrictions in `src/lib/bots/ask-ai.ts`, `src/lib/bots/fluid-prompts.ts`, and `src/lib/bots/orchestrate.ts` that erroneously stripped philosopher identity in Ask AI chat. The selected philosopher is now the authentic mind across all OS chat and tool-calling surfaces while fully executing user tasks and tool operations.
+- **Modified Files:** `src/lib/persona-engine.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/ask-ai.ts`, `src/lib/bots/fluid-prompts.ts`, `src/lib/bots/orchestrate.ts`, `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx`, `tests/thinking-tags.spec.ts`, `tests/tool-loop.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 26/26 thinking-tags tests passed, 24/24 tool-loop tests passed.
 
 ### Entry 304 - Custom Cursor Removal & Default Cursor Enforcement (TSK-240)
 - **Date:** 2026-08-20

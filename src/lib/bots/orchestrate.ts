@@ -21,7 +21,7 @@ import {
 } from './thinking'
 import { ThinkingStreamDemux, stripThinkingBlocks } from './thinking-tags'
 import { getFluidSystemPrompt, type PromptScope } from './fluid-prompts'
-import { getAskAiSystemPrompt } from './ask-ai'
+import { getAskAiSystemPrompt, askAiOperatorPreamble } from './ask-ai'
 import { extractSearchQuery, needsLiveWeb } from './search-intent'
 import { formatSearchResults, searchWebSources } from './web-search'
 import { resolveWimKnowledge } from './wim-knowledge'
@@ -143,20 +143,14 @@ function buildTurnSystemPrompt(
     const density = resolvePersonaDensity(taskType, input.thinkingDepth)
     const wimContext = resolveWimKnowledge(input.question, input.scope)
     const operator = Boolean(input.enableTools && taskType === 'autonomous_assistant')
-    if (operator) {
-        return getAskAiSystemPrompt({
-            voiceName: persona.name,
-            wimContext,
-            trustedInstruction: input.trustedInstruction,
-        })
-    }
+
     return [
-        SECURITY_PREAMBLE,
+        operator ? askAiOperatorPreamble(persona.name) : SECURITY_PREAMBLE,
         wimContext,
         input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
         buildPersonaHeader(persona, mood, taskType, density),
         buildThinkingInstruction(taskType, input.thinkingDepth, persona.name),
-        getFluidSystemPrompt(persona.name, input.scope || 'site_wide'),
+        getFluidSystemPrompt(persona.name, input.scope || (operator ? 'ask_ai' : 'site_wide')),
     ]
         .filter(Boolean)
         .join('\n\n')
