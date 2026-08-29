@@ -257,6 +257,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-236` | Stream 5 / 3 | Cross-Notebook Full Read/Search Tool for WIM AI (`read_notebook` by ID/Title across all workspace documents) | `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-237` | Stream 5 / 3 | Full AI UX & Friction Polish: Streaming Cursor, Code Copy Feedback, Window Drag Dropzone, Dynamic Voice Lang, Selection Badge | `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `ChatInput.tsx`, `ThinkingBlock.tsx`, `index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-238` | Stream 5 / 3 | Connect & Fully Wire BYOK (OpenAI, Gemini, Groq, Anthropic execution in tool loop, bypass rate limits, verify test endpoint) | `src/lib/bots/tools/loop.ts`, `src/pages/api/byok/verify.ts`, `src/components/ApiKeysModal/index.tsx`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
+| `TSK-239` | Stream 5 / 1 | Philosopher Epistemic Reasoning & Thinking Methodologies (Custom cognitive frameworks per philosopher) | `src/lib/persona-engine.ts`, `src/lib/bots/thinking-schemas.ts`, `src/lib/bots/thinking.ts` | `[CLAIMED - PENDING USER FILE]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 

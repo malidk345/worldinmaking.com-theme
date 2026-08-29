@@ -982,6 +982,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       let buffer = '';
       let streamedCitations: Message['citations'] = [];
 
+      let lastTokenFlushTime = 0;
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -1122,10 +1124,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
           if (parsed.type === 'token') {
             accumulatedContent += parsed.text;
-            updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: sanitizePublicAssistantText(accumulatedContent),
-              thinkingProcess: { ...currentThinkingProcess },
-            });
+            const now = Date.now();
+            if (now - lastTokenFlushTime > 32 || accumulatedContent.length < 50) {
+              lastTokenFlushTime = now;
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                content: sanitizePublicAssistantText(accumulatedContent),
+                thinkingProcess: { ...currentThinkingProcess },
+              });
+            }
           }
 
           if (parsed.type === 'done') {
@@ -1570,9 +1576,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className={`relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [overflow-anchor:none] ${
-            isStreaming ? '' : '[-webkit-overflow-scrolling:touch]'
-          }`}
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">

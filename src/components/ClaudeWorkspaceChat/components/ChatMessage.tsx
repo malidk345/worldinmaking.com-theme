@@ -89,7 +89,13 @@ function artifactCardMeta(art: Artifact): string {
   return art.version > 1 ? `${kind} · v${art.version}` : kind;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({
+function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return undefined
+  const voices = window.speechSynthesis.getVoices()
+  return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
+}
+
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   message,
   modelOptions,
   onOpenArtifact,
@@ -114,19 +120,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return
-    const loadVoices = () => {
-      window.speechSynthesis.getVoices()
-    }
-    loadVoices()
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
-      window.speechSynthesis.cancel()
-    }
-  }, [])
 
   const handleSpeak = () => {
     if (!('speechSynthesis' in window)) return;
@@ -405,3 +398,20 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     </div>
   );
 };
+
+export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.message.isStreaming === next.message.isStreaming &&
+    prev.message.isTypingDone === next.message.isTypingDone &&
+    prev.message.stopped === next.message.stopped &&
+    prev.message.liked === next.message.liked &&
+    prev.message.modelUsed === next.message.modelUsed &&
+    prev.message.thinkingProcess === next.message.thinkingProcess &&
+    prev.message.toolTrace === next.message.toolTrace &&
+    prev.message.artifacts === next.message.artifacts &&
+    prev.message.citations === next.message.citations &&
+    prev.message.osAction === next.message.osAction
+  );
+});

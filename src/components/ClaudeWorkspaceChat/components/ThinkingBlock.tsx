@@ -224,7 +224,7 @@ const StageTitle: React.FC<{ title: string; className?: string }> = ({ title, cl
   );
 };
 
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
+const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
@@ -385,3 +385,5 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, toolTrac
     </div>
   );
 };
+
+export const ThinkingBlock = React.memo(ThinkingBlockComponent);
