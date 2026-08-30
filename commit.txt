@@ -1,0 +1,6 @@
+⚡ Bolt: Memoize team data aggregations
+
+💡 What: Wrapped `teamCrestMap` array reduction and `teamJobs` array filter inside `useMemo` hooks in `src/components/Team/index.tsx`, `src/components/People/index.tsx`, and `src/hooks/useTeamCrestMap.ts`.
+🎯 Why: Computing large data sets using `.reduce` and `.filter` on every render forces the JS engine to perform O(N) array traversals, which blocks the main thread and introduces garbage collection overhead for static or semi-static GraphQL data.
+📊 Impact: Prevents unnecessary array traversals on every render, significantly reducing CPU pressure and garbage collection for top-level Team and People UI components.
+🔬 Measurement: Verify rendering performance of `/team` and `/people` routes; confirm reduced React re-render timings in the React DevTools Profiler.
