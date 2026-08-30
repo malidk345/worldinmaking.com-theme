@@ -21,7 +21,7 @@ import {
 } from './thinking'
 import { ThinkingStreamDemux, stripThinkingBlocks } from './thinking-tags'
 import { getFluidSystemPrompt, type PromptScope } from './fluid-prompts'
-import { getAskAiSystemPrompt, askAiOperatorPreamble } from './ask-ai'
+import { askAiOperatorPreamble } from './ask-ai'
 import { extractSearchQuery, needsLiveWeb } from './search-intent'
 import { formatSearchResults, searchWebSources } from './web-search'
 import { resolveWimKnowledge } from './wim-knowledge'
