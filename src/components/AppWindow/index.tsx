@@ -302,7 +302,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         toggleExpanded()
     }
 
-    const { history, activeHistoryIndex, canGoBack, canGoForward, goBack, goForward } = useWindowHistory({ item })
+    const { canGoBack, canGoForward, goBack, goForward } = useWindowHistory({ item })
 
     useEffect(() => {
         setActiveInternalMenu(getActiveInternalMenu())
