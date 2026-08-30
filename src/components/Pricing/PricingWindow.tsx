@@ -1,13 +1,12 @@
 import React, { useState } from 'react'
 import SEO from 'components/seo'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import OSButton from 'components/OSButton'
 import WimLogo from 'components/WimLogo'
 import { useUser } from 'hooks/useUser'
 import { useToast } from 'context/Toast'
 import { useAppActions } from 'context/App'
 import { isUserPro, BILLING_PLANS } from 'lib/wim-billing'
-import { IconCheck, IconSparkles, IconSpinner, IconShield, IconLock, IconArrowRight } from '@posthog/icons'
+import { IconCheck, IconSparkles, IconSpinner, IconShield, IconArrowRight } from '@posthog/icons'
 
 interface FeatureRowProps {
     title: string
@@ -29,10 +28,10 @@ function FeatureRow({ title, explorer, thinker, highlight }: FeatureRowProps) {
     }
 
     return (
-        <tr className={`border-b border-primary/10 transition-colors ${highlight ? 'bg-amber-500/5' : ''}`}>
+        <tr className={`border-b border-primary/10 transition-colors ${highlight ? 'bg-blue-500/5' : ''}`}>
             <td className="py-3 px-4 text-xs font-medium text-primary">{title}</td>
             <td className="py-3 px-4 text-center text-xs text-muted">{renderVal(explorer)}</td>
-            <td className="py-3 px-4 text-center text-xs font-semibold text-primary">{renderVal(thinker)}</td>
+            <td className="py-3 px-4 text-center text-xs font-semibold text-blue-600 dark:text-blue-400">{renderVal(thinker)}</td>
         </tr>
     )
 }
@@ -102,7 +101,7 @@ export default function PricingWindow() {
                             <span className="text-[11px] font-bold tracking-widest uppercase text-muted">
                                 worldinmaking / plans
                             </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20 bg-accent/40 text-primary">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400">
                                 Pro
                             </span>
                         </div>
@@ -138,7 +137,7 @@ export default function PricingWindow() {
                                     }`}
                                 >
                                     Annual
-                                    <span className="px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                    <span className="px-1.5 py-0.2 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
                                         Save 20%
                                     </span>
                                 </button>
@@ -188,9 +187,9 @@ export default function PricingWindow() {
                             </div>
                         </div>
 
-                        {/* Pro Tier */}
-                        <div className="relative rounded-2xl p-6 bg-surface-primary/90 border-[1.5px] border-amber-500/80 shadow-lg flex flex-col justify-between space-y-6 [box-shadow:0_0_28px_rgba(245,158,11,0.12)]">
-                            <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10.5px] font-bold shadow-xs flex items-center gap-1">
+                        {/* Pro Tier (Navy Blue Theme) */}
+                        <div className="relative rounded-2xl p-6 bg-surface-primary/90 border-[1.5px] border-blue-600/70 dark:border-blue-500/70 shadow-lg flex flex-col justify-between space-y-6 [box-shadow:0_0_28px_rgba(30,58,138,0.18)]">
+                            <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] text-white text-[10.5px] font-bold shadow-xs flex items-center gap-1">
                                 <IconSparkles className="size-3" />
                                 Recommended
                             </div>
@@ -219,7 +218,7 @@ export default function PricingWindow() {
                                 <ul className="space-y-2.5 pt-4 text-xs text-primary border-t border-primary/10 m-0 p-0 list-none">
                                     {BILLING_PLANS.pro.features.map((feature, idx) => (
                                         <li key={idx} className="flex items-start gap-2">
-                                            <IconCheck className="size-4 text-amber-500 shrink-0 mt-0.5" />
+                                            <IconCheck className="size-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                                             <span className="font-medium text-secondary hover:text-primary transition-colors">{feature}</span>
                                         </li>
                                     ))}
@@ -237,7 +236,7 @@ export default function PricingWindow() {
                                         type="button"
                                         onClick={handleUpgrade}
                                         disabled={loading}
-                                        className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                        className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-[#1E3A8A] hover:bg-[#1E40AF] dark:bg-[#1E3A8A] dark:hover:bg-[#2563EB] text-white shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                                     >
                                         {loading ? (
                                             <>
@@ -268,7 +267,7 @@ export default function PricingWindow() {
                                     <tr className="border-b border-primary/15 bg-accent/30 text-[11px] uppercase tracking-wider text-muted">
                                         <th className="py-3 px-4 font-semibold">Capability</th>
                                         <th className="py-3 px-4 font-semibold text-center w-36">Explorer (Free)</th>
-                                        <th className="py-3 px-4 font-semibold text-center w-36 text-amber-600 dark:text-amber-400">Thinker (Pro)</th>
+                                        <th className="py-3 px-4 font-semibold text-center w-36 text-blue-600 dark:text-blue-400">Thinker (Pro)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
