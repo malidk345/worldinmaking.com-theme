@@ -1557,6 +1557,9 @@ function wrapInlineText(text: string, mark: NotebookInlineMark, marks: NotebookI
     if (mark.type === 'code') {
         return `\`${text}\``
     }
+    if (mark.type === 'ref') {
+        return mark.id ? `<ref id=${JSON.stringify(mark.id)}>${text}</ref>` : text
+    }
     if (mark.type === 'mention') {
         return mark.id ? `<mention id=${JSON.stringify(mark.id)}>${text}</mention>` : text
     }
