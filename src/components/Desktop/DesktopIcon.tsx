@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import ZoomHover from 'components/ZoomHover'
 import { useArchive } from 'context/ArchiveContext'
+import { useTrash } from 'context/TrashContext'
 
 interface DesktopIconProps {
     app: AppItem
@@ -31,6 +32,7 @@ function setIconDragImage(e: React.DragEvent, node: HTMLElement | null) {
 
 export default function DesktopIcon({ app }: DesktopIconProps) {
     const { archiveApp, isArchived, isHydrated } = useArchive()
+    const { moveToTrash, isTrashed } = useTrash()
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDraggingSelf, setIsDraggingSelf] = useState(false)
     const [blockClick, setBlockClick] = useState(false)
@@ -38,6 +40,7 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
 
     const appUrl = app.url || ''
     const isArchiveIcon = appUrl === '/archive'
+    const isTrashIcon = appUrl === '/trash'
 
     useEffect(() => {
         if (!blockClick || isDraggingSelf) return
@@ -46,7 +49,7 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
         return () => window.removeEventListener('click', clear, { capture: true })
     }, [blockClick, isDraggingSelf])
 
-    if (isHydrated && isArchived(appUrl)) {
+    if (isHydrated && (isArchived(appUrl) || isTrashed(appUrl))) {
         return null
     }
 
@@ -65,26 +68,30 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
     }
 
     const handleDragOver = (e: React.DragEvent) => {
-        if (!isArchiveIcon) return
+        if (!isArchiveIcon && !isTrashIcon) return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         setIsDragOver(true)
     }
 
     const handleDragLeave = (e: React.DragEvent) => {
-        if (!isArchiveIcon) return
+        if (!isArchiveIcon && !isTrashIcon) return
         if (e.currentTarget.contains(e.relatedTarget as Node)) return
         setIsDragOver(false)
     }
 
     const handleDrop = (e: React.DragEvent) => {
-        if (!isArchiveIcon) return
+        if (!isArchiveIcon && !isTrashIcon) return
         e.preventDefault()
         setIsDragOver(false)
         const url = e.dataTransfer.getData('text/plain')
         const label = e.dataTransfer.getData('text/label')
-        if (url && url !== '/archive') {
-            archiveApp(url, label)
+        if (url && url !== appUrl) {
+            if (isTrashIcon) {
+                moveToTrash({ url, label, type: 'app' })
+            } else {
+                archiveApp(url, label)
+            }
         }
     }
 
@@ -106,7 +113,11 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
                     ref={visualRef}
                     data-desktop-icon-visual
                     className={`relative w-full flex flex-col items-center rounded-xl transition-[color,transform,box-shadow,background-color] duration-150 ${
-                        isArchiveIcon && isDragOver ? 'scale-[1.04] ring-2 ring-blue/40 bg-blue/10 p-1' : ''
+                        (isArchiveIcon || isTrashIcon) && isDragOver
+                            ? isTrashIcon
+                                ? 'scale-[1.04] ring-2 ring-red/40 bg-red/10 p-1'
+                                : 'scale-[1.04] ring-2 ring-blue/40 bg-blue/10 p-1'
+                            : ''
                     }`}
                 >
                     <AppLink {...app} hasDragged={blockClick} />
