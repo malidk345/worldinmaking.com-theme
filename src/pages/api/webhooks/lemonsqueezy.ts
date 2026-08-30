@@ -1,38 +1,52 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { verifyLemonSqueezySignature } from '../../../lib/wim-billing'
-import { getSupabaseAdmin } from '../../../lib/supabaseAdmin'
+export const runtime = 'edge'
 
-// Disable body parsing so we can verify raw HMAC signature
-export const config = {
-    api: {
-        bodyParser: false,
-    },
+import { supabaseRest } from '../../../lib/bots/supabase-edge'
+
+function json(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    })
 }
 
-async function getRawBody(req: NextApiRequest): Promise<string> {
-    const chunks: Buffer[] = []
-    for await (const chunk of req) {
-        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+async function verifyLemonSqueezySignatureEdge(rawBody: string, signature: string, secret: string): Promise<boolean> {
+    if (!rawBody || !signature || !secret) return false
+    try {
+        const encoder = new TextEncoder()
+        const key = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify', 'sign']
+        )
+        const hex = signature.trim()
+        const bytes = new Uint8Array(hex.length / 2)
+        for (let i = 0; i < hex.length; i += 2) {
+            bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+        }
+        return await crypto.subtle.verify('HMAC', key, bytes, encoder.encode(rawBody))
+    } catch {
+        return false
     }
-    return Buffer.concat(chunks).toString('utf8')
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return json({ error: 'Method not allowed' }, 405)
     }
 
     try {
-        const rawBody = await getRawBody(req)
-        const signature = (req.headers['x-signature'] as string) || ''
+        const rawBody = await req.text()
+        const signature = req.headers.get('x-signature') || ''
         const webhookSecret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || ''
 
         // In production, signature verification is strictly enforced
         if (webhookSecret) {
-            const isValid = verifyLemonSqueezySignature(rawBody, signature, webhookSecret)
+            const isValid = await verifyLemonSqueezySignatureEdge(rawBody, signature, webhookSecret)
             if (!isValid) {
                 console.warn('[LemonSqueezy Webhook] Invalid signature')
-                return res.status(401).json({ error: 'Invalid webhook signature' })
+                return json({ error: 'Invalid webhook signature' }, 401)
             }
         }
 
@@ -46,10 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!userId) {
             console.warn('[LemonSqueezy Webhook] Missing user_id in custom_data')
-            return res.status(200).json({ received: true, note: 'No user_id found' })
+            return json({ received: true, note: 'No user_id found' }, 200)
         }
-
-        const supabase = getSupabaseAdmin()
 
         if (eventName === 'subscription_created' || eventName === 'subscription_updated' || eventName === 'subscription_resumed') {
             const status = dataAttributes?.status || 'active'
@@ -59,14 +71,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             // 1. Upgrade user profile to 'pro'
             if (status === 'active' || status === 'on_trial') {
-                await supabase
-                    .from('profiles')
-                    .update({ role: 'pro', updated_at: new Date().toISOString() })
-                    .eq('id', userId)
+                await supabaseRest(`profiles?id=eq.${userId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ role: 'pro', updated_at: new Date().toISOString() }),
+                })
 
                 // 2. Save subscription details
-                await supabase.from('subscriptions').upsert(
-                    {
+                await supabaseRest('subscriptions', {
+                    method: 'POST',
+                    headers: { Prefer: 'resolution=merge-duplicates' },
+                    body: JSON.stringify({
                         user_id: userId,
                         subscription_id: subscriptionId,
                         customer_id: customerId,
@@ -74,26 +88,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         plan: 'pro',
                         current_period_end: currentPeriodEnd,
                         updated_at: new Date().toISOString(),
-                    },
-                    { onConflict: 'user_id' }
-                )
+                    }),
+                })
             }
         } else if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
             // Downgrade to standard member
-            await supabase
-                .from('profiles')
-                .update({ role: 'member', updated_at: new Date().toISOString() })
-                .eq('id', userId)
+            await supabaseRest(`profiles?id=eq.${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ role: 'member', updated_at: new Date().toISOString() }),
+            })
 
-            await supabase
-                .from('subscriptions')
-                .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-                .eq('user_id', userId)
+            await supabaseRest(`subscriptions?user_id=eq.${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'cancelled', updated_at: new Date().toISOString() }),
+            })
         }
 
-        return res.status(200).json({ success: true, event: eventName })
+        return json({ success: true, event: eventName }, 200)
     } catch (err: any) {
         console.error('[LemonSqueezy Webhook Error]:', err)
-        return res.status(500).json({ error: err?.message || 'Webhook processing failed' })
+        return json({ error: err?.message || 'Webhook processing failed' }, 500)
     }
 }

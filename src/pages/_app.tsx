@@ -25,6 +25,7 @@ import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
 import SeoFromRoute from '../components/SeoFromRoute'
 import SeoDocument from '../components/SeoDocument'
 import { installCancelledRouteSwallow, isCancelledRouteError } from '../lib/swallow-cancelled-route'
+import { initPostHog, trackPageView } from '../lib/wim-posthog'
 
 if (typeof window !== 'undefined') {
     installCancelledRouteSwallow()
@@ -56,6 +57,21 @@ export default function App({ Component, pageProps }: AppProps) {
             window.removeEventListener('unhandledrejection', onRejection, true)
             window.removeEventListener('error', onError, true)
             router.events.off('routeChangeError', onRouteError)
+        }
+    }, [router.events])
+
+    // Initialize PostHog client analytics and track SPA pageviews
+    React.useEffect(() => {
+        initPostHog()
+        trackPageView()
+
+        const handleRouteChange = (url: string) => {
+            trackPageView(url)
+        }
+
+        router.events.on('routeChangeComplete', handleRouteChange)
+        return () => {
+            router.events.off('routeChangeComplete', handleRouteChange)
         }
     }, [router.events])
     const [location, setLocation] = React.useState(() => {

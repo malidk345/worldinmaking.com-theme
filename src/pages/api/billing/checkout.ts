@@ -1,19 +1,28 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+export const runtime = 'edge'
+
 import { createCheckoutSession } from '../../../lib/wim-billing'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+function json(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    })
+}
+
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return json({ error: 'Method not allowed' }, 405)
     }
 
     try {
         const user = await getSupabaseUserFromRequest(req)
         if (!user) {
-            return res.status(401).json({ error: 'Please sign in to upgrade to Pro.' })
+            return json({ error: 'Please sign in to upgrade to Pro.' }, 401)
         }
 
-        const { interval } = req.body || {}
+        const body = (await req.json().catch(() => ({}))) as Record<string, any>
+        const { interval } = body || {}
         const planInterval = interval === 'year' ? 'year' : 'month'
 
         const meta = (user.user_metadata || {}) as Record<string, any>
@@ -27,15 +36,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
 
         if (!session.ok || !session.checkoutUrl) {
-            return res.status(400).json({ error: session.error || 'Could not generate checkout session.' })
+            return json({ error: session.error || 'Could not generate checkout session.' }, 400)
         }
 
-        return res.status(200).json({
+        return json({
             success: true,
             checkoutUrl: session.checkoutUrl,
             isTestMode: session.isTestMode || false,
-        })
+        }, 200)
     } catch (err: any) {
-        return res.status(500).json({ error: err?.message || 'Checkout initiation failed' })
+        return json({ error: err?.message || 'Checkout initiation failed' }, 500)
     }
 }

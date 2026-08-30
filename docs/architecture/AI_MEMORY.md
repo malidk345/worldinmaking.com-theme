@@ -4422,13 +4422,27 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   1. **Supabase Schema Migration:** Executed `supabase/migrations/20260830_subscriptions.sql` directly on the live Supabase instance (`iydypisgfaksqkjdraiu`) via Supabase Management API. Provisioned `public.subscriptions` table with RLS policies and indexed foreign keys.
   2. **Production Build & Edge Fix:** Added `src/lib/supabaseAdmin.ts` for server-side webhook Supabase client operations, resolving the `Module not found: Can't resolve '../../../lib/supabaseAdmin'` build failure on Cloudflare Pages / Vercel. Removed top-level Node `crypto` import in `src/lib/wim-billing.ts` to guarantee Edge Runtime compatibility.
   3. **Verification:** Verified successful production build (`next build` generates all 46 static and dynamic routes cleanly) and verified that all 77 Playwright test suites pass with 0 errors.
+### Entry 006 — Full PostHog Client Integration & SPA Pageview / Session Recording (TSK-121)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **PostHog SDK Installed:** Added `posthog-js` (`^1.418.10`) to workspace dependencies.
+  2. **Client Helper & Safety:** Created `src/lib/wim-posthog.ts` with `initPostHog`, `trackPageView`, `identifyUser`, `resetUser`, and `trackEvent` with fallback when no key is configured.
+  3. **Router Lifecycle Hook:** Wired `_app.tsx` with Next.js router `routeChangeComplete` to accurately record client-side SPA navigations and session replays.
+  4. **Auth & Profile Binding:** Updated `src/hooks/usePostHog.ts` and `src/hooks/useUser.tsx` to automatically bind user profiles with PostHog person properties on login.
+  5. **Environment Configuration:** Created `.env.example` documenting all configuration keys (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, Supabase, Lemon Squeezy, AI keys).
 - **Modified Files:**
-  - `src/lib/supabaseAdmin.ts` [NEW]
-  - `src/lib/wim-billing.ts` [UPDATED]
+  - `src/lib/wim-posthog.ts` [NEW]
+  - `src/hooks/usePostHog.ts` [UPDATED]
+  - `src/pages/_app.tsx` [UPDATED]
+  - `package.json` & `pnpm-lock.yaml` [UPDATED]
+  - `.env.example` [NEW]
+  - `tests/posthog.spec.ts` [NEW]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Clean local build passing. Ready for deployment.
+- **Notes / Handoff:** Verified with unit tests passing. Ready for live API keys in `.env.local` or Cloudflare dashboard.
 
 ---
+
 
 
 ## 6. Shared Knowledge & Discoveries
