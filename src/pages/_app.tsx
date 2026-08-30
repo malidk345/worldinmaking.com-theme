@@ -18,6 +18,7 @@ import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import { UserProvider } from 'hooks/useUser'
 import { ArchiveProvider } from 'context/ArchiveContext'
+import { TrashProvider } from 'context/TrashContext'
 import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
@@ -97,8 +98,10 @@ export default function App({ Component, pageProps }: AppProps) {
                 <KeyboardInsetRoot />
                 <UserProvider>
                     <ArchiveProvider>
-                        <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
-                        <Component {...pageProps} />
+                        <TrashProvider>
+                            <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
+                            <Component {...pageProps} />
+                        </TrashProvider>
                     </ArchiveProvider>
                 </UserProvider>
             </ToastProvider>
@@ -115,11 +118,13 @@ export default function App({ Component, pageProps }: AppProps) {
             <ToastProvider>
                 <UserProvider>
                     <ArchiveProvider>
-                        <Provider element={<Component {...pageProps} />} location={location as any}>
-                            <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
-                            <SeoDocument pageProps={pageProps} isNotFound={isNotFound} />
-                            <Wrapper />
-                        </Provider>
+                        <TrashProvider>
+                            <Provider element={<Component {...pageProps} />} location={location as any}>
+                                <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
+                                <SeoDocument pageProps={pageProps} isNotFound={isNotFound} />
+                                <Wrapper />
+                            </Provider>
+                        </TrashProvider>
                     </ArchiveProvider>
                 </UserProvider>
             </ToastProvider>
