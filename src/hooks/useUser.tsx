@@ -218,8 +218,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
                 let token = await getSessionAccessToken()
                 if (!token) {
-                    const refreshResult = await supabase.auth.refreshSession()
-                    token = refreshResult.data?.session?.access_token ?? null
+                    try {
+                        const refreshResult = await supabase.auth.refreshSession()
+                        token = refreshResult.data?.session?.access_token ?? null
+                    } catch {
+                        /* ignore */
+                    }
                 }
                 if (token) {
                     setJwt(token)
@@ -237,12 +241,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     }
                 }
             }
-            // Only clear user if there's genuinely no session (not a transient network error)
-            clearUser()
         } catch (e) {
             console.warn('[useUser] validateUser', e)
-            // Don't clearUser on network errors — keep existing localStorage state
-            // so the user isn't forcefully logged out by a transient failure
         }
         setIsValidating(false)
     }

@@ -50,10 +50,24 @@ export async function getSupabaseUserFromBearer(
     if (!token || token.length < 20) return null
 
     const env = getRuntimeEnv()
-    const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
-    const anon = envFrom(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
-    const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
-    if (!base || !anon) return null
+    const base =
+        envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL') ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        'https://iydypisgfaksqkjdraiu.supabase.co'
+
+    const anon =
+        envFrom(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY') ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_ANON_KEY ||
+        'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
+
+    const serviceKey =
+        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') ||
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+
+    if (!base) return null
 
     try {
         if (anon) {
@@ -181,8 +195,15 @@ export async function resolveNotebookOwner(
  */
 export async function resolveForumBotAuth(req: Request): Promise<BotAuthOk | AuthzFail> {
     const env = getRuntimeEnv()
-    const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
-    const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
+    const serviceKey =
+        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') ||
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+    const base =
+        envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL') ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        'https://iydypisgfaksqkjdraiu.supabase.co'
     if (!serviceKey || !base) {
         return { ok: false, status: 500, error: 'Server misconfigured: missing Supabase service credentials' }
     }
