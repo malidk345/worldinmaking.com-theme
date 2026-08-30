@@ -89,6 +89,12 @@ export const useProductLinks = () => {
 
 export const apps: AppItem[] = [
     {
+        label: 'Pro Plan',
+        Icon: <AppIcon name="pricing" />,
+        url: '/pricing',
+        source: 'desktop',
+    },
+    {
         label: 'Archive',
         Icon: <AppIcon name="archive" />,
         url: '/archive',
