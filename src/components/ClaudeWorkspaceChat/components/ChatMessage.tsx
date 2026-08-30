@@ -55,13 +55,13 @@ function ChatMessageCodeBlock({ language, code }: { language: string; code: stri
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="my-2 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-2xs">
-      <div className="flex items-center justify-between px-3 py-1 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-400 font-mono">
+    <div className="my-1.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-2xs">
+      <div className="flex items-center justify-between px-2.5 py-0.5 bg-stone-900 border-b border-stone-800 text-[10.5px] text-stone-400 font-mono">
         <span className="font-semibold text-stone-300">{language}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className={`flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-0.5 rounded ${
+          className={`flex items-center gap-1 transition-colors cursor-pointer px-1 py-0.5 rounded ${
             copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'hover:text-stone-200'
           }`}
           title="Copy code"
@@ -79,7 +79,7 @@ function ChatMessageCodeBlock({ language, code }: { language: string; code: stri
           )}
         </button>
       </div>
-      <pre className="p-2.5 overflow-x-auto font-mono text-[11.5px] leading-relaxed">{code}</pre>
+      <pre className="p-2 overflow-x-auto font-mono text-[11px] leading-snug">{code}</pre>
     </div>
   );
 }
@@ -144,7 +144,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   };
 
   return (
-    <div className="py-2.5 sm:py-3 px-4 sm:px-8 max-w-3xl mx-auto">
+    <div className="py-2 sm:py-2.5 px-3.5 sm:px-6 max-w-3xl mx-auto">
       {/* USER MESSAGE: Compact Bubble with Action Icons Underneath */}
       {isUser ? (
         <div className="flex flex-col items-end group">
@@ -174,7 +174,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         </div>
       ) : (
         /* ASSISTANT MESSAGE: philosopher header with thinking on the same row, full-width reply */
-        <div className="space-y-2 text-primary">
+        <div className="space-y-1 text-primary">
           <div className="w-full min-w-0">
             <ThinkingBlock
               model={
@@ -196,9 +196,9 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             />
           </div>
 
-          {/* Response Text with Compact High-Density Industry Standard Typography */}
+          {/* Response Text with Ultra-Compact High-Density Typography */}
           <div
-            className="font-sans text-[13.5px] sm:text-[14px] leading-relaxed text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-relaxed [&_p]:mb-2 last:[&_p]:mb-0 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:mt-3 [&_h1]:mb-1.5 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mt-2.5 [&_h2]:mb-1 [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-secondary [&_blockquote]:italic [&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2.5 [&_th]:py-1 [&_th]:text-left [&_th]:text-xs [&_td]:border [&_td]:border-primary/20 [&_td]:px-2.5 [&_td]:py-1 [&_td]:text-xs [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
+            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
           >
             {displayedText ? (
               <>
@@ -207,7 +207,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   rehypePlugins={[rehypeSanitize]}
                   components={{
                     p: ({ children }: any) => (
-                      <p className="mb-2 last:mb-0 leading-relaxed break-words">{children}</p>
+                      <p className="mb-1.5 last:mb-0 leading-[1.42] break-words">{children}</p>
                     ),
                     code({ node, inline, className, children, ...props }: any) {
                       const match = /language-(\w+)/.exec(className || '');
@@ -215,7 +215,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       return !inline && match ? (
                         <ChatMessageCodeBlock language={match[1]} code={codeContent} />
                       ) : (
-                        <code className="bg-accent text-primary border border-primary/20 px-1.5 py-0.5 rounded text-[12px] font-mono" {...props}>
+                        <code className="bg-accent text-primary border border-primary/20 px-1 py-0.2 rounded text-[11.5px] font-mono" {...props}>
                           {children}
                         </code>
                       );
@@ -227,7 +227,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 {isLiveAnswer && (
                   <span
                     aria-hidden="true"
-                    className="inline-block w-1.5 h-4 ml-1 -mb-0.5 bg-primary/70 dark:bg-primary/90 animate-pulse rounded-xs"
+                    className="inline-block w-1.5 h-3.5 ml-1 -mb-0.5 bg-primary/70 dark:bg-primary/90 animate-pulse rounded-xs"
                   />
                 )}
               </>
