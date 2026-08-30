@@ -17,6 +17,8 @@ import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/wi
 import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
+import { useWindowHistory } from 'hooks/useWindowHistory'
+import { useWindowShortcuts } from 'hooks/useWindowShortcuts'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
@@ -154,8 +156,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const inSwitcher = !!missionControlLayout
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
-    const [history, setHistory] = useState<string[]>([])
-    const [activeHistoryIndex, setActiveHistoryIndex] = useState(0)
     const windowRef = useRef<HTMLDivElement>(null)
     const [dragging, setDragging] = useState(false)
     const [pageOptions, setPageOptions] = useState<MenuItemType[]>()
@@ -302,32 +302,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         toggleExpanded()
     }
 
-    const canGoBack = history.length > 0 && activeHistoryIndex > 0
-    const canGoForward = activeHistoryIndex < history.length - 1
+    const { history, activeHistoryIndex, canGoBack, canGoForward, goBack, goForward } = useWindowHistory({ item })
 
     useEffect(() => {
-        if (!item?.fromHistory) {
-            setHistory((prev) => [...prev, item.path])
-            setActiveHistoryIndex(history.length)
-        }
         setActiveInternalMenu(getActiveInternalMenu())
-    }, [item?.path])
+    }, [item?.path, getActiveInternalMenu])
 
     const router = useRouter()
-
-    const goBack = useCallback(() => {
-        if (canGoBack) {
-            setActiveHistoryIndex(activeHistoryIndex - 1)
-            router.push(history[activeHistoryIndex - 1])
-        }
-    }, [canGoBack, activeHistoryIndex, history])
-
-    const goForward = useCallback(() => {
-        if (canGoForward) {
-            setActiveHistoryIndex(activeHistoryIndex + 1)
-            router.push(history[activeHistoryIndex + 1])
-        }
-    }, [canGoForward, activeHistoryIndex, history])
 
     const handleMouseDown = () => {
         if (focusedWindow === item) return
@@ -398,56 +379,26 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
     }, [item.key])
 
-    useEffect(() => {
-        if (!item.appSettings?.closeOnEscape || focusedWindow !== item || closing) return
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape' || event.defaultPrevented) return
-
-            event.preventDefault()
-            setClosing(true)
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [closing, focusedWindow, item])
-
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         setClosing(true)
-    }
+    }, [])
+
+    useWindowShortcuts({
+        item,
+        focusedWindow,
+        closing,
+        handleClose,
+        compact,
+        isMobile,
+        expandWindow,
+        handleSnapToSide,
+    })
 
     useEffect(() => {
         if (closingAllWindowsAnimation && !closing) {
             setClosing(true)
         }
     }, [closingAllWindowsAnimation, closing])
-
-    useEffect(() => {
-        if (focusedWindow !== item || compact || isMobile) return
-
-        const handleShortcut = (event: KeyboardEvent) => {
-            const key = event.key.toLowerCase()
-            const modifier = event.metaKey || event.ctrlKey
-
-            if ((modifier && key === 'w') || (event.shiftKey && key === 'w')) {
-                event.preventDefault()
-                handleClose()
-            } else if (event.shiftKey && event.key === 'ArrowUp') {
-                event.preventDefault()
-                expandWindow(item)
-            } else if (event.shiftKey && event.key === 'ArrowLeft') {
-                event.preventDefault()
-                handleSnapToSide('left')
-            } else if (event.shiftKey && event.key === 'ArrowRight') {
-                event.preventDefault()
-                handleSnapToSide('right')
-            }
-        }
-
-        window.addEventListener('keydown', handleShortcut)
-        return () => window.removeEventListener('keydown', handleShortcut)
-    }, [focusedWindow, item, compact, isMobile, expandWindow, handleSnapToSide])
 
     const onAnimationStart = () => {
         animationStartTimeRef.current = performance.now()
