@@ -25,13 +25,13 @@ import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
 
-const GUEST_HOURLY_LIMIT = 80
-const AUTH_HOURLY_LIMIT = 120
-const PRO_HOURLY_LIMIT = 600
+const GUEST_HOURLY_LIMIT = 5
+const AUTH_HOURLY_LIMIT = 15
+const PRO_HOURLY_LIMIT = 60
 
-const GUEST_DAILY_LIMIT = 200
-const AUTH_DAILY_LIMIT = 400
-const PRO_DAILY_LIMIT = 3000
+const GUEST_DAILY_LIMIT = 10
+const AUTH_DAILY_LIMIT = 30
+const PRO_DAILY_LIMIT = 300
 const MAX_BODY_BYTES = 1024 * 1024
 
 const MAX_PROMPT_LENGTH = 8000
@@ -230,10 +230,10 @@ export default async function handler(req: Request) {
             {
                 success: false,
                 error: isPro
-                    ? `[app] Pro hourly chat quota exceeded (${hourlyLimit}/h). Please wait a moment.`
+                    ? `[app] Pro hourly chat quota reached (${hourlyLimit}/h). Please wait a few minutes.`
                     : user
-                    ? `[app] Hourly chat quota exceeded (${hourlyLimit}/h). Upgrade to Pro for 5x higher quota.`
-                    : `[app] Guest hourly quota exceeded (${hourlyLimit}/h). Sign in or upgrade to Pro for higher limits.`,
+                    ? `[app] Hourly chat quota reached (${hourlyLimit}/h). Upgrade to Pro for 60 msgs/hour.`
+                    : `[app] Guest hourly quota reached (${hourlyLimit}/h). Sign in for free to increase your limit.`,
                 retryAfterSec: hourly.retryAfterSec,
             },
             429,
@@ -247,9 +247,11 @@ export default async function handler(req: Request) {
             return json(
                 {
                     success: false,
-                    error: user
-                        ? `[app] Daily chat quota exceeded (${dailyLimit}/d)`
-                        : `[app] Guest daily quota exceeded (${dailyLimit}/d). Sign in for a higher limit.`,
+                    error: isPro
+                        ? `[app] Pro daily chat quota reached (${dailyLimit}/day). Quota resets at 00:00 UTC.`
+                        : user
+                        ? `[app] Daily chat quota reached (${dailyLimit}/day). Upgrade to Pro for 300 messages/day.`
+                        : `[app] Guest daily quota reached (${dailyLimit}/day). Sign in for free to get 30 messages/day.`,
                     retryAfterSec: 86400,
                 },
                 429,

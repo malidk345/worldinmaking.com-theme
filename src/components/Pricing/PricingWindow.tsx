@@ -301,8 +301,9 @@ export default function PricingWindow() {
                                     />
                                     <FeatureRow
                                         title="Daily Request Capacity"
-                                        explorer="400 msgs / day"
-                                        thinker="3,000 msgs / day"
+                                        explorer="30 msgs / day (15/hr)"
+                                        thinker="300 msgs / day (10x)"
+                                        highlight
                                     />
                                     <FeatureRow
                                         title="Pro Thinker Profile Badge"

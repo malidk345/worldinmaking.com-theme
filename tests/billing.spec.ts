@@ -17,8 +17,8 @@ test.describe('billing & subscriptions', () => {
     })
 
     test('BILLING_PLANS defines distinct quotas and features', () => {
-        expect(BILLING_PLANS.free.dailyChatLimit).toBe(400)
-        expect(BILLING_PLANS.pro.dailyChatLimit).toBe(3000)
+        expect(BILLING_PLANS.free.dailyChatLimit).toBe(30)
+        expect(BILLING_PLANS.pro.dailyChatLimit).toBe(300)
         expect(BILLING_PLANS.pro.hourlyChatLimit).toBeGreaterThan(BILLING_PLANS.free.hourlyChatLimit)
         expect(BILLING_PLANS.pro.features.some((f) => f.includes('frontier reasoning'))).toBe(true)
     })
