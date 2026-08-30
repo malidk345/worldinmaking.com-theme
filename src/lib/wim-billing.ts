@@ -32,7 +32,7 @@ export const BILLING_PLANS = {
         dailyChatLimit: 30,
         features: [
             'Standard intelligence & fast response models',
-            '30 messages / day capacity (15/hr)',
+            'Standard daily inquiry capacity',
             'Full notebook editor & desktop OS tools',
             'Community forum reading and discussions',
         ],
@@ -46,7 +46,7 @@ export const BILLING_PLANS = {
         dailyChatLimit: 300,
         features: [
             'Next-generation frontier reasoning & deep thinking models',
-            '300 messages / day capacity (10x higher)',
+            'Expanded high-volume inquiry capacity',
             'Multi-mind philosophical debate & panel inquiries',
             'Persistent semantic memory across past notes & chats',
             'Deep notebook structural overhaul & inline margin notes',

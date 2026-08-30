@@ -300,9 +300,9 @@ export default function PricingWindow() {
                                         thinker="Unrestricted & High Speed"
                                     />
                                     <FeatureRow
-                                        title="Daily Request Capacity"
-                                        explorer="30 msgs / day (15/hr)"
-                                        thinker="300 msgs / day (10x)"
+                                        title="Daily Inquiry Capacity"
+                                        explorer="Standard Capacity"
+                                        thinker="Expanded High-Volume"
                                         highlight
                                     />
                                     <FeatureRow

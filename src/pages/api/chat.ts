@@ -230,10 +230,10 @@ export default async function handler(req: Request) {
             {
                 success: false,
                 error: isPro
-                    ? `[app] Pro hourly chat quota reached (${hourlyLimit}/h). Please wait a few minutes.`
+                    ? `[app] Pace limit reached. Please pause a moment before continuing.`
                     : user
-                    ? `[app] Hourly chat quota reached (${hourlyLimit}/h). Upgrade to Pro for 60 msgs/hour.`
-                    : `[app] Guest hourly quota reached (${hourlyLimit}/h). Sign in for free to increase your limit.`,
+                    ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
+                    : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
                 retryAfterSec: hourly.retryAfterSec,
             },
             429,
@@ -248,10 +248,10 @@ export default async function handler(req: Request) {
                 {
                     success: false,
                     error: isPro
-                        ? `[app] Pro daily chat quota reached (${dailyLimit}/day). Quota resets at 00:00 UTC.`
+                        ? `[app] Daily inquiry limit reached. Quota resets at 00:00 UTC.`
                         : user
-                        ? `[app] Daily chat quota reached (${dailyLimit}/day). Upgrade to Pro for 300 messages/day.`
-                        : `[app] Guest daily quota reached (${dailyLimit}/day). Sign in for free to get 30 messages/day.`,
+                        ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
+                        : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
                     retryAfterSec: 86400,
                 },
                 429,

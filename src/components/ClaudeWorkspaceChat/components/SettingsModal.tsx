@@ -42,23 +42,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Options */}
         <div className="space-y-4 text-xs">
-          {/* Plan & Quotas (Subtle & Contextual) */}
+          {/* Plan & Membership (Subtle & Contextual) */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50/70 dark:border-stone-800 dark:bg-stone-900/40">
             <div>
               <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                 <span>Current Plan:</span>
                 {isPro ? (
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">Thinker (Pro)</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">Thinker Pro</span>
                 ) : user ? (
-                  <span className="text-stone-700 dark:text-stone-300 font-medium">Explorer (30 msgs/day)</span>
+                  <span className="text-stone-700 dark:text-stone-300 font-medium">Explorer Free</span>
                 ) : (
-                  <span className="text-stone-500 font-medium">Guest (10 msgs/day)</span>
+                  <span className="text-stone-500 font-medium">Guest Session</span>
                 )}
               </div>
               <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
                 {isPro
-                  ? '300 requests/day, frontier reasoning models enabled.'
-                  : 'Upgrade to Thinker for 300 msgs/day and frontier reasoning.'}
+                  ? 'Frontier reasoning models and persistent semantic memory active.'
+                  : 'Upgrade to Thinker Pro for frontier reasoning, panel inquiries & persistent memory.'}
               </div>
             </div>
             <button
