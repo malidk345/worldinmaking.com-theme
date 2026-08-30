@@ -57,9 +57,11 @@ export default function PricingWindow() {
 
         setLoading(true)
         try {
+            const { chatAuthHeadersFresh } = await import('lib/chat-remote')
+            const authHeaders = await chatAuthHeadersFresh(true)
             const res = await fetch('/api/billing/checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({ interval }),
             })
 
