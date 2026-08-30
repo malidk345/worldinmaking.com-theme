@@ -7,10 +7,8 @@
 import type { TaskType } from 'lib/persona-engine'
 import { stripThinkingBlocks, THINKING_TAG_NAMES } from './thinking-tags'
 import {
-    allRepertoireTags,
     allThinkingStageIds,
     repertoireFor,
-    type PhilosopherRepertoire,
 } from './thinking-schemas'
 
 export type ThinkingDepth = 'brief' | 'standard' | 'deep'
@@ -87,11 +85,6 @@ export function shouldPromptThinkingTags(_depth?: ThinkingDepth): boolean {
     return true
 }
 
-export function thinkingCueFor(name?: string): string {
-    const schema = thinkingSchemaFor(name)
-    if (!schema) return 'Decide the one cut this mind would take on this case.'
-    return schema.stages.map((stage) => stage.hint).join(' ')
-}
 
 function normalizeClause(value: string): string {
     return value.toLowerCase().replace(/[^a-z0-9çğıöşü]+/gi, ' ').replace(/\s+/g, ' ').trim()
@@ -125,14 +118,6 @@ export function isJunkThought(text: string): boolean {
     return false
 }
 
-function isHintEcho(text: string, hint: string): boolean {
-    const a = normalizeClause(text)
-    const b = normalizeClause(hint)
-    if (!a) return true
-    if (a === b) return true
-    const head = b.slice(0, 28)
-    return head.length >= 16 && a.startsWith(head)
-}
 
 /**
  * Short prompted <thinking> with this mind's three stages.
@@ -172,21 +157,6 @@ function extractTag(block: string, tag: string): string {
     return ''
 }
 
-function extractLabeledLine(block: string, stage: { id: string; label: string; hint: string }): string {
-    const names = [stage.id, stage.label].filter(Boolean)
-    for (const name of names) {
-        const re = new RegExp(
-            `(?:^|\\n)\\s*(?:\\d+[.)]\\s*)?(?:<${escapeRegExp(name)}>|${escapeRegExp(name)})\\s*(?:—|-|:)?\\s*([^\\n<]+)`,
-            'i',
-        )
-        const m = block.match(re)
-        const text = cleanAIOutput((m?.[1] || '').replace(/^[.…\s]+|[.…\s]+$/g, '').trim())
-        if (text && !isHintEcho(text, stage.hint) && !/^the case$|^what is taken$|^the side$/i.test(text)) {
-            return text
-        }
-    }
-    return ''
-}
 
 const LEGACY_STAGE_ORDER = [
     ['perceive', 'Perceive'],
@@ -195,60 +165,13 @@ const LEGACY_STAGE_ORDER = [
     ['move', 'Move'],
 ] as const
 
-function extractSchemaStages(block: string, schema: PersonaThinkingSchema): ThinkingStage[] {
-    const stages: ThinkingStage[] = []
-    for (let i = 0; i < schema.stages.length; i++) {
-        const stage = schema.stages[i]
-        const nextId = schema.stages[i + 1]?.id
-        const closed = extractTag(block, stage.id)
-        const labeled = !closed ? extractLabeledLine(block, stage) : ''
-        const openRe = nextId
-            ? new RegExp(`<${escapeRegExp(stage.id)}>\\s*([\\s\\S]*?)(?=<${escapeRegExp(nextId)}>|<\\/thinking>|<\\/thought>|$)`, 'i')
-            : new RegExp(`<${escapeRegExp(stage.id)}>\\s*([\\s\\S]*?)(?=<\\/thinking>|<\\/thought>|$)`, 'i')
-        const open = !closed && !labeled ? block.match(openRe)?.[1]?.trim() || '' : ''
-        const text = cleanStageText(closed || labeled || open)
-        if (!text || isJunkThought(text) || isHintEcho(text, stage.hint)) continue
-        stages.push({ id: stage.id, label: stage.label, text })
-    }
-    return stages
-}
-
-function fillSchemaFromProse(inner: string, schema: PersonaThinkingSchema): ThinkingStage[] {
-    const tagPattern = new RegExp(`</?(?:${THINKING_TAG_NAMES.join('|')})(?:\\s[^>]*)?>`, 'gi')
-    const raw = cleanAIOutput(inner.replace(tagPattern, '').trim())
-    if (!raw) return []
-    const parts = raw
-        .split(/(?<=[.!?])\s+|\n+/)
-        .map((part) => part.trim())
-        .filter((part) => part.length > 6 && !isJunkThought(part))
-        .filter((part) => {
-            if (schema.stages.some((stage) => isHintEcho(part, stage.hint))) return false
-            const clause = normalizeClause(part)
-            return !schema.stages.some((stage) => {
-                const hint = normalizeClause(stage.hint)
-                return clause.length >= 8 && hint.includes(clause)
-            })
-        })
-        .map((part) => cleanStageText(part))
-        .filter(Boolean)
-    if (parts.length === 0) return []
-    return schema.stages
-        .map((stage, index) => ({
-            id: stage.id,
-            label: stage.label,
-            text: parts[index] || (index === 0 ? raw : ''),
-        }))
-        .filter((stage) => stage.text)
-}
 
 function extractAnyKnownStages(block: string): ThinkingStage[] {
     const found: ThinkingStage[] = []
     for (const id of allThinkingStageIds()) {
         const text = extractTag(block, id)
         if (!text) continue
-        const def = stageDefById(id)
-        if (def && isHintEcho(text, def.hint)) continue
-        found.push({ id, label: def?.label || id, text })
+        found.push({ id, label: id, text })
     }
     if (found.length) return found
     const stages: ThinkingStage[] = []

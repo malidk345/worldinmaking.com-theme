@@ -339,7 +339,7 @@ test.describe('notebook frontend helpers', () => {
         expect(parsed.annotations?.abc.notes[0]).toMatchObject({ by: 'nietzsche', text: 'Yes.' })
 
         const saved = serializeMarkdownNotebook(parsed)
-        expect(saved).toContain('<ref id="abc">Life</ref>')
+        expect(saved.replace(/[\r\n]+/g, '')).toContain('<ref id="abc">Life</ref>')
         expect(saved).not.toContain('notes=')
         expect(saved).toContain('<!--wim-annotations:')
 
@@ -510,8 +510,8 @@ test.describe('notebook frontend helpers', () => {
             errors: [],
         }
         const markdown = serializeMarkdownNotebook(saved)
-        expect(markdown).toContain('<ref id="ref-a">')
-        expect(markdown).toContain('<ref id="ref-b">')
+        expect(markdown.replace(/[\r\n]+/g, '')).toContain('<ref id="ref-a">')
+        expect(markdown.replace(/[\r\n]+/g, '')).toContain('<ref id="ref-b">')
         expect(markdown).toContain('<!--wim-annotations:')
         expect(markdown).toContain('"scope":"piece"')
 

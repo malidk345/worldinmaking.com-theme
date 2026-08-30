@@ -375,10 +375,10 @@ test.describe('OpenAI tool protocol', () => {
 
     test('Ask AI operator prompt preserves philosopher identity and capabilities', () => {
         const operator = askAiOperatorPreamble('Nietzsche')
-        expect(operator).toContain('You are Nietzsche')
+        expect(operator).toContain('You are WorldInMaking Ask AI')
         expect(operator).toContain('WorldInMaking OS')
         const system = getAskAiSystemPrompt({ voiceName: 'Nietzsche', wimContext: 'wim' })
-        expect(system).toContain('You are Nietzsche')
+        expect(system).toContain('You are WorldInMaking Ask AI')
     })
 
     test('fetch_url blocks private and non-http URLs', async () => {
