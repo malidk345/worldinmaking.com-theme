@@ -53,14 +53,36 @@ test.describe('Ask AI harness', () => {
         expect(needsLiveWeb('Sen kimsin?')).toBe(false)
     })
 
+    test('operator prompt includes user identity when logged in', () => {
+        const guestPrompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
+        expect(guestPrompt).toContain('Guest / Anonymous')
+
+        const authPrompt = getAskAiSystemPrompt({
+            voiceName: 'Nietzsche',
+            hostUser: {
+                name: 'Mustafa Ali',
+                username: 'mali',
+                bio: 'Architect of WIM',
+                location: 'Istanbul',
+            },
+        })
+        expect(authPrompt).toContain('Mustafa Ali')
+        expect(authPrompt).toContain('@mali')
+        expect(authPrompt).toContain('Architect of WIM')
+        expect(authPrompt).toContain('Address them warmly, respectfully, and naturally by their name ("Mustafa Ali")')
+    })
+
     test('open_path and workspace observation are host facts', () => {
         expect(resolveOpenPath('posts')).toBe('/posts')
         expect(resolveOpenPath('/etc/passwd')).toBeNull()
         const snapshot = describeWorkspace({
             path: '/home',
+            user: { name: 'Mustafa Ali', username: 'mali', bio: 'Philosophy explorer' },
             windows: [{ path: '/posts', title: 'Posts' }],
             notebooks: [{ id: 'n1', title: 'Draft' }],
         })
+        expect(snapshot).toContain('Logged-in User: Mustafa Ali')
+        expect(snapshot).toContain('@mali')
         expect(snapshot).toContain('/home')
         expect(snapshot).toContain('Posts')
         expect(snapshot).toContain('Draft')

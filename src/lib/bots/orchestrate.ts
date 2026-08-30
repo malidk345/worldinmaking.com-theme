@@ -145,7 +145,7 @@ function buildTurnSystemPrompt(
     const operator = Boolean(input.enableTools && taskType === 'autonomous_assistant')
 
     return [
-        operator ? askAiOperatorPreamble(persona.name) : SECURITY_PREAMBLE,
+        operator ? askAiOperatorPreamble(persona.name, input.host?.user) : SECURITY_PREAMBLE,
         wimContext,
         input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
         buildPersonaHeader(persona, mood, taskType, density),

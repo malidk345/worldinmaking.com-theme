@@ -3,8 +3,19 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../supabase-rest'
 
 export type HostWindow = { path?: string; title?: string }
 
+export type HostUser = {
+    id?: string
+    name?: string
+    username?: string
+    bio?: string
+    location?: string
+    pronouns?: string
+    role?: string
+}
+
 export type HostSnapshot = {
     path?: string
+    user?: HostUser
     windows?: HostWindow[]
     notebookId?: string
     notebookTitle?: string
@@ -83,8 +94,21 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
             })
         }
     }
-    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId) return undefined
-    return { path, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType }
+    let user: HostSnapshot['user']
+    if (snap.user && typeof snap.user === 'object') {
+        const u = snap.user as Record<string, unknown>
+        user = {
+            id: typeof u.id === 'string' ? u.id.slice(0, 80) : undefined,
+            name: typeof u.name === 'string' ? u.name.slice(0, 100) : undefined,
+            username: typeof u.username === 'string' ? u.username.slice(0, 60) : undefined,
+            bio: typeof u.bio === 'string' ? u.bio.slice(0, 300) : undefined,
+            location: typeof u.location === 'string' ? u.location.slice(0, 100) : undefined,
+            pronouns: typeof u.pronouns === 'string' ? u.pronouns.slice(0, 40) : undefined,
+            role: typeof u.role === 'string' ? u.role.slice(0, 40) : undefined,
+        }
+    }
+    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user) return undefined
+    return { path, user, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType }
 }
 
 export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }> = [
@@ -119,12 +143,16 @@ export function resolveOpenPath(raw: string): string | null {
 }
 
 export function describeWorkspace(host?: HostSnapshot): string {
+    const userLine = host?.user?.name || host?.user?.username
+        ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
+        : 'User: Guest / Anonymous'
     const windows = (host?.windows || [])
         .slice(0, 12)
         .map((window) => `- ${window.title || 'Window'} (${window.path || '/'})`)
         .join('\n')
     const apps = SITE_APPS.map((app) => `${app.name}: ${app.path}`).join('\n')
     return [
+        userLine,
         `Current path: ${host?.path || '/'}`,
         host?.notebookId ? `Bound notebook: ${host.notebookTitle || host.notebookId} (${host.notebookId})` : 'No notebook bound',
         host?.notebooks?.length

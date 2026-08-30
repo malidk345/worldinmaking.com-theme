@@ -33,6 +33,7 @@ import { ShareModal } from './components/ShareModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
+import { useUser } from '../../hooks/useUser';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import {
@@ -149,6 +150,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   // App Context for openNewChat params
   const app = useApp();
+  const { user } = useUser();
   const { chatParams, setChatParams } = app;
   const processedInitialQuestionRef = useRef<string | null>(null);
   // Subscribe to windows via dedicated context so we re-render when windows change
@@ -945,6 +947,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           conversationId: targetChatId,
           workspace: {
             path: typeof window !== 'undefined' ? window.location.pathname : '/',
+            user: user
+              ? {
+                  id: String(user.id),
+                  name: user.profile?.firstName
+                    ? `${user.profile.firstName}${user.profile.lastName ? ` ${user.profile.lastName}` : ''}`.trim()
+                    : user.profile?.username || user.username || user.email?.split('@')[0],
+                  username: user.profile?.username || user.username,
+                  bio: user.profile?.biography || (user.profile as any)?.bio,
+                  location: user.profile?.location,
+                  pronouns: user.profile?.pronouns,
+                  role: user.role?.type || (user.isModerator ? 'moderator' : 'member'),
+                }
+              : undefined,
             windows: (appWindows || []).slice(0, 12).map((item) => ({
               path: item.path,
               title: item.title || item.meta?.title || item.path,

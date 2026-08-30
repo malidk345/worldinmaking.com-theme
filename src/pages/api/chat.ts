@@ -199,6 +199,22 @@ export default async function handler(req: Request) {
 
     const clientIp = getClientIp(req)
     const user = await getSupabaseUserFromRequest(req)
+    if (user && host) {
+        const meta = (user.user_metadata || {}) as Record<string, unknown>
+        const name = (meta.first_name || meta.name || meta.full_name || user.email?.split('@')[0]) as string | undefined
+        const username = (meta.username || user.email?.split('@')[0]) as string | undefined
+        if (!host.user) {
+            host.user = {
+                id: user.id,
+                name,
+                username,
+                role: user.role,
+            }
+        } else {
+            if (!host.user.name && name) host.user.name = name
+            if (!host.user.username && username) host.user.username = username
+        }
+    }
     const hourlyLimit = user ? AUTH_HOURLY_LIMIT : GUEST_HOURLY_LIMIT
     const dailyLimit = user ? AUTH_DAILY_LIMIT : GUEST_DAILY_LIMIT
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
