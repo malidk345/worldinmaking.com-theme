@@ -393,7 +393,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
             type="button"
             onClick={() => setIsOpen((open) => !open)}
             aria-expanded={isOpen}
-            className="group/status inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/60 hover:bg-accent border border-primary/20 text-left text-[12px] text-secondary transition-all hover:text-primary focus:outline-none cursor-pointer ml-auto shadow-2xs"
+            className="group/status inline-flex items-center gap-1.5 py-0.5 text-left text-[13px] text-stone-500 transition-colors hover:text-stone-800 focus:outline-none dark:text-stone-400 dark:hover:text-stone-200 cursor-pointer ml-auto"
           >
             <ThinkingLeadIcon live={isLive} />
             {isLive ? (
@@ -401,12 +401,12 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
                 {headerStage || 'Thinking…'}
               </span>
             ) : (
-              <span className="truncate leading-tight font-medium">
+              <span className="truncate leading-tight">
                 {formatDoneHeader(durationSeconds, headerStage)}
               </span>
             )}
             <ChevronDown
-              className={`h-3 w-3 shrink-0 text-muted transition-transform duration-200 ${
+              className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-200 dark:text-stone-500 ${
                 isOpen ? 'rotate-180' : ''
               }`}
             />
