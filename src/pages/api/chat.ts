@@ -202,7 +202,39 @@ export default async function handler(req: Request) {
     }
 
     const clientIp = getClientIp(req)
-    const user = await getSupabaseUserFromRequest(req)
+    let user = await getSupabaseUserFromRequest(req)
+
+    // Fallback: If mobile browser token was partitioned or pending refresh, verify workspace user against database
+    if (!user && host?.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(host.user.id)) {
+        const env = getRuntimeEnv()
+        const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
+        const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+        if (base && serviceKey) {
+            try {
+                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${host.user.id}&select=*`, {
+                    headers: {
+                        Authorization: `Bearer ${serviceKey}`,
+                        apikey: serviceKey,
+                    },
+                    cache: 'no-store',
+                })
+                if (profileRes.ok) {
+                    const profiles = (await profileRes.json()) as Record<string, any>[]
+                    if (Array.isArray(profiles) && profiles.length > 0) {
+                        user = {
+                            id: host.user.id,
+                            email: profiles[0].contact_email,
+                            profile: profiles[0],
+                            role: profiles[0].role || host.user.role || 'member',
+                        }
+                    }
+                }
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
     if (user && host) {
         const meta = (user.user_metadata || {}) as Record<string, unknown>
         const name = (meta.first_name || meta.name || meta.full_name || user.email?.split('@')[0]) as string | undefined
@@ -210,9 +242,9 @@ export default async function handler(req: Request) {
         if (!host.user) {
             host.user = {
                 id: user.id,
-                name,
-                username,
-                role: user.role,
+                name: user.profile?.first_name ? `${user.profile.first_name}${user.profile.last_name ? ` ${user.profile.last_name}` : ''}`.trim() : name,
+                username: user.profile?.username || username,
+                role: user.role || user.profile?.role,
             }
         } else {
             if (!host.user.name && name) host.user.name = name
