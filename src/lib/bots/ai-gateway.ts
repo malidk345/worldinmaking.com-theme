@@ -127,7 +127,7 @@ const GEMINI_MODELS = [
     'gemini-3.5-flash',
     'gemini-3.6-flash',
 ] as const
-const MAX_SYSTEM_PROMPT_CHARS = 8_000
+const MAX_SYSTEM_PROMPT_CHARS = 12_000
 const MAX_USER_PROMPT_CHARS = 24_000
 const DEFAULT_MAX_TOKENS = 4096
 /** Groq on_demand qwen/qwen3.6-27b: 8K TPM. Request size = input + max_tokens. */

@@ -20,3 +20,7 @@
 ## 2025-02-23 - Memoizing Stage Computations & Static Menu Constants
 **Learning:** Array filtering/sorting operations in render functions (such as `EarlyAccessFeaturesSection`) and inside custom hooks (such as `useEarlyAccessFeatures`) allocate new object/array references every render frame. Pre-computing lookup sets at module scope and wrapping array stage groupings in `useMemo` reduces CPU churn during React re-renders.
 **Action:** Always extract static configuration objects/sets outside component scope and wrap non-trivial array filtering or grouping operations in `useMemo`.
+
+## 2025-05-18 - System Prompt Capping Optimization in AI Gateway
+**Learning:** Hard-truncating system prompts to 8,000 characters in `src/lib/bots/ai-gateway.ts` caused truncation of rich system context instructions during long multi-turn AI interactions. Increasing system prompt capacity to 12,000 characters provides adequate context window while retaining optimal token fitting logic across Groq and Gemini models.
+**Action:** When configuring multi-provider AI gateway system prompt limits, ensure system prompt caps accommodate rich operational preambles and persona contexts without clipping critical tool definitions.
