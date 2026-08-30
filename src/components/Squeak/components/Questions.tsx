@@ -82,7 +82,6 @@ export const Questions = ({
                     </button>
                 )*/}
 
-            {/* TODO: Pass refresh for now questions */}
             {showForm && (
                 <QuestionForm
                     autoFocus={autoFocus}
