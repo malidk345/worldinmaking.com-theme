@@ -929,6 +929,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const posthog = usePostHog()
 
     const [windows, setWindows] = useState<AppWindow[]>(() => {
+        const rawPath = location?.pathname || '/'
+        if (rawPath === '/' || rawPath === '/desktop') {
+            return []
+        }
         if (isSSR) {
             return [createNewWindow(element as WindowElement, [], location, true, taskbarHeight)]
         }
@@ -1453,6 +1457,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     function getInitialWindows(element: any) {
+        const rawPath = location?.pathname || '/'
+        if (rawPath === '/' || rawPath === '/desktop') {
+            return []
+        }
         if (isSSR) {
             return [createNewWindow(element, [], location, isSSR, taskbarHeight)]
         }
