@@ -56,6 +56,7 @@ test.describe('Ask AI harness', () => {
     test('operator prompt includes user identity when logged in', () => {
         const guestPrompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
         expect(guestPrompt).toContain('Guest / Anonymous')
+        expect(guestPrompt).toContain('Explorer (Free) tier')
 
         const authPrompt = getAskAiSystemPrompt({
             voiceName: 'Nietzsche',
@@ -64,12 +65,14 @@ test.describe('Ask AI harness', () => {
                 username: 'mali',
                 bio: 'Architect of WIM',
                 location: 'Istanbul',
+                role: 'pro',
             },
         })
         expect(authPrompt).toContain('Mustafa Ali')
         expect(authPrompt).toContain('@mali')
         expect(authPrompt).toContain('Architect of WIM')
         expect(authPrompt).toContain('Address them warmly, respectfully, and naturally by their name ("Mustafa Ali")')
+        expect(authPrompt).toContain('Pro Thinker')
     })
 
     test('open_path and workspace observation are host facts', () => {

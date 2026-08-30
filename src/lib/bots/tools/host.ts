@@ -11,6 +11,7 @@ export type HostUser = {
     location?: string
     pronouns?: string
     role?: string
+    plan?: 'free' | 'pro'
 }
 
 export type HostSnapshot = {
@@ -105,6 +106,7 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
             location: typeof u.location === 'string' ? u.location.slice(0, 100) : undefined,
             pronouns: typeof u.pronouns === 'string' ? u.pronouns.slice(0, 40) : undefined,
             role: typeof u.role === 'string' ? u.role.slice(0, 40) : undefined,
+            plan: u.plan === 'pro' ? 'pro' : 'free',
         }
     }
     if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user) return undefined
@@ -145,7 +147,7 @@ export function resolveOpenPath(raw: string): string | null {
 
 export function describeWorkspace(host?: HostSnapshot): string {
     const userLine = host?.user?.name || host?.user?.username
-        ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
+        ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.plan ? ` | Plan: ${host.user.plan.toUpperCase()}` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
         : 'User: Guest / Anonymous'
     const windows = (host?.windows || [])
         .slice(0, 12)

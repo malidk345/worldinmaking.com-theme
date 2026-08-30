@@ -333,7 +333,7 @@ export default async function handler(req: Request) {
                         question: prompt,
                         philosopher,
                         taskType: 'autonomous_assistant',
-                        thinkingDepth: 'brief',
+                        thinkingDepth: isPro ? 'deep' : 'brief',
                         context,
                         messages: history,
                         env: activeEnv,
