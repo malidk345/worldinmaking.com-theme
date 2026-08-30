@@ -16,7 +16,7 @@ interface AskAIInputProps {
 
 const DEFAULT_PLACEHOLDER = 'Ask a question...'
 
-export default function AskAIInput({ placeholder = DEFAULT_PLACEHOLDER, className = '' }: AskAIInputProps) {
+export default function AskAIInput({ placeholder = DEFAULT_PLACEHOLDER, className = '' }: AskAIInputProps): JSX.Element | null {
     const [question, setQuestion] = useState('')
     const posthog = usePostHog()
     const { compact } = useLayoutData()
@@ -66,7 +66,7 @@ export default function AskAIInput({ placeholder = DEFAULT_PLACEHOLDER, classNam
                 iconPosition="right"
                 disabled={!question.trim()}
             >
-                Ask PostHog AI
+                Ask WIM AI
             </OSButton>
         </div>
     )
