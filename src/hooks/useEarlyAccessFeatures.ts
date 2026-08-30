@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import usePostHog from './usePostHog'
 
 export type EarlyAccessFeatureStage = 'concept' | 'alpha' | 'beta' | 'general-availability'
@@ -199,10 +199,14 @@ export function useEarlyAccessFeatures(options: UseEarlyAccessFeaturesOptions = 
         }
     }, [fetchFeatures])
 
-    const grouped: GroupedEarlyAccessFeatures = {
-        beta: features.filter((f) => f.stage === 'beta'),
-        comingSoon: features.filter((f) => f.stage === 'concept' || f.stage === 'alpha'),
-    }
+    // Bolt: Memoized grouped early access features to prevent downstream object reference churn
+    const grouped: GroupedEarlyAccessFeatures = useMemo(
+        () => ({
+            beta: features.filter((f) => f.stage === 'beta'),
+            comingSoon: features.filter((f) => f.stage === 'concept' || f.stage === 'alpha'),
+        }),
+        [features]
+    )
 
     return { features, grouped, loading, error, refetch: fetchFeatures }
 }

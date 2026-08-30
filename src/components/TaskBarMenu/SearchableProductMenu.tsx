@@ -19,23 +19,22 @@ interface SearchableProductMenuProps {
     products: Product[]
 }
 
+// Bolt: Extracted static configuration outside component to prevent re-allocation on every render frame
+const HIDDEN_SLUGS_SET = new Set([
+    'ai',
+    'data-stack/sources',
+    'data-stack/reverse-etl-export',
+    'data-stack/data-modeling',
+    'data-stack',
+])
+
+const CUSTOM_LABELS: Record<string, string> = {
+    // 'cdp': 'CDP'
+}
+
 const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products }) => {
     const [searchTerm, setSearchTerm] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
-
-    // Slugs to hide from the searchable menu
-    const hiddenSlugs = [
-        'ai',
-        'data-stack/sources',
-        'data-stack/reverse-etl-export',
-        'data-stack/data-modeling',
-        'data-stack',
-    ]
-
-    // Custom labels for specific products
-    const customLabels: Record<string, string> = {
-        // 'cdp': 'CDP'
-    }
 
     // Focus the input when the component mounts
     useEffect(() => {
@@ -45,14 +44,15 @@ const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products 
     }, [])
 
     // Simple fuzzy search - matches if all characters appear in order (case insensitive)
+    // Bolt: Uses Set.has for O(1) hidden slug lookup and references module-level constants
     const filteredProducts = useMemo(() => {
         // First filter out hidden products and products without categories (already filtered out from browsed navigation and products)
-        let filtered = products.filter((product) => !hiddenSlugs.includes(product.slug) && product.category)
+        let filtered = products.filter((product) => !HIDDEN_SLUGS_SET.has(product.slug) && product.category)
 
         if (searchTerm.trim()) {
             const searchLower = searchTerm.toLowerCase()
             filtered = filtered.filter((product) => {
-                const displayName = customLabels[product.slug] || product.name
+                const displayName = CUSTOM_LABELS[product.slug] || product.name
                 const searchableText = displayName.toLowerCase()
 
                 // Simple fuzzy matching: check if all search characters appear in order
@@ -68,8 +68,8 @@ const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products 
 
         // Sort alphabetically by display name
         return [...filtered].sort((a, b) => {
-            const aName = customLabels[a.slug] || a.name
-            const bName = customLabels[b.slug] || b.name
+            const aName = CUSTOM_LABELS[a.slug] || a.name
+            const bName = CUSTOM_LABELS[b.slug] || b.name
             return aName.localeCompare(bName)
         })
     }, [products, searchTerm])
@@ -120,7 +120,7 @@ const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products 
                                     </span>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium truncate">
-                                            {customLabels[product.slug] || product.name}
+                                            {CUSTOM_LABELS[product.slug] || product.name}
                                         </div>
                                         {product.description && (
                                             <div className="text-xs text-muted truncate">{product.description}</div>

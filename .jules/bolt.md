@@ -16,3 +16,7 @@
 ## 2024-12-04 - Memoizing Array Aggregations
 **Learning:** In the `Places` component (`src/pages/places/index.tsx`), computing the `placesByType` map using `places.reduce` without `useMemo` forces the JavaScript engine to perform an O(N) array traversal and allocate a new object on every render. For components with frequent state updates (like toggling map layers or selecting places), this introduces unnecessary main thread overhead and garbage collection pressure.
 **Action:** Always wrap array aggregations (like `.reduce` or `Object.fromEntries`) in `useMemo` when they depend on props or state arrays that change infrequently, especially in components that re-render often due to internal state changes.
+
+## 2025-02-23 - Memoizing Stage Computations & Static Menu Constants
+**Learning:** Array filtering/sorting operations in render functions (such as `EarlyAccessFeaturesSection`) and inside custom hooks (such as `useEarlyAccessFeatures`) allocate new object/array references every render frame. Pre-computing lookup sets at module scope and wrapping array stage groupings in `useMemo` reduces CPU churn during React re-renders.
+**Action:** Always extract static configuration objects/sets outside component scope and wrap non-trivial array filtering or grouping operations in `useMemo`.

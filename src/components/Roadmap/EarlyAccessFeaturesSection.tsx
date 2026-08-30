@@ -677,7 +677,7 @@ export default function EarlyAccessFeaturesSection(): JSX.Element | null {
     const { teamInfoBySlug, peopleByTeamSlug } = useMemo(() => {
         const teams: Record<string, TeamInfo> = {}
         const people: Record<string, TeamPerson[]> = {}
-        (allSqueakTeam?.nodes || []).forEach((node) => {
+        ;(allSqueakTeam?.nodes || []).forEach((node) => {
             teams[node.slug] = { name: node.name, miniCrest: node.miniCrest }
             people[node.slug] = (node.profiles?.data || []).map((profile) => ({
                 id: profile.id ? String(profile.id) : undefined,
@@ -824,19 +824,27 @@ export default function EarlyAccessFeaturesSection(): JSX.Element | null {
             (a, b) => Number(isNew(b)) - Number(isNew(a)) || (a.stage === 'beta' ? 0 : bySignupAvailability(a, b))
         )
 
-    const filteredByStage = STAGES.reduce<Record<BoardStage, EarlyAccessFeature[]>>(
-        (result, { stage }) => {
-            result[stage] = sortFeatures(
-                allFeatures.filter(
-                    (feature) => feature.stage === stage && matchesSearch(feature) && matchesTeam(feature)
-                )
-            )
-            return result
-        },
-        { concept: [], alpha: [], beta: [] }
+    // Bolt: Memoized stage calculation and total count to avoid O(N log N) filtering and sorting on every render
+    const filteredByStage = useMemo(
+        () =>
+            STAGES.reduce<Record<BoardStage, EarlyAccessFeature[]>>(
+                (result, { stage }) => {
+                    result[stage] = sortFeatures(
+                        allFeatures.filter(
+                            (feature) => feature.stage === stage && matchesSearch(feature) && matchesTeam(feature)
+                        )
+                    )
+                    return result
+                },
+                { concept: [], alpha: [], beta: [] }
+            ),
+        [allFeatures, query, teamFilter, mounted]
     )
 
-    const filteredTotal = STAGES.reduce((count, { stage }) => count + filteredByStage[stage].length, 0)
+    const filteredTotal = useMemo(
+        () => STAGES.reduce((count, { stage }) => count + filteredByStage[stage].length, 0),
+        [filteredByStage]
+    )
     const openFeature = (feature: EarlyAccessFeature) => {
         setSelectedFlagKey(feature.flagKey)
         setPitchOpen(false)
