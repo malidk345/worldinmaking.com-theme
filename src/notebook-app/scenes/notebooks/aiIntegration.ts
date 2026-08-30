@@ -15,8 +15,35 @@ export function generateAIResponse(prompt: string): string {
 export function handleAskAI(
     nodeId: string,
     promptText: string,
-    updateNodeProps: (nodeId: string, props: Record<string, any>) => void
+    updateNodeProps: (nodeId: string, props: Record<string, unknown>) => void
 ): void {
-    const response = generateAIResponse(promptText)
-    updateNodeProps(nodeId, { response, status: 'complete' })
+    updateNodeProps(nodeId, { status: 'loading' })
+
+    const instruction = promptText.trim()
+    if (!instruction) {
+        const fallback = generateAIResponse(promptText)
+        updateNodeProps(nodeId, { response: fallback, status: 'complete' })
+        return
+    }
+
+    void fetch('/api/notebook/inline-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction }),
+    })
+        .then(async (res) => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`)
+            }
+            const data = await res.json()
+            const markdown = typeof data?.markdown === 'string' && data.markdown.trim() ? data.markdown.trim() : null
+            if (markdown) {
+                updateNodeProps(nodeId, { response: markdown, status: 'complete' })
+            } else {
+                updateNodeProps(nodeId, { response: generateAIResponse(promptText), status: 'complete' })
+            }
+        })
+        .catch(() => {
+            updateNodeProps(nodeId, { response: generateAIResponse(promptText), status: 'complete' })
+        })
 }
