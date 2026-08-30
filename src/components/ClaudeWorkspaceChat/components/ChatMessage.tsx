@@ -148,7 +148,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
       {/* USER MESSAGE: Compact Bubble with Action Icons Underneath */}
       {isUser ? (
         <div className="flex flex-col items-end group">
-          <div className="relative w-fit max-w-[85%] rounded-md bg-primary border border-primary px-3 py-1.5 text-primary text-[14px] sm:text-[15px] leading-[1.45] font-sans shadow-2xs">
+          <div className="relative w-fit max-w-[85%] rounded-2xl bg-primary/90 backdrop-blur-md border border-primary/60 px-4 py-2 text-primary text-[14px] sm:text-[15px] leading-[1.45] font-sans shadow-sm transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
 
@@ -242,7 +242,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-primary bg-primary px-4 py-3 text-left transition-all hover:bg-accent cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary active:scale-[0.99] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">
