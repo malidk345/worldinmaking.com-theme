@@ -6,16 +6,20 @@ import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { fetchPublicUrl } from './fetch-url'
 import {
+    executeAnnotateNotebook,
     executeCreateNotebook,
     executeGetWorkspace,
     executeInsertNotebookBlock,
     executeListNotebooks,
+    executeManageWindows,
     executeOpenPath,
+    executePublishToForum,
     executeReadNotebook,
     executeReadPost,
     executeReplaceNotebookSelection,
     executeRewriteNotebookDocument,
     executeSearchSite,
+    executeSetSystemAppearance,
     executeUpdateNotebookTitle,
     type HostOsAction,
     type HostSnapshot,
@@ -96,6 +100,41 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         notebookId: 'notebook_id',
         id: 'notebook_id',
         notebook: 'notebook_id',
+    },
+    manage_windows: {
+        target: 'path',
+        app: 'path',
+        route: 'path',
+        left: 'left_path',
+        leftPath: 'left_path',
+        right: 'right_path',
+        rightPath: 'right_path',
+    },
+    set_system_appearance: {
+        mode: 'theme',
+        colorMode: 'theme',
+        bg: 'wallpaper',
+        background: 'wallpaper',
+        transparency: 'reduce_transparency',
+    },
+    annotate_notebook: {
+        quote: 'span_text',
+        selection: 'span_text',
+        text: 'span_text',
+        span: 'span_text',
+        comment: 'note',
+        critique: 'note',
+        annotation: 'note',
+        notebookId: 'notebook_id',
+        id: 'notebook_id',
+    },
+    publish_to_forum: {
+        name: 'title',
+        topic: 'title',
+        body: 'content',
+        markdown: 'content',
+        text: 'content',
+        tag: 'category',
     },
     create_artifact: { kind: 'type', source: 'content', body: 'content', code: 'content', markdown: 'content' },
 }
@@ -372,6 +411,57 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
                 host,
                 asText(args.title, 120),
                 asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'manage_windows') {
+            const executed = executeManageWindows(
+                host,
+                asText(args.action, 40),
+                asText(args.path, 120),
+                asText(args.left_path || args.leftPath, 120),
+                asText(args.right_path || args.rightPath, 120)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'set_system_appearance') {
+            const executed = executeSetSystemAppearance(
+                asText(args.theme, 20),
+                asText(args.wallpaper, 60),
+                typeof args.reduce_transparency === 'boolean' ? args.reduce_transparency : undefined
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'annotate_notebook') {
+            const executed = executeAnnotateNotebook(
+                host,
+                asText(args.span_text || args.spanText || args.quote || args.selection, 500),
+                asText(args.note || args.comment || args.critique, 2_000),
+                asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'publish_to_forum') {
+            const executed = executePublishToForum(
+                asText(args.title, 140),
+                asText(args.content || args.body, 12_000),
+                asText(args.category || args.tag, 40)
             )
             return {
                 ...base,

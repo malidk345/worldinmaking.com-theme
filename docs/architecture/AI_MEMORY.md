@@ -1138,6 +1138,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 325 - 4 New Agentic OS & Workspace Powers (TSK-261)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Added 4 new native tool capabilities to WIM AI:
+  1. **Desktop & Window Management (`manage_windows`):** Enables AI to tile windows side-by-side (`split-screen`), snap left/right, minimize, focus, or close windows.
+  2. **System Theme & Appearance Control (`set_system_appearance`):** Controls visual themes (`dark`, `light`, `system`), wallpaper presets, and transparency preferences.
+  3. **Inline Notebook Annotations & Margin Notes (`annotate_notebook`):** Attaches critical commentary, suggestions, and footnotes to specific passages in notebooks without modifying source text.
+  4. **Community Forum Topic Publishing (`publish_to_forum`):** Directly creates and drafts new discussion topics and philosophical inquiries to the `/community` forum.
+- **Modified Files:** `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/labels.ts`, `src/components/ClaudeWorkspaceChat/types.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `tests/tool-loop.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 73/73 Playwright unit & integration tests passed.
+
 ### Entry 324 - Ultra-Compact High-Density Typography for WIM AI & Thinking Process (TSK-260)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)

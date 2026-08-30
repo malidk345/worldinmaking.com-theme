@@ -1311,8 +1311,65 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           })
         );
         if (app?.addWindow) app.addWindow({ path: '/notebooks' });
-      } else if (action.type === 'create_forum_topic') {
+      } else if (action.type === 'create_forum_topic' || action.type === 'publish_to_forum') {
+        window.dispatchEvent(
+          new CustomEvent('wimForumCreateTopicDraft', {
+            detail: {
+              title: action.payload.title || '',
+              content: action.payload.content || '',
+              category: action.payload.category || 'discussion',
+            },
+          })
+        );
         if (app?.addWindow) app.addWindow({ path: '/community' });
+      } else if (action.type === 'manage_windows') {
+        const act = action.payload.action || 'tile';
+        if (act === 'tile' && action.payload.left_path && action.payload.right_path) {
+          if (app?.addWindow) {
+            app.addWindow({ path: action.payload.left_path, snapped: 'left' });
+            app.addWindow({ path: action.payload.right_path, snapped: 'right' });
+          }
+        } else if (act === 'snap_left' && action.payload.path && app?.addWindow) {
+          app.addWindow({ path: action.payload.path, snapped: 'left' });
+        } else if (act === 'snap_right' && action.payload.path && app?.addWindow) {
+          app.addWindow({ path: action.payload.path, snapped: 'right' });
+        } else if (act === 'close' && action.payload.path && app?.closeWindow) {
+          const target = appWindows.find((w) => w.path === action.payload.path);
+          if (target) app.closeWindow(target);
+        } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
+          const target = appWindows.find((w) => w.path === action.payload.path);
+          if (target) app.updateWindow(target, { minimized: true });
+        } else if (act === 'close_all' && app?.closeWindow) {
+          appWindows.forEach((w) => app.closeWindow(w));
+        } else if (action.payload.path && app?.addWindow) {
+          app.addWindow({ path: action.payload.path });
+        }
+      } else if (action.type === 'set_system_appearance') {
+        if (action.payload.theme && typeof window !== 'undefined') {
+          if ((window as any).__setPreferredTheme) {
+            (window as any).__setPreferredTheme(action.payload.theme);
+          }
+          window.dispatchEvent(
+            new CustomEvent('wimThemeChanged', { detail: { theme: action.payload.theme } })
+          );
+        }
+        if (action.payload.wallpaper && (app as any)?.updateSiteSettings) {
+          (app as any).updateSiteSettings({ wallpaper: action.payload.wallpaper });
+        }
+        if (typeof action.payload.reduce_transparency === 'boolean' && (app as any)?.updateSiteSettings) {
+          (app as any).updateSiteSettings({ reduceTransparency: action.payload.reduce_transparency });
+        }
+      } else if (action.type === 'annotate_notebook') {
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookAddAnnotation', {
+            detail: {
+              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              spanText: action.payload.span_text || '',
+              note: action.payload.note || '',
+            },
+          })
+        );
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'open_window') {
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }

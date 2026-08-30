@@ -27,18 +27,22 @@ test.describe('OpenAI tool protocol', () => {
     test('exposes only the allowlisted Chat Completions functions', () => {
         expect(OPENAI_CHAT_TOOLS.every((tool) => tool.type === 'function')).toBe(true)
         expect([...ALLOWED_TOOL_NAMES].sort()).toEqual([
+            'annotate_notebook',
             'create_artifact',
             'create_notebook',
             'fetch_url',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
+            'manage_windows',
             'open_path',
+            'publish_to_forum',
             'read_notebook',
             'read_post',
             'replace_notebook_selection',
             'rewrite_notebook_document',
             'search_site',
+            'set_system_appearance',
             'update_notebook_title',
             'web_search',
         ])
@@ -235,18 +239,22 @@ test.describe('OpenAI tool protocol', () => {
     test('Gemini declarations and contents stay on the same host contract', () => {
         const declarations = toGeminiFunctionDeclarations()
         expect(declarations.map((item) => item.name).sort()).toEqual([
+            'annotate_notebook',
             'create_artifact',
             'create_notebook',
             'fetch_url',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
+            'manage_windows',
             'open_path',
+            'publish_to_forum',
             'read_notebook',
             'read_post',
             'replace_notebook_selection',
             'rewrite_notebook_document',
             'search_site',
+            'set_system_appearance',
             'update_notebook_title',
             'web_search',
         ])
@@ -482,5 +490,60 @@ test.describe('OpenAI tool protocol', () => {
         expect(compacted[1].tool_calls?.[0].thoughtSignature).toBe('sig-keep-me')
         const contents = openaiMessagesToGeminiContents(compacted)
         expect((contents[1].parts[0] as { thoughtSignature?: string }).thoughtSignature).toBe('sig-keep-me')
+    })
+
+    test('manage_windows emits window organization host action', async () => {
+        const result = await executeToolCall({
+            id: 'call-win',
+            name: 'manage_windows',
+            argumentsJson: JSON.stringify({ action: 'tile', left_path: '/notebooks', right_path: '/posts' }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.action?.type).toBe('manage_windows')
+        expect(result.action?.payload.action).toBe('tile')
+        expect(result.action?.payload.left_path).toBe('/notebooks')
+        expect(result.action?.payload.right_path).toBe('/posts')
+    })
+
+    test('set_system_appearance updates theme and wallpaper', async () => {
+        const result = await executeToolCall({
+            id: 'call-app',
+            name: 'set_system_appearance',
+            argumentsJson: JSON.stringify({ theme: 'dark', wallpaper: 'desert-glow', reduce_transparency: true }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.action?.type).toBe('set_system_appearance')
+        expect(result.action?.payload.theme).toBe('dark')
+        expect(result.action?.payload.wallpaper).toBe('desert-glow')
+        expect(result.action?.payload.reduce_transparency).toBe(true)
+    })
+
+    test('annotate_notebook attaches margin notes to bound notebook', async () => {
+        const result = await executeToolCall(
+            {
+                id: 'call-ann',
+                name: 'annotate_notebook',
+                argumentsJson: JSON.stringify({ span_text: 'Will to Power', note: 'Examine biological vs metaphysical aspects.' }),
+            },
+            undefined,
+            { notebookId: 'nb-1', notebookTitle: 'Nietzsche Notes' }
+        )
+        expect(result.ok).toBe(true)
+        expect(result.action?.type).toBe('annotate_notebook')
+        expect(result.action?.payload.notebookId).toBe('nb-1')
+        expect(result.action?.payload.span_text).toBe('Will to Power')
+        expect(result.action?.payload.note).toContain('biological vs metaphysical')
+    })
+
+    test('publish_to_forum creates forum topic action', async () => {
+        const result = await executeToolCall({
+            id: 'call-pub',
+            name: 'publish_to_forum',
+            argumentsJson: JSON.stringify({ title: 'Genealogy of Ethics', content: 'Discussion on moral origins.', category: 'philosophy' }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.action?.type).toBe('publish_to_forum')
+        expect(result.action?.payload.title).toBe('Genealogy of Ethics')
+        expect(result.action?.payload.category).toBe('philosophy')
     })
 })

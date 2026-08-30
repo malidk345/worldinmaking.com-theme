@@ -263,6 +263,119 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'manage_windows',
+            description:
+                'Manage OS desktop windows: tile two windows side-by-side (split screen), snap a window left or right, minimize, focus, or close windows. Use when the user asks to organize, split, arrange, or close their desktop windows.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    action: {
+                        type: 'string',
+                        enum: ['tile', 'snap_left', 'snap_right', 'minimize', 'close', 'focus', 'close_all'],
+                        description: 'Action to perform on windows.',
+                    },
+                    path: {
+                        type: 'string',
+                        description: 'Primary app/path to target (e.g. /notebooks, /posts, /community, /home).',
+                    },
+                    left_path: {
+                        type: 'string',
+                        description: 'App/path for the left half when action is tile (e.g. /notebooks).',
+                    },
+                    right_path: {
+                        type: 'string',
+                        description: 'App/path for the right half when action is tile (e.g. /posts or /workspace-chat).',
+                    },
+                },
+                required: ['action'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'set_system_appearance',
+            description:
+                'Change the OS visual theme or wallpaper. Themes: dark, light, system. Wallpapers: desert-glow, ocean-night, minimalist-dark, sand-light, forest. Use when the user asks to switch themes, dark mode, light mode, or change their background.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    theme: {
+                        type: 'string',
+                        enum: ['dark', 'light', 'system'],
+                        description: 'Visual theme mode.',
+                    },
+                    wallpaper: {
+                        type: 'string',
+                        description: 'Wallpaper name or preset (e.g. desert-glow, ocean-night, minimalist-dark, sand-light, forest).',
+                    },
+                    reduce_transparency: {
+                        type: 'boolean',
+                        description: 'Whether to reduce OS window glass transparency.',
+                    },
+                },
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'annotate_notebook',
+            description:
+                'Attach a margin note, critique, or contextual feedback annotation to a specific text passage/sentence in the bound notebook. Use when the user asks for inline feedback, critique, review notes, or margin comments without rewriting their text.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    span_text: {
+                        type: 'string',
+                        description: 'The exact quote or sentence in the notebook being commented on.',
+                    },
+                    note: {
+                        type: 'string',
+                        description: 'The critical analysis, margin note, suggestion, or footnote.',
+                    },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Optional notebook id. Defaults to the bound notebook.',
+                    },
+                },
+                required: ['span_text', 'note'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'publish_to_forum',
+            description:
+                'Create and publish a new discussion topic or question on the WorldInMaking Community Forum. Use when the user asks to post to the forum, publish a discussion topic, or share a synthesis to the community.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    title: {
+                        type: 'string',
+                        description: 'A clear, compelling topic title.',
+                    },
+                    content: {
+                        type: 'string',
+                        description: 'The discussion body or question in markdown.',
+                    },
+                    category: {
+                        type: 'string',
+                        description: 'Optional category or tag (e.g. philosophy, general, inquiry).',
+                    },
+                },
+                required: ['title', 'content'],
+            },
+        },
+    },
 ]
 
 export const TOOL_PROTOCOL = `
@@ -277,13 +390,18 @@ TOOL USE:
 - search_site: search this site's posts. web_search is the public internet; search_site is WorldInMaking.
 - open_path: open an allowed OS window. Do not invent paths.
 - read_post: read one site post by slug after search_site.
+- manage_windows: tile, snap left/right, minimize, or close desktop windows.
+- set_system_appearance: change theme (dark/light/system) or wallpaper background.
+- publish_to_forum: publish a new topic or question to the Community forum.
 - Notebook Tools (Full Authority):
   * list_notebooks: see all notebooks in this OS.
+  * read_notebook: read full notebook content.
   * create_notebook: create a brand new notebook.
   * insert_notebook_block: append content to the bound notebook.
   * rewrite_notebook_document: full-document rewrite/overhaul of the bound notebook.
   * replace_notebook_selection: replace the active user selection in the notebook.
   * update_notebook_title: rename or set title for the bound notebook.
+  * annotate_notebook: attach inline critique or margin notes to a passage in the notebook.
   * All notebook modifications are applied live by the host with automatic time-travel snapshotting. Do not dump the same markdown in the bubble after calling a notebook tool.
 - If a tool returns an error, fix the arguments and call it again. Do not dump the failed source in the bubble.
 - If you need a tool, emit only the tool call. Do not write the user-visible answer in the same step. After the host returns the result, write the answer.

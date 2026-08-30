@@ -13,6 +13,14 @@ const LABELS: Record<string, [string, string, string]> = {
     list_notebooks: ['Listing notebooks', 'Listed notebooks', 'Could not list notebooks'],
     create_notebook: ['Creating notebook', 'Created notebook', 'Could not create notebook'],
     insert_notebook_block: ['Writing to notebook', 'Wrote to notebook', 'Could not write to notebook'],
+    rewrite_notebook_document: ['Rewriting notebook', 'Rewrote notebook', 'Could not rewrite notebook'],
+    replace_notebook_selection: ['Revising selection', 'Revised selection', 'Could not revise selection'],
+    update_notebook_title: ['Renaming notebook', 'Renamed notebook', 'Could not rename notebook'],
+    read_notebook: ['Reading notebook', 'Read notebook', 'Could not read notebook'],
+    manage_windows: ['Managing windows', 'Arranged windows', 'Could not arrange windows'],
+    set_system_appearance: ['Updating appearance', 'Updated appearance', 'Could not update appearance'],
+    annotate_notebook: ['Adding notebook note', 'Added notebook note', 'Could not add note'],
+    publish_to_forum: ['Publishing to forum', 'Published to forum', 'Could not publish to forum'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {

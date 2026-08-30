@@ -84,6 +84,10 @@ export interface OSActionCard {
     | 'rewrite_notebook_document'
     | 'replace_notebook_selection'
     | 'update_notebook_title'
+    | 'manage_windows'
+    | 'set_system_appearance'
+    | 'annotate_notebook'
+    | 'publish_to_forum'
   title: string
   description: string
   payload: {
@@ -91,6 +95,16 @@ export interface OSActionCard {
       content?: string
       path?: string
       notebookId?: string
+      action?: string
+      target?: string
+      left_path?: string
+      right_path?: string
+      theme?: string
+      wallpaper?: string
+      reduce_transparency?: boolean
+      span_text?: string
+      note?: string
+      category?: string
   }
   executed?: boolean
 }

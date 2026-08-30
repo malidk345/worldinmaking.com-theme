@@ -24,9 +24,28 @@ export type HostOsAction = {
         | 'rewrite_notebook_document'
         | 'replace_notebook_selection'
         | 'update_notebook_title'
+        | 'manage_windows'
+        | 'set_system_appearance'
+        | 'annotate_notebook'
+        | 'publish_to_forum'
     title: string
     description: string
-    payload: { path?: string; title?: string; content?: string; notebookId?: string }
+    payload: {
+        path?: string
+        title?: string
+        content?: string
+        notebookId?: string
+        action?: string
+        target?: string
+        left_path?: string
+        right_path?: string
+        theme?: string
+        wallpaper?: string
+        reduce_transparency?: boolean
+        span_text?: string
+        note?: string
+        category?: string
+    }
 }
 
 /** Shared by /api/chat and notebook co-author. */
@@ -377,3 +396,102 @@ export function executeUpdateNotebookTitle(
         },
     }
 }
+
+export function executeManageWindows(
+    host: HostSnapshot | undefined,
+    action: string,
+    path?: string,
+    leftPath?: string,
+    rightPath?: string
+): { ok: boolean; result: string; action: HostOsAction } {
+    const act = clip((action || 'tile').trim(), 40)
+    const primary = path ? resolveOpenPath(path) || path : undefined
+    const left = leftPath ? resolveOpenPath(leftPath) || leftPath : undefined
+    const right = rightPath ? resolveOpenPath(rightPath) || rightPath : undefined
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, action: act, path: primary, left_path: left, right_path: right }),
+        action: {
+            type: 'manage_windows',
+            title: `Window layout: ${act}`,
+            description: 'Organize desktop windows',
+            payload: { action: act, path: primary, left_path: left, right_path: right },
+        },
+    }
+}
+
+export function executeSetSystemAppearance(
+    theme?: string,
+    wallpaper?: string,
+    reduceTransparency?: boolean
+): { ok: boolean; result: string; action: HostOsAction } {
+    const cleanTheme = theme ? clip(theme.trim().toLowerCase(), 20) : undefined
+    const cleanWallpaper = wallpaper ? clip(wallpaper.trim().toLowerCase(), 60) : undefined
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, theme: cleanTheme, wallpaper: cleanWallpaper, reduce_transparency: reduceTransparency }),
+        action: {
+            type: 'set_system_appearance',
+            title: `System appearance: ${cleanTheme || cleanWallpaper || 'updated'}`,
+            description: 'Update visual theme and desktop styling',
+            payload: { theme: cleanTheme, wallpaper: cleanWallpaper, reduce_transparency: reduceTransparency },
+        },
+    }
+}
+
+export function executeAnnotateNotebook(
+    host: HostSnapshot | undefined,
+    spanText: string,
+    note: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const quote = clip((spanText || '').trim(), 500)
+    const comment = clip((note || '').trim(), 2_000)
+    if (!quote || !comment) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'span_text and note are both required' }) }
+    }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Open a notebook first to add annotations.',
+            }),
+        }
+    }
+    const known = host?.notebooks?.find((item) => item.id === targetId)
+    const title = known?.title || host?.notebookTitle || 'Notebook'
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, notebookId: targetId, title, span_text: quote, note: comment }),
+        action: {
+            type: 'annotate_notebook',
+            title: `Annotate in ${title}`,
+            description: 'Attach inline critique or margin note',
+            payload: { notebookId: targetId, title, span_text: quote, note: comment },
+        },
+    }
+}
+
+export function executePublishToForum(
+    title: string,
+    content: string,
+    category?: string
+): { ok: boolean; result: string; action: HostOsAction } {
+    const topicTitle = clip((title || '').trim(), 140)
+    const topicBody = clip((content || '').trim(), 12_000)
+    const tag = category ? clip(category.trim(), 40) : 'discussion'
+    return {
+        ok: true,
+        result: JSON.stringify({ ok: true, title: topicTitle, category: tag }),
+        action: {
+            type: 'publish_to_forum',
+            title: `Forum topic: ${topicTitle}`,
+            description: 'Publish a new topic to the Community forum',
+            payload: { title: topicTitle, content: topicBody, category: tag },
+        },
+    }
+}
+
