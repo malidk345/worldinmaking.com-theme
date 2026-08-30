@@ -71,9 +71,10 @@ function readOptionalBoundedString(
 export default async function handler(req: Request) {
     if (req.method !== 'POST') return jsonError('Method not allowed', 405)
 
-    const parsed = await readJsonObject(req, MAX_BODY_BYTES)
-    if (!parsed.ok) return jsonError(parsed.error, parsed.status)
-    const body = parsed.body
+    try {
+        const parsed = await readJsonObject(req, MAX_BODY_BYTES)
+        if (!parsed.ok) return jsonError(parsed.error, parsed.status)
+        const body = parsed.body
 
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
     if (!prompt) return jsonError('Prompt is required.', 400)
@@ -477,12 +478,16 @@ export default async function handler(req: Request) {
         },
     })
 
-    return new Response(stream, {
-        headers: {
-            'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache, no-transform',
-            Connection: 'keep-alive',
-            'X-Accel-Buffering': 'no',
-        },
-    })
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream; charset=utf-8',
+                'Cache-Control': 'no-cache, no-transform',
+                Connection: 'keep-alive',
+                'X-Accel-Buffering': 'no',
+            },
+        })
+    } catch (err: any) {
+        console.error('[chat] fatal handler error:', err)
+        return jsonError(err?.message || 'Internal chat handler error', 500)
+    }
 }
