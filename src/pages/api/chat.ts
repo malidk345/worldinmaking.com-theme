@@ -200,15 +200,16 @@ export default async function handler(req: Request) {
     const clientIp = getClientIp(req)
     const user = await getSupabaseUserFromRequest(req)
     if (user && host) {
-        const meta = (user.user_metadata || {}) as Record<string, unknown>
-        const name = (meta.first_name || meta.name || meta.full_name || user.email?.split('@')[0]) as string | undefined
-        const username = (meta.username || user.email?.split('@')[0]) as string | undefined
+        const u = user as { id: string; email?: string; user_metadata?: Record<string, unknown>; role?: string }
+        const meta = u.user_metadata || {}
+        const name = (meta.first_name || meta.name || meta.full_name || u.email?.split('@')[0]) as string | undefined
+        const username = (meta.username || u.email?.split('@')[0]) as string | undefined
         if (!host.user) {
             host.user = {
-                id: user.id,
+                id: u.id,
                 name,
                 username,
-                role: user.role,
+                role: u.role,
             }
         } else {
             if (!host.user.name && name) host.user.name = name
@@ -416,7 +417,7 @@ export default async function handler(req: Request) {
 
                 if (result.success && result.actions?.length) {
                     for (const action of result.actions) {
-                        send({ type: 'action', action })
+                        send({ type: 'action', action: action as any })
                     }
                 }
 
