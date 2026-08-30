@@ -1,5 +1,8 @@
 import React from 'react'
-import { PanelLeft } from 'lucide-react'
+import { PanelLeft, Sparkles } from 'lucide-react'
+import { useUser } from '../../../hooks/useUser'
+import { useApp } from '../../../context/App'
+import { isUserPro } from '../../../lib/wim-billing'
 
 interface HeaderProps {
     onToggleSidebar: () => void
@@ -8,6 +11,10 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, activeChatTitle, boundNotebookTitle }) => {
+    const { user } = useUser()
+    const app = useApp()
+    const isPro = isUserPro(user as any)
+
     return (
         <header className="flex h-9 shrink-0 items-center gap-0.5 px-2 pr-24">
             <button
@@ -25,6 +32,28 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, activeChatTitle
                     <span className="text-muted"> · {boundNotebookTitle}</span>
                 ) : null}
             </div>
+
+            {isPro ? (
+                <button
+                    type="button"
+                    onClick={() => app?.addWindow?.({ path: '/pricing' })}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-semibold border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer mr-1 shrink-0"
+                    title="Pro Membership Active"
+                >
+                    <Sparkles className="h-3 w-3" />
+                    <span>Pro</span>
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => app?.addWindow?.({ path: '/pricing' })}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-secondary text-muted hover:text-primary hover:bg-surface-secondary/80 text-[11px] font-medium border border-[var(--color-border-primary)] transition-all cursor-pointer mr-1 shrink-0"
+                    title="Upgrade to Pro"
+                >
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                    <span>Upgrade</span>
+                </button>
+            )}
         </header>
     )
 }
