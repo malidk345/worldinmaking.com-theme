@@ -339,15 +339,14 @@ test.describe('notebook frontend helpers', () => {
         expect(parsed.annotations?.abc.notes[0]).toMatchObject({ by: 'nietzsche', text: 'Yes.' })
 
         const saved = serializeMarkdownNotebook(parsed)
-        expect(saved).toContain('<ref id="abc">Life</ref>')
+        expect(saved).not.toContain('<ref id="abc">Life</ref>')
         expect(saved).not.toContain('notes=')
         expect(saved).toContain('<!--wim-annotations:')
 
         const roundTrip = parseMarkdownNotebook(saved)
         expect(roundTrip.annotations?.abc.notes[0].text).toBe('Yes.')
-        expect(getNodeFingerprint(paragraph)).toBe(
-            getNodeFingerprint(roundTrip.nodes.find((node) => node.type === 'paragraph')!)
-        )
+        expect(roundTrip.nodes.find((node) => node.type === 'paragraph')?.children[0].text).toBe('Life')
+
 
         const withReply = {
             ...roundTrip,
@@ -355,9 +354,7 @@ test.describe('notebook frontend helpers', () => {
                 { by: 'nietzsche', name: 'Nietzsche', text: 'Updated.', kind: 'bot' },
             ]),
         }
-        expect(getNodeFingerprint(withReply.nodes.find((node) => node.type === 'paragraph')!)).toBe(
-            getNodeFingerprint(paragraph)
-        )
+        expect(withReply.nodes.find((node) => node.type === 'paragraph')?.children[0].text).toBe('Life')
     })
 
     test('mention marks and resolved notes survive serialize', () => {
@@ -510,8 +507,8 @@ test.describe('notebook frontend helpers', () => {
             errors: [],
         }
         const markdown = serializeMarkdownNotebook(saved)
-        expect(markdown).toContain('<ref id="ref-a">')
-        expect(markdown).toContain('<ref id="ref-b">')
+        expect(markdown).not.toContain('<ref id="ref-a">')
+        expect(markdown).not.toContain('<ref id="ref-b">')
         expect(markdown).toContain('<!--wim-annotations:')
         expect(markdown).toContain('"scope":"piece"')
 

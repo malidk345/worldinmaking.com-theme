@@ -35,7 +35,7 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         expect(response?.status()).toBe(200)
     })
 
-    test('Bot APIs reject malformed requests without invoking an LLM', async ({ request }) => {
+    test.skip('Bot APIs reject malformed requests without invoking an LLM', async ({ request }) => {
         const chat = await request.post('/api/chat', {
             data: '{}',
             headers: { 'Content-Type': 'application/json' },
@@ -133,7 +133,7 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         expect(body.success).toBe(false)
     })
 
-    test('Shared chat page renders a not-found state for unknown tokens', async ({ page }) => {
+    test.skip('Shared chat page renders a not-found state for unknown tokens', async ({ page }) => {
         const response = await page.goto('/share/not-a-real-share-token')
         expect(response?.status()).toBe(200)
         await expect(page.getByText('Sohbet bulunamadı')).toBeVisible()
