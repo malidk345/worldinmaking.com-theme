@@ -20,3 +20,7 @@
 ## 2025-02-23 - Memoizing Stage Computations & Static Menu Constants
 **Learning:** Array filtering/sorting operations in render functions (such as `EarlyAccessFeaturesSection`) and inside custom hooks (such as `useEarlyAccessFeatures`) allocate new object/array references every render frame. Pre-computing lookup sets at module scope and wrapping array stage groupings in `useMemo` reduces CPU churn during React re-renders.
 **Action:** Always extract static configuration objects/sets outside component scope and wrap non-trivial array filtering or grouping operations in `useMemo`.
+
+## 2025-05-18 - Memoizing Notebook App Backlinks, Table Filtering, and Template Computations
+**Learning:** In the Notebook application (`App.tsx`, `NotebooksListScene.tsx`, and `TemplatesGallery.tsx`), operations like `computeBacklinks()`, `notebooks.filter()`, and `getNotebooks().filter()` were executing directly in render bodies without `useMemo`. This caused unnecessary O(N) text scanning, regex parsing, and array re-allocations on every render frame.
+**Action:** Wrap document backlink computation and scene filtering logic in `useMemo` with appropriate dependency arrays to stabilize reference identities and eliminate main-thread rendering churn.
