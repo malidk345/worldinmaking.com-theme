@@ -58,35 +58,42 @@ function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
 async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = false): Promise<HeadersInit> {
     const headers = { ...(notebookAuthHeaders(ownerKey, jsonBody) as Record<string, string>) }
     try {
+        const { getStoredJwt } = await import('../../../lib/chat-remote')
+        let token = getStoredJwt()
+
         const { supabase, isSupabaseConfigured } = await import('../../../lib/supabase')
         if (isSupabaseConfigured) {
-            let { data } = await supabase.auth.getSession()
-            let session = data.session
+            try {
+                const { data } = await supabase.auth.getSession()
+                let session = data?.session
 
-            const nowSec = Math.floor(Date.now() / 1000)
-            const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
+                const nowSec = Math.floor(Date.now() / 1000)
+                const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
 
-            if (!session || isExpiringSoon) {
-                const refreshed = await supabase.auth.refreshSession()
-                if (refreshed.data?.session) {
-                    session = refreshed.data.session
-                } else {
-                    session = null
+                if (!session || isExpiringSoon) {
+                    const refreshed = await supabase.auth.refreshSession()
+                    if (refreshed.data?.session) {
+                        session = refreshed.data.session
+                    }
                 }
-            }
 
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`
-                localStorage.setItem('jwt', session.access_token)
-                if (session.user?.id) {
-                    localStorage.setItem('wim_auth_user_id', session.user.id)
+                if (session?.access_token) {
+                    token = session.access_token
+                    localStorage.setItem('jwt', token)
+                    if (session.user?.id) {
+                        localStorage.setItem('wim_auth_user_id', session.user.id)
+                    }
                 }
-            } else {
-                localStorage.removeItem('jwt')
+            } catch {
+                /* fallback to cached token */
             }
         }
+
+        if (token && token.length >= 20) {
+            headers.Authorization = `Bearer ${token}`
+        }
     } catch {
-        /* keep cached jwt */
+        /* keep cached headers */
     }
     return headers
 }

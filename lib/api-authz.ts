@@ -56,38 +56,44 @@ export async function getSupabaseUserFromBearer(
     if (!base || !anon) return null
 
     try {
-        const res = await fetch(`${base.replace(/\/$/, '')}/auth/v1/user`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                apikey: anon,
-            },
-            cache: 'no-store',
-        })
-        if (res.ok) {
-            const user = (await res.json()) as Record<string, any>
-            if (user?.id && typeof user.id === 'string') {
-                // Fetch user profile from public.profiles for role & metadata
-                try {
-                    const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            apikey: anon,
-                        },
-                        cache: 'no-store',
-                    })
-                    if (profileRes.ok) {
-                        const profiles = (await profileRes.json()) as Record<string, any>[]
-                        if (Array.isArray(profiles) && profiles.length > 0) {
-                            user.profile = profiles[0]
-                            if (profiles[0].role) {
-                                user.role = profiles[0].role
+        if (anon) {
+            try {
+                const res = await fetch(`${base.replace(/\/$/, '')}/auth/v1/user`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        apikey: anon,
+                    },
+                    cache: 'no-store',
+                })
+                if (res.ok) {
+                    const user = (await res.json()) as Record<string, any>
+                    if (user?.id && typeof user.id === 'string') {
+                        // Fetch user profile from public.profiles for role & metadata
+                        try {
+                            const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
+                                headers: {
+                                    Authorization: `Bearer ${serviceKey || token}`,
+                                    apikey: serviceKey || anon,
+                                },
+                                cache: 'no-store',
+                            })
+                            if (profileRes.ok) {
+                                const profiles = (await profileRes.json()) as Record<string, any>[]
+                                if (Array.isArray(profiles) && profiles.length > 0) {
+                                    user.profile = profiles[0]
+                                    if (profiles[0].role) {
+                                        user.role = profiles[0].role
+                                    }
+                                }
                             }
+                        } catch {
+                            /* ignore profile fetch error */
                         }
+                        return user
                     }
-                } catch {
-                    /* ignore profile fetch error */
                 }
-                return user
+            } catch {
+                /* fallback to JWT decode + service key lookup */
             }
         }
 

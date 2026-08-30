@@ -89,6 +89,38 @@ export function rememberDeletedChatId(chatId: string): void {
 
 import { getActiveByokHeaders } from './byok-vault'
 
+export function getStoredJwt(): string | null {
+    if (typeof window === 'undefined') return null
+    try {
+        let jwt = localStorage.getItem('jwt')
+        if (jwt && jwt.length >= 20) return jwt
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                const raw = localStorage.getItem(k)
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw)
+                        jwt = parsed?.access_token || parsed?.currentSession?.access_token || null
+                        const uid = parsed?.user?.id || parsed?.currentSession?.user?.id
+                        if (jwt) {
+                            localStorage.setItem('jwt', jwt)
+                            if (uid) localStorage.setItem(AUTH_USER_ID_KEY, uid)
+                            return jwt
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
 export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()): HeadersInit {
     const byokHeaders = getActiveByokHeaders()
     const headers: Record<string, string> = {
@@ -97,32 +129,8 @@ export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()):
         ...byokHeaders,
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
-    try {
-        let jwt = localStorage.getItem('jwt')
-        if (!jwt || jwt.length < 20) {
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i)
-                if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
-                    const raw = localStorage.getItem(k)
-                    if (raw) {
-                        try {
-                            const parsed = JSON.parse(raw)
-                            jwt = parsed?.access_token || parsed?.currentSession?.access_token || null
-                            if (jwt) {
-                                localStorage.setItem('jwt', jwt)
-                                break
-                            }
-                        } catch {
-                            /* ignore */
-                        }
-                    }
-                }
-            }
-        }
-        if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
-    } catch {
-        /* ignore */
-    }
+    const jwt = getStoredJwt()
+    if (jwt) headers.Authorization = `Bearer ${jwt}`
     return headers
 }
 
@@ -135,44 +143,43 @@ export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatO
     if (jsonBody) headers['Content-Type'] = 'application/json'
 
     try {
+        let token = getStoredJwt()
+
         if (isSupabaseConfigured) {
-            let { data } = await supabase.auth.getSession()
-            let session = data.session
+            try {
+                const { data } = await supabase.auth.getSession()
+                let session = data?.session
 
-            const nowSec = Math.floor(Date.now() / 1000)
-            const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
+                const nowSec = Math.floor(Date.now() / 1000)
+                const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
 
-            if (!session || isExpiringSoon) {
-                const refreshed = await supabase.auth.refreshSession()
-                if (refreshed.data?.session) {
-                    session = refreshed.data.session
-                } else {
-                    // Refresh failed — clear stale token
-                    session = null
+                if (!session || isExpiringSoon) {
+                    const refreshed = await supabase.auth.refreshSession()
+                    if (refreshed.data?.session) {
+                        session = refreshed.data.session
+                    }
                 }
-            }
 
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`
-                localStorage.setItem('jwt', session.access_token)
-                if (session.user?.id) {
-                    localStorage.setItem('wim_auth_user_id', session.user.id)
+                if (session?.access_token) {
+                    token = session.access_token
+                    localStorage.setItem('jwt', token)
+                    if (session.user?.id) {
+                        localStorage.setItem(AUTH_USER_ID_KEY, session.user.id)
+                    }
                 }
-            } else {
-                // No valid session — remove stale jwt so we don't send expired tokens
-                localStorage.removeItem('jwt')
+            } catch {
+                /* fallback to cached token */
             }
-        } else {
-            // Supabase not configured — use cached jwt if available
-            const jwt = localStorage.getItem('jwt')
-            if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
+        }
+
+        if (token && token.length >= 20) {
+            headers.Authorization = `Bearer ${token}`
         }
     } catch {
-        // Last resort: use cached jwt
-        try {
-            const jwt = localStorage.getItem('jwt')
-            if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
-        } catch { /* ignore */ }
+        const fallbackJwt = getStoredJwt()
+        if (fallbackJwt && fallbackJwt.length >= 20) {
+            headers.Authorization = `Bearer ${fallbackJwt}`
+        }
     }
     return headers
 }

@@ -17,8 +17,29 @@ export function isUuid(value: string): boolean {
 export function getAuthUserId(): string | null {
     if (typeof window === 'undefined') return null
     try {
-        const id = window.localStorage.getItem(AUTH_USER_ID_KEY)
-        return id && id.length >= OWNER_KEY_MIN ? id : null
+        let id = window.localStorage.getItem(AUTH_USER_ID_KEY)
+        if (id && id.length >= OWNER_KEY_MIN) return id
+
+        // Resilient recovery: scan Supabase storage keys if wim_auth_user_id wasn't directly written
+        for (let i = 0; i < window.localStorage.length; i++) {
+            const k = window.localStorage.key(i)
+            if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                const raw = window.localStorage.getItem(k)
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw)
+                        const recoveredId = parsed?.user?.id || parsed?.currentSession?.user?.id
+                        if (recoveredId && typeof recoveredId === 'string' && recoveredId.length >= OWNER_KEY_MIN) {
+                            window.localStorage.setItem(AUTH_USER_ID_KEY, recoveredId)
+                            return recoveredId
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+        }
+        return null
     } catch {
         return null
     }
