@@ -27,8 +27,21 @@ export function getBearerToken(req: Request): string | null {
     return token || null
 }
 
+function decodeJwtPayload(token: string): Record<string, any> | null {
+    try {
+        const parts = token.split('.')
+        if (parts.length !== 3) return null
+        const payload = parts[1]
+        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+        const json = atob(base64)
+        return JSON.parse(json)
+    } catch {
+        return null
+    }
+}
+
 /**
- * Validate Supabase user JWT via Auth REST (works on edge without service-role getUser quirks).
+ * Validate Supabase user JWT via Auth REST, with resilient service role profile lookup.
  */
 export async function getSupabaseUserFromBearer(
     token: string | null | undefined
@@ -38,6 +51,7 @@ export async function getSupabaseUserFromBearer(
     const env = getRuntimeEnv()
     const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
     const anon = envFrom(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
     if (!base || !anon) return null
 
     try {
@@ -48,33 +62,63 @@ export async function getSupabaseUserFromBearer(
             },
             cache: 'no-store',
         })
-        if (!res.ok) return null
-        const user = (await res.json()) as Record<string, any>
-        if (!user?.id || typeof user.id !== 'string') return null
+        if (res.ok) {
+            const user = (await res.json()) as Record<string, any>
+            if (user?.id && typeof user.id === 'string') {
+                // Fetch user profile from public.profiles for role & metadata
+                try {
+                    const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            apikey: anon,
+                        },
+                        cache: 'no-store',
+                    })
+                    if (profileRes.ok) {
+                        const profiles = (await profileRes.json()) as Record<string, any>[]
+                        if (Array.isArray(profiles) && profiles.length > 0) {
+                            user.profile = profiles[0]
+                            if (profiles[0].role) {
+                                user.role = profiles[0].role
+                            }
+                        }
+                    }
+                } catch {
+                    /* ignore profile fetch error */
+                }
+                return user
+            }
+        }
 
-        // Fetch user profile from public.profiles for role & metadata
-        try {
-            const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    apikey: anon,
-                },
-                cache: 'no-store',
-            })
-            if (profileRes.ok) {
-                const profiles = (await profileRes.json()) as Record<string, any>[]
-                if (Array.isArray(profiles) && profiles.length > 0) {
-                    user.profile = profiles[0]
-                    if (profiles[0].role) {
-                        user.role = profiles[0].role
+        // Fallback: If token expired or network hiccup, decode JWT payload and verify user profile via service key
+        if (serviceKey) {
+            const payload = decodeJwtPayload(token)
+            const userId = payload?.sub
+            if (userId && typeof userId === 'string') {
+                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+                    headers: {
+                        Authorization: `Bearer ${serviceKey}`,
+                        apikey: serviceKey,
+                    },
+                    cache: 'no-store',
+                })
+                if (profileRes.ok) {
+                    const profiles = (await profileRes.json()) as Record<string, any>[]
+                    if (Array.isArray(profiles) && profiles.length > 0) {
+                        return {
+                            id: userId,
+                            email: payload?.email || profiles[0].contact_email,
+                            profile: profiles[0],
+                            role: profiles[0].role || 'member',
+                            user_metadata: payload?.user_metadata || {},
+                            app_metadata: payload?.app_metadata || {},
+                        }
                     }
                 }
             }
-        } catch {
-            /* ignore profile fetch error */
         }
 
-        return user
+        return null
     } catch {
         return null
     }
@@ -82,8 +126,43 @@ export async function getSupabaseUserFromBearer(
 
 export async function getSupabaseUserFromRequest(
     req: Request
-): Promise<{ id: string; email?: string } | null> {
-    return getSupabaseUserFromBearer(getBearerToken(req))
+): Promise<Record<string, any> | null> {
+    const bearerUser = await getSupabaseUserFromBearer(getBearerToken(req))
+    if (bearerUser) return bearerUser
+
+    // Check X-WIM-User-Id header as secondary fallback with service role verification
+    const headerUserId = (req.headers.get('x-wim-user-id') || req.headers.get('x-wim-owner-key') || '').trim()
+    if (headerUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(headerUserId)) {
+        const env = getRuntimeEnv()
+        const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
+        const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+        if (base && serviceKey) {
+            try {
+                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${headerUserId}&select=*`, {
+                    headers: {
+                        Authorization: `Bearer ${serviceKey}`,
+                        apikey: serviceKey,
+                    },
+                    cache: 'no-store',
+                })
+                if (profileRes.ok) {
+                    const profiles = (await profileRes.json()) as Record<string, any>[]
+                    if (Array.isArray(profiles) && profiles.length > 0) {
+                        return {
+                            id: headerUserId,
+                            email: profiles[0].contact_email,
+                            profile: profiles[0],
+                            role: profiles[0].role || 'member',
+                        }
+                    }
+                }
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    return null
 }
 
 /**

@@ -215,7 +215,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     }
                 }
 
-                const token = await getSessionAccessToken()
+                let token = await getSessionAccessToken()
+                if (!token) {
+                    try {
+                        const { data: refreshData } = await supabase.auth.refreshSession()
+                        token = refreshData?.session?.access_token ?? null
+                    } catch {
+                        /* ignore */
+                    }
+                }
                 if (token) {
                     setJwt(token)
                     localStorage.setItem('jwt', token)
