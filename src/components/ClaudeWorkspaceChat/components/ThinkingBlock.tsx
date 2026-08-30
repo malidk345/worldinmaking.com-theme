@@ -300,7 +300,7 @@ const ThinkingLeadIcon: React.FC<{ live?: boolean }> = ({ live = false }) => {
   return (
     <Brain
       aria-hidden="true"
-      className={`h-3.5 w-3.5 shrink-0 stroke-[1.5] text-stone-400 dark:text-stone-500 ${
+      className={`h-3 w-3 shrink-0 stroke-[1.5] text-stone-400 dark:text-stone-500 ${
         live ? 'opacity-90' : ''
       }`}
     />
@@ -393,7 +393,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
             type="button"
             onClick={() => setIsOpen((open) => !open)}
             aria-expanded={isOpen}
-            className="group/status inline-flex items-center gap-1.5 py-0.5 text-left text-[13px] text-stone-500 transition-colors hover:text-stone-800 focus:outline-none dark:text-stone-400 dark:hover:text-stone-200 cursor-pointer ml-auto"
+            className="group/status inline-flex items-center gap-1 py-0.5 text-left text-[12px] text-stone-500 transition-colors hover:text-stone-800 focus:outline-none dark:text-stone-400 dark:hover:text-stone-200 cursor-pointer ml-auto"
           >
             <ThinkingLeadIcon live={isLive} />
             {isLive ? (
@@ -406,7 +406,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
               </span>
             )}
             <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-200 dark:text-stone-500 ${
+              className={`h-3 w-3 shrink-0 text-stone-400 transition-transform duration-200 dark:text-stone-500 ${
                 isOpen ? 'rotate-180' : ''
               }`}
             />
@@ -415,16 +415,16 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
       </div>
 
       {isOpen && (
-        <div className="relative mt-1 min-w-0 w-full mb-2">
+        <div className="relative mt-0.5 min-w-0 w-full mb-1.5">
           <div
             ref={scrollRef}
             onScroll={handleScroll}
             className={VIEWPORT_CLASS}
             style={VIEWPORT_MASK}
           >
-            <div className="relative pl-5 py-2 space-y-3.5">
+            <div className="relative pl-4.5 py-1 space-y-2.5">
               {/* Vertical Thread Connector */}
-              <div className="absolute left-[5px] top-2.5 bottom-2.5 w-[1px] bg-stone-200/80 dark:bg-stone-800" />
+              <div className="absolute left-[4px] top-2 bottom-2 w-[1px] bg-stone-200/80 dark:bg-stone-800" />
 
               {nodes.map((node) => {
                 const Icon = getStepIcon(node.title);
@@ -433,17 +433,17 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
                 return (
                   <div key={node.id} className="relative group/node">
                     {/* Subtle bullet on connector */}
-                    <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
+                    <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
 
                     <div className="min-w-0">
                       {displayTitle && (
-                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-stone-700 dark:text-stone-300">
-                          <Icon className="size-3.5 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
+                        <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-stone-700 dark:text-stone-300">
+                          <Icon className="size-3 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
                           <span>{displayTitle}</span>
                         </div>
                       )}
                       {node.detail && (
-                        <p className="m-0 mt-0.5 text-[13px] leading-[1.6] text-stone-600 dark:text-stone-400 font-sans whitespace-pre-wrap break-words">
+                        <p className="m-0 mt-0.5 text-[12px] leading-[1.4] text-stone-600 dark:text-stone-400 font-sans whitespace-pre-wrap break-words">
                           {node.detail}
                         </p>
                       )}
@@ -454,10 +454,10 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
 
               {isLive && (
                 <div className="relative flex items-center gap-2">
-                  <div className="absolute -left-[18px] top-1 size-2 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
+                  <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
                   <span
                     aria-hidden="true"
-                    className="inline-block h-[0.85em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
+                    className="inline-block h-[0.8em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
                   />
                 </div>
               )}
