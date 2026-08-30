@@ -4415,9 +4415,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `tests/billing.spec.ts` [NEW]
   - `tests/ask-ai-harness.spec.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** 77/77 tests passing. Pushed cleanly to `origin/main`.
+### Entry 005 — Supabase Remote DDL Migration & Cloudflare Build Fix (TSK-120)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Supabase Schema Migration:** Executed `supabase/migrations/20260830_subscriptions.sql` directly on the live Supabase instance (`iydypisgfaksqkjdraiu`) via Supabase Management API. Provisioned `public.subscriptions` table with RLS policies and indexed foreign keys.
+  2. **Production Build & Edge Fix:** Added `src/lib/supabaseAdmin.ts` for server-side webhook Supabase client operations, resolving the `Module not found: Can't resolve '../../../lib/supabaseAdmin'` build failure on Cloudflare Pages / Vercel. Removed top-level Node `crypto` import in `src/lib/wim-billing.ts` to guarantee Edge Runtime compatibility.
+  3. **Verification:** Verified successful production build (`next build` generates all 46 static and dynamic routes cleanly) and verified that all 77 Playwright test suites pass with 0 errors.
+- **Modified Files:**
+  - `src/lib/supabaseAdmin.ts` [NEW]
+  - `src/lib/wim-billing.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Clean local build passing. Ready for deployment.
 
 ---
+
 
 ## 6. Shared Knowledge & Discoveries
 

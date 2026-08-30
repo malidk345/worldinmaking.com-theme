@@ -4,8 +4,6 @@
  * Handles checkout creation, webhook signature verification, and plan entitlement checks.
  */
 
-import crypto from 'crypto'
-
 export type SubscriptionPlan = 'free' | 'pro' | 'patron'
 
 export type SubscriptionRecord = {
@@ -75,6 +73,7 @@ export function isUserPro(user?: { role?: { type?: string } | string; profile?: 
 export function verifyLemonSqueezySignature(rawBody: string, signature: string, secret: string): boolean {
     if (!rawBody || !signature || !secret) return false
     try {
+        const crypto = require('crypto')
         const hmac = crypto.createHmac('sha256', secret)
         const digest = Buffer.from(hmac.update(rawBody).digest('hex'), 'utf8')
         const signatureBuffer = Buffer.from(signature, 'utf8')
