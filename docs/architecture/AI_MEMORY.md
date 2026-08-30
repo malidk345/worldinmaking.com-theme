@@ -4387,11 +4387,37 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts` [UPDATED]
   - `src/notebook-app/lib/components/MarkdownNotebook/WimWritingBlocks.tsx` [UPDATED]
   - `src/lib/bots/groq-key-cursor.ts` [UPDATED]
+### Entry 004 — Merchant of Record (MoR) Billing Infrastructure & 3-Tier Quota Enforcement (TSK-119)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Merchant of Record (MoR) Integration:** Built solo-creator compliant Lemon Squeezy integration (`src/lib/wim-billing.ts`) with HMAC SHA-256 webhook validation (`/api/webhooks/lemonsqueezy`), checkout session creator (`/api/billing/checkout`), and Supabase subscriptions table schema with RLS (`supabase/migrations/20260830_subscriptions.sql`).
+  2. **Direct Desktop Boot:** Updated `src/context/App.tsx` so root (`/` and `/desktop`) boots directly to a clean wallpaper without auto-opening the Home window.
+  3. **WIM AI User Identity & Subscription Awareness:** Integrated logged-in user profiles into `HostUser` in `src/lib/bots/tools/host.ts`, `askAiOperatorPreamble` in `src/lib/bots/ask-ai.ts`, and `ClaudeWorkspaceChat/index.tsx`.
+  4. **3-Tier Calibrated Quotas & Functional Gating:** Enforced strict, sustainable tiers in `/api/chat.ts` (Guest 10/d, Free Member 30/d, Pro Thinker 300/d) with deep thinking reasoning enabled for Pro. Replaced raw numeric error text with elegant natural guidance.
+  5. **Minimalist & Native Pricing Window:** Redesigned `/pricing` (`PricingWindow.tsx`) to match WorldInMaking's signature navy blue (`#1E3A8A`) frosted glass aesthetic, Socratic epigraph, and "frontier reasoning & thinking models" copy.
+- **Modified Files:**
+  - `src/lib/wim-billing.ts` [NEW]
+  - `src/components/Pricing/PricingWindow.tsx` [NEW]
+  - `src/pages/pricing.tsx` [NEW]
+  - `src/pages/api/webhooks/lemonsqueezy.ts` [NEW]
+  - `src/pages/api/billing/checkout.ts` [NEW]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `src/lib/bots/tools/host.ts` [UPDATED]
+  - `src/lib/bots/ask-ai.ts` [UPDATED]
+  - `src/components/Desktop/desktopApps.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/Header.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/SettingsModal.tsx` [UPDATED]
+  - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
+  - `src/lib/window-path.ts` [UPDATED]
+  - `src/context/App.tsx` [UPDATED]
+  - `supabase/migrations/20260830_subscriptions.sql` [NEW]
+  - `tests/billing.spec.ts` [NEW]
+  - `tests/ask-ai-harness.spec.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Production build tested cleanly with `pnpm run build` (exit code 0).
+- **Notes / Handoff:** 77/77 tests passing. Pushed cleanly to `origin/main`.
 
 ---
-
 
 ## 6. Shared Knowledge & Discoveries
 
