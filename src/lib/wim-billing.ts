@@ -54,18 +54,26 @@ export const BILLING_PLANS = {
     },
 }
 
-/** Check if current user is subscribed to Pro */
-export function isUserPro(user?: { role?: { type?: string } | string; profile?: { role?: string | null }; app_metadata?: { plan?: string } } | null): boolean {
+/** Check if current user is subscribed to Pro (or is admin/moderator) */
+export function isUserPro(user?: { email?: string; role?: { type?: string } | string; profile?: { role?: string | null }; app_metadata?: { plan?: string } } | null): boolean {
     if (!user) return false
     const role = typeof user.role === 'object' ? user.role?.type : user.role
     const profileRole = user.profile?.role
     const metaPlan = user.app_metadata?.plan
+    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean)
+    const isAdminEmail = !!user.email && adminEmails.includes(user.email.toLowerCase())
     return (
+        isAdminEmail ||
         role === 'pro' ||
-        profileRole === 'pro' ||
-        metaPlan === 'pro' ||
+        role === 'admin' ||
         role === 'moderator' ||
-        profileRole === 'admin'
+        profileRole === 'pro' ||
+        profileRole === 'admin' ||
+        profileRole === 'moderator' ||
+        metaPlan === 'pro'
     )
 }
 

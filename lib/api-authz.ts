@@ -32,7 +32,7 @@ export function getBearerToken(req: Request): string | null {
  */
 export async function getSupabaseUserFromBearer(
     token: string | null | undefined
-): Promise<{ id: string; email?: string } | null> {
+): Promise<Record<string, any> | null> {
     if (!token || token.length < 20) return null
 
     const env = getRuntimeEnv()
@@ -49,9 +49,32 @@ export async function getSupabaseUserFromBearer(
             cache: 'no-store',
         })
         if (!res.ok) return null
-        const user = (await res.json()) as { id?: string; email?: string }
+        const user = (await res.json()) as Record<string, any>
         if (!user?.id || typeof user.id !== 'string') return null
-        return { id: user.id, email: user.email }
+
+        // Fetch user profile from public.profiles for role & metadata
+        try {
+            const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    apikey: anon,
+                },
+                cache: 'no-store',
+            })
+            if (profileRes.ok) {
+                const profiles = (await profileRes.json()) as Record<string, any>[]
+                if (Array.isArray(profiles) && profiles.length > 0) {
+                    user.profile = profiles[0]
+                    if (profiles[0].role) {
+                        user.role = profiles[0].role
+                    }
+                }
+            }
+        } catch {
+            /* ignore profile fetch error */
+        }
+
+        return user
     } catch {
         return null
     }

@@ -98,7 +98,27 @@ export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()):
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
     try {
-        const jwt = localStorage.getItem('jwt')
+        let jwt = localStorage.getItem('jwt')
+        if (!jwt || jwt.length < 20) {
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i)
+                if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                    const raw = localStorage.getItem(k)
+                    if (raw) {
+                        try {
+                            const parsed = JSON.parse(raw)
+                            jwt = parsed?.access_token || parsed?.currentSession?.access_token || null
+                            if (jwt) {
+                                localStorage.setItem('jwt', jwt)
+                                break
+                            }
+                        } catch {
+                            /* ignore */
+                        }
+                    }
+                }
+            }
+        }
         if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
     } catch {
         /* ignore */

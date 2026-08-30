@@ -58,6 +58,7 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import {
   chatAuthHeaders,
+  chatAuthHeadersFresh,
   claimDeviceAccountOnLogin,
   deleteChatOnRemote,
   getChatStorageKey,
@@ -931,9 +932,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       }
 
+      const authHeaders = await chatAuthHeadersFresh(true);
       const sseRes = await fetch('/api/chat', {
         method: 'POST',
-        headers: chatAuthHeaders(true),
+        headers: authHeaders,
         signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           prompt: effectivePrompt,
