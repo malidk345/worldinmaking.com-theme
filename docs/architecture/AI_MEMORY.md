@@ -4439,9 +4439,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `.env.example` [NEW]
   - `tests/posthog.spec.ts` [NEW]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Verified with unit tests passing. Ready for live API keys in `.env.local` or Cloudflare dashboard.
+### Entry 007 — Persistent Auth Resilience, Session Auto-Refresh & Expired Token Recovery (TSK-122)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Root Cause Analysis:** Devices with existing logins experienced hourly JWT expiration. When `chat.ts` received expired access tokens from older sessions, `fetch('/auth/v1/user')` returned 401, causing `/api/chat` to fall back to IP rate limits and misidentify users as guests.
+  2. **Proactive Client Refresh:** Updated `useUser.tsx` and `src/lib/chat-remote.ts` (`chatAuthHeadersFresh`) to inspect expiration timestamps and trigger `supabase.auth.refreshSession()` before sending chat requests.
+  3. **Multi-layer Server Verification:** Updated `lib/api-authz.ts` to decode JWT sub payload and query `public.profiles` with `SUPABASE_SERVICE_ROLE_KEY` if standard Auth REST encounters a temporary expiration or clock drift.
+  4. **Admin Role Bypass:** Updated `isUserPro` in `src/lib/wim-billing.ts` to recognize `NEXT_PUBLIC_ADMIN_EMAIL` automatically.
+- **Modified Files:**
+  - `lib/api-authz.ts` [UPDATED]
+  - `src/hooks/useUser.tsx` [UPDATED]
+  - `src/lib/chat-remote.ts` [UPDATED]
+  - `src/lib/wim-billing.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Fully tested with unit test suite passing. Pushed to `origin/main`.
 
 ---
+
 
 
 
