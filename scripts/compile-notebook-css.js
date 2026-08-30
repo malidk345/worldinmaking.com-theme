@@ -17,6 +17,9 @@ try {
     // Fix invalid nested :root and :host selectors so CSS variables bind directly to .notebook-app-scope
     cssContent = cssContent.replace(/\.notebook-app-scope\s+(?::root|:host)/g, '.notebook-app-scope')
 
+    // Remove unparsed @import statements left inside compiled CSS blocks
+    cssContent = cssContent.replace(/@import\s+['"][^'"]+['"];?/g, '')
+
     // Allow portal selectors (Popover/Modal/Tooltip/…) to match when `notebook-app-scope`
     // is on the portal root itself (FloatingPortal mounts under body).
     //

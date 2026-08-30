@@ -225,7 +225,7 @@ export default async function handler(req: Request) {
                 }
                 if (result.success && result.actions?.length) {
                     for (const action of result.actions) {
-                        send({ type: 'action', action })
+                        send({ type: 'action', action: action as any })
                     }
                 }
 
