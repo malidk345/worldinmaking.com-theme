@@ -1138,6 +1138,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 326 - Logged-in User Profile Awareness & Personalized AI Greetings (TSK-262)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Integrated authenticated user profiles directly into the AI operator prompt and workspace snapshot:
+  1. **User Identity In Preamble (`src/lib/bots/ask-ai.ts`):** Injects user identity (`name`, `username`, `bio`, `location`) into the operator prompt with an explicit directive to address the user warmly, respectfully, and naturally by their real name in conversation.
+  2. **Workspace Snapshot (`src/lib/bots/tools/host.ts`):** `parseHostSnapshot` and `describeWorkspace` report the logged-in user profile attributes.
+  3. **Client-Side Sync (`src/components/ClaudeWorkspaceChat/index.tsx`):** Retrieves user object from `useUser()` hook and passes it in the `workspace.user` payload to `/api/chat`.
+  4. **Server-Side Session Fallback (`src/pages/api/chat.ts`):** Automatically enriches `host.user` from the Supabase session token if present.
+- **Modified Files:** `src/lib/bots/ask-ai.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/tools/host.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `tests/ask-ai-harness.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 74/74 Playwright unit & integration tests passed.
+
 ### Entry 325 - 4 New Agentic OS & Workspace Powers (TSK-261)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
