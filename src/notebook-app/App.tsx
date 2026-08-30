@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Component, useCallback, useRef } from 'react'
+import React, { useState, useEffect, Component, useCallback, useRef, useMemo } from 'react'
 import {
     MarkdownNotebook,
     type MarkdownNotebookAskAIRequest,
@@ -276,6 +276,14 @@ export function App() {
     version: currentNotebook?.version,
     actor: userToNotebookActor(user) || getNotebookActor(),
   })
+
+  const backlinks = useMemo(() => {
+    if (route.page !== 'editor' || !currentNotebook) return []
+    return computeBacklinks(
+      { id: currentNotebook.id, title: currentNotebook.title || title },
+      getNotebooks()
+    )
+  }, [route.page, currentNotebook?.id, currentNotebook?.title, title, markdown])
 
 
   useEffect(() => {
@@ -932,10 +940,7 @@ export function App() {
 
                     {/* Bidirectional Backlinks Panel */}
                     <BacklinksPanel
-                      backlinks={computeBacklinks(
-                        { id: currentNotebook.id, title: currentNotebook.title || title },
-                        getNotebooks()
-                      )}
+                      backlinks={backlinks}
                       currentNotebookTitle={currentNotebook.title || title}
                     />
                   </div>

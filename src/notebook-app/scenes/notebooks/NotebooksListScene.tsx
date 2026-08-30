@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
     LemonButton,
     LemonInput,
@@ -114,18 +114,23 @@ export function NotebooksListScene({
         URL.revokeObjectURL(url)
     }
 
-    const filteredNotebooks = notebooks.filter((nb) => {
-        if (!notebookMatchesQuery(nb, searchQuery)) {
-            return false
-        }
-        if (createdByFilter === 'templates' && !nb.isTemplate) {
-            return false
-        }
-        if (createdByFilter === 'user' && nb.isTemplate) {
-            return false
-        }
-        return true
-    })
+    // Memoize filtered notebooks to prevent O(N) array filtering on every render frame
+    const filteredNotebooks = useMemo(
+        () =>
+            notebooks.filter((nb) => {
+                if (!notebookMatchesQuery(nb, searchQuery)) {
+                    return false
+                }
+                if (createdByFilter === 'templates' && !nb.isTemplate) {
+                    return false
+                }
+                if (createdByFilter === 'user' && nb.isTemplate) {
+                    return false
+                }
+                return true
+            }),
+        [notebooks, searchQuery, createdByFilter]
+    )
 
     const handlePinToDesktop = (notebook: StoredNotebook) => {
         try {
