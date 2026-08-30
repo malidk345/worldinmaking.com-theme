@@ -20,7 +20,7 @@ test.describe('billing & subscriptions', () => {
         expect(BILLING_PLANS.free.dailyChatLimit).toBe(400)
         expect(BILLING_PLANS.pro.dailyChatLimit).toBe(3000)
         expect(BILLING_PLANS.pro.hourlyChatLimit).toBeGreaterThan(BILLING_PLANS.free.hourlyChatLimit)
-        expect(BILLING_PLANS.pro.features.some((f) => f.includes('Claude 3.7'))).toBe(true)
+        expect(BILLING_PLANS.pro.features.some((f) => f.includes('frontier reasoning'))).toBe(true)
     })
 
     test('verifyLemonSqueezySignature validates HMAC SHA256 signatures', () => {
