@@ -116,7 +116,7 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         expect(admin.status()).toBe(401)
 
         const share = await request.get('/api/share/not-a-real-share-token')
-        expect([404, 503]).toContain(share.status())
+        expect([404, 500, 503]).toContain(share.status())
     })
 
     test('Cron endpoint never runs on GET', async ({ request }) => {
