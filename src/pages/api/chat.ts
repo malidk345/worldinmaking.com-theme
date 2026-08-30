@@ -23,11 +23,15 @@ import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
+import { isUserPro } from '../../lib/wim-billing'
 
 const GUEST_HOURLY_LIMIT = 80
 const AUTH_HOURLY_LIMIT = 120
+const PRO_HOURLY_LIMIT = 600
+
 const GUEST_DAILY_LIMIT = 200
 const AUTH_DAILY_LIMIT = 400
+const PRO_DAILY_LIMIT = 3000
 const MAX_BODY_BYTES = 1024 * 1024
 
 const MAX_PROMPT_LENGTH = 8000
@@ -215,8 +219,9 @@ export default async function handler(req: Request) {
             if (!host.user.username && username) host.user.username = username
         }
     }
-    const hourlyLimit = user ? AUTH_HOURLY_LIMIT : GUEST_HOURLY_LIMIT
-    const dailyLimit = user ? AUTH_DAILY_LIMIT : GUEST_DAILY_LIMIT
+    const isPro = user ? isUserPro(user as any) : false
+    const hourlyLimit = isPro ? PRO_HOURLY_LIMIT : user ? AUTH_HOURLY_LIMIT : GUEST_HOURLY_LIMIT
+    const dailyLimit = isPro ? PRO_DAILY_LIMIT : user ? AUTH_DAILY_LIMIT : GUEST_DAILY_LIMIT
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     const hourly = checkRateLimit(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000)
@@ -224,9 +229,11 @@ export default async function handler(req: Request) {
         return json(
             {
                 success: false,
-                error: user
-                    ? `[app] Hourly chat quota exceeded (${hourlyLimit}/h)`
-                    : `[app] Guest hourly quota exceeded (${hourlyLimit}/h). Sign in for a higher limit.`,
+                error: isPro
+                    ? `[app] Pro hourly chat quota exceeded (${hourlyLimit}/h). Please wait a moment.`
+                    : user
+                    ? `[app] Hourly chat quota exceeded (${hourlyLimit}/h). Upgrade to Pro for 5x higher quota.`
+                    : `[app] Guest hourly quota exceeded (${hourlyLimit}/h). Sign in or upgrade to Pro for higher limits.`,
                 retryAfterSec: hourly.retryAfterSec,
             },
             429,

@@ -40,6 +40,7 @@ import { isProfilePath } from '../../lib/profile-path'
 import { canonicalWindowPath, isArtifactWindowPath, isPathRoutedWindow } from '../../lib/window-path'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
+const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false })
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
@@ -78,6 +79,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/contact') {
         return <ContactWindow />
+    }
+
+    if (path === '/pricing') {
+        return <PricingWindow />
     }
 
     if (path === '/home') {

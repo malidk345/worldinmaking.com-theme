@@ -121,6 +121,7 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Contact', path: '/contact', aliases: ['iletişim', 'contact'] },
     { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
     { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
+    { name: 'Pricing', path: '/pricing', aliases: ['pro', 'upgrade', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
 ]
 
 const ALLOWED_PATHS = new Set(SITE_APPS.map((app) => app.path))

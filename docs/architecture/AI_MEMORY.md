@@ -1138,6 +1138,19 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Tests:** 36/36 Playwright unit tests passed in 2.7s.
 
+### Entry 327 - Lemon Squeezy No-Company MoR Billing & Pricing Window (TSK-263)
+- **Date:** 2026-08-30
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Built a complete, individual-friendly subscription monetization architecture powered by Lemon Squeezy (Merchant of Record - requires no company/incorporation):
+  1. **Billing Library (`src/lib/wim-billing.ts`):** Implemented `isUserPro`, HMAC SHA256 webhook signature validation, plan definitions (`Gezgin Free` vs `Düşünür Pro`), and `createCheckoutSession` with fallback sandbox testing.
+  2. **Lemon Squeezy Webhook (`src/pages/api/webhooks/lemonsqueezy.ts`):** Handles `subscription_created`, `subscription_updated`, `subscription_cancelled`, and `subscription_expired` to automatically grant or revoke `pro` role in Supabase `profiles` & `subscriptions`.
+  3. **Checkout Route (`src/pages/api/billing/checkout.ts`):** Creates dynamic Lemon Squeezy checkout sessions for authenticated users.
+  4. **Pro Chat Rate Limits (`src/pages/api/chat.ts`):** Extended chat quotas for Pro subscribers (`PRO_HOURLY_LIMIT = 600`, `PRO_DAILY_LIMIT = 3000`).
+  5. **Pricing Window (`src/components/Pricing/PricingWindow.tsx` & `/pricing`):** Designed desktop window with monthly/yearly toggle (20% discount), feature comparison grid, and checkout triggers.
+  6. **Routing & Tool Integration:** Connected `/pricing` to `WindowRouter`, `window-path.ts`, and `SITE_APPS` in `host.ts`.
+- **Modified Files:** `src/lib/wim-billing.ts`, `src/pages/api/webhooks/lemonsqueezy.ts`, `src/pages/api/billing/checkout.ts`, `src/pages/api/chat.ts`, `src/components/Pricing/PricingWindow.tsx`, `src/pages/pricing.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `src/lib/window-path.ts`, `src/lib/bots/tools/host.ts`, `supabase/migrations/20260830_subscriptions.sql`, `tests/billing.spec.ts`, `tests/window-path.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Tests:** 77/77 Playwright unit & integration tests passed.
+
 ### Entry 326 - Logged-in User Profile Awareness & Personalized AI Greetings (TSK-262)
 - **Date:** 2026-08-30
 - **AI Agent:** Antigravity (Gemini 3.7 Flash)
