@@ -1125,7 +1125,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'token') {
             accumulatedContent += parsed.text;
             const now = Date.now();
-            if (now - lastTokenFlushTime > 32 || accumulatedContent.length < 50) {
+            if (now - lastTokenFlushTime > 24 || accumulatedContent.length < 40) {
               lastTokenFlushTime = now;
               updateAssistantMessage(targetChatId, assistantMessageId, {
                 content: sanitizePublicAssistantText(accumulatedContent),
