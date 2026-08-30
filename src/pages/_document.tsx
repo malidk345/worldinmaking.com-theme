@@ -145,6 +145,10 @@ export default function Document() {
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
                 <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+                <link rel="preconnect" href="https://us.i.posthog.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://us.i.posthog.com" />
+                <link rel="preconnect" href="https://eu.i.posthog.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
                 <meta name="theme-color" content={DEFAULT_WALLPAPER_THEME_COLOR.light} />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
