@@ -1,6 +1,9 @@
 import React from 'react';
 import { UserSettings } from '../types';
-import { X, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
+import { X, Settings as SettingsIcon, RefreshCw, Sparkles } from 'lucide-react';
+import { useUser } from '../../../hooks/useUser';
+import { useApp } from '../../../context/App';
+import { isUserPro } from '../../../lib/wim-billing';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -17,6 +20,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateSettings,
   onResetData,
 }) => {
+  const { user } = useUser();
+  const app = useApp();
+  const isPro = isUserPro(user as any);
+
   if (!isOpen) return null;
 
   return (
@@ -26,7 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex items-center justify-between border-b border-primary pb-3">
           <div className="flex items-center gap-2 text-primary font-semibold text-base">
             <SettingsIcon className="h-5 w-5 text-secondary" />
-            <span>wim's ai bots settings</span>
+            <span>AI Workspace Settings</span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-secondary hover:text-primary cursor-pointer">
             <X className="h-5 w-5" />
@@ -35,12 +42,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Options */}
         <div className="space-y-4 text-xs">
+          {/* Plan & Quotas (Subtle & Contextual) */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50/70 dark:border-stone-800 dark:bg-stone-900/40">
+            <div>
+              <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                <span>Current Plan:</span>
+                {isPro ? (
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">Thinker (Pro)</span>
+                ) : user ? (
+                  <span className="text-stone-700 dark:text-stone-300 font-medium">Explorer (30 msgs/day)</span>
+                ) : (
+                  <span className="text-stone-500 font-medium">Guest (10 msgs/day)</span>
+                )}
+              </div>
+              <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
+                {isPro
+                  ? '300 requests/day, frontier reasoning models enabled.'
+                  : 'Upgrade to Thinker for 300 msgs/day and frontier reasoning.'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                app?.addWindow?.({ path: '/pricing' });
+              }}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary hover:bg-accent text-primary transition-all cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              {isPro ? 'Manage' : 'Plans'}
+            </button>
+          </div>
+
           {/* Typewriter Speed */}
           <div>
-            <label className="block font-semibold text-stone-800 mb-1">
+            <label className="block font-semibold text-stone-800 dark:text-stone-200 mb-1">
               Response motion
             </label>
-            <p className="text-[11px] text-stone-500 mb-2">
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-2">
               Pace the on-screen reveal so short answers still linger a little.
             </p>
             <div className="grid grid-cols-4 gap-1.5">
@@ -55,8 +93,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onClick={() => onUpdateSettings({ typewriterSpeed: sp.id as any })}
                   className={`py-2 rounded-xl border text-center font-medium transition-all ${
                     settings.typewriterSpeed === sp.id
-                      ? 'bg-amber-100 border-amber-300 text-amber-900 font-semibold'
-                      : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
+                      ? 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 font-semibold'
+                      : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900/30 dark:text-stone-300'
                   }`}
                 >
                   {sp.label}
@@ -66,10 +104,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Auto Open Artifacts */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50">
+          <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-900/30">
             <div>
-              <div className="font-semibold text-stone-800">Auto-open artifacts</div>
-              <div className="text-[10px] text-stone-500">Open the canvas when a document or chart is created.</div>
+              <div className="font-semibold text-stone-800 dark:text-stone-200">Auto-open artifacts</div>
+              <div className="text-[10px] text-stone-500 dark:text-stone-400">Open the canvas when a document or chart is created.</div>
             </div>
             <input
               type="checkbox"
@@ -80,7 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Reset Demo Data */}
-          <div className="pt-2 border-t border-stone-100">
+          <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
             <button
               onClick={() => {
                 if (confirm('Reset all chats and local demo data?')) {
@@ -88,9 +126,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onClose();
                 }
               }}
-              className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 py-2 font-medium text-rose-700 hover:bg-rose-100 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 py-2 font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-900/30 dark:bg-rose-950/20 dark:text-rose-400 transition-colors cursor-pointer"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Reset demo data
+              <RefreshCw className="h-3.5 w-3.5" /> Reset chat data
             </button>
           </div>
         </div>
@@ -99,9 +137,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex items-center justify-end pt-2">
           <button
             onClick={onClose}
-            className="rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800"
+            className="rounded-xl bg-stone-900 dark:bg-stone-100 px-4 py-2 text-xs font-semibold text-white dark:text-stone-900 hover:opacity-90 cursor-pointer"
           >
-            Tamam
+            Done
           </button>
         </div>
       </div>
