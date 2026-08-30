@@ -12,7 +12,7 @@ export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
-import { getRuntimeEnv } from 'lib/bots/runtime-env'
+import { getRuntimeEnv, envFrom } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
@@ -203,38 +203,7 @@ export default async function handler(req: Request) {
     }
 
     const clientIp = getClientIp(req)
-    let user = await getSupabaseUserFromRequest(req)
-
-    // Fallback: If mobile browser token was partitioned or pending refresh, verify workspace user against database
-    if (!user && host?.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(host.user.id)) {
-        const env = getRuntimeEnv()
-        const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
-        const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
-        if (base && serviceKey) {
-            try {
-                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${host.user.id}&select=*`, {
-                    headers: {
-                        Authorization: `Bearer ${serviceKey}`,
-                        apikey: serviceKey,
-                    },
-                    cache: 'no-store',
-                })
-                if (profileRes.ok) {
-                    const profiles = (await profileRes.json()) as Record<string, any>[]
-                    if (Array.isArray(profiles) && profiles.length > 0) {
-                        user = {
-                            id: host.user.id,
-                            email: profiles[0].contact_email,
-                            profile: profiles[0],
-                            role: profiles[0].role || host.user.role || 'member',
-                        }
-                    }
-                }
-            } catch {
-                /* ignore */
-            }
-        }
-    }
+    const user = await getSupabaseUserFromRequest(req)
 
     if (user && host) {
         const meta = (user.user_metadata || {}) as Record<string, unknown>

@@ -128,42 +128,7 @@ export async function getSupabaseUserFromBearer(
 export async function getSupabaseUserFromRequest(
     req: Request
 ): Promise<Record<string, any> | null> {
-    const bearerUser = await getSupabaseUserFromBearer(getBearerToken(req))
-    if (bearerUser) return bearerUser
-
-    // Check X-WIM-User-Id header as secondary fallback with service role verification
-    const headerUserId = (req.headers.get('x-wim-user-id') || req.headers.get('x-wim-owner-key') || '').trim()
-    if (headerUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(headerUserId)) {
-        const env = getRuntimeEnv()
-        const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
-        const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
-        if (base && serviceKey) {
-            try {
-                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${headerUserId}&select=*`, {
-                    headers: {
-                        Authorization: `Bearer ${serviceKey}`,
-                        apikey: serviceKey,
-                    },
-                    cache: 'no-store',
-                })
-                if (profileRes.ok) {
-                    const profiles = (await profileRes.json()) as Record<string, any>[]
-                    if (Array.isArray(profiles) && profiles.length > 0) {
-                        return {
-                            id: headerUserId,
-                            email: profiles[0].contact_email,
-                            profile: profiles[0],
-                            role: profiles[0].role || 'member',
-                        }
-                    }
-                }
-            } catch {
-                /* ignore */
-            }
-        }
-    }
-
-    return null
+    return getSupabaseUserFromBearer(getBearerToken(req))
 }
 
 /**

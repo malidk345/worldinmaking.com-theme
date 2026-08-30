@@ -201,6 +201,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     const hash = window.location.hash || ''
                     const search = window.location.search || ''
                     if (hash.includes('access_token=') || search.includes('code=')) {
+                        setIsValidating(false)
                         return
                     }
                     if (hash.includes('error_code=otp_expired') || search.includes('error_code=otp_expired')) {
@@ -217,12 +218,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
                 let token = await getSessionAccessToken()
                 if (!token) {
-                    try {
-                        const { data: refreshData } = await supabase.auth.refreshSession()
-                        token = refreshData?.session?.access_token ?? null
-                    } catch {
-                        /* ignore */
-                    }
+                    const refreshResult = await supabase.auth.refreshSession()
+                    token = refreshResult.data?.session?.access_token ?? null
                 }
                 if (token) {
                     setJwt(token)
@@ -240,10 +237,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     }
                 }
             }
+            // Only clear user if there's genuinely no session (not a transient network error)
             clearUser()
         } catch (e) {
             console.warn('[useUser] validateUser', e)
-            clearUser()
+            // Don't clearUser on network errors — keep existing localStorage state
+            // so the user isn't forcefully logged out by a transient failure
         }
         setIsValidating(false)
     }
@@ -269,7 +268,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 if (u) {
                     setUser(u)
                     try {
-                        localStorage.setItem('wim_auth_user_id', String(u.id))
+                        localStorage.setItem(AUTH_USER_ID_KEY, String(u.id))
                     } catch {
                         /* ignore */
                     }

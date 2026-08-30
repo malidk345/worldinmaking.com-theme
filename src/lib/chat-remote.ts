@@ -127,7 +127,13 @@ export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()):
 }
 
 export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatOwnerKey()): Promise<HeadersInit> {
-    const headers = { ...(chatAuthHeaders(jsonBody, ownerKey) as Record<string, string>) }
+    const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'X-WIM-Owner-Key': ownerKey,
+        ...getActiveByokHeaders(),
+    }
+    if (jsonBody) headers['Content-Type'] = 'application/json'
+
     try {
         if (isSupabaseConfigured) {
             let { data } = await supabase.auth.getSession()
@@ -137,27 +143,36 @@ export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatO
             const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
 
             if (!session || isExpiringSoon) {
-                try {
-                    const refreshed = await supabase.auth.refreshSession()
-                    if (refreshed.data?.session) {
-                        session = refreshed.data.session
-                    }
-                } catch {
-                    /* ignore */
+                const refreshed = await supabase.auth.refreshSession()
+                if (refreshed.data?.session) {
+                    session = refreshed.data.session
+                } else {
+                    // Refresh failed — clear stale token
+                    session = null
                 }
             }
 
-            const token = session?.access_token
-            if (token) {
-                headers.Authorization = `Bearer ${token}`
-                localStorage.setItem('jwt', token)
-                if (session?.user?.id) {
-                    headers['X-WIM-User-Id'] = session.user.id
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`
+                localStorage.setItem('jwt', session.access_token)
+                if (session.user?.id) {
+                    localStorage.setItem('wim_auth_user_id', session.user.id)
                 }
+            } else {
+                // No valid session — remove stale jwt so we don't send expired tokens
+                localStorage.removeItem('jwt')
             }
+        } else {
+            // Supabase not configured — use cached jwt if available
+            const jwt = localStorage.getItem('jwt')
+            if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
         }
     } catch {
-        /* keep cached jwt */
+        // Last resort: use cached jwt
+        try {
+            const jwt = localStorage.getItem('jwt')
+            if (jwt && jwt.length > 20) headers.Authorization = `Bearer ${jwt}`
+        } catch { /* ignore */ }
     }
     return headers
 }
@@ -281,16 +296,28 @@ export async function setRemoteMessageLiked(chatId: string, messageId: string, l
 }
 
 export function subscribeToWorkspaceChats(onChange: () => void): () => void {
-    if (typeof window === 'undefined' || !isSupabaseConfigured || !getAuthUserId()) {
+    if (typeof window === 'undefined' || !isSupabaseConfigured) {
         return () => {}
     }
-    const channel = supabase
-        .channel(`wim-chats-live-${getAuthUserId()}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats' }, () => onChange())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chat_messages' }, () => onChange())
-        .subscribe()
-    return () => {
-        void supabase.removeChannel(channel)
+    const userId = getAuthUserId()
+    if (!userId) return () => {}
+
+    try {
+        const channel = supabase
+            .channel(`wim-chats-live-${userId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats', filter: `owner_id=eq.${userId}` }, () => onChange())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chat_messages' }, () => onChange())
+            .subscribe((status) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.warn('[chat-remote] realtime channel error, falling back to polling')
+                }
+            })
+        return () => {
+            void supabase.removeChannel(channel)
+        }
+    } catch (err) {
+        console.warn('[chat-remote] realtime subscription failed:', err)
+        return () => {}
     }
 }
 

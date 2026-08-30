@@ -34,6 +34,19 @@ export default function AuthCallbackPage() {
                 }
             }
 
+            // Persist auth tokens to localStorage so early API calls on next page have auth context
+            try {
+                const { data: sessionData } = await supabase.auth.getSession()
+                if (sessionData.session?.access_token) {
+                    localStorage.setItem('jwt', sessionData.session.access_token)
+                }
+                if (sessionData.session?.user?.id) {
+                    localStorage.setItem('wim_auth_user_id', sessionData.session.user.id)
+                }
+            } catch {
+                /* best-effort */
+            }
+
             // Hard navigation back to the OS shell — router.replace('/desktop')
             // used to open a centered AppWindow that then vanished on world sync.
             window.location.replace(next)

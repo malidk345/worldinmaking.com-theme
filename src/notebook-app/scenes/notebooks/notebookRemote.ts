@@ -67,23 +67,22 @@ async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = false): Pro
             const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
 
             if (!session || isExpiringSoon) {
-                try {
-                    const refreshed = await supabase.auth.refreshSession()
-                    if (refreshed.data?.session) {
-                        session = refreshed.data.session
-                    }
-                } catch {
-                    /* ignore */
+                const refreshed = await supabase.auth.refreshSession()
+                if (refreshed.data?.session) {
+                    session = refreshed.data.session
+                } else {
+                    session = null
                 }
             }
 
-            const token = session?.access_token
-            if (token) {
-                headers.Authorization = `Bearer ${token}`
-                localStorage.setItem('jwt', token)
-                if (session?.user?.id) {
-                    headers['X-WIM-User-Id'] = session.user.id
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`
+                localStorage.setItem('jwt', session.access_token)
+                if (session.user?.id) {
+                    localStorage.setItem('wim_auth_user_id', session.user.id)
                 }
+            } else {
+                localStorage.removeItem('jwt')
             }
         }
     } catch {
