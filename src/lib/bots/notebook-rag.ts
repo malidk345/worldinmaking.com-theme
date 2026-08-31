@@ -6,7 +6,17 @@
  */
 
 import type { AiCitation } from '../ai/contracts'
-import type { ParsedDocument } from '../document-parser'
+
+export interface ParsedDocumentSection {
+    heading?: string
+    content: string
+}
+
+export interface ParsedDocument {
+    id: string
+    filename: string
+    sections: ParsedDocumentSection[]
+}
 
 export interface RAGChunk {
     documentId: string
