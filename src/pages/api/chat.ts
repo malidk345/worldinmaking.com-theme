@@ -24,7 +24,7 @@ import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-stor
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
-import { estimateTokens, recordTokenUsage, getTokenQuota, type UserTier } from '../../lib/token-quota'
+import { estimateTokens, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 
 const GUEST_HOURLY_LIMIT = 30
 const AUTH_HOURLY_LIMIT = 100
