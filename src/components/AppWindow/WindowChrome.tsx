@@ -30,14 +30,14 @@ export default function WindowChrome({
 
     return (
         <div
-            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
+            className={`relative ${hasToolbar ? 'bg-transparent flex items-center py-2 px-3' : ''}`}
             onPointerDown={hasToolbar && canDrag ? onDragHandlePointerDown : undefined}
             onDoubleClick={onDoubleClick}
         >
             {hasToolbar && (
                 <>
                     {!hideTitle && (
-                        <p className="text-primary text-left text-sm font-semibold ml-1.5 my-0 line-clamp-1 pointer-events-none">
+                        <p className="text-primary text-left text-sm font-semibold ml-1 my-0 line-clamp-1 pointer-events-none">
                             {(item.meta?.title || item.title || '').replace(/ - PostHog$/, '')}
                         </p>
                     )}
@@ -47,15 +47,15 @@ export default function WindowChrome({
             {!hasToolbar && canDrag && (
                 <div
                     aria-hidden
-                    className="absolute inset-x-0 top-0 z-10 h-2 cursor-grab active:cursor-grabbing"
+                    className="absolute inset-x-0 top-0 z-10 h-4 cursor-grab active:cursor-grabbing"
                     onPointerDown={onDragHandlePointerDown}
                 />
             )}
             <div
                 data-scheme="tertiary"
                 onPointerDown={(event) => event.stopPropagation()}
-                className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
-                    hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
+                className={`inline-flex gap-2 items-center py-1 pl-2 pr-1 opacity-60 hover:opacity-100 transition-opacity duration-200 ${
+                    hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-2 top-2'
                 }`}
             >
                 <div className="window-minimize-control flex justify-end">

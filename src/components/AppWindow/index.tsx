@@ -500,18 +500,18 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-none ring-1 ring-black/5 dark:ring-white/5 shadow-2xl ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none'
+                            ? 'border-t-0 rounded-t-none rounded-b-[32px] shadow-none'
                             : item.snapped
                             ? `border-t-0 shadow-none ${
                                   item.snapped === 'left'
-                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
-                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
+                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[32px]'
+                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[32px]'
                               }`
-                            : 'rounded-lg shadow-md'
+                            : 'rounded-[32px]'
                     }`}
                     style={{
                         pointerEvents: 'auto',
@@ -568,10 +568,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.98,
+                        scale: 0.96,
                         opacity: 0,
                         transition: {
-                            duration: compact ? 0.05 : 0.15,
+                            duration: compact ? 0.05 : 0.25,
                             ease: [0.32, 0, 0.67, 0],
                         },
                     }}
@@ -579,7 +579,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  duration: 0.15,
+                                  duration: 0.4,
                                   ease: [0.16, 1, 0.3, 1],
                               }
                     }
