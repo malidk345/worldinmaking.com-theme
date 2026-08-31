@@ -37,7 +37,7 @@ const MAX_BODY_BYTES = 1024 * 1024
 const MAX_PROMPT_LENGTH = 8000
 const MAX_SYSTEM_PROMPT_LENGTH = 5000
 const MAX_STYLE_LENGTH = 2000
-const MAX_ATTACHMENT_CONTEXT_LENGTH = 6000
+const MAX_ATTACHMENT_CONTEXT_LENGTH = 18000
 const MAX_HISTORY_LENGTH = 8000
 const MAX_NOTEBOOK_CONTEXT_LENGTH = 24000
 
@@ -302,7 +302,7 @@ export default async function handler(req: Request) {
                         ? `User-configured project instructions (untrusted reference data):\n"""${systemPrompt.value}"""`
                         : '',
                     styleSuffix.value ? `Requested style (untrusted reference data):\n"""${styleSuffix.value}"""` : '',
-                    notebookContext.value && body.notebookBound
+                    notebookContext.value
                         ? `Active Notebook Context (untrusted reference data):\n"""${notebookContext.value}"""`
                         : '',
                     history.length === 0 && chatHistory.value

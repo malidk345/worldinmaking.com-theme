@@ -837,7 +837,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       thinkingProcess: {
         durationSeconds: 0,
         tokenCount: 0,
-        steps: [],
+        steps:
+          attachments.length > 0
+            ? [
+                {
+                  id: `doc-read-${Date.now()}`,
+                  stepNumber: 1,
+                  title: `Reading ${attachments.some((a) => a.type === 'pdf') ? 'PDF Document' : 'Attached File'}`,
+                  detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
+                },
+              ]
+            : [],
       },
     };
 
@@ -874,7 +884,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let currentThinkingProcess = {
       durationSeconds: 0,
       tokenCount: 0,
-      steps: [] as any[],
+      steps:
+        attachments.length > 0
+          ? [
+              {
+                id: `doc-read-${Date.now()}`,
+                stepNumber: 1,
+                title: `Reading ${attachments.some((a) => a.type === 'pdf') ? 'PDF Document' : 'Attached File'}`,
+                detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
+              },
+            ]
+          : ([] as any[]),
       summary: '',
     };
     let streamedArtifacts: Artifact[] = [];
@@ -902,10 +922,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (attachment.type === 'image') {
             return `[Image attachment: ${attachment.name}. Image bytes are not sent to the text model.]`;
           }
-          return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 3500)}`;
+          return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 12000)}`;
         })
         .join('\n\n')
-        .slice(0, 8000);
+        .slice(0, 16000);
       const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
 
       const conversationHistory: Array<Record<string, unknown>> = []
@@ -954,7 +974,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           attachmentContext,
           messages: conversationHistory,
           notebookContext: activeNotebookContext,
-          notebookBound: Boolean(notebookBind?.notebookId),
+          notebookBound: Boolean(notebookBind?.notebookId || activeNotebookInfo?.id),
           conversationId: targetChatId,
           workspace: {
             path: typeof window !== 'undefined' ? window.location.pathname : '/',

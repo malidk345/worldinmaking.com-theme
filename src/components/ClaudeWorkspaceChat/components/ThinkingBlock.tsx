@@ -279,6 +279,9 @@ function getStepIcon(title?: string) {
       heading.includes('create_artifact') ||
       heading.includes('belge') ||
       heading.includes('document') ||
+      heading.includes('pdf') ||
+      heading.includes('reading') ||
+      heading.includes('okuma') ||
       heading.includes('tablo') ||
       heading.includes('table') ||
       heading.includes('şema') ||

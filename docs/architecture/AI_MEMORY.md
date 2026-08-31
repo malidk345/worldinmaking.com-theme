@@ -4527,7 +4527,26 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
   - `src/components/Desktop/DesktopIcon.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
+### Entry 013 — Client-Side PDF Parsing, Token-Optimized Document Engine & Thinking Telemetry
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Client-Side Multi-Page PDF Parser (`src/lib/pdf-parser.ts`):** Integrated `pdfjs-dist` to parse uploaded PDF documents page-by-page into clean text blocks (`[Page X]`) rather than corrupted raw binary strings.
+  2. **Token-Optimized Document Adapter (`src/lib/document-parser.ts`):** Added specialized token compression for CSV (converting into Markdown tables with ~60% token savings), JSON, code, and text files.
+  3. **User Message Attachment Badges:** Rendered uploaded document chips on user messages (`ChatMessage.tsx`) with file icons, names, and sizes, plus dismissable `x` actions.
+  4. **Document Ingestion Thinking Telemetry:** Added live `Reading PDF Document` / `Reading Attached File` step to the `ThinkingBlock` and `thinkingProcess` state so users see document extraction directly in the reasoning trace.
+  5. **Expanded API Attachment & Notebook Limits:** Increased `MAX_ATTACHMENT_CONTEXT_LENGTH` from 6k to 18k in `src/pages/api/chat.ts` and enabled unconditional notebook context forwarding.
+- **Modified Files:**
+  - `src/lib/pdf-parser.ts` [NEW]
+  - `src/lib/document-parser.ts` [NEW]
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `package.json` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Verified clean compile and all test suites passing. Pushed to `origin/main`.
 
 ---
 

@@ -4,6 +4,7 @@ import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
 import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
+import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -148,6 +149,28 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
       {/* USER MESSAGE: Compact Bubble with Action Icons Underneath */}
       {isUser ? (
         <div className="flex flex-col items-end group">
+          {/* Attached Files / Context Chips */}
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-1.5 mb-1.5 max-w-[85%]">
+              {message.attachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="flex items-center gap-1.5 rounded-md border border-primary/50 bg-accent/80 px-2 py-1 text-[11px] text-secondary font-sans shadow-2xs"
+                >
+                  {att.type === 'image' && att.url ? (
+                    <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
+                  ) : att.type === 'image' ? (
+                    <IconImage className="size-3.5 shrink-0 text-amber-700" />
+                  ) : (
+                    <IconDocument className="size-3.5 shrink-0 text-secondary" />
+                  )}
+                  <span className="max-w-[160px] truncate font-medium text-primary">{att.name}</span>
+                  {att.size && <span className="text-[9.5px] text-muted font-mono">{att.size}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="relative w-fit max-w-[85%] rounded-2xl bg-primary/90 backdrop-blur-md border border-primary/60 px-3.5 py-1.5 text-primary text-[13.5px] sm:text-[14px] leading-normal font-sans shadow-2xs transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
@@ -212,9 +235,18 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     code({ node, inline, className, children, ...props }: any) {
                       const match = /language-(\w+)/.exec(className || '');
                       const codeContent = String(children).replace(/\n$/, '');
-                      return !inline && match ? (
-                        <ChatMessageCodeBlock language={match[1]} code={codeContent} />
-                      ) : (
+                      if (!inline && match) {
+                        return <ChatMessageCodeBlock language={match[1]} code={codeContent} />;
+                      }
+                      if (inline && /^(Page|Sayfa)\s+\d+$/i.test(codeContent.trim())) {
+                        return (
+                          <span className="inline-flex items-center gap-1 bg-[#1E3A8A]/10 text-[#1E3A8A] dark:text-blue-400 border border-[#1E3A8A]/25 px-1.5 py-0.2 rounded text-[11px] font-sans font-medium mx-0.5 shadow-2xs">
+                            <IconDocument className="size-3 shrink-0" />
+                            {codeContent.trim()}
+                          </span>
+                        );
+                      }
+                      return (
                         <code className="bg-accent text-primary border border-primary/20 px-1 py-0.2 rounded text-[11.5px] font-mono" {...props}>
                           {children}
                         </code>

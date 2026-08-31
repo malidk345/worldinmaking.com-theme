@@ -11,6 +11,7 @@ import {
   IconArrowRight,
 } from '@posthog/icons';
 import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { parseDocumentFile } from '../../../lib/document-parser';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
@@ -162,29 +163,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const processFiles = (fileList: FileList | File[]) => {
-    Array.from(fileList).forEach((file) => {
-      const isImage = file.type.startsWith('image/');
-      const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
-      const isCode = /\.(js|ts|tsx|jsx|py|html|css|json|sql|sh|rs|go|c|cpp|md)$/i.test(file.name);
-      const type: 'image' | 'text' | 'pdf' | 'code' = isImage ? 'image' : isPdf ? 'pdf' : isCode ? 'code' : 'text';
+    Array.from(fileList).forEach(async (file) => {
       const id = `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       const sizeStr = file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         : `${(file.size / 1024).toFixed(1)} KB`;
 
-      const reader = new FileReader();
-      if (isImage) {
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          setAttachments((prev) => [...prev, { id, name: file.name, type, size: sizeStr, url: dataUrl, content: dataUrl }]);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        reader.onload = () => {
-          const textContent = reader.result as string;
-          setAttachments((prev) => [...prev, { id, name: file.name, type, size: sizeStr, content: textContent, contentPreview: textContent.slice(0, 200) }]);
-        };
-        reader.readAsText(file);
+      try {
+        const parsed = await parseDocumentFile(file);
+        setAttachments((prev) => [
+          ...prev,
+          {
+            id,
+            name: file.name,
+            type: parsed.type as any,
+            size: sizeStr,
+            url: parsed.type === 'image' ? parsed.content : undefined,
+            content: parsed.content,
+            contentPreview: parsed.preview,
+          },
+        ]);
+      } catch (err) {
+        console.error('[ChatInput] Document parsing failed:', err);
       }
     });
   };

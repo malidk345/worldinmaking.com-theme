@@ -1,133 +1,96 @@
-/**
- * Document Parser — WorldInMaking Enterprise AI Workstation
- *
- * Extracts structured text, sections, tables, and metadata from uploaded
- * documents (Markdown, Plain Text, CSV, JSON, and PDF text extractions).
- */
+import { extractTextFromPdf } from './pdf-parser';
 
-export interface ParsedDocumentSection {
-    heading?: string
-    content: string
-    pageNumber?: number
-    index: number
-}
-
-export interface ParsedDocument {
-    id: string
-    filename: string
-    fileType: 'markdown' | 'text' | 'csv' | 'json' | 'pdf' | 'other'
-    sizeBytes: number
-    totalWordCount: number
-    sections: ParsedDocumentSection[]
-    rawText: string
-    uploadedAt: string
+export interface ParsedDocumentResult {
+  type: 'pdf' | 'csv' | 'json' | 'code' | 'text' | 'image';
+  content: string;
+  preview: string;
+  pageCount?: number;
+  summary?: string;
 }
 
 /**
- * Extracts plain text & structured sections from raw text content based on file type.
+ * Converts raw CSV data into a clean Markdown table, saving tokens and improving LLM factual reasoning.
  */
-export function parseDocumentContent(
-    filename: string,
-    content: string,
-    fileTypeHint?: string
-): ParsedDocument {
-    const rawText = String(content || '').trim()
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    
-    let fileType: ParsedDocument['fileType'] = 'text'
-    if (ext === 'md' || ext === 'markdown' || fileTypeHint?.includes('markdown')) {
-        fileType = 'markdown'
-    } else if (ext === 'csv' || fileTypeHint?.includes('csv')) {
-        fileType = 'csv'
-    } else if (ext === 'json' || fileTypeHint?.includes('json')) {
-        fileType = 'json'
-    } else if (ext === 'pdf' || fileTypeHint?.includes('pdf')) {
-        fileType = 'pdf'
-    }
+export function formatCsvToMarkdown(csvText: string, maxRows = 60): string {
+  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return '';
+  const rows = lines.slice(0, maxRows).map((line) => {
+    const cells = line.split(',').map((c) => c.replace(/^["']|["']$/g, '').trim());
+    return cells;
+  });
 
-    const sections: ParsedDocumentSection[] = []
-    const words = rawText.split(/\s+/).filter(Boolean).length
+  if (rows.length === 0) return '';
+  const header = rows[0];
+  const divider = header.map(() => '---');
+  const mdRows = [
+    `| ${header.join(' | ')} |`,
+    `| ${divider.join(' | ')} |`,
+    ...rows.slice(1).map((r) => `| ${r.join(' | ')} |`),
+  ];
+  return mdRows.join('\n');
+}
 
-    if (fileType === 'markdown' || fileType === 'pdf') {
-        const lines = rawText.split('\n')
-        let currentHeading = 'Introduction'
-        let currentLines: string[] = []
-        let sectionIndex = 0
+/**
+ * Token-optimized document parser for uploaded files.
+ */
+export async function parseDocumentFile(file: File): Promise<ParsedDocumentResult> {
+  const isImage = file.type.startsWith('image/');
+  const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+  const isCsv = file.type === 'text/csv' || file.name.endsWith('.csv');
+  const isJson = file.type === 'application/json' || file.name.endsWith('.json');
+  const isCode = /\.(js|ts|tsx|jsx|py|html|css|sql|sh|rs|go|c|cpp|md)$/i.test(file.name);
 
-        const flush = () => {
-            const text = currentLines.join('\n').trim()
-            if (text.length > 0) {
-                sections.push({
-                    heading: currentHeading,
-                    content: text,
-                    index: sectionIndex++,
-                })
-            }
-            currentLines = []
-        }
+  if (isImage) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        resolve({
+          type: 'image',
+          content: dataUrl,
+          preview: '[Image attachment]',
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
-        for (const line of lines) {
-            const hMatch = line.match(/^(#{1,4})\s+(.+)$/)
-            if (hMatch) {
-                flush()
-                currentHeading = hMatch[2].trim()
-                continue
-            }
-            // PDF Page boundary marker detection e.g. "--- Page 2 ---"
-            const pageMatch = line.match(/^---\s*(?:Page|Sayfa)\s*(\d+)\s*---$/i)
-            if (pageMatch) {
-                flush()
-                currentHeading = `Page ${pageMatch[1]}`
-                continue
-            }
-            currentLines.push(line)
-        }
-        flush()
-    } else if (fileType === 'csv') {
-        // Break CSV into structured chunks of 20 rows
-        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean)
-        const header = lines[0] || 'Data'
-        const chunkSize = 20
-        for (let i = 1; i < lines.length; i += chunkSize) {
-            const slice = lines.slice(i, i + chunkSize)
-            sections.push({
-                heading: `Rows ${i} - ${Math.min(i + chunkSize - 1, lines.length - 1)}`,
-                content: `${header}\n${slice.join('\n')}`,
-                index: sections.length,
-            })
-        }
-    } else {
-        // Plain text / other: Split into ~1200 character paragraphs
-        const paragraphs = rawText.split(/\n\s*\n/)
-        paragraphs.forEach((p, idx) => {
-            const trimmed = p.trim()
-            if (trimmed.length > 0) {
-                sections.push({
-                    heading: `Section ${idx + 1}`,
-                    content: trimmed,
-                    index: idx,
-                })
-            }
-        })
-    }
-
-    // Fallback if no sections were created
-    if (sections.length === 0 && rawText.length > 0) {
-        sections.push({
-            heading: filename,
-            content: rawText,
-            index: 0,
-        })
-    }
-
+  if (isPdf) {
+    const pdfText = await extractTextFromPdf(file);
     return {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        filename,
-        fileType,
-        sizeBytes: typeof Blob !== 'undefined' ? new Blob([rawText]).size : rawText.length,
-        totalWordCount: words,
-        sections,
-        rawText,
-        uploadedAt: new Date().toISOString(),
-    }
+      type: 'pdf',
+      content: pdfText,
+      preview: pdfText.slice(0, 200),
+    };
+  }
+
+  const rawText = await file.text();
+
+  if (isCsv) {
+    const mdTable = formatCsvToMarkdown(rawText);
+    return {
+      type: 'csv',
+      content: `[CSV Table: ${file.name}]\n${mdTable}`,
+      preview: mdTable.slice(0, 200),
+    };
+  }
+
+  if (isJson) {
+    try {
+      const parsed = JSON.parse(rawText);
+      const formatted = JSON.stringify(parsed, null, 2);
+      return {
+        type: 'json',
+        content: `[JSON: ${file.name}]\n${formatted.slice(0, 14000)}`,
+        preview: formatted.slice(0, 200),
+      };
+    } catch (_) {}
+  }
+
+  const cleanText = rawText.slice(0, 16000);
+  return {
+    type: isCode ? 'code' : 'text',
+    content: `[File: ${file.name}]\n${cleanText}`,
+    preview: cleanText.slice(0, 200),
+  };
 }

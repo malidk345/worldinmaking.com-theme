@@ -162,6 +162,7 @@
     "openapi-sampler": "^1.6.1",
     "p-limit": "3.1.0",
     "patch-package": "^8.0.0",
+    "pdfjs-dist": "3.11.174",
     "pluralize": "^8.0.0",
     "posthog-js": "^1.418.10",
     "posthog-node": "^4.2.0",
