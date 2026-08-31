@@ -4466,6 +4466,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Verified clean compile and all Playwright tests passing. Pushed to `origin/main`.
 
+### Entry 009 — AI Workspace Host Snapshot Plan & Role Resolution
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Root Cause:** In `src/lib/bots/tools/host.ts`, `parseHostSnapshot` previously defaulted missing `plan` property to `'free'`, and `src/components/ClaudeWorkspaceChat/index.tsx` was not passing `plan` in the `workspace.user` payload. Consequently, `describeWorkspace` fed the AI an OS snapshot containing `Plan: FREE`, causing the AI to inform users they were on the free plan.
+  2. **Client-Side Sync:** Updated `ClaudeWorkspaceChat` to import `isUserPro` and transmit `plan: isUserPro(user) ? 'pro' : 'free'` alongside proper user roles.
+  3. **Server-Side Enforcement:** Updated `src/pages/api/chat.ts` to actively override `host.user.plan` and `host.user.role` with verified Supabase claims.
+  4. **Snapshot Formatting:** Formatted `describeWorkspace` to explicitly output `Plan: PRO (Thinker Pro)` for all Pro/Admin tiers.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `src/lib/bots/tools/host.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
+
 ---
 
 

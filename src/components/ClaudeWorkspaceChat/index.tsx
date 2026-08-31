@@ -34,6 +34,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { useUser } from '../../hooks/useUser';
+import { isUserPro } from '../../lib/wim-billing';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import {
@@ -959,7 +960,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   bio: user.profile?.biography || (user.profile as any)?.bio,
                   location: user.profile?.location,
                   pronouns: user.profile?.pronouns,
-                  role: user.role?.type || (user.isModerator ? 'moderator' : 'member'),
+                  role: isUserPro(user) ? (user.role?.type || (user.isModerator ? 'moderator' : 'pro')) : (user.role?.type || 'member'),
+                  plan: isUserPro(user) ? 'pro' : 'free',
                 }
               : undefined,
             windows: (appWindows || []).slice(0, 12).map((item) => ({

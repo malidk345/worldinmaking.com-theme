@@ -204,24 +204,28 @@ export default async function handler(req: Request) {
 
     const clientIp = getClientIp(req)
     const user = await getSupabaseUserFromRequest(req)
+    const isPro = user ? isUserPro(user as any) : false
 
     if (user && host) {
         const meta = (user.user_metadata || {}) as Record<string, unknown>
         const name = (meta.first_name || meta.name || meta.full_name || user.email?.split('@')[0]) as string | undefined
         const username = (meta.username || user.email?.split('@')[0]) as string | undefined
+        const resolvedRole = user.role || user.profile?.role || (isPro ? 'pro' : 'member')
         if (!host.user) {
             host.user = {
                 id: user.id,
                 name: user.profile?.first_name ? `${user.profile.first_name}${user.profile.last_name ? ` ${user.profile.last_name}` : ''}`.trim() : name,
                 username: user.profile?.username || username,
-                role: user.role || user.profile?.role,
+                role: resolvedRole,
+                plan: isPro ? 'pro' : 'free',
             }
         } else {
             if (!host.user.name && name) host.user.name = name
             if (!host.user.username && username) host.user.username = username
+            host.user.plan = isPro ? 'pro' : 'free'
+            host.user.role = resolvedRole
         }
     }
-    const isPro = user ? isUserPro(user as any) : false
     const hourlyLimit = isPro ? PRO_HOURLY_LIMIT : user ? AUTH_HOURLY_LIMIT : GUEST_HOURLY_LIMIT
     const dailyLimit = isPro ? PRO_DAILY_LIMIT : user ? AUTH_DAILY_LIMIT : GUEST_DAILY_LIMIT
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
