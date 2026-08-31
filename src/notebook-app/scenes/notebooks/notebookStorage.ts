@@ -578,9 +578,9 @@ export function saveNotebook(
     schedulePushNotebook(next)
     // Local-First IndexedDB Persistence & Snapshots
     if (typeof window !== 'undefined') {
-        persistNotebookLocal(next.id, next.title, next.content).catch(() => {})
+        persistNotebookLocal(next.id, next.title, next.content).catch(() => { /* ignore */ })
         if (shouldSnapshot && (contentChanged || options.snapshot)) {
-            createDocumentSnapshot(next.id, next.title, next.content, options.snapshotLabel).catch(() => {})
+            createDocumentSnapshot(next.id, next.title, next.content, options.snapshotLabel).catch(() => { /* ignore */ })
         }
     }
     return next

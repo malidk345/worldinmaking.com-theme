@@ -277,7 +277,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }, []);
 
 

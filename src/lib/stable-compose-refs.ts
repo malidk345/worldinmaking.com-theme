@@ -4,11 +4,11 @@ export function setRef<T>(ref: any, value: T) {
     if (typeof ref === 'function') {
         try {
             ref(value)
-        } catch (e) {}
+        } catch (e) {/* ignore */ }
     } else if (ref !== null && ref !== undefined) {
         try {
             ref.current = value
-        } catch (e) {}
+        } catch (e) {/* ignore */ }
     }
 }
 

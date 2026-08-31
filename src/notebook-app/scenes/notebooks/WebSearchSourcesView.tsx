@@ -53,7 +53,7 @@ function parseSources(resultsText?: string | null): WebSearchSource[] {
                         seen.add(url)
                         sources.push({ title: domain, url, domain })
                     }
-                } catch {}
+                } catch {/* ignore */ }
             })
         }
     }
