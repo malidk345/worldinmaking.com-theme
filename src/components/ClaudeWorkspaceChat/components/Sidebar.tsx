@@ -95,68 +95,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 const SidebarUsageMeter: React.FC = () => {
     const { quota } = useTokenQuota()
-    const byokActive = hasActiveByok()
+    const [byokActive, setByokActive] = React.useState(false)
+
+    React.useEffect(() => {
+        setByokActive(hasActiveByok())
+        const handleByok = () => setByokActive(hasActiveByok())
+        window.addEventListener('wim_byok_updated', handleByok)
+        return () => window.removeEventListener('wim_byok_updated', handleByok)
+    }, [])
 
     if (byokActive) {
         return (
-            <div className="px-3 py-2 mx-2 mb-1.5 rounded-lg bg-accent/40 border border-primary/20 shadow-2xs">
-                <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex items-center gap-1.5 text-primary">
-                        <ShieldCheck className="size-3.5 text-indigo-500 shrink-0" />
-                        <span className="text-[11.5px] font-medium">BYOK Active</span>
-                    </div>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-                        Unlimited
-                    </span>
-                </div>
+            <div className="px-3 py-1.5 flex items-center justify-between text-[11.5px] text-muted">
+                <span>Usage</span>
+                <span className="text-[11px] font-medium text-primary">BYOK (Unlimited)</span>
             </div>
         )
     }
 
     if (!quota) return null
 
-    const percent = Math.min(100, Math.max(0, quota.percentage || 0))
-    const usedK = (quota.usedTokens / 1000).toFixed(1)
-    const limitK = (quota.limitTokens / 1000).toFixed(0)
-
-    const barColor =
-        percent >= 90
-            ? 'bg-rose-500'
-            : percent >= 75
-              ? 'bg-amber-500'
-              : 'bg-emerald-600 dark:bg-emerald-400'
+    const remainingPercent = Math.max(0, Math.min(100, Math.round(100 - (quota.percentage || 0))))
 
     return (
-        <div className="px-3 py-2.5 mx-2 mb-1.5 rounded-lg bg-accent/35 border border-primary/25 shadow-2xs">
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-primary">
-                    <Zap className="size-3.5 text-amber-500 shrink-0" />
-                    <span className="text-[11.5px] font-medium">Token Usage</span>
-                </div>
-                <span
-                    className={`text-[10.5px] font-semibold px-1.5 py-0.2 rounded-full ${
-                        percent >= 90
-                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                            : percent >= 75
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                              : 'bg-primary/10 text-secondary'
-                    }`}
-                >
-                    {percent}%
-                </span>
+        <div className="px-3 py-1.5 space-y-1">
+            <div className="flex items-center justify-between text-[11.5px] text-secondary">
+                <span>Usage</span>
+                <span className="font-mono text-[11px] font-medium text-primary">{remainingPercent}%</span>
             </div>
-
-            {/* Progress bar */}
-            <div className="mt-2 h-1.5 w-full rounded-full bg-primary/15 overflow-hidden">
+            <div className="h-1 w-full rounded-full bg-primary/10 overflow-hidden">
                 <div
-                    className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                    style={{ width: `${Math.max(percent > 0 ? 4 : 0, percent)}%` }}
+                    className={`h-full rounded-full transition-all duration-300 ${
+                        remainingPercent <= 10
+                            ? 'bg-rose-500'
+                            : remainingPercent <= 25
+                              ? 'bg-amber-500'
+                              : 'bg-primary/50'
+                    }`}
+                    style={{ width: `${remainingPercent}%` }}
                 />
-            </div>
-
-            <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted font-medium">
-                <span>{usedK}k / {limitK}k tokens</span>
-                <span>Resets 24h</span>
             </div>
         </div>
     )

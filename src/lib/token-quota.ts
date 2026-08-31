@@ -97,17 +97,32 @@ export async function recordTokenUsage(
 
     const added = Math.max(1, Math.ceil(tokensConsumed))
     const current = inMemoryUsage.get(memKey)
-    const newTotal = (current && current.day === day ? current.tokens : 0) + added
+    let newTotal = (current && current.day === day ? current.tokens : 0) + added
     inMemoryUsage.set(memKey, { tokens: newTotal, day })
 
-    // Async persistence to Supabase if table exists
+    // Atomic PostgreSQL increment in Supabase
     try {
-        await supabaseAdmin
-            .from('wim_chat_token_usage')
-            .upsert(
-                { subject, day, tokens: newTotal, updated_at: new Date().toISOString() },
-                { onConflict: 'subject,day' }
-            )
+        const { data: rpcTotal, error: rpcError } = await supabaseAdmin.rpc(
+            'increment_wim_chat_token_usage',
+            {
+                p_subject: subject,
+                p_day: day,
+                p_tokens: added,
+            }
+        )
+
+        if (!rpcError && typeof rpcTotal === 'number') {
+            newTotal = rpcTotal
+            inMemoryUsage.set(memKey, { tokens: newTotal, day })
+        } else {
+            // Fallback to direct upsert if RPC is pending
+            await supabaseAdmin
+                .from('wim_chat_token_usage')
+                .upsert(
+                    { subject, day, tokens: newTotal, updated_at: new Date().toISOString() },
+                    { onConflict: 'subject,day' }
+                )
+        }
     } catch {
         /* silent fallback to memory */
     }

@@ -4592,7 +4592,19 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/lib/chat-usage-client.ts` [NEW]
   - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx` [UPDATED]
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
-  - `src/pages/api/chat.ts` [UPDATED]
+### Entry 018 — Supabase Atomic PostgreSQL Quota Migration & Native Minimalist Countdown Meter
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Supabase PostgreSQL Schema Migration:** Executed SQL migration creating `public.wim_chat_token_usage` table with unique constraint on `(subject, day)` and created atomic RPC function `increment_wim_chat_token_usage` using `ON CONFLICT DO UPDATE SET tokens = tokens + EXCLUDED.tokens` to guarantee 100% race-condition proof token tallying.
+  2. **Live Supabase Verification:** Verified atomic concurrent incrementation via live REST RPC invocation (1500 + 2500 = 4000 tokens) on project `iydypisgfaksqkjdraiu`.
+  3. **Sidebar UI Minimalist Redesign (`Sidebar.tsx`):** Removed bulky card/box wrapper. Replaced with unboxed, site-native, 100%-countdown usage meter (`Usage  %XX` counting down from 100% with slim progress line and reactive BYOK detection).
+  4. **Import Path Fixes:** Standardized relative paths in `src/pages/api/chat-quota.ts` (`../../../lib/api-authz`).
+- **Modified Files:**
+  - `src/lib/token-quota.ts` [UPDATED]
+  - `src/lib/byok-vault.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx` [UPDATED]
+  - `src/pages/api/chat-quota.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing.
 

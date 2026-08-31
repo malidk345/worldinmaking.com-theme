@@ -111,3 +111,9 @@ export function getActiveByokHeaders(): Record<string, string> {
 
     return headers
 }
+
+export function hasActiveByok(): boolean {
+    const headers = getActiveByokHeaders()
+    return Object.keys(headers).length > 0
+}
+

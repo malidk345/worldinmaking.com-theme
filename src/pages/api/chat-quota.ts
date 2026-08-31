@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getSupabaseUserFromRequest } from '../../lib/api-authz'
-import { isUserPro } from '../lib/wim-billing'
-import { getTokenQuota, UserTier } from '../lib/token-quota'
-import { getClientIp } from '../lib/bots/rate-limit'
+import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
+import { isUserPro } from '../../lib/wim-billing'
+import { getTokenQuota, UserTier } from '../../lib/token-quota'
+import { getClientIp } from '../../lib/bots/rate-limit'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
