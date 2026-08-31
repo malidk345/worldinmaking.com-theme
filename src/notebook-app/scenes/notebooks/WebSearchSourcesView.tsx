@@ -88,7 +88,7 @@ export function WebSearchSourcesView({ query, results, status }: WebSearchSource
                                     alt=""
                                     className="w-3 h-3 rounded-full opacity-80 group-hover:opacity-100"
                                     onError={(e) => {
-                                        ;(e.target as HTMLImageElement).style.display = 'none'
+                                        (e.target as HTMLImageElement).style.display = 'none'
                                     }}
                                 />
                                 <span className="font-medium text-primary truncate max-w-[120px]">{src.title}</span>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
-import { IconSparkles, IconCheck, IconPlus, IconExternal } from '@posthog/icons'
+import { IconSparkles, IconCheck, IconPlus } from '@posthog/icons'
 import { useApp } from '../../../context/App'
 import { createNotebook } from './notebookStorage'
 

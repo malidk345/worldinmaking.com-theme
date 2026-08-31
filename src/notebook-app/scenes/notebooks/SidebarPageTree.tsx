@@ -18,7 +18,6 @@ export function SidebarPageTree({
     onOpenCommandPalette,
 }: SidebarPageTreeProps) {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [filterQuery, setFilterQuery] = useState('')
     const [favorites, setFavorites] = useState<string[]>([])
 
     const toggleFavorite = (id: string, e: React.MouseEvent) => {
@@ -26,13 +25,7 @@ export function SidebarPageTree({
         setFavorites((prev) => (prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]))
     }
 
-    const filteredNotebooks = notebooks.filter((nb) => {
-        if (!filterQuery.trim()) return true
-        const q = filterQuery.toLowerCase()
-        return nb.title.toLowerCase().includes(q) || nb.shortId.toLowerCase().includes(q)
-    })
-
-    const favoriteNotebooks = filteredNotebooks.filter((nb) => favorites.includes(nb.id))
+    const favoriteNotebooks = notebooks.filter((nb) => favorites.includes(nb.id))
 
     return (
         <aside
@@ -102,17 +95,17 @@ export function SidebarPageTree({
                 {/* All Notebooks Tree */}
                 <div className="space-y-1">
                     <div className="flex items-center justify-between px-2 py-1 text-[10px] font-bold text-muted uppercase">
-                        <span>Documents ({filteredNotebooks.length})</span>
+                        <span>Documents ({notebooks.length})</span>
                         <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-0.5 hover:text-primary">
                             {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
                     </div>
 
                     {!isCollapsed &&
-                        (filteredNotebooks.length === 0 ? (
+                        (notebooks.length === 0 ? (
                             <div className="p-3 text-center text-muted italic text-[11px]">No documents yet</div>
                         ) : (
-                            filteredNotebooks.map((nb) => {
+                            notebooks.map((nb) => {
                                 const isActive = activeNotebookId === nb.id
                                 const isFav = favorites.includes(nb.id)
                                 return (

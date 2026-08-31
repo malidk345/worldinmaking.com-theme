@@ -9,7 +9,6 @@ import {
     IconPlus,
     IconTrash,
     IconUpload,
-    IconX,
 } from '@posthog/icons'
 import { LemonButton, LemonCheckbox, LemonInput, LemonSelect, LemonTextArea } from '@posthog/lemon-ui'
 

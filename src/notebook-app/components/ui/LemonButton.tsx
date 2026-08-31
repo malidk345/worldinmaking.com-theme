@@ -25,7 +25,6 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
       active = false,
       loading = false,
       fullWidth = false,
-      status,
       disabledReason,
       children,
       className,

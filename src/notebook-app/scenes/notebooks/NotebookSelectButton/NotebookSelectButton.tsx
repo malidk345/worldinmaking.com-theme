@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { LemonButton, LemonDropdown, LemonInput, LemonDivider, LemonTag, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { LemonButton, LemonDropdown, LemonInput, LemonDivider, ProfilePicture } from '~nb-lib/lemon-ui/index'
 import { IconNotebook, IconPlus } from '@posthog/icons'
-import { StoredNotebook, getNotebooks, createNotebook } from '../notebookStorage'
+import { getNotebooks } from '../notebookStorage'
 
 export interface NotebookSelectButtonProps {
     onSelectNotebook: (id: string) => void

@@ -10,7 +10,6 @@ import {
     NotebookComponentBlockNode,
     NotebookComponentProps,
     NotebookComponentRegistry,
-    NotebookDocument,
     NotebookMode,
 } from './types'
 import { cloneNotebookNode, getInlineText, getNodeFingerprint } from './utils'

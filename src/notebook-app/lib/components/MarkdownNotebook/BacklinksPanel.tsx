@@ -9,7 +9,7 @@ export interface BacklinksPanelProps {
     currentNotebookTitle?: string
 }
 
-export function BacklinksPanel({ backlinks, currentNotebookTitle }: BacklinksPanelProps): JSX.Element | null {
+export function BacklinksPanel({ backlinks }: BacklinksPanelProps): JSX.Element | null {
     const [isOpen, setIsOpen] = useState(true)
     const { addWindow, updateWindow } = useAppActions()
     const { windows } = useAppWindows()

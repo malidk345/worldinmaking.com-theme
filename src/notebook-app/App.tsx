@@ -50,7 +50,6 @@ import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
 import { AskAIDropdown } from './scenes/notebooks/AskAI'
-import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
@@ -166,7 +165,6 @@ export function App() {
   const [remoteMarkdown, setRemoteMarkdown] = useState('')
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
-  const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -313,36 +311,6 @@ export function App() {
   const handleNotebookAskAI = useCallback(async (request: MarkdownNotebookAskAIRequest) => {
     const requestId = ++askAIAbortRef.current
     setIsAskAIBusy(true)
-
-    const applyStatic = (reply: string) => {
-      if (requestId !== askAIAbortRef.current) return
-      try {
-        if (request.apply === 'inline') {
-          const start = request.selectionStart ?? 0
-          const end = request.selectionEnd ?? start + (request.selectedMarkdown?.length ?? 0)
-          setMarkdown(
-            replaceInlineRangeInMarkdown(
-              request.markdownWithResponse,
-              request.responseNodeIndex,
-              start,
-              end,
-              reply.trim(),
-              request.listItemIndex
-            )
-          )
-          return
-        }
-        const result = replaceNotebookAIResponseMarkdown(
-          request.markdownWithResponse,
-          request.responseNodeIndex,
-          reply.trim(),
-          1
-        )
-        setMarkdown(result.markdown)
-      } catch (err) {
-        console.warn('[notebook editor] failed to apply reply', err)
-      }
-    }
 
     const fail = (error: string) => {
       if (requestId !== askAIAbortRef.current) return
