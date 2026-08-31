@@ -1,3 +1,4 @@
+import { AUTH_USER_ID_KEY } from './wim-identity'
 /**
  * Browser helper for workspace chat ↔ Supabase sync.
  * Failures are silent: localStorage remains the offline cache.
