@@ -161,10 +161,10 @@ export default function CommandPalette() {
             {isOpen && (
                 <div className="keyboard-pad fixed inset-0 z-[100000] flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/40 backdrop-blur-sm">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        initial={{ opacity: 0, scale: 0.94, y: -16 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ duration: 0.15 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -12 }}
+                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                         className="w-full max-w-xl bg-accent border border-secondary rounded-xl shadow-2xl overflow-hidden text-primary"
                         onKeyDown={handleKeyDown}
                     >
@@ -186,7 +186,7 @@ export default function CommandPalette() {
                             </button>
                         </div>
 
-                        <div className="max-h-80 overflow-y-auto p-2 space-y-1">
+                        <div className="max-h-80 overflow-y-auto p-2 space-y-1 relative">
                             {allItems.length === 0 ? (
                                 <div className="p-4 text-center text-xs text-secondary font-medium">
                                     No matching commands or articles found.
@@ -202,19 +202,24 @@ export default function CommandPalette() {
                                                 setIsOpen(false)
                                             }}
                                             onMouseEnter={() => setSelectedIndex(idx)}
-                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors lowercase ${
-                                                isSelected
-                                                    ? 'bg-blue text-white'
-                                                    : 'hover:bg-primary/5 text-primary'
+                                            className={`relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors lowercase cursor-pointer ${
+                                                isSelected ? 'text-white' : 'text-primary hover:text-primary'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2.5 truncate">
+                                            {isSelected && (
+                                                <motion.div
+                                                    layoutId="cmd-palette-highlight"
+                                                    className="absolute inset-0 bg-blue rounded-lg -z-10 shadow-xs"
+                                                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                                                />
+                                            )}
+                                            <div className="flex items-center gap-2.5 truncate z-10">
                                                 <span className={isSelected ? 'text-white' : 'text-secondary'}>
                                                     {item.icon}
                                                 </span>
                                                 <span className="truncate">{item.label}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                                            <div className="flex items-center gap-1 shrink-0 ml-2 z-10">
                                                 <span
                                                     className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
                                                         isSelected

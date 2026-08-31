@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ModelOption, ThinkingProcess, ThinkingStep, ToolTrace } from '../types';
 import { toolStatusLabel } from '../../../lib/bots/tools/labels';
 import dayjs from 'dayjs';
@@ -414,57 +415,65 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
         )}
       </div>
 
-      {isOpen && (
-        <div className="relative mt-0.5 min-w-0 w-full mb-1.5">
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className={VIEWPORT_CLASS}
-            style={VIEWPORT_MASK}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            className="relative mt-0.5 min-w-0 w-full mb-1.5 overflow-hidden"
           >
-            <div className="relative pl-4.5 py-1 space-y-2.5">
-              {/* Vertical Thread Connector */}
-              <div className="absolute left-[4px] top-2 bottom-2 w-[1px] bg-stone-200/80 dark:bg-stone-800" />
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className={VIEWPORT_CLASS}
+              style={VIEWPORT_MASK}
+            >
+              <div className="relative pl-4.5 py-1 space-y-2.5">
+                {/* Vertical Thread Connector */}
+                <div className="absolute left-[4px] top-2 bottom-2 w-[1px] bg-stone-200/80 dark:bg-stone-800" />
 
-              {nodes.map((node) => {
-                const Icon = getStepIcon(node.title);
-                const displayTitle = formatStageTitle(node.title);
+                {nodes.map((node) => {
+                  const Icon = getStepIcon(node.title);
+                  const displayTitle = formatStageTitle(node.title);
 
-                return (
-                  <div key={node.id} className="relative group/node">
-                    {/* Subtle bullet on connector */}
-                    <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
+                  return (
+                    <div key={node.id} className="relative group/node">
+                      {/* Subtle bullet on connector */}
+                      <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
 
-                    <div className="min-w-0">
-                      {displayTitle && (
-                        <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-stone-700 dark:text-stone-300">
-                          <Icon className="size-3 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
-                          <span>{displayTitle}</span>
-                        </div>
-                      )}
-                      {node.detail && (
-                        <p className="m-0 mt-0.5 text-[12px] leading-[1.4] text-stone-600 dark:text-stone-400 font-sans whitespace-pre-wrap break-words">
-                          {node.detail}
-                        </p>
-                      )}
+                      <div className="min-w-0">
+                        {displayTitle && (
+                          <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-stone-700 dark:text-stone-300">
+                            <Icon className="size-3 shrink-0 stroke-[1.75] text-stone-500 dark:text-stone-400" />
+                            <span>{displayTitle}</span>
+                          </div>
+                        )}
+                        {node.detail && (
+                          <p className="m-0 mt-0.5 text-[12px] leading-[1.4] text-stone-600 dark:text-stone-400 font-sans whitespace-pre-wrap break-words">
+                            {node.detail}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              {isLive && (
-                <div className="relative flex items-center gap-2">
-                  <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
-                  <span
-                    aria-hidden="true"
-                    className="inline-block h-[0.8em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
-                  />
-                </div>
-              )}
+                {isLive && (
+                  <div className="relative flex items-center gap-2">
+                    <div className="absolute -left-[16px] top-1 size-1.5 rounded-full bg-stone-300 dark:bg-stone-600 ring-2 ring-white dark:ring-stone-900" />
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-[0.8em] w-[1.5px] translate-y-[1px] animate-pulse bg-stone-400 align-baseline dark:bg-stone-500"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

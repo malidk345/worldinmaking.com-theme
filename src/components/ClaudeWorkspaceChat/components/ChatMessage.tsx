@@ -242,7 +242,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary active:scale-[0.99] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">
@@ -278,7 +278,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
               <button
                 onClick={handleCopy}
-                className="p-0.5 hover:text-primary transition-colors cursor-pointer"
+                className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
                 title="Copy"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
@@ -292,7 +292,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     setAddedToNotebook(true)
                     setTimeout(() => setAddedToNotebook(false), 2000)
                   }}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${
                     addedToNotebook ? 'text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/40' : 'hover:text-primary'
                   }`}
                   title="Add to notebook"
@@ -313,7 +313,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
 
               <button
                 onClick={handleSpeak}
-                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
+                className={`p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded ${
                   isSpeaking ? 'text-amber-600' : ''
                 }`}
                 title="Read aloud"
@@ -324,7 +324,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               {onRetry && (
                 <button
                   onClick={() => onRetry(message.id)}
-                  className="p-0.5 hover:text-primary transition-colors cursor-pointer"
+                  className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
                   title="Retry"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />

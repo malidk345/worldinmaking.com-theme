@@ -500,18 +500,22 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
+                        focusedWindow === item.key
+                            ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
+                            : 'border-primary/40 shadow-sm opacity-[0.985]'
+                    } ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none'
+                            ? 'border-t-0 rounded-t-none rounded-b-lg !shadow-none'
                             : item.snapped
-                            ? `border-t-0 shadow-none ${
+                            ? `border-t-0 !shadow-none ${
                                   item.snapped === 'left'
                                       ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
                                       : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
                               }`
-                            : 'rounded-lg shadow-md'
+                            : 'rounded-lg'
                     }`}
                     style={{
                         pointerEvents: 'auto',
@@ -551,10 +555,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         return generated
                     }}
                     initial={{
-                        scale: item.fromOrigin && !compact ? 0.4 : 0.96,
+                        scale: item.fromOrigin && !compact ? 0.15 : 0.95,
                         opacity: 0,
-                        left: item.fromOrigin && !compact ? item.fromOrigin.x : Math.round(position.x),
-                        top: item.fromOrigin && !compact ? item.fromOrigin.y : Math.round(position.y),
+                        left: item.fromOrigin && !compact ? Math.round(item.fromOrigin.x) : Math.round(position.x),
+                        top: item.fromOrigin && !compact ? Math.round(item.fromOrigin.y) : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -568,10 +572,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.98,
+                        scale: 0.96,
                         opacity: 0,
                         transition: {
-                            duration: compact ? 0.05 : 0.15,
+                            duration: compact ? 0.05 : 0.14,
                             ease: [0.32, 0, 0.67, 0],
                         },
                     }}
@@ -579,8 +583,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  duration: 0.15,
-                                  ease: [0.16, 1, 0.3, 1],
+                                  type: 'spring',
+                                  stiffness: 350,
+                                  damping: 26,
+                                  mass: 0.75,
                               }
                     }
                     drag={inSwitcher ? false : !item.fixedSize}

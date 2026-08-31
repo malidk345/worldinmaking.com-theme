@@ -1623,14 +1623,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     ? { min: settings.size.min, max: settings.size.max }
                     : getWindowBasedSizeConstraints(),
             fixedSize: settings?.size?.fixed || false,
-            fromOrigin:
-                targetState?.fromOrigin ||
-                (lastClickedElementRect
-                    ? {
-                          x: lastClickedElementRect.x - size.width / 2,
-                          y: lastClickedElementRect.y - size.height / 2,
-                      }
-                    : undefined),
+            fromOrigin: (() => {
+                const rawOrigin = targetState?.fromOrigin || lastClickedElementRect
+                if (!rawOrigin) return undefined
+                const winWidth = options.size?.width || finalSize.width || 600
+                const winHeight = options.size?.height || finalSize.height || 400
+                return {
+                    x: Math.round(rawOrigin.x - winWidth / 2),
+                    y: Math.round(rawOrigin.y - winHeight / 2),
+                }
+            })(),
             minimal: el?.props?.minimal ?? false,
             appSettings: appSettings[keyToUse],
             location: targetLocation,
@@ -2123,21 +2125,28 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }, [])
 
     useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement
-            const link = target.closest('a')
-            const button = target.closest('button')
-            const isClickable = link || button
-            if (isClickable) {
-                // Capture immediately on click to avoid forced reflow during window creation
-                const rect = target.getBoundingClientRect()
-                setLastClickedElementRect({ x: rect.left, y: rect.top })
+        const handlePointerDown = (e: MouseEvent | PointerEvent) => {
+            const target = e.target as HTMLElement | null
+            if (!target) return
+            const clickable = target.closest('a, button, [role="button"], [data-icon-label], [data-window-trigger], li') as HTMLElement | null
+            if (clickable) {
+                const rect = clickable.getBoundingClientRect()
+                if (rect.width > 0 && rect.height > 0) {
+                    setLastClickedElementRect({
+                        x: Math.round(rect.left + rect.width / 2),
+                        y: Math.round(rect.top + rect.height / 2),
+                    })
+                    return
+                }
+            }
+            if (e.clientX || e.clientY) {
+                setLastClickedElementRect({ x: Math.round(e.clientX), y: Math.round(e.clientY) })
             }
         }
-        document.addEventListener('click', handleClick)
+        document.addEventListener('pointerdown', handlePointerDown, true)
 
         return () => {
-            document.removeEventListener('click', handleClick)
+            document.removeEventListener('pointerdown', handlePointerDown, true)
         }
     }, [])
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import { motion } from 'framer-motion'
 
 export type SnapZone = 'left' | 'right' | 'maximize'
 
@@ -37,7 +38,7 @@ export function snapZoneFromPoint(
     clientX: number,
     clientY: number,
     bounds: DOMRect,
-    edge = 20
+    edge = 32
 ): SnapZone | null {
     if (clientY - bounds.top < edge) return 'maximize'
     if (clientX - bounds.left < edge) return 'left'
@@ -46,7 +47,7 @@ export function snapZoneFromPoint(
 }
 
 /** How far the pointer must move before a snap zone can arm. */
-export const SNAP_ARM_DISTANCE = 24
+export const SNAP_ARM_DISTANCE = 20
 
 export function dragDistance(offset: { x: number; y: number }): number {
     return Math.hypot(offset.x, offset.y)
@@ -89,10 +90,13 @@ export default function SnapAssistOverlay({
 }) {
     const box = zoneBox(zone, bounds)
     return (
-        <div
+        <motion.div
             aria-hidden
-            className="pointer-events-none fixed z-[9990] rounded-xl border border-white/55 bg-white/18 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-[3px] transition-[left,top,width,height] duration-150 ease-out"
-            style={box}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1, ...box }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            className="pointer-events-none fixed z-[9990] rounded-xl border border-blue-500/40 bg-blue-500/10 dark:border-blue-400/50 dark:bg-blue-600/15 backdrop-blur-md shadow-[0_16px_48px_rgba(37,99,235,0.22)]"
         />
     )
 }

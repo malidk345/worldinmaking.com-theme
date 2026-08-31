@@ -238,6 +238,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-216` | Stream 3 / 5 | Parse Rich Markdown Inline Marks in WIM AI Replacements & Clean Click-Outside Dismissals | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.tsx`, `notebookAI.ts`, `tests/wimai-editor.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-217` | Stream 3 / 5 | Seamless Floating Centered WIM AI Pill & Prompt Vanish on Generation with Native Theme Tokens | `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`, `MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-218` | Stream 3 / 5 | Apply Site Standard Crisp Border Radius (var(--radius, 6px) / 4px) to WIM AI Overlays | `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`, `bundleCss.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
+| `TSK-225` | Stream 2 / 3 / 5 | Phenomenal UX Animation Overhaul (Spring window physics, active focus elevation, taskbar/dock micro-interactions, AI stream & thinking transitions) | `src/components/AppWindow/*`, `src/components/ClaudeWorkspaceChat/*`, `src/components/CommandPalette/*` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-31 |
 | `TSK-219` | Stream 2 / 5 | Notebook Engine Performance Hardening: In-Memory Storage Cache, Fast structuredClone & Allocation-Free Marks Comparison | `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `src/notebook-app/lib/components/MarkdownNotebook/utils.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-220` | Stream 1 / 2 | Fix Dynamic Route /profile/[username] Interpolation Exception & Resilient Monotonic Sync Storage | `src/components/AppWindow/index.tsx`, `src/components/Link/index.tsx`, `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`, `src/notebook-app/scenes/notebooks/notebookStorage.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
 | `TSK-221` | Stream 1 / 4 | Comprehensive Admin/Moderator Role Resolution across Supabase auth app_metadata, user_metadata & companyRole | `src/lib/wim-auth.ts`, `src/hooks/useProfileData.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-19 |
@@ -4480,6 +4481,37 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/lib/bots/tools/host.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
+
+### Entry 010 — Phenomenal UX Animation Overhaul (TSK-225)
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Spatial Window Hierarchy & Focus Elevation:** Updated `src/components/AppWindow/index.tsx` so active/focused windows gain prominent ambient depth (`shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]` and crisp border emphasis), while inactive background windows soften (`shadow-sm opacity-[0.985]`).
+  2. **Raycast-Style Spotlight / Command Palette:** Upgraded `src/components/CommandPalette/index.tsx` with a spring-based modal entrance (`stiffness: 450, damping: 32`) and shared `layoutId="cmd-palette-highlight"` for fluid, gliding selection animations between arrow-key items.
+  3. **TaskBar Micro-Interactions:** Added tactile spring micro-scaling (`active:scale-[0.93] hover:scale-[1.05]`) to taskbar buttons and active window count badges in `src/components/TaskBarMenu/index.tsx`.
+  4. **AI Chat Living Canvas & Thinking Transitions:** Added `AnimatePresence` and spring height transitions (`stiffness: 420, damping: 32`) to the Thinking Process accordion in `ThinkingBlock.tsx`, plus subtle hover lift and active tap compression on artifact blocks and action buttons in `ChatMessage.tsx`.
+- **Modified Files:**
+  - `src/components/AppWindow/index.tsx` [UPDATED]
+  - `src/components/CommandPalette/index.tsx` [UPDATED]
+  - `src/components/TaskBarMenu/index.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** Verified clean compile and tests passing. Kept strictly on local environment per user directive (no git push).
+
+### Entry 011 — Click-Origin Blossom Entrance, Silky Dragging & Aero Snap Assist Overhaul
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Click-Origin Window Blossom Entrance:** In `src/context/App.tsx`, implemented global capture-phase `pointerdown` tracking for all clickable elements (`a, button, [role="button"], [data-icon-label], [data-window-trigger], li`) to resolve exact click centers. In `addWindow`, accurately calculate `fromOrigin` centered around the clicked element. In `src/components/AppWindow/index.tsx`, set `initial` scale to `0.15` at `fromOrigin`, expanding outward with a fluid spring (`stiffness: 350, damping: 26, mass: 0.75`).
+  2. **Silky Window Movement & Zero-Jank Dragging:** Preserved zero-latency `{ duration: 0 }` during drag operations in `AppWindow/index.tsx` while transitioning to tactile springs for snap/maximize/restore events.
+  3. **Aero Glass Split-Screen Snapping:** Upgraded `src/components/AppWindow/SnapAssistOverlay.tsx` with responsive `32px` edge margins, `framer-motion` spring morphing (`stiffness: 420, damping: 32`), and a refined glowing blue glass overlay (`border-blue-500/40 bg-blue-500/10 backdrop-blur-md`).
+- **Modified Files:**
+  - `src/context/App.tsx` [UPDATED]
+  - `src/components/AppWindow/index.tsx` [UPDATED]
+  - `src/components/AppWindow/SnapAssistOverlay.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** All test suites passing. Kept strictly on local environment per user directive (no git push).
 
 ---
 

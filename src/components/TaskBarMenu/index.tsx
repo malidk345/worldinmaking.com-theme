@@ -324,7 +324,7 @@ function TaskBarMenu() {
 
                             <Tooltip
                                 trigger={
-                                    <OSButton onClick={() => openSearch()} size="sm" className="relative top-px">
+                                    <OSButton onClick={() => openSearch()} size="sm" className="relative top-px transition-transform duration-150 active:scale-[0.93] hover:scale-[1.05]">
                                         <IconSearch className="size-5" />
                                     </OSButton>
                                 }
@@ -341,12 +341,12 @@ function TaskBarMenu() {
                                         onClick={() => setIsActiveWindowsPanelOpen(!isActiveWindowsPanelOpen)}
                                         disabled={totalWindows <= 0}
                                         size="sm"
-                                        className="relative top-px !px-1.5 flex items-center gap-1.5"
+                                        className="relative top-px !px-1.5 flex items-center gap-1.5 transition-transform duration-150 active:scale-[0.93] hover:scale-[1.05]"
                                         aria-label={`Active windows (${totalWindows})`}
                                     >
                                         <IconApps className="size-5" />
                                         {totalWindows > 0 && (
-                                            <span suppressHydrationWarning className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20">
+                                            <span suppressHydrationWarning className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20 shadow-2xs">
                                                 {totalWindows}
                                             </span>
                                         )}
