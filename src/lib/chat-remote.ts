@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from './supabase'
 import {
     DEVICE_CHAT_OWNER_KEY,
     DEVICE_NOTEBOOK_OWNER_KEY,
+    AUTH_USER_ID_KEY,
     getActiveOwnerKey,
     getAuthUserId,
     getDeviceOwnerKey,

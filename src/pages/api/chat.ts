@@ -25,13 +25,13 @@ import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
 
-const GUEST_HOURLY_LIMIT = 5
-const AUTH_HOURLY_LIMIT = 15
-const PRO_HOURLY_LIMIT = 60
+const GUEST_HOURLY_LIMIT = 30
+const AUTH_HOURLY_LIMIT = 100
+const PRO_HOURLY_LIMIT = 300
 
-const GUEST_DAILY_LIMIT = 10
-const AUTH_DAILY_LIMIT = 30
-const PRO_DAILY_LIMIT = 300
+const GUEST_DAILY_LIMIT = 100
+const AUTH_DAILY_LIMIT = 300
+const PRO_DAILY_LIMIT = 1000
 const MAX_BODY_BYTES = 1024 * 1024
 
 const MAX_PROMPT_LENGTH = 8000
@@ -226,43 +226,65 @@ export default async function handler(req: Request) {
             host.user.role = resolvedRole
         }
     }
-    const hourlyLimit = isPro ? PRO_HOURLY_LIMIT : user ? AUTH_HOURLY_LIMIT : GUEST_HOURLY_LIMIT
-    const dailyLimit = isPro ? PRO_DAILY_LIMIT : user ? AUTH_DAILY_LIMIT : GUEST_DAILY_LIMIT
+    const isDevEnv =
+        process.env.NODE_ENV === 'development' ||
+        clientIp === '127.0.0.1' ||
+        clientIp === '::1' ||
+        clientIp === 'localhost'
+
+    const hourlyLimit = isDevEnv
+        ? 5000
+        : isPro
+        ? PRO_HOURLY_LIMIT
+        : user
+        ? AUTH_HOURLY_LIMIT
+        : GUEST_HOURLY_LIMIT
+    const dailyLimit = isDevEnv
+        ? 20000
+        : isPro
+        ? PRO_DAILY_LIMIT
+        : user
+        ? AUTH_DAILY_LIMIT
+        : GUEST_DAILY_LIMIT
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
-    const hourly = checkRateLimit(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000)
-    if (!hourly.allowed) {
-        return json(
-            {
-                success: false,
-                error: isPro
-                    ? `[app] Pace limit reached. Please pause a moment before continuing.`
-                    : user
-                    ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
-                    : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
-                retryAfterSec: hourly.retryAfterSec,
-            },
-            429,
-            { 'Retry-After': String(hourly.retryAfterSec) }
-        )
-    }
-
-    try {
-        const dailyCount = await incrementDailyUsage(quotaSubject)
-        if (typeof dailyCount === 'number' && dailyCount > dailyLimit) {
+    if (!isDevEnv) {
+        const hourly = checkRateLimit(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000)
+        if (!hourly.allowed) {
             return json(
                 {
                     success: false,
                     error: isPro
-                        ? `[app] Daily inquiry limit reached. Quota resets at 00:00 UTC.`
+                        ? `[app] Pace limit reached. Please pause a moment before continuing.`
                         : user
-                        ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
-                        : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
-                    retryAfterSec: 86400,
+                        ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
+                        : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
+                    retryAfterSec: hourly.retryAfterSec,
                 },
                 429,
-                { 'Retry-After': '86400' }
+                { 'Retry-After': String(hourly.retryAfterSec) }
             )
+        }
+    }
+
+    try {
+        if (!isDevEnv) {
+            const dailyCount = await incrementDailyUsage(quotaSubject)
+            if (typeof dailyCount === 'number' && dailyCount > dailyLimit) {
+                return json(
+                    {
+                        success: false,
+                        error: isPro
+                            ? `[app] Daily inquiry limit reached. Quota resets at 00:00 UTC.`
+                            : user
+                            ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
+                            : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
+                        retryAfterSec: 86400,
+                    },
+                    429,
+                    { 'Retry-After': '86400' }
+                )
+            }
         }
     } catch (err) {
         if (!isChatStoreUnavailable(err)) {

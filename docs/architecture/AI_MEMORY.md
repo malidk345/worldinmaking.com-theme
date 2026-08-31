@@ -4567,6 +4567,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Modified Files:**
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
+### Entry 016 — Auth Header Import Fix & Chat Rate Limit Upgrade
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Fixed Token Header Crash (`src/lib/chat-remote.ts`):** Added missing `AUTH_USER_ID_KEY` import in `chat-remote.ts`, which previously threw a `ReferenceError` during Supabase session sync and caused authenticated requests to fall back to unauthenticated guest mode.
+  2. **Exempted Local/Dev Environment (`src/pages/api/chat.ts`):** Added `isDevEnv` bypass so localhost development never hits false-positive rate limit lockouts.
+  3. **Increased Production Quotas:** Upgraded production rate limits (Guest: 30/hr, 100/day; Auth: 100/hr, 300/day; Pro: 300/hr, 1000/day) so users are never prematurely locked out.
+- **Modified Files:**
+  - `src/lib/chat-remote.ts` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing.
 
 ---
