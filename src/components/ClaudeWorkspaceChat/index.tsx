@@ -843,7 +843,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 {
                   id: `doc-read-${Date.now()}`,
                   stepNumber: 1,
-                  title: `Reading ${attachments.some((a) => a.type === 'pdf') ? 'PDF Document' : 'Attached File'}`,
+                  title: 'Reading Document',
                   detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
                 },
               ]
@@ -890,7 +890,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               {
                 id: `doc-read-${Date.now()}`,
                 stepNumber: 1,
-                title: `Reading ${attachments.some((a) => a.type === 'pdf') ? 'PDF Document' : 'Attached File'}`,
+                title: 'Reading Document',
                 detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
               },
             ]
