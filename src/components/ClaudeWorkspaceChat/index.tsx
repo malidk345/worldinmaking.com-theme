@@ -78,6 +78,7 @@ import {
   writeLocalChats,
 } from '../../lib/chat-remote';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
+import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
 
 const EMPTY_STARTERS = [
   { label: 'What’s open?', prompt: 'Which windows are open right now, and what can I do next in this OS?' },
@@ -1196,6 +1197,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 thinkingProcess: { ...currentThinkingProcess },
               });
             }
+          if ((parsed as any).type === 'token_usage' && (parsed as any).snapshot) {
+            updateCachedTokenQuota((parsed as any).snapshot);
           }
 
           if (parsed.type === 'done') {

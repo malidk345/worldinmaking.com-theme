@@ -4578,6 +4578,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/lib/chat-remote.ts` [UPDATED]
   - `src/pages/api/chat.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
+### Entry 017 — Token Quota Architecture & Live Sidebar Usage Meter
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Token Quota Service (`src/lib/token-quota.ts`):** Transitioned quota enforcement from crude message counting to true token accounting (prompt, context, completion, and thinking tokens). Standardized 24h daily token limits: Guest 50k tokens, Member 200k tokens, Pro 2M tokens, Dev 10M tokens.
+  2. **Quota API Endpoint (`src/pages/api/chat-quota.ts`):** Provides live `GET /api/chat-quota` returning `{ usedTokens, limitTokens, percentage, remainingTokens, resetAtUtc }`.
+  3. **Live Token SSE Streaming (`src/pages/api/chat.ts`):** Records turn tokens and emits `type: 'token_usage'` SSE event at the completion of generation.
+  4. **Sidebar Usage Meter UI (`src/components/ClaudeWorkspaceChat/components/Sidebar.tsx` & `src/lib/chat-usage-client.ts`):** Added a sleek, color-coded progress bar widget (`Token Usage 42% (21.4k / 50k tokens)`) to the sidebar with real-time reactive sync across workspace windows.
+- **Modified Files:**
+  - `src/lib/token-quota.ts` [NEW]
+  - `src/pages/api/chat-quota.ts` [NEW]
+  - `src/lib/chat-usage-client.ts` [NEW]
+  - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing.
 
 ---

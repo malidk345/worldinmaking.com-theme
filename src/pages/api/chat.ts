@@ -24,6 +24,7 @@ import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-stor
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
+import { estimateTokens, recordTokenUsage, getTokenQuota, type UserTier } from '../../lib/token-quota'
 
 const GUEST_HOURLY_LIMIT = 30
 const AUTH_HOURLY_LIMIT = 100
@@ -454,6 +455,20 @@ export default async function handler(req: Request) {
                 if (result.success && result.actions?.length) {
                     for (const action of result.actions) {
                         send({ type: 'action', action })
+                    }
+                }
+
+                // Record & stream real token usage to update client sidebar
+                if (!byokGroq && !byokGemini && !byokOpenai && !byokAnthropic) {
+                    const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
+                    const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
+                    const totalTurnTokens = Math.max(10, inTokens + outTokens)
+                    try {
+                        const tokenTier: UserTier = isDevEnv ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
+                        const snapshot = await recordTokenUsage(quotaSubject, totalTurnTokens, tokenTier)
+                        send({ type: 'token_usage', snapshot } as any)
+                    } catch {
+                        /* ignore tracking error */
                     }
                 }
 

@@ -1,7 +1,9 @@
 import React from 'react'
 import { Chat } from '../types'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Zap, ShieldCheck } from 'lucide-react'
 import { ByokSidebarPanel } from './ByokSidebarPanel'
+import { useTokenQuota } from '../../../lib/chat-usage-client'
+import { hasActiveByok } from '../../../lib/byok-vault'
 
 interface SidebarProps {
     isOpen: boolean
@@ -81,10 +83,82 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
                 </div>
 
+                {/* Token Quota Meter */}
+                <SidebarUsageMeter />
+
                 {/* BYOK Custom Keys Panel */}
                 <ByokSidebarPanel />
             </aside>
         </>
+    )
+}
+
+const SidebarUsageMeter: React.FC = () => {
+    const { quota } = useTokenQuota()
+    const byokActive = hasActiveByok()
+
+    if (byokActive) {
+        return (
+            <div className="px-3 py-2 mx-2 mb-1.5 rounded-lg bg-accent/40 border border-primary/20 shadow-2xs">
+                <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 text-primary">
+                        <ShieldCheck className="size-3.5 text-indigo-500 shrink-0" />
+                        <span className="text-[11.5px] font-medium">BYOK Active</span>
+                    </div>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                        Unlimited
+                    </span>
+                </div>
+            </div>
+        )
+    }
+
+    if (!quota) return null
+
+    const percent = Math.min(100, Math.max(0, quota.percentage || 0))
+    const usedK = (quota.usedTokens / 1000).toFixed(1)
+    const limitK = (quota.limitTokens / 1000).toFixed(0)
+
+    const barColor =
+        percent >= 90
+            ? 'bg-rose-500'
+            : percent >= 75
+              ? 'bg-amber-500'
+              : 'bg-emerald-600 dark:bg-emerald-400'
+
+    return (
+        <div className="px-3 py-2.5 mx-2 mb-1.5 rounded-lg bg-accent/35 border border-primary/25 shadow-2xs">
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-primary">
+                    <Zap className="size-3.5 text-amber-500 shrink-0" />
+                    <span className="text-[11.5px] font-medium">Token Usage</span>
+                </div>
+                <span
+                    className={`text-[10.5px] font-semibold px-1.5 py-0.2 rounded-full ${
+                        percent >= 90
+                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                            : percent >= 75
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                              : 'bg-primary/10 text-secondary'
+                    }`}
+                >
+                    {percent}%
+                </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-2 h-1.5 w-full rounded-full bg-primary/15 overflow-hidden">
+                <div
+                    className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                    style={{ width: `${Math.max(percent > 0 ? 4 : 0, percent)}%` }}
+                />
+            </div>
+
+            <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted font-medium">
+                <span>{usedK}k / {limitK}k tokens</span>
+                <span>Resets 24h</span>
+            </div>
+        </div>
     )
 }
 
