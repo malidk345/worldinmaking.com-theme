@@ -131,9 +131,7 @@ export function InsertMenu({
                     </div>
                 </div>
             ))}
-            {!filteredCommands.length ? (
-                <div className="MarkdownNotebook__empty-menu">No matching blocks</div>
-            ) : null}
+            {!filteredCommands.length ? <div className="MarkdownNotebook__empty-menu">No matching blocks</div> : null}
         </div>
     )
 }
@@ -172,7 +170,11 @@ export function getInsertCommandSearchText(command: InsertCommand): string {
 
 export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
     return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
-        accumulator[command.category] = [...(accumulator[command.category] ?? []), command]
+        if (!accumulator[command.category]) {
+            accumulator[command.category] = []
+        }
+        // Bolt: Avoided array spread `[...acc, command]` which causes O(N^2) memory churn and allocations. Use `push` for O(1) appending.
+        accumulator[command.category].push(command)
         return accumulator
     }, {})
 }
@@ -434,10 +436,24 @@ export function buildInsertCommands(
         },
     ]
 
-    return [...aiCommands, ...textCommands, ...mediaCommands, ...componentCommands, ...textStyleCommands, ...extraCommands]
+    return [
+        ...aiCommands,
+        ...textCommands,
+        ...mediaCommands,
+        ...componentCommands,
+        ...textStyleCommands,
+        ...extraCommands,
+    ]
 }
 
-function getVisibleViewport(): { top: number; left: number; width: number; height: number; bottom: number; right: number } {
+function getVisibleViewport(): {
+    top: number
+    left: number
+    width: number
+    height: number
+    bottom: number
+    right: number
+} {
     const vv = window.visualViewport
     const left = vv?.offsetLeft ?? 0
     const top = vv?.offsetTop ?? 0
