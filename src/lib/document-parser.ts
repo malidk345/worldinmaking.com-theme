@@ -1,5 +1,11 @@
 import { extractTextFromPdf } from './pdf-parser';
 
+export interface ParsedDocument {
+  id: string;
+  filename: string;
+  sections: Array<{ heading?: string; content: string }>;
+}
+
 export interface ParsedDocumentResult {
   type: 'pdf' | 'csv' | 'json' | 'code' | 'text' | 'image';
   content: string;
