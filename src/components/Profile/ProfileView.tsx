@@ -367,19 +367,19 @@ const AvatarBlock = ({
                     />
                 </div>
             ) : (
-                <div className="my-2.5 px-3 text-center flex flex-col items-center w-full">
-                    <div className="flex items-center justify-center space-x-2">
+                <div className="my-2 text-center flex flex-col items-center px-3 w-full">
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
                         <h2 className="uppercase text-base font-bold m-0">{name}</h2>
+                        {isPro && (
+                            <span
+                                title={proLabel || 'Pro Member'}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-navy/10 text-navy border border-navy/30 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30"
+                            >
+                                PRO
+                            </span>
+                        )}
                     </div>
                     {profile.username && <p className="text-sm text-muted m-0 mt-0.5">@{profile.username}</p>}
-
-                    {/* Pro Plan Navy Badge */}
-                    {isPro && (
-                        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3A8A] border border-[#2563EB]/50 text-white text-xs font-bold shadow-xs tracking-wide">
-                            <IconSparkles className="size-3.5 text-amber-300 shrink-0" />
-                            <span>{proLabel || 'Thinker Pro'}</span>
-                        </div>
-                    )}
                 </div>
             )}
             {!isEditing && profile.companyRole && !isPro && (
@@ -389,7 +389,23 @@ const AvatarBlock = ({
     )
 }
 
-const Details = ({ profile, isEditing, setFieldValue, values, errors }) => {
+const Details = ({
+    profile,
+    isEditing,
+    setFieldValue,
+    values,
+    errors,
+    isPro,
+    proLabel,
+}: {
+    profile: ProfileData
+    isEditing: boolean
+    setFieldValue: (field: string, value: string) => void
+    values: any
+    errors: any
+    isPro?: boolean
+    proLabel?: string
+}) => {
     const [showPronounsInput, setShowPronounsInput] = useState(!!values.pronouns)
 
     // Update showPronounsInput when values.pronouns changes
@@ -398,6 +414,15 @@ const Details = ({ profile, isEditing, setFieldValue, values, errors }) => {
     }, [values.pronouns])
     return (
         <div className="text-sm space-y-3">
+            {isPro && !isEditing && (
+                <p className="flex justify-between items-center m-0">
+                    <span className="font-semibold">Plan</span>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide bg-navy/10 text-navy border border-navy/20 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-navy dark:bg-blue-400" />
+                        {proLabel || 'Thinker Pro'}
+                    </span>
+                </p>
+            )}
             {!isEditing && (
                 <p className="flex justify-between m-0">
                     <span className="font-semibold">Community member since</span>
@@ -1102,25 +1127,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 proLabel={proBadgeLabel}
                             />
 
-                            {/* Pro Membership Card in Site Navy */}
-                            {isProfilePro && (
-                                <div className="mb-4 rounded-md border border-[#2563EB]/40 bg-[#1E3A8A]/10 dark:bg-[#1E3A8A]/25 p-3 shadow-xs">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="p-2 rounded-md bg-[#1E3A8A] text-white flex items-center justify-center shadow-xs shrink-0">
-                                            <IconSparkles className="size-4 text-amber-300" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-xs font-bold text-primary">{proBadgeLabel}</span>
-                                                <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-[#1E3A8A] text-white font-extrabold">PRO</span>
-                                            </div>
-                                            <p className="text-[11px] text-muted m-0 mt-0.5 truncate">Unbounded Cognition & Frontier AI</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {(isEditing || profile.pronouns || profile.location || profile.birthDate) && (
+                            {(isEditing || profile.pronouns || profile.location || profile.birthDate || isProfilePro) && (
                                 <Block title="Details">
                                     <Details
                                         profile={profile}
@@ -1128,6 +1135,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                         setFieldValue={setFieldValue}
                                         values={values}
                                         errors={errors}
+                                        isPro={isProfilePro}
+                                        proLabel={proBadgeLabel}
                                     />
                                 </Block>
                             )}
