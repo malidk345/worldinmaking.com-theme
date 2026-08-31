@@ -18,19 +18,13 @@ const CHIP_ICON = 'size-3.5 shrink-0'
 
 const SLASH_COMMANDS = [
   { id: 'table', label: '/table', hint: 'Comparison table', insert: 'Make a clear comparison table of ' },
-  { id: 'tablo', label: '/tablo', hint: 'Karşılaştırma tablosu', insert: 'Şu konuyu detaylı bir karşılaştırma tablosu olarak hazırla: ' },
   { id: 'diagram', label: '/diagram', hint: 'Mermaid flowchart', insert: 'Draw a mermaid diagram of ' },
-  { id: 'sema', label: '/şema', hint: 'Mermaid akış şeması', insert: 'Şu süreci açıklayan bir Mermaid akış şeması çiz: ' },
-  { id: 'notebook', label: '/notebook', hint: 'Notebook draft', insert: 'Write a notebook-ready draft about ' },
-  { id: 'not', label: '/not', hint: 'Not taslağı', insert: 'Açık olan not defterine eklenecek yapılandırılmış bir taslak yaz: ' },
+  { id: 'notebook', label: '/notebook', hint: 'Notebook draft', insert: 'Write a notebook-ready structured draft about ' },
   { id: 'critique', label: '/critique', hint: 'Philosophical critique', insert: 'Critique the following argument through philosophical deconstruction: ' },
-  { id: 'elestir', label: '/eleştir', hint: 'Felsefi eleştiri', insert: 'Aşağıdaki argümanı felsefi açıdan derinlemesine eleştir: ' },
   { id: 'code', label: '/code', hint: 'React / TS component', insert: 'Write a clean, production-ready React component for ' },
-  { id: 'kod', label: '/kod', hint: 'React / TS bileşeni', insert: 'Şu istek için temiz ve modern bir React bileşeni yaz: ' },
   { id: 'summarize', label: '/summarize', hint: 'Distill core points', insert: 'Summarize the core thesis and key points of ' },
-  { id: 'ozet', label: '/özet', hint: 'Özetle', insert: 'Aşağıdaki metnin en can alıcı noktalarını özetle: ' },
-  { id: 'simplify', label: '/simplify', hint: 'Plain intuitive language', insert: 'Explain in clear and intuitive language: ' },
-  { id: 'sadelestir', label: '/sadeleştir', hint: 'Sadeleştir', insert: 'Aşağıdaki karmaşık kavramı duru ve sezgisel bir dille açıkla: ' },
+  { id: 'simplify', label: '/simplify', hint: 'Plain intuitive explanation', insert: 'Explain in clear and intuitive language: ' },
+  { id: 'chart', label: '/chart', hint: 'Interactive data chart', insert: 'Create an interactive chart visualizing ' },
 ] as const
 
 interface ChatInputProps {

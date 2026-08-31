@@ -4606,6 +4606,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx` [UPDATED]
   - `src/pages/api/chat-quota.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
+### Entry 019 — English-Only Slash Commands Standard
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Purged Turkish Slash Command Duplicates (`ChatInput.tsx`):** Removed all Turkish duplicate slash commands (`/tablo`, `/şema`, `/not`, `/eleştir`, `/kod`, `/özet`, `/sadeleştir`).
+  2. **Standardized English Suite:** Standardized clean, professional, English-only command list: `/table`, `/diagram`, `/notebook`, `/critique`, `/code`, `/summarize`, `/simplify`, `/chart`.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing.
 
 ---
