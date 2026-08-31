@@ -1197,6 +1197,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 thinkingProcess: { ...currentThinkingProcess },
               });
             }
+          }
+
           if ((parsed as any).type === 'token_usage' && (parsed as any).snapshot) {
             updateCachedTokenQuota((parsed as any).snapshot);
           }
