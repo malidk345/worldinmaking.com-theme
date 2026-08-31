@@ -12,7 +12,6 @@ interface VersionHistoryModalProps {
 
 export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
     notebookId,
-    currentContent,
     isOpen,
     onClose,
     onRestoreVersion,

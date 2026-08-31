@@ -1,5 +1,5 @@
 import { getNotebookStringProp, isPromptComponentNode, isTextBlockNode } from './documentModel'
-import { plainTextToInlineNodes, splitInlineNodesAt } from './inlineContent'
+import { splitInlineNodesAt } from './inlineContent'
 import { parseInlineMarkdown, parseMarkdownNotebook, serializeMarkdownNotebook } from './markdown'
 import type { NotebookBlockNode, NotebookInlineNode } from './types'
 import { getInlineText, getNodeFingerprint, getNodeSignature, getNodeText, normalizeInlineNodes } from './utils'

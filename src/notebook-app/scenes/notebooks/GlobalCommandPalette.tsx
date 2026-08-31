@@ -20,7 +20,6 @@ export function GlobalCommandPalette({
     onOpenTemplates,
 }: GlobalCommandPaletteProps) {
     const [query, setQuery] = useState('')
-    const [selectedIndex, setSelectedIndex] = useState(0)
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

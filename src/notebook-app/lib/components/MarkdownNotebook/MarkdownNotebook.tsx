@@ -8,7 +8,6 @@ import {
     Fragment,
     KeyboardEvent,
     MouseEvent as ReactMouseEvent,
-    ReactNode,
     TouchEvent as ReactTouchEvent,
     useCallback,
     useEffect,
@@ -148,7 +147,6 @@ import {
     INVITE_PICKER_MAX_HEIGHT,
     INVITE_PICKER_MIN_HEIGHT,
     INVITE_PICKER_WIDTH,
-    InsertCommand,
     InsertMenuPosition,
     InsertMenuSelectionDirection,
     InsertMenuState,
@@ -174,7 +172,6 @@ import {
     plainTextToInlineNodes,
     setInlineLinkMark,
     setInlineMark,
-    setInlineRefMark,
     splitInlineNodesAt,
 } from './inlineContent'
 import {
@@ -219,7 +216,6 @@ import {
     mergeMarkdownNotebookRegistries,
 } from './registry'
 import {
-    MarkdownNotebookCaretPosition,
     RemoteCaretOverlay,
     RemoteNotebookCaret,
     getFocusedBlockCaretPosition,
@@ -242,11 +238,9 @@ import {
     NotebookBlockNode,
     NotebookCodeBlockNode,
     NotebookComponentBlockNode,
-    NotebookDocument,
     NotebookInlineMark,
     NotebookInlineNode,
     NotebookListItem,
-    NotebookMode,
     NotebookTableBlockNode,
     NotebookTextBlockNode,
     NotebookTextSelectionRange,
@@ -3122,17 +3116,6 @@ function MarkdownNotebookEditor({
         })
     }
 
-    const setCodeRefMark = (
-        node: NotebookCodeBlockNode,
-        range: NotebookTextSelectionRange,
-        refId: string
-    ): NotebookCodeBlockNode => ({
-        ...node,
-        refs: [
-            ...(node.refs ?? []).filter((ref) => ref.id !== refId),
-            { id: refId, start: range.start, end: Math.min(range.end, node.text.length) },
-        ],
-    })
 
     const askAIAboutSelection = (presetQuery?: string): void => {
         if (!floatingToolbar) {
@@ -3325,20 +3308,6 @@ function MarkdownNotebookEditor({
         window.setTimeout(() => element.classList.remove('MarkdownNotebook__component-shell--comment-flash'), 1600)
     }
 
-    const focusDiscussionCommentComposer = (nodeId: string): void => {
-        window.setTimeout(() => {
-            const element = blockRefs.current[nodeId]
-            const textarea = element?.querySelector(
-                '[data-attr="notebook-discussion-comment-input"] textarea, textarea[data-attr="notebook-discussion-comment-input"]'
-            )
-            if (textarea instanceof HTMLTextAreaElement) {
-                textarea.focus()
-                textarea.setSelectionRange(textarea.value.length, textarea.value.length)
-                return
-            }
-            element?.focus()
-        }, 0)
-    }
 
     // Links in editable blocks are pointer-inert so plain clicks place the caret; holding
     // Cmd/Ctrl re-enables them (see MarkdownNotebook.scss) so they can be opened, matching

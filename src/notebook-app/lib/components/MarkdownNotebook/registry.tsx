@@ -369,7 +369,7 @@ function QueryView({ node }: NotebookComponentRenderProps): JSX.Element {
     )
 }
 
-function DividerView(_: NotebookComponentRenderProps): JSX.Element {
+function DividerView(): JSX.Element {
     return <hr className="MarkdownNotebook__divider" />
 }
 
@@ -377,34 +377,6 @@ function DividerView(_: NotebookComponentRenderProps): JSX.Element {
 function CommentView({ node }: NotebookComponentRenderProps): JSX.Element {
     const text = typeof node.props.text === 'string' ? node.props.text : ''
     return <div className="MarkdownNotebook__comment-chip">{text || 'Comment'}</div>
-}
-
-function ImageView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : ''
-
-    return src ? (
-        <img className="MarkdownNotebook__image" src={src} alt={alt} />
-    ) : (
-        <SummaryView node={node} mode="view" updateProps={() => {}} deleteNode={() => {}} />
-    )
-}
-
-function ImageEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Element {
-    const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : ''
-
-    return (
-        <div className="MarkdownNotebook__component-form">
-            <LemonInput
-                value={src}
-                onChange={(value) => updateProps({ src: value })}
-                placeholder="Image URL"
-                autoFocus={wasNotebookNodeJustInserted(node.id)}
-            />
-            <LemonInput value={alt} onChange={(value) => updateProps({ alt: value })} placeholder="Alt text" />
-        </div>
-    )
 }
 
 function EmbedView({ node }: NotebookComponentRenderProps): JSX.Element {

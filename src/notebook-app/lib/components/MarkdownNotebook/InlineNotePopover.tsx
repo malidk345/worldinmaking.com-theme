@@ -9,7 +9,6 @@ export function InlineNotePopover({
     text,
     createdAt,
     intent,
-    scope,
     suggestion,
     pending,
     draft,

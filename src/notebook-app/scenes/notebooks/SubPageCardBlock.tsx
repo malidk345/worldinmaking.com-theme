@@ -16,7 +16,6 @@ export function SubPageCardBlock({
     title,
     description = 'Nested sub-document containing detailed blocks and research notes.',
     coverGradient = 'from-purple-900/40 via-indigo-900/20 to-slate-900/40',
-    iconName = 'document',
     blockCount = 0,
     onClickCard,
 }: SubPageCardBlockProps) {
