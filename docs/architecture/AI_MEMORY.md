@@ -4452,9 +4452,19 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/hooks/useUser.tsx` [UPDATED]
   - `src/lib/chat-remote.ts` [UPDATED]
   - `src/lib/wim-billing.ts` [UPDATED]
-  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+### Entry 008 — Pro Plan Profile Badge & Navy Status Card Integration
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Profile Header Badge:** Added a site-themed Navy Blue pill badge (`bg-[#1E3A8A]`, `border-[#2563EB]/50`, gold sparkle icon) under the username in `ProfileView.tsx` (`AvatarBlock`) for Pro, Admin, and Moderator accounts.
+  2. **Sidebar Plan Card:** Integrated a dedicated Pro membership card in a site-styled navy container (`bg-[#1E3A8A]/10`, `border-[#2563EB]/40`, `IconSparkles`) in the left sidebar of `ProfileView.tsx`.
+  3. **Forum Author Badges:** Added a compact navy `PRO` pill next to author names in `Squeak/components/Profile.tsx`.
+  4. **Dynamic Tier Determination:** Wired role resolution through `isUserPro` + `adminEmails` + `companyRole` so Pro, Admin, and Moderator profiles automatically display the badge across all devices.
+- **Modified Files:**
+  - `src/components/Profile/ProfileView.tsx` [UPDATED]
+  - `src/components/Squeak/components/Profile.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** Fully tested with unit test suite passing. Pushed to `origin/main`.
+- **Notes / Handoff:** Verified clean compile and all Playwright tests passing. Pushed to `origin/main`.
 
 ---
 

@@ -23,7 +23,9 @@ import {
     IconX,
     IconCheck,
     IconExternal,
+    IconSparkles,
 } from '@posthog/icons'
+import { isUserPro } from 'lib/wim-billing'
 import { Fieldset } from 'components/OSFieldset'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
@@ -279,6 +281,8 @@ const AvatarBlock = ({
     setFieldValue,
     values,
     errors,
+    isPro,
+    proLabel,
 }: {
     profile: ProfileData
     isEditing: boolean
@@ -286,6 +290,8 @@ const AvatarBlock = ({
     setFieldValue: (field: string, value: string) => void
     values: any
     errors: any
+    isPro?: boolean
+    proLabel?: string
 }) => {
     const { isModerator } = useUser()
     const inputRef = useRef<HTMLInputElement>(null)
@@ -361,15 +367,23 @@ const AvatarBlock = ({
                     />
                 </div>
             ) : (
-                <div className="my-2">
-                    <div className="flex items-center space-x-2">
-                        <h2 className="uppercase">{name}</h2>
+                <div className="my-2.5 px-3 text-center flex flex-col items-center w-full">
+                    <div className="flex items-center justify-center space-x-2">
+                        <h2 className="uppercase text-base font-bold m-0">{name}</h2>
                     </div>
-                    {profile.username && <p className="text-sm text-muted m-0">@{profile.username}</p>}
+                    {profile.username && <p className="text-sm text-muted m-0 mt-0.5">@{profile.username}</p>}
+
+                    {/* Pro Plan Navy Badge */}
+                    {isPro && (
+                        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3A8A] border border-[#2563EB]/50 text-white text-xs font-bold shadow-xs tracking-wide">
+                            <IconSparkles className="size-3.5 text-amber-300 shrink-0" />
+                            <span>{proLabel || 'Thinker Pro'}</span>
+                        </div>
+                    )}
                 </div>
             )}
-            {!isEditing && profile.companyRole && (
-                <p className="text-secondary text-sm m-0 mb-2 -mt-2">{profile.companyRole}</p>
+            {!isEditing && profile.companyRole && !isPro && (
+                <p className="text-secondary text-sm m-0 mb-2 -mt-1">{profile.companyRole}</p>
             )}
         </div>
     )
@@ -953,6 +967,29 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
     const name = [firstName, lastName].filter(Boolean).join(' ') || profile?.username || 'Profile'
 
+    const isProfilePro = useMemo(() => {
+        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean)
+        const email = profile?.contactEmail || (isCurrentUser ? user?.email : '')
+        const role = profile?.companyRole || (isCurrentUser ? (typeof user?.role === 'object' ? user?.role?.type : user?.role) : '')
+        return (
+            (!!email && adminEmails.includes(email.toLowerCase())) ||
+            role === 'pro' ||
+            role === 'admin' ||
+            role === 'moderator' ||
+            (isCurrentUser && isUserPro(user))
+        )
+    }, [profile, user, isCurrentUser])
+
+    const proBadgeLabel = useMemo(() => {
+        const role = profile?.companyRole || (isCurrentUser ? (typeof user?.role === 'object' ? user?.role?.type : user?.role) : '')
+        if (role === 'admin') return 'Pro · Admin'
+        if (role === 'moderator') return 'Pro · Moderator'
+        return 'Thinker Pro'
+    }, [profile, user, isCurrentUser])
+
     const { submitForm, isSubmitting, setFieldValue, values, resetForm, errors } = useFormik({
         validationSchema: ValidationSchema,
         enableReinitialize: true,
@@ -1061,7 +1098,27 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 setFieldValue={setFieldValue}
                                 values={values}
                                 errors={errors}
+                                isPro={isProfilePro}
+                                proLabel={proBadgeLabel}
                             />
+
+                            {/* Pro Membership Card in Site Navy */}
+                            {isProfilePro && (
+                                <div className="mb-4 rounded-md border border-[#2563EB]/40 bg-[#1E3A8A]/10 dark:bg-[#1E3A8A]/25 p-3 shadow-xs">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-2 rounded-md bg-[#1E3A8A] text-white flex items-center justify-center shadow-xs shrink-0">
+                                            <IconSparkles className="size-4 text-amber-300" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-xs font-bold text-primary">{proBadgeLabel}</span>
+                                                <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-[#1E3A8A] text-white font-extrabold">PRO</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted m-0 mt-0.5 truncate">Unbounded Cognition & Frontier AI</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {(isEditing || profile.pronouns || profile.location || profile.birthDate) && (
                                 <Block title="Details">
