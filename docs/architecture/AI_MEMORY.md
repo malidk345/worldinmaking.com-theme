@@ -4621,7 +4621,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Summary:**
   1. **Minimalist Hero (`ClaudeWorkspaceChat/index.tsx`):** Streamlined empty chat state to display solely `"How can I help?"`.
   2. **Removed Clutter:** Removed legacy starter pills and subheadings for a pristine, distraction-free conversational canvas.
+### Entry 021 — Deep UX Polish & Seamless Clipboard/Keyboard Workflows
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Direct Clipboard Paste Ingestion (`ChatInput.tsx`):** Users can now paste screenshots, PDFs, or files directly into the textarea (`Ctrl+V`) without dragging or clicking the file picker.
+  2. **Auto-Focus on Chat Switch & New Chat:** Switching conversations or creating a new chat automatically focuses the composer.
+  3. **Global Keyboard Shortcuts (`ClaudeWorkspaceChat/index.tsx`):** Bound `Ctrl/Cmd + Shift + O` (New Chat), `Ctrl/Cmd + L` (Focus Composer), `Ctrl/Cmd + .` or `Esc` (Stop Streaming).
+  4. **Smart Scroll Freedom:** Preserves reading position during streaming if the user scrolls up, while keeping the "Scroll to Bottom" button active.
 - **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
   - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing.

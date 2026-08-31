@@ -756,6 +756,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setActiveChatId(newChat.id);
     setActiveArtifact(null);
     closeArtifacts();
+    setComposerDraftNonce((n) => n + 1);
   };
 
   // Handle HTML/JSON Chat Import
@@ -1635,14 +1636,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         setSearchModalOpen((open) => !open)
         return
       }
+      if (meta && event.shiftKey && event.key.toLowerCase() === 'o') {
+        event.preventDefault()
+        handleNewChat()
+        return
+      }
       if (meta && event.key === '.' && isStreaming) {
         event.preventDefault()
         handleStopStreaming()
+        return
+      }
+      if (meta && event.key.toLowerCase() === 'l') {
+        event.preventDefault()
+        document.querySelector<HTMLTextAreaElement>('textarea[data-composer]')?.focus()
+        return
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming])
+  }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat])
 
   return (
     <div className="relative flex h-full min-h-0 w-full min-w-0 bg-primary text-primary font-sans overflow-hidden antialiased">
@@ -1652,7 +1664,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         onClose={() => setSidebarOpen(false)}
         chats={chats}
         activeChatId={activeChatId}
-        onSelectChat={(id) => setActiveChatId(id)}
+        onSelectChat={(id) => {
+          setActiveChatId(id)
+          setComposerDraftNonce((n) => n + 1)
+        }}
         onNewChat={() => handleNewChat()}
         onDeleteChat={handleDeleteChat}
         onRenameChat={handleRenameChat}
@@ -1740,7 +1755,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
-              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom && !isStreaming}
+              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
               models={models}
               selectedModelId={selectedModelId}
               onSelectModel={handleSelectModel}
