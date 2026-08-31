@@ -80,19 +80,6 @@ import {
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
 
-const EMPTY_STARTERS = [
-  { label: 'What’s open?', prompt: 'Which windows are open right now, and what can I do next in this OS?' },
-  { label: 'Search the site', prompt: 'Search this site for notebooks and writing about unfinished work.' },
-  { label: 'Today’s AI news', prompt: 'Bugün yapay zeka haberlerinde öne çıkan 3 gelişmeyi kaynaklarıyla yaz.' },
-  { label: 'Draw a flow', prompt: 'Draw a mermaid diagram of a checkout flow: cart, pay, done.' },
-]
-
-const NOTEBOOK_STARTERS = [
-  { label: 'Add a section', prompt: 'Bu deftere kısa bir saha notları bölümü ekle.' },
-  { label: 'Summarize this', prompt: 'Bu notebook’u kısaca özetle ve özeti deftere ekle.' },
-  { label: 'Draw the outline', prompt: 'Bu defterin outline’ından bir mermaid diyagramı çiz.' },
-]
-
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
 
@@ -1706,26 +1693,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
-              <h1 className="m-0 mb-1 text-center text-[22px] font-semibold tracking-tight text-primary">
+              <h1 className="m-0 text-center text-[22px] sm:text-[24px] font-medium tracking-tight text-primary">
                 How can I help?
               </h1>
-              <p className="m-0 mb-5 max-w-sm text-center text-[13px] leading-snug text-muted">
-                {notebookBind?.title
-                  ? `Writing in ${notebookBind.title}. You ask; it chooses the tools.`
-                  : 'Looks at this OS and the web. You ask; it chooses the tools.'}
-              </p>
-              <div className="flex w-full flex-wrap justify-center gap-2">
-                {(notebookBind?.notebookId ? NOTEBOOK_STARTERS : EMPTY_STARTERS).map((starter) => (
-                  <button
-                    key={starter.label}
-                    type="button"
-                    onClick={() => fillComposer(starter.prompt)}
-                    className="rounded-full border border-primary bg-primary px-3 py-1.5 text-[13px] text-primary hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    {starter.label}
-                  </button>
-                ))}
-              </div>
             </div>
           ) : (
             <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40">
