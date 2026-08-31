@@ -1,34 +1,34 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+export const runtime = 'edge'
+
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { isUserPro } from '../../lib/wim-billing'
 import { getTokenQuota, UserTier } from '../../lib/token-quota'
 import { getClientIp } from '../../lib/bots/request-validation'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+function json(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    })
+}
+
+export default async function handler(req: Request) {
     if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return json({ error: 'Method not allowed' }, 405)
     }
 
     try {
-        const standardReq = new Request(
-            `https://${req.headers.host || 'localhost'}${req.url || '/api/chat-quota'}`,
-            {
-                method: 'GET',
-                headers: req.headers as any,
-            }
-        )
-
-        const user = await getSupabaseUserFromRequest(standardReq)
+        const user = await getSupabaseUserFromRequest(req)
         const isPro = user ? isUserPro(user as any) : false
-        const clientIp = getClientIp(standardReq)
+        const clientIp = getClientIp(req)
         const isDev = process.env.NODE_ENV === 'development' || clientIp === '127.0.0.1' || clientIp === '::1'
 
         const tier: UserTier = isDev ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
         const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
         const quota = await getTokenQuota(quotaSubject, tier)
-        return res.status(200).json(quota)
+        return json(quota as unknown as Record<string, unknown>, 200)
     } catch (err: any) {
-        return res.status(500).json({ error: err?.message || 'Failed to fetch token quota' })
+        return json({ error: err?.message || 'Failed to fetch token quota' }, 500)
     }
 }
