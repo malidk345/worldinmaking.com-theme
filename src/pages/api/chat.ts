@@ -12,7 +12,7 @@ export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
-import { getRuntimeEnv, envFrom } from 'lib/bots/runtime-env'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'

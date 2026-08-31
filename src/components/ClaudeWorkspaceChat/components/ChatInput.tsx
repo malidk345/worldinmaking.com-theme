@@ -207,7 +207,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     if (isRecording) {
-      try { recognitionRef.current?.stop(); } catch (_) {}
+      try { recognitionRef.current?.stop(); } catch (_) {/* ignore */ }
       setIsRecording(false);
     } else {
       try {

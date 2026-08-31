@@ -1090,7 +1090,7 @@ export function writeSystemClipboardText(markdown: string): void {
         return
     }
 
-    void navigator.clipboard.writeText(markdown).catch(() => {})
+    void navigator.clipboard.writeText(markdown).catch(() => { /* ignore */ })
 }
 
 export async function readSystemClipboardText(): Promise<string | null> {

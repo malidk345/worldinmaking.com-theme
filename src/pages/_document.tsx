@@ -15,10 +15,10 @@ const themeScript = `(function () {
     var darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     try {
         preferredTheme = localStorage.getItem('theme') || 'light'
-    } catch (err) {}
+    } catch (err) {/* ignore */ }
     try {
         siteSettings = JSON.parse(localStorage.getItem('siteSettings') || '{}')
-    } catch (err) {}
+    } catch (err) {/* ignore */ }
 
     var colorMode = siteSettings.colorMode || preferredTheme || 'light'
     var theme = colorMode === 'system' ? (darkQuery.matches ? 'dark' : 'light') : (preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme)
@@ -34,7 +34,7 @@ const themeScript = `(function () {
         }
         siteSettings.reduceTransparency = ${JSON.stringify(DEFAULT_REDUCE_TRANSPARENCY)}
         siteSettings.siteDefaultsVersion = DEFAULTS_VERSION
-        try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (err) {}
+        try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (err) {/* ignore */ }
     }
     var wallpaper = siteSettings.wallpaper || DEFAULT_WALLPAPER
     var reduceTransparency = siteSettings.reduceTransparency === false ? 'false' : 'true'
@@ -105,7 +105,7 @@ const themeScript = `(function () {
         window.__onThemeChange(nextTheme)
         try {
             localStorage.setItem('theme', nextTheme)
-        } catch (err) {}
+        } catch (err) {/* ignore */ }
         return nextTheme
     }
 
