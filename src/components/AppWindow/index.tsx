@@ -501,7 +501,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     tabIndex={-1}
                     data-scheme="tertiary"
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
-                        focusedWindow === item.key
+                        focusedWindow?.key === item.key
                             ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
                             : 'border-primary/40 shadow-sm opacity-[0.985]'
                     } ${WINDOW_BG} ${

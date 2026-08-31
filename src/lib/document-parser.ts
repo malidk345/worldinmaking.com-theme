@@ -8,6 +8,17 @@ export interface ParsedDocumentResult {
   summary?: string;
 }
 
+export interface ParsedDocumentSection {
+  heading?: string;
+  content: string;
+}
+
+export interface ParsedDocument {
+  id: string;
+  filename: string;
+  sections: ParsedDocumentSection[];
+}
+
 /**
  * Converts raw CSV data into a clean Markdown table, saving tokens and improving LLM factual reasoning.
  */
@@ -84,7 +95,9 @@ export async function parseDocumentFile(file: File): Promise<ParsedDocumentResul
         content: `[JSON: ${file.name}]\n${formatted.slice(0, 14000)}`,
         preview: formatted.slice(0, 200),
       };
-    } catch (_) {}
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   const cleanText = rawText.slice(0, 16000);
