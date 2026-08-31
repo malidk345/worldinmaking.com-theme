@@ -284,7 +284,7 @@ export function executeReadNotebook(
     }
 }
 
-export function executeCreateNotebook(title: string, content?: string): {
+export function executeCreateNotebook(_host: HostSnapshot | undefined, title: string, content?: string): {
     ok: boolean
     result: string
     action: HostOsAction
@@ -429,7 +429,7 @@ export function executeUpdateNotebookTitle(
 }
 
 export function executeManageWindows(
-    host: HostSnapshot | undefined,
+    _host: HostSnapshot | undefined,
     action: string,
     path?: string,
     leftPath?: string,
@@ -452,6 +452,7 @@ export function executeManageWindows(
 }
 
 export function executeSetSystemAppearance(
+    _host: HostSnapshot | undefined,
     theme?: string,
     wallpaper?: string,
     reduceTransparency?: boolean
@@ -507,6 +508,7 @@ export function executeAnnotateNotebook(
 }
 
 export function executePublishToForum(
+    _host: HostSnapshot | undefined,
     title: string,
     content: string,
     category?: string

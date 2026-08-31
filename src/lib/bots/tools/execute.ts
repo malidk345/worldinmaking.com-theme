@@ -367,7 +367,7 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'create_notebook') {
-            const executed = executeCreateNotebook(asText(args.title, 80), asText(args.content, 8_000))
+            const executed = executeCreateNotebook(host, asText(args.title, 80), asText(args.content, 8_000))
             return { ...base, ...executed, summary: executed.action.title }
         }
         if (name === 'insert_notebook_block') {
@@ -433,11 +433,7 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             }
         }
         if (name === 'set_system_appearance') {
-            const executed = executeSetSystemAppearance(
-                asText(args.theme, 20),
-                asText(args.wallpaper, 60),
-                typeof args.reduce_transparency === 'boolean' ? args.reduce_transparency : undefined
-            )
+            const executed = executeSetSystemAppearance(host, asText(args.theme, 20), asText(args.wallpaper, 60), typeof args.reduce_transparency === 'boolean' ? args.reduce_transparency : undefined)
             return {
                 ...base,
                 ...executed,
@@ -458,11 +454,7 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             }
         }
         if (name === 'publish_to_forum') {
-            const executed = executePublishToForum(
-                asText(args.title, 140),
-                asText(args.content || args.body, 12_000),
-                asText(args.category || args.tag, 40)
-            )
+            const executed = executePublishToForum(host, asText(args.title, 140), asText(args.content || args.body, 12_000), asText(args.category || args.tag, 40))
             return {
                 ...base,
                 ...executed,

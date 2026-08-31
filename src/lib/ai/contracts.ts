@@ -101,6 +101,10 @@ export type AiSseEvent =
           action: {
               type:
                   | 'open_window'
+                  | 'manage_windows'
+                  | 'set_system_appearance'
+                  | 'annotate_notebook'
+                  | 'publish_to_forum'
                   | 'create_notebook'
                   | 'create_forum_topic'
                   | 'insert_notebook_block'
