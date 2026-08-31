@@ -106,7 +106,7 @@ export function getStoredJwt(): string | null {
                         const uid = parsed?.user?.id || parsed?.currentSession?.user?.id
                         if (jwt) {
                             localStorage.setItem('jwt', jwt)
-                            if (uid) localStorage.setItem(AUTH_USER_ID_KEY, uid)
+                            if (uid) localStorage.setItem('wim_auth_uid', uid)
                             return jwt
                         }
                     } catch {
@@ -164,7 +164,7 @@ export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatO
                     token = session.access_token
                     localStorage.setItem('jwt', token)
                     if (session.user?.id) {
-                        localStorage.setItem(AUTH_USER_ID_KEY, session.user.id)
+                        localStorage.setItem('wim_auth_uid', session.user.id)
                     }
                 }
             } catch {

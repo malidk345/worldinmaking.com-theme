@@ -1,0 +1,8 @@
+feat(ui): adopt iOS 26 style window aesthetics
+
+Updates the main app window frames to adopt an iOS 26 / VisionOS style.
+- Uses a multi-layered premium frosted glass background (`WINDOW_BG`) with extreme blur and elevated saturation.
+- Simulates physical depth with specular top highlights and subtle ring borders instead of flat solid colors.
+- Adjusts outer border radiuses to ultra-rounded `32px` corners when unmaximized.
+- Increases window motion physics weight, setting the animation transition scale to 0.96 for physical compression click feedback.
+- Makes the window chrome action bar background fully transparent to cleanly overlay the main window glass body.
