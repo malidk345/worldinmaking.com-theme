@@ -11,6 +11,7 @@ import {
     getAuthUserId,
     getDeviceOwnerKey,
     namespacedStorageKey,
+    AUTH_USER_ID_KEY,
 } from './wim-identity'
 
 export { mergeChats, mergeMessages } from './chat-merge'

@@ -420,7 +420,6 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
         }
         if (name === 'manage_windows') {
             const executed = executeManageWindows(
-                host,
                 asText(args.action, 40),
                 asText(args.path, 120),
                 asText(args.left_path || args.leftPath, 120),
