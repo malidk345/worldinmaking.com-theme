@@ -57,6 +57,8 @@ import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
+import { findNotebookWindow } from '../../lib/open-ask-ai-window';
+import { extractNotebookId } from '../../lib/window-path';
 import {
   chatAuthHeaders,
   chatAuthHeadersFresh,
@@ -158,22 +160,40 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   // Subscribe to windows via dedicated context so we re-render when windows change
   const { windows: appWindows } = useAppWindows();
   const [notebookBind, setNotebookBind] = useState<NotebookChatBind | null>(null);
+  const [dismissedNotebookId, setDismissedNotebookId] = useState<string | null>(null);
   const selectedModelIdRef = useRef<ModelId>(settings.defaultModel);
+
+  // Extract active open notebook or explicitly bound notebook
+  const activeNotebookInfo = React.useMemo(() => {
+    if (notebookBind?.notebookId) {
+      if (dismissedNotebookId === notebookBind.notebookId) return null;
+      return { id: notebookBind.notebookId, title: notebookBind.title || 'Notebook' };
+    }
+    const openNb = findNotebookWindow(appWindows);
+    if (!openNb?.path) return null;
+    const nbId = extractNotebookId(openNb.path);
+    if (!nbId || dismissedNotebookId === nbId) return null;
+    const bound = getNotebook(nbId);
+    return {
+      id: nbId,
+      title: bound?.title || openNb.title || 'Notebook',
+    };
+  }, [appWindows, notebookBind, dismissedNotebookId]);
 
   // Extract full active notebook text content from open notebook windows
   const activeNotebookContext = React.useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const boundId = notebookBind?.notebookId
+    const boundId = activeNotebookInfo?.id;
     if (boundId) {
-      const bound = getNotebook(boundId)
+      const bound = getNotebook(boundId);
       return buildNotebookAgentContext({
-        title: bound?.title || notebookBind?.title,
+        title: bound?.title || activeNotebookInfo?.title || 'Notebook',
         content: bound?.content,
         selection: readNotebookSelection(),
-      })
+      });
     }
     return '';
-  }, [appWindows, notebookBind]);
+  }, [activeNotebookInfo]);
 
   const insertIntoNotebook = (content: string, notebookId?: string) => {
     const text = String(content || '').trim()
@@ -723,17 +743,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     };
   }, [isStreaming, pinChatToBottom]);
 
-  // Auto-open artifact when switching chats
+  // Scroll chat to bottom when switching chats
   useEffect(() => {
     scrollChatToBottom('auto');
-
-    if (activeChat?.messages) {
-      const lastArt = [...activeChat.messages].reverse().find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
-      if (lastArt && settings.autoOpenArtifacts) {
-        openArtifact(lastArt);
-      }
-    }
-  }, [activeChatId, settings.autoOpenArtifacts]);
+  }, [activeChatId]);
 
   // Handle New Chat Creation
   const handleNewChat = (projId?: string) => {
@@ -761,11 +774,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const handleImportChat = (importedChat: Chat) => {
     setChats((prev) => [importedChat, ...prev]);
     setActiveChatId(importedChat.id);
-    // Auto open artifact if available
-    const firstArt = importedChat.messages.find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
-    if (firstArt) {
-      openArtifact(firstArt);
-    }
   };
 
   // Handle Message Sending with Backend Streaming
@@ -1727,6 +1735,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               draftPrompt={composerDraft}
               draftNonce={composerDraftNonce}
               incomingAttachments={incomingAttachments}
+              boundNotebookTitle={activeNotebookInfo?.title}
+              onDismissNotebookContext={() => {
+                if (activeNotebookInfo?.id) {
+                  setDismissedNotebookId(activeNotebookInfo.id);
+                }
+                setNotebookBind(null);
+              }}
               menuPlacement="top-start"
             />
           </div>

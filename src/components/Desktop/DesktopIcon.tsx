@@ -105,7 +105,7 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
                 <div
                     ref={visualRef}
                     data-desktop-icon-visual
-                    className={`relative w-full flex flex-col items-center rounded-xl transition-[color,transform,box-shadow,background-color] duration-150 ${
+                    className={`relative w-full flex flex-col items-center rounded-xl transition-all duration-150 active:scale-[0.93] ${
                         isArchiveIcon && isDragOver ? 'scale-[1.04] ring-2 ring-blue/40 bg-blue/10 p-1' : ''
                     }`}
                 >

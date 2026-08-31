@@ -17,8 +17,19 @@ const CHIP_ICON = 'size-3.5 shrink-0'
 
 const SLASH_COMMANDS = [
   { id: 'table', label: '/table', hint: 'Comparison table', insert: 'Make a clear comparison table of ' },
-  { id: 'diagram', label: '/diagram', hint: 'Mermaid diagram', insert: 'Draw a mermaid diagram of ' },
-  { id: 'notebook', label: '/notebook', hint: 'Notebook-ready draft', insert: 'Write a notebook-ready draft about ' },
+  { id: 'tablo', label: '/tablo', hint: 'Karşılaştırma tablosu', insert: 'Şu konuyu detaylı bir karşılaştırma tablosu olarak hazırla: ' },
+  { id: 'diagram', label: '/diagram', hint: 'Mermaid flowchart', insert: 'Draw a mermaid diagram of ' },
+  { id: 'sema', label: '/şema', hint: 'Mermaid akış şeması', insert: 'Şu süreci açıklayan bir Mermaid akış şeması çiz: ' },
+  { id: 'notebook', label: '/notebook', hint: 'Notebook draft', insert: 'Write a notebook-ready draft about ' },
+  { id: 'not', label: '/not', hint: 'Not taslağı', insert: 'Açık olan not defterine eklenecek yapılandırılmış bir taslak yaz: ' },
+  { id: 'critique', label: '/critique', hint: 'Philosophical critique', insert: 'Critique the following argument through philosophical deconstruction: ' },
+  { id: 'elestir', label: '/eleştir', hint: 'Felsefi eleştiri', insert: 'Aşağıdaki argümanı felsefi açıdan derinlemesine eleştir: ' },
+  { id: 'code', label: '/code', hint: 'React / TS component', insert: 'Write a clean, production-ready React component for ' },
+  { id: 'kod', label: '/kod', hint: 'React / TS bileşeni', insert: 'Şu istek için temiz ve modern bir React bileşeni yaz: ' },
+  { id: 'summarize', label: '/summarize', hint: 'Distill core points', insert: 'Summarize the core thesis and key points of ' },
+  { id: 'ozet', label: '/özet', hint: 'Özetle', insert: 'Aşağıdaki metnin en can alıcı noktalarını özetle: ' },
+  { id: 'simplify', label: '/simplify', hint: 'Plain intuitive language', insert: 'Explain in clear and intuitive language: ' },
+  { id: 'sadelestir', label: '/sadeleştir', hint: 'Sadeleştir', insert: 'Aşağıdaki karmaşık kavramı duru ve sezgisel bir dille açıkla: ' },
 ] as const
 
 interface ChatInputProps {
@@ -36,6 +47,8 @@ interface ChatInputProps {
   draftNonce?: number;
   menuPlacement?: 'top-start' | 'bottom-start';
   incomingAttachments?: FileAttachment[];
+  boundNotebookTitle?: string;
+  onDismissNotebookContext?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -51,6 +64,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   draftNonce = 0,
   menuPlacement = 'top-start',
   incomingAttachments,
+  boundNotebookTitle,
+  onDismissNotebookContext,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -257,6 +272,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.5)] focus-within:border-[#1E3A8A] focus-within:ring-2 focus-within:ring-[#1E3A8A]/35 focus-within:shadow-[0_0_20px_rgba(30,58,138,0.28),0_4px_12px_rgba(30,58,138,0.18)]'
         }`}
       >
+        {/* Dropzone Drag Overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#1E3A8A] bg-primary/95 backdrop-blur-md text-primary pointer-events-none shadow-lg">
+            <IconPlus className="size-5 text-[#1E3A8A] dark:text-blue-400 mb-0.5" />
+            <span className="text-xs font-semibold">Drop files here to attach</span>
+            <span className="text-[10px] text-secondary">Images, documents or code snippets</span>
+          </div>
+        )}
+
         {slashMatches.length > 0 && (
           <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded-md border border-primary bg-primary py-0.5 shadow-sm">
             {slashMatches.map((command, index) => (
@@ -274,23 +298,51 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ))}
           </div>
         )}
+
+        {/* Bound Notebook Context Badge */}
+        {boundNotebookTitle && (
+          <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/80 border border-primary/50 px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
+            <div className="flex items-center gap-1.5 min-w-0 truncate">
+              <span className="shrink-0 font-semibold text-[#1E3A8A] dark:text-blue-400 flex items-center gap-1">
+                <IconDocument className="size-3.5" />
+                Notebook:
+              </span>
+              <span className="truncate font-medium text-primary">{boundNotebookTitle}</span>
+            </div>
+            {onDismissNotebookContext && (
+              <button
+                type="button"
+                onClick={onDismissNotebookContext}
+                className="text-muted hover:text-primary p-0.5 rounded transition-colors cursor-pointer shrink-0"
+                title="Disconnect notebook context"
+              >
+                <IconX className="size-3" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Attachment Previews */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-1.5 pb-1.5 border-b border-primary">
             {attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-1.5 rounded-md border border-primary bg-accent px-2 py-0.5 text-[11px] text-secondary"
+                className="flex items-center gap-1.5 rounded-md border border-primary bg-accent px-1.5 py-0.5 text-[11px] text-secondary"
               >
-                {att.type === 'image' ? (
+                {att.type === 'image' && att.url ? (
+                  <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
+                ) : att.type === 'image' ? (
                   <IconImage className={`${CHIP_ICON} text-amber-700`} />
                 ) : (
                   <IconDocument className={`${CHIP_ICON} text-secondary`} />
                 )}
-                <span className="max-w-[140px] truncate font-medium">{att.name}</span>
+                <span className="max-w-[130px] truncate font-medium">{att.name}</span>
+                <span className="text-[9.5px] text-muted font-mono">{att.size}</span>
                 <button
                   onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                  className="text-muted hover:text-secondary"
+                  className="text-muted hover:text-secondary cursor-pointer p-0.5"
+                  title="Remove attachment"
                 >
                   <IconX className={CHIP_ICON} />
                 </button>

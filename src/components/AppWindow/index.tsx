@@ -555,7 +555,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         return generated
                     }}
                     initial={{
-                        scale: item.fromOrigin && !compact ? 0.15 : 0.95,
+                        scale: item.fromOrigin && !compact ? 0.08 : 0.94,
                         opacity: 0,
                         left: item.fromOrigin && !compact ? Math.round(item.fromOrigin.x) : Math.round(position.x),
                         top: item.fromOrigin && !compact ? Math.round(item.fromOrigin.y) : Math.round(position.y),
@@ -572,10 +572,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.96,
+                        scale: 0.95,
                         opacity: 0,
                         transition: {
-                            duration: compact ? 0.05 : 0.14,
+                            duration: compact ? 0.05 : 0.12,
                             ease: [0.32, 0, 0.67, 0],
                         },
                     }}
@@ -583,10 +583,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  type: 'spring',
-                                  stiffness: 350,
-                                  damping: 26,
-                                  mass: 0.75,
+                                  scale: { type: 'spring', stiffness: 440, damping: 25, mass: 0.6 },
+                                  left: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
+                                  top: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
+                                  width: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
+                                  height: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
+                                  opacity: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
+                                  default: { type: 'spring', stiffness: 380, damping: 26 },
                               }
                     }
                     drag={inSwitcher ? false : !item.fixedSize}

@@ -4511,7 +4511,23 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/AppWindow/index.tsx` [UPDATED]
   - `src/components/AppWindow/SnapAssistOverlay.tsx` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
-- **Notes / Handoff:** All test suites passing. Kept strictly on local environment per user directive (no git push).
+- **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
+
+### Entry 012 — WIM AI UX Elevation, Notebook Live Bridge & Refined OS Blossom Physics
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Disabled Auto-Opening of Artifacts:** Removed historical artifact auto-open `useEffect` on chat mount and switch in `src/components/ClaudeWorkspaceChat/index.tsx`, ensuring artifacts only open when users deliberately click an artifact card.
+  2. **Notebook Live Bridge & Dismissable Context:** Added active open notebook detection (`findNotebookWindow`, `extractNotebookId`) and live context pill in `ChatInput.tsx` (`📌 Notebook: [Title]`) with dismissable `x` button and seamless insertion into active notebooks via `onAddToNotebook`.
+  3. **Bilingual Slash Commands & Dropzone:** Added `/tablo`, `/şema`, `/not`, `/eleştir`, `/özet`, `/kod`, `/sadeleştir` alongside English equivalents in `ChatInput.tsx`, plus a frosted dropzone overlay and image thumbnail previews.
+  4. **Per-Channel Spring Curves:** Fine-tuned `AppWindow` blossom zoom physics with channel-specific spring parameters (`scale: stiffness 440, damping 25, mass 0.6`, `opacity: 150ms ramp`) and added tactile active scaling (`active:scale-[0.93]`) to `DesktopIcon.tsx`.
+- **Modified Files:**
+  - `src/components/AppWindow/index.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/components/Desktop/DesktopIcon.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
 
 ---
 
