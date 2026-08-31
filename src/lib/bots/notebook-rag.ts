@@ -6,7 +6,11 @@
  */
 
 import type { AiCitation } from '../ai/contracts'
-import type { ParsedDocument } from '../document-parser'
+export interface RAGDocument {
+    id: string
+    filename: string
+    sections: Array<{ heading?: string; content: string }>
+}
 
 export interface RAGChunk {
     documentId: string
@@ -118,7 +122,7 @@ export function searchKnowledgeWorkspace(
     query: string,
     sources: {
         notebooks?: Array<{ id: string; title: string; content: string }>
-        documents?: ParsedDocument[]
+        documents?: RAGDocument[]
     },
     maxResults = 5
 ): RAGSearchResult {
