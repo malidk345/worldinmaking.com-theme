@@ -24,3 +24,7 @@
 ## 2025-05-18 - System Prompt Capping Optimization in AI Gateway
 **Learning:** Hard-truncating system prompts to 8,000 characters in `src/lib/bots/ai-gateway.ts` caused truncation of rich system context instructions during long multi-turn AI interactions. Increasing system prompt capacity to 12,000 characters provides adequate context window while retaining optimal token fitting logic across Groq and Gemini models.
 **Action:** When configuring multi-provider AI gateway system prompt limits, ensure system prompt caps accommodate rich operational preambles and persona contexts without clipping critical tool definitions.
+
+## 2025-05-24 - Avoiding Array Spreads in Grouping Functions
+**Learning:** Using array spread syntax (`[...acc, item]`) within `.reduce()` to dynamically group or bucket array items creates an $O(N^2)$ operation due to repeated array allocations on every loop iteration. While convenient to write, this can cause significant memory churn and main-thread blocking when executed frequently, such as during user-input filtering in `InsertMenu.tsx`.
+**Action:** When aggregating or grouping arrays inside `.reduce()`, always initialize the bucket array and use `.push()` to mutate it in-place. This guarantees an $O(N)$ allocation time and avoids degrading rendering performance.

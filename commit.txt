@@ -1,0 +1,6 @@
+⚡ Bolt: Replace O(N^2) array spread with O(1) push in InsertMenu grouping
+
+💡 What: Refactored `groupInsertCommandsByCategory` in `InsertMenu.tsx` to use `push()` instead of array spread syntax (`[...acc, command]`) when bucketizing commands.
+🎯 Why: Array spreading inside a `.reduce()` loop for grouping items creates a new array reference on every single iteration, leading to $O(N^2)$ time complexity and excessive garbage collection churn. In a menu filtered on every keystroke, this causes unnecessary main-thread overhead.
+📊 Impact: Guarantees $O(N)$ allocation time when filtering and grouping the command palette, reducing memory pressure and rendering overhead.
+🔬 Measurement: Verified the test suite passes locally.
