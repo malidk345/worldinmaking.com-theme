@@ -429,7 +429,7 @@ export function executeUpdateNotebookTitle(
 }
 
 export function executeManageWindows(
-    host: HostSnapshot | undefined,
+    _host: HostSnapshot | undefined,
     action: string,
     path?: string,
     leftPath?: string,
