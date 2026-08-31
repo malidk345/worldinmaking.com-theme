@@ -4558,6 +4558,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** All test suites passing. Pushed to `origin/main`.
 
+### Entry 015 — Multi-Turn Persistent Document & Attachment Memory
+- **Date:** 2026-08-31
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. In `src/components/ClaudeWorkspaceChat/index.tsx`, enabled multi-turn session document persistence: if a user asks a follow-up question without re-attaching the file, `effectiveAttachments` automatically retains the most recent document context from previous turns.
+  2. Enriched historical user messages in `conversationHistory` with document context snippets so the LLM retains deep contextual memory of uploaded PDFs, CSVs, and code files throughout follow-up turns.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** All test suites passing.
+
 ---
 
 

@@ -917,7 +917,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let backendError = false;
     try {
 
-      const attachmentContext = attachments
+      // Resolve active turn attachments or preserve active session document memory
+      const effectiveAttachments = attachments.length > 0
+        ? attachments
+        : [...baseMessages]
+            .reverse()
+            .find((m) => m.role === 'user' && m.attachments && m.attachments.length > 0)?.attachments || [];
+
+      const attachmentContext = effectiveAttachments
         .map((attachment) => {
           if (attachment.type === 'image') {
             return `[Image attachment: ${attachment.name}. Image bytes are not sent to the text model.]`;
@@ -930,9 +937,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       const conversationHistory: Array<Record<string, unknown>> = []
       for (const message of baseMessages.filter((item) => item.role === 'user' || item.role === 'assistant').slice(-6)) {
+        let msgContent = message.content;
+        if (message.role === 'user' && message.attachments && message.attachments.length > 0) {
+          const docSnippet = message.attachments
+            .filter((a) => a.type !== 'image' && (a.content || a.contentPreview))
+            .map((a) => `[Document: ${a.name}]\n${(a.content || a.contentPreview || '').slice(0, 3000)}`)
+            .join('\n\n');
+          if (docSnippet && !msgContent.includes(docSnippet.slice(0, 50))) {
+            msgContent = `${msgContent}\n\n${docSnippet}`;
+          }
+        }
         conversationHistory.push({
           role: message.role,
-          content: message.content.slice(0, 1200),
+          content: msgContent.slice(0, 4000),
           artifacts:
             message.role === 'assistant' && message.artifacts?.length
               ? message.artifacts.slice(0, 2).map((artifact) => ({
