@@ -107,9 +107,13 @@ export type AiSseEvent =
                   | 'rewrite_notebook_document'
                   | 'replace_notebook_selection'
                   | 'update_notebook_title'
+                  | 'manage_windows'
+                  | 'set_system_appearance'
+                  | 'annotate_notebook'
+                  | 'publish_to_forum'
               title: string
               description: string
-              payload: { path?: string; title?: string; content?: string; notebookId?: string }
+              payload: any // Allow varying payload structures for the new actions
           }
       }
     | {
