@@ -1,4 +1,4 @@
-import { parseChartSpec, type ChartSpec } from './ai/chart-artifacts'
+import { parseChartSpec, parsePostHogAnalyticsSpec, type ChartSpec } from './ai/chart-artifacts'
 import { getRenderer } from './artifacts'
 import { artifactLooksLikeMermaid, cleanMermaidSource } from './mermaid-patterns'
 import type { Artifact, Message } from '../components/ClaudeWorkspaceChat/types'
@@ -48,6 +48,14 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
     const title = heading(artifact.title || '')
     const body = String(artifact.content || '').trim()
     const renderer = getRenderer(artifact.type)
+
+    if (artifact.type === 'posthog-analytics' || body.includes('"metrics"') || body.includes('"graph"') || body.includes('"funnel"')) {
+        const phSpec = parsePostHogAnalyticsSpec(body) || (artifact.chartSpec as any)
+        if (phSpec) {
+            const json = JSON.stringify(phSpec, null, 2)
+            return [title, fence('posthog-analytics', json)].filter(Boolean).join('\n\n')
+        }
+    }
 
     if (artifact.type === 'table') {
         return [title, asMarkdownTable(body)].filter(Boolean).join('\n\n')

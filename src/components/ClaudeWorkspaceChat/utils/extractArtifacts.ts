@@ -1,5 +1,5 @@
 import { Artifact, ArtifactType } from '../types';
-import { extractChartArtifacts, isChartRequest, parseChartSpec } from 'lib/ai/chart-artifacts';
+import { extractChartArtifacts, isChartRequest, parseChartSpec, parsePostHogAnalyticsSpec } from 'lib/ai/chart-artifacts';
 import { extractUiScreenSource, isUiDesignRequest, looksLikeReactSource } from 'lib/ai/design-request';
 import {
   artifactLooksLikeMermaid,
@@ -310,6 +310,25 @@ function extractFencedArtifacts(
     const isMermaidBlock = isMermaidLanguage(lang) || isMermaidSource(blockContent)
     const minLength = isMermaidBlock ? 8 : 20
     if (!blockContent || blockContent.length < minLength) continue
+
+    const postHogSpec = parsePostHogAnalyticsSpec(blockContent)
+    const isPostHogBlock =
+      ['posthog', 'posthog-analytics', 'analytics', 'dashboard'].includes(lang) ||
+      (lang === 'json' && Boolean(postHogSpec))
+    if (isPostHogBlock && postHogSpec) {
+      artifacts.push({
+        id: `art-${Date.now()}-analytics-${artifacts.length + 1}`,
+        title: postHogSpec.title || 'Analytics Dashboard',
+        type: 'posthog-analytics',
+        language: 'json',
+        content: JSON.stringify(postHogSpec),
+        chartSpec: postHogSpec as any,
+        description: 'PostHog Analytics Dashboard',
+        version: 1,
+        createdAt: now,
+      })
+      continue
+    }
 
     const chartSpec = parseChartSpec(blockContent)
     const isChartBlock =

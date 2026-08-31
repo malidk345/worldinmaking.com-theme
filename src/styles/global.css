@@ -4,6 +4,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    /* PostHog Embedded Analytics Colors */
+    --ph-embed-chart-primary: 210 40% 50%;
+    --ph-embed-chart-secondary: 200 30% 40%;
+    --ph-embed-chart-background: 0 0% 100%;
+    --ph-embed-chart-grid: 240 4.9% 83.9%;
+    --ph-embed-chart-text: 240 10% 3.9%;
+    --ph-embed-chart-gradient-start: 210 40% 50%;
+    --ph-embed-chart-gradient-end: 210 40% 95%;
+    --ph-embed-chart-line-color: 217 91% 60%;
+    --ph-embed-chart-line-color-muted: 217 91% 60%;
+
+    /* PostHog Embedded Analytics Metric Colors */
+    --ph-embed-positive: 142 76% 36%;
+    --ph-embed-negative: 0 84% 60%;
+    --ph-embed-neutral: 240 3.8% 46.1%;
+    --ph-embed-fill-background: 240 4.8% 95.9%;
+    --ph-embed-table-fill-color: 217 91% 60%;
+}
+
+.dark {
+    --ph-embed-chart-background: 240 10% 3.9%;
+    --ph-embed-chart-grid: 240 3.7% 15.9%;
+    --ph-embed-chart-text: 0 0% 98%;
+    --ph-embed-fill-background: 240 3.7% 15.9%;
+}
+
 @layer components {
     .markdown.prose {
         img {

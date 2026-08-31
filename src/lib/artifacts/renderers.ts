@@ -13,6 +13,7 @@ export type ArtifactRenderer = {
 export const ARTIFACT_RENDERERS: Record<ArtifactKind, ArtifactRenderer> = {
     mermaid: { kind: 'mermaid', label: 'diagram', notebookFence: 'mermaid', preview: 'mermaid', autoOpen: true },
     chart: { kind: 'chart', label: 'chart', notebookFence: 'chart', preview: 'chart', autoOpen: true },
+    'posthog-analytics': { kind: 'posthog-analytics', label: 'analytics', notebookFence: 'posthog-analytics', preview: 'chart', autoOpen: true },
     react: { kind: 'react', label: 'screen', notebookFence: 'react', preview: 'sandbox', autoOpen: true },
     html: { kind: 'html', label: 'screen', notebookFence: 'html', preview: 'html', autoOpen: true },
     svg: { kind: 'svg', label: 'SVG', notebookFence: 'svg', preview: 'html', autoOpen: true },

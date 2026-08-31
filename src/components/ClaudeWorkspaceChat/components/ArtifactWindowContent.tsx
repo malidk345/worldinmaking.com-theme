@@ -10,8 +10,15 @@ import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
 import { LocalPreviewIframe } from '../sandbox/LocalPreviewIframe'
 
+import { parsePostHogAnalyticsSpec } from '../../../lib/ai/chart-artifacts'
+
 const ChartArtifactRenderer = dynamic(
   () => import('./ChartArtifactRenderer').then((module) => module.ChartArtifactRenderer),
+  { ssr: false }
+)
+
+const PostHogAnalyticsDashboard = dynamic(
+  () => import('../../PostHogAnalytics').then((module) => module.PostHogAnalyticsDashboard),
   { ssr: false }
 )
 
@@ -55,6 +62,7 @@ export function ArtifactWindowContent({
   const content = String(artifact?.content || '').trim()
   const lang = String(artifact?.language || '').toLowerCase().trim()
 
+  const postHogSpec = parsePostHogAnalyticsSpec(content) || (artifact.type === 'posthog-analytics' ? (typeof artifact.content === 'object' ? artifact.content : parsePostHogAnalyticsSpec(artifact.content)) : null)
   const isMermaid = artifactLooksLikeMermaid(artifact)
   const isChart = artifact.type === 'chart' || Boolean(artifact.chartSpec)
   const isReact = artifact.type === 'react' || ['react', 'tsx', 'jsx', 'wim-ui'].includes(lang)
@@ -125,7 +133,11 @@ export function ArtifactWindowContent({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-primary">
         {activeTab === 'preview' ? (
           <div className="absolute inset-0 min-h-0 w-full">
-            {isChart ? (
+            {postHogSpec ? (
+              <div className="h-full min-h-0 p-4 overflow-auto">
+                <PostHogAnalyticsDashboard spec={postHogSpec} />
+              </div>
+            ) : isChart ? (
               <div className="h-full min-h-0 p-4 overflow-auto">
                 <div className="h-full min-h-[280px]">
                   <ChartArtifactRenderer spec={artifact.chartSpec || artifact.content} />

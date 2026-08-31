@@ -1,6 +1,6 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { parseChartSpec } from '../../../../lib/ai/chart-artifacts'
+import { parseChartSpec, parsePostHogAnalyticsSpec } from '../../../../lib/ai/chart-artifacts'
 import { looksLikeReactSource } from '../../../../lib/ai/design-request'
 import { wrapHtmlArtifactDocument } from '../../../../lib/wim-artifact-theme'
 import { isMermaidLanguage, isMermaidSource } from '../../../../lib/mermaid-loader'
@@ -17,6 +17,14 @@ const ChartArtifactRenderer = dynamic(
     () =>
         import('../../../../components/ClaudeWorkspaceChat/components/ChartArtifactRenderer').then(
             (module) => module.ChartArtifactRenderer
+        ),
+    { ssr: false }
+)
+
+const PostHogAnalyticsDashboard = dynamic(
+    () =>
+        import('../../../../components/PostHogAnalytics').then(
+            (module) => module.PostHogAnalyticsDashboard
         ),
     { ssr: false }
 )
@@ -38,6 +46,7 @@ export function isNotebookLiveCodeBlock(node: NotebookCodeBlockNode): boolean {
     const lang = (node.language || '').toLowerCase().trim()
     const text = (node.text || '').trim()
 
+    if (lang === 'posthog-analytics' || lang === 'analytics' || parsePostHogAnalyticsSpec(text) || parsePostHogAnalyticsSpec(node.text)) return true
     if (isNotebookChartFence(lang) || parseChartSpec(text)) return true
     if (isNotebookMermaidFence(lang) || isMermaidLanguage(lang) || isMermaidSource(text)) return true
     if (isNotebookSvgFence(lang) || (text.startsWith('<svg') && text.includes('</svg>'))) return true
@@ -56,7 +65,8 @@ export function NotebookWimCodeBlock({
 }): JSX.Element {
     const language = (node.language || '').toLowerCase().trim()
     const text = (node.text || '').trim()
-    const spec = isNotebookChartFence(language) ? parseChartSpec(node.text) : parseChartSpec(text)
+    const postHogSpec = parsePostHogAnalyticsSpec(text) || parsePostHogAnalyticsSpec(node.text)
+    const spec = !postHogSpec && (isNotebookChartFence(language) ? parseChartSpec(node.text) : parseChartSpec(text))
     const isMermaid = isNotebookMermaidFence(language) || isMermaidLanguage(language) || isMermaidSource(text)
     const isSvg = isNotebookSvgFence(language) || (text.startsWith('<svg') && text.includes('</svg>'))
     const isHtml =
@@ -70,7 +80,11 @@ export function NotebookWimCodeBlock({
             contentEditable={false}
             data-markdown-notebook-node-id={node.id}
         >
-            {spec ? (
+            {postHogSpec ? (
+                <div data-testid="notebook-posthog-analytics-block" className="py-2">
+                    <PostHogAnalyticsDashboard spec={postHogSpec} />
+                </div>
+            ) : spec ? (
                 <div data-testid="notebook-chart-block" className="py-2">
                     <ChartArtifactRenderer spec={{ ...spec, title: undefined }} chrome={false} />
                 </div>

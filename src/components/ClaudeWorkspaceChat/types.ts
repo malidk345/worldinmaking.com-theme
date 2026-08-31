@@ -34,7 +34,7 @@ export interface ThinkingProcess {
   source?: 'model_summary' | 'provider_trace' | 'system_event' | 'none'
 }
 
-export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
+export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
 
 export type ArtifactOrigin = {
   top: number

@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { ReactPreviewIframe } from '../sandbox/ReactPreviewIframe';
+import { parsePostHogAnalyticsSpec } from '../../../lib/ai/chart-artifacts';
 
 const BADGE_LABELS = new Set([
   'YENİ',
@@ -44,6 +45,11 @@ function prepareArtifactMarkdown(source: string): string {
 
 const ChartArtifactRenderer = dynamic(
   () => import('./ChartArtifactRenderer').then((module) => module.ChartArtifactRenderer),
+  { ssr: false }
+);
+
+const PostHogAnalyticsDashboard = dynamic(
+  () => import('../../PostHogAnalytics').then((module) => module.PostHogAnalyticsDashboard),
   { ssr: false }
 );
 
@@ -390,6 +396,10 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
         {activeTab === 'code' ? (
           <div className="h-full w-full overflow-auto bg-[#fafafa] p-3 sm:p-5 font-mono text-[12px] sm:text-[12.5px] leading-relaxed text-[#2a2a2a]">
             <pre className="max-w-full whitespace-pre-wrap break-words">{artifact.content}</pre>
+          </div>
+        ) : activeTab === 'preview' && (artifact.type === 'posthog-analytics' || (artifact.content && (artifact.content.includes('"metrics"') || artifact.content.includes('"graph"') || artifact.content.includes('"table"') || artifact.content.includes('"funnel"')))) ? (
+          <div className="h-full w-full min-w-0 overflow-auto p-3 sm:p-5 bg-primary">
+            <PostHogAnalyticsDashboard spec={typeof artifact.content === 'object' ? artifact.content : (parsePostHogAnalyticsSpec(artifact.content) || (artifact.chartSpec as any))} />
           </div>
         ) : activeTab === 'preview' && artifact.type === 'chart' ? (
           <div className="h-full w-full min-w-0 overflow-auto p-3 sm:p-5 bg-white">

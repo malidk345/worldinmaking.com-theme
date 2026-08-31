@@ -4,7 +4,7 @@ import type { ChartSpec } from '../ai/chart-artifacts'
 export type ArtifactIntent = 'chat' | 'react_ui' | 'mermaid' | 'chart' | 'table' | 'markdown' | 'code'
 
 /** Canonical artifact kinds. Same union as the SSE/workspace document. */
-export type ArtifactKind = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
+export type ArtifactKind = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
 
 export type ArtifactDocument = {
     id: string

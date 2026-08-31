@@ -2,11 +2,32 @@ import { UI_DESIGN_INSTRUCTION } from '../ai/design-request'
 import type { ArtifactIntent } from './kinds'
 
 export const CHART_ARTIFACT_CONTRACT = `
-CHART OUTPUT:
+CHART & ANALYTICS OUTPUT:
 - Emit one envelope, JSON only inside:
 <wimArtifact type="chart" title="Short title">{"kind":"line","xKey":"month","series":[{"key":"value","label":"Value"}],"data":[{"month":"Jan","value":10}]}</wimArtifact>
-- kind: line | bar | pie | doughnut | scatter. At most 60 rows and 6 series. No invented business data.
-- Visible reply stays outside the envelope. Do not emit React or mermaid.
+- Or for full dashboards with metrics, graphs, funnels and tables:
+<wimArtifact type="posthog-analytics" title="Short title">
+{
+  "title": "Performance Dashboard",
+  "metrics": [
+    { "label": "Revenue", "value": "$142,500", "change": "+18.4%", "trend": "up" }
+  ],
+  "graph": {
+    "type": "area",
+    "xAxisKey": "month",
+    "data": [
+      { "month": "Jan", "value": 95000 },
+      { "month": "Feb", "value": 118000 }
+    ]
+  },
+  "table": {
+    "columns": ["Item", "Status"],
+    "rows": [["Pro Plan", { "badge": "Active", "variant": "green" }]]
+  }
+}
+</wimArtifact>
+- Supports: metrics (BigNumbers), graph (line | area | bar | pie | donut), table (sortable data table), and funnel (conversion steps).
+- Visible reply stays outside the envelope. Do not emit raw code or mermaid when analytics/charts are requested.
 `.trim()
 
 export const MERMAID_ARTIFACT_CONTRACT = `

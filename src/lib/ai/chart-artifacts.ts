@@ -31,8 +31,6 @@ const MAX_DATA_POINTS = 500
 const MAX_SERIES = 8
 const MAX_CELL_LENGTH = 500
 const MAX_TITLE_LENGTH = 120
-const CHART_REQUEST_PATTERN =
-    /(grafik|grafiği|grafiğini|\bcharts?\b|\bplot\b|visuali[sz]ation|\btrend\b|bar chart|line chart|pie chart|bar graph)/i
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -165,6 +163,151 @@ export function parseChartSpec(content: string): ChartSpec | null {
     }
 }
 
+function humanizeKey(key: string): string {
+    return String(key || '')
+        .replace(/[_.-]+/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+        .trim()
+}
+
+export function normalizePostHogAnalyticsSpec(input: Record<string, any>): any {
+    if (!isRecord(input)) return null
+
+    const output: Record<string, any> = {
+        title: input.title,
+        description: input.description,
+    }
+
+    // 1. Normalize metrics
+    if (Array.isArray(input.metrics)) {
+        output.metrics = input.metrics.map((m: any) => {
+            if (typeof m === 'object' && m !== null) {
+                return {
+                    label: m.label || humanizeKey(m.name || m.key || 'Metric'),
+                    value: typeof m.value === 'number' ? m.value.toLocaleString('en-US') : String(m.value ?? '-'),
+                    change: m.change,
+                    trend: m.trend || (m.change?.startsWith('+') ? 'up' : m.change?.startsWith('-') ? 'down' : undefined),
+                    positive: m.positive,
+                    sparkline: Array.isArray(m.sparkline) ? m.sparkline : undefined,
+                }
+            }
+            return { label: 'Metric', value: String(m) }
+        })
+    } else if (isRecord(input.metrics)) {
+        output.metrics = Object.entries(input.metrics).map(([key, val]) => {
+            const label = humanizeKey(key)
+            let formattedVal = String(val)
+            if (typeof val === 'number') {
+                if (/rate|percent|ratio|pct/i.test(key)) {
+                    formattedVal = `${val}%`
+                } else if (/price|revenue|cost|order_value|aov|amount/i.test(key)) {
+                    formattedVal = `$${val.toLocaleString('en-US')}`
+                } else {
+                    formattedVal = val.toLocaleString('en-US')
+                }
+            }
+            return {
+                label,
+                value: formattedVal,
+            }
+        })
+    }
+
+    // 2. Normalize funnel
+    const rawFunnel = Array.isArray(input.funnel)
+        ? input.funnel
+        : input.graph && (input.graph.type === 'funnel' || Array.isArray(input.graph.steps))
+          ? input.graph.steps
+          : null
+
+    if (Array.isArray(rawFunnel) && rawFunnel.length > 0) {
+        output.funnel = rawFunnel.map((step: any, idx: number) => {
+            if (typeof step === 'object' && step !== null) {
+                const name = step.name || humanizeKey(step.event || step.label || step.step || `Step ${idx + 1}`)
+                const count = Number(step.count ?? step.value ?? step.users ?? step.total ?? 0)
+                return {
+                    name,
+                    count,
+                    conversionRate: step.conversionRate || step.conversion_rate,
+                    dropOffRate: step.dropOffRate || step.drop_off_rate,
+                }
+            }
+            return { name: `Step ${idx + 1}`, count: Number(step) || 0 }
+        })
+    }
+
+    // 3. Normalize graph
+    if (
+        isRecord(input.graph) &&
+        input.graph.type !== 'funnel' &&
+        Array.isArray(input.graph.data) &&
+        input.graph.data.length > 0
+    ) {
+        output.graph = {
+            type: input.graph.type || 'area',
+            xAxisKey: input.graph.xAxisKey || Object.keys(input.graph.data[0] || {})[0] || 'x',
+            seriesKeys: input.graph.seriesKeys,
+            data: input.graph.data,
+            stacked: Boolean(input.graph.stacked),
+            height: input.graph.height,
+        }
+    }
+
+    // 4. Normalize table
+    if (isRecord(input.table) && (Array.isArray(input.table.rows) || Array.isArray(input.table.data))) {
+        const rawRows = input.table.rows || input.table.data || []
+        const columns = Array.isArray(input.table.columns)
+            ? input.table.columns
+            : rawRows[0] && typeof rawRows[0] === 'object' && !Array.isArray(rawRows[0])
+              ? Object.keys(rawRows[0]).map(humanizeKey)
+              : []
+
+        const rows = rawRows.map((row: any) => {
+            if (Array.isArray(row)) return row
+            if (isRecord(row)) {
+                return (input.table.columns || Object.keys(row)).map((col: string) => {
+                    const exactVal =
+                        row[col] ??
+                        row[col.toLowerCase()] ??
+                        row[col.replace(/ /g, '_').toLowerCase()]
+                    return exactVal ?? '-'
+                })
+            }
+            return [String(row)]
+        })
+
+        output.table = {
+            title: input.table.title,
+            columns,
+            rows,
+        }
+    }
+
+    const hasAnySection = Boolean(output.metrics || output.graph || output.table || output.funnel)
+    return hasAnySection ? output : null
+}
+
+export function parsePostHogAnalyticsSpec(content: string): any | null {
+    if (!content || typeof content !== 'string') return null
+    const normalized = content
+        .trim()
+        .replace(/^```(?:json|posthog|posthog-analytics|analytics|dashboard)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+
+    try {
+        const parsed = JSON.parse(normalized) as Record<string, any>
+        if (isRecord(parsed)) {
+            return normalizePostHogAnalyticsSpec(parsed)
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
+const CHART_REQUEST_PATTERN =
+    /(grafik|grafiği|grafiğini|\bcharts?\b|\bplot\b|visuali[sz]ation|\btrend\b|bar chart|line chart|pie chart|bar graph|analitik|analytics|dashboard|metrik|kpi|funnel|dönüşüm|donusum)/i
+
 export function isChartRequest(prompt: string): boolean {
     const text = String(prompt || '')
     if (!text) return false
@@ -178,7 +321,7 @@ function attributeValue(attributes: string, name: string): string | undefined {
 }
 
 const CHART_ARTIFACT_PATTERN = /<(?:wimArtifact|antArtifact|artifact)\s+([^>]*?)>([\s\S]*?)<\/(?:wimArtifact|antArtifact|artifact)>/gi
-const CHART_CODE_BLOCK_PATTERN = /```(?:chart|chartjson|json)\s*\n([\s\S]*?)```/gi
+const CHART_CODE_BLOCK_PATTERN = /```(?:chart|chartjson|json|posthog|posthog-analytics|analytics|dashboard)\s*\n([\s\S]*?)```/gi
 
 /** Extracts only explicit chart artifacts or chart-shaped JSON requested by the user. */
 export function extractChartArtifacts(content: string, userPrompt: string): ExtractedChartArtifact[] {
@@ -190,6 +333,20 @@ export function extractChartArtifacts(content: string, userPrompt: string): Extr
     while ((match = CHART_ARTIFACT_PATTERN.exec(content)) !== null) {
         const attributes = match[1]
         const rawType = attributeValue(attributes, 'type')?.toLowerCase()
+
+        if (rawType === 'posthog-analytics' || rawType === 'analytics') {
+            const phSpec = parsePostHogAnalyticsSpec(match[2])
+            if (phSpec) {
+                artifacts.push({
+                    title: attributeValue(attributes, 'title') || phSpec.title || 'Analytics Dashboard',
+                    description: 'PostHog Analytics Dashboard',
+                    content: JSON.stringify(phSpec),
+                    chartSpec: phSpec as any,
+                })
+                continue
+            }
+        }
+
         if (rawType !== 'chart' && rawType !== 'visualization') continue
 
         const chartSpec = parseChartSpec(match[2])
@@ -206,6 +363,16 @@ export function extractChartArtifacts(content: string, userPrompt: string): Extr
     if (artifacts.length > 0 || !isChartRequest(userPrompt)) return artifacts
 
     while ((match = CHART_CODE_BLOCK_PATTERN.exec(content)) !== null) {
+        const phSpec = parsePostHogAnalyticsSpec(match[1])
+        if (phSpec) {
+            artifacts.push({
+                title: phSpec.title || 'Analytics Dashboard',
+                description: 'PostHog Analytics Dashboard',
+                content: JSON.stringify(phSpec),
+                chartSpec: phSpec as any,
+            })
+            continue
+        }
         const chartSpec = parseChartSpec(match[1])
         if (!chartSpec) continue
         artifacts.push({
@@ -217,14 +384,24 @@ export function extractChartArtifacts(content: string, userPrompt: string): Extr
     }
 
     if (artifacts.length === 0 && content.trim().startsWith('{')) {
-        const chartSpec = parseChartSpec(content)
-        if (chartSpec) {
+        const phSpec = parsePostHogAnalyticsSpec(content)
+        if (phSpec) {
             artifacts.push({
-                title: chartSpec.title || 'Generated chart',
-                description: 'Chart JSON converted to a validated artifact',
-                content: JSON.stringify(chartSpec),
-                chartSpec,
+                title: phSpec.title || 'Analytics Dashboard',
+                description: 'PostHog Analytics Dashboard',
+                content: JSON.stringify(phSpec),
+                chartSpec: phSpec as any,
             })
+        } else {
+            const chartSpec = parseChartSpec(content)
+            if (chartSpec) {
+                artifacts.push({
+                    title: chartSpec.title || 'Generated chart',
+                    description: 'Chart JSON converted to a validated artifact',
+                    content: JSON.stringify(chartSpec),
+                    chartSpec,
+                })
+            }
         }
     }
 
@@ -236,9 +413,14 @@ export function stripChartArtifactMarkup(content: string): string {
     return content
         .replace(CHART_ARTIFACT_PATTERN, (fullMatch, attributes: string) => {
             const rawType = attributeValue(attributes, 'type')?.toLowerCase()
-            return rawType === 'chart' || rawType === 'visualization' ? '' : fullMatch
+            return rawType === 'chart' || rawType === 'visualization' || rawType === 'posthog-analytics' || rawType === 'analytics'
+                ? ''
+                : fullMatch
         })
-        .replace(/<(?:wimArtifact|antArtifact|artifact)\s+([^>]*?type=["'](?:chart|visualization)["'][^>]*)>[\s\S]*$/gi, '')
+        .replace(
+            /<(?:wimArtifact|antArtifact|artifact)\s+([^>]*?type=["'](?:chart|visualization|posthog-analytics|analytics)["'][^>]*)>[\s\S]*$/gi,
+            ''
+        )
         .replace(CHART_CODE_BLOCK_PATTERN, '')
         .trim()
 }

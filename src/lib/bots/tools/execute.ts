@@ -1,4 +1,4 @@
-import { parseChartSpec } from '../../ai/chart-artifacts'
+import { parseChartSpec, parsePostHogAnalyticsSpec } from '../../ai/chart-artifacts'
 import type { AiCitation } from '../../ai/contracts'
 import type { ArtifactDocument, ArtifactKind } from '../../artifacts/kinds'
 import { artifactContentError } from '../../artifacts/validate-source'
@@ -143,7 +143,7 @@ const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
     diagram: 'mermaid',
     flowchart: 'mermaid',
     flow: 'mermaid',
-    graph: 'mermaid',
+    graph: 'posthog-analytics',
     tsx: 'react',
     jsx: 'react',
     component: 'react',
@@ -155,6 +155,13 @@ const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
     note: 'markdown',
     csv: 'table',
     spreadsheet: 'table',
+    analytics: 'posthog-analytics',
+    dashboard: 'posthog-analytics',
+    posthog: 'posthog-analytics',
+    'posthog-dashboard': 'posthog-analytics',
+    kpi: 'posthog-analytics',
+    metrics: 'posthog-analytics',
+    funnel: 'posthog-analytics',
 }
 
 function parseObjectJson(raw: string): Record<string, unknown> | null {
@@ -245,8 +252,17 @@ async function executeCreateArtifact(
         const spec = parseChartSpec(content)
         if (!spec) return { ok: false, result: JSON.stringify({ ok: false, error: 'content must be valid chart JSON' }) }
         artifact.chartSpec = spec
-        artifact.content = JSON.stringify(spec)
+        artifact.content = JSON.stringify(spec, null, 2)
         artifact.language = 'json'
+    }
+
+    if (type === 'posthog-analytics') {
+        const spec = parsePostHogAnalyticsSpec(content)
+        if (!spec) return { ok: false, result: JSON.stringify({ ok: false, error: 'content must be valid analytics JSON (metrics, graph, table, or funnel)' }) }
+        artifact.chartSpec = spec as any
+        artifact.content = JSON.stringify(spec, null, 2)
+        artifact.language = 'json'
+        artifact.description = 'PostHog Lemon Analytics'
     }
 
     return {
