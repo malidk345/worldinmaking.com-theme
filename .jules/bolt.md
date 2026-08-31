@@ -24,3 +24,7 @@
 ## 2025-05-18 - System Prompt Capping Optimization in AI Gateway
 **Learning:** Hard-truncating system prompts to 8,000 characters in `src/lib/bots/ai-gateway.ts` caused truncation of rich system context instructions during long multi-turn AI interactions. Increasing system prompt capacity to 12,000 characters provides adequate context window while retaining optimal token fitting logic across Groq and Gemini models.
 **Action:** When configuring multi-provider AI gateway system prompt limits, ensure system prompt caps accommodate rich operational preambles and persona contexts without clipping critical tool definitions.
+
+## 2024-11-20 - Avoid Array Spreading of Iterables
+**Learning:** Using `[...iterable].reduce(...)` on Sets or Strings creates temporary intermediate array allocations and incurs callback overhead. This pattern was found in `documentModel.ts` and `markdown.ts` and can cause unnecessary GC pressure and CPU cycles during parsing or model updates.
+**Action:** Replace `[...iterable].reduce(...)` with `for...of` loops. This executes the same logic efficiently in O(N) time with zero intermediate array allocations.

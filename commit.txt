@@ -1,0 +1,6 @@
+⚡ Bolt: [performance improvement] Replace iterable spreading + reduce with for...of loops
+
+💡 What: Replaced `[...iterable].reduce(...)` patterns in `markdown.ts` and `documentModel.ts` with `for...of` loops.
+🎯 Why: Using array spread `[...iterable]` on Sets or strings before calling `.reduce()` creates temporary intermediate arrays and adds callback overhead, leading to unnecessary GC pressure and CPU cycles during markdown parsing and model updates.
+📊 Impact: Eliminates temporary array allocations and callback overhead in `getListItemDepth` and `mapNodeInlineChildren`, providing a small O(N) execution optimization.
+🔬 Measurement: Check the updated files; verify that performance regressions are not introduced via `pnpm run test:smoke`.
