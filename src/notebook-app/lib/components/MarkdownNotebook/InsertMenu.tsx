@@ -9,7 +9,7 @@ import {
     INSERT_MENU_MIN_HEIGHT,
     INSERT_MENU_VIEWPORT_PADDING,
     INSERT_MENU_WIDTH,
-    InsertCommand,
+    type InsertCommand,
     InsertMenuPosition,
     InsertMenuSelectionDirection,
 } from './editorTypes'
@@ -31,6 +31,7 @@ export function getInsertMenuOptionDomId(menuId: string, commandKey: string): st
 /** The menu's top group. Exported so a registry component can place its insert command here
  * without hard-coding the label, which would split into a second group if this were renamed. */
 export const COMMON_INSERT_COMMAND_CATEGORY = 'Common'
+export type { InsertCommand }
 
 export function omitInsertCommands(commands: InsertCommand[], hiddenKeys: string[] | undefined): InsertCommand[] {
     if (!hiddenKeys?.length) {
@@ -172,7 +173,11 @@ export function getInsertCommandSearchText(command: InsertCommand): string {
 
 export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
     return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
-        accumulator[command.category] = [...(accumulator[command.category] ?? []), command]
+        // Optimize: mutate array in-place with push to avoid O(N^2) spread allocations
+        if (!accumulator[command.category]) {
+            accumulator[command.category] = []
+        }
+        accumulator[command.category].push(command)
         return accumulator
     }, {})
 }
