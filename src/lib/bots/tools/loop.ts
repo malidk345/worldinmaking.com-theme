@@ -484,42 +484,47 @@ export async function runToolLoop(params: {
     }
 
     const nvidiaKey = envFrom(env, 'NVIDIA_API_KEY', 'NVIDIA_KEY', 'DEEPSEEK_API_KEY', 'DEEPSEEK_KEY').trim()
-    const nvidiaModel = envFrom(env, 'NVIDIA_MODEL', 'DEEPSEEK_MODEL') || 'deepseek-ai/deepseek-r1'
+    const configuredNvidia = envFrom(env, 'NVIDIA_MODEL', 'DEEPSEEK_MODEL')
+    const nvidiaModels = configuredNvidia
+        ? [configuredNvidia]
+        : ['deepseek-ai/deepseek-v4-pro-0813', 'deepseek-ai/deepseek-v4-flash-0731']
 
     if (nvidiaKey) {
-        const step = await runToolSteps({
-            provider: 'nvidia:deepseek',
-            env,
-            host: params.host,
-            forceWebSearch: params.forceWebSearch,
-            holdPublicUntilCitations: params.holdPublicUntilCitations,
-            baseMessages,
-            onToken: params.onToken,
-            onTool: params.onTool,
-            complete: ({ messages, toolChoice, onToken }) =>
-                openaiCompletion({
-                    apiKey: nvidiaKey,
-                    baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
-                    model: nvidiaModel,
-                    messages,
-                    toolChoice,
-                    onToken,
-                }),
-        })
-        if (step.kind === 'done') return step.result
-        if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-            return {
-                ok: true,
-                usedTools: step.usedTools,
-                usedWebSearch: step.usedWebSearch,
-                text: step.text,
-                artifacts: step.artifacts,
-                citations: step.citations,
-                actions: step.actions,
+        for (const nvidiaModel of nvidiaModels) {
+            const step = await runToolSteps({
                 provider: 'nvidia:deepseek',
+                env,
+                host: params.host,
+                forceWebSearch: params.forceWebSearch,
+                holdPublicUntilCitations: params.holdPublicUntilCitations,
+                baseMessages,
+                onToken: params.onToken,
+                onTool: params.onTool,
+                complete: ({ messages, toolChoice, onToken }) =>
+                    openaiCompletion({
+                        apiKey: nvidiaKey,
+                        baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+                        model: nvidiaModel,
+                        messages,
+                        toolChoice,
+                        onToken,
+                    }),
+            })
+            if (step.kind === 'done') return step.result
+            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                return {
+                    ok: true,
+                    usedTools: step.usedTools,
+                    usedWebSearch: step.usedWebSearch,
+                    text: step.text,
+                    artifacts: step.artifacts,
+                    citations: step.citations,
+                    actions: step.actions,
+                    provider: 'nvidia:deepseek',
+                }
             }
+            lastError = step.error
         }
-        lastError = step.error
     }
 
     for (const apiKey of groqKeys) {
