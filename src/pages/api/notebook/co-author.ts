@@ -18,7 +18,7 @@ import { finalizeArtifactTurn } from '../../../lib/artifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
 import { checkRateLimit } from '../../../lib/bots/rate-limit'
-import { formatAiSseEvent, type AiSseEvent } from '../../../lib/ai/contracts'
+import { formatAiSseEvent, type AiSseEvent, type AiArtifact } from '../../../lib/ai/contracts'
 import { parseHostSnapshot } from '../../../lib/bots/tools/host'
 import {
     COAUTHOR_MODES,
@@ -217,7 +217,7 @@ export default async function handler(req: Request) {
                     turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
 
                 if (turn.artifacts.length > 0) {
-                    send({ type: 'artifacts', artifacts: turn.artifacts })
+                    send({ type: 'artifacts', artifacts: turn.artifacts as unknown as AiArtifact[] })
                 }
 
                 if (result.success && result.citations?.length) {
@@ -239,7 +239,7 @@ export default async function handler(req: Request) {
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
-                    artifacts: turn.artifacts,
+                    artifacts: turn.artifacts as unknown as AiArtifact[],
                 })
                 controller.close()
             } catch (err: any) {
