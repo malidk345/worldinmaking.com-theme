@@ -16,7 +16,7 @@ import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
-import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
+import { formatAiSseEvent, type AiCitation, type AiSseEvent, type AiArtifact } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
@@ -449,7 +449,7 @@ export default async function handler(req: Request) {
                 }
 
                 if (turn.artifacts.length > 0) {
-                    send({ type: 'artifacts', artifacts: turn.artifacts })
+                    send({ type: 'artifacts', artifacts: turn.artifacts as unknown as AiArtifact[] })
                 }
 
                 if (result.success && result.actions?.length) {
@@ -476,7 +476,7 @@ export default async function handler(req: Request) {
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
-                    artifacts: turn.artifacts,
+                    artifacts: turn.artifacts as unknown as AiArtifact[],
                     latencyMs: result.latencyMs,
                 })
                 controller.close()
