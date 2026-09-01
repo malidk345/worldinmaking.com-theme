@@ -324,9 +324,15 @@ export function stripNotebookRefMarksFromNodes(nodes: NotebookBlockNode[], refId
             const refs = node.refs.filter((ref) => !refIds.has(ref.id))
             return { ...node, refs: refs.length ? refs : undefined }
         }
-        return mapNodeInlineChildren(node, (children) =>
-            [...refIds].reduce((current, refId) => removeInlineRefMark(current, refId), children)
-        )
+        return mapNodeInlineChildren(node, (children) => {
+            // ⚡ Bolt: Iterate directly over the Set using a for...of loop instead of
+            // spreading into a temporary array and using .reduce, eliminating an O(N) allocation.
+            let current = children
+            for (const refId of refIds) {
+                current = removeInlineRefMark(current, refId)
+            }
+            return current
+        })
     })
 }
 

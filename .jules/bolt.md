@@ -24,3 +24,7 @@
 ## 2025-05-18 - System Prompt Capping Optimization in AI Gateway
 **Learning:** Hard-truncating system prompts to 8,000 characters in `src/lib/bots/ai-gateway.ts` caused truncation of rich system context instructions during long multi-turn AI interactions. Increasing system prompt capacity to 12,000 characters provides adequate context window while retaining optimal token fitting logic across Groq and Gemini models.
 **Action:** When configuring multi-provider AI gateway system prompt limits, ensure system prompt caps accommodate rich operational preambles and persona contexts without clipping critical tool definitions.
+
+## 2025-05-18 - Replacing [...iterable].reduce with for...of loops
+**Learning:** Using `[...iterable].reduce(...)` on iterables (like strings or Sets) forces an unnecessary intermediate array allocation in memory. While V8 might optimize some array spreads, using a simple `for...of` loop guarantees O(1) extra space and avoids O(N) memory allocation and garbage collection churn, especially inside frequent parsing loops.
+**Action:** When aggregating or transforming over an iterable (like iterating characters of a string or elements of a Set), replace `[...iterable].reduce` with standard `for...of` loops to eliminate intermediate allocations.
