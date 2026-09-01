@@ -97,7 +97,8 @@ const unsubCartItemsChange = useCartStore.subscribe(
             return prev + (curr.kit ? 0 : curr.price) * curr.count
         }, 0)
         const cartCount = cartItems?.length
-            ? cartItems.map((item) => item.count).reduce((prev, curr) => prev + curr)
+            // Bolt: Avoid intermediate array allocation by accumulating directly
+            ? cartItems.reduce((prev, curr) => prev + curr.count, 0)
             : 0
         useCartStore.setState({ subtotal, count: cartCount, cartId: null })
     }
