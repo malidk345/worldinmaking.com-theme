@@ -449,7 +449,7 @@ export default async function handler(req: Request) {
                 }
 
                 if (turn.artifacts.length > 0) {
-                    send({ type: 'artifacts', artifacts: turn.artifacts })
+                    send({ type: 'artifacts', artifacts: turn.artifacts as any })
                 }
 
                 if (result.success && result.actions?.length) {
@@ -476,7 +476,7 @@ export default async function handler(req: Request) {
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
-                    artifacts: turn.artifacts,
+                    artifacts: turn.artifacts as any,
                     latencyMs: result.latencyMs,
                 })
                 controller.close()

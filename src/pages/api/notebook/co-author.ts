@@ -217,7 +217,7 @@ export default async function handler(req: Request) {
                     turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
 
                 if (turn.artifacts.length > 0) {
-                    send({ type: 'artifacts', artifacts: turn.artifacts })
+                    send({ type: 'artifacts', artifacts: turn.artifacts as any })
                 }
 
                 if (result.success && result.citations?.length) {
@@ -239,7 +239,7 @@ export default async function handler(req: Request) {
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
-                    artifacts: turn.artifacts,
+                    artifacts: turn.artifacts as any,
                 })
                 controller.close()
             } catch (err: any) {
