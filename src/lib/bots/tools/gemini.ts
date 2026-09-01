@@ -174,7 +174,7 @@ export async function geminiToolCompletion(params: {
     onToken?: (text: string) => void
     timeoutMs?: number
 }): Promise<
-    | { ok: true; content: string; toolCalls: ToolCall[]; modelParts: GeminiPart[] }
+    | { ok: true; content: string; toolCalls: ToolCall[]; modelParts: GeminiPart[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
@@ -210,6 +210,7 @@ export async function geminiToolCompletion(params: {
         const decoder = new TextDecoder('utf-8')
         let buffer = ''
         let content = ''
+        let reasoning = ''
         const toolCalls: ToolCall[] = []
         const modelParts: GeminiPart[] = []
         let lastThoughtSignature = ''
@@ -271,7 +272,9 @@ export async function geminiToolCompletion(params: {
                                     ...(isThought ? { thought: true } : {}),
                                     ...(signature ? { thoughtSignature: signature } : {}),
                                 })
-                                if (!isThought) {
+                                if (isThought) {
+                                    reasoning += text
+                                } else {
                                     content += text
                                     if (!chunkHasTool && toolCalls.length === 0) params.onToken?.(text)
                                 }
@@ -294,7 +297,7 @@ export async function geminiToolCompletion(params: {
             }
         }
 
-        return { ok: true, content, toolCalls, modelParts }
+        return { ok: true, content, toolCalls, modelParts, reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {

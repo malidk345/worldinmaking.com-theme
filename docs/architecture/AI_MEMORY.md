@@ -452,10 +452,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-330` | Stream 5 | Ask AI tool loop Groq model: gpt-oss-120b (forum stays Qwen) | `tools/loop.ts`, runtime-env, .env.example | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-331` | Stream 5 | Golden tours, shared provider errors, notebook insert, artifact revise, runtime label | golden.ts, provider-errors, host, chat, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-332` | Stream 3 / 5 | Mobile Ask AI feed must not jump up while streaming | ClaudeWorkspaceChat/index.tsx, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
+| `TSK-333` | Stream 5 | PostHog-Inspired Node State Machine & Fail-Open Gateway Recovery (Eliminate 'tool loop empty' and thinking wobble bugs) | `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/loop.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-01 |
+
 
 ---
 
-## 5. AI Change History & Log
+### Entry 410 - NVIDIA NIM & DeepSeek R1 Model Integration
+- **Date:** 2026-09-02
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Integrated NVIDIA NIM with `deepseek-ai/deepseek-r1` as an execution tier for tool calling and reasoning: (1) Added `NVIDIA_API_KEY`, `NVIDIA_KEY`, `DEEPSEEK_API_KEY`, `DEEPSEEK_KEY` to `SECRET_NAME_BASES` and `getProviderKeyFlags` in `src/lib/bots/runtime-env.ts`. (2) Updated `openaiCompletion` in `src/lib/bots/tools/loop.ts` to support customizable `baseUrl` and stream `delta.reasoning_content` (DeepSeek R1 format). (3) Wired `nvidia:deepseek` provider directly into `runToolLoop` prioritized before Groq/Gemini fallbacks.
+- **Modified Files:** `src/lib/bots/runtime-env.ts`, `src/lib/bots/tools/loop.ts`, `.env.local`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors); Playwright test suite 28/28 PASS.
+
+### Entry 409 - PostHog-Inspired Node State Machine & Fail-Open Gateway Recovery (TSK-333)
+- **Date:** 2026-09-01
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Solved `"The reply could not be completed. tool loop empty"` and thinking wobble failures by transitioning the bot tool runtime into a PostHog AI-inspired Node State Machine: (1) Created `src/lib/bots/tools/pipeline.ts` providing typed `AgentState` and clean state graph nodes (`DecisionNode` -> `ToolsNode` -> `SynthesisNode` -> `FallbackNode`). (2) Upgraded `geminiToolCompletion` (`src/lib/bots/tools/gemini.ts`) and `groqCompletion` (`src/lib/bots/tools/loop.ts`) to stream and capture native reasoning & thought tokens without losing public responses. (3) Added `extractFallbackAnswerFromThinking` to recover turns where models generated answers inside thinking blocks. (4) Upgraded `streamBotTurn` (`src/lib/bots/orchestrate.ts`) with a fail-open recovery path to `streamWithGateway` when a tool loop produces no text, completely eliminating empty tool loop crashes. (5) Aligned `AiArtifactType` in `src/lib/ai/contracts.ts` with `ArtifactKind`.
+- **Modified Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/loop.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors); Playwright test suites (`tool-loop.spec.ts`, `ask-ai-harness.spec.ts`, `thinking-tags.spec.ts`) 68/68 PASS (100%).
+
 
 ### Entry 408 - Full BYOK Integration & Verification Endpoint (TSK-238)
 - **Date:** 2026-08-29

@@ -575,43 +575,46 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 actions: loop.actions,
             }
         }
-        input.onLifecycle?.({ phase: 'generation', status: 'failed', detail: 'Tool runtime produced no answer' })
-        const emptyThinking: ThinkingProcess = {
-            summary: '',
-            stages: [],
-            structured: false,
-            depth: input.thinkingDepth || 'standard',
-            source: 'none',
+        if (liveWeb && hostCitations.length === 0 && !loop.usedTools) {
+            input.onLifecycle?.({ phase: 'generation', status: 'failed', detail: 'Live search produced no answer' })
+            const emptyThinking: ThinkingProcess = {
+                summary: '',
+                stages: [],
+                structured: false,
+                depth: input.thinkingDepth || 'standard',
+                source: 'none',
+            }
+            recordAiTurn({
+                ok: false,
+                stream: true,
+                provider: 'none',
+                taskType,
+                philosopher: persona.name,
+                latencyMs: Date.now() - streamStarted,
+                attemptCount: 1,
+                errorCode: 'tools_required',
+            })
+            return {
+                success: false,
+                philosopher: persona.name,
+                epistemicStance: persona.epistemicStance,
+                reply: 'Live search did not complete, so no headlines were invented. Please try again.',
+                thought: '',
+                thinking: emptyThinking,
+                provider: 'none',
+                confident: false,
+                error: loop.error || 'tools_required',
+                host: 'cloudflare-pages-edge',
+                configured: getProviderKeyFlags(runtimeEnv),
+                attempts: [loop.error || 'tool loop empty'].filter(Boolean),
+                latencyMs: Date.now() - streamStarted,
+                taskType,
+            }
         }
-        recordAiTurn({
-            ok: false,
-            stream: true,
-            provider: 'none',
-            taskType,
-            philosopher: persona.name,
-            latencyMs: Date.now() - streamStarted,
-            attemptCount: 1,
-            errorCode: 'tools_required',
-        })
-        return {
-            success: false,
-            philosopher: persona.name,
-            epistemicStance: persona.epistemicStance,
-            reply: liveWeb
-                ? 'Live search did not complete, so no headlines were invented. Please try again.'
-                : 'The assistant could not finish this turn. Please try again.',
-            thought: '',
-            thinking: emptyThinking,
-            provider: 'none',
-            confident: false,
-            error: loop.error || 'tools_required',
-            host: 'cloudflare-pages-edge',
-            configured: getProviderKeyFlags(runtimeEnv),
-            attempts: [loop.error || 'tool loop empty'].filter(Boolean),
-            latencyMs: Date.now() - streamStarted,
-            taskType,
-        }
+
+        console.warn('[orchestrate] tool loop produced no answer, recovering via gateway fallback')
     }
+
 
     const gen = await streamWithGateway({
         systemPrompt,
