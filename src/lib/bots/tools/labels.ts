@@ -21,6 +21,7 @@ const LABELS: Record<string, [string, string, string]> = {
     set_system_appearance: ['Updating appearance', 'Updated appearance', 'Could not update appearance'],
     annotate_notebook: ['Adding notebook note', 'Added notebook note', 'Could not add note'],
     publish_to_forum: ['Publishing to forum', 'Published to forum', 'Could not publish to forum'],
+    read_document: ['Reading document', 'Read document', 'Could not read document'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {

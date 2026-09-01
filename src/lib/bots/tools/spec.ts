@@ -86,6 +86,36 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'read_document',
+            description:
+                'Read and analyze a document, PDF, CSV, JSON, Markdown, or text file from a public URL or from the active workspace. Supports targeting specific pages and keyword filtering.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    url: {
+                        type: 'string',
+                        description: 'Public http(s) URL of a PDF, CSV, JSON, Markdown, or text document.',
+                    },
+                    name: {
+                        type: 'string',
+                        description: 'Name or title of a workspace document, attachment, or notebook to read.',
+                    },
+                    page: {
+                        type: 'number',
+                        description: 'Specific page number (1-indexed) to read for multi-page documents like PDFs.',
+                    },
+                    query: {
+                        type: 'string',
+                        description: 'Optional keyword or topic to locate relevant sections in the document.',
+                    },
+                },
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'get_workspace',
             description:
                 'Look at the live WorldInMaking OS: current path, open windows, bound notebook, and installed apps. Use when the user asks what is open, where they are, or what exists in the product.',

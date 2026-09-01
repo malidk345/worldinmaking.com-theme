@@ -37,6 +37,7 @@ test.describe('OpenAI tool protocol', () => {
             'manage_windows',
             'open_path',
             'publish_to_forum',
+            'read_document',
             'read_notebook',
             'read_post',
             'replace_notebook_selection',
@@ -249,6 +250,7 @@ test.describe('OpenAI tool protocol', () => {
             'manage_windows',
             'open_path',
             'publish_to_forum',
+            'read_document',
             'read_notebook',
             'read_post',
             'replace_notebook_selection',
@@ -545,5 +547,41 @@ test.describe('OpenAI tool protocol', () => {
         expect(result.action?.type).toBe('publish_to_forum')
         expect(result.action?.payload.title).toBe('Genealogy of Ethics')
         expect(result.action?.payload.category).toBe('philosophy')
+    })
+
+    test('read_document blocks private and non-http URLs', async () => {
+        const result = await executeToolCall({
+            id: 'call-doc-1',
+            name: 'read_document',
+            argumentsJson: JSON.stringify({ url: 'http://127.0.0.1/secret.pdf' }),
+        })
+        expect(result.ok).toBe(false)
+        expect(result.result).toContain('url is not allowed')
+    })
+
+    test('read_document resolves bound notebook document by name', async () => {
+        const result = await executeToolCall(
+            {
+                id: 'call-doc-2',
+                name: 'read_document',
+                argumentsJson: JSON.stringify({ name: 'Architecture Research' }),
+            },
+            undefined,
+            { notebookId: 'nb-101', notebookTitle: 'Architecture Research', selection: 'Detailed system blueprints.' }
+        )
+        expect(result.ok).toBe(true)
+        expect(result.result).toContain('Architecture Research')
+        expect(result.result).toContain('Detailed system blueprints.')
+    })
+
+    test('read_pdf and parse_document aliases map to read_document', async () => {
+        const result = await executeToolCall({
+            id: 'call-doc-3',
+            name: 'read_pdf',
+            argumentsJson: JSON.stringify({ url: 'file:///etc/passwd' }),
+        })
+        expect(result.name).toBe('read_document')
+        expect(result.ok).toBe(false)
+        expect(result.result).toContain('url must be http or https')
     })
 })

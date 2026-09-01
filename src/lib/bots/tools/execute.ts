@@ -5,6 +5,7 @@ import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { fetchPublicUrl } from './fetch-url'
+import { executeReadDocument } from './read-document'
 import {
     executeAnnotateNotebook,
     executeCreateNotebook,
@@ -137,6 +138,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         tag: 'category',
     },
     create_artifact: { kind: 'type', source: 'content', body: 'content', code: 'content', markdown: 'content' },
+    read_document: { doc: 'name', document: 'name', file: 'name', link: 'url', href: 'url', p: 'page', q: 'query' },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -321,6 +323,11 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     rename_notebook: 'update_notebook_title',
     set_notebook_title: 'update_notebook_title',
     artifact: 'create_artifact',
+    read_pdf: 'read_document',
+    read_file: 'read_document',
+    parse_document: 'read_document',
+    view_document: 'read_document',
+    inspect_document: 'read_document',
 }
 
 export function resolveToolName(raw: string): string {
@@ -352,6 +359,23 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const result = clip(`UNTRUSTED page text for ${url}:\n${fetched.text}`, MAX_TOOL_RESULT)
+            return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
+        }
+        if (name === 'read_document') {
+            const executed = await executeReadDocument(
+                {
+                    url: asText(args.url, 2_000).trim(),
+                    name: asText(args.name, 120).trim(),
+                    page: typeof args.page === 'number' ? args.page : undefined,
+                    query: asText(args.query, 120).trim(),
+                },
+                host
+            )
+            if (!executed.ok) {
+                const result = JSON.stringify({ ok: false, error: executed.error })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const result = clip(executed.text, MAX_TOOL_RESULT)
             return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
         }
         if (name === 'get_workspace') {

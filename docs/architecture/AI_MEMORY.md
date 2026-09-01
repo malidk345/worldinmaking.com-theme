@@ -453,9 +453,20 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-331` | Stream 5 | Golden tours, shared provider errors, notebook insert, artifact revise, runtime label | golden.ts, provider-errors, host, chat, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-332` | Stream 3 / 5 | Mobile Ask AI feed must not jump up while streaming | ClaudeWorkspaceChat/index.tsx, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-333` | Stream 5 | PostHog-Inspired Node State Machine & Fail-Open Gateway Recovery (Eliminate 'tool loop empty' and thinking wobble bugs) | `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/loop.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-01 |
+| `TSK-334` | Stream 5 | Implement powerful `read_document` / `read_pdf` agent tool with multi-format parsing, page targeting, and workspace document resolution | `src/lib/bots/tools/read-document.ts`, `spec.ts`, `execute.ts`, `labels.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-02 |
+
 
 
 ---
+
+## 5. AI Change History & Log
+
+### Entry 411 - Powerful `read_document` & `read_pdf` Tool Implementation (TSK-334)
+- **Date:** 2026-09-02
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Built and integrated a comprehensive, Edge-safe `read_document` tool for the agent tool loop: (1) Created `src/lib/bots/tools/read-document.ts` providing remote document fetching (PDF stream decoding, CSV to Markdown table transformation, JSON formatting, text/HTML extraction), SSRF URL blocking (`isBlockedFetchUrl`), page targeting (`page: N`), and keyword filtering. (2) Added workspace document fallback resolving `host.notebookTitle`, `host.notebooks`, and `host.artifactId`. (3) Added `read_document` schema to `OPENAI_CHAT_TOOLS` in `spec.ts` and workbench labels in `labels.ts`. (4) Registered aliases `read_pdf`, `read_file`, `parse_document`, `view_document`, `inspect_document` in `execute.ts`. (5) Added unit and integration tests in `tests/tool-loop.spec.ts`.
+- **Modified Files:** `src/lib/bots/tools/read-document.ts`, `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/labels.ts`, `tests/tool-loop.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors); Full Playwright test suite 71/71 PASS (100%).
 
 ### Entry 410 - NVIDIA NIM & DeepSeek R1 Model Integration
 - **Date:** 2026-09-02
