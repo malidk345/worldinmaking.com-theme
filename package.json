@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:notebook-styles": "node scripts/generate-scoped-quill-shim.js && node scripts/generate-style-bundle.js && node scripts/compile-notebook-css.js",
+    "build:notebook-styles": "node scripts/generate-style-bundle.js && node scripts/compile-notebook-css.js",
     "predev": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
     "prebuild": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
     "pages:build": "next-on-pages",
