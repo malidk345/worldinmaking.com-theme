@@ -1238,22 +1238,29 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const processedItem = { ...item }
 
             if (item.dynamicChildren && (dynamicMenus as any)[item.dynamicChildren]) {
-                const newChildren = [
-                    ...(item.children || []),
-                    ...(dynamicMenus as any)[item.dynamicChildren],
-                ].reduce((acc: MenuItem[][], child: MenuItem) => {
+                // Bolt: Refactored to avoid spread array allocations and O(N^2) reduce pattern, reducing main thread layout parsing time.
+                const newChildren: MenuItem[][] = []
+                const processChild = (child: MenuItem) => {
                     if (isLabel(child)) {
-                        acc.push([child])
+                        newChildren.push([child])
                     } else {
-                        const lastGroup = acc[acc.length - 1]
+                        const lastGroup = newChildren[newChildren.length - 1]
                         if (!lastGroup || isLabel(lastGroup[lastGroup.length - 1])) {
-                            acc.push([child])
+                            newChildren.push([child])
                         } else {
                             lastGroup.push(child)
                         }
                     }
-                    return acc
-                }, [] as MenuItem[][])
+                }
+
+                if (item.children) {
+                    for (const child of item.children) processChild(child)
+                }
+
+                const dynamicChildrenList = (dynamicMenus as any)[item.dynamicChildren]
+                if (dynamicChildrenList) {
+                    for (const child of dynamicChildrenList) processChild(child)
+                }
 
                 newChildren.forEach((group: MenuItem[]) => {
                     group.sort((a: MenuItem, b: MenuItem) => {
