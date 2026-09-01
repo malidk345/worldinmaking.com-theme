@@ -1,6 +1,0 @@
-⚡ Bolt: [performance improvement] optimize cartCount calculation
-
-💡 What: Replaced `.map().reduce()` with a single `.reduce()` in `src/templates/merch/store.ts`.
-🎯 Why: Chained `.map().reduce()` creates an intermediate array of counts, causing unnecessary O(N) memory allocation and churn.
-📊 Impact: Reduces memory overhead from O(N) to O(1) for this operation and executes faster.
-🔬 Measurement: Check the updated code to verify intermediate array creation is avoided.
