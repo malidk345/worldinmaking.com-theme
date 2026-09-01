@@ -25,6 +25,7 @@ export type HostSnapshot = {
     artifactId?: string
     artifactTitle?: string
     artifactType?: string
+    attachments?: Array<{ name: string; content: string }>
 }
 
 export type HostOsAction = {

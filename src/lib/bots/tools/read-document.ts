@@ -121,6 +121,25 @@ export async function executeReadDocument(
                 }
             }
         }
+        if (host.attachments?.length) {
+            const matchedAtt = host.attachments.find(
+                (att) =>
+                    att.name.toLowerCase().includes(docName.toLowerCase()) ||
+                    docName.toLowerCase().includes(att.name.toLowerCase())
+            )
+            if (matchedAtt) {
+                let content = matchedAtt.content || ''
+                if (filterQuery) {
+                    const paragraphs = content.split(/\n\n+/)
+                    const matched = paragraphs.filter((p) => p.toLowerCase().includes(filterQuery))
+                    if (matched.length > 0) content = matched.join('\n\n')
+                }
+                return {
+                    ok: true,
+                    text: `[Attached Document: ${matchedAtt.name}]\n${content.slice(0, MAX_DOC_CHARS)}`,
+                }
+            }
+        }
         if (host.artifactId && (host.artifactId.toLowerCase().includes(docName.toLowerCase()) || docName === 'current')) {
             return {
                 ok: true,

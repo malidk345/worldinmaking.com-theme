@@ -339,6 +339,10 @@ export default async function handler(req: Request) {
                     .filter(Boolean)
                     .join('\n\n')
 
+                if (host && attachmentContext.value) {
+                    host.attachments = [{ name: 'attachments', content: attachmentContext.value }]
+                }
+
                 const notebookTask = body.notebookBound === true && isNotebookTask(prompt)
                 const trustedInstruction = notebookTask
                     ? NOTEBOOK_EDITOR_INSTRUCTION
