@@ -1,7 +1,15 @@
 /**
- * Lightweight in-memory rate limit for edge isolates.
- * Resets when the isolate recycles — good enough to stop accidental spam.
+ * Rate limiting for edge runtimes.
+ *
+ * `checkRateLimit` — in-memory per-isolate limiter. Resets when the isolate
+ * recycles; fine as an always-available fallback.
+ *
+ * `checkRateLimitDurable` — Upstash Redis (REST) fixed-window limiter that
+ * survives isolate recycling. Falls back to the in-memory limiter when
+ * UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are not configured or the
+ * store is unreachable, so endpoints never hard-fail on infra issues.
  */
+import { envFrom, getRuntimeEnv, type EnvStore } from './runtime-env'
 type Bucket = { count: number; resetAt: number }
 
 const buckets = new Map<string, Bucket>()
@@ -67,6 +75,91 @@ export function checkRateLimit(key: string, limit = 20, windowMs = 60 * 60 * 100
         resetSec,
         retryAfterSec: resetSec,
     }
+}
+
+// ── Durable Upstash-backed limiter ───────────────────────────────────────────
+
+type UpstashCreds = { url: string; token: string }
+
+function readUpstashCreds(env?: EnvStore): UpstashCreds | null {
+    const store = env ?? getRuntimeEnv()
+    const url = envFrom(store, 'UPSTASH_REDIS_REST_URL').replace(/\/+$/, '')
+    const token = envFrom(store, 'UPSTASH_REDIS_REST_TOKEN')
+    if (!url || !token) return null
+    return { url, token }
+}
+
+const UPSTASH_TIMEOUT_MS = 2_500
+
+/**
+ * Fixed-window counter in Redis:
+ *   key = `rl:{name}:{windowIndex}` with PEXPIRE so old windows self-clean.
+ * Returns null when Upstash is not configured or unreachable (caller falls back).
+ */
+async function upstashRateLimit(
+    creds: UpstashCreds,
+    key: string,
+    limit: number,
+    windowMs: number
+): Promise<RateLimitResult | null> {
+    const now = Date.now()
+    const windowIndex = Math.floor(now / windowMs)
+    const windowStart = windowIndex * windowMs
+    const redisKey = `rl:${key}:${windowIndex}`
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), UPSTASH_TIMEOUT_MS)
+    try {
+        const res = await fetch(`${creds.url}/pipeline`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${creds.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify([
+                ['INCR', redisKey],
+                ['PEXPIREAT', redisKey, windowStart + windowMs + 60_000],
+            ]),
+            signal: controller.signal,
+        })
+        if (!res.ok) return null
+        const data = (await res.json()) as Array<{ result?: number; error?: string }>
+        const count = Number(data?.[0]?.result)
+        if (!Number.isFinite(count) || count < 1) return null
+
+        const resetSec = Math.max(1, Math.ceil((windowStart + windowMs - now) / 1000))
+        const allowed = count <= limit
+        return {
+            allowed,
+            limit,
+            remaining: Math.max(0, limit - count),
+            resetSec,
+            retryAfterSec: resetSec,
+        }
+    } catch {
+        return null
+    } finally {
+        clearTimeout(timer)
+    }
+}
+
+/**
+ * Preferred limiter for public LLM endpoints. Uses durable Upstash counters
+ * when configured; otherwise degrades to the per-isolate in-memory bucket.
+ * Never throws.
+ */
+export async function checkRateLimitDurable(
+    key: string,
+    limit = 20,
+    windowMs = 60 * 60 * 1000,
+    env?: EnvStore
+): Promise<RateLimitResult> {
+    const creds = readUpstashCreds(env)
+    if (creds) {
+        const durable = await upstashRateLimit(creds, key, limit, windowMs)
+        if (durable) return durable
+    }
+    return checkRateLimit(key, limit, windowMs)
 }
 
 export function resetRateLimit(key?: string): void {

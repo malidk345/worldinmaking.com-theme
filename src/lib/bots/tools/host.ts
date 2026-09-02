@@ -26,6 +26,11 @@ export type HostSnapshot = {
     artifactTitle?: string
     artifactType?: string
     attachments?: Array<{ name: string; content: string }>
+    scratchpad?: {
+        documents?: Array<{ name: string; size?: string; type?: string }>
+        nodes?: Array<{ type: string; title?: string; content: string; source?: string }>
+        tasks?: Array<{ title: string; status: string }>
+    }
 }
 
 export type HostOsAction = {
@@ -110,8 +115,35 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
             plan: u.plan === 'pro' ? 'pro' : u.plan === 'free' ? 'free' : undefined,
         }
     }
-    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user) return undefined
-    return { path, user, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType }
+    let scratchpad: HostSnapshot['scratchpad']
+    if (snap.scratchpad && typeof snap.scratchpad === 'object') {
+        const s = snap.scratchpad as Record<string, unknown>
+        scratchpad = {
+            documents: Array.isArray(s.documents)
+                ? s.documents.map((d: any) => ({
+                      name: String(d.name || 'Document'),
+                      size: typeof d.size === 'string' ? d.size : undefined,
+                      type: typeof d.type === 'string' ? d.type : undefined,
+                  }))
+                : undefined,
+            nodes: Array.isArray(s.nodes)
+                ? s.nodes.map((n: any) => ({
+                      type: String(n.type || 'concept'),
+                      title: typeof n.title === 'string' ? n.title : undefined,
+                      content: String(n.content || ''),
+                      source: typeof n.source === 'string' ? n.source : undefined,
+                  }))
+                : undefined,
+            tasks: Array.isArray(s.tasks)
+                ? s.tasks.map((t: any) => ({
+                      title: String(t.title || ''),
+                      status: String(t.status || 'pending'),
+                  }))
+                : undefined,
+        }
+    }
+    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user && !scratchpad) return undefined
+    return { path, user, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType, scratchpad }
 }
 
 export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }> = [
@@ -125,6 +157,7 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
     { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
     { name: 'Pricing', path: '/pricing', aliases: ['pro', 'upgrade', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
+    { name: 'Scratchpad', path: '/scratchpad', aliases: ['scratchpad', 'karalama defteri', 'working memory', 'memory', 'notes-draft', 'draft'] },
 ]
 
 const ALLOWED_PATHS = new Set(SITE_APPS.map((app) => app.path))
@@ -159,6 +192,12 @@ export function describeWorkspace(host?: HostSnapshot): string {
         userLine,
         `Current path: ${host?.path || '/'}`,
         host?.notebookId ? `Bound notebook: ${host.notebookTitle || host.notebookId} (${host.notebookId})` : 'No notebook bound',
+        host?.scratchpad?.documents?.length
+            ? `Scratchpad Active Documents (${host.scratchpad.documents.length}):\n${host.scratchpad.documents.map((d) => `- ${d.name} (${d.type || 'file'})`).join('\n')}`
+            : '',
+        host?.scratchpad?.nodes?.length
+            ? `Scratchpad Knowledge Nodes & Citations (${host.scratchpad.nodes.length}):\n${host.scratchpad.nodes.slice(0, 8).map((n) => `- [${n.type.toUpperCase()}] ${n.title ? `${n.title}: ` : ''}"${n.content}"${n.source ? ` (${n.source})` : ''}`).join('\n')}`
+            : '',
         host?.notebooks?.length
             ? `Notebooks (${host.notebooks.length}): ${host.notebooks
                   .slice(0, 8)

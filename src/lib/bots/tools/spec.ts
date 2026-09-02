@@ -116,6 +116,76 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'write_scratchpad',
+            description:
+                'Store key knowledge nodes, citations (atıflar), book chapters, core concepts, or quotes into the OS Scratchpad canvas. The scratchpad serves as active cognitive grounding context.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    content: {
+                        type: 'string',
+                        description: 'The quote, extracted key concept, argument, or important note.',
+                    },
+                    type: {
+                        type: 'string',
+                        enum: ['citation', 'concept', 'source', 'synthesis', 'note'],
+                        description: 'Node type: citation (alıntı/atıf), concept (kavram/tez), source (kitap bölümü/belge), synthesis (çıkarım).',
+                    },
+                    title: {
+                        type: 'string',
+                        description: 'Short headline or concept label (e.g. "Übermensch Konsepti", "Kapital Bölüm 1 Özeti").',
+                    },
+                    source: {
+                        type: 'string',
+                        description: 'Book title, chapter, author, or PDF page citation (e.g. "Nietzsche - Böyle Söyledi Zerdüşt, Bölüm 2", "rapor.pdf #s.4").',
+                    },
+                    tags: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Relevant tags or philosophical themes.',
+                    },
+                },
+                required: ['content'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'todo_write',
+            description:
+                'Plan and track multi-step execution tasks (e.g. 1. search data, 2. read PDF, 3. create chart, 4. summarize). Keep task states updated: pending, in_progress, completed. Exactly one item in_progress at a time.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    tasks: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            additionalProperties: false,
+                            properties: {
+                                id: { type: 'string', description: 'Unique task id like "task_1"' },
+                                title: { type: 'string', description: 'Clear actionable step name' },
+                                status: {
+                                    type: 'string',
+                                    enum: ['pending', 'in_progress', 'completed'],
+                                    description: 'Current execution status of this task.',
+                                },
+                            },
+                            required: ['id', 'title', 'status'],
+                        },
+                        description: 'List of tasks and their progress states.',
+                    },
+                },
+                required: ['tasks'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'get_workspace',
             description:
                 'Look at the live WorldInMaking OS: current path, open windows, bound notebook, and installed apps. Use when the user asks what is open, where they are, or what exists in the product.',
@@ -432,6 +502,13 @@ TOOL USE:
   * update_notebook_title: rename or set title for the bound notebook.
   * annotate_notebook: attach inline critique or margin notes to a passage in the notebook.
   * All notebook modifications are applied live by the host with automatic time-travel snapshotting. Do not dump the same markdown in the bubble after calling a notebook tool.
+- write_scratchpad: transfer critical quotes, citations (atıflar), book chapters, thesis concepts, or document excerpts into the Scratchpad canvas as Knowledge Nodes. Use type='citation' for quotes/atıflar, type='concept' for thesis/definitions, type='source' for chapter/document overviews.
+- todo_write: build and update an active plan for multi-step tasks. Mark each step pending -> in_progress -> completed. Exactly one item in_progress at a time.
+- DOCUMENT & RESEARCH DIRECTIVE:
+  * When an attached document, book excerpt, PDF, or multi-step question is provided: DO NOT immediately answer in one shot.
+  * First, call todo_write to outline your inquiry or analysis steps.
+  * Transfer key quotes, book chapters, page citations, and core concepts to the Scratchpad using write_scratchpad (with explicit title, source, type).
+  * Use the accumulated Scratchpad nodes as your active grounding context to deliver your final synthesis.
 - If a tool returns an error, fix the arguments and call it again. Do not dump the failed source in the bubble.
 - If you need a tool, emit only the tool call. Do not write the user-visible answer in the same step. After the host returns the result, write the answer.
 - If no tool is needed, answer normally.

@@ -21,7 +21,9 @@ const LABELS: Record<string, [string, string, string]> = {
     set_system_appearance: ['Updating appearance', 'Updated appearance', 'Could not update appearance'],
     annotate_notebook: ['Adding notebook note', 'Added notebook note', 'Could not add note'],
     publish_to_forum: ['Publishing to forum', 'Published to forum', 'Could not publish to forum'],
-    read_document: ['Reading document', 'Read document', 'Could not read document'],
+    read_document: ['Reading document context', 'Document context loaded', 'Could not read document'],
+    write_scratchpad: ['Extracting knowledge node', 'Saved node to scratchpad', 'Could not save node'],
+    todo_write: ['Structuring cognitive plan', 'Cognitive plan updated', 'Could not update plan'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {

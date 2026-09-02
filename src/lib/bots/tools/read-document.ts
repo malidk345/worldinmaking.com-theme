@@ -121,6 +121,25 @@ export async function executeReadDocument(
                 }
             }
         }
+        if (host.scratchpad?.documents?.length) {
+            const matchedScratchDoc = host.scratchpad.documents.find(
+                (doc: any) =>
+                    doc.name.toLowerCase().includes(docName.toLowerCase()) ||
+                    docName.toLowerCase().includes(doc.name.toLowerCase())
+            )
+            if (matchedScratchDoc) {
+                let content = (matchedScratchDoc as any).content || ''
+                if (filterQuery) {
+                    const paragraphs = content.split(/\n\n+/)
+                    const matched = paragraphs.filter((p: string) => p.toLowerCase().includes(filterQuery))
+                    if (matched.length > 0) content = matched.join('\n\n')
+                }
+                return {
+                    ok: true,
+                    text: `[Scratchpad Document: ${matchedScratchDoc.name}]\n${content.slice(0, MAX_DOC_CHARS)}`,
+                }
+            }
+        }
         if (host.attachments?.length) {
             const matchedAtt = host.attachments.find(
                 (att) =>

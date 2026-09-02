@@ -38,6 +38,7 @@ import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
 import { canonicalWindowPath, isArtifactWindowPath, isPathRoutedWindow } from '../../lib/window-path'
+import { ScratchpadWindow } from '../ScratchpadWindow'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false })
@@ -91,6 +92,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (isAskAiPath(path)) {
         return <AskAiWindow />
+    }
+
+    if (path === '/scratchpad' || path.startsWith('/scratchpad/')) {
+        return <ScratchpadWindow />
     }
 
     if (path === '/admin' || path === '/community/admin') {

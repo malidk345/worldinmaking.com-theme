@@ -44,8 +44,10 @@ test.describe('OpenAI tool protocol', () => {
             'rewrite_notebook_document',
             'search_site',
             'set_system_appearance',
+            'todo_write',
             'update_notebook_title',
             'web_search',
+            'write_scratchpad',
         ])
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
         expect(TOOL_PROTOCOL).toContain('tool channel')
@@ -257,8 +259,10 @@ test.describe('OpenAI tool protocol', () => {
             'rewrite_notebook_document',
             'search_site',
             'set_system_appearance',
+            'todo_write',
             'update_notebook_title',
             'web_search',
+            'write_scratchpad',
         ])
         expect(declarations[0].parameters.type).toBe('OBJECT')
         expect(JSON.stringify(declarations)).not.toContain('additionalProperties')
@@ -583,5 +587,37 @@ test.describe('OpenAI tool protocol', () => {
         expect(result.name).toBe('read_document')
         expect(result.ok).toBe(false)
         expect(result.result).toContain('url must be http or https')
+    })
+
+    test('write_scratchpad saves key facts and references into working memory', async () => {
+        const result = await executeToolCall({
+            id: 'call-sp-1',
+            name: 'write_scratchpad',
+            argumentsJson: JSON.stringify({ content: 'Q3 net profit rose 18% YoY', source: 'financials.pdf#page=4' }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.summary).toContain('Saved note from financials.pdf#page=4')
+        const parsed = JSON.parse(result.result)
+        expect(parsed.saved).toBe(true)
+        expect(parsed.note).toContain('Q3 net profit')
+    })
+
+    test('todo_write manages structured multi-step task list', async () => {
+        const result = await executeToolCall({
+            id: 'call-todo-1',
+            name: 'todo_write',
+            argumentsJson: JSON.stringify({
+                tasks: [
+                    { id: 't1', title: 'Fetch PDF reports', status: 'completed' },
+                    { id: 't2', title: 'Extract KPI metrics', status: 'in_progress' },
+                    { id: 't3', title: 'Render dashboard', status: 'pending' },
+                ],
+            }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.summary).toContain('Working on: Extract KPI metrics (1/3)')
+        const parsed = JSON.parse(result.result)
+        expect(parsed.progress).toBe('1/3')
+        expect(parsed.tasks).toHaveLength(3)
     })
 })

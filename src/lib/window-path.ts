@@ -152,6 +152,7 @@ export function isPathRoutedWindow(path: string): boolean {
     const p = canonicalWindowPath(path)
     return (
         /^\/workspace-chat(\/|$)/.test(p) ||
+        /^\/scratchpad(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||
         /^\/notebooks(\/|$)/.test(p) ||
         /^\/(posts|blog)(\/|$)/.test(p) ||

@@ -37,6 +37,7 @@ import { useUser } from '../../hooks/useUser';
 import { isUserPro } from '../../lib/wim-billing';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
+import { ScratchpadStore } from '../../lib/scratchpad-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
   type NotebookChatBind,
@@ -913,6 +914,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             .reverse()
             .find((m) => m.role === 'user' && m.attachments && m.attachments.length > 0)?.attachments || [];
 
+      if (effectiveAttachments.length > 0) {
+        app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
+      }
+
       const attachmentContext = effectiveAttachments
         .map((attachment) => {
           if (attachment.type === 'image') {
@@ -1015,6 +1020,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             artifactId: activeArtifact?.id,
             artifactTitle: activeArtifact?.title,
             artifactType: activeArtifact?.type,
+            scratchpad: {
+              documents: ScratchpadStore.getState().documents.map((d) => ({ name: d.name, size: d.size ? String(d.size) : undefined, type: d.type })),
+              nodes: ScratchpadStore.getState().nodes.map((n) => ({ type: n.type, title: n.title, content: n.content, source: n.source })),
+              tasks: ScratchpadStore.getState().tasks.map((t) => ({ title: t.title, status: t.status })),
+            },
           },
         }),
       });
@@ -1086,6 +1096,44 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               thinkingProcess: { ...currentThinkingProcess },
               toolTrace: streamedToolTrace,
             });
+
+            // Reactively sync into WorldInMaking OS Scratchpad Store & Auto-open Scratchpad Window
+            if (
+              parsed.tool.name === 'write_scratchpad' ||
+              parsed.tool.name === 'scratchpad' ||
+              parsed.tool.name === 'take_notes'
+            ) {
+              try {
+                const args = JSON.parse(parsed.tool.arguments || '{}');
+                if (args.content || args.note) {
+                  ScratchpadStore.addNode({
+                    content: args.content || args.note,
+                    type: args.type,
+                    title: args.title,
+                    source: args.source || parsed.tool.detail,
+                    tags: args.tags,
+                  });
+                  app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
+                }
+              } catch {
+                /* ignore */
+              }
+            }
+            if (
+              parsed.tool.name === 'todo_write' ||
+              parsed.tool.name === 'plan_task' ||
+              parsed.tool.name === 'tasks'
+            ) {
+              try {
+                const args = JSON.parse(parsed.tool.arguments || '{}');
+                if (Array.isArray(args.tasks)) {
+                  ScratchpadStore.setTasks(args.tasks);
+                  app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
+                }
+              } catch {
+                /* ignore */
+              }
+            }
           }
 
           if (parsed.type === 'search') {

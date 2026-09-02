@@ -60,8 +60,8 @@ type ChatMessage = {
 }
 
 const MAX_STEPS = 6
-const REQUEST_TIMEOUT_MS = 30_000
-const GEMINI_TIMEOUT_MS = 45_000
+const REQUEST_TIMEOUT_MS = 12_000
+const GEMINI_TIMEOUT_MS = 18_000
 const MAX_TOKENS = 4_096
 
 export type ToolLoopResult = {
@@ -453,46 +453,26 @@ export async function runToolLoop(params: {
 
     const byokOpenai = envFrom(env, 'OPENAI_API_KEY', 'OPENAI_KEY').trim()
     const openaiModel = envFrom(env, 'OPENAI_MODEL', 'OPENAI_TOOL_MODEL') || 'gpt-4o'
-
-    if (byokOpenai) {
-        const step = await runToolSteps({
-            provider: 'openai',
-            env,
-            host: params.host,
-            forceWebSearch: params.forceWebSearch,
-            holdPublicUntilCitations: params.holdPublicUntilCitations,
-            baseMessages,
-            onToken: params.onToken,
-            onTool: params.onTool,
-            complete: ({ messages, toolChoice, onToken }) =>
-                openaiCompletion({ apiKey: byokOpenai, model: openaiModel, messages, toolChoice, onToken }),
-        })
-        if (step.kind === 'done') return step.result
-        if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-            return {
-                ok: true,
-                usedTools: step.usedTools,
-                usedWebSearch: step.usedWebSearch,
-                text: step.text,
-                artifacts: step.artifacts,
-                citations: step.citations,
-                actions: step.actions,
-                provider: 'openai',
-            }
-        }
-        lastError = step.error
-    }
-
     const nvidiaKey = envFrom(env, 'NVIDIA_API_KEY', 'NVIDIA_KEY', 'DEEPSEEK_API_KEY', 'DEEPSEEK_KEY').trim()
     const configuredNvidia = envFrom(env, 'NVIDIA_MODEL', 'DEEPSEEK_MODEL')
     const nvidiaModels = configuredNvidia
         ? [configuredNvidia]
         : ['deepseek-ai/deepseek-v4-pro-0813', 'deepseek-ai/deepseek-v4-flash-0731']
 
-    if (nvidiaKey) {
-        for (const nvidiaModel of nvidiaModels) {
+    let toolFamilyCursor = 0
+    function nextToolFamilyOrder(): Array<'gemini' | 'groq' | 'nvidia' | 'openai'> {
+        const order: Array<'gemini' | 'groq' | 'nvidia' | 'openai'> = ['gemini', 'groq', 'nvidia', 'openai']
+        const offset = toolFamilyCursor % order.length
+        toolFamilyCursor += 1
+        return [...order.slice(offset), ...order.slice(0, offset)]
+    }
+
+    const families = nextToolFamilyOrder()
+
+    for (const family of families) {
+        if (family === 'openai' && byokOpenai) {
             const step = await runToolSteps({
-                provider: 'nvidia:deepseek',
+                provider: 'openai',
                 env,
                 host: params.host,
                 forceWebSearch: params.forceWebSearch,
@@ -501,14 +481,7 @@ export async function runToolLoop(params: {
                 onToken: params.onToken,
                 onTool: params.onTool,
                 complete: ({ messages, toolChoice, onToken }) =>
-                    openaiCompletion({
-                        apiKey: nvidiaKey,
-                        baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
-                        model: nvidiaModel,
-                        messages,
-                        toolChoice,
-                        onToken,
-                    }),
+                    openaiCompletion({ apiKey: byokOpenai, model: openaiModel, messages, toolChoice, onToken }),
             })
             if (step.kind === 'done') return step.result
             if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
@@ -520,94 +493,136 @@ export async function runToolLoop(params: {
                     artifacts: step.artifacts,
                     citations: step.citations,
                     actions: step.actions,
+                    provider: 'openai',
+                }
+            }
+            lastError = step.error
+        }
+
+        if (family === 'nvidia' && nvidiaKey) {
+            for (const nvidiaModel of nvidiaModels) {
+                const step = await runToolSteps({
                     provider: 'nvidia:deepseek',
+                    env,
+                    host: params.host,
+                    forceWebSearch: params.forceWebSearch,
+                    holdPublicUntilCitations: params.holdPublicUntilCitations,
+                    baseMessages,
+                    onToken: params.onToken,
+                    onTool: params.onTool,
+                    complete: ({ messages, toolChoice, onToken }) =>
+                        openaiCompletion({
+                            apiKey: nvidiaKey,
+                            baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+                            model: nvidiaModel,
+                            messages,
+                            toolChoice,
+                            onToken,
+                        }),
+                })
+                if (step.kind === 'done') return step.result
+                if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                    return {
+                        ok: true,
+                        usedTools: step.usedTools,
+                        usedWebSearch: step.usedWebSearch,
+                        text: step.text,
+                        artifacts: step.artifacts,
+                        citations: step.citations,
+                        actions: step.actions,
+                        provider: 'nvidia:deepseek',
+                    }
                 }
-            }
-            lastError = step.error
-        }
-    }
-
-    for (const apiKey of groqKeys) {
-        let skipKey = false
-        for (const groqModel of groqModels) {
-            if (skipKey) break
-            const step = await runToolSteps({
-                provider: 'groq',
-                env,
-                host: params.host,
-                forceWebSearch: params.forceWebSearch,
-                holdPublicUntilCitations: params.holdPublicUntilCitations,
-                baseMessages,
-                onToken: params.onToken,
-                onTool: params.onTool,
-                complete: ({ messages, toolChoice, onToken }) =>
-                    groqCompletion({ apiKey, model: groqModel, messages, toolChoice, onToken }),
-            })
-            if (step.kind === 'done') return step.result
-            lastError = step.error
-            if (step.kind === 'tools-rejected') continue
-            if (step.kind === 'auth') {
-                markGroqKeyCooling(apiKey)
-                skipKey = true
-                break
-            }
-            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                return {
-                    ok: true,
-                    usedTools: step.usedTools,
-                    usedWebSearch: step.usedWebSearch,
-                    text: step.text,
-                    artifacts: step.artifacts,
-                    citations: step.citations,
-                    actions: step.actions,
-                    provider: 'groq',
-                }
+                lastError = step.error
             }
         }
-    }
 
-    for (const apiKey of geminiKeys) {
-        let skipKey = false
-        for (const model of geminiModels) {
-            if (skipKey) break
-            const step = await runToolSteps({
-                provider: 'gemini',
-                env,
-                host: params.host,
-                forceWebSearch: params.forceWebSearch,
-                holdPublicUntilCitations: params.holdPublicUntilCitations,
-                baseMessages,
-                onToken: params.onToken,
-                onTool: params.onTool,
-                complete: ({ messages, toolChoice, onToken }) =>
-                    geminiToolCompletion({
-                        apiKey,
-                        model,
-                        systemPrompt,
-                        messages,
-                        toolChoice,
-                        onToken,
-                        timeoutMs: GEMINI_TIMEOUT_MS,
-                    }),
-            })
-            if (step.kind === 'done') return step.result
-            lastError = step.error
-            if (step.kind === 'tools-rejected') continue
-            if (step.kind === 'auth') {
-                markFamilyKeyCooling('gemini', apiKey)
-                skipKey = true
-                break
+        if (family === 'groq') {
+            for (const apiKey of groqKeys) {
+                let skipKey = false
+                for (const groqModel of groqModels) {
+                    if (skipKey) break
+                    const step = await runToolSteps({
+                        provider: 'groq',
+                        env,
+                        host: params.host,
+                        forceWebSearch: params.forceWebSearch,
+                        holdPublicUntilCitations: params.holdPublicUntilCitations,
+                        baseMessages,
+                        onToken: params.onToken,
+                        onTool: params.onTool,
+                        complete: ({ messages, toolChoice, onToken }) =>
+                            groqCompletion({ apiKey, model: groqModel, messages, toolChoice, onToken }),
+                    })
+                    if (step.kind === 'done') return step.result
+                    lastError = step.error
+                    if (step.kind === 'tools-rejected') continue
+                    if (step.kind === 'auth') {
+                        markGroqKeyCooling(apiKey)
+                        skipKey = true
+                        break
+                    }
+                    if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                        return {
+                            ok: true,
+                            usedTools: step.usedTools,
+                            usedWebSearch: step.usedWebSearch,
+                            text: step.text,
+                            artifacts: step.artifacts,
+                            citations: step.citations,
+                            actions: step.actions,
+                            provider: 'groq',
+                        }
+                    }
+                }
             }
-            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                return {
-                    ok: true,
-                    usedTools: step.usedTools,
-                    usedWebSearch: step.usedWebSearch,
-                    text: step.text,
-                    artifacts: step.artifacts,
-                    citations: step.citations,
-                    actions: step.actions,
-                    provider: 'gemini',
+        }
+
+        if (family === 'gemini') {
+            for (const apiKey of geminiKeys) {
+                let skipKey = false
+                for (const model of geminiModels) {
+                    if (skipKey) break
+                    const step = await runToolSteps({
+                        provider: 'gemini',
+                        env,
+                        host: params.host,
+                        forceWebSearch: params.forceWebSearch,
+                        holdPublicUntilCitations: params.holdPublicUntilCitations,
+                        baseMessages,
+                        onToken: params.onToken,
+                        onTool: params.onTool,
+                        complete: ({ messages, toolChoice, onToken }) =>
+                            geminiToolCompletion({
+                                apiKey,
+                                model,
+                                systemPrompt,
+                                messages,
+                                toolChoice,
+                                onToken,
+                                timeoutMs: GEMINI_TIMEOUT_MS,
+                            }),
+                    })
+                    if (step.kind === 'done') return step.result
+                    lastError = step.error
+                    if (step.kind === 'tools-rejected') continue
+                    if (step.kind === 'auth') {
+                        markFamilyKeyCooling('gemini', apiKey)
+                        skipKey = true
+                        break
+                    }
+                    if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                        return {
+                            ok: true,
+                            usedTools: step.usedTools,
+                            usedWebSearch: step.usedWebSearch,
+                            text: step.text,
+                            artifacts: step.artifacts,
+                            citations: step.citations,
+                            actions: step.actions,
+                            provider: 'gemini',
+                        }
+                    }
                 }
             }
         }

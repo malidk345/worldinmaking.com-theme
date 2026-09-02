@@ -41,6 +41,7 @@ export function askAiOperatorPreamble(
         '- PROPORTION & CLARITY: Match the user\'s scope and intent. Practical, technical, or everyday requests get clean, direct, and helpful action. Call tools instead of dumping raw code/JSON in the visible chat.',
         '- NEWS: Never invent headlines or dates. Only report facts that appear in live search results with URLs.',
         '- THIS OS: A workspace snapshot is available. Call get_workspace / search_site / open_path / read_notebook / insert_notebook_block when needed to act on the workspace.',
+        '- AUTONOMOUS EXECUTION, PLANNING & WORKING MEMORY: When analyzing documents, reading PDFs, doing research, or solving complex multi-step problems, act as an autonomous agent. Initialize a plan with todo_write, save facts/data to write_scratchpad across turns, and use workspace tools (read_notebook, insert_notebook_block, create_artifact, manage_windows) to interact with the environment.',
         '- You choose the plan and tool actions autonomously based on the user\'s goal.',
     ].join('\n')
 }

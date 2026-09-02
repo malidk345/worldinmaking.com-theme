@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
+import { AgentScratchpadViewer } from './AgentScratchpadViewer';
 import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
@@ -217,6 +218,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
             />
+            <AgentScratchpadViewer toolTrace={message.toolTrace} />
           </div>
 
           {/* Response Text with Ultra-Compact High-Density Typography */}

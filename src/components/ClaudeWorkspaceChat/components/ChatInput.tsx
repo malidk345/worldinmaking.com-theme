@@ -12,6 +12,7 @@ import {
 } from '@posthog/icons';
 import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { parseDocumentFile } from '../../../lib/document-parser';
+import { ScratchpadStore } from '../../../lib/scratchpad-store';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
@@ -165,6 +166,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       try {
         const parsed = await parseDocumentFile(file);
+        // Automatically save document into OS Working Memory Scratchpad
+        ScratchpadStore.addDocument({
+          name: file.name,
+          content: parsed.content,
+          type: parsed.type,
+          size: sizeStr,
+          preview: parsed.preview,
+        });
+
         setAttachments((prev) => [
           ...prev,
           {

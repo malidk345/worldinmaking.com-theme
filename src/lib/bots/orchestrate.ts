@@ -66,6 +66,8 @@ export interface BotRunInput {
     /** Tool-loop progress for SSE (running / done / error). */
     onTool?: (event: ToolEvent) => void
     host?: HostSnapshot
+    /** Correlates telemetry with the originating HTTP request. */
+    requestId?: string
 }
 
 export interface BotRunSuccess {
@@ -221,6 +223,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
             latencyMs: gen.latencyMs,
             attemptCount: gen.attempts.length,
             errorCode: 'provider_unavailable',
+            requestId: input.requestId,
         })
 
         return {
@@ -284,6 +287,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         attemptCount: 0,
         promptChars: estimateChars([systemPrompt, userPrompt]),
         completionChars: gatedReply.length,
+        requestId: input.requestId,
     })
 
     return {
@@ -552,6 +556,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 attemptCount: 1,
                 promptChars: estimateChars([systemPrompt, userPrompt]),
                 completionChars: rawReply.length,
+                requestId: input.requestId,
             })
             return {
                 success: true,
@@ -593,6 +598,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 latencyMs: Date.now() - streamStarted,
                 attemptCount: 1,
                 errorCode: 'tools_required',
+                requestId: input.requestId,
             })
             return {
                 success: false,
@@ -645,6 +651,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             latencyMs: Date.now() - streamStarted,
             attemptCount: gen.attempts.length,
             errorCode: 'provider_unavailable',
+            requestId: input.requestId,
         })
 
         return {
@@ -716,6 +723,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             latencyMs: Date.now() - streamStarted,
             attemptCount: gen.attempts.length,
             errorCode: 'empty_public_reply',
+            requestId: input.requestId,
         })
         return {
             success: false,
@@ -745,6 +753,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         attemptCount: gen.attempts.length,
         promptChars: estimateChars([systemPrompt, userPrompt]),
         completionChars: rawReply.length,
+        requestId: input.requestId,
     })
 
     return {

@@ -318,13 +318,12 @@ function clipTraceDetail(value?: string): string {
 }
 
 const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTrace, isLive = false, model, timestamp }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const pinnedToBottom = useRef(true);
-
   const traces = toolTrace || [];
   const hasTools = traces.length > 0;
   const rawSteps = thinking?.steps || [];
+  const [isOpen, setIsOpen] = useState(() => hasTools || Boolean(isLive));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pinnedToBottom = useRef(true);
   const nodes = useMemo(() => buildThreadNodes(rawSteps, traces, hasTools), [rawSteps, traces, hasTools]);
   const hasThoughtText = nodes.length > 0;
   const durationSeconds = thinking?.durationSeconds || 0;
@@ -362,9 +361,10 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({ thinking, toolTr
   const showThinkingTrigger = isLive || hasThoughtText;
 
   useEffect(() => {
-    if (!isLive || !(hasTools || hasThoughtText)) return;
-    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
-    if (!mobile) setIsOpen(true);
+    if (hasTools || (isLive && hasThoughtText)) {
+      const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+      if (!mobile) setIsOpen(true);
+    }
   }, [isLive, hasTools, hasThoughtText]);
 
   if (!model && !showThinkingTrigger) return null;

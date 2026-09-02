@@ -139,6 +139,8 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     },
     create_artifact: { kind: 'type', source: 'content', body: 'content', code: 'content', markdown: 'content' },
     read_document: { doc: 'name', document: 'name', file: 'name', link: 'url', href: 'url', p: 'page', q: 'query' },
+    write_scratchpad: { note: 'content', text: 'content', body: 'content', markdown: 'content', ref: 'source', url: 'source', document: 'source' },
+    todo_write: { plan: 'tasks', todo: 'tasks', items: 'tasks', list: 'tasks' },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -328,6 +330,14 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     parse_document: 'read_document',
     view_document: 'read_document',
     inspect_document: 'read_document',
+    scratchpad: 'write_scratchpad',
+    take_notes: 'write_scratchpad',
+    note_down: 'write_scratchpad',
+    add_note: 'write_scratchpad',
+    plan_task: 'todo_write',
+    update_todo: 'todo_write',
+    todo: 'todo_write',
+    tasks: 'todo_write',
 }
 
 export function resolveToolName(raw: string): string {
@@ -377,6 +387,49 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
             }
             const result = clip(executed.text, MAX_TOOL_RESULT)
             return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
+        }
+        if (name === 'write_scratchpad') {
+            const content = asText(args.content, 4_000).trim()
+            if (!content) {
+                const result = JSON.stringify({ ok: false, error: 'scratchpad note content is required' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const source = asText(args.source, 200).trim()
+            const result = JSON.stringify({ ok: true, saved: true, note: content, source: source || undefined })
+            return {
+                ...base,
+                ok: true,
+                result,
+                summary: source ? `Saved note from ${source}` : `Saved note to working memory`,
+            }
+        }
+        if (name === 'todo_write') {
+            const rawTasks = Array.isArray(args.tasks) ? args.tasks : []
+            const tasks = rawTasks
+                .filter((t): t is Record<string, unknown> => Boolean(t && typeof t === 'object'))
+                .map((t, idx) => ({
+                    id: asText(t.id || `task_${idx + 1}`, 40).trim(),
+                    title: asText(t.title || t.name || t.text, 120).trim(),
+                    status: (['pending', 'in_progress', 'completed'].includes(String(t.status))
+                        ? String(t.status)
+                        : 'pending') as 'pending' | 'in_progress' | 'completed',
+                }))
+                .filter((t) => t.title.length > 0)
+            if (tasks.length === 0) {
+                const result = JSON.stringify({ ok: false, error: 'tasks array cannot be empty' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const inProgress = tasks.find((t) => t.status === 'in_progress')
+            const completedCount = tasks.filter((t) => t.status === 'completed').length
+            const result = JSON.stringify({ ok: true, tasks, progress: `${completedCount}/${tasks.length}` })
+            return {
+                ...base,
+                ok: true,
+                result,
+                summary: inProgress
+                    ? `Working on: ${inProgress.title} (${completedCount}/${tasks.length})`
+                    : `Updated task plan (${completedCount}/${tasks.length})`,
+            }
         }
         if (name === 'get_workspace') {
             const executed = await executeGetWorkspace(host)

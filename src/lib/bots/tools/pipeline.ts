@@ -55,6 +55,8 @@ export interface AgentState {
     artifacts: ArtifactDocument[]
     citations: AiCitation[]
     actions: HostOsAction[]
+    scratchpad: Array<{ note: string; source?: string }>
+    todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
     usedTools: boolean
     usedWebSearch: boolean
     publicText: string
@@ -210,6 +212,24 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
         if (name === 'web_search') {
             state.usedWebSearch = true
         }
+        if (name === 'write_scratchpad' && executed.ok) {
+            try {
+                const parsed = JSON.parse(executed.result)
+                if (parsed.note) {
+                    state.scratchpad.push({ note: parsed.note, source: parsed.source })
+                }
+            } catch {
+                state.scratchpad.push({ note: executed.result })
+            }
+        }
+        if (name === 'todo_write' && executed.ok) {
+            try {
+                const parsed = JSON.parse(executed.result)
+                if (Array.isArray(parsed.tasks)) {
+                    state.todos = parsed.tasks
+                }
+            } catch {}
+        }
 
         const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
         params.onTool?.({
@@ -272,6 +292,8 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         artifacts: [],
         citations: [],
         actions: [],
+        scratchpad: [],
+        todos: [],
         usedTools: false,
         usedWebSearch: false,
         publicText: '',

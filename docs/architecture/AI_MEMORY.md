@@ -260,6 +260,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-237` | Stream 5 / 3 | Full AI UX & Friction Polish: Streaming Cursor, Code Copy Feedback, Window Drag Dropzone, Dynamic Voice Lang, Selection Badge | `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `ChatInput.tsx`, `ThinkingBlock.tsx`, `index.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-238` | Stream 5 / 3 | Connect & Fully Wire BYOK (OpenAI, Gemini, Groq, Anthropic execution in tool loop, bypass rate limits, verify test endpoint) | `src/lib/bots/tools/loop.ts`, `src/pages/api/byok/verify.ts`, `src/components/ApiKeysModal/index.tsx`, `src/pages/api/chat.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
 | `TSK-239` | Stream 5 / 1 | Philosopher Epistemic Reasoning & Thinking Methodologies (Custom cognitive frameworks per philosopher - Nietzsche initial integration) | `src/lib/persona-engine.ts`, `src/lib/bots/thinking-schemas.ts`, `src/lib/bots/thinking.ts` | `[IN PROGRESS by Antigravity (Gemini 3.7 Flash)]` | Antigravity (Gemini 3.7 Flash) | 2026-08-29 |
+| `TSK-240` | Stream 5 / 1 | AI 2026 Phase 1: Durable Upstash rate limiting, request-id tracing, PostHog server-side AI telemetry | `src/lib/bots/rate-limit.ts`, `src/lib/bots/telemetry.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/inline-edit.ts` | `[IN PROGRESS by Kimi K3 (opencode)]` | Kimi K3 (opencode) | 2026-09-02 |
 
 Every AI model/agent working on this repository **MUST** follow these rules:
 
@@ -454,12 +455,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-332` | Stream 3 / 5 | Mobile Ask AI feed must not jump up while streaming | ClaudeWorkspaceChat/index.tsx, ThinkingBlock | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-28 |
 | `TSK-333` | Stream 5 | PostHog-Inspired Node State Machine & Fail-Open Gateway Recovery (Eliminate 'tool loop empty' and thinking wobble bugs) | `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/loop.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-01 |
 | `TSK-334` | Stream 5 | Implement powerful `read_document` / `read_pdf` agent tool with multi-format parsing, page targeting, and workspace document resolution | `src/lib/bots/tools/read-document.ts`, `spec.ts`, `execute.ts`, `labels.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-02 |
+| `TSK-335` | Stream 5 | Autonomous Agent Scratchpad, PostHog-inspired `todo_write` task planner, and multi-turn deep thinking loop (Local Only) | `spec.ts`, `pipeline.ts`, `execute.ts`, `labels.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED - LOCAL TESTING]` | Antigravity (Gemini 3.7 Flash) | 2026-09-02 |
+
 
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 412 - Autonomous Agent Scratchpad, Task Planner (`todo_write`), and Multi-Turn Deep Thinking Loop (TSK-335 - Local)
+- **Date:** 2026-09-02
+- **AI Agent:** Antigravity (Gemini 3.7 Flash)
+- **Summary:** Elevated WIM AI into an autonomous deep-thinking agent with working memory and multi-step execution: (1) Added `write_scratchpad` tool (and aliases `scratchpad`, `take_notes`, `note_down`, `add_note`) allowing the agent to save facts, table quotes, and interim research to `state.scratchpad` across multiple loop rounds. (2) Added `todo_write` tool (and aliases `plan_task`, `update_todo`, `tasks`) for structured task planning with states (`pending`, `in_progress`, `completed`). (3) Upgraded `pipeline.ts` with `maxSteps: 6` allowing dynamic multi-turn deep research without premature cutoff. (4) Added UI workbench labels in `labels.ts`. (5) Added tests in `tests/tool-loop.spec.ts`. Kept strictly local as directed.
+- **Modified Files:** `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/labels.ts`, `tests/tool-loop.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm run typecheck:shell` PASS (0 gated errors); Full Playwright test suite 73/73 PASS (100%).
 
 ### Entry 411 - Powerful `read_document` & `read_pdf` Tool Implementation (TSK-334)
 - **Date:** 2026-09-02
@@ -4770,6 +4780,49 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/PostHogAnalytics/PostHogAnalyticsDashboard.tsx` [UPDATED]
   - `src/components/PostHogAnalytics/index.ts` [UPDATED]
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
+---
+
+### [2026-09-02] - Entry 027: Independent Scratchpad Knowledge Canvas & Autonomous Agent Tool Pipeline
+- **AI Agent:** Antigravity (Advanced Agentic Assistant)
+- **Summary:**
+  1. **Independent Scratchpad Knowledge Canvas (`/scratchpad`):**
+     - Completely separated Scratchpad from Notebooks into an independent cognitive context hub and desktop OS window (`src/components/ScratchpadWindow/index.tsx`, `src/lib/scratchpad-store.ts`).
+     - Structured Knowledge Nodes (`citation`, `concept`, `source`, `synthesis`, `note`) with exact citations (author, chapter, page number) and tag filters.
+     - Redesigned with the minimalist, clean aesthetic of `ArchiveWindow.tsx` in English (`OSInput`, `OSButton`, `ScrollArea`).
+  2. **Autonomous Multi-Step Agent Tool Pipeline:**
+     - Refactored `runAgentNodePipeline` (`src/lib/bots/tools/pipeline.ts`) into a typed State Graph allowing multi-turn tool chaining (up to 6 steps).
+     - Integrated `host.scratchpad.documents` into `executeReadDocument` (`src/lib/bots/tools/read-document.ts`).
+     - Injected active Scratchpad cognitive context (documents, nodes, tasks) directly into `/api/chat` prompt context.
+  3. **Verification & Quality:**
+     - `pnpm run typecheck:shell` -> PASS (0 gated errors).
+     - Playwright Test Suite -> 73/73 tests PASSED.
+- **Modified Files:**
+  - `src/lib/scratchpad-store.ts` [NEW]
+  - `src/components/ScratchpadWindow/index.tsx` [NEW]
+  - `src/components/ClaudeWorkspaceChat/components/AgentScratchpadViewer.tsx` [NEW]
+  - `src/lib/request-id.ts` [NEW]
+  - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/lib/bots/ask-ai.ts` [UPDATED]
+  - `src/lib/bots/orchestrate.ts` [UPDATED]
+  - `src/lib/bots/rate-limit.ts` [UPDATED]
+  - `src/lib/bots/runtime-env.ts` [UPDATED]
+  - `src/lib/bots/telemetry.ts` [UPDATED]
+  - `src/lib/bots/tools/execute.ts` [UPDATED]
+  - `src/lib/bots/tools/host.ts` [UPDATED]
+  - `src/lib/bots/tools/labels.ts` [UPDATED]
+  - `src/lib/bots/tools/loop.ts` [UPDATED]
+  - `src/lib/bots/tools/pipeline.ts` [UPDATED]
+  - `src/lib/bots/tools/read-document.ts` [UPDATED]
+  - `src/lib/bots/tools/spec.ts` [UPDATED]
+  - `src/lib/window-path.ts` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `tests/tool-loop.spec.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+
 
 
 
