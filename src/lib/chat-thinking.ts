@@ -1,13 +1,17 @@
-import type { Message, ThinkingProcess, ToolTrace } from '../components/ClaudeWorkspaceChat/types'
+import type { AgentCheckpoint, HumanTurn, Message, ThinkingProcess, ToolTrace } from '../components/ClaudeWorkspaceChat/types'
 
-export type PackedThinking = ThinkingProcess & { toolTrace?: ToolTrace[] }
+export type PackedThinking = ThinkingProcess & {
+    toolTrace?: ToolTrace[]
+    humanTurn?: HumanTurn
+    checkpoint?: AgentCheckpoint
+}
 
 function clip(value: unknown, max: number): string {
     return typeof value === 'string' ? value.slice(0, max) : ''
 }
 
 export function packMessageThinking(
-    message: Pick<Message, 'thinkingProcess' | 'toolTrace'>
+    message: Pick<Message, 'thinkingProcess' | 'toolTrace' | 'humanTurn' | 'checkpoint'>
 ): PackedThinking | null {
     const traces = (message.toolTrace || []).slice(0, 16).map((trace) => ({
         id: clip(trace.id, 80),
@@ -29,7 +33,7 @@ export function packMessageThinking(
                 thinking.tokenCount > 0 ||
                 thinking.summary)
     )
-    if (!hasThinking && traces.length === 0) return null
+    if (!hasThinking && traces.length === 0 && !message.humanTurn && !message.checkpoint) return null
     return {
         durationSeconds: thinking?.durationSeconds || 0,
         tokenCount: thinking?.tokenCount || 0,
@@ -37,12 +41,16 @@ export function packMessageThinking(
         summary: thinking?.summary,
         source: thinking?.source,
         ...(traces.length ? { toolTrace: traces } : {}),
+        ...(message.humanTurn ? { humanTurn: message.humanTurn } : {}),
+        ...(message.checkpoint ? { checkpoint: message.checkpoint } : {}),
     }
 }
 
 export function unpackMessageThinking(raw: PackedThinking | ThinkingProcess | null | undefined): {
     thinkingProcess?: ThinkingProcess
     toolTrace?: ToolTrace[]
+    humanTurn?: HumanTurn
+    checkpoint?: AgentCheckpoint
 } {
     if (!raw) return {}
     const packed = raw as PackedThinking
@@ -61,5 +69,7 @@ export function unpackMessageThinking(raw: PackedThinking | ThinkingProcess | nu
               }
             : undefined,
         toolTrace,
+        humanTurn: packed.humanTurn,
+        checkpoint: packed.checkpoint,
     }
 }

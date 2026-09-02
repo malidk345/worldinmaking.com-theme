@@ -32,13 +32,14 @@ export type CompactedMessage = {
     tool_call_id?: string
 }
 
-const MAX_TURNS = 16
+const MAX_TURNS = 12
 const MAX_VISIBLE = 2_000
 const MAX_ARTIFACT_BODY = 4_000
 const MAX_MESSAGE = 10_000
 const MAX_ARTIFACTS_PER_TURN = 2
-const MAX_TOOL_ARGS = 4_000
-const MAX_TOOL_RESULT = 2_000
+const MAX_TOOL_ARGS = 2_000
+const MAX_TOOL_RESULT = 1_200
+const MAX_OLD_TOOL_RESULT = 400
 
 function clip(value: string, max: number): string {
     const text = String(value || '')
@@ -62,12 +63,18 @@ export function formatHistoryContent(item: HistoryTurn): string {
 /** Rebuild OpenAI tool_calls + role:tool turns from the client thread. */
 export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] {
     const out: CompactedMessage[] = []
-    for (const item of (history || []).slice(-MAX_TURNS)) {
+    const window = (history || []).slice(-MAX_TURNS)
+    const toolPositions = window
+        .map((item, index) => (item.role === 'tool' ? index : -1))
+        .filter((index) => index >= 0)
+    const recentTools = new Set(toolPositions.slice(-4))
+    for (let index = 0; index < window.length; index += 1) {
+        const item = window[index]
         if (item.role === 'tool' && item.tool_call_id) {
             out.push({
                 role: 'tool',
                 tool_call_id: item.tool_call_id.slice(0, 80),
-                content: clip(item.content || '', MAX_TOOL_RESULT),
+                content: clip(item.content || '', recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
             })
             continue
         }

@@ -11,6 +11,8 @@ import { compactToolHistory } from '../src/lib/bots/tools/history'
 import { applyToolCallDelta, assembleToolCalls, publicTextFromRound, runToolLoop } from '../src/lib/bots/tools/loop'
 import { resolveOpenPath } from '../src/lib/bots/tools/host'
 import { ALLOWED_TOOL_NAMES, OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, toGeminiFunctionDeclarations } from '../src/lib/bots/tools/spec'
+import { parseLeakedToolCalls, stripLeakedToolMarkup } from '../src/lib/bots/tools/leak'
+import { runAgentNodePipeline } from '../src/lib/bots/tools/pipeline'
 import { needsReactHeal, prepareSandpackSource } from '../src/components/ClaudeWorkspaceChat/sandbox/reactPreview'
 
 const MERMAID = ['flowchart TD', '  Cart --> Pay', '  Pay --> Done'].join('\n')
@@ -28,9 +30,11 @@ test.describe('OpenAI tool protocol', () => {
         expect(OPENAI_CHAT_TOOLS.every((tool) => tool.type === 'function')).toBe(true)
         expect([...ALLOWED_TOOL_NAMES].sort()).toEqual([
             'annotate_notebook',
+            'ask_user',
             'create_artifact',
             'create_notebook',
             'fetch_url',
+            'finalize_plan',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
@@ -40,10 +44,13 @@ test.describe('OpenAI tool protocol', () => {
             'read_document',
             'read_notebook',
             'read_post',
+            'remember',
             'replace_notebook_selection',
             'rewrite_notebook_document',
             'search_site',
             'set_system_appearance',
+            'switch_mode',
+            'task',
             'todo_write',
             'update_notebook_title',
             'web_search',
@@ -52,7 +59,48 @@ test.describe('OpenAI tool protocol', () => {
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
         expect(TOOL_PROTOCOL).toContain('tool channel')
         expect(TOOL_PROTOCOL).toContain('Do not write the user-visible answer in the same step')
-        expect(TOOL_PROTOCOL).not.toContain('<tool_call>')
+        expect(TOOL_PROTOCOL).toContain('Never print <tool_code>')
+    })
+
+    test('strips leaked <tool_code> dumps and recovers todo_write', async () => {
+        const dumped = `<tool_code>
+todo_write(tasks=[{id: "task_1", status: "completed", title: "Makale İskeletinin ve Giriş Bölümünün Hazırlanması"}, {id: "task_4", status: "in_progress", title: "Vaka Analizleri: Sağlık ve Bilimsel Keşif"}])
+</tool_code>
+
+HAIC paradigmasının felsefi derinliğini Deleuze ile çarpıştırıyorum.`
+        const cleaned = stripLeakedToolMarkup(dumped)
+        expect(cleaned).toContain('Deleuze')
+        expect(cleaned).not.toContain('tool_code')
+        expect(cleaned).not.toContain('todo_write')
+        const leaked = parseLeakedToolCalls(dumped)
+        expect(leaked).toHaveLength(1)
+        expect(leaked[0].name).toBe('todo_write')
+        expect(JSON.parse(leaked[0].argumentsJson).tasks[0].title).toContain('Makale')
+
+        let actRounds = 0
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools, toolChoice }) => {
+                if (omitTools || toolChoice === 'none') {
+                    return { ok: true as const, content: '', toolCalls: [], reasoning: 'Need a locked plan.' }
+                }
+                actRounds += 1
+                if (actRounds === 1) {
+                    return { ok: true as const, content: dumped, toolCalls: [] }
+                }
+                return { ok: true as const, content: 'Vaka analizi yazıldı.', toolCalls: [] }
+            },
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'write the article' },
+            ],
+            provider: 'test',
+            agentMode: 'execute',
+            maxSteps: 4,
+        })
+        expect(result.usedTools).toBe(true)
+        expect(result.text).not.toContain('tool_code')
+        expect(result.text).not.toContain('todo_write')
+        expect(result.text).toContain('Vaka analizi')
     })
 
     test('unknown tools fail closed', async () => {
@@ -74,6 +122,45 @@ test.describe('OpenAI tool protocol', () => {
         })
         expect(result.ok).toBe(false)
         expect(result.artifact).toBeUndefined()
+    })
+
+    test('ask_user, remember, finalize_plan, and task execute as host tools', async () => {
+        const asked = await executeToolCall({
+            id: 'ask-1',
+            name: 'ask_user',
+            argumentsJson: JSON.stringify({
+                title: 'Scope',
+                questions: [{ prompt: 'Which source first?', options: ['PDF', 'Web'] }],
+            }),
+        })
+        expect(asked.ok).toBe(true)
+        expect(JSON.parse(asked.result).awaiting).toBe(true)
+        expect(JSON.parse(asked.result).questions[0].prompt).toContain('source')
+
+        const remembered = await executeToolCall({
+            id: 'mem-1',
+            name: 'remember',
+            argumentsJson: JSON.stringify({ fact: 'Prefer Turkish replies', category: 'preference' }),
+        })
+        expect(remembered.ok).toBe(true)
+        expect(JSON.parse(remembered.result).fact).toContain('Turkish')
+
+        const finalized = await executeToolCall({
+            id: 'fin-1',
+            name: 'finalize_plan',
+            argumentsJson: JSON.stringify({ summary: 'Search, then write.' }),
+        })
+        expect(finalized.ok).toBe(true)
+        expect(JSON.parse(finalized.result).mode).toBe('execute')
+        expect(JSON.parse(finalized.result).awaiting).toBeUndefined()
+
+        const tasked = await executeToolCall({
+            id: 'task-1',
+            name: 'task',
+            argumentsJson: JSON.stringify({ goal: 'Find the publication year.' }),
+        })
+        expect(tasked.ok).toBe(true)
+        expect(JSON.parse(tasked.result).goal).toContain('publication')
     })
 
     test('create_artifact produces a mermaid document without echoing source', async () => {
@@ -162,6 +249,57 @@ test.describe('OpenAI tool protocol', () => {
         })
     })
 
+    test('SSE node and mode events round-trip on the shared contract', () => {
+        const nodeFrame = formatAiSseEvent({
+            type: 'node',
+            node: { name: 'tools', status: 'started', detail: 'Using tools' },
+        })
+        expect(parseAiSseEvent(nodeFrame)).toEqual({
+            type: 'node',
+            node: { name: 'tools', status: 'started', detail: 'Using tools' },
+        })
+        const modeFrame = formatAiSseEvent({ type: 'mode', mode: 'plan' })
+        expect(parseAiSseEvent(modeFrame)).toEqual({ type: 'mode', mode: 'plan' })
+        const activityFrame = formatAiSseEvent({
+            type: 'activity',
+            activity: { seq: 1, kind: 'thought', id: 'thought-0', status: 'running', delta: 'Hello' },
+        })
+        expect(parseAiSseEvent(activityFrame)?.type).toBe('activity')
+        const humanFrame = formatAiSseEvent({
+            type: 'human',
+            human: {
+                kind: 'plan_approval',
+                title: 'Plan ready',
+                status: 'pending',
+                plan: [{ id: 't1', title: 'Search', status: 'pending' }],
+            },
+        })
+        expect(parseAiSseEvent(humanFrame)).toEqual({
+            type: 'human',
+            human: {
+                kind: 'plan_approval',
+                title: 'Plan ready',
+                status: 'pending',
+                plan: [{ id: 't1', title: 'Search', status: 'pending' }],
+            },
+        })
+        const checkpointFrame = formatAiSseEvent({
+            type: 'checkpoint',
+            checkpoint: {
+                v: 1,
+                messages: [{ role: 'user', content: 'plan this' }],
+                todos: [],
+                scratchpad: [],
+                agentMode: 'plan',
+                stepCount: 1,
+                usedTools: true,
+                usedWebSearch: false,
+                interrupt: { kind: 'plan_approval', title: 'Plan ready', status: 'pending' },
+            },
+        })
+        expect(parseAiSseEvent(checkpointFrame)?.type).toBe('checkpoint')
+    })
+
     test('finalize prefers host-produced artifacts over fenced extraction', () => {
         const produced = [
             {
@@ -243,9 +381,11 @@ test.describe('OpenAI tool protocol', () => {
         const declarations = toGeminiFunctionDeclarations()
         expect(declarations.map((item) => item.name).sort()).toEqual([
             'annotate_notebook',
+            'ask_user',
             'create_artifact',
             'create_notebook',
             'fetch_url',
+            'finalize_plan',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
@@ -255,10 +395,13 @@ test.describe('OpenAI tool protocol', () => {
             'read_document',
             'read_notebook',
             'read_post',
+            'remember',
             'replace_notebook_selection',
             'rewrite_notebook_document',
             'search_site',
             'set_system_appearance',
+            'switch_mode',
+            'task',
             'todo_write',
             'update_notebook_title',
             'web_search',
@@ -391,6 +534,8 @@ test.describe('OpenAI tool protocol', () => {
         const operator = askAiOperatorPreamble('Nietzsche')
         expect(operator).toContain('You are WorldInMaking Ask AI')
         expect(operator).toContain('WorldInMaking OS')
+        expect(operator).toContain('public reply')
+        expect(TOOL_PROTOCOL).toContain('long article')
         const system = getAskAiSystemPrompt({ voiceName: 'Nietzsche', wimContext: 'wim' })
         expect(system).toContain('You are WorldInMaking Ask AI')
     })
@@ -619,5 +764,52 @@ test.describe('OpenAI tool protocol', () => {
         const parsed = JSON.parse(result.result)
         expect(parsed.progress).toBe('1/3')
         expect(parsed.tasks).toHaveLength(3)
+    })
+
+    test('switch_mode enters execute and plan supermodes', async () => {
+        const execute = await executeToolCall({
+            id: 'call-mode-1',
+            name: 'switch_mode',
+            argumentsJson: JSON.stringify({ mode: 'execute' }),
+        })
+        expect(execute.ok).toBe(true)
+        expect(JSON.parse(execute.result).mode).toBe('execute')
+
+        const plan = await executeToolCall({
+            id: 'call-mode-2',
+            name: 'switch_mode',
+            argumentsJson: JSON.stringify({ mode: 'plan' }),
+        })
+        expect(plan.ok).toBe(true)
+        expect(JSON.parse(plan.result).mode).toBe('plan')
+    })
+
+    test('plan mode locks mutating tools until switch_mode', async () => {
+        const blocked = await executeToolCall(
+            {
+                id: 'call-locked',
+                name: 'create_artifact',
+                argumentsJson: JSON.stringify({ type: 'markdown', title: 'Plan', content: '# hi' }),
+            },
+            undefined,
+            undefined,
+            'plan'
+        )
+        expect(blocked.ok).toBe(false)
+        expect(blocked.result).toContain('plan mode')
+
+        const allowed = await executeToolCall(
+            {
+                id: 'call-read',
+                name: 'todo_write',
+                argumentsJson: JSON.stringify({
+                    tasks: [{ id: 't1', title: 'Research', status: 'in_progress' }],
+                }),
+            },
+            undefined,
+            undefined,
+            'plan'
+        )
+        expect(allowed.ok).toBe(true)
     })
 })

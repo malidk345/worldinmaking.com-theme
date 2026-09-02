@@ -456,6 +456,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-333` | Stream 5 | PostHog-Inspired Node State Machine & Fail-Open Gateway Recovery (Eliminate 'tool loop empty' and thinking wobble bugs) | `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/loop.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-01 |
 | `TSK-334` | Stream 5 | Implement powerful `read_document` / `read_pdf` agent tool with multi-format parsing, page targeting, and workspace document resolution | `src/lib/bots/tools/read-document.ts`, `spec.ts`, `execute.ts`, `labels.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.7 Flash) | 2026-09-02 |
 | `TSK-335` | Stream 5 | Autonomous Agent Scratchpad, PostHog-inspired `todo_write` task planner, and multi-turn deep thinking loop (Local Only) | `spec.ts`, `pipeline.ts`, `execute.ts`, `labels.ts`, `tests/tool-loop.spec.ts` | `[COMPLETED - LOCAL TESTING]` | Antigravity (Gemini 3.7 Flash) | 2026-09-02 |
+| `TSK-336` | Stream 5 / 2 | WIM AI PostHog node graph: plan mode, switch_mode, tools inside chronological thinking UI | `src/lib/bots/agent/*`, `pipeline.ts`, `loop.ts`, `ThinkingBlock.tsx`, `ChatInput.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-09-02 |
 
 
 
@@ -463,6 +464,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 414 - Thinking/plan UX matches PostHog Max (inline Activity, no scratchpad hijack)
+- **Date:** 2026-09-02
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Plan and node stages now render inside the WIM AI message like PostHog Max: IconBrain Thought rows (shimmer live, collapse to "Thought"), tool Activities, Planning (n/m) checklist, and graph node rows (Deciding next step / Using tools / Writing answer). Removed the mega accordion + scratchpad auto-open on todo_write. Plan stays in the chat, not a side window.
+- **Modified Files:** `ThinkingBlock.tsx`, `activity/ActivityPrimitives.tsx`, `ChatMessage.tsx`, `index.tsx`, `timeline.ts`, `global.css`, `tests/agent-modes.spec.ts`
+- **Verification:** Playwright agent-modes + tool-loop 44/44 PASS.
+- **Handoff:** Hard-refresh Ask AI. Toggle Plan. Expect inline Thought / Planning / node / tool rows under the philosopher header. Scratchpad must not pop open for a plan.
+
+### Entry 413 - WIM AI plan mode, node events, chronological thinking (TSK-336)
+- **Date:** 2026-09-02
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Ported PostHog Max agent-mode architecture onto the existing edge node pipeline without a LangGraph runtime. (1) Added `ask` / `plan` / `execute` modes with a plan-mode toolkit (research + todo_write + switch_mode) and host-side lock on mutating tools. (2) Pipeline emits `node` (root/tools/synthesis) and `mode` SSE events; `switch_mode` mid-loop swaps the live tool spec and injects the execution transition prompt. (3) Thinking UI now interleaves reasoning, tool rows, and a PostHog-style Planning checklist in stream order instead of dumping tools first. Composer has a Plan toggle.
+- **Modified Files:** `src/lib/bots/agent/modes.ts`, `src/lib/bots/agent/timeline.ts`, `src/lib/bots/tools/{pipeline,loop,spec,execute,labels,gemini}.ts`, `src/lib/bots/orchestrate.ts`, `src/lib/ai/contracts.ts`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/{types.ts,index.tsx,components/ThinkingBlock.tsx,ChatInput.tsx,AgentScratchpadViewer.tsx}`, `tests/{agent-modes,tool-loop,ask-ai-harness}.spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` PASS (0 gated errors); Playwright `agent-modes` + `tool-loop` + `ask-ai-harness` + `thinking-tags` 83/83 PASS.
+- **Handoff:** Hard-refresh Ask AI. Toggle Plan in the composer: mutating tools stay locked until the model calls switch_mode or the user turns Plan off. Tools and todo_write should appear inside the Thought accordion in arrival order. Forum philosophers unchanged.
 
 ### Entry 412 - Autonomous Agent Scratchpad, Task Planner (`todo_write`), and Multi-Turn Deep Thinking Loop (TSK-335 - Local)
 - **Date:** 2026-09-02

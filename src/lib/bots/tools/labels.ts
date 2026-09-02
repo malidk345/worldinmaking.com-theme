@@ -23,7 +23,12 @@ const LABELS: Record<string, [string, string, string]> = {
     publish_to_forum: ['Publishing to forum', 'Published to forum', 'Could not publish to forum'],
     read_document: ['Reading document context', 'Document context loaded', 'Could not read document'],
     write_scratchpad: ['Extracting knowledge node', 'Saved node to scratchpad', 'Could not save node'],
-    todo_write: ['Structuring cognitive plan', 'Cognitive plan updated', 'Could not update plan'],
+    todo_write: ['Planning', 'Updated plan', 'Could not update plan'],
+    switch_mode: ['Switching mode', 'Switched mode', 'Could not switch mode'],
+    ask_user: ['Asking you', 'Asked you', 'Could not ask'],
+    remember: ['Saving memory', 'Saved memory', 'Could not save memory'],
+    finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
+    task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {

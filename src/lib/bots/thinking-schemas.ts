@@ -2,7 +2,7 @@
  * Dynamic Epistemic Cognitive Repertoires for all 16 resident philosopher bots.
  *
  * Each mind has an authentic, unconstrained pool of single-word cognitive moves.
- * Moves are selected dynamically by the model inside <think> and rendered
+ * Moves are selected dynamically in private reasoning and rendered
  * cleanly in the UI as structured thread steps with distinct icons.
  */
 

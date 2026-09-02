@@ -30,6 +30,7 @@ export type HostSnapshot = {
         documents?: Array<{ name: string; size?: string; type?: string }>
         nodes?: Array<{ type: string; title?: string; content: string; source?: string }>
         tasks?: Array<{ title: string; status: string }>
+        memories?: Array<{ fact: string; category?: string }>
     }
 }
 
@@ -140,6 +141,16 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
                       status: String(t.status || 'pending'),
                   }))
                 : undefined,
+            memories: Array.isArray(s.memories)
+                ? s.memories
+                      .filter((m: unknown) => m && typeof m === 'object')
+                      .slice(0, 24)
+                      .map((m: any) => ({
+                          fact: String(m.fact || m.content || '').slice(0, 400),
+                          category: typeof m.category === 'string' ? m.category.slice(0, 40) : undefined,
+                      }))
+                      .filter((m: { fact: string }) => m.fact)
+                : undefined,
         }
     }
     if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user && !scratchpad) return undefined
@@ -197,6 +208,12 @@ export function describeWorkspace(host?: HostSnapshot): string {
             : '',
         host?.scratchpad?.nodes?.length
             ? `Scratchpad Knowledge Nodes & Citations (${host.scratchpad.nodes.length}):\n${host.scratchpad.nodes.slice(0, 8).map((n) => `- [${n.type.toUpperCase()}] ${n.title ? `${n.title}: ` : ''}"${n.content}"${n.source ? ` (${n.source})` : ''}`).join('\n')}`
+            : '',
+        host?.scratchpad?.memories?.length
+            ? `Remembered facts (${host.scratchpad.memories.length}):\n${host.scratchpad.memories
+                  .slice(0, 12)
+                  .map((m) => `- ${m.category ? `[${m.category}] ` : ''}${m.fact}`)
+                  .join('\n')}`
             : '',
         host?.notebooks?.length
             ? `Notebooks (${host.notebooks.length}): ${host.notebooks

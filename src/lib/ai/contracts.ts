@@ -15,6 +15,11 @@ export interface AiThinkingStep {
     detail: string
     completed: boolean
     source?: 'model_summary' | 'provider_trace' | 'system_event'
+    kind?: 'reasoning' | 'tool' | 'plan' | 'node'
+    toolName?: string
+    arguments?: string
+    result?: string
+    status?: 'running' | 'done' | 'error'
 }
 
 export type AiLifecyclePhase = 'context' | 'generation' | 'quality_gate' | 'persistence'
@@ -87,6 +92,49 @@ export type AiSseEvent =
     | {
           type: 'phase'
           phase: AiLifecycleEvent
+      }
+    | {
+          type: 'node'
+          node: {
+              name: 'root' | 'tools' | 'synthesis'
+              status: 'started' | 'completed'
+              detail?: string
+          }
+      }
+    | {
+          type: 'mode'
+          mode: 'ask' | 'plan' | 'execute'
+      }
+    | {
+          type: 'human'
+          human: {
+              kind: 'ask' | 'plan_approval'
+              title: string
+              status: 'pending' | 'answered' | 'approved' | 'revised'
+              questions?: Array<{ id: string; prompt: string; options?: string[] }>
+              plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
+              summary?: string
+          }
+      }
+    | {
+          type: 'checkpoint'
+          checkpoint: import('../bots/agent/checkpoint').AgentCheckpoint
+      }
+    | {
+          type: 'activity'
+          activity: {
+              seq: number
+              kind: 'node' | 'thought' | 'tool' | 'plan'
+              id: string
+              status: 'running' | 'done' | 'error'
+              title?: string
+              delta?: string
+              detail?: string
+              toolName?: string
+              arguments?: string
+              result?: string
+              node?: 'root' | 'tools' | 'synthesis'
+          }
       }
     | {
           type: 'citations'

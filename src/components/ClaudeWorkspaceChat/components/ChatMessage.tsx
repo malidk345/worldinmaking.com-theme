@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
+import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, HumanTurn } from '../types';
 import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
-import { AgentScratchpadViewer } from './AgentScratchpadViewer';
+
 import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
@@ -26,6 +26,7 @@ interface ChatMessageProps {
   onFeedback?: (messageId: string, liked: boolean | null) => void;
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
+  onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
   onAddToNotebook?: (message: Message) => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
@@ -97,6 +98,116 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
 }
 
+function HumanTurnCard({
+  turn,
+  disabled,
+  onRespond,
+}: {
+  turn: HumanTurn
+  disabled?: boolean
+  onRespond: (action: 'run' | 'revise' | 'answer', payload?: string) => void
+}) {
+  const [draft, setDraft] = useState('')
+  const pending = turn.status === 'pending' && !disabled
+  if (turn.kind === 'plan_approval') {
+    return (
+      <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+        <p className="m-0 font-medium">{turn.title}</p>
+        {turn.summary ? <p className="mt-1 mb-0 text-secondary leading-relaxed">{turn.summary}</p> : null}
+        {turn.plan && turn.plan.length > 0 ? (
+          <ul className="mt-2 mb-0 pl-4 space-y-1 text-secondary">
+            {turn.plan.map((item) => (
+              <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : ''}>
+                {item.title}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {pending ? (
+          <div className="mt-2.5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onRespond('run')}
+              className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+            >
+              Run
+            </button>
+            <button
+              type="button"
+              onClick={() => onRespond('revise', draft.trim() || undefined)}
+              className="rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer"
+            >
+              Revise
+            </button>
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Optional revision note"
+              className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
+            />
+          </div>
+        ) : (
+          <p className="mt-2 mb-0 text-muted">
+            {turn.status === 'approved' ? 'Running the plan.' : turn.status === 'revised' ? 'Revising the plan.' : null}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+      <p className="m-0 font-medium">{turn.title}</p>
+      <div className="mt-2 space-y-2">
+        {(turn.questions || []).map((question) => (
+          <div key={question.id}>
+            <p className="m-0 text-secondary">{question.prompt}</p>
+            {pending && question.options && question.options.length > 0 ? (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {question.options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => onRespond('answer', option)}
+                    className="rounded-md border border-primary/50 px-2 py-0.5 text-[12px] text-secondary hover:text-primary hover:border-primary cursor-pointer"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {pending ? (
+        <form
+          className="mt-2.5 flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!draft.trim()) return
+            onRespond('answer', draft.trim())
+          }}
+        >
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Type an answer"
+            className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
+          />
+          <button
+            type="submit"
+            className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+          >
+            Send
+          </button>
+        </form>
+      ) : turn.status === 'answered' ? (
+        <p className="mt-2 mb-0 text-muted">Answered.</p>
+      ) : null}
+    </div>
+  )
+}
+
 const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   message,
   modelOptions,
@@ -106,6 +217,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   onRetry,
   onFeedback,
   onExecuteOSAction,
+  onHumanRespond,
   onAddToNotebook,
   typewriterSpeed = 'smooth',
 }) => {
@@ -218,7 +330,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
             />
-            <AgentScratchpadViewer toolTrace={message.toolTrace} />
           </div>
 
           {/* Response Text with Ultra-Compact High-Density Typography */}
@@ -295,6 +406,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               ))}
             </div>
           )}
+
+          {message.humanTurn ? (
+            <HumanTurnCard
+              turn={message.humanTurn}
+              disabled={!!message.isStreaming}
+              onRespond={(action, payload) => onHumanRespond?.(message.id, action, payload)}
+            />
+          ) : null}
 
           {message.osAction && !message.osAction.executed ? (
             <OSActionCard
@@ -438,6 +557,8 @@ export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
     prev.message.toolTrace === next.message.toolTrace &&
     prev.message.artifacts === next.message.artifacts &&
     prev.message.citations === next.message.citations &&
-    prev.message.osAction === next.message.osAction
+    prev.message.osAction === next.message.osAction &&
+    prev.message.humanTurn === next.message.humanTurn &&
+    prev.message.checkpoint === next.message.checkpoint
   );
 });

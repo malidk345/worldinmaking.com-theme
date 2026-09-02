@@ -2,7 +2,12 @@ import { test, expect } from '@playwright/test'
 import { getAskAiSystemPrompt } from '../src/lib/bots/ask-ai'
 import { needsLiveWeb } from '../src/lib/bots/search-intent'
 import { ALLOWED_TOOL_NAMES, TOOL_PROTOCOL } from '../src/lib/bots/tools/spec'
-import { publicTextFromRound, resolveGroqToolModels } from '../src/lib/bots/tools/loop'
+import {
+    extractReasoningDelta,
+    groqNativeThinkingBody,
+    publicTextFromRound,
+    resolveGroqToolModels,
+} from '../src/lib/bots/tools/loop'
 import { describeWorkspace, parseHostSnapshot, resolveOpenPath } from '../src/lib/bots/tools/host'
 import { toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels'
 import { finalizeArtifactTurn } from '../src/lib/artifacts'
@@ -16,6 +21,14 @@ test.describe('Ask AI harness', () => {
         expect(resolveGroqToolModels({ GROQ_MODEL: 'qwen/qwen3.6-27b', QWEN_MODEL: 'qwen/qwen3.6-27b' })[0]).toBe(
             'openai/gpt-oss-120b'
         )
+        expect(groqNativeThinkingBody('openai/gpt-oss-120b')).toEqual({
+            reasoning_effort: 'low',
+            include_reasoning: true,
+        })
+        expect(groqNativeThinkingBody('llama-3.3')).toEqual({ reasoning_format: 'parsed' })
+        expect(extractReasoningDelta({ reasoning: 'step one' })).toBe('step one')
+        expect(extractReasoningDelta({ reasoning_content: 'step two' })).toBe('step two')
+        expect(extractReasoningDelta({ reasoning: { content: 'nested' } })).toBe('nested')
     })
 
     test('tool catalog is the capability surface', () => {
@@ -31,9 +44,16 @@ test.describe('Ask AI harness', () => {
                 'list_notebooks',
                 'create_notebook',
                 'insert_notebook_block',
+                'switch_mode',
+                'todo_write',
+                'ask_user',
+                'remember',
+                'finalize_plan',
+                'task',
             ])
         )
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
+        expect(TOOL_PROTOCOL).toContain('THINK → ACT → TOOLS')
     })
 
     test('operator prompt is Ask AI, not a philosopher identity', () => {
@@ -180,8 +200,10 @@ test.describe('Ask AI harness', () => {
             notebookId: 'nb-1',
             notebookTitle: 'Draft',
             notebooks: [{ id: 'nb-1', title: 'Draft' }],
+            scratchpad: { memories: [{ fact: 'Prefer Turkish', category: 'preference' }] },
         })
         expect(host?.notebookId).toBe('nb-1')
+        expect(host?.scratchpad?.memories?.[0].fact).toContain('Turkish')
         expect(parseHostSnapshot(null)).toBeUndefined()
     })
 })

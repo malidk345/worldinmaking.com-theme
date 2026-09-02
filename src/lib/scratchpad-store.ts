@@ -40,10 +40,18 @@ export interface ScratchpadTask {
     timestamp?: string
 }
 
+export interface ScratchpadMemory {
+    id: string
+    fact: string
+    category?: string
+    timestamp: string
+}
+
 export interface ScratchpadState {
     documents: ScratchpadDocument[]
     nodes: ScratchpadNode[]
     tasks: ScratchpadTask[]
+    memories: ScratchpadMemory[]
     lastUpdated: number
 }
 
@@ -53,6 +61,7 @@ let state: ScratchpadState = {
     documents: [],
     nodes: [],
     tasks: [],
+    memories: [],
     lastUpdated: Date.now(),
 }
 
@@ -62,11 +71,12 @@ if (typeof window !== 'undefined') {
         const raw = window.localStorage.getItem(STORAGE_KEY)
         if (raw) {
             const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed.nodes) || Array.isArray(parsed.tasks) || Array.isArray(parsed.documents)) {
+            if (Array.isArray(parsed.nodes) || Array.isArray(parsed.tasks) || Array.isArray(parsed.documents) || Array.isArray(parsed.memories)) {
                 state = {
                     documents: Array.isArray(parsed.documents) ? parsed.documents : [],
                     nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
                     tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+                    memories: Array.isArray(parsed.memories) ? parsed.memories : [],
                     lastUpdated: parsed.lastUpdated || Date.now(),
                 }
             }
@@ -207,10 +217,26 @@ export const ScratchpadStore = {
         emit()
     },
 
+    addMemory(input: { fact: string; category?: string }): ScratchpadMemory {
+        const memory: ScratchpadMemory = {
+            id: `mem-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            fact: input.fact.trim(),
+            category: input.category?.trim() || undefined,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        const exists = state.memories.some((item) => item.fact === memory.fact)
+        if (!exists && memory.fact) {
+            state.memories = [memory, ...state.memories].slice(0, 48)
+            emit()
+        }
+        return memory
+    },
+
     clearAll(): void {
         state.documents = []
         state.nodes = []
         state.tasks = []
+        state.memories = []
         emit()
     },
 
@@ -228,6 +254,13 @@ export const ScratchpadStore = {
             state.tasks.forEach((t) => {
                 const mark = t.status === 'completed' ? '[x]' : t.status === 'in_progress' ? '[-]' : '[ ]'
                 parts.push(`- ${mark} ${t.title}`)
+            })
+            parts.push('')
+        }
+        if (state.memories.length > 0) {
+            parts.push('## Remembered facts\n')
+            state.memories.forEach((memory) => {
+                parts.push(`- ${memory.category ? `[${memory.category}] ` : ''}${memory.fact}`)
             })
             parts.push('')
         }
@@ -261,6 +294,15 @@ export const ScratchpadStore = {
         if (state.nodes.length > 0) {
             sections.push(`Active Knowledge Nodes & Citations (${state.nodes.length}):\n` +
                 state.nodes.slice(0, 10).map((n) => `[${n.type.toUpperCase()}] ${n.title ? `${n.title}: ` : ''}"${n.content}"${n.source ? ` (Source: ${n.source})` : ''}`).join('\n')
+            )
+        }
+        if (state.memories.length > 0) {
+            sections.push(
+                `Remembered facts (${state.memories.length}):\n` +
+                    state.memories
+                        .slice(0, 12)
+                        .map((memory) => `- ${memory.category ? `[${memory.category}] ` : ''}${memory.fact}`)
+                        .join('\n')
             )
         }
         return sections.join('\n\n')

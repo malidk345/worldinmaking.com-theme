@@ -129,6 +129,8 @@ function rowToMessage(row: MessageRow): Message {
         modelUsed: row.model_used || undefined,
         thinkingProcess: unpacked.thinkingProcess,
         toolTrace: unpacked.toolTrace,
+        humanTurn: unpacked.humanTurn,
+        checkpoint: unpacked.checkpoint,
         artifacts: row.artifacts || undefined,
         citations: row.citations || undefined,
         attachments: row.attachments || undefined,

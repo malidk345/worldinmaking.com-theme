@@ -1,8 +1,8 @@
 /**
  * Bot thinking process — structured internal reasoning before public reply.
  *
- * Models emit <thinking> with three persona-specific stage tags
- * (see thinking-schemas.ts), then the public reply outside.
+ * Private reasoning is native (or a host THINK step). Public reply stays outside.
+ * If a model still emits legacy thinking tags, they are stripped, not prompted.
  */
 import type { TaskType } from 'lib/persona-engine'
 import { stripThinkingBlocks, THINKING_TAG_NAMES } from './thinking-tags'
@@ -81,6 +81,7 @@ export function usesNativeQwenReasoning(_depth?: ThinkingDepth): boolean {
     return false
 }
 
+/** Keep the philosopher thinking method in the prompt. Do not ask for XML thinking tags. */
 export function shouldPromptThinkingTags(_depth?: ThinkingDepth): boolean {
     return true
 }
@@ -120,8 +121,8 @@ export function isJunkThought(text: string): boolean {
 
 
 /**
- * Short prompted <thinking> with this mind's three stages.
- * Outer tag is always <thinking> so the live ticker still works.
+ * Philosopher thinking method for the native reasoning channel.
+ * Do not instruct XML thinking tags — those leak into the public bubble.
  */
 export function buildThinkingInstruction(
     _taskType: TaskType,
@@ -132,16 +133,16 @@ export function buildThinkingInstruction(
     if (rep) {
         const movesList = rep.moves.map((m) => `[${m.tag}]`).join(', ')
         return [
-            'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
-            `Freely select cognitive moves from your repertoire (${movesList}) and label them with single-word brackets like ${rep.moves.slice(0, 3).map(m => `[${m.tag}]`).join(', ')}.`,
-            'Ground each selected move in concrete details of the topic. Be radically honest — never flatter, pander, or use empty rhetoric. Close </think> before writing your visible reply.',
+            'THINKING PROCESS: Reason privately first. Keep it short — 1 to 3 repertoire moves, a few sentences, not an essay. Do not emit XML thinking tags.',
+            `Pick only the moves that grip this question (${movesList}).`,
+            'Be radically honest. Then write the visible reply.',
             "Reply in the user's language.",
         ].join('\n')
     }
 
     return [
-        'THINKING PROCESS (mandatory): Your first characters MUST be <think>.',
-        'Freely explore the question inside <think> with concrete analysis. Be radically honest and avoid empty rhetoric before closing with </think>.',
+        'THINKING PROCESS: Reason privately first in a few short sentences. Do not emit XML thinking tags. Do not write an essay.',
+        'Be radically honest. Then write the visible reply.',
         "Reply in the user's language.",
     ].join('\n')
 }

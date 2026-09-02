@@ -1,5 +1,5 @@
 import type { ToolCall } from './execute'
-import { OPENAI_CHAT_TOOLS, toGeminiFunctionDeclarations } from './spec'
+import { OPENAI_CHAT_TOOLS, toGeminiFunctionDeclarations, type OpenAiToolSpec } from './spec'
 
 export type OpenAiChatMessage = {
     role: 'system' | 'user' | 'assistant' | 'tool'
@@ -170,9 +170,13 @@ export async function geminiToolCompletion(params: {
     model: string
     systemPrompt: string
     messages: OpenAiChatMessage[]
-    toolChoice: 'auto' | 'none' | 'web_search'
+    toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
     onToken?: (text: string) => void
+    onThinking?: (text: string) => void
+    omitTools?: boolean
+    maxTokens?: number
     timeoutMs?: number
+    tools?: OpenAiToolSpec[]
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; modelParts: GeminiPart[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
@@ -181,28 +185,58 @@ export async function geminiToolCompletion(params: {
     const timer = setTimeout(() => controller.abort(), params.timeoutMs || 45_000)
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(params.apiKey)}`
-        const res = await fetch(url, {
+        const functionCallingConfig =
+            params.toolChoice === 'none'
+                ? { mode: 'NONE' as const }
+                : params.toolChoice === 'web_search'
+                  ? { mode: 'ANY' as const, allowedFunctionNames: ['web_search'] }
+                  : params.toolChoice === 'todo_write'
+                    ? { mode: 'ANY' as const, allowedFunctionNames: ['todo_write'] }
+                    : { mode: 'AUTO' as const }
+        const baseBody: Record<string, unknown> = {
+            systemInstruction: { parts: [{ text: params.systemPrompt }] },
+            contents: openaiMessagesToGeminiContents(params.messages),
+        }
+        if (!params.omitTools) {
+            baseBody.tools = [{ functionDeclarations: toGeminiFunctionDeclarations(params.tools || OPENAI_CHAT_TOOLS) }]
+            baseBody.toolConfig = { functionCallingConfig }
+        }
+        const thinkingConfig = { thinkingBudget: params.omitTools ? 48 : 96, includeThoughts: true }
+        let res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
-                systemInstruction: { parts: [{ text: params.systemPrompt }] },
-                contents: openaiMessagesToGeminiContents(params.messages),
-                tools: [{ functionDeclarations: toGeminiFunctionDeclarations(OPENAI_CHAT_TOOLS) }],
-                toolConfig: {
-                    functionCallingConfig:
-                        params.toolChoice === 'none'
-                            ? { mode: 'NONE' }
-                            : params.toolChoice === 'web_search'
-                              ? { mode: 'ANY', allowedFunctionNames: ['web_search'] }
-                              : { mode: 'AUTO' },
+                ...baseBody,
+                generationConfig: {
+                    temperature: 0.6,
+                    maxOutputTokens: params.maxTokens || (params.omitTools ? 48 : 8192),
+                    thinkingConfig,
                 },
-                generationConfig: { temperature: 0.6, maxOutputTokens: 4096 },
             }),
         })
         if (!res.ok) {
             const raw = await res.text()
-            return { ok: false, detail: `${res.status} ${raw.slice(0, 220)}`, status: res.status }
+            const thinkingRejected =
+                raw.toLowerCase().includes('thinkingconfig') ||
+                raw.toLowerCase().includes('thinking_config') ||
+                raw.toLowerCase().includes('includethoughts')
+            if (!thinkingRejected) {
+                return { ok: false, detail: `${res.status} ${raw.slice(0, 220)}`, status: res.status }
+            }
+            res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    ...baseBody,
+                    generationConfig: { temperature: 0.6, maxOutputTokens: params.maxTokens || 4096 },
+                }),
+            })
+            if (!res.ok) {
+                const retryRaw = await res.text()
+                return { ok: false, detail: `${res.status} ${retryRaw.slice(0, 220)}`, status: res.status }
+            }
         }
         if (!res.body) return { ok: false, detail: 'No response body' }
 
@@ -234,7 +268,6 @@ export async function geminiToolCompletion(params: {
                             }>
                         }
                         const parts = data.candidates?.[0]?.content?.parts || []
-                        const chunkHasTool = parts.some((part) => Boolean((part as { functionCall?: unknown }).functionCall))
                         for (const part of parts) {
                             const signature = geminiPartThoughtSignature(part)
                             if (signature) lastThoughtSignature = signature
@@ -274,9 +307,9 @@ export async function geminiToolCompletion(params: {
                                 })
                                 if (isThought) {
                                     reasoning += text
+                                    params.onThinking?.(text)
                                 } else {
                                     content += text
-                                    if (!chunkHasTool && toolCalls.length === 0) params.onToken?.(text)
                                 }
                             }
                         }
@@ -297,6 +330,7 @@ export async function geminiToolCompletion(params: {
             }
         }
 
+        if (toolCalls.length === 0 && content) params.onToken?.(content)
         return { ok: true, content, toolCalls, modelParts, reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }

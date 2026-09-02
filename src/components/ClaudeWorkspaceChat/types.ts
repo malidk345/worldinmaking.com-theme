@@ -16,6 +16,39 @@ export interface ModelOption {
 
 export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
 
+export type AgentMode = 'ask' | 'plan' | 'execute'
+
+export type HumanTurn = {
+  kind: 'ask' | 'plan_approval'
+  title: string
+  status: 'pending' | 'answered' | 'approved' | 'revised'
+  questions?: Array<{ id: string; prompt: string; options?: string[] }>
+  plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
+  summary?: string
+}
+
+export type AgentCheckpoint = {
+  v: 1
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant' | 'tool'
+    content: string | null
+    tool_calls?: Array<{
+      id: string
+      type: 'function'
+      function: { name: string; arguments: string }
+      thoughtSignature?: string
+    }>
+    tool_call_id?: string
+  }>
+  todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
+  scratchpad: Array<{ note: string; source?: string }>
+  agentMode: AgentMode
+  stepCount: number
+  usedTools: boolean
+  usedWebSearch: boolean
+  interrupt: HumanTurn
+}
+
 export interface ThinkingStep {
   id: string
   stepNumber: number
@@ -24,6 +57,11 @@ export interface ThinkingStep {
   timestampMs?: number
   completed: boolean
   source?: 'model_summary' | 'provider_trace' | 'system_event'
+  kind?: 'reasoning' | 'tool' | 'plan' | 'node'
+  toolName?: string
+  arguments?: string
+  result?: string
+  status?: 'running' | 'done' | 'error'
 }
 
 export interface ThinkingProcess {
@@ -32,6 +70,7 @@ export interface ThinkingProcess {
   steps: ThinkingStep[]
   summary?: string
   source?: 'model_summary' | 'provider_trace' | 'system_event' | 'none'
+  currentNode?: 'root' | 'tools' | 'synthesis'
 }
 
 export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
@@ -137,6 +176,8 @@ export interface Message {
   editedFromId?: string
   osAction?: OSActionCard
   provider?: string
+  humanTurn?: HumanTurn
+  checkpoint?: AgentCheckpoint
 }
 
 export interface ProjectSpace {
@@ -161,6 +202,7 @@ export interface Chat {
   updatedAt: string
   thinkingBudget: ThinkingBudget
   webSearchEnabled: boolean
+  agentMode?: AgentMode
   systemPrompt?: string
   shareToken?: string
   isShared?: boolean

@@ -12,6 +12,9 @@ import {
   WebCitation,
   UserSettings,
   FileAttachment,
+  AgentMode,
+  HumanTurn,
+  AgentCheckpoint,
 } from './types';
 import {
   AVAILABLE_MODELS,
@@ -52,8 +55,15 @@ import type { OSActionCard as OSActionCardType } from './types';
 import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
+import {
+  activityFromToolEvent,
+  applyAgentActivity,
+  processItemToThinkingStep,
+  type ProcessItem,
+} from '../../lib/bots/agent/activity';
 import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
+import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
@@ -114,7 +124,7 @@ function toWorkspaceArtifact(artifact: AiArtifact): Artifact {
 }
 
 function sanitizePublicAssistantText(value: string): string {
-  return stripThinkingBlocks(stripChartArtifactMarkup(value));
+  return stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(value)));
 }
 
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
@@ -123,6 +133,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const stored = readLocalChats<unknown>(readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS));
     return Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
   });
+
 
   const [projects, setProjects] = useState<ProjectSpace[]>(() => {
     const stored = readStored<unknown>(PROJECT_STORAGE_KEYS, INITIAL_PROJECTS);
@@ -770,14 +781,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const handleSendMessage = async (
     promptText: string,
     attachments: FileAttachment[],
-    options?: { skipUserAppend?: boolean; historyOverride?: Message[] }
+    options?: {
+      skipUserAppend?: boolean
+      historyOverride?: Message[]
+      agentMode?: AgentMode
+      resume?: AgentCheckpoint
+      resumeAction?: 'run' | 'revise' | 'answer'
+      resumePayload?: string
+      continueMessageId?: string
+    }
   ) => {
-    if (!promptText.trim() && attachments.length === 0) return;
+    if (!promptText.trim() && attachments.length === 0 && !options?.resume) return;
 
     let targetChatId = activeChatId;
     const editMessageId = pendingEditMessageIdRef.current
     pendingEditMessageIdRef.current = null
     const sourceChat = chats.find((c) => c.id === (targetChatId || '')) || activeChat
+    const turnAgentMode = options?.agentMode || 'ask'
     let baseMessages = options?.historyOverride || sourceChat?.messages || []
     if (editMessageId) {
       const editIndex = baseMessages.findIndex((message) => message.id === editMessageId)
@@ -800,12 +820,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         updatedAt: new Date().toISOString(),
         thinkingBudget: 'extended',
         webSearchEnabled: false,
+        agentMode: turnAgentMode,
         messages: [],
       };
       setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat.id);
       targetChatId = newChat.id;
     }
+
+    const continued = options?.continueMessageId
+      ? baseMessages.find((message) => message.id === options.continueMessageId)
+      : undefined
 
     const userMessage: Message = {
       id: `m-user-${Date.now()}`,
@@ -815,36 +840,51 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       attachments,
     };
 
-    const assistantMessageId = `m-ast-${Date.now()}`;
-    const assistantMessage: Message = {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date().toISOString(),
-      modelUsed: selectedModelId,
-      isStreaming: true,
-      isTypingDone: false,
-      thinkingProcess: {
-        durationSeconds: 0,
-        tokenCount: 0,
-        steps:
-          attachments.length > 0
-            ? [
-                {
-                  id: `doc-read-${Date.now()}`,
-                  stepNumber: 1,
-                  title: 'Reading Document',
-                  detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
-                },
-              ]
-            : [],
-      },
-    };
+    const assistantMessageId = continued?.id || `m-ast-${Date.now()}`;
+    const assistantMessage: Message = continued
+      ? {
+          ...continued,
+          isStreaming: true,
+          isTypingDone: false,
+          stopped: false,
+        }
+      : {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toISOString(),
+          modelUsed: selectedModelId,
+          isStreaming: true,
+          isTypingDone: false,
+          thinkingProcess: {
+            durationSeconds: 0,
+            tokenCount: 0,
+            steps:
+              attachments.length > 0
+                ? [
+                    {
+                      id: `doc-read-${Date.now()}`,
+                      stepNumber: 1,
+                      title: 'Reading Document',
+                      detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
+                      completed: false,
+                    },
+                  ]
+                : [],
+          },
+        };
 
-    // Update state with user and pending assistant message
     setChats((prev) =>
       prev.map((c) => {
         if (c.id === targetChatId) {
+          if (continued) {
+            return {
+              ...c,
+              agentMode: turnAgentMode,
+              updatedAt: new Date().toISOString(),
+              messages: c.messages.map((message) => (message.id === assistantMessageId ? assistantMessage : message)),
+            }
+          }
           const nextMessages = options?.skipUserAppend
             ? [...baseMessages, assistantMessage]
             : [...baseMessages, userMessage, assistantMessage];
@@ -869,13 +909,26 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
     const activeProjectObj = projects.find((p) => p.id === activeProjectId);
 
-    let accumulatedContent = '';
+    let accumulatedContent = continued?.content || '';
     const thinkStartedAt = Date.now();
+    let thinkSeq = 0
+    let liveThinkId = 'stream-think-0'
+    let processItems: ProcessItem[] = (continued?.thinkingProcess?.steps || []).map((step) => ({
+      id: step.id,
+      kind: step.kind === 'reasoning' ? 'thought' : step.kind === 'plan' ? 'plan' : step.kind === 'node' ? 'node' : 'tool',
+      title: step.title,
+      detail: step.detail,
+      status: step.status || (step.completed ? 'done' : 'running'),
+      toolName: step.toolName,
+      args: step.arguments,
+      result: step.result,
+      seq: step.stepNumber,
+    }))
     let currentThinkingProcess = {
-      durationSeconds: 0,
-      tokenCount: 0,
-      steps:
-        attachments.length > 0
+      durationSeconds: continued?.thinkingProcess?.durationSeconds || 0,
+      tokenCount: continued?.thinkingProcess?.tokenCount || 0,
+      steps: (continued?.thinkingProcess?.steps ||
+        (attachments.length > 0
           ? [
               {
                 id: `doc-read-${Date.now()}`,
@@ -884,13 +937,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 detail: `Extracted and indexed: ${attachments.map((a) => a.name).join(', ')}`,
               },
             ]
-          : ([] as any[]),
-      summary: '',
+          : [])) as any[],
+      summary: continued?.thinkingProcess?.summary || '',
     };
-    let streamedArtifacts: Artifact[] = [];
+    let streamedArtifacts: Artifact[] = continued?.artifacts ? [...continued.artifacts] : [];
     let streamedAction: OSActionCardType | undefined;
+    let streamedHumanTurn: HumanTurn | undefined = continued?.humanTurn;
+    let streamedCheckpoint: AgentCheckpoint | undefined = continued?.checkpoint;
     let streamedProvider: string | undefined;
-    let streamedToolTrace: ToolTrace[] = [];
+    let streamedToolTrace: ToolTrace[] = continued?.toolTrace ? [...continued.toolTrace] : [];
     const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
       if (!incoming || incoming.length === 0) return;
       const next = incoming.map(toWorkspaceArtifact);
@@ -987,6 +1042,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           notebookContext: activeNotebookContext,
           notebookBound: Boolean(notebookBind?.notebookId || activeNotebookInfo?.id),
           conversationId: targetChatId,
+          agentMode: turnAgentMode,
+          checkpoint: options?.resume,
+          resumeAction: options?.resumeAction,
+          resumePayload: options?.resumePayload,
           workspace: {
             path: typeof window !== 'undefined' ? window.location.pathname : '/',
             user: user
@@ -1024,6 +1083,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               documents: ScratchpadStore.getState().documents.map((d) => ({ name: d.name, size: d.size ? String(d.size) : undefined, type: d.type })),
               nodes: ScratchpadStore.getState().nodes.map((n) => ({ type: n.type, title: n.title, content: n.content, source: n.source })),
               tasks: ScratchpadStore.getState().tasks.map((t) => ({ title: t.title, status: t.status })),
+              memories: ScratchpadStore.getState().memories.map((m) => ({ fact: m.fact, category: m.category })),
             },
           },
         }),
@@ -1059,20 +1119,33 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           const parsed = parseAiSseEvent(frame);
           if (!parsed) continue;
 
+          if (parsed.type === 'activity') {
+            processItems = applyAgentActivity(processItems, parsed.activity)
+            currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              thinkingProcess: { ...currentThinkingProcess },
+            })
+            continue
+          }
+
           if (parsed.type === 'tool') {
+            if (parsed.tool.status === 'running' && !streamedToolTrace.some((item) => item.id === parsed.tool.id)) {
+              thinkSeq += 1
+              liveThinkId = `stream-think-${thinkSeq}`
+              currentThinkingProcess.steps = currentThinkingProcess.steps.map((step: any) =>
+                typeof step.id === 'string' && step.id.startsWith('stream-think')
+                  ? { ...step, completed: true, status: 'done' }
+                  : step
+              )
+            }
             const toolTitle = toolStatusLabel(parsed.tool.name, parsed.tool.status);
-            const toolStep = {
-              id: `tool-${parsed.tool.id}`,
-              stepNumber: 0,
-              title: toolTitle,
-              detail: parsed.tool.detail || '',
-              completed: parsed.tool.status !== 'running',
-              source: 'system_event' as const,
-            };
-            const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === toolStep.id);
-            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = toolStep;
-            else currentThinkingProcess.steps.push(toolStep);
-            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            processItems = applyAgentActivity(
+              processItems,
+              activityFromToolEvent(parsed.tool, processItems.length + 1)
+            )
+            currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps]
             if (parsed.tool.status === 'running') currentThinkingProcess.summary = toolTitle;
             const nextTrace: ToolTrace = {
               id: parsed.tool.id,
@@ -1113,22 +1186,35 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                     source: args.source || parsed.tool.detail,
                     tags: args.tags,
                   });
-                  app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
                 }
               } catch {
                 /* ignore */
               }
             }
-            if (
-              parsed.tool.name === 'todo_write' ||
-              parsed.tool.name === 'plan_task' ||
-              parsed.tool.name === 'tasks'
-            ) {
+            if (parsed.tool.name === 'remember' && parsed.tool.status === 'done') {
               try {
-                const args = JSON.parse(parsed.tool.arguments || '{}');
-                if (Array.isArray(args.tasks)) {
-                  ScratchpadStore.setTasks(args.tasks);
-                  app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
+                const parsedResult = JSON.parse(parsed.tool.result || '{}') as { fact?: string; category?: string }
+                const args = JSON.parse(parsed.tool.arguments || '{}') as { fact?: string; category?: string }
+                const fact = parsedResult.fact || args.fact
+                if (fact) ScratchpadStore.addMemory({ fact, category: parsedResult.category || args.category })
+              } catch {
+                /* ignore */
+              }
+            }
+            if (parsed.tool.name === 'todo_write' && parsed.tool.status === 'done') {
+              try {
+                const parsedResult = JSON.parse(parsed.tool.result || parsed.tool.arguments || '{}') as {
+                  tasks?: Array<{ id?: string; title?: string; status?: string }>
+                }
+                if (Array.isArray(parsedResult.tasks)) {
+                  ScratchpadStore.setTasks(
+                    parsedResult.tasks.map((task, index) => ({
+                      id: String(task.id || index + 1),
+                      title: String(task.title || ''),
+                      status:
+                        task.status === 'completed' || task.status === 'in_progress' ? task.status : 'pending',
+                    }))
+                  )
                 }
               } catch {
                 /* ignore */
@@ -1137,24 +1223,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'search') {
-            const searchTitle =
-              parsed.search.status === 'running'
-                ? `Searching the web for “${parsed.search.query}”`
-                : parsed.search.status === 'error'
-                ? `Web search failed for “${parsed.search.query}”`
-                : `Searched the web for “${parsed.search.query}”`;
-            const searchStep = {
-              id: 'search-step',
-              stepNumber: 0,
-              title: searchTitle,
-              detail: parsed.search.results || '',
-              completed: parsed.search.status === 'done',
-              source: 'system_event' as const,
-            };
-            const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
-            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = searchStep;
-            else currentThinkingProcess.steps.push(searchStep);
-            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            const searchStatus =
+              parsed.search.status === 'error' ? ('error' as const) : parsed.search.status === 'done' ? ('done' as const) : ('running' as const)
+            const searchTitle = toolStatusLabel('web_search', searchStatus)
+            processItems = applyAgentActivity(
+              processItems,
+              activityFromToolEvent(
+                {
+                  id: 'host-search',
+                  name: 'web_search',
+                  status: searchStatus,
+                  detail: parsed.search.query,
+                  arguments: JSON.stringify({ query: parsed.search.query }),
+                  result: parsed.search.results || undefined,
+                },
+                processItems.length + 1
+              )
+            )
+            currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps]
             currentThinkingProcess.summary = parsed.search.status === 'running' ? searchTitle : '';
             const searchTrace: ToolTrace = {
               id: 'host-search',
@@ -1180,6 +1267,30 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             });
           }
 
+          if (parsed.type === 'node') {
+            continue
+          }
+
+          if (parsed.type === 'mode') {
+            setChats((prev) =>
+              prev.map((chat) => (chat.id === targetChatId ? { ...chat, agentMode: parsed.mode } : chat))
+            );
+          }
+
+          if (parsed.type === 'human') {
+            streamedHumanTurn = { ...parsed.human, status: parsed.human.status || 'pending' }
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              humanTurn: streamedHumanTurn,
+            })
+          }
+
+          if (parsed.type === 'checkpoint') {
+            streamedCheckpoint = parsed.checkpoint
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              checkpoint: streamedCheckpoint,
+            })
+          }
+
           if (parsed.type === 'thinking_start') {
             currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
             currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
@@ -1202,14 +1313,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'thinking_step') {
-            const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === parsed.step.id);
-            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = parsed.step;
-            else currentThinkingProcess.steps.push(parsed.step);
-            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-            updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: sanitizePublicAssistantText(accumulatedContent),
-              thinkingProcess: { ...currentThinkingProcess },
-            });
+            continue
           }
 
           if (parsed.type === 'error') {
@@ -1255,7 +1359,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
-      if (!finalCleanContent && !backendError && streamedArtifacts.length === 0) {
+      if (!finalCleanContent && !backendError && streamedArtifacts.length === 0 && !streamedHumanTurn) {
         throw new Error('AI returned no content');
       }
 
@@ -1288,14 +1392,24 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           currentThinkingProcess.durationSeconds,
           (Date.now() - thinkStartedAt) / 1000
         );
+        currentThinkingProcess.steps = currentThinkingProcess.steps.map((step: any) =>
+          step.kind === 'reasoning' || (typeof step.id === 'string' && step.id.startsWith('stream-think'))
+            ? { ...step, completed: true, status: 'done' }
+            : step.kind === 'node' && step.status === 'running'
+            ? { ...step, completed: true, status: 'done' }
+            : step
+        )
+        currentThinkingProcess.steps = [...currentThinkingProcess.steps]
         updateAssistantMessage(targetChatId, assistantMessageId, {
-          content: visibleMessageText || finalCleanContent || 'Response ready.',
+          content: visibleMessageText || finalCleanContent || (streamedHumanTurn ? '' : 'Response ready.'),
           thinkingProcess: { ...currentThinkingProcess },
           toolTrace: streamedToolTrace.length > 0 ? streamedToolTrace : undefined,
           artifacts: extractedArtifacts.length > 0 ? extractedArtifacts : undefined,
           isStreaming: false,
           isTypingDone: true,
           osAction: streamedAction,
+          humanTurn: streamedHumanTurn,
+          checkpoint: streamedCheckpoint,
           provider: streamedProvider,
         });
       }
@@ -1489,6 +1603,39 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return false;
     }
   };
+
+  const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
+    if (isStreaming || !activeChat) return
+    const message = activeChat.messages.find((item) => item.id === messageId)
+    if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
+    const nextStatus = action === 'run' ? 'approved' : action === 'revise' ? 'revised' : 'answered'
+    updateAssistantMessage(activeChat.id, messageId, {
+      humanTurn: { ...message.humanTurn, status: nextStatus },
+    })
+    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : 'ask'
+    setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
+    if (message.checkpoint) {
+      void handleSendMessage(action === 'answer' ? payload?.trim() || '' : '', [], {
+        skipUserAppend: true,
+        continueMessageId: messageId,
+        agentMode: nextMode,
+        resume: message.checkpoint,
+        resumeAction: action,
+        resumePayload: payload,
+      })
+      return
+    }
+    if (action === 'run') {
+      void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
+      return
+    }
+    if (action === 'revise') {
+      void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
+      return
+    }
+    if (!payload?.trim()) return
+    void handleSendMessage(payload.trim(), [])
+  }
 
   const handleDeleteChat = (id: string) => {
     rememberDeletedChatId(id)
@@ -1781,6 +1928,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onFeedback={handleMessageFeedback}
                   onUpdateMessage={updateAssistantMessage}
                   onExecuteOSAction={executeOSAction}
+                  onHumanRespond={handleHumanRespond}
                   onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
                   typewriterSpeed={settings.typewriterSpeed}
                 />
@@ -1811,6 +1959,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               draftNonce={composerDraftNonce}
               incomingAttachments={incomingAttachments}
               boundNotebookTitle={activeNotebookInfo?.title}
+
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {
                   setDismissedNotebookId(activeNotebookInfo.id);

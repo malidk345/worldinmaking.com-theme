@@ -16,12 +16,15 @@ import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
+import { stripLeakedToolMarkup } from 'lib/bots/tools/leak'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
+import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoint'
+import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
 import { estimateTokens, recordTokenUsage, type UserTier } from '../../lib/token-quota'
@@ -78,7 +81,7 @@ export default async function handler(req: Request) {
         const body = parsed.body
 
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
-    if (!prompt) return jsonError('Prompt is required.', 400)
+    if (!prompt && !parseAgentCheckpoint(body.checkpoint)) return jsonError('Prompt is required.', 400)
     if (prompt.length > MAX_PROMPT_LENGTH) {
         return jsonError(`Prompt too long (max ${MAX_PROMPT_LENGTH} characters)`, 400)
     }
@@ -111,6 +114,12 @@ export default async function handler(req: Request) {
     if (!conversationId.ok) return jsonError(conversationId.error, 400)
 
     const host = parseHostSnapshot(body.workspace)
+    const agentMode = parseAgentMode(body.agentMode)
+    const checkpoint = parseAgentCheckpoint(body.checkpoint)
+    const resumeAction = parseResumeAction(body.resumeAction)
+    const resumePayload = typeof body.resumePayload === 'string' ? body.resumePayload.slice(0, 800) : undefined
+    if (body.checkpoint !== undefined && !checkpoint) return jsonError('checkpoint is invalid', 400)
+    if (checkpoint && !resumeAction) return jsonError('resumeAction is required with checkpoint', 400)
 
     let history: GatewayMessage[] = []
     if (body.messages !== undefined) {
@@ -312,6 +321,8 @@ export default async function handler(req: Request) {
                 )
 
                 // Periodic SSE keep-alive heartbeat to prevent edge proxy dropouts during deep reasoning
+                send({ type: 'mode', mode: agentMode })
+
                 const heartbeat = setInterval(() => {
                     try {
                         controller.enqueue(new TextEncoder().encode(': keep-alive\n\n'))
@@ -395,7 +406,15 @@ export default async function handler(req: Request) {
                         trustedInstruction: trustedInstruction || undefined,
                         enableTools,
                         host,
+                        agentMode,
+                        checkpoint: checkpoint && resumeAction ? checkpoint : undefined,
+                        resumeAction,
+                        resumePayload,
                         onTool: (event) => send({ type: 'tool', tool: event }),
+                        onNode: (event) => send({ type: 'node', node: event }),
+                        onMode: (mode) => send({ type: 'mode', mode }),
+                        onHuman: (human) => send({ type: 'human', human }),
+                        onActivity: (activity) => send({ type: 'activity', activity }),
                         onLifecycle: (event) => send({ type: 'phase', phase: event }),
                     },
                     (token) => {
@@ -404,17 +423,6 @@ export default async function handler(req: Request) {
                     },
                     (thinkingChunk) => {
                         liveThinkingAcc += thinkingChunk
-                        send({
-                            type: 'thinking_step',
-                            step: {
-                                id: 'stream-think',
-                                stepNumber: 1,
-                                title: 'Thinking',
-                                detail: liveThinkingAcc,
-                                completed: false,
-                                source: 'model_summary',
-                            },
-                        })
                     }
                 )
 
@@ -434,19 +442,7 @@ export default async function handler(req: Request) {
                     return
                 }
 
-                if (liveThinkingAcc) {
-                    send({
-                        type: 'thinking_step',
-                        step: {
-                            id: 'stream-think',
-                            stepNumber: 1,
-                            title: 'Thinking',
-                            detail: liveThinkingAcc,
-                            completed: true,
-                            source: 'model_summary',
-                        },
-                    })
-                }
+
 
                 if (result.success && result.citations?.length) {
                     const start = citations.length
@@ -464,7 +460,7 @@ export default async function handler(req: Request) {
                     { scrape: false }
                 )
                 const visibleReply =
-                    turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+                    turn.visibleText || stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(result.reply)))
 
                 // Safety fallback: if no live tokens were streamed during generation, flush visible reply
                 if (livePublicTokensCount === 0 && visibleReply) {
@@ -479,6 +475,13 @@ export default async function handler(req: Request) {
                     for (const action of result.actions) {
                         send({ type: 'action', action })
                     }
+                }
+
+                if (result.success && result.interrupt) {
+                    send({ type: 'human', human: result.interrupt })
+                }
+                if (result.success && result.checkpoint) {
+                    send({ type: 'checkpoint', checkpoint: result.checkpoint })
                 }
 
                 // Record & stream real token usage to update client sidebar

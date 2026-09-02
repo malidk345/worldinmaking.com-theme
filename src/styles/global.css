@@ -3404,3 +3404,47 @@ div[data-radix-popper-content-wrapper] {
 html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     display: none;
 }
+
+@keyframes wim-thought-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes wim-thought-shimmer-opacity {
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    25% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    75% {
+        opacity: 1;
+    }
+}
+
+@keyframes wim-activity-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .group\/activity-header span,
+    [data-activity-id] {
+        animation: none !important;
+        transition: none !important;
+    }
+}

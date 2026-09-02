@@ -22,12 +22,36 @@ import type { HostOsAction, HostSnapshot } from './host'
 import { geminiToolCompletion, type GeminiPart } from './gemini'
 import { compactToolHistory, type HistoryTurn } from './history'
 import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provider-errors'
-import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL } from './spec'
-import { runAgentNodePipeline } from './pipeline'
+import { modeAfterResume, resumeUserMessage, type AgentCheckpoint, type ResumeAction } from '../agent/checkpoint'
+import type { HumanTurn } from '../agent/human'
+import { modeSystemPrompt, parseAgentMode, PLAN_TOOL_PROTOCOL, type AgentMode } from '../agent/modes'
+import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, toolsForAgentMode, type OpenAiToolSpec } from './spec'
+import { runAgentNodePipeline, type NodeEvent } from './pipeline'
+import type { AgentActivity } from '../agent/activity'
 
 
 const GEMINI_TOOL_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash'] as const
 const GROQ_TOOL_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'] as const
+
+/** PostHog Max always enables model thinking. Ask AI tool loop must do the same. */
+export function groqNativeThinkingBody(model: string): Record<string, unknown> {
+    if (model.includes('gpt-oss')) {
+        return { reasoning_effort: 'low', include_reasoning: true }
+    }
+    return { reasoning_format: 'parsed' }
+}
+
+export function extractReasoningDelta(delta: unknown): string {
+    if (!delta || typeof delta !== 'object') return ''
+    const row = delta as Record<string, unknown>
+    if (typeof row.reasoning_content === 'string' && row.reasoning_content) return row.reasoning_content
+    if (typeof row.reasoning === 'string' && row.reasoning) return row.reasoning
+    const nested = row.reasoning
+    if (nested && typeof nested === 'object' && typeof (nested as { content?: unknown }).content === 'string') {
+        return (nested as { content: string }).content
+    }
+    return ''
+}
 
 /** Ask AI tool loop only. Forum / gateway keep Qwen. */
 export function resolveGroqToolModels(env?: EnvStore): string[] {
@@ -59,10 +83,12 @@ type ChatMessage = {
     geminiModelParts?: GeminiPart[]
 }
 
-const MAX_STEPS = 6
-const REQUEST_TIMEOUT_MS = 12_000
-const GEMINI_TIMEOUT_MS = 18_000
-const MAX_TOKENS = 4_096
+const MAX_STEPS = 16
+const REQUEST_TIMEOUT_MS = 45_000
+const GEMINI_TIMEOUT_MS = 45_000
+const MAX_TOKENS = 8_192
+
+export const TOOL_FAMILY_ORDER = ['groq', 'gemini', 'nvidia', 'openai'] as const
 
 export type ToolLoopResult = {
     ok: boolean
@@ -74,6 +100,8 @@ export type ToolLoopResult = {
     actions: HostOsAction[]
     provider: string
     error?: string
+    interrupt?: HumanTurn
+    checkpoint?: AgentCheckpoint
 }
 
 export type ToolCallDelta = {
@@ -111,9 +139,12 @@ export function assembleToolCalls(buckets: Map<number, ToolCallBucket>): ToolCal
         .filter((call) => Boolean(call.name))
 }
 
-function openaiToolChoice(choice: 'auto' | 'none' | 'web_search') {
+function openaiToolChoice(choice: 'auto' | 'none' | 'web_search' | 'todo_write') {
     if (choice === 'web_search') {
         return { type: 'function' as const, function: { name: 'web_search' } }
+    }
+    if (choice === 'todo_write') {
+        return { type: 'function' as const, function: { name: 'todo_write' } }
     }
     return choice
 }
@@ -123,8 +154,12 @@ async function openaiCompletion(params: {
     baseUrl?: string
     model: string
     messages: ChatMessage[]
-    toolChoice: 'auto' | 'none' | 'web_search'
+    toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
     onToken?: (text: string) => void
+    onThinking?: (text: string) => void
+    tools?: OpenAiToolSpec[]
+    omitTools?: boolean
+    maxTokens?: number
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
@@ -144,10 +179,14 @@ async function openaiCompletion(params: {
                 model: params.model || 'gpt-4o',
                 messages: toGroqMessages(params.messages),
                 temperature: 0.6,
-                max_tokens: MAX_TOKENS,
+                max_tokens: params.maxTokens || MAX_TOKENS,
                 stream: true,
-                tools: OPENAI_CHAT_TOOLS,
-                tool_choice: openaiToolChoice(params.toolChoice),
+                ...(params.omitTools
+                    ? {}
+                    : {
+                          tools: params.tools || OPENAI_CHAT_TOOLS,
+                          tool_choice: openaiToolChoice(params.toolChoice),
+                      }),
             }),
         })
         if (!res.ok) {
@@ -161,7 +200,6 @@ async function openaiCompletion(params: {
         let buffer = ''
         let content = ''
         let reasoning = ''
-        let sawToolCall = false
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
         try {
@@ -191,17 +229,16 @@ async function openaiCompletion(params: {
                         }
                         const delta = data.choices?.[0]?.delta
                         for (const call of delta?.tool_calls || []) {
-                            sawToolCall = true
                             applyToolCallDelta(buckets, call)
                         }
-                        const reasoningPiece = delta?.reasoning_content || delta?.reasoning
-                        if (typeof reasoningPiece === 'string' && reasoningPiece) {
+                        const reasoningPiece = extractReasoningDelta(delta)
+                        if (reasoningPiece) {
                             reasoning += reasoningPiece
+                            params.onThinking?.(reasoningPiece)
                         }
                         const piece = delta?.content
                         if (typeof piece === 'string' && piece) {
                             content += piece
-                            if (!sawToolCall) params.onToken?.(piece)
                         }
                     } catch {
                         /* ignore */
@@ -212,7 +249,9 @@ async function openaiCompletion(params: {
             reader.releaseLock()
         }
 
-        return { ok: true, content, toolCalls: assembleToolCalls(buckets), reasoning: reasoning.trim() || undefined }
+        const toolCalls = assembleToolCalls(buckets)
+        if (toolCalls.length === 0 && content) params.onToken?.(content)
+        return { ok: true, content, toolCalls, reasoning: reasoning.trim() || undefined }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
@@ -224,8 +263,12 @@ async function groqCompletion(params: {
     apiKey: string
     model: string
     messages: ChatMessage[]
-    toolChoice: 'auto' | 'none' | 'web_search'
+    toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
     onToken?: (text: string) => void
+    onThinking?: (text: string) => void
+    tools?: OpenAiToolSpec[]
+    omitTools?: boolean
+    maxTokens?: number
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
@@ -244,11 +287,15 @@ async function groqCompletion(params: {
                 model: params.model,
                 messages: toGroqMessages(params.messages),
                 temperature: 0.6,
-                max_tokens: MAX_TOKENS,
+                max_tokens: params.maxTokens || MAX_TOKENS,
                 stream: true,
-                tools: OPENAI_CHAT_TOOLS,
-                tool_choice: openaiToolChoice(params.toolChoice),
-                ...(params.model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
+                ...groqNativeThinkingBody(params.model),
+                ...(params.omitTools
+                    ? {}
+                    : {
+                          tools: params.tools || OPENAI_CHAT_TOOLS,
+                          tool_choice: openaiToolChoice(params.toolChoice),
+                      }),
             }),
         })
         if (!res.ok) {
@@ -262,7 +309,6 @@ async function groqCompletion(params: {
         let buffer = ''
         let content = ''
         let reasoning = ''
-        let sawToolCall = false
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
         try {
@@ -292,17 +338,16 @@ async function groqCompletion(params: {
                         }
                         const delta = data.choices?.[0]?.delta
                         for (const call of delta?.tool_calls || []) {
-                            sawToolCall = true
                             applyToolCallDelta(buckets, call)
                         }
                         const piece = delta?.content
                         if (typeof piece === 'string' && piece) {
                             content += piece
-                            if (!sawToolCall) params.onToken?.(piece)
                         }
-                        const reasonPiece = delta?.reasoning_content || delta?.reasoning
-                        if (typeof reasonPiece === 'string' && reasonPiece) {
+                        const reasonPiece = extractReasoningDelta(delta)
+                        if (reasonPiece) {
                             reasoning += reasonPiece
+                            params.onThinking?.(reasonPiece)
                         }
                     } catch {
                         /* ignore malformed SSE lines */
@@ -313,7 +358,9 @@ async function groqCompletion(params: {
             reader.releaseLock()
         }
 
-        return { ok: true, content, toolCalls: assembleToolCalls(buckets), reasoning }
+        const toolCalls = assembleToolCalls(buckets)
+        if (toolCalls.length === 0 && content) params.onToken?.(content)
+        return { ok: true, content, toolCalls, reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
@@ -345,17 +392,27 @@ function toGroqMessages(messages: ChatMessage[]): ChatMessage[] {
 async function runToolSteps(params: {
     complete: (input: {
         messages: ChatMessage[]
-        toolChoice: 'auto' | 'none' | 'web_search'
+        toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
         onToken?: (text: string) => void
+        onThinking?: (text: string) => void
+        omitTools?: boolean
+        maxTokens?: number
     }) => Promise<CompletionRound>
     baseMessages: ChatMessage[]
     onToken?: (text: string) => void
+    onThinking?: (text: string) => void
     onTool?: (event: ToolEvent) => void
+    onNode?: (event: NodeEvent) => void
+    onMode?: (mode: AgentMode) => void
+    onHuman?: (turn: HumanTurn) => void
+    onActivity?: (activity: AgentActivity) => void
     provider: string
     env?: EnvStore
     host?: HostSnapshot
     forceWebSearch?: boolean
     holdPublicUntilCitations?: boolean
+    agentMode?: AgentMode
+    checkpoint?: AgentCheckpoint
 }): Promise<
     | { kind: 'done'; result: ToolLoopResult }
     | { kind: 'tools-rejected'; error: string }
@@ -375,13 +432,20 @@ async function runToolSteps(params: {
         complete: params.complete,
         baseMessages: params.baseMessages,
         onToken: params.onToken,
+        onThinking: params.onThinking,
         onTool: params.onTool,
+        onNode: params.onNode,
+        onMode: params.onMode,
+        onHuman: params.onHuman,
+        onActivity: params.onActivity,
+        checkpoint: params.checkpoint,
         provider: params.provider,
         env: params.env,
         host: params.host,
         forceWebSearch: params.forceWebSearch,
         holdPublicUntilCitations: params.holdPublicUntilCitations,
         maxSteps: MAX_STEPS,
+        agentMode: params.agentMode,
     })
 
     if (pipelineRes.ok) {
@@ -396,6 +460,8 @@ async function runToolSteps(params: {
                 citations: pipelineRes.citations,
                 actions: pipelineRes.actions,
                 provider: pipelineRes.provider,
+                interrupt: pipelineRes.interrupt,
+                checkpoint: pipelineRes.checkpoint,
             },
         }
     }
@@ -428,10 +494,19 @@ export async function runToolLoop(params: {
     history?: HistoryTurn[]
     env?: EnvStore
     onToken?: (text: string) => void
+    onThinking?: (text: string) => void
     onTool?: (event: ToolEvent) => void
+    onNode?: (event: NodeEvent) => void
+    onMode?: (mode: AgentMode) => void
+    onHuman?: (turn: HumanTurn) => void
+    onActivity?: (activity: AgentActivity) => void
     forceWebSearch?: boolean
     holdPublicUntilCitations?: boolean
     host?: HostSnapshot
+    agentMode?: AgentMode
+    checkpoint?: AgentCheckpoint
+    resumeAction?: ResumeAction
+    resumePayload?: string
 }): Promise<ToolLoopResult> {
     const env = params.env ?? getRuntimeEnv()
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(env)).filter((key) => !isGroqKeyCooling(key))
@@ -442,12 +517,31 @@ export async function runToolLoop(params: {
         ? [configuredGemini, ...GEMINI_TOOL_MODELS.filter((model) => model !== configuredGemini)]
         : [...GEMINI_TOOL_MODELS]
 
-    const systemPrompt = `${params.systemPrompt}\n\n${TOOL_PROTOCOL}`.slice(0, 10_000)
-    const baseMessages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...compactToolHistory(params.history),
-        { role: 'user', content: params.userPrompt.slice(0, 8_000) },
-    ]
+    const resumed = params.checkpoint && params.resumeAction
+    let agentMode = resumed
+        ? modeAfterResume(params.resumeAction!, parseAgentMode(params.checkpoint!.agentMode))
+        : parseAgentMode(params.agentMode)
+    const modePrompt = modeSystemPrompt(agentMode)
+    const protocol = agentMode === 'plan' ? PLAN_TOOL_PROTOCOL : TOOL_PROTOCOL
+    const head = [modePrompt, protocol].filter(Boolean).join('\n\n')
+    const restBudget = Math.max(1500, 12_000 - head.length)
+    const systemPrompt = `${head}\n\n${params.systemPrompt.slice(0, restBudget)}`
+    const onMode = (mode: AgentMode) => {
+        agentMode = mode
+        params.onMode?.(mode)
+    }
+    if (resumed) onMode(agentMode)
+    const baseMessages: ChatMessage[] = resumed
+        ? [
+              { role: 'system', content: systemPrompt },
+              ...params.checkpoint!.messages.filter((message) => message.role !== 'system'),
+              { role: 'user', content: resumeUserMessage(params.resumeAction!, params.resumePayload) },
+          ]
+        : [
+              { role: 'system', content: systemPrompt },
+              ...compactToolHistory(params.history),
+              { role: 'user', content: params.userPrompt.slice(0, 8_000) },
+          ]
 
     let lastError = ''
 
@@ -460,8 +554,8 @@ export async function runToolLoop(params: {
         : ['deepseek-ai/deepseek-v4-pro-0813', 'deepseek-ai/deepseek-v4-flash-0731']
 
     let toolFamilyCursor = 0
-    function nextToolFamilyOrder(): Array<'gemini' | 'groq' | 'nvidia' | 'openai'> {
-        const order: Array<'gemini' | 'groq' | 'nvidia' | 'openai'> = ['gemini', 'groq', 'nvidia', 'openai']
+    function nextToolFamilyOrder(): Array<(typeof TOOL_FAMILY_ORDER)[number]> {
+        const order = [...TOOL_FAMILY_ORDER]
         const offset = toolFamilyCursor % order.length
         toolFamilyCursor += 1
         return [...order.slice(offset), ...order.slice(0, offset)]
@@ -479,9 +573,26 @@ export async function runToolLoop(params: {
                 holdPublicUntilCitations: params.holdPublicUntilCitations,
                 baseMessages,
                 onToken: params.onToken,
+                onThinking: params.onThinking,
                 onTool: params.onTool,
-                complete: ({ messages, toolChoice, onToken }) =>
-                    openaiCompletion({ apiKey: byokOpenai, model: openaiModel, messages, toolChoice, onToken }),
+                onNode: params.onNode,
+                onMode,
+                onHuman: params.onHuman,
+                onActivity: params.onActivity,
+                checkpoint: params.checkpoint,
+                agentMode,
+                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                    openaiCompletion({
+                        apiKey: byokOpenai,
+                        model: openaiModel,
+                        messages,
+                        toolChoice,
+                        onToken,
+                        onThinking,
+                        omitTools,
+                        maxTokens,
+                        tools: toolsForAgentMode(agentMode),
+                    }),
             })
             if (step.kind === 'done') return step.result
             if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
@@ -509,8 +620,15 @@ export async function runToolLoop(params: {
                     holdPublicUntilCitations: params.holdPublicUntilCitations,
                     baseMessages,
                     onToken: params.onToken,
+                    onThinking: params.onThinking,
                     onTool: params.onTool,
-                    complete: ({ messages, toolChoice, onToken }) =>
+                    onNode: params.onNode,
+                    onMode,
+                    onHuman: params.onHuman,
+                    onActivity: params.onActivity,
+                    checkpoint: params.checkpoint,
+                    agentMode,
+                    complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
                         openaiCompletion({
                             apiKey: nvidiaKey,
                             baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
@@ -518,6 +636,10 @@ export async function runToolLoop(params: {
                             messages,
                             toolChoice,
                             onToken,
+                            onThinking,
+                            omitTools,
+                            maxTokens,
+                            tools: toolsForAgentMode(agentMode),
                         }),
                 })
                 if (step.kind === 'done') return step.result
@@ -550,9 +672,26 @@ export async function runToolLoop(params: {
                         holdPublicUntilCitations: params.holdPublicUntilCitations,
                         baseMessages,
                         onToken: params.onToken,
+                        onThinking: params.onThinking,
                         onTool: params.onTool,
-                        complete: ({ messages, toolChoice, onToken }) =>
-                            groqCompletion({ apiKey, model: groqModel, messages, toolChoice, onToken }),
+                        onNode: params.onNode,
+                        onMode,
+                        onHuman: params.onHuman,
+                        onActivity: params.onActivity,
+                        checkpoint: params.checkpoint,
+                        agentMode,
+                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                            groqCompletion({
+                                apiKey,
+                                model: groqModel,
+                                messages,
+                                toolChoice,
+                                onToken,
+                                onThinking,
+                                omitTools,
+                                maxTokens,
+                                tools: toolsForAgentMode(agentMode),
+                            }),
                     })
                     if (step.kind === 'done') return step.result
                     lastError = step.error
@@ -591,8 +730,15 @@ export async function runToolLoop(params: {
                         holdPublicUntilCitations: params.holdPublicUntilCitations,
                         baseMessages,
                         onToken: params.onToken,
+                        onThinking: params.onThinking,
                         onTool: params.onTool,
-                        complete: ({ messages, toolChoice, onToken }) =>
+                        onNode: params.onNode,
+                        onMode,
+                        onHuman: params.onHuman,
+                        onActivity: params.onActivity,
+                        checkpoint: params.checkpoint,
+                        agentMode,
+                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
                             geminiToolCompletion({
                                 apiKey,
                                 model,
@@ -600,7 +746,11 @@ export async function runToolLoop(params: {
                                 messages,
                                 toolChoice,
                                 onToken,
+                                onThinking,
+                                omitTools,
+                                maxTokens,
                                 timeoutMs: GEMINI_TIMEOUT_MS,
+                                tools: toolsForAgentMode(agentMode),
                             }),
                     })
                     if (step.kind === 'done') return step.result

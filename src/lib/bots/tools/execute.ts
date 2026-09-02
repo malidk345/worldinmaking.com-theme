@@ -25,6 +25,7 @@ import {
     type HostOsAction,
     type HostSnapshot,
 } from './host'
+import { isToolAllowedInMode, parseAgentMode, type AgentMode } from '../agent/modes'
 import { toolResultSummary } from './labels'
 import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, type ArtifactToolType } from './spec'
 
@@ -66,6 +67,7 @@ function asText(value: unknown, max: number): string {
 }
 
 const ARG_ALIASES: Record<string, Record<string, string>> = {
+    switch_mode: { target: 'mode', supermode: 'mode' },
     web_search: { q: 'query', search: 'query', text: 'query', keywords: 'query' },
     search_site: { q: 'query', search: 'query', text: 'query' },
     fetch_url: { uri: 'url', href: 'url', link: 'url', page: 'url' },
@@ -141,6 +143,10 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     read_document: { doc: 'name', document: 'name', file: 'name', link: 'url', href: 'url', p: 'page', q: 'query' },
     write_scratchpad: { note: 'content', text: 'content', body: 'content', markdown: 'content', ref: 'source', url: 'source', document: 'source' },
     todo_write: { plan: 'tasks', todo: 'tasks', items: 'tasks', list: 'tasks' },
+    ask_user: { question: 'questions', prompt: 'questions', q: 'questions' },
+    remember: { memory: 'fact', note: 'fact', text: 'fact', content: 'fact' },
+    finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
+    task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -338,6 +344,18 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     update_todo: 'todo_write',
     todo: 'todo_write',
     tasks: 'todo_write',
+    enter_plan: 'switch_mode',
+    enter_execute: 'switch_mode',
+    set_mode: 'switch_mode',
+    ask: 'ask_user',
+    ask_question: 'ask_user',
+    clarify: 'ask_user',
+    save_memory: 'remember',
+    memorize: 'remember',
+    ready_plan: 'finalize_plan',
+    submit_plan: 'finalize_plan',
+    subagent: 'task',
+    sub_task: 'task',
 }
 
 export function resolveToolName(raw: string): string {
@@ -345,14 +363,35 @@ export function resolveToolName(raw: string): string {
     return TOOL_NAME_ALIASES[key] || TOOL_NAME_ALIASES[key.toLowerCase()] || key
 }
 
-export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: HostSnapshot): Promise<ToolExecution> {
+export async function executeToolCall(
+    call: ToolCall,
+    env?: EnvStore,
+    host?: HostSnapshot,
+    mode: AgentMode = 'ask'
+): Promise<ToolExecution> {
     const name = resolveToolName(call.name)
     const base = { callId: call.id, name }
     if (!ALLOWED_TOOL_NAMES.has(name)) {
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unknown tool: ${call.name}` }) }
     }
+    if (!isToolAllowedInMode(name, mode)) {
+        const result = JSON.stringify({
+            ok: false,
+            error: `Tool "${name}" is locked in plan mode. Call switch_mode with mode="execute" after the plan is ready.`,
+        })
+        return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+    }
     const args = normalizeArgs(name, parseArgs(call.argumentsJson))
     try {
+        if (name === 'switch_mode') {
+            const next = parseAgentMode(args.mode)
+            if (next === 'ask') {
+                const result = JSON.stringify({ ok: false, error: 'switch_mode requires mode="plan" or mode="execute"' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const result = JSON.stringify({ ok: true, mode: next })
+            return { ...base, ok: true, result, summary: next === 'plan' ? 'Entered plan mode' : 'Entered execution mode' }
+        }
         if (name === 'create_artifact') {
             const executed = await executeCreateArtifact(args, host)
             return { ...base, ...executed, summary: executed.artifact?.title || toolResultSummary(name, executed.ok, executed.result) }
@@ -561,6 +600,55 @@ export async function executeToolCall(call: ToolCall, env?: EnvStore, host?: Hos
                 ...executed,
                 summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
             }
+        }
+        if (name === 'ask_user') {
+            const rawQuestions = Array.isArray(args.questions)
+                ? args.questions
+                : typeof args.prompt === 'string' || typeof args.question === 'string'
+                  ? [{ prompt: args.prompt || args.question }]
+                  : []
+            const questions = rawQuestions
+                .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
+                .map((item, index) => ({
+                    id: asText(item.id || `q_${index + 1}`, 40).trim(),
+                    prompt: asText(item.prompt || item.question || item.text, 400).trim(),
+                    options: Array.isArray(item.options)
+                        ? item.options.map((option) => asText(option, 80).trim()).filter(Boolean).slice(0, 8)
+                        : undefined,
+                }))
+                .filter((item) => item.prompt.length > 0)
+                .slice(0, 6)
+            if (questions.length === 0) {
+                const result = JSON.stringify({ ok: false, error: 'ask_user requires at least one question' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const title = asText(args.title, 80).trim() || 'A question'
+            const result = JSON.stringify({ ok: true, awaiting: true, title, questions })
+            return { ...base, ok: true, result, summary: questions[0].prompt }
+        }
+        if (name === 'remember') {
+            const fact = asText(args.fact, 400).trim()
+            if (!fact) {
+                const result = JSON.stringify({ ok: false, error: 'remember requires a fact' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const category = asText(args.category, 40).trim() || 'preference'
+            const result = JSON.stringify({ ok: true, remembered: true, fact, category })
+            return { ...base, ok: true, result, summary: `Remembered: ${fact}` }
+        }
+        if (name === 'finalize_plan') {
+            const summary = asText(args.summary, 400).trim()
+            const result = JSON.stringify({ ok: true, mode: 'execute', summary: summary || undefined })
+            return { ...base, ok: true, result, summary: summary || 'Started the plan' }
+        }
+        if (name === 'task') {
+            const goal = asText(args.goal, 2_000).trim()
+            if (!goal) {
+                const result = JSON.stringify({ ok: false, error: 'task requires a goal' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const result = JSON.stringify({ ok: true, goal })
+            return { ...base, ok: true, result, summary: `Running subtask` }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }
     } catch (error) {
