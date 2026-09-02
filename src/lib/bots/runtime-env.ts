@@ -45,6 +45,11 @@ const SECRET_NAME_BASES = [
     'GROQ_PRIMARY_MODEL',
     'GROQ_TOOL_MODEL',
     'QWEN_MODEL',
+    'NVIDIA_API_KEY',
+    'NVIDIA_KEY',
+    'NVIDIA_MODEL',
+    'DEEPSEEK_API_KEY',
+    'DEEPSEEK_KEY',
 ] as const
 
 const NUMBERED_SECRET_MAX = 32
@@ -244,6 +249,9 @@ export function getProviderKeyFlags(store: EnvStore) {
             hasKeyMatching(store, /^(GEMINI|GOOGLE)_?(API_?)?KEY(S|_\d+)?$/i) ||
             hasKeyMatching(store, /^GOOGLE_GENERATIVE_AI_API_KEY(S|_\d+)?$/i) ||
             hasKeyMatching(store, /^GOOGLE_AI_API_KEY(S|_\d+)?$/i),
+        nvidia:
+            hasKeyMatching(store, /^NVIDIA_?(API_?)?KEY(S|_\d+)?$/i) ||
+            hasKeyMatching(store, /^DEEPSEEK_?(API_?)?KEY(S|_\d+)?$/i),
         cfContext: hasCloudflareContext(),
         envSource: hasCloudflareContext() ? ('cloudflare+process' as const) : ('process-only' as const),
     }

@@ -17,13 +17,14 @@ import {
     takeGroqKeyOrder,
 } from '../ai-gateway'
 import { envFrom, getRuntimeEnv, type EnvStore } from '../runtime-env'
-import { executeToolCall, resolveToolName, type ToolCall } from './execute'
+import type { ToolCall } from './execute'
 import type { HostOsAction, HostSnapshot } from './host'
 import { geminiToolCompletion, type GeminiPart } from './gemini'
 import { compactToolHistory, type HistoryTurn } from './history'
 import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provider-errors'
-import { toolResultSummary, toolStatusLabel } from './labels'
 import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL } from './spec'
+import { runAgentNodePipeline } from './pipeline'
+
 
 const GEMINI_TOOL_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash'] as const
 const GROQ_TOOL_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'] as const
@@ -119,18 +120,20 @@ function openaiToolChoice(choice: 'auto' | 'none' | 'web_search') {
 
 async function openaiCompletion(params: {
     apiKey: string
+    baseUrl?: string
     model: string
     messages: ChatMessage[]
     toolChoice: 'auto' | 'none' | 'web_search'
     onToken?: (text: string) => void
 }): Promise<
-    | { ok: true; content: string; toolCalls: ToolCall[] }
+    | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
     try {
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        const url = params.baseUrl || 'https://api.openai.com/v1/chat/completions'
+        const res = await fetch(url, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${params.apiKey}`,
@@ -157,6 +160,7 @@ async function openaiCompletion(params: {
         const decoder = new TextDecoder('utf-8')
         let buffer = ''
         let content = ''
+        let reasoning = ''
         let sawToolCall = false
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
@@ -175,6 +179,8 @@ async function openaiCompletion(params: {
                             choices?: Array<{
                                 delta?: {
                                     content?: string | null
+                                    reasoning_content?: string | null
+                                    reasoning?: string | null
                                     tool_calls?: Array<{
                                         index?: number
                                         id?: string
@@ -187,6 +193,10 @@ async function openaiCompletion(params: {
                         for (const call of delta?.tool_calls || []) {
                             sawToolCall = true
                             applyToolCallDelta(buckets, call)
+                        }
+                        const reasoningPiece = delta?.reasoning_content || delta?.reasoning
+                        if (typeof reasoningPiece === 'string' && reasoningPiece) {
+                            reasoning += reasoningPiece
                         }
                         const piece = delta?.content
                         if (typeof piece === 'string' && piece) {
@@ -202,7 +212,7 @@ async function openaiCompletion(params: {
             reader.releaseLock()
         }
 
-        return { ok: true, content, toolCalls: assembleToolCalls(buckets) }
+        return { ok: true, content, toolCalls: assembleToolCalls(buckets), reasoning: reasoning.trim() || undefined }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
@@ -217,7 +227,7 @@ async function groqCompletion(params: {
     toolChoice: 'auto' | 'none' | 'web_search'
     onToken?: (text: string) => void
 }): Promise<
-    | { ok: true; content: string; toolCalls: ToolCall[] }
+    | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
@@ -251,6 +261,7 @@ async function groqCompletion(params: {
         const decoder = new TextDecoder('utf-8')
         let buffer = ''
         let content = ''
+        let reasoning = ''
         let sawToolCall = false
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
@@ -269,6 +280,8 @@ async function groqCompletion(params: {
                             choices?: Array<{
                                 delta?: {
                                     content?: string | null
+                                    reasoning_content?: string | null
+                                    reasoning?: string | null
                                     tool_calls?: Array<{
                                         index?: number
                                         id?: string
@@ -287,6 +300,10 @@ async function groqCompletion(params: {
                             content += piece
                             if (!sawToolCall) params.onToken?.(piece)
                         }
+                        const reasonPiece = delta?.reasoning_content || delta?.reasoning
+                        if (typeof reasonPiece === 'string' && reasonPiece) {
+                            reasoning += reasonPiece
+                        }
                     } catch {
                         /* ignore malformed SSE lines */
                     }
@@ -296,7 +313,7 @@ async function groqCompletion(params: {
             reader.releaseLock()
         }
 
-        return { ok: true, content, toolCalls: assembleToolCalls(buckets) }
+        return { ok: true, content, toolCalls: assembleToolCalls(buckets), reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
@@ -305,8 +322,9 @@ async function groqCompletion(params: {
 }
 
 type CompletionRound =
-    | { ok: true; content: string; toolCalls: ToolCall[]; modelParts?: GeminiPart[] }
+    | { ok: true; content: string; toolCalls: ToolCall[]; modelParts?: GeminiPart[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
+
 
 function toGroqMessages(messages: ChatMessage[]): ChatMessage[] {
     return messages.map((message) => {
@@ -353,146 +371,56 @@ async function runToolSteps(params: {
           text: string
       }
 > {
-    const artifacts: ArtifactDocument[] = []
-    const citations: AiCitation[] = []
-    const actions: HostOsAction[] = []
-    const working: ChatMessage[] = params.baseMessages.map((item) => ({ ...item }))
-    let usedTools = false
-    let usedWebSearch = false
-    let publicText = ''
+    const pipelineRes = await runAgentNodePipeline({
+        complete: params.complete,
+        baseMessages: params.baseMessages,
+        onToken: params.onToken,
+        onTool: params.onTool,
+        provider: params.provider,
+        env: params.env,
+        host: params.host,
+        forceWebSearch: params.forceWebSearch,
+        holdPublicUntilCitations: params.holdPublicUntilCitations,
+        maxSteps: MAX_STEPS,
+    })
 
-    for (let step = 0; step < MAX_STEPS; step += 1) {
-        const lastStep = step === MAX_STEPS - 1
-        const toolChoice: 'auto' | 'none' | 'web_search' = lastStep
-            ? 'none'
-            : step === 0 && params.forceWebSearch
-              ? 'web_search'
-              : 'auto'
-        const emitPublic = (text: string) => {
-            if (!text) return
-            if (params.holdPublicUntilCitations && citations.length === 0) return
-            params.onToken?.(text)
-        }
-        let streamedChars = 0
-        const round = await params.complete({
-            messages: working,
-            toolChoice,
-            onToken: (text) => {
-                streamedChars += text.length
-                emitPublic(text)
+    if (pipelineRes.ok) {
+        return {
+            kind: 'done',
+            result: {
+                ok: true,
+                usedTools: pipelineRes.usedTools,
+                usedWebSearch: pipelineRes.usedWebSearch,
+                text: pipelineRes.text,
+                artifacts: pipelineRes.artifacts,
+                citations: pipelineRes.citations,
+                actions: pipelineRes.actions,
+                provider: pipelineRes.provider,
             },
-        })
-        if (!round.ok) {
-            if (round.status === 400 && isToolProtocolReject(round.detail)) {
-                return { kind: 'tools-rejected', error: round.detail }
-            }
-            if (
-                round.status === 429 ||
-                round.status === 401 ||
-                round.status === 403 ||
-                isRateLimitDetail(round.detail) ||
-                isAuthDetail(round.detail)
-            ) {
-                return { kind: 'auth', error: round.detail }
-            }
-            return {
-                kind: 'failed',
-                error: round.detail,
-                usedTools,
-                usedWebSearch,
-                artifacts,
-                citations,
-                actions,
-                text: publicText,
-            }
         }
+    }
 
-        const visible = publicTextFromRound(round.content || '', round.toolCalls.length)
-        if (visible && streamedChars === 0) emitPublic(visible)
-        publicText += visible
-        if (round.toolCalls.length === 0) {
-            return {
-                kind: 'done',
-                result: {
-                    ok: Boolean(publicText.trim()) || usedTools || artifacts.length > 0 || citations.length > 0,
-                    usedTools,
-                    usedWebSearch,
-                    text: publicText,
-                    artifacts,
-                    citations,
-                    actions,
-                    provider: params.provider,
-                },
-            }
+    if (pipelineRes.error) {
+        if (isToolProtocolReject(pipelineRes.error)) {
+            return { kind: 'tools-rejected', error: pipelineRes.error }
         }
-
-        usedTools = true
-        working.push({
-            role: 'assistant',
-            content: round.content || null,
-            tool_calls: round.toolCalls.map((call) => ({
-                id: call.id,
-                type: 'function' as const,
-                function: { name: call.name, arguments: call.argumentsJson },
-                thoughtSignature: call.thoughtSignature,
-            })),
-            geminiModelParts: round.modelParts,
-        })
-
-        for (const call of round.toolCalls) {
-            const name = resolveToolName(call.name)
-            params.onTool?.({
-                id: call.id,
-                name,
-                status: 'running',
-                arguments: call.argumentsJson.slice(0, 800),
-                detail: toolStatusLabel(name, 'running'),
-                thoughtSignature: call.thoughtSignature,
-            })
-        }
-        const executedRound = await Promise.all(
-            round.toolCalls.map((call) => executeToolCall(call, params.env, params.host))
-        )
-        for (let index = 0; index < round.toolCalls.length; index += 1) {
-            const call = round.toolCalls[index]
-            const executed = executedRound[index]
-            if (executed.artifact) artifacts.push(executed.artifact)
-            if (executed.citations?.length) citations.push(...executed.citations)
-            if (executed.action) actions.push(executed.action)
-            if (executed.name === 'web_search') usedWebSearch = true
-            params.onTool?.({
-                id: call.id,
-                name: executed.name,
-                status: executed.ok ? 'done' : 'error',
-                arguments: call.argumentsJson.slice(0, 800),
-                result: executed.result.slice(0, 1500),
-                detail:
-                    executed.summary ||
-                    toolResultSummary(executed.name, executed.ok, executed.result),
-                thoughtSignature: call.thoughtSignature,
-            })
-            working.push({
-                role: 'tool',
-                tool_call_id: call.id,
-                content: executed.result,
-            })
+        if (isRateLimitDetail(pipelineRes.error) || isAuthDetail(pipelineRes.error)) {
+            return { kind: 'auth', error: pipelineRes.error }
         }
     }
 
     return {
-        kind: 'done',
-        result: {
-            ok: Boolean(publicText.trim()) || artifacts.length > 0 || citations.length > 0,
-            usedTools,
-            usedWebSearch,
-            text: publicText,
-            artifacts,
-            citations,
-            actions,
-            provider: params.provider,
-        },
+        kind: 'failed',
+        error: pipelineRes.error || 'tool loop failed',
+        usedTools: pipelineRes.usedTools,
+        usedWebSearch: pipelineRes.usedWebSearch,
+        artifacts: pipelineRes.artifacts,
+        citations: pipelineRes.citations,
+        actions: pipelineRes.actions,
+        text: pipelineRes.text,
     }
 }
+
 
 export async function runToolLoop(params: {
     systemPrompt: string
@@ -553,6 +481,50 @@ export async function runToolLoop(params: {
             }
         }
         lastError = step.error
+    }
+
+    const nvidiaKey = envFrom(env, 'NVIDIA_API_KEY', 'NVIDIA_KEY', 'DEEPSEEK_API_KEY', 'DEEPSEEK_KEY').trim()
+    const configuredNvidia = envFrom(env, 'NVIDIA_MODEL', 'DEEPSEEK_MODEL')
+    const nvidiaModels = configuredNvidia
+        ? [configuredNvidia]
+        : ['deepseek-ai/deepseek-v4-pro-0813', 'deepseek-ai/deepseek-v4-flash-0731']
+
+    if (nvidiaKey) {
+        for (const nvidiaModel of nvidiaModels) {
+            const step = await runToolSteps({
+                provider: 'nvidia:deepseek',
+                env,
+                host: params.host,
+                forceWebSearch: params.forceWebSearch,
+                holdPublicUntilCitations: params.holdPublicUntilCitations,
+                baseMessages,
+                onToken: params.onToken,
+                onTool: params.onTool,
+                complete: ({ messages, toolChoice, onToken }) =>
+                    openaiCompletion({
+                        apiKey: nvidiaKey,
+                        baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+                        model: nvidiaModel,
+                        messages,
+                        toolChoice,
+                        onToken,
+                    }),
+            })
+            if (step.kind === 'done') return step.result
+            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                return {
+                    ok: true,
+                    usedTools: step.usedTools,
+                    usedWebSearch: step.usedWebSearch,
+                    text: step.text,
+                    artifacts: step.artifacts,
+                    citations: step.citations,
+                    actions: step.actions,
+                    provider: 'nvidia:deepseek',
+                }
+            }
+            lastError = step.error
+        }
     }
 
     for (const apiKey of groqKeys) {

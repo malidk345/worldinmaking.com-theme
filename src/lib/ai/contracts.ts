@@ -35,6 +35,8 @@ export interface AiCitation {
     source?: string
 }
 
+
+
 export type AiArtifactType = 'posthog-analytics' | 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
 
 export interface AiArtifact {
