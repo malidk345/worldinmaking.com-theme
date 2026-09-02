@@ -28,3 +28,7 @@
 ## 2025-05-19 - Avoid Reduce with Array Spread for Dynamic Layout Trees
 **Learning:** Using `reduce` combined with array spread syntax (`[...sourceA, ...sourceB].reduce(...)`) for complex tree structure traversal creates redundant intermediate arrays and memory churn. When this pattern is used in deep or frequently executed layout parsers (like `injectDynamicChildren` for the App Context menu), it significantly increases main thread overhead and execution time.
 **Action:** When aggregating multiple source arrays during layout construction or recursive rendering, use a direct `for...of` loop over each source array or a helper function instead of allocating intermediate flattened arrays to pass into `.reduce`.
+
+## 2024-05-24 - [Avoid Array allocation for includes]
+**Learning:** Using `array.map(x => x.id).includes(targetId)` creates an unnecessary intermediate array allocation which is O(N) memory and an O(N) pass for the map, followed by another O(N) pass for includes.
+**Action:** Replace this pattern with `array.some(x => x.id === targetId)` which prevents the intermediate array allocation and can stop early on the first match.
