@@ -25,7 +25,6 @@ const LABELS: Record<string, [string, string, string]> = {
     write_scratchpad: ['Extracting knowledge node', 'Saved node to scratchpad', 'Could not save node'],
     todo_write: ['Planning', 'Updated plan', 'Could not update plan'],
     switch_mode: ['Switching mode', 'Switched mode', 'Could not switch mode'],
-    ask_user: ['Asking you', 'Asked you', 'Could not ask'],
     remember: ['Saving memory', 'Saved memory', 'Could not save memory'],
     finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
