@@ -1,6 +1,8 @@
-import { getOrCreateOwnerKey } from '../notebook-app/scenes/notebooks/notebookRemote'
+import { getOrCreateOwnerKey, pushNotebookToRemote } from '../notebook-app/scenes/notebooks/notebookRemote'
 import { getStoredJwt } from './chat-remote'
 import { supabase, isSupabaseConfigured } from './supabase'
+import { DEVICE_NOTEBOOK_OWNER_KEY, getDeviceOwnerKey } from './wim-identity'
+import { getNotebook } from '../notebook-app/scenes/notebooks/notebookStorage'
 import type { NotebookAccessRole, NotebookShareRole } from './notebook-sharing'
 
 export type NotebookCollaboratorPerson = {
@@ -45,6 +47,7 @@ async function authHeaders(jsonBody = false): Promise<HeadersInit> {
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
+        'X-WIM-Device-Key': getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY),
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
     let token = ''
@@ -101,6 +104,10 @@ export async function inviteNotebookPerson(
     input: { handle?: string; role?: NotebookShareRole; link?: boolean }
 ): Promise<{ ok: boolean; url?: string; added?: boolean; error?: string }> {
     try {
+        const local = getNotebook(notebookId)
+        if (local) {
+            await pushNotebookToRemote(local)
+        }
         const res = await fetch('/api/notebook/collaborators', {
             method: 'POST',
             headers: await authHeaders(true),
@@ -109,10 +116,14 @@ export async function inviteNotebookPerson(
                 handle: input.handle,
                 role: input.role,
                 link: input.link === true,
+                notebook: local || undefined,
             }),
         })
         const body = await parseJson<{ ok?: boolean; url?: string; added?: boolean; error?: string }>(res)
-        if (!res.ok) return { ok: false, error: body?.error || 'Could not invite' }
+        if (res.status === 401) {
+            return { ok: false, error: body?.error || 'Sign in to invite people.' }
+        }
+        if (!res.ok) return { ok: false, error: body?.error || `Could not invite (${res.status})` }
         return { ok: true, url: body?.url, added: body?.added }
     } catch {
         return { ok: false, error: 'Could not invite' }

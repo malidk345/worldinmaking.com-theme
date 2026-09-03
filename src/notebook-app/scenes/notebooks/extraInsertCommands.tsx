@@ -8,6 +8,7 @@ export type MarkdownNotebookInsertMenuApi = {
     insertComponent: (targetNodeId: string, tagName: string, props: NotebookComponentProps) => void
     openAIPrompt?: () => void
     openPhilosopherInvite?: (targetNodeId: string) => void
+    openPeopleInvite?: () => void
     openInlineComment?: (targetNodeId: string) => void
 }
 
@@ -47,13 +48,25 @@ export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): I
     if (api.openPhilosopherInvite) {
         commands.unshift({
             key: 'invite-philosophers',
-            label: 'Invite',
+            label: 'Philosopher',
             category: COMMON_INSERT_COMMAND_CATEGORY,
-            description: 'Invite philosophers to leave their own notes',
-            aliases: ['invite', 'filozof', 'philosopher', 'davet'],
+            description: 'Invite philosophers to leave notes on this page',
+            aliases: ['filozof', 'philosopher'],
             icon: <IconPeople />,
             closeOnRun: false,
             run: (targetNodeId) => api.openPhilosopherInvite?.(targetNodeId),
+        })
+    }
+    if (api.openPeopleInvite) {
+        commands.unshift({
+            key: 'invite-people',
+            label: 'Invite',
+            category: COMMON_INSERT_COMMAND_CATEGORY,
+            description: 'Invite a person to write on this notebook',
+            aliases: ['invite', 'davet', 'share', 'people', 'kisi', 'kişi'],
+            icon: <IconPeople />,
+            closeOnRun: true,
+            run: (_targetNodeId) => api.openPeopleInvite?.(),
         })
     }
     return commands

@@ -50,6 +50,7 @@ export type InsertCommand = {
 export type MarkdownNotebookInsertMenuApi = {
     insertComponent: (targetNodeId: string, tagName: string, props: NotebookComponentProps) => void
     openPhilosopherInvite?: (targetNodeId: string) => void
+    openPeopleInvite?: () => void
     openInlineComment?: (targetNodeId: string) => void
 }
 

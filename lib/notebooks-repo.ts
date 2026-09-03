@@ -91,18 +91,37 @@ export function rowToDTO(row: StoredNotebookRow, accessRole: NotebookAccessRole 
     }
 }
 
-function isOwnerOfRow(row: Pick<StoredNotebookRow, 'owner_key' | 'auth_user_id'>, ownerKey: string, userId?: string): boolean {
-    return row.owner_key === ownerKey || Boolean(userId && row.auth_user_id === userId)
+function isOwnerOfRow(
+    row: Pick<StoredNotebookRow, 'owner_key' | 'auth_user_id'>,
+    ownerKey: string,
+    userId?: string,
+    extraOwnerKeys: string[] = []
+): boolean {
+    if (row.owner_key === ownerKey || Boolean(userId && row.auth_user_id === userId)) return true
+    return extraOwnerKeys.some((key) => key && key === row.owner_key)
 }
 
 export async function resolveNotebookAccess(
     row: Pick<StoredNotebookRow, 'id' | 'owner_key' | 'auth_user_id'>,
     ownerKey: string,
-    userId?: string
+    userId?: string,
+    extraOwnerKeys: string[] = []
 ): Promise<NotebookAccessRole | null> {
-    if (isOwnerOfRow(row, ownerKey, userId)) return 'owner'
+    if (isOwnerOfRow(row, ownerKey, userId, extraOwnerKeys)) return 'owner'
     if (!userId) return null
     return getCollaboratorRole(row.id, userId)
+}
+
+async function claimNotebookRow(row: StoredNotebookRow, userId: string): Promise<StoredNotebookRow> {
+    if (row.auth_user_id === userId && row.owner_key === userId) return row
+    const { data, error } = await supabaseAdmin
+        .from('wim_notebooks')
+        .update({ owner_key: userId, auth_user_id: userId })
+        .eq('id', row.id)
+        .select('*')
+        .maybeSingle()
+    if (error) throw error
+    return (data as StoredNotebookRow) || { ...row, owner_key: userId, auth_user_id: userId }
 }
 
 export function dtoToRow(nb: StoredNotebookDTO, ownerKey: string): Omit<StoredNotebookRow, never> {
@@ -255,7 +274,7 @@ export async function listDeletedNotebookIds(ownerKey: string, userId?: string):
 
 export async function getNotebookByIdOrShort(
     idOrShort: string,
-    options?: { ownerKey?: string; userId?: string; publishedOnly?: boolean }
+    options?: { ownerKey?: string; userId?: string; publishedOnly?: boolean; extraOwnerKeys?: string[] }
 ): Promise<StoredNotebookDTO | null> {
     const q = supabaseAdmin
         .from('wim_notebooks')
@@ -267,11 +286,19 @@ export async function getNotebookByIdOrShort(
     const { data, error } = await q.maybeSingle()
     if (error) throw error
     if (!data) return null
-    const row = data as StoredNotebookRow
+    let row = data as StoredNotebookRow
     if (options?.publishedOnly && !row.is_published) return null
     if (options?.ownerKey) {
-        const role = await resolveNotebookAccess(row, options.ownerKey, options.userId)
+        const extra = (options.extraOwnerKeys || []).filter(Boolean)
+        const role = await resolveNotebookAccess(row, options.ownerKey, options.userId, extra)
         if (!role) return null
+        if (
+            role === 'owner' &&
+            options.userId &&
+            (row.owner_key !== options.userId || row.auth_user_id !== options.userId)
+        ) {
+            row = await claimNotebookRow(row, options.userId)
+        }
         return rowToDTO(row, role)
     }
     return rowToDTO(row)
@@ -304,7 +331,12 @@ export async function assertNotebookWriteAccess(
     return { ok: true }
 }
 
-export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string, userId?: string): Promise<StoredNotebookDTO> {
+export async function upsertNotebook(
+    nb: StoredNotebookDTO,
+    ownerKey: string,
+    userId?: string,
+    extraOwnerKeys: string[] = []
+): Promise<StoredNotebookDTO> {
     const { data: existing, error: findErr } = await supabaseAdmin
         .from('wim_notebooks')
         .select('id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template')
@@ -319,14 +351,18 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string, us
 
     if (existing) {
         const current = existing as StoredNotebookRow
-        const role = await resolveNotebookAccess(current, ownerKey, userId || ownerKey)
+        const role = await resolveNotebookAccess(current, ownerKey, userId || ownerKey, extraOwnerKeys)
         if (!role || !canWriteNotebook(role)) {
             const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
             err.status = 403
             throw err
         }
         accessRole = role
-        persistOwnerKey = current.owner_key
+        persistOwnerKey =
+            role === 'owner' && userId ? userId : current.owner_key
+        if (role === 'owner' && userId) {
+            nb.auth_user_id = current.auth_user_id || userId
+        }
         if (current.deleted_at) {
             const err = new Error('Notebook was deleted') as Error & { status?: number }
             err.status = 410

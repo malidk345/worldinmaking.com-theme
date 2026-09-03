@@ -290,6 +290,7 @@ function MarkdownNotebookEditor({
     mode = 'edit',
     registry,
     extraInsertCommands,
+    onInvitePeople,
     hiddenInsertCommandKeys,
     selectionAIActions,
     remoteValue,
@@ -2200,9 +2201,10 @@ function MarkdownNotebookEditor({
                         : null
                 )
             },
+            openPeopleInvite: onInvitePeople,
             openInlineComment: (targetNodeId) => startInlineCommentFromSlash(targetNodeId),
         }),
-        [replaceNodeWithInsertedComponent]
+        [replaceNodeWithInsertedComponent, onInvitePeople]
     )
 
     const replaceNodeWithNodes = useCallback(
@@ -3528,7 +3530,11 @@ function MarkdownNotebookEditor({
             return
         }
         if (action === 'invite') {
-            insertMenuApi.openPhilosopherInvite(nodeId)
+            if (insertMenuApi.openPeopleInvite) {
+                insertMenuApi.openPeopleInvite()
+                return
+            }
+            insertMenuApi.openPhilosopherInvite?.(nodeId)
             return
         }
         if (action === 'wim-ai') {

@@ -1021,6 +1021,10 @@ export function App() {
                       onAskAI={canWriteNotebook(currentNotebook.access_role) ? handleNotebookAskAI : undefined}
                       isAskAIDisabled={isAskAIBusy || !canWriteNotebook(currentNotebook.access_role)}
                       extraInsertCommands={extraCommands}
+                      onInvitePeople={() => {
+                        setShareTab('private')
+                        setShowShareModal(true)
+                      }}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"

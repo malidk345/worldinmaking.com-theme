@@ -21,6 +21,7 @@ import {
     type NotebookPendingInvite,
 } from '../../../lib/notebook-collaborators-client'
 import { canManageNotebookPeople, type NotebookShareRole } from '../../../lib/notebook-sharing'
+import { getAuthUserId } from '../../../lib/wim-identity'
 
 export type NotebookShareTab = 'private' | 'publish'
 
@@ -80,7 +81,7 @@ export function NotebookShareModal({
     const [peopleBusy, setPeopleBusy] = useState(false)
     const [peopleError, setPeopleError] = useState<string | null>(null)
 
-    const signedIn = Boolean(user)
+    const signedIn = Boolean(user) || Boolean(getAuthUserId())
     const canInvite = signedIn && canManageNotebookPeople(notebook?.access_role || 'owner')
 
     useEffect(() => {
@@ -104,7 +105,11 @@ export function NotebookShareModal({
         }
         let cancelled = false
         fetchNotebookPeople(notebookId).then((result) => {
-            if (cancelled || !result) return
+            if (cancelled) return
+            if (!result) {
+                setPeopleError('Could not load people. Sign in and save the notebook, then try again.')
+                return
+            }
             setPeople(result.collaborators)
             setInvites(result.invites)
         })
@@ -181,12 +186,19 @@ export function NotebookShareModal({
             return
         }
         setHandle('')
-        if (result.url) setLinkUrl(result.url)
+        if (result.url) {
+            setLinkUrl(result.url)
+            try {
+                await navigator.clipboard.writeText(result.url)
+            } catch {
+                /* still show the URL */
+            }
+        }
         await reloadPeople()
         addToast({
             description: result.added
-                ? 'They can write on this notebook now.'
-                : 'Invite created. Send them the link.',
+                ? 'They can write on this notebook now. Invite link copied.'
+                : 'Invite link copied. Send it to them so they can join.',
         })
     }
 

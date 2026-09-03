@@ -24,6 +24,7 @@ export type MarkdownNotebookProps = {
     mode?: NotebookMode
     registry?: NotebookComponentRegistry
     extraInsertCommands?: (api: MarkdownNotebookInsertMenuApi) => InsertCommand[]
+    onInvitePeople?: () => void
     hiddenInsertCommandKeys?: string[]
     selectionAIActions?: Array<{ id: string; label: string; tooltip: string; prompt: string }>
     remoteValue?: string

@@ -7,14 +7,14 @@
  */
 export const runtime = 'edge'
 
-import { resolveNotebookOwner } from '../../../../lib/api-authz'
+import { isOwnerKey, resolveNotebookOwner } from '../../../../lib/api-authz'
 import {
     createNotebookInvite,
     listNotebookPeople,
     removeNotebookCollaborator,
     revokeNotebookInvite,
 } from '../../../../lib/notebook-collaborators'
-import { getNotebookByIdOrShort } from '../../../../lib/notebooks-repo'
+import { getNotebookByIdOrShort, upsertNotebook, type StoredNotebookDTO } from '../../../../lib/notebooks-repo'
 import { canManageNotebookPeople, notebookInviteUrl, parseInviteHandle } from '../../../lib/notebook-sharing'
 import { checkRateLimitDurable, buildRateLimitHeaders } from '../../../lib/bots/rate-limit'
 import { getRuntimeEnv } from '../../../lib/bots/runtime-env'
@@ -59,11 +59,25 @@ export default async function handler(req: Request) {
         ).trim()
         if (!notebookId) return json({ error: 'notebook_id required' }, 400)
 
-        const notebook = await getNotebookByIdOrShort(notebookId, {
+        const deviceKey = (req.headers.get('x-wim-device-key') || '').trim()
+        const extraOwnerKeys = isOwnerKey(deviceKey) && deviceKey !== auth.ownerKey ? [deviceKey] : []
+
+        let notebook = await getNotebookByIdOrShort(notebookId, {
             ownerKey: auth.ownerKey,
             userId: auth.userId,
+            extraOwnerKeys,
         })
-        if (!notebook) return json({ error: 'Not found' }, 404)
+        if (!notebook && req.method === 'POST' && body.notebook && typeof body.notebook === 'object') {
+            const payload = body.notebook as StoredNotebookDTO
+            payload.id = payload.id || notebookId
+            notebook = await upsertNotebook(payload, auth.ownerKey, auth.userId, extraOwnerKeys)
+        }
+        if (!notebook) {
+            return json(
+                { error: 'This notebook is not saved to your account yet. Save it, then invite.' },
+                404
+            )
+        }
         const role = notebook.access_role || 'owner'
 
         if (req.method === 'GET') {
@@ -87,8 +101,7 @@ export default async function handler(req: Request) {
                 `nb-invite:${auth.userId}`,
                 40,
                 60 * 60 * 1000,
-                env,
-                { failClosed: true }
+                env
             )
             if (rl.source === 'unavailable') {
                 return json(
