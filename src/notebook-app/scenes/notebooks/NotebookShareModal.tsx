@@ -240,7 +240,7 @@ export function NotebookShareModal({
                 role="dialog"
                 aria-labelledby="notebook-share-title"
                 data-scheme="secondary"
-                className="w-[28rem] max-w-[calc(100vw-2rem)] max-h-[min(32rem,80vh)] overflow-y-auto p-3 space-y-4"
+                className="w-[22rem] max-w-[calc(100vw-2rem)] p-1 space-y-4"
             >
                 <div className="flex items-start justify-between gap-3">
                     <h2 id="notebook-share-title" className="text-base font-semibold m-0">
