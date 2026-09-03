@@ -5,7 +5,7 @@
  */
 export const runtime = 'edge'
 
-import { runBotTurn, type ThinkingDepth } from 'lib/bots'
+import { runBotTurn, publicBotSuccessFields, type ThinkingDepth } from 'lib/bots'
 import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
@@ -143,14 +143,7 @@ export default async function handler(req: Request) {
 
     return json(
         {
-            success: true,
-            philosopher: result.philosopher,
-            epistemicStance: result.epistemicStance,
-            reply: result.reply,
-            thought: result.thought,
-            thinking: result.thinking,
-            latencyMs: result.latencyMs,
-            taskType: result.taskType,
+            ...publicBotSuccessFields(result),
         },
         200,
         {
