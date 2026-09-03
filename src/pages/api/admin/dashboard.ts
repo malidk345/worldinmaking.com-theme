@@ -3,12 +3,13 @@ export const runtime = 'edge'
 
 import { isAssignableRole, verifyAdminRequest, type AdminAuthOk } from '../../../../lib/admin-auth'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -695,9 +696,30 @@ export default async function handler(req: Request) {
     const auth = await verifyAdminRequest(req)
     if (!auth.ok) return json({ error: auth.error }, auth.status)
 
-    const rate = checkRateLimit(`admin-dashboard:${auth.userId}`, 240, 60 * 60 * 1000)
+    const rate = await checkRateLimitDurable(
+        `admin-dashboard:${auth.userId}`,
+        240,
+        60 * 60 * 1000,
+        getRuntimeEnv(),
+        { failClosed: true }
+    )
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
     if (!rate.allowed) {
-        return json({ error: 'Rate limited', retryAfterSec: rate.retryAfterSec }, 429)
+        return json(
+            { error: 'Rate limited', code: 'RATE_LIMITED', retryAfterSec: rate.retryAfterSec },
+            429,
+            buildRateLimitHeaders(rate)
+        )
     }
 
     try {
