@@ -159,6 +159,10 @@ export async function fetchPublicUrl(rawUrl: string): Promise<{ ok: true; text: 
         const slice = buf.byteLength > MAX_BYTES ? buf.slice(0, MAX_BYTES) : buf
         const decoded = new TextDecoder('utf-8', { fatal: false }).decode(slice)
         const text = stripMarkup(decoded).slice(0, MAX_RESULT)
+        if (!ipv4Literal && !host.includes(':')) {
+            const rebound = await assertPublicHostname(host, controller.signal)
+            if (rebound) return { ok: false, error: rebound }
+        }
         if (!text) return { ok: false, error: 'page had no readable text' }
         return { ok: true, text }
     } catch (error) {
