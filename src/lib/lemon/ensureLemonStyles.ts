@@ -124,14 +124,13 @@ const NOTEBOOK_PALETTE_CSS = `
   height: 0;
   min-height: 0;
 }
-.notebook-app-scope .NotebookPublicView h1,
-.notebook-app-scope .NotebookPublicView h1.MarkdownNotebook__text-block--heading {
+.notebook-app-scope .NotebookPublicView__title {
   font-family: var(--font-sans);
   color: rgb(var(--text-primary));
-  font-size: 2.1428571em !important;
+  font-size: 1.75rem !important;
   font-weight: 700 !important;
-  line-height: 1.2 !important;
-  letter-spacing: normal !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.025em !important;
 }
 .notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
