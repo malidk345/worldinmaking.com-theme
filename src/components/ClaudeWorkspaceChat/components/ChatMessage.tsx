@@ -98,6 +98,20 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
 }
 
+
+function QualityGateNote({ gate }: { gate: 'passed' | 'failed' | 'skipped' }) {
+  if (gate === 'passed') return null
+  const text =
+    gate === 'failed'
+      ? 'Quality check flagged issues — reply shown with caveats'
+      : 'Quality check skipped — reply shown ungated'
+  return (
+    <p className="m-0 mt-1.5 text-[11px] leading-snug text-muted" role="note">
+      {text}
+    </p>
+  )
+}
+
 function InquiryStatusCard({ kind, text }: { kind: 'quota' | 'provider' | 'network'; text: string }) {
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
@@ -349,14 +363,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             ) : null}
           </div>
 
-          {!message.errorKind && message.qualityGate === 'failed' ? (
-            <p className="m-0 mt-1 text-[10px] leading-4 text-muted font-sans">
-              Quality check flagged issues — verify claims and citations.
-            </p>
-          ) : !message.errorKind && message.qualityGate === 'skipped' ? (
-            <p className="m-0 mt-1 text-[10px] leading-4 text-muted font-sans">
-              Quality check skipped — reply shown ungated.
-            </p>
+          {!message.errorKind &&
+          !isLiveAnswer &&
+          (message.qualityGate === 'failed' || message.qualityGate === 'skipped') ? (
+            <QualityGateNote gate={message.qualityGate} />
           ) : null}
 
           {/* Document / Artifact Card */}

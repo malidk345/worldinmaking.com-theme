@@ -175,11 +175,13 @@ export interface Message {
   liked?: boolean | null
   editedFromId?: string
   osAction?: OSActionCard
-  /** Coarse gateway tier from SSE done/phase — never raw model ids. */
-  provider?: 'groq' | 'gemini' | 'openai'
+  provider?: string
   humanTurn?: HumanTurn
   errorKind?: 'quota' | 'provider' | 'network'
-  /** Soft quality-gate outcome — never drives InquiryStatusCard / errorKind. */
+  /**
+   * Soft honesty from SSE done.qualityGate.
+   * failed/skipped may still show a reply; never treated as errorKind.
+   */
   qualityGate?: 'passed' | 'failed' | 'skipped'
   checkpoint?: AgentCheckpoint
 }

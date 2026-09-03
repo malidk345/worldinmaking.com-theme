@@ -1526,7 +1526,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             appendStreamedArtifacts(parsed.artifacts);
             accumulatedContent = parsed.fullText || accumulatedContent;
             const qgId = 'lifecycle-quality-gate'
-            const gate = (parsed as { qualityGate?: 'passed' | 'failed' | 'skipped' }).qualityGate
+            const gate = (parsed as { qualityGate?: Message['qualityGate'] }).qualityGate
             if (gate === 'passed' || gate === 'failed' || gate === 'skipped') {
               streamedQualityGate = gate
             }

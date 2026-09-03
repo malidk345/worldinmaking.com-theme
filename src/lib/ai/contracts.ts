@@ -187,12 +187,15 @@ export type AiSseEvent =
           artifacts?: AiArtifact[]
           latencyMs?: number
           attemptCount?: number
-          /** True when quality-gate (or finalize) changed the public reply vs live streamed tokens. */
+          /**
+           * True only when qualityGate === 'passed' AND the public reply differs from live tokens.
+           * Sanitize / skipped / failed diffs must not set this (see shouldAdvertiseQualityCorrection).
+           */
           corrected?: boolean
           /**
            * Soft honesty flag for Ask AI timeline.
            * failed = gate flagged issues but reply may still be shown;
-           * skipped = checker unavailable / interrupt short-circuit (not a hard failure).
+           * skipped = checker unavailable with a real reply (not interrupt-only omit).
            */
           qualityGate?: 'passed' | 'failed' | 'skipped'
       }
@@ -202,6 +205,20 @@ export type AiSseEvent =
           message: string
           retryable?: boolean
       }
+
+
+/**
+ * Wire honesty for done.corrected: advertise a quality revision only when the
+ * gate actually passed a corrected body. Sanitize/skipped/failed text diffs
+ * must not claim "Reply revised for quality".
+ */
+export function shouldAdvertiseQualityCorrection(
+    qualityGate: 'passed' | 'failed' | 'skipped' | undefined,
+    livePublicText: string,
+    finalPublicText: string
+): boolean {
+    return qualityGate === 'passed' && livePublicText.trim() !== finalPublicText.trim()
+}
 
 /** Deep-walk an SSE payload and scrub every string leaf before wire serialize. */
 export function scrubAiSsePayload<T>(value: T): T {

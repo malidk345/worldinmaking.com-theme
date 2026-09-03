@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { formatAiSseEvent, toPublicProviderLabel } from '../src/lib/ai/contracts'
+import { formatAiSseEvent, shouldAdvertiseQualityCorrection, toPublicProviderLabel } from '../src/lib/ai/contracts'
 import type { HumanTurn, HumanTurnKind } from '../src/lib/bots/agent/human'
 import { publicBotSuccessFields, type BotRunSuccess } from '../src/lib/bots/orchestrate'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
@@ -240,3 +240,15 @@ test.describe('Secret scrubbing on public surfaces', () => {
         expect(usageFrame).not.toContain('[redacted]')
     })
 })
+
+test.describe('done.corrected honesty', () => {
+    test('shouldAdvertiseQualityCorrection only when gate passed and text changed', () => {
+        expect(shouldAdvertiseQualityCorrection('passed', 'live', 'final')).toBe(true)
+        expect(shouldAdvertiseQualityCorrection('passed', 'same', 'same')).toBe(false)
+        expect(shouldAdvertiseQualityCorrection('passed', '  same  ', 'same')).toBe(false)
+        expect(shouldAdvertiseQualityCorrection('failed', 'live', 'final')).toBe(false)
+        expect(shouldAdvertiseQualityCorrection('skipped', 'live', 'final')).toBe(false)
+        expect(shouldAdvertiseQualityCorrection(undefined, 'live', 'final')).toBe(false)
+    })
+})
+
