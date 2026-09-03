@@ -791,7 +791,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       historyOverride?: Message[]
       agentMode?: AgentMode
       resume?: AgentCheckpoint
-      resumeAction?: 'run' | 'revise' | 'answer'
+      resumeAction?: 'run' | 'revise'
       resumePayload?: string
       continueMessageId?: string
     }
@@ -1839,18 +1839,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
+  const handleHumanRespond = (messageId: string, action: 'run' | 'revise', payload?: string) => {
     if (isStreaming || !activeChat) return
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
-    const nextStatus = action === 'run' ? 'approved' : action === 'revise' ? 'revised' : 'answered'
+    const nextStatus = action === 'run' ? 'approved' : 'revised'
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
-    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : 'ask'
+    const nextMode = action === 'run' ? 'execute' : 'plan'
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
     if (message.checkpoint) {
-      void handleSendMessage(action === 'answer' ? payload?.trim() || '' : '', [], {
+      void handleSendMessage('', [], {
         skipUserAppend: true,
         continueMessageId: messageId,
         agentMode: nextMode,
@@ -1864,12 +1864,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
       return
     }
-    if (action === 'revise') {
-      void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
-      return
-    }
-    if (!payload?.trim()) return
-    void handleSendMessage(payload.trim(), [])
+    void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
   }
 
   const handleDeleteChat = (id: string) => {
