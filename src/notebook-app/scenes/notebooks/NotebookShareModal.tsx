@@ -66,6 +66,9 @@ export function NotebookShareModal({
     const { user } = useUser()
     const { openSignIn } = useApp()
     const [tab, setTab] = useState<NotebookShareTab>(initialTab)
+    useEffect(() => {
+        if (isOpen) setTab(initialTab)
+    }, [isOpen, initialTab])
     const [copied, setCopied] = useState<string | null>(null)
     const notebook = useMemo(() => (isOpen ? getNotebook(notebookId) : undefined), [isOpen, notebookId])
 
@@ -233,19 +236,11 @@ export function NotebookShareModal({
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <button
-                type="button"
-                className="absolute inset-0 bg-black/40 border-0 cursor-default"
-                aria-label="Close share"
-                onClick={onClose}
-            />
             <div
                 role="dialog"
-                aria-modal="true"
                 aria-labelledby="notebook-share-title"
                 data-scheme="secondary"
-                className="relative z-[1] w-full max-w-lg rounded-lg border border-primary bg-primary text-primary shadow-xl p-4 space-y-4 max-h-[90vh] overflow-y-auto"
+                className="w-[28rem] max-w-[calc(100vw-2rem)] max-h-[min(32rem,80vh)] overflow-y-auto p-3 space-y-4"
             >
                 <div className="flex items-start justify-between gap-3">
                     <h2 id="notebook-share-title" className="text-base font-semibold m-0">
@@ -503,6 +498,5 @@ export function NotebookShareModal({
                     </div>
                 )}
             </div>
-        </div>
     )
 }
