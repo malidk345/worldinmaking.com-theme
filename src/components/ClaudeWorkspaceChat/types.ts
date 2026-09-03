@@ -19,7 +19,7 @@ export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
 export type AgentMode = 'ask' | 'plan' | 'execute'
 
 export type HumanTurn = {
-  kind: 'ask' | 'plan_approval'
+  kind: 'plan_approval'
   title: string
   status: 'pending' | 'answered' | 'approved' | 'revised'
   questions?: Array<{ id: string; prompt: string; options?: string[] }>
