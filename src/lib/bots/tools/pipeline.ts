@@ -12,7 +12,7 @@ import type { ArtifactDocument } from '../../artifacts/kinds'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
 import { snapshotCheckpoint, type AgentCheckpoint } from '../agent/checkpoint'
 import type { HumanTurn } from '../agent/human'
-import { mergePlan, PLAN_ACTIVITY_ID, withHostContext, type PlanTodo } from '../agent/plan'
+import { memoriesForHostContext, mergePlan, PLAN_ACTIVITY_ID, withHostContext, type PlanTodo } from '../agent/plan'
 import {
     EXECUTION_TRANSITION_PROMPT,
     modeTransitionPrompt,
@@ -267,7 +267,7 @@ async function runThinkPhase(state: AgentState, params: AgentPipelineParams, tho
             withHostContext(compactLoopMessages(state.messages), {
                 todos: state.todos,
                 reminder: state.pendingReminder,
-                memories: params.host?.scratchpad?.memories,
+                memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
             })
         ),
         toolChoice: 'none',
@@ -319,7 +319,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
             todos: state.todos,
             thought: state.cycleThought,
             reminder: state.pendingReminder,
-            memories: params.host?.scratchpad?.memories,
+            memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
         }),
         toolChoice,
         onToken: (text) => {
