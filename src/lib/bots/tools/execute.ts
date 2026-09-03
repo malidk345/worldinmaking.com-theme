@@ -373,7 +373,7 @@ export async function executeToolCall(
     if (!isToolAllowedInMode(name, mode)) {
         const result = JSON.stringify({
             ok: false,
-            error: `Tool "${name}" is locked in plan mode. Call switch_mode with mode="execute" after the plan is ready.`,
+            error: `Tool "${name}" is locked in plan mode. Call finalize_plan, then wait for the user to approve.`,
         })
         return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
     }
@@ -610,7 +610,7 @@ export async function executeToolCall(
         if (name === 'finalize_plan') {
             const summary = asText(args.summary, 400).trim()
             const result = JSON.stringify({ ok: true, mode: 'execute', summary: summary || undefined })
-            return { ...base, ok: true, result, summary: summary || 'Started the plan' }
+            return { ...base, ok: true, result, summary: summary || 'Waiting for plan approval' }
         }
         if (name === 'task') {
             const goal = asText(args.goal, 2_000).trim()
