@@ -98,6 +98,17 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
 }
 
+function InquiryStatusCard({ kind, text }: { kind: 'quota' | 'provider' | 'network'; text: string }) {
+  const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
+  const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
+  return (
+    <div className="mt-1.5 rounded-xl border border-primary/50 bg-accent/50 px-3 py-2.5">
+      <p className="m-0 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">{title}</p>
+      <p className="m-0 mt-1 text-[12.5px] leading-relaxed text-primary">{body || 'The inquiry could not continue.'}</p>
+    </div>
+  )
+}
+
 function HumanTurnCard({
   turn,
   disabled,
@@ -111,46 +122,53 @@ function HumanTurnCard({
   const pending = turn.status === 'pending' && !disabled
   if (turn.kind === 'plan_approval') {
     return (
-      <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
-        <p className="m-0 font-medium">{turn.title}</p>
-        {turn.summary ? <p className="mt-1 mb-0 text-secondary leading-relaxed">{turn.summary}</p> : null}
-        {turn.plan && turn.plan.length > 0 ? (
-          <ul className="mt-2 mb-0 pl-4 space-y-1 text-secondary">
-            {turn.plan.map((item) => (
-              <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : ''}>
-                {item.title}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {pending ? (
-          <div className="mt-2.5 flex items-center gap-2">
+      <div className="mt-2.5 rounded-xl border border-primary bg-surface-primary p-3 shadow-2xs space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="m-0 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">Plan</p>
+            <p className="m-0 mt-0.5 font-semibold text-[13px] text-primary">{turn.title}</p>
+          </div>
+          {pending ? (
             <button
               type="button"
               onClick={() => onRespond('run')}
-              className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+              className="shrink-0 rounded-md bg-[#1E3A8A] px-2.5 py-1 text-[12px] font-medium text-white hover:bg-[#1e40af] cursor-pointer"
             >
               Run
             </button>
-            <button
-              type="button"
-              onClick={() => onRespond('revise', draft.trim() || undefined)}
-              className="rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer"
-            >
-              Revise
-            </button>
+          ) : (
+            <span className="text-[11px] text-muted">
+              {turn.status === 'approved' ? 'Running' : turn.status === 'revised' ? 'Revising' : null}
+            </span>
+          )}
+        </div>
+        {turn.summary ? <p className="m-0 text-[12.5px] leading-relaxed text-secondary">{turn.summary}</p> : null}
+        {turn.plan && turn.plan.length > 0 ? (
+          <ol className="m-0 list-decimal space-y-1 pl-4 text-[12.5px] text-secondary">
+            {turn.plan.map((item) => (
+              <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : item.status === 'in_progress' ? 'font-medium text-primary' : ''}>
+                {item.title}
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        {pending ? (
+          <div className="flex items-center gap-2 pt-0.5">
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Optional revision note"
+              placeholder="Revision note (optional)"
               className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
             />
+            <button
+              type="button"
+              onClick={() => onRespond('revise', draft.trim() || undefined)}
+              className="shrink-0 rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer"
+            >
+              Revise
+            </button>
           </div>
-        ) : (
-          <p className="mt-2 mb-0 text-muted">
-            {turn.status === 'approved' ? 'Running the plan.' : turn.status === 'revised' ? 'Revising the plan.' : null}
-          </p>
-        )}
+        ) : null}
       </div>
     )
   }
@@ -336,7 +354,9 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           <div
             className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
           >
-            {displayedText ? (
+            {message.errorKind ? (
+              <InquiryStatusCard kind={message.errorKind} text={displayedText} />
+            ) : displayedText ? (
               <>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
