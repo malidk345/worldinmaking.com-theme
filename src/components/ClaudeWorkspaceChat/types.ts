@@ -177,6 +177,7 @@ export interface Message {
   osAction?: OSActionCard
   provider?: string
   humanTurn?: HumanTurn
+  errorKind?: 'quota' | 'provider' | 'network'
   checkpoint?: AgentCheckpoint
 }
 
