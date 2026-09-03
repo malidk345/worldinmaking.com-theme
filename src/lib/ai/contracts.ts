@@ -129,7 +129,7 @@ export type AiSseEvent =
           human: {
               kind: 'plan_approval'
               title: string
-              status: 'pending' | 'answered' | 'approved' | 'revised'
+              status: 'pending' | 'approved' | 'revised'
               plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
               summary?: string
           }
