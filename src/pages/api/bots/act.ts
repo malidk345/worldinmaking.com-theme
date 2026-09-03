@@ -284,7 +284,6 @@ export default async function handler(req: Request) {
                 error: 'Philosopher network unavailable',
                 latencyMs: result.latencyMs,
                 taskType: result.taskType,
-                persona: result.persona,
             },
             503
         )
