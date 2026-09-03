@@ -144,6 +144,11 @@ export function NotebookShareButton({
             visible={isOpen}
             onVisibilityChange={onOpenChange}
             closeOnClickInside={false}
+            // Footer trigger: same idea as Settings/Export (side="top").
+            // top-start keeps the panel's left edge on the button and opens into
+            // the editor; top-end + a 28rem panel shifts into the viewport center.
+            placement="top-start"
+            fallbackPlacements={['top-end', 'right-start', 'bottom-start']}
         >
             <LemonButton size="small" icon={<IconShare />} active={Boolean(isOpen)} tooltip="Share" aria-label="Share" />
         </LemonDropdown>
