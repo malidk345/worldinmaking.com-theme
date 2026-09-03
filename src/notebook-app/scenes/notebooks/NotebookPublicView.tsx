@@ -64,8 +64,8 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
 
     return (
         <div data-scheme="primary" className="NotebookPublicView bg-primary text-primary min-h-full pb-16">
-            <div className="flex flex-col w-full max-w-3xl mx-auto">
-                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
+            <div className="flex flex-col w-full max-w-2xl mx-auto p-4">
+                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-3">
                     {href ? (
                         <Link className="flex items-center relative !no-underline hover:!underline" to={href}>
                             <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
@@ -110,7 +110,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     </div>
                 </div>
 
-                <div className="pb-4 min-w-0 max-w-full box-border pl-5 pr-8">
+                <div className="min-w-0 max-w-full box-border">
                     <article className="prose prose-sm dark:prose-invert max-w-none font-normal">
                     <h1 className="!mt-0 !mb-2 break-words">{displayTitle}</h1>
                     {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
@@ -139,7 +139,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     </article>
                 </div>
 
-                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 px-4 pb-8">
+                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 pb-8">
                     <Questions
                         slug={notebookCommentSlug(notebook.short_id || notebook.id)}
                         subject={false}
