@@ -1152,7 +1152,30 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (!parsed) continue;
 
           if (parsed.type === 'activity') {
-            processItems = applyAgentActivity(processItems, parsed.activity)
+            const scrubbedActivity = {
+              ...parsed.activity,
+              title:
+                typeof parsed.activity.title === 'string'
+                  ? scrubSecretMaterial(parsed.activity.title)
+                  : parsed.activity.title,
+              detail:
+                typeof parsed.activity.detail === 'string'
+                  ? scrubSecretMaterial(parsed.activity.detail)
+                  : parsed.activity.detail,
+              delta:
+                typeof parsed.activity.delta === 'string'
+                  ? scrubSecretMaterial(parsed.activity.delta)
+                  : parsed.activity.delta,
+              arguments:
+                typeof parsed.activity.arguments === 'string'
+                  ? scrubSecretMaterial(parsed.activity.arguments)
+                  : parsed.activity.arguments,
+              result:
+                typeof parsed.activity.result === 'string'
+                  ? scrubSecretMaterial(parsed.activity.result)
+                  : parsed.activity.result,
+            }
+            processItems = applyAgentActivity(processItems, scrubbedActivity)
             currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
             currentThinkingProcess.steps = [...currentThinkingProcess.steps]
             updateAssistantMessage(targetChatId, assistantMessageId, {
@@ -1172,9 +1195,29 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               )
             }
             const toolTitle = toolStatusLabel(parsed.tool.name, parsed.tool.status);
+            const safeToolDetail =
+              typeof parsed.tool.detail === 'string'
+                ? scrubSecretMaterial(parsed.tool.detail)
+                : parsed.tool.detail
+            const safeToolArguments =
+              typeof parsed.tool.arguments === 'string'
+                ? scrubSecretMaterial(parsed.tool.arguments)
+                : parsed.tool.arguments
+            const safeToolResult =
+              typeof parsed.tool.result === 'string'
+                ? scrubSecretMaterial(parsed.tool.result)
+                : parsed.tool.result
             processItems = applyAgentActivity(
               processItems,
-              activityFromToolEvent(parsed.tool, processItems.length + 1)
+              activityFromToolEvent(
+                {
+                  ...parsed.tool,
+                  detail: safeToolDetail,
+                  arguments: safeToolArguments,
+                  result: safeToolResult,
+                },
+                processItems.length + 1
+              )
             )
             currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
             currentThinkingProcess.steps = [...currentThinkingProcess.steps]
@@ -1183,9 +1226,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               id: parsed.tool.id,
               name: parsed.tool.name,
               status: parsed.tool.status,
-              arguments: parsed.tool.arguments,
-              result: parsed.tool.result,
-              detail: parsed.tool.detail,
+              arguments: safeToolArguments,
+              result: safeToolResult,
+              detail: safeToolDetail,
               thoughtSignature: parsed.tool.thoughtSignature,
             };
             const traceIdx = streamedToolTrace.findIndex((item) => item.id === nextTrace.id);
@@ -1258,6 +1301,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             const searchStatus =
               parsed.search.status === 'error' ? ('error' as const) : parsed.search.status === 'done' ? ('done' as const) : ('running' as const)
             const searchTitle = toolStatusLabel('web_search', searchStatus)
+            const safeSearchQuery =
+              typeof parsed.search.query === 'string'
+                ? scrubSecretMaterial(parsed.search.query)
+                : parsed.search.query
+            const safeSearchResults =
+              typeof parsed.search.results === 'string'
+                ? scrubSecretMaterial(parsed.search.results)
+                : parsed.search.results
             processItems = applyAgentActivity(
               processItems,
               activityFromToolEvent(
@@ -1265,9 +1316,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   id: 'host-search',
                   name: 'web_search',
                   status: searchStatus,
-                  detail: parsed.search.query,
-                  arguments: JSON.stringify({ query: parsed.search.query }),
-                  result: parsed.search.results || undefined,
+                  detail: safeSearchQuery,
+                  arguments: JSON.stringify({ query: safeSearchQuery }),
+                  result: safeSearchResults || undefined,
                 },
                 processItems.length + 1
               )
@@ -1280,7 +1331,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               name: 'web_search',
               status: parsed.search.status === 'error' ? 'error' : parsed.search.status === 'done' ? 'done' : 'running',
               detail: searchTitle,
-              result: parsed.search.results || undefined,
+              result: safeSearchResults || undefined,
             };
             const searchTraceIdx = streamedToolTrace.findIndex((item) => item.id === searchTrace.id);
             if (searchTraceIdx >= 0) streamedToolTrace[searchTraceIdx] = { ...streamedToolTrace[searchTraceIdx], ...searchTrace };
