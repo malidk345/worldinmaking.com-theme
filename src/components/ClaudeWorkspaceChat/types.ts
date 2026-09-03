@@ -174,7 +174,8 @@ export interface Message {
   liked?: boolean | null
   editedFromId?: string
   osAction?: OSActionCard
-  provider?: string
+  /** Coarse gateway tier from SSE done — never raw model ids. */
+  provider?: 'groq' | 'gemini' | 'openai'
   humanTurn?: HumanTurn
   errorKind?: 'quota' | 'provider' | 'network'
   /**
