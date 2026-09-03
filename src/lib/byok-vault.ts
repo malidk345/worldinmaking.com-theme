@@ -117,16 +117,6 @@ export function getActiveByokPayload(): ByokPayload {
     return payload
 }
 
-/** @deprecated Prefer getActiveByokPayload() on /api/chat body. Kept for one release. */
-export function getActiveByokHeaders(): Record<string, string> {
-    const payload = getActiveByokPayload()
-    const headers: Record<string, string> = {}
-    for (const [provider, key] of Object.entries(payload)) {
-        if (key) headers[`x-byok-${provider}`] = key
-    }
-    return headers
-}
-
 export function hasActiveByok(): boolean {
     return Object.keys(getActiveByokPayload()).length > 0
 }

@@ -75,8 +75,8 @@ function readOptionalBoundedString(
 
 const BYOK_KEY_MAX = 200
 
-/** Read BYOK keys from JSON body (preferred). Header fallback for one release only. */
-function readByokEnv(body: Record<string, unknown>, req: Request): Record<string, string> {
+/** Read BYOK keys from the chat JSON body only (never from shared headers). */
+function readByokEnv(body: Record<string, unknown>): Record<string, string> {
     const byokEnv: Record<string, string> = {}
     const raw = body.byok
     const fromBody =
@@ -85,18 +85,11 @@ function readByokEnv(body: Record<string, unknown>, req: Request): Record<string
             : null
 
     const take = (provider: 'groq' | 'gemini' | 'openai' | 'anthropic', envName: string) => {
-        let value = ''
-        if (fromBody) {
-            const candidate = fromBody[provider]
-            if (typeof candidate === 'string' && candidate.trim()) {
-                value = candidate.trim().slice(0, BYOK_KEY_MAX)
-            }
+        if (!fromBody) return
+        const candidate = fromBody[provider]
+        if (typeof candidate === 'string' && candidate.trim()) {
+            byokEnv[envName] = candidate.trim().slice(0, BYOK_KEY_MAX)
         }
-        if (!value) {
-            const header = req.headers.get(`x-byok-${provider}`)
-            if (header?.trim()) value = header.trim().slice(0, BYOK_KEY_MAX)
-        }
-        if (value) byokEnv[envName] = value
     }
 
     take('groq', 'GROQ_API_KEY')
@@ -461,7 +454,7 @@ export default async function handler(req: Request) {
                 let livePublicText = ''
                 let liveThinkingAcc = ''
 
-                const byokEnv = readByokEnv(body, req)
+                const byokEnv = readByokEnv(body)
                 const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
 
                 const result = await streamBotTurn(
