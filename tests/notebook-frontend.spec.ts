@@ -83,7 +83,7 @@ import { getInlineText } from '../src/notebook-app/lib/components/MarkdownNotebo
 import { computeBacklinks } from '../src/notebook-app/lib/components/MarkdownNotebook/wikilinks'
 import { extractOutlineHeadings } from '../src/notebook-app/scenes/notebooks/outlineModel'
 import type { NotebookTextBlockNode } from '../src/notebook-app/lib/components/MarkdownNotebook/types'
-import { documentMarkdown } from '../src/notebook-app/scenes/notebooks/notebookPublicMarkdown'
+import { documentMarkdown, pickPublicNotebook } from '../src/notebook-app/scenes/notebooks/notebookPublicMarkdown'
 
 test.describe('notebook frontend helpers', () => {
     test('list timeAgo uses hours between 1h and 24h', () => {
@@ -97,6 +97,15 @@ test.describe('notebook frontend helpers', () => {
         expect(documentMarkdown('# Hello\n\nBody text', 'Hello')).toBe('Body text')
         expect(documentMarkdown('<ph-query />\n\nKept', 'Other')).toBe('Kept')
         expect(documentMarkdown('<ph-callout>hidden</ph-callout>\nVisible', 'T')).toBe('Visible')
+    })
+
+    test('public links ignore unpublished local drafts', () => {
+        expect(pickPublicNotebook({ isPublished: false }, null)).toBeNull()
+        expect(pickPublicNotebook({ isPublished: true, id: 'local' }, null)).toEqual({ isPublished: true, id: 'local' })
+        expect(pickPublicNotebook({ isPublished: true, id: 'local' }, { isPublished: true, id: 'remote' })).toEqual({
+            isPublished: true,
+            id: 'remote',
+        })
     })
 
     test('publish is explicit — false does not stay live', () => {

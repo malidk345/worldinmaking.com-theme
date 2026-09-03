@@ -1,3 +1,13 @@
+/** Public links must not show a local unpublished draft. Prefer the published remote copy. */
+export function pickPublicNotebook<T extends { isPublished?: boolean }>(
+    local: T | null | undefined,
+    remote: T | null | undefined
+): T | null {
+    if (remote) return remote
+    if (local?.isPublished === true) return local
+    return null
+}
+
 /** Plain document text: drop editor blocks and a repeated title heading. */
 export function documentMarkdown(content: string, title: string): string {
     let text = String(content || '').replace(/^\uFEFF/, '')

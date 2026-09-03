@@ -839,7 +839,7 @@ export function App() {
       <main
         className={
           route.page === 'public'
-            ? 'flex-1 w-full min-h-0 p-0 bg-primary text-primary'
+            ? 'flex-1 w-full min-h-0 overflow-y-auto overscroll-contain p-0 bg-primary text-primary'
             : route.page === 'editor' && currentNotebook
               ? 'flex-1 w-full min-h-0 h-full flex flex-col p-0 overflow-hidden'
               : 'flex-1 w-full min-h-0 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'

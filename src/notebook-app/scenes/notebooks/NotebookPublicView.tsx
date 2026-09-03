@@ -4,15 +4,21 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import type { StoredNotebook } from './notebookStorage'
 import { getNotebook, getNotebookPublicUrl } from './notebookStorage'
 import { pullPublishedNotebook } from './notebookRemote'
-import { documentMarkdown, notebookCommentSlug } from './notebookPublicMarkdown'
+import { notebookCommentSlug, pickPublicNotebook } from './notebookPublicMarkdown'
 import { Avatar, Questions } from 'components/Squeak'
-import Markdown from 'components/Squeak/components/Markdown'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
 import { IconCopy, IconPencil, IconArrowLeft } from '@posthog/icons'
 import { ZoomImage } from 'components/ZoomImage'
 import { profileHref } from '../../../lib/profile-path'
 import { useToast } from '../../../context/Toast'
+import { canWriteNotebook } from '../../../lib/notebook-sharing'
+
+const MarkdownNotebook = React.lazy(() =>
+    import('../../lib/components/MarkdownNotebook/MarkdownNotebook').then((mod) => ({
+        default: mod.MarkdownNotebook,
+    }))
+)
 
 dayjs.extend(relativeTime)
 
@@ -45,7 +51,6 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     const name = authorName(notebook)
     const handle = person?.username || ''
     const href = handle ? profileHref(handle) : ''
-    const body = documentMarkdown(notebook.content, displayTitle)
     const postedAt = notebook.createdAt || notebook.updatedAt
 
     const handleCopyLink = async () => {
@@ -58,7 +63,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     }
 
     return (
-        <div data-scheme="primary" className="bg-primary text-primary min-h-full">
+        <div data-scheme="primary" className="bg-primary text-primary min-h-full pb-16">
             <div className="flex flex-col w-full max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
                     {href ? (
@@ -115,8 +120,18 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                             </ZoomImage>
                         </div>
                     ) : null}
-                    {body ? (
-                        <Markdown className="question-content">{body}</Markdown>
+                    {notebook.content?.trim() ? (
+                        <React.Suspense
+                            fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
+                        >
+                            <MarkdownNotebook
+                                value={notebook.content}
+                                mode="view"
+                                spellCheck={false}
+                                autoFocus={false}
+                                placeholder=""
+                            />
+                        </React.Suspense>
                     ) : (
                         <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
                     )}
@@ -141,40 +156,42 @@ interface NotebookPublicRouteProps {
     onOpenEditor: (id: string) => void
 }
 
-/** Local first, then published remote fallback for share links opened on another device. */
+/** Published remote copy, with a local published draft only as a fast first paint. */
 export function NotebookPublicRoute({ notebookId, onBack, onOpenEditor }: NotebookPublicRouteProps): JSX.Element {
-    const [notebook, setNotebook] = useState<StoredNotebook | null>(() => getNotebook(notebookId) ?? null)
-    const [loading, setLoading] = useState(!getNotebook(notebookId))
+    const [notebook, setNotebook] = useState<StoredNotebook | null>(() => {
+        const local = getNotebook(notebookId)
+        return local?.isPublished === true ? local : null
+    })
+    const [loading, setLoading] = useState(() => getNotebook(notebookId)?.isPublished !== true)
     const [missing, setMissing] = useState(false)
 
     useEffect(() => {
         let cancelled = false
         const local = getNotebook(notebookId)
-        if (local) {
-            setNotebook(local)
+        const publishedLocal = local?.isPublished === true ? local : null
+        if (publishedLocal) {
+            setNotebook(publishedLocal)
             setLoading(false)
             setMissing(false)
-            return
+        } else {
+            setNotebook(null)
+            setLoading(true)
+            setMissing(false)
         }
-
-        setLoading(true)
-        setMissing(false)
-        setNotebook(null)
 
         pullPublishedNotebook(notebookId)
             .then((remote) => {
                 if (cancelled) return
-                if (remote) {
-                    setNotebook(remote)
-                    setMissing(false)
-                } else {
-                    setMissing(true)
-                }
+                const next = pickPublicNotebook(publishedLocal, remote)
+                setNotebook(next)
+                setMissing(!next)
                 setLoading(false)
             })
             .catch(() => {
                 if (cancelled) return
-                setMissing(true)
+                const next = pickPublicNotebook(publishedLocal, null)
+                setNotebook(next)
+                setMissing(!next)
                 setLoading(false)
             })
 
@@ -201,12 +218,13 @@ export function NotebookPublicRoute({ notebookId, onBack, onOpenEditor }: Notebo
         )
     }
 
-    const ownsLocally = Boolean(getNotebook(notebook.id) || getNotebook(notebook.short_id))
+    const localCopy = getNotebook(notebook.id) || getNotebook(notebook.short_id)
+    const canEdit = Boolean(localCopy && canWriteNotebook(localCopy.access_role))
     return (
         <NotebookPublicView
             notebook={notebook}
             onBack={onBack}
-            onOpenEditor={ownsLocally ? () => onOpenEditor(notebook.id) : undefined}
+            onOpenEditor={canEdit ? () => onOpenEditor(notebook.id) : undefined}
         />
     )
 }
