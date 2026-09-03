@@ -10,7 +10,7 @@ Desktop OS shell product built on a Next.js (Pages Router) codebase inherited fr
 | **Package manager** | **pnpm only** (`pnpm-lock.yaml`) — do not use npm or commit `package-lock.json` |
 | **Node** | 22.x |
 | **Architecture** | [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) |
-| **AI agent board** | [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) |
+| **AI architecture** | [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) |
 
 ---
 
@@ -106,10 +106,9 @@ Key paths:
 
 Multiple AI agents share this repo. **Before coding:**
 
-1. Read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and the performance report.
-2. Claim a `[NOT STARTED]` task on the board (`[IN PROGRESS by <name>]`).
-3. Stay on that stream’s files; no broad `git add -A`.
-4. On finish: mark `[COMPLETED]`, append a log entry in AI_MEMORY.
+1. Read [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) and the performance report.
+2. Stay on that stream’s files; no broad `git add -A`.
+3. Prefer small PRs aligned with Infra, Shell, Performance, Data, AI/Bots.
 
 Human contributors: prefer small PRs aligned with those streams (Infra, Shell, Performance, Data, AI/Bots).
 
