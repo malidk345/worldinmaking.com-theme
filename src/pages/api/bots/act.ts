@@ -263,7 +263,34 @@ export default async function handler(req: Request) {
         env,
     })
 
-    return json({ ...result, action: 'chat' }, result.success ? 200 : 503)
+    if (!result.success) {
+        console.error('[bots/act] chat providers failed', {
+            philosopher: result.philosopher,
+            error: result.error,
+            attempts: 'attempts' in result ? result.attempts : undefined,
+        })
+        const productReply =
+            typeof result.reply === 'string' && result.reply.trim()
+                ? result.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return json(
+            {
+                success: false,
+                action: 'chat',
+                philosopher: result.philosopher,
+                reply: productReply,
+                epistemicStance: result.epistemicStance,
+                code: 'PROVIDER_UNAVAILABLE',
+                error: 'Philosopher network unavailable',
+                latencyMs: result.latencyMs,
+                taskType: result.taskType,
+                persona: result.persona,
+            },
+            503
+        )
+    }
+
+    return json({ ...result, action: 'chat' }, 200)
     } catch (error) {
         console.error('[bots/act] unexpected failure', error)
         return json({ success: false, error: 'Bot action failed', action }, 503)

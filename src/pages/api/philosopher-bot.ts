@@ -129,7 +129,7 @@ export default async function handler(req: Request) {
         return json(
             {
                 success: false,
-                code: 'PROVIDER_FAILED',
+                code: 'PROVIDER_UNAVAILABLE',
                 error: 'Philosopher network unavailable',
                 philosopher: result.philosopher,
                 epistemicStance: result.epistemicStance,
@@ -137,7 +137,6 @@ export default async function handler(req: Request) {
                 thought: result.thought,
                 thinking: result.thinking,
                 configured: result.configured,
-                attempts: result.attempts,
             },
             503,
             rlHeaders

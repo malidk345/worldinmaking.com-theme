@@ -477,11 +477,20 @@ export default async function handler(req: Request) {
                 if (!result.success) {
                     const attempts = 'attempts' in result ? result.attempts : []
                     console.error('[chat] providers failed', { error: result.error, attempts })
-                    const lastAttempt = (attempts[attempts.length - 1] || '').replace(/\s+/g, ' ').slice(0, 180)
+                    const productReply =
+                        typeof result.reply === 'string' && result.reply.trim()
+                            ? result.reply.trim()
+                            : 'The philosopher network is unavailable right now.'
+                    const errorCode =
+                        result.error === 'empty_public_reply'
+                            ? 'EMPTY_REPLY'
+                            : result.error === 'tools_required'
+                              ? 'TOOLS_REQUIRED'
+                              : 'PROVIDER_UNAVAILABLE'
                     send({
                         type: 'error',
-                        code: 'PROVIDER_UNAVAILABLE',
-                        message: lastAttempt ? `The reply could not be completed. ${lastAttempt}` : result.reply,
+                        code: errorCode,
+                        message: productReply,
                         retryable: true,
                     })
                     controller.close()
@@ -571,6 +580,6 @@ export default async function handler(req: Request) {
         })
     } catch (err: any) {
         console.error('[chat] fatal handler error:', err)
-        return jsonError(err?.message || 'Internal chat handler error', 500)
+        return jsonError('Internal chat handler error', 500)
     }
 }

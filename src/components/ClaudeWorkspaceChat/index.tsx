@@ -1092,14 +1092,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       if (!sseRes.ok || !sseRes.body) {
         let errorMessage = `Chat API ${sseRes.status}`;
+        let errCode = "";
         try {
           const errBody = await sseRes.json();
           if (errBody?.error) errorMessage = String(errBody.error);
+          if (typeof errBody?.code === "string") errCode = errBody.code;
         } catch {
           /* use status text */
         }
         const fail = new Error(errorMessage) as Error & { kind?: Message["errorKind"] };
-        fail.kind = sseRes.status === 429 || errorMessage.includes("[app]") ? "quota" : "network";
+        fail.kind =
+          sseRes.status === 429 ||
+          errCode.startsWith("QUOTA_") ||
+          errorMessage.includes("[app]") ||
+          (sseRes.status === 503 && (errCode.startsWith("QUOTA_") || errorMessage.includes("[app]")))
+            ? "quota"
+            : "network";
         throw fail;
       }
 
@@ -1388,13 +1396,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'error') {
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
-            streamErrorKind = (parsed as { code?: string }).code === 'PROVIDER_UNAVAILABLE' ? 'provider' : 'network';
-            if (!accumulatedContent.trim()) {
-              updateAssistantMessage(targetChatId, assistantMessageId, {
-                content: parsed.message || 'Philosopher network unavailable.',
-                errorKind: streamErrorKind,
-              });
+            const errCode = (parsed as { code?: string }).code || '';
+            if (
+              errCode === 'PROVIDER_UNAVAILABLE' ||
+              errCode === 'EMPTY_REPLY' ||
+              errCode === 'TOOLS_REQUIRED'
+            ) {
+              streamErrorKind = 'provider';
+            } else if (errCode.startsWith('QUOTA_') || (parsed.message || '').includes('[app]')) {
+              streamErrorKind = 'quota';
+            } else {
+              streamErrorKind = 'network';
             }
+            const safeMessage = parsed.message || 'Philosopher network unavailable.';
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: accumulatedContent.trim()
+                ? sanitizePublicAssistantText(accumulatedContent)
+                : safeMessage,
+              errorKind: streamErrorKind,
+            });
             continue;
           }
 
