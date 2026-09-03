@@ -478,10 +478,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const fillComposer = (text: string) => {
-    setComposerDraft(text)
-    setComposerDraftNonce((value) => value + 1)
-  }
   const [shareBusy, setShareBusy] = useState(false);
 
   const persistOwnerRef = useRef(getChatStorageKey())
@@ -2124,9 +2120,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
-          isStreaming={isStreaming}
-          streamStatus={streamStatus}
-          philosopherName={models.find((m) => m.id === selectedModelId)?.name}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -2136,25 +2129,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
-              <p className="m-0 text-[11px] font-medium uppercase tracking-[0.2em] text-muted">Ask AI</p>
-              <h1 className="mt-2 mb-0 text-center text-[22px] sm:text-[26px] font-medium tracking-tight text-primary">
-                What are you thinking through?
+              <h1 className="m-0 text-center text-[22px] sm:text-[24px] font-medium tracking-tight text-primary">
+                How can I help?
               </h1>
-              <p className="mt-2 mb-5 max-w-md text-center text-[13px] leading-relaxed text-secondary">
-                {(models.find((m) => m.id === selectedModelId)?.name) || "A philosopher"} reads the notebook, searches when needed, and answers in public text only.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {["Stress-test this argument", "Map the counterpositions", "Draft a notebook note"].map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => fillComposer(`${label}: `)}
-                    className="rounded-full border border-primary/50 bg-accent/40 px-3 py-1.5 text-[12px] text-primary hover:bg-accent cursor-pointer"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
             </div>
           ) : (
             <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40">
