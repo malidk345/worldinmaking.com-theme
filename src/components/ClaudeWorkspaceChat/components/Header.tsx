@@ -1,11 +1,14 @@
 import React from 'react'
 import { PanelLeft } from 'lucide-react'
 
+export type InquiryStreamStatus = 'thinking' | 'quality' | 'answering' | null
+
 interface HeaderProps {
     onToggleSidebar: () => void
     activeChatTitle?: string
     boundNotebookTitle?: string
     isStreaming?: boolean
+    streamStatus?: InquiryStreamStatus
     philosopherName?: string
 }
 
@@ -15,11 +18,18 @@ function surname(name?: string): string {
     return parts[parts.length - 1] || name
 }
 
+function streamLabel(status?: InquiryStreamStatus): string {
+    if (status === 'quality') return 'Checking quality'
+    if (status === 'answering') return 'Answering'
+    return 'Thinking'
+}
+
 export const Header: React.FC<HeaderProps> = ({
     onToggleSidebar,
     activeChatTitle,
     boundNotebookTitle,
     isStreaming,
+    streamStatus,
     philosopherName,
 }) => {
     return (
@@ -46,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {isStreaming ? (
                     <span className="inline-flex items-center gap-1.5 text-primary">
                         <span className="size-1.5 rounded-full bg-[#1E3A8A] animate-pulse" />
-                        Thinking
+                        {streamLabel(streamStatus)}
                     </span>
                 ) : philosopherName ? (
                     <span className="text-muted">{surname(philosopherName)}</span>

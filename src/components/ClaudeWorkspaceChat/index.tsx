@@ -402,6 +402,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
@@ -905,6 +906,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     );
 
     setIsStreaming(true);
+    setStreamStatus('thinking');
     autoScrollRef.current = true;
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('auto'));
@@ -1361,6 +1363,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               phaseDetailRaw.length > 0 && phaseDetailRaw.length < 120 ? phaseDetailRaw : undefined
 
             if (phaseName === 'generation') {
+              if (phaseStatus === 'started') setStreamStatus('thinking')
+              else if (phaseStatus !== 'failed') setStreamStatus('answering')
               const genId = 'lifecycle-generation'
               const status =
                 phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
@@ -1389,6 +1393,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             }
 
             if (phaseName === 'quality_gate') {
+              if (phaseStatus === 'started') setStreamStatus('quality')
               const qgId = 'lifecycle-quality-gate'
               const status =
                 phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
@@ -1502,6 +1507,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
           if (parsed.type === 'token') {
             accumulatedContent += parsed.text;
+            setStreamStatus((prev) => (prev === 'quality' ? prev : 'answering'))
             const now = Date.now();
             if (now - lastTokenFlushTime > 24 || accumulatedContent.length < 40) {
               lastTokenFlushTime = now;
@@ -1677,6 +1683,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     } finally {
       persistChatIdRef.current = targetChatId;
       setIsStreaming(false);
+      setStreamStatus(null);
       abortControllerRef.current = null;
     }
   };
@@ -1699,6 +1706,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const handleStopStreaming = () => {
     abortControllerRef.current?.abort()
     setIsStreaming(false)
+    setStreamStatus(null)
     const chatId = activeChat?.id
     const last = activeChat?.messages.at(-1)
     if (chatId && last?.role === 'assistant' && last.isStreaming) {
@@ -2122,6 +2130,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
           isStreaming={isStreaming}
+          streamStatus={streamStatus}
           philosopherName={models.find((m) => m.id === selectedModelId)?.name}
         />
 
