@@ -179,6 +179,8 @@ export interface Message {
   provider?: 'groq' | 'gemini' | 'openai'
   humanTurn?: HumanTurn
   errorKind?: 'quota' | 'provider' | 'network'
+  /** Soft quality-gate outcome — never drives InquiryStatusCard / errorKind. */
+  qualityGate?: 'passed' | 'failed' | 'skipped'
   checkpoint?: AgentCheckpoint
 }
 

@@ -962,6 +962,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let isStreamComplete = false;
     let backendError = false;
     let streamErrorKind: Message["errorKind"] | undefined;
+    let streamedQualityGate: Message["qualityGate"] | undefined;
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1420,11 +1421,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               streamErrorKind = 'network';
             }
             const safeMessage = parsed.message || 'Philosopher network unavailable.';
+            const hasPublicReply = Boolean(accumulatedContent.trim());
             updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: accumulatedContent.trim()
+              content: hasPublicReply
                 ? sanitizePublicAssistantText(accumulatedContent)
                 : safeMessage,
-              errorKind: streamErrorKind,
+              // Keep markdown bubble when tokens already streamed; InquiryStatusCard would wipe it.
+              ...(hasPublicReply ? {} : { errorKind: streamErrorKind }),
             });
             continue;
           }
@@ -1450,6 +1453,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             accumulatedContent = parsed.fullText || accumulatedContent;
             const qgId = 'lifecycle-quality-gate'
             const gate = (parsed as { qualityGate?: 'passed' | 'failed' | 'skipped' }).qualityGate
+            if (gate === 'passed' || gate === 'failed' || gate === 'skipped') {
+              streamedQualityGate = gate
+            }
             if (gate === 'failed') {
               // Keep failed status — never rewrite to success after a hard gate flag.
               processItems = applyAgentActivity(processItems, {
@@ -1492,6 +1498,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               citations: streamedCitations,
               thinkingProcess: { ...currentThinkingProcess },
               provider: publicProvider,
+              // Soft flag only — never map qualityGate onto errorKind (keeps reply bubble).
+              ...(streamedQualityGate ? { qualityGate: streamedQualityGate } : {}),
             });
             if (publicProvider) streamedProvider = publicProvider;
           }
@@ -1551,6 +1559,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           humanTurn: streamedHumanTurn,
           checkpoint: streamedCheckpoint,
           provider: streamedProvider,
+          ...(streamedQualityGate ? { qualityGate: streamedQualityGate } : {}),
         });
       }
 
@@ -1585,7 +1594,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           thinkingProcess: { ...currentThinkingProcess },
           isStreaming: false,
           isTypingDone: true,
-          errorKind: (err as any).kind || streamErrorKind || 'network',
+          ...(displayContent.trim()
+            ? {}
+            : { errorKind: (err as any).kind || streamErrorKind || 'network' }),
         });
       }
     } finally {

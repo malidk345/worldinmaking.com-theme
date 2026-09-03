@@ -349,6 +349,16 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             ) : null}
           </div>
 
+          {!message.errorKind && message.qualityGate === 'failed' ? (
+            <p className="m-0 mt-1 text-[10px] leading-4 text-muted font-sans">
+              Quality check flagged issues — verify claims and citations.
+            </p>
+          ) : !message.errorKind && message.qualityGate === 'skipped' ? (
+            <p className="m-0 mt-1 text-[10px] leading-4 text-muted font-sans">
+              Quality check skipped — reply shown ungated.
+            </p>
+          ) : null}
+
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
             <div className="mt-3.5 space-y-2 font-sans">
