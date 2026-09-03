@@ -37,7 +37,7 @@ import { runToolLoop, type ToolEvent } from './tools'
 import type { NodeEvent } from './tools/pipeline'
 import type { HostOsAction, HostSnapshot } from './tools/host'
 import { describeWorkspace } from './tools/host'
-import { runQualityGate } from '../../../lib/quality-gate'
+import { buildCriticUserPrompt, parseCriticVerdict, QUALITY_CRITIC_SYSTEM, runQualityGate } from '../../../lib/quality-gate'
 
 /** Re-export for action modules that import depth from the orchestrator surface. */
 export type { ThinkingDepth } from './thinking'
@@ -444,27 +444,35 @@ async function applyQualityGate(
     rawReply: string,
     persona: BotPersona,
     taskType: TaskType,
-    systemPrompt: string,
+    _systemPrompt: string,
     runtimeEnv: EnvStore,
     onLifecycle: BotRunInput['onLifecycle'],
     allowCorrection: boolean
 ): Promise<{ reply: string; qualityGate: QualityGateOutcome }> {
+    void _systemPrompt
     onLifecycle?.({ phase: 'quality_gate', status: 'started' })
     try {
         const report = await runQualityGate(rawReply, persona, taskType, {
             maxRetries: allowCorrection ? 1 : 0,
-            correctionFn: allowCorrection
-                ? async (correctionPrompt: string) => {
+            criticFn: allowCorrection
+                ? async ({ body, issues, persona: criticPersona, task }) => {
                       const correction = await generateWithGateway({
-                          systemPrompt,
-                          userPrompt: correctionPrompt,
-                          taskType,
-                          botName: persona.name,
+                          systemPrompt: QUALITY_CRITIC_SYSTEM,
+                          userPrompt: buildCriticUserPrompt({
+                              body,
+                              issues,
+                              personaName: criticPersona.name,
+                              task,
+                          }),
+                          taskType: task,
+                          botName: criticPersona.name,
                           env: runtimeEnv,
-                          temperature: persona.temperature,
+                          temperature: 0.2,
                       })
                       if (!correction.ok) throw new Error(correction.error)
-                      return correction.text
+                      const parsed = parseCriticVerdict(correction.text)
+                      if (!parsed) throw new Error('quality critic returned no verdict')
+                      return parsed
                   }
                 : undefined,
         })
