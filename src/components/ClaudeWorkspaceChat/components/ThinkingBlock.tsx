@@ -66,12 +66,7 @@ function ToolActivity({ item }: { item: TimelineItem }) {
       ? toolStatusLabel(item.toolName, item.status === 'running' ? 'running' : item.status === 'error' ? 'error' : 'done')
       : item.title || (item.toolName ? toolStatusLabel(item.toolName, item.status) : 'Tool')
   const extra = item.detail && item.detail !== title ? item.detail : undefined
-  const details =
-    item.args || item.result ? (
-      <pre className="m-0 max-h-24 overflow-auto whitespace-pre-wrap break-words text-[11.5px] leading-[1.4] tracking-tight text-muted">
-        {item.result || item.args}
-      </pre>
-    ) : extra ? (
+  const details = extra ? (
       <p className="m-0 text-[11.5px] leading-[1.4] tracking-tight text-muted">{extra}</p>
     ) : null
   return (
