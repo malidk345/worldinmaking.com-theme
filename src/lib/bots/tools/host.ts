@@ -157,6 +157,17 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
     return { path, user, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType, scratchpad }
 }
 
+/** Same-turn memory path: remember writes here so withHostContext and get_workspace see it. */
+export function applyRememberedFact(host: HostSnapshot | undefined, fact: string, category?: string): HostSnapshot | undefined {
+    const trimmed = fact.trim().slice(0, 400)
+    if (!host || !trimmed) return host
+    const memories = [...(host.scratchpad?.memories || [])]
+    if (memories.some((item) => item.fact === trimmed)) return host
+    memories.unshift({ fact: trimmed, category: category?.trim().slice(0, 40) || undefined })
+    host.scratchpad = { ...host.scratchpad, memories: memories.slice(0, 48) }
+    return host
+}
+
 export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }> = [
     { name: 'Home', path: '/home', aliases: ['desktop', 'ana sayfa'] },
     { name: 'Community', path: '/community', aliases: ['forum', 'questions', 'community'] },
