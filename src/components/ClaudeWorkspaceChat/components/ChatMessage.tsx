@@ -397,7 +397,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             <p className="m-0 pt-1 text-[12px] text-muted">Stopped</p>
           ) : null}
 
-          {!isLiveAnswer && (message.isTypingDone || message.stopped) && (
+          {!isLiveAnswer && (message.isTypingDone || message.stopped) && message.errorKind !== 'quota' && (
             <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
               <button
                 onClick={handleCopy}
