@@ -9,6 +9,8 @@ interface SidebarContextPanelMenuProps {
     initialTab?: NotebookShareTab
     isOpen?: boolean
     onOpenChange?: (open: boolean) => void
+    /** Called when the Share button itself is clicked to open (not menu-driven). */
+    onButtonOpen?: (tab: NotebookShareTab) => void
 }
 
 /** Share / publish control in the notebook top bar — LemonDropdown, same pattern as Notebooks. */
@@ -19,6 +21,7 @@ export function SidebarContextPanelMenu({
     initialTab = 'publish',
     isOpen,
     onOpenChange,
+    onButtonOpen,
 }: SidebarContextPanelMenuProps) {
     return (
         <LemonDropdown
@@ -45,6 +48,9 @@ export function SidebarContextPanelMenu({
                 icon={<IconShare />}
                 active={Boolean(isOpen)}
                 tooltip="Publish on your profile, or send the text privately"
+                onClick={() => {
+                    if (!isOpen) onButtonOpen?.('publish')
+                }}
             >
                 <span className="hidden sm:inline">Share</span>
             </LemonButton>
