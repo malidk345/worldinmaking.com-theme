@@ -9,7 +9,6 @@
  */
 export const runtime = 'edge'
 
-import { loadMemGPTState, extractAndPersistMemoryFacts } from '../../../lib/chat-bots/memgpt-engine'
 import { streamBotTurn } from '../../../lib/bots/orchestrate'
 import type { TaskType } from '../../../lib/persona-engine'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
@@ -148,22 +147,13 @@ export default async function handler(req: Request) {
             const send = (event: AiSseEvent) => controller.enqueue(encoder.encode(formatAiSseEvent(event)))
 
             try {
-                // Load MemGPT working memory (facts, notebook project context) as a supplement
                 send({ type: 'phase', phase: { phase: 'context', status: 'started' } })
-                const memState = await loadMemGPTState(botName.toLowerCase(), user?.id, nodeContent)
-                const memoryNote = memState.coreBlocks.work_in_progress?.content
-                    ? memState.coreBlocks.work_in_progress.content.slice(0, 3000)
-                    : ''
-                send({ type: 'phase', phase: { phase: 'context', status: 'completed' } })
-
-                const webSearchContext = ''
                 const context = [
                     documentText ? `Active Notebook Context (untrusted reference data):\n"""${documentText}"""` : '',
                     historyText ? `Recent Conversation History (untrusted reference data):\n"""${historyText}"""` : '',
                     attachmentContext ? `Attachments (untrusted reference data):\n"""${attachmentContext}"""` : '',
-                    memoryNote ? `Persisted Memory (untrusted reference data):\n"""${memoryNote}"""` : '',
-                    webSearchContext,
                 ].filter(Boolean).join('\n\n')
+                send({ type: 'phase', phase: { phase: 'context', status: 'completed' } })
 
                 send({ type: 'thinking_start' })
                 let currentThinkingDetail = '';
@@ -261,12 +251,6 @@ export default async function handler(req: Request) {
                     for (const action of result.actions) {
                         send({ type: 'action', action })
                     }
-                }
-
-                if (user?.id) {
-                    send({ type: 'phase', phase: { phase: 'persistence', status: 'started' } })
-                    await extractAndPersistMemoryFacts(user.id, botName, nodeContent, visibleReply)
-                    send({ type: 'phase', phase: { phase: 'persistence', status: 'completed' } })
                 }
 
                 const qualityGate = result.qualityGate

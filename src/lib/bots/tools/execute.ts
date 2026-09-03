@@ -22,6 +22,7 @@ import {
     executeSearchSite,
     executeSetSystemAppearance,
     executeUpdateNotebookTitle,
+    applyRememberedFact,
     type HostOsAction,
     type HostSnapshot,
 } from './host'
@@ -604,6 +605,7 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const category = asText(args.category, 40).trim() || 'preference'
+            applyRememberedFact(host, fact, category)
             const result = JSON.stringify({ ok: true, remembered: true, fact, category })
             return { ...base, ok: true, result, summary: `Remembered: ${fact}` }
         }

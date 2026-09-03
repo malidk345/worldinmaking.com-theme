@@ -62,4 +62,5 @@ test.describe('Ask AI golden tours', () => {
             'fetch_localhost',
         ])
     })
+
 })
