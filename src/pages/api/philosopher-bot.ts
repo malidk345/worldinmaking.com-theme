@@ -136,7 +136,6 @@ export default async function handler(req: Request) {
                 reply: result.reply,
                 thought: result.thought,
                 thinking: result.thinking,
-                configured: result.configured,
             },
             503,
             rlHeaders
