@@ -14,18 +14,11 @@ import {
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor, setFamilyKeyStart } from './groq-key-cursor'
 import { isAuthDetail, isRateLimitDetail, isRequestTooLargeDetail } from './provider-errors'
+import { scrubSecretMaterial } from 'lib/ai/scrub'
 
 /** Strip API keys / bearer tokens from provider error text before it hits logs or SSE. */
 function scrubProviderDetail(detail: string): string {
-    return detail
-        .replace(/Bearer\s+[A-Za-z0-9._\-]{8,}/gi, 'Bearer [redacted]')
-        .replace(/(?:api[_-]?key|key)=([^&\s"']+)/gi, 'key=[redacted]')
-        .replace(/\bAIza[0-9A-Za-z\-_]{20,}\b/g, '[redacted]')
-        // OpenAI user/project keys and Anthropic (`sk-ant-…`) share the sk- prefix but include hyphens.
-        .replace(/\bsk-(?:ant|proj)-[A-Za-z0-9_\-]{16,}\b/g, '[redacted]')
-        .replace(/\bsk-[A-Za-z0-9]{20,}\b/g, '[redacted]')
-        .replace(/\bgsk_[A-Za-z0-9]{20,}\b/g, '[redacted]')
-        .replace(/\bxai-[A-Za-z0-9]{20,}\b/g, '[redacted]')
+    return scrubSecretMaterial(detail)
 }
 
 

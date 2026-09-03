@@ -1,5 +1,7 @@
 /** User-visible labels for the tool workbench. One map for stream steps and the chat chrome. */
 
+import { scrubSecretMaterial } from 'lib/ai/scrub'
+
 export type ToolRunStatus = 'running' | 'done' | 'error'
 
 const LABELS: Record<string, [string, string, string]> = {
@@ -54,26 +56,26 @@ export function toolResultSummary(name: string, ok: boolean, result: string): st
         try {
             const parsed = JSON.parse(result) as { error?: unknown }
             if (parsed && typeof parsed.error === 'string' && parsed.error.trim()) {
-                return clipSummary(parsed.error, 160)
+                return clipSummary(scrubSecretMaterial(parsed.error), 160)
             }
         } catch {
             /* plain error body */
         }
-        return clipSummary(result, 160) || toolStatusLabel(name, 'error')
+        return clipSummary(scrubSecretMaterial(result), 160) || toolStatusLabel(name, 'error')
     }
     if (name === 'web_search' || name === 'search_site') {
         const lines = result.split('\n').filter((line) => line.trim() && !line.startsWith('UNTRUSTED') && !line.startsWith('Site search'))
-        return clipSummary(lines[0] || 'Search complete')
+        return clipSummary(scrubSecretMaterial(lines[0] || 'Search complete'))
     }
     if (name === 'fetch_url') {
         const first = result.split('\n').find((line) => line.trim() && !line.startsWith('UNTRUSTED'))
-        return clipSummary(first || 'Page fetched')
+        return clipSummary(scrubSecretMaterial(first || 'Page fetched'))
     }
     try {
         const parsed = JSON.parse(result) as { title?: unknown; path?: unknown; name?: unknown; ok?: unknown }
-        if (typeof parsed.title === 'string' && parsed.title.trim()) return clipSummary(parsed.title)
-        if (typeof parsed.path === 'string' && parsed.path.trim()) return parsed.path
-        if (typeof parsed.name === 'string' && parsed.name.trim()) return parsed.name
+        if (typeof parsed.title === 'string' && parsed.title.trim()) return clipSummary(scrubSecretMaterial(parsed.title))
+        if (typeof parsed.path === 'string' && parsed.path.trim()) return scrubSecretMaterial(parsed.path)
+        if (typeof parsed.name === 'string' && parsed.name.trim()) return scrubSecretMaterial(parsed.name)
     } catch {
         /* not json */
     }

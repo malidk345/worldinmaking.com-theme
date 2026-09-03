@@ -3,7 +3,8 @@ import { toPublicProviderLabel } from '../src/lib/ai/contracts'
 import type { HumanTurn, HumanTurnKind } from '../src/lib/bots/agent/human'
 import { publicBotSuccessFields, type BotRunSuccess } from '../src/lib/bots/orchestrate'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
-import { toolStatusLabel } from '../src/lib/bots/tools/labels'
+import { toolStatusLabel, toolResultSummary } from '../src/lib/bots/tools/labels'
+import { scrubSecretMaterial } from '../src/lib/ai/scrub'
 
 test.describe('Public provider labels', () => {
     test('toPublicProviderLabel maps gateway ids to coarse public tiers', () => {
@@ -120,3 +121,44 @@ test.describe('Tool workbench labels', () => {
         }
     })
 })
+
+test.describe('Secret scrubbing on public surfaces', () => {
+    test('scrubSecretMaterial redacts Bearer, sk-, and gsk_ material', () => {
+        const bearer = scrubSecretMaterial('auth failed Bearer FAKESECRET_e4f5g6h7i8j9k0l1m2n3')
+        expect(bearer).toContain('Bearer [redacted]')
+        expect(bearer).not.toMatch(/Bearer\s+sk-abc/)
+
+        const openai = scrubSecretMaterial('upstream: sk-abcdefghijklmnopqrstuvwxyz12')
+        expect(openai).toContain('[redacted]')
+        expect(openai).not.toMatch(/sk-[A-Za-z0-9]{20,}/)
+
+        const groq = scrubSecretMaterial('quota: gsk_abcdefghijklmnopqrstuvwxyz12')
+        expect(groq).toContain('[redacted]')
+        expect(groq).not.toMatch(/gsk_[A-Za-z0-9]{20,}/)
+    })
+
+    test('toolResultSummary scrubs secrets on JSON and plain error paths', () => {
+        const jsonErr = toolResultSummary(
+            'web_search',
+            false,
+            JSON.stringify({ error: 'Provider said Bearer sk-abcdefghijklmnopqrstuvwxyz12' }),
+        )
+        expect(jsonErr).toContain('Bearer [redacted]')
+        expect(jsonErr).not.toMatch(/Bearer\s+sk-/)
+
+        const plain = toolResultSummary('fetch_url', false, 'fail gsk_abcdefghijklmnopqrstuvwxyz12')
+        expect(plain).toContain('[redacted]')
+        expect(plain).not.toMatch(/gsk_[A-Za-z0-9]{20,}/)
+    })
+
+    test('toolResultSummary scrubs secrets on successful raw line paths', () => {
+        const line = toolResultSummary(
+            'web_search',
+            true,
+            '1. Result sk-abcdefghijklmnopqrstuvwxyz12\nmore',
+        )
+        expect(line).toContain('[redacted]')
+        expect(line).not.toMatch(/sk-[A-Za-z0-9]{20,}/)
+    })
+})
+

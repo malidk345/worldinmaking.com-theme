@@ -55,6 +55,7 @@ import type { OSActionCard as OSActionCardType } from './types';
 import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, toPublicProviderLabel, type AiArtifact } from 'lib/ai/contracts';
+import { scrubSecretMaterial } from 'lib/ai/scrub';
 import {
   activityFromToolEvent,
   applyAgentActivity,
@@ -1295,7 +1296,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             const phaseName = parsed.phase?.phase
             const phaseStatus = parsed.phase?.status
             const phaseDetailRaw =
-              typeof parsed.phase?.detail === 'string' ? parsed.phase.detail.trim() : ''
+              typeof parsed.phase?.detail === 'string'
+                ? scrubSecretMaterial(parsed.phase.detail.trim())
+                : ''
             const safeDetail =
               phaseDetailRaw.length > 0 && phaseDetailRaw.length < 120 ? phaseDetailRaw : undefined
 
