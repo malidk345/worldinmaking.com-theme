@@ -337,6 +337,9 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         promptChars: estimateChars([systemPrompt, userPrompt]),
         completionChars: gated.reply.length,
         requestId: input.requestId,
+        qualityGate: gated.qualityGate,
+        interrupted: false,
+        usedTools: false,
     })
 
     return {
@@ -670,6 +673,9 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 promptChars: estimateChars([systemPrompt, userPrompt]),
                 completionChars: gated.reply.length,
                 requestId: input.requestId,
+                qualityGate: gated.qualityGate,
+                interrupted: Boolean(loop.interrupt),
+                usedTools: loop.usedTools || hostCitations.length > 0,
             })
             return {
                 success: true,
@@ -872,6 +878,9 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         promptChars: estimateChars([systemPrompt, userPrompt]),
         completionChars: gated.reply.length,
         requestId: input.requestId,
+        qualityGate: gated.qualityGate,
+        interrupted: false,
+        usedTools: false,
     })
 
     return {
