@@ -1,0 +1,6 @@
+⚡ Bolt: Optimize string and iterable aggregations by avoiding spread to array in reduce
+
+💡 What: Replaced `[...iterable].reduce(...)` with `for...of` loops in `getListItemDepth` (markdown parsing) and `removeInlineRefMark` usage (document modeling).
+🎯 Why: Spreading strings or Sets into arrays just to use `.reduce()` forces the JavaScript engine to allocate unnecessary intermediate arrays, causing O(N) memory churn and increased garbage collection overhead on frequently executed paths.
+📊 Impact: Reduces memory allocation and garbage collection pauses during markdown parsing and document node updates.
+🔬 Measurement: Profile the markdown parsing functions and verify a reduction in array allocations.
