@@ -201,7 +201,7 @@ export function resolveOpenPath(raw: string): string | null {
     return match?.path || null
 }
 
-export function describeWorkspace(host?: HostSnapshot): string {
+export function describeWorkspace(host?: HostSnapshot, opts?: { nodePreview?: boolean }): string {
     const userLine = host?.user?.name || host?.user?.username
         ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.plan ? ` | Plan: ${host.user.plan === 'pro' ? 'PRO (Thinker Pro)' : 'FREE'}` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
         : 'User: Guest / Anonymous'
@@ -210,6 +210,7 @@ export function describeWorkspace(host?: HostSnapshot): string {
         .map((window) => `- ${window.title || 'Window'} (${window.path || '/'})`)
         .join('\n')
     const apps = SITE_APPS.map((app) => `${app.name}: ${app.path}`).join('\n')
+    const nodePreview = Boolean(opts?.nodePreview)
     return [
         userLine,
         `Current path: ${host?.path || '/'}`,
@@ -218,7 +219,12 @@ export function describeWorkspace(host?: HostSnapshot): string {
             ? `Scratchpad Active Documents (${host.scratchpad.documents.length}):\n${host.scratchpad.documents.map((d) => `- ${d.name} (${d.type || 'file'})`).join('\n')}`
             : '',
         host?.scratchpad?.nodes?.length
-            ? `Scratchpad Knowledge Nodes & Citations (${host.scratchpad.nodes.length}):\n${host.scratchpad.nodes.slice(0, 8).map((n) => `- [${n.type.toUpperCase()}] ${n.title ? `${n.title}: ` : ''}"${n.content}"${n.source ? ` (${n.source})` : ''}`).join('\n')}`
+            ? `Scratchpad nodes (${host.scratchpad.nodes.length}):\n${host.scratchpad.nodes.slice(0, 8).map((n) => {
+                  const label = `[${String(n.type || 'note').toUpperCase()}] ${n.title || 'untitled'}`
+                  if (!nodePreview) return `- ${label}${n.source ? ` (${n.source})` : ''}`
+                  const preview = clip(String(n.content || '').trim(), 80)
+                  return `- ${label}${preview ? `: "${preview}"` : ''}${n.source ? ` (${n.source})` : ''}`
+              }).join('\n')}`
             : '',
         host?.scratchpad?.memories?.length
             ? `Remembered facts (${host.scratchpad.memories.length}):\n${host.scratchpad.memories
@@ -244,7 +250,7 @@ export function describeWorkspace(host?: HostSnapshot): string {
 }
 
 export async function executeGetWorkspace(host?: HostSnapshot): Promise<{ ok: boolean; result: string }> {
-    return { ok: true, result: clip(describeWorkspace(host), 4_000) }
+    return { ok: true, result: clip(describeWorkspace(host, { nodePreview: true }), 4_000) }
 }
 
 export async function executeOpenPath(rawPath: string): Promise<{

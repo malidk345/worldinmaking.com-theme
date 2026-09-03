@@ -113,13 +113,27 @@ export function isNotebookTask(prompt: string): boolean {
 }
 
 export const NOTEBOOK_AVAILABLE_INSTRUCTION = `
-A notebook is bound in this OS. You have full authority over the bound notebook:
-- Call insert_notebook_block to append notes or sections.
-- Call rewrite_notebook_document to overhaul, reformat, or restructure the entire note.
-- Call replace_notebook_selection to replace the selected passage.
-- Call update_notebook_title to update or rename the note.
-Do not only dump notes into the chat bubble when the user intends to work on their notebook.
+A notebook is bound in this OS. That is optional background, not the current task.
+- Answer the Query / Prompt first. Do not summarize, quote, or steer toward the notebook or scratchpad unless the query is about them.
+- Use notebook tools only if the query asks to read, edit, append, or save to the notebook.
 `.trim()
+
+/** Short pointer for ordinary chat so a bound notebook does not become the subject. */
+export function clipNotebookBackground(context: string, max = 1200): string {
+    const text = String(context || '').trim()
+    if (!text) return ''
+    const title = text.match(/Bound notebook title:[^\n]+/)?.[0] || ''
+    const outline = text.match(/Outline:\n(?:[^\n]+\n?){0,12}/)?.[0]?.trim() || ''
+    const pointer = [
+        title,
+        outline,
+        '(Notebook body omitted — not the current task. Call read_notebook only if the Query needs it.)',
+    ]
+        .filter(Boolean)
+        .join('\n\n')
+    if (pointer.length <= max) return pointer
+    return `${pointer.slice(0, max - 1)}…`
+}
 
 export const NOTEBOOK_EDITOR_INSTRUCTION = `
 You have full agentic authority to edit, restructure, and rewrite the bound notebook:

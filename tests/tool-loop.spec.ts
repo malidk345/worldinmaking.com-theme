@@ -59,6 +59,8 @@ test.describe('OpenAI tool protocol', () => {
         expect(TOOL_PROTOCOL).toContain('tool channel')
         expect(TOOL_PROTOCOL).toContain('Do not write the user-visible answer in the same step')
         expect(TOOL_PROTOCOL).toContain('Never print <tool_code>')
+        expect(TOOL_PROTOCOL).toContain('A plan is optional')
+        expect(TOOL_PROTOCOL).toContain('Independent reads')
     })
 
     test('strips leaked <tool_code> dumps and recovers todo_write', async () => {
@@ -100,6 +102,20 @@ HAIC paradigmasının felsefi derinliğini Deleuze ile çarpıştırıyorum.`
         expect(result.text).not.toContain('tool_code')
         expect(result.text).not.toContain('todo_write')
         expect(result.text).toContain('Vaka analizi')
+    })
+
+    test('recovers leaked fetch_url and notebook calls from the bubble', () => {
+        const dumped = `fetch_url(url="https://example.com/report")
+read_notebook(notebook_id="nb-1")
+I will summarize after the host returns.`
+        const leaked = parseLeakedToolCalls(dumped)
+        expect(leaked.map((call) => call.name).sort()).toEqual(['fetch_url', 'read_notebook'])
+        const fetchCall = leaked.find((call) => call.name === 'fetch_url')
+        expect(JSON.parse(fetchCall?.argumentsJson || '{}').url).toContain('example.com')
+        const cleaned = stripLeakedToolMarkup(dumped)
+        expect(cleaned).toContain('summarize')
+        expect(cleaned).not.toContain('fetch_url')
+        expect(cleaned).not.toContain('read_notebook')
     })
 
     test('unknown tools fail closed', async () => {

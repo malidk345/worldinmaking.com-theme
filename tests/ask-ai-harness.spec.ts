@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { getAskAiSystemPrompt } from '../src/lib/bots/ask-ai'
+import { buildUserPrompt } from '../src/lib/bots/orchestrate'
 import { needsLiveWeb } from '../src/lib/bots/search-intent'
 import { ALLOWED_TOOL_NAMES, TOOL_PROTOCOL } from '../src/lib/bots/tools/spec'
 import {
@@ -10,7 +11,7 @@ import {
 } from '../src/lib/bots/tools/loop'
 import { applyRememberedFact, describeWorkspace, parseHostSnapshot, resolveOpenPath } from '../src/lib/bots/tools/host'
 import { memoriesForHostContext, withHostContext } from '../src/lib/bots/agent/plan'
-import { toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels'
+import { toolActivityTitle, toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels'
 import { finalizeArtifactTurn } from '../src/lib/artifacts'
 import { executeToolCall } from '../src/lib/bots/tools/execute'
 import { packMessageThinking, unpackMessageThinking } from '../src/lib/chat-thinking'
@@ -71,6 +72,8 @@ test.describe('Ask AI harness', () => {
     test('operator prompt is Ask AI, not a philosopher identity', () => {
         const prompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
         expect(prompt).toContain('WorldInMaking Ask AI')
+        expect(prompt).toContain('QUESTION FIRST')
+        expect(prompt).toContain('optional background')
         expect(prompt).not.toContain('You ARE the assigned philosopher')
         expect(prompt).not.toContain('living, self-aware contemporary mind')
     })
@@ -121,6 +124,38 @@ test.describe('Ask AI harness', () => {
         expect(snapshot).toContain('/home')
         expect(snapshot).toContain('Posts')
         expect(snapshot).toContain('Draft')
+    })
+
+    test('passive OS snapshot lists scratchpad titles, not node bodies', () => {
+        const host = {
+            path: '/desktop',
+            scratchpad: {
+                nodes: [
+                    {
+                        type: 'citation',
+                        title: 'Übermensch',
+                        content: 'A long Nietzsche quote that must not hijack an unrelated question.',
+                        source: 'Zerdüşt',
+                    },
+                ],
+            },
+        }
+        const inventory = describeWorkspace(host)
+        expect(inventory).toContain('Übermensch')
+        expect(inventory).not.toContain('hijack an unrelated question')
+        const preview = describeWorkspace(host, { nodePreview: true })
+        expect(preview).toContain('hijack an unrelated question')
+        const user = buildUserPrompt({
+            question: 'özgürlük nedir?',
+            host,
+            context: 'Notebook background (optional):\n"""Labor notes"""',
+        })
+        const queryAt = user.lastIndexOf('Query / Prompt:')
+        const osAt = user.indexOf('OS snapshot')
+        expect(queryAt).toBeGreaterThan(osAt)
+        expect(user).toContain('Answer this query.')
+        expect(user.slice(queryAt)).toContain('özgürlük nedir?')
+        expect(user.slice(queryAt)).not.toContain('OS snapshot')
     })
 
     test('Ask AI does not mint artifacts from dumped fences', () => {
@@ -176,12 +211,24 @@ test.describe('Ask AI harness', () => {
 
     test('tool workbench labels are status verbs, not Thought', () => {
         expect(toolStatusLabel('web_search', 'running')).toBe('Searching the web')
+        expect(toolActivityTitle('web_search', 'running', JSON.stringify({ query: 'today climate news' }))).toBe(
+            'Searching: today climate news'
+        )
+        expect(toolActivityTitle('fetch_url', 'running', JSON.stringify({ url: 'https://example.com/a' }))).toContain(
+            'example.com'
+        )
+        expect(toolActivityTitle('web_search', 'running')).toBe('Searching the web')
         expect(toolStatusLabel('insert_notebook_block', 'done')).toBe('Wrote to notebook')
         expect(toolStatusLabel('open_path', 'error')).toBe('Could not open window')
         expect(toolResultSummary('create_notebook', true, JSON.stringify({ ok: true, title: 'Field notes' }))).toBe(
             'Field notes'
         )
-        expect(toolResultSummary('web_search', false, JSON.stringify({ error: 'query required' }))).toBe('query required')
+        expect(toolResultSummary('web_search', false, JSON.stringify({ error: 'query required' }))).toBe(
+            'Need a search query'
+        )
+        expect(toolResultSummary('fetch_url', false, JSON.stringify({ error: 'blocked private host' }))).toBe(
+            'That page isn’t reachable'
+        )
     })
 
     test('chat-store packs toolTrace inside thinking_process json', () => {

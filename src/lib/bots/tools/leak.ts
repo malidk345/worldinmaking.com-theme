@@ -11,8 +11,15 @@ const LEAK_BLOCK = /<(tool_code|tool_call|invoke)\b[^>]*>[\s\S]*?<\/\1>/gi
 const LEAK_UNCLOSED = /<(tool_code|tool_call|invoke)\b[^>]*>[\s\S]*$/gi
 const LEAK_FENCE = /```(?:tool_code|tool_call|tool|json)[^\n]*\n[\s\S]*?```/gi
 const CALL_IN_BLOCK = /(?:print\()?[ \t]*(?:default_api\.)?([A-Za-z_][\w]*)\s*\(([\s\S]*)\)[ \t]*\)?/
-const BARE_CALL =
-    /(?:^|\n)[ \t]*(?:print\()?[ \t]*(?:default_api\.)?(todo_write|switch_mode|ask_user|remember|finalize_plan|task|write_scratchpad|web_search|create_artifact)\s*\([\s\S]*?\)[ \t]*\)?[ \t]*(?=\n|$)/gi
+const LEAKED_TOOL_NAMES = Array.from(ALLOWED_TOOL_NAMES).concat('ask_user').sort().join('|')
+const BARE_CALL = new RegExp(
+    `(?:^|\\n)[ \\t]*(?:print\\()?[ \\t]*(?:default_api\\.)?(${LEAKED_TOOL_NAMES})\\s*\\([\\s\\S]*?\\)[ \\t]*\\)?[ \\t]*(?=\\n|$)`,
+    'gi'
+)
+const TRAILING_BARE_CALL = new RegExp(
+    `^\\s*(?:print\\()?[ \\t]*(?:default_api\\.)?(${LEAKED_TOOL_NAMES})\\s*\\([\\s\\S]*$`,
+    'i'
+)
 
 function pythonishToJson(value: string): string {
     return value
@@ -122,7 +129,7 @@ export function stripLeakedToolMarkup(value: string): string {
         .replace(LEAK_FENCE, '')
         .replace(BARE_CALL, '\n')
         .replace(LEAK_UNCLOSED, '')
-        .replace(/^\s*(?:print\()?[ \t]*(?:default_api\.)?(todo_write|switch_mode|ask_user|remember|finalize_plan|task)\s*\([\s\S]*$/i, '')
+        .replace(TRAILING_BARE_CALL, '')
     text = text.replace(/\n{3,}/g, '\n\n').trim()
     return text
 }

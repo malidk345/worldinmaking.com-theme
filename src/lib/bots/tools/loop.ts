@@ -239,6 +239,9 @@ async function openaiCompletion(params: {
                         const piece = delta?.content
                         if (typeof piece === 'string' && piece) {
                             content += piece
+                            if (buckets.size === 0) {
+                                params.onToken?.(piece)
+                            }
                         }
                     } catch {
                         /* ignore */
@@ -250,7 +253,6 @@ async function openaiCompletion(params: {
         }
 
         const toolCalls = assembleToolCalls(buckets)
-        if (toolCalls.length === 0 && content) params.onToken?.(content)
         return { ok: true, content, toolCalls, reasoning: reasoning.trim() || undefined }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
@@ -343,6 +345,9 @@ async function groqCompletion(params: {
                         const piece = delta?.content
                         if (typeof piece === 'string' && piece) {
                             content += piece
+                            if (buckets.size === 0) {
+                                params.onToken?.(piece)
+                            }
                         }
                         const reasonPiece = extractReasoningDelta(delta)
                         if (reasonPiece) {
@@ -359,7 +364,7 @@ async function groqCompletion(params: {
         }
 
         const toolCalls = assembleToolCalls(buckets)
-        if (toolCalls.length === 0 && content) params.onToken?.(content)
+        if (toolCalls.length === 0 && content && buckets.size > 0) params.onToken?.(content)
         return { ok: true, content, toolCalls, reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }

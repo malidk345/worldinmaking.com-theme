@@ -1,7 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { extractUiScreenSource, isAdminNavigationRequest, isUiDesignRequest, UI_DESIGN_INSTRUCTION } from '../src/lib/ai/design-request'
 import { artifactToNotebookMarkdown, messageToNotebookMarkdown } from '../src/lib/notebook-artifact-block'
-import { buildNotebookAgentContext, extractNotebookOutline, isNotebookTask } from '../src/lib/notebook-chat-bind'
+import {
+    buildNotebookAgentContext,
+    clipNotebookBackground,
+    extractNotebookOutline,
+    isNotebookTask,
+    NOTEBOOK_AVAILABLE_INSTRUCTION,
+} from '../src/lib/notebook-chat-bind'
 
 test.describe('notebook chat bind context', () => {
     test('extracts a short outline from markdown headings', () => {
@@ -28,6 +34,22 @@ test.describe('notebook chat bind context', () => {
         expect(isNotebookTask('bu paragrafı düzelt')).toBe(true)
         expect(isNotebookTask('notebooka bunu ekle')).toBe(true)
         expect(isNotebookTask('rewrite the selection')).toBe(true)
+    })
+
+    test('ordinary chat does not receive the full notebook body as the subject', () => {
+        const full = buildNotebookAgentContext({
+            title: 'Labor notes',
+            content: '# Labor\n\n## Wages\n\n' + 'surplus value '.repeat(400),
+        })
+        expect(full).toContain('surplus value')
+        const clipped = clipNotebookBackground(full)
+        expect(clipped).toContain('Labor notes')
+        expect(clipped).toContain('Outline:')
+        expect(clipped).not.toContain('surplus value')
+        expect(clipped).toContain('not the current task')
+        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).toContain('optional background')
+        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).toContain('Answer the Query / Prompt first')
+        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).not.toContain('Do not only dump notes')
     })
 
     test('prefers selection over dumping the whole notebook first', () => {

@@ -3441,10 +3441,109 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     }
 }
 
+.wim-ask-thinking {
+    overflow-anchor: none;
+}
+
+.wim-ask-reply {
+    overflow-anchor: auto;
+}
+
+.wim-think-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 18px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.wim-think-dot {
+    --wim-think-idle: #1e3a8a;
+    --wim-think-live: #1d4ed8;
+    --wim-think-glow: #29dbbb;
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background: var(--wim-think-idle);
+    opacity: 0.28;
+    transform: translateY(0);
+    animation: wim-think-dot 1.8s ease-in-out infinite;
+}
+
+.dark .wim-think-dot {
+    --wim-think-idle: #93c5fd;
+    --wim-think-live: #60a5fa;
+}
+
+.wim-think-dot:nth-child(2) {
+    animation-delay: 0.22s;
+}
+
+.wim-think-dot:nth-child(3) {
+    animation-delay: 0.44s;
+}
+
+@keyframes wim-think-dot {
+    0%,
+    70%,
+    100% {
+        opacity: 0.28;
+        background: var(--wim-think-idle);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+    16%,
+    28% {
+        opacity: 1;
+        background: var(--wim-think-live);
+        box-shadow: 0 0 5px 0 var(--wim-think-glow);
+        transform: translateY(-0.5px);
+    }
+}
+
+.wim-think-desktop {
+    display: inline-block;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #0a1020;
+    background-image: url('/images/thinking/desktop-think-sheet.png');
+    background-repeat: no-repeat;
+    background-size: 600% 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    animation: wim-think-desktop 3.6s steps(6) infinite;
+}
+
+@keyframes wim-think-desktop {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -600% 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .group\/activity-header span,
     [data-activity-id] {
         animation: none !important;
         transition: none !important;
+    }
+
+    .wim-think-desktop {
+        animation: none !important;
+        background-position: 0 0;
+    }
+
+    .wim-think-dot {
+        animation: none !important;
+        opacity: 0.55;
+        background: var(--wim-think-live);
+        box-shadow: none;
+        transform: none;
     }
 }

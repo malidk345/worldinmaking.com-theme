@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react'
 import { ModelOption, ThinkingProcess, ToolTrace } from '../types'
-import { toolStatusLabel } from '../../../lib/bots/tools/labels'
+import { toolActivityTitle, toolStatusLabel } from '../../../lib/bots/tools/labels'
 import { scrubSecretMaterial } from '../../../lib/ai/scrub'
 import {
   buildThinkingTimeline,
-  shouldShowLiveThinkingIndicator,
   type TimelineItem,
 } from '../../../lib/bots/agent/timeline'
 import dayjs from 'dayjs'
 import { IconBrain, IconWrench, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight } from '@posthog/icons'
 import { Activity, ShimmeringContent, type ActivityStatus } from './activity/ActivityPrimitives'
+import { ThinkingBangDots } from './ThinkingBangDots'
 
 function philosopherSurname(name?: string): string {
   if (!name) return 'AI'
@@ -42,32 +42,40 @@ function toolIcon(name?: string) {
   return <IconWrench className={ICON} />
 }
 
-function ReasoningActivity({ item, isLive }: { item: TimelineItem; isLive: boolean }) {
+function ReasoningActivity({
+  item,
+  isLive,
+  durationSeconds,
+}: {
+  item: TimelineItem
+  isLive: boolean
+  durationSeconds?: number
+}) {
   const body = scrubSecretMaterial((item.detail || item.title || '').trim())
   if (!body) return null
-  const live = isLive && item.status === 'running'
   return (
     <Activity
       id={item.id}
-      title={live ? body : 'Thought'}
-      status={live ? 'in_progress' : 'completed'}
+      title={isLive ? body : collapsedThoughtTitle(durationSeconds)}
+      status={isLive ? 'in_progress' : 'completed'}
       icon={<IconBrain className={ICON} />}
       animate={false}
-      allowWrap={live}
-      compactBody
-      substeps={live ? [] : [body]}
+      allowWrap={isLive}
+      compactBody={isLive}
+      substeps={isLive ? [] : [body]}
     />
   )
 }
 
 function ToolActivity({ item }: { item: TimelineItem }) {
   const live = item.status === 'running'
-  const rawTitle =
-    item.toolName === 'web_search' || item.toolName === 'search_site' || item.toolName === 'fetch_url'
-      ? toolStatusLabel(item.toolName, item.status === 'running' ? 'running' : item.status === 'error' ? 'error' : 'done')
-      : item.title || (item.toolName ? toolStatusLabel(item.toolName, item.status) : 'Tool')
+  const status = live ? 'running' : item.status === 'error' ? 'error' : 'done'
+  const labeled = item.toolName ? toolActivityTitle(item.toolName, status, item.args) : ''
+  const rawTitle = live
+    ? labeled || item.title || 'Tool'
+    : item.title || labeled || (item.toolName ? toolStatusLabel(item.toolName, status) : 'Tool')
   const title = scrubSecretMaterial(rawTitle)
-  const rawExtra = item.detail && item.detail !== rawTitle ? item.detail : undefined
+  const rawExtra = item.detail && item.detail !== rawTitle && item.detail !== labeled ? item.detail : undefined
   const extra = rawExtra ? scrubSecretMaterial(rawExtra) : undefined
   const details = extra ? (
       <p className="m-0 text-[11.5px] leading-[1.4] tracking-tight text-muted">{extra}</p>
@@ -84,12 +92,16 @@ function ToolActivity({ item }: { item: TimelineItem }) {
   )
 }
 
-function PlanningActivity({ item }: { item: TimelineItem }) {
+function PlanningActivity({ item, isLive }: { item: TimelineItem; isLive: boolean }) {
   const todos = item.todos || []
   const completed = todos.filter((todo) => todo.status === 'completed').length
-  const live = item.status === 'running' || todos.some((todo) => todo.status === 'in_progress')
+  const live = isLive || item.status === 'running' || todos.some((todo) => todo.status === 'in_progress')
   const hasMultiple = todos.length > 1
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(isLive)
+
+  React.useEffect(() => {
+    setExpanded(isLive)
+  }, [isLive])
 
   return (
     <div
@@ -158,23 +170,24 @@ function PlanningActivity({ item }: { item: TimelineItem }) {
   )
 }
 
-function TimelineRow({ item, isLive }: { item: TimelineItem; isLive: boolean }) {
-  if (item.kind === 'node') return null
-  if (item.kind === 'plan') return <PlanningActivity item={item} />
-  if (item.kind === 'tool') return <ToolActivity item={item} />
-  return <ReasoningActivity item={item} isLive={isLive} />
+function collapsedThoughtTitle(durationSeconds?: number): string {
+  const seconds = Math.round(Number(durationSeconds) || 0)
+  return seconds >= 1 ? `Thought · ${seconds}s` : 'Thought'
 }
 
-function LiveIndicator({ label }: { label: string }) {
-  return (
-    <Activity
-      id="live-thinking-indicator"
-      title={`${label}${label.endsWith('…') || label.endsWith('...') ? '' : '…'}`}
-      status="in_progress"
-      icon={<IconBrain className={ICON} />}
-      animate
-    />
-  )
+function TimelineRow({
+  item,
+  isLive,
+  durationSeconds,
+}: {
+  item: TimelineItem
+  isLive: boolean
+  durationSeconds?: number
+}) {
+  if (item.kind === 'node') return null
+  if (item.kind === 'plan') return <PlanningActivity item={item} isLive={isLive} />
+  if (item.kind === 'tool') return <ToolActivity item={item} />
+  return <ReasoningActivity item={item} isLive={isLive} durationSeconds={durationSeconds} />
 }
 
 interface ThinkingBlockProps {
@@ -201,32 +214,46 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
 
   const surname = philosopherSurname(model?.name)
   const formattedTime = formatExactTime(timestamp)
+  const lastReasoningId = [...items].reverse().find((item) => item.kind === 'reasoning')?.id
 
   return (
-    <div className="w-full max-w-full font-sans text-secondary space-y-1 mb-1">
-      {model && (
+    <div className="wim-ask-thinking w-full max-w-full font-sans text-secondary space-y-1 mb-0">
+      {(model || isLive) && (
         <div className="flex items-center gap-1.5 w-full min-w-0">
-          <div className="size-6 shrink-0 rounded-full overflow-hidden border border-primary bg-accent">
-            {model.avatarUrl ? (
-              <img src={model.avatarUrl} alt={surname} className="size-full object-cover object-top" />
-            ) : (
-              <span className={`flex size-full items-center justify-center text-[10px] font-bold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
-                {model.initials || surname.slice(0, 2)}
+          {model && (
+            <>
+              <div className="size-6 shrink-0 rounded-full overflow-hidden border border-primary bg-accent">
+                {model.avatarUrl ? (
+                  <img src={model.avatarUrl} alt={surname} className="size-full object-cover object-top" />
+                ) : (
+                  <span className={`flex size-full items-center justify-center text-[10px] font-bold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
+                    {model.initials || surname.slice(0, 2)}
+                  </span>
+                )}
+              </div>
+              <strong className="font-semibold text-[13px] text-primary leading-none">{surname}</strong>
+              <span className="text-[11px] text-muted leading-none" suppressHydrationWarning>
+                {formattedTime}
               </span>
-            )}
-          </div>
-          <strong className="font-semibold text-[13px] text-primary leading-none">{surname}</strong>
-          <span className="text-[11px] text-muted leading-none" suppressHydrationWarning>
-            {formattedTime}
-          </span>
+            </>
+          )}
+          {isLive && (
+            <span className="ml-auto shrink-0 flex items-center">
+              <ThinkingBangDots />
+            </span>
+          )}
         </div>
       )}
 
       <div className="flex flex-col gap-1 w-full min-w-0">
         {items.map((item) => (
-          <TimelineRow key={item.id} item={item} isLive={isLive} />
+          <TimelineRow
+            key={item.id}
+            item={item}
+            isLive={isLive}
+            durationSeconds={item.id === lastReasoningId ? thinking.durationSeconds : undefined}
+          />
         ))}
-        {shouldShowLiveThinkingIndicator(items, isLive) && <LiveIndicator label="Thinking" />}
       </div>
     </div>
   )

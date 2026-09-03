@@ -25,7 +25,7 @@ import {
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
-import { ChatInput } from './components/ChatInput';
+import { ASK_STARTERS, ChatInput } from './components/ChatInput';
 import { ArtifactsPanel } from './components/ArtifactsPanel';
 import { ArtifactWindowContent } from './components/ArtifactWindowContent';
 import { SourcesPanel } from './components/SourcesPanel';
@@ -2125,13 +2125,28 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [overflow-anchor:none] [-webkit-overflow-scrolling:touch]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
               <h1 className="m-0 text-center text-[22px] sm:text-[24px] font-medium tracking-tight text-primary">
                 How can I help?
               </h1>
+              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                {ASK_STARTERS.map((starter) => (
+                  <button
+                    key={starter.label}
+                    type="button"
+                    onClick={() => {
+                      setComposerDraft(starter.prompt)
+                      setComposerDraftNonce((n) => n + 1)
+                    }}
+                    className="rounded-full border border-primary/50 bg-primary/80 px-3 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
+                  >
+                    {starter.label}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40">
@@ -2156,6 +2171,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onExecuteOSAction={executeOSAction}
                   onHumanRespond={handleHumanRespond}
                   onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
+                  onOpenByok={() => setSidebarOpen(true)}
                   typewriterSpeed={settings.typewriterSpeed}
                 />
               ))}
