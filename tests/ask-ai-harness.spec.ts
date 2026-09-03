@@ -8,7 +8,8 @@ import {
     publicTextFromRound,
     resolveGroqToolModels,
 } from '../src/lib/bots/tools/loop'
-import { describeWorkspace, parseHostSnapshot, resolveOpenPath } from '../src/lib/bots/tools/host'
+import { applyRememberedFact, describeWorkspace, parseHostSnapshot, resolveOpenPath } from '../src/lib/bots/tools/host'
+import { memoriesForHostContext, withHostContext } from '../src/lib/bots/agent/plan'
 import { toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels'
 import { finalizeArtifactTurn } from '../src/lib/artifacts'
 import { executeToolCall } from '../src/lib/bots/tools/execute'
@@ -315,5 +316,50 @@ test.describe('Ask AI harness', () => {
         } finally {
             globalThis.fetch = original
         }
+    })
+
+    test('remember writes the host scratchpad that withHostContext reads', async () => {
+        const host = parseHostSnapshot({
+            scratchpad: { memories: [{ fact: 'Prefer Turkish', category: 'preference' }] },
+        })
+        const executed = await executeToolCall(
+            {
+                id: 'r1',
+                name: 'remember',
+                argumentsJson: JSON.stringify({ fact: 'Call me Ali', category: 'name' }),
+            },
+            undefined,
+            host,
+            'ask'
+        )
+        expect(executed.ok).toBe(true)
+        expect(host?.scratchpad?.memories?.map((item) => item.fact)).toEqual(['Call me Ali', 'Prefer Turkish'])
+        const again = await executeToolCall(
+            {
+                id: 'r2',
+                name: 'remember',
+                argumentsJson: JSON.stringify({ fact: 'Call me Ali', category: 'name' }),
+            },
+            undefined,
+            host,
+            'ask'
+        )
+        expect(again.ok).toBe(true)
+        expect(host?.scratchpad?.memories?.filter((item) => item.fact === 'Call me Ali')).toHaveLength(1)
+        const snapshot = describeWorkspace(host)
+        expect(snapshot).toContain('Call me Ali')
+        expect(snapshot).toContain('Prefer Turkish')
+        const memories = memoriesForHostContext(host?.scratchpad?.memories, [
+            { note: 'Call me Ali', source: 'memory' },
+            { note: 'scratch note', source: 'tool' },
+        ])
+        expect(memories.map((item) => item.fact)).toEqual(['Call me Ali', 'Prefer Turkish'])
+        const folded = withHostContext([{ role: 'system', content: 'You are Ask AI' }], {
+            todos: [],
+            memories,
+        })
+        expect(folded[0].content).toContain('<memory>')
+        expect(folded[0].content).toContain('Call me Ali')
+        expect(applyRememberedFact(undefined, 'x')).toBeUndefined()
     })
 })
