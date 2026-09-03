@@ -906,14 +906,6 @@ export function App() {
                     writeNotebookChromeSettings(merged)
                     setChrome(merged)
                   }}
-                  onShare={(tab) => {
-                    setShareTab(tab || 'private')
-                    setShowShareModal(true)
-                  }}
-                  shareOpen={showShareModal}
-                  onShareOpenChange={setShowShareModal}
-                  shareTab={shareTab}
-                  onPublish={handlePublish}
                   people={presence.people}
                 />
                 <div
@@ -990,9 +982,14 @@ export function App() {
                       }}
                     />
                     <SidebarContextPanelMenu
-                      onOpenShare={(tab) => {
-                        setShareTab(tab || 'publish')
-                        setShowShareModal(true)
+                      notebookId={currentNotebook.id}
+                      notebookTitle={currentNotebook.title}
+                      onPublish={handlePublish}
+                      initialTab={shareTab}
+                      isOpen={showShareModal}
+                      onOpenChange={(open) => {
+                        setShowShareModal(open)
+                        if (!open) setShareTab('private')
                       }}
                     />
                   </div>
