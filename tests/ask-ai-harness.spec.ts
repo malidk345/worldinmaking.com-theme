@@ -14,8 +14,7 @@ import { finalizeArtifactTurn } from '../src/lib/artifacts'
 import { executeToolCall } from '../src/lib/bots/tools/execute'
 import { packMessageThinking, unpackMessageThinking } from '../src/lib/chat-thinking'
 import { QUALITY_GATE_UNAVAILABLE_REPLY } from '../src/lib/bots/orchestrate'
-import { modeAfterResume, parseAgentCheckpoint, parseResumeAction } from '../src/lib/bots/agent/checkpoint'
-import { requestPlanApproval, type AgentPipelineParams, type AgentState } from '../src/lib/bots/tools/pipeline'
+import { parseAgentCheckpoint } from '../src/lib/bots/agent/checkpoint'
 import {
     assertPublicHostname,
     fetchPublicUrl,
@@ -217,20 +216,20 @@ test.describe('Ask AI harness', () => {
         expect(parseHostSnapshot(null)).toBeUndefined()
     })
 
-    test('finalize_plan interrupt waits for run or revise', () => {
-        const state = {
-            todos: [{ id: 'task_1', title: 'Draft the post', status: 'in_progress' }],
-        } as AgentState
-        const body = requestPlanApproval(state, {} as AgentPipelineParams, 'Draft then publish')
-        expect(JSON.parse(body).awaiting).toBe('plan_approval')
-        expect(state.interrupt?.kind).toBe('plan_approval')
-        expect(state.interrupt?.status).toBe('pending')
-        expect(state.interrupt?.plan?.[0].title).toBe('Draft the post')
-        expect(state.agentMode).toBeUndefined()
-        expect(parseResumeAction('answer')).toBeUndefined()
-        expect(parseResumeAction('run')).toBe('run')
-        expect(modeAfterResume('run', 'plan')).toBe('execute')
-        expect(modeAfterResume('revise', 'plan')).toBe('plan')
+    test('finalize_plan is allowed in plan mode and does not wait for the user', async () => {
+        const ready = await executeToolCall(
+            {
+                id: 'f1',
+                name: 'finalize_plan',
+                argumentsJson: JSON.stringify({ summary: 'Ready' }),
+            },
+            undefined,
+            undefined,
+            'plan'
+        )
+        expect(ready.ok).toBe(true)
+        expect(ready.result).not.toContain('awaiting')
+        expect(ready.result).not.toContain('plan_approval')
     })
 
     test('plan-approval checkpoint replays without ask_user leftovers', () => {
