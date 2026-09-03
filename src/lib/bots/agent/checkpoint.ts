@@ -1,7 +1,7 @@
 /**
  * Edge-safe graph checkpoint (LangGraph interrupt, without LangGraph).
  *
- * On plan approval the host snapshots the loop and stops. finalize_plan starts execution in the same turn.
+ * finalize_plan interrupts and snapshots. ResumeAction run enters execute; revise stays in plan.
  * The next request loads this snapshot and continues ROOT → TOOLS from the
  * same messages, todos, and mode. It does not start a new user turn.
  */
