@@ -1,4 +1,5 @@
 import type { ChartSpec } from './chart-artifacts'
+import { scrubSecretMaterial } from './scrub'
 
 /**
  * Shared wire contract for every AI streaming surface.
@@ -202,8 +203,24 @@ export type AiSseEvent =
           retryable?: boolean
       }
 
+/** Deep-walk an SSE payload and scrub every string leaf before wire serialize. */
+export function scrubAiSsePayload<T>(value: T): T {
+    return scrubJsonValue(value) as T
+}
+
+function scrubJsonValue(value: unknown): unknown {
+    if (typeof value === 'string') return scrubSecretMaterial(value)
+    if (value === null || typeof value !== 'object') return value
+    if (Array.isArray(value)) return value.map(scrubJsonValue)
+    const out: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        out[key] = scrubJsonValue(child)
+    }
+    return out
+}
+
 export function formatAiSseEvent(event: AiSseEvent): string {
-    return `data: ${JSON.stringify(event)}\n\n`
+    return `data: ${JSON.stringify(scrubAiSsePayload(event))}\n\n`
 }
 
 /** Parse one complete SSE frame. Incomplete frames return null. */

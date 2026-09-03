@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { toPublicProviderLabel } from '../src/lib/ai/contracts'
+import { formatAiSseEvent, toPublicProviderLabel } from '../src/lib/ai/contracts'
 import type { HumanTurn, HumanTurnKind } from '../src/lib/bots/agent/human'
 import { publicBotSuccessFields, type BotRunSuccess } from '../src/lib/bots/orchestrate'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
@@ -160,5 +160,83 @@ test.describe('Secret scrubbing on public surfaces', () => {
         expect(line).toContain('[redacted]')
         expect(line).not.toMatch(/sk-[A-Za-z0-9]{20,}/)
     })
-})
 
+    test('formatAiSseEvent scrubs secrets in tool/phase/error/activity string fields', () => {
+        const secret = 'sk-abcdefghijklmnopqrstuvwxyz12'
+        const bearer = `Bearer ${secret}`
+
+        const toolFrame = formatAiSseEvent({
+            type: 'tool',
+            tool: {
+                id: 't1',
+                name: 'web_search',
+                status: 'error',
+                detail: `fail ${bearer}`,
+                arguments: `{"q":"${secret}"}`,
+                result: `upstream ${secret}`,
+            },
+        })
+        expect(toolFrame.startsWith('data: ')).toBe(true)
+        expect(toolFrame).toContain('[redacted]')
+        expect(toolFrame).not.toContain(secret)
+        expect(toolFrame).not.toMatch(/Bearer\s+sk-/)
+
+        const phaseFrame = formatAiSseEvent({
+            type: 'phase',
+            phase: {
+                phase: 'generation',
+                status: 'failed',
+                detail: `Provider said ${bearer}`,
+            },
+        })
+        expect(phaseFrame).toContain('[redacted]')
+        expect(phaseFrame).not.toContain(secret)
+
+        const errorFrame = formatAiSseEvent({
+            type: 'error',
+            code: 'PROVIDER_UNAVAILABLE',
+            message: `auth failed ${secret}`,
+            retryable: true,
+        })
+        expect(errorFrame).toContain('[redacted]')
+        expect(errorFrame).not.toContain(secret)
+        expect(errorFrame).toContain('"retryable":true')
+
+        const activityFrame = formatAiSseEvent({
+            type: 'activity',
+            activity: {
+                seq: 1,
+                kind: 'tool',
+                id: 'a1',
+                status: 'error',
+                detail: bearer,
+                result: secret,
+            },
+        })
+        expect(activityFrame).toContain('[redacted]')
+        expect(activityFrame).not.toContain(secret)
+        expect(activityFrame).toContain('"seq":1')
+    })
+
+    test('formatAiSseEvent preserves non-string leaves on token and usage events', () => {
+        const tokenFrame = formatAiSseEvent({ type: 'token', text: 'hello' })
+        expect(tokenFrame).toBe('data: {"type":"token","text":"hello"}\n\n')
+
+        const usageFrame = formatAiSseEvent({
+            type: 'token_usage',
+            snapshot: {
+                subject: 'user',
+                tier: 'free',
+                usedTokens: 42,
+                limitTokens: 100,
+                remainingTokens: 58,
+                percentage: 42,
+                allowed: false,
+                resetAtUtc: '2026-09-03T00:00:00.000Z',
+            },
+        })
+        expect(usageFrame).toContain('"usedTokens":42')
+        expect(usageFrame).toContain('"allowed":false')
+        expect(usageFrame).not.toContain('[redacted]')
+    })
+})
