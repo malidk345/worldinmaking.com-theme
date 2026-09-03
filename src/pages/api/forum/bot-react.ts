@@ -8,7 +8,8 @@ import { createForumReply } from 'lib/bots/actions/forum'
 import { instructionForForumMove, pickForumMove } from 'lib/bots/forum-moves'
 import { pickRespondent, shouldReactToHuman } from 'lib/bots/forum-react'
 import { loadForumThread } from 'lib/bots/forum-thread'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp } from 'lib/bots/request-validation'
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -21,8 +22,9 @@ function json(body: Record<string, unknown>, status = 200) {
 export default async function handler(req: Request) {
     if (req.method !== 'POST') return json({ success: false, error: 'Method not allowed' }, 405)
 
+    const env = getRuntimeEnv()
     const ip = getClientIp(req)
-    const burst = checkRateLimit(`forum-react:${ip}`, 20, 60 * 60 * 1000)
+    const burst = await checkRateLimitDurable(`forum-react:${ip}`, 20, 60 * 60 * 1000, env)
     if (!burst.allowed) {
         return json({ success: false, skipped: true, reason: 'rate_limited' }, 200)
     }
@@ -33,7 +35,7 @@ export default async function handler(req: Request) {
         return json({ success: false, error: 'postId required' }, 400)
     }
 
-    const recent = checkRateLimit(`forum-react-post:${postId}`, 1, 6 * 60 * 1000)
+    const recent = await checkRateLimitDurable(`forum-react-post:${postId}`, 1, 6 * 60 * 1000, env)
     if (!recent.allowed) {
         return json({ success: true, skipped: true, reason: 'cooldown' }, 200)
     }
