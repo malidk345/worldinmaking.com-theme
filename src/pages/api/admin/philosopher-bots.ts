@@ -8,12 +8,13 @@ export const runtime = 'edge'
 
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
 import { parseTickRequest, runPhilosopherBotTick } from 'lib/bots/philosopher-tick'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -33,9 +34,31 @@ export default async function handler(req: Request) {
     const auth = await verifyAdminRequest(req)
     if (!auth.ok) return json({ success: false, error: auth.error }, auth.status)
 
-    const rate = checkRateLimit(`admin-cron:${auth.userId}`, 24, 60 * 60 * 1000)
+    const rate = await checkRateLimitDurable(
+        `admin-cron:${auth.userId}`,
+        24,
+        60 * 60 * 1000,
+        getRuntimeEnv(),
+        { failClosed: true }
+    )
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
     if (!rate.allowed) {
-        return json({ success: false, error: 'Rate limited', retryAfterSec: rate.retryAfterSec }, 429)
+        return json(
+            { success: false, error: 'Rate limited', code: 'RATE_LIMITED', retryAfterSec: rate.retryAfterSec },
+            429,
+            buildRateLimitHeaders(rate)
+        )
     }
 
     const tickReq = parseTickRequest(await readJsonBody(req), new URL(req.url))
@@ -44,7 +67,8 @@ export default async function handler(req: Request) {
     try {
         const result = await runPhilosopherBotTick({ ...tickReq, phase })
         return json(result, 200)
-    } catch (err: any) {
-        return json({ success: false, phase, error: err?.message || 'cron failed' }, 200)
+    } catch (err: unknown) {
+        console.error('[admin/philosopher-bots] tick failed', err)
+        return json({ success: false, phase, error: 'cron failed', code: 'CRON_FAILED' }, 200)
     }
 }
