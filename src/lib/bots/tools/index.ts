@@ -1,5 +1,5 @@
 export { executeToolCall, type ToolCall, type ToolExecution } from './execute'
-export { parseHostSnapshot, resolveOpenPath, SITE_APPS, type HostSnapshot } from './host'
+export { applyRememberedFact, parseHostSnapshot, resolveOpenPath, SITE_APPS, type HostSnapshot } from './host'
 export { isBlockedFetchUrl, isPrivateIPv4 } from './fetch-url'
 export { openaiMessagesToGeminiContents } from './gemini'
 export { compactToolHistory, formatHistoryContent, type HistoryTurn } from './history'
