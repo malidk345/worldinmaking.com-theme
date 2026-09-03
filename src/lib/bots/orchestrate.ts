@@ -612,7 +612,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             const gatedReply =
                 loop.interrupt && !rawReply.trim()
                     ? rawReply
-                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
+                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
                 ok: true,
                 stream: true,
@@ -812,7 +812,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
-    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
+    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
 
     recordAiTurn({
         ok: true,
