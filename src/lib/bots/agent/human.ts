@@ -3,7 +3,7 @@
  * The graph stops. The client shows a card. The next turn resumes.
  */
 
-export type HumanTurnKind = 'ask' | 'plan_approval'
+export type HumanTurnKind = 'plan_approval'
 
 export type HumanQuestion = {
     id: string
