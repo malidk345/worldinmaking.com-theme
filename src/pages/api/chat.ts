@@ -84,7 +84,7 @@ function readByokEnv(body: Record<string, unknown>): Record<string, string> {
             ? (raw as Record<string, unknown>)
             : null
 
-    const take = (provider: 'groq' | 'gemini' | 'openai' | 'anthropic', envName: string) => {
+    const take = (provider: 'groq' | 'gemini' | 'openai' | 'anthropic' | 'deepseek', envName: string) => {
         if (!fromBody) return
         const candidate = fromBody[provider]
         if (typeof candidate === 'string' && candidate.trim()) {
@@ -96,6 +96,7 @@ function readByokEnv(body: Record<string, unknown>): Record<string, string> {
     take('gemini', 'GEMINI_API_KEY')
     take('openai', 'OPENAI_API_KEY')
     take('anthropic', 'ANTHROPIC_API_KEY')
+    take('deepseek', 'DEEPSEEK_API_KEY')
     return byokEnv
 }
 
@@ -559,7 +560,7 @@ export default async function handler(req: Request) {
                 }
 
                 // Record & stream real token usage to update client sidebar
-                if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY) {
+                if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY && !byokEnv.DEEPSEEK_API_KEY) {
                     const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
                     const totalTurnTokens = Math.max(10, inTokens + outTokens)
