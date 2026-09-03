@@ -4,7 +4,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import type { StoredNotebook } from './notebookStorage'
 import { getNotebook, getNotebookPublicUrl } from './notebookStorage'
 import { pullPublishedNotebook } from './notebookRemote'
-import { notebookCommentSlug, pickPublicNotebook } from './notebookPublicMarkdown'
+import { documentMarkdown, notebookCommentSlug, pickPublicNotebook } from './notebookPublicMarkdown'
 import { Avatar, Questions } from 'components/Squeak'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
@@ -43,7 +43,7 @@ function authorName(notebook: StoredNotebook): string {
  */
 export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookPublicViewProps): JSX.Element {
     const { addToast } = useToast()
-    const displayTitle = notebook.publish?.publicTitle || notebook.title
+    const displayTitle = String(notebook.publish?.publicTitle || notebook.title || '').replace(/^#+\s+/, '').trim()
     const subtitle = notebook.publish?.subtitle
     const coverUrl = notebook.publish?.coverUrl
     const category = notebook.publish?.category
@@ -52,6 +52,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     const handle = person?.username || ''
     const href = handle ? profileHref(handle) : ''
     const postedAt = notebook.createdAt || notebook.updatedAt
+    const bodyMarkdown = documentMarkdown(documentMarkdown(notebook.content || '', displayTitle), notebook.title || displayTitle)
 
     const handleCopyLink = async () => {
         try {
@@ -63,9 +64,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     }
 
     return (
-        <div data-scheme="primary" className="bg-primary text-primary min-h-full pb-16">
-            <div className="flex flex-col w-full max-w-3xl mx-auto">
-                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
+        <div data-scheme="primary" className="NotebookPublicView bg-primary text-primary min-h-full pb-16">
+            <div className="flex flex-col w-full p-4">
+                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-2">
                     {href ? (
                         <Link className="flex items-center relative !no-underline hover:!underline" to={href}>
                             <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
@@ -109,10 +110,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         ) : null}
                     </div>
                 </div>
-
-                <div className="pb-4 min-w-0 max-w-full box-border pl-5 pr-8">
-                    <h3 className="text-base font-semibold !m-0 pb-1 leading-5 break-words">{displayTitle}</h3>
-                    {subtitle ? <p className="text-sm text-secondary m-0 mb-3 leading-relaxed">{subtitle}</p> : null}
+                    <article className="NotebookPublicView__article prose prose-sm dark:prose-invert max-w-none font-normal">
+                    <p className="NotebookPublicView__title">{displayTitle}</p>
+                    {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
                             <ZoomImage>
@@ -120,12 +120,12 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                             </ZoomImage>
                         </div>
                     ) : null}
-                    {notebook.content?.trim() ? (
+                    {bodyMarkdown ? (
                         <React.Suspense
                             fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
                         >
                             <MarkdownNotebook
-                                value={notebook.content}
+                                value={bodyMarkdown}
                                 mode="view"
                                 spellCheck={false}
                                 autoFocus={false}
@@ -135,9 +135,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     ) : (
                         <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
                     )}
-                </div>
+                    </article>
 
-                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 px-4 pb-8">
+                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 pb-8">
                     <Questions
                         slug={notebookCommentSlug(notebook.short_id || notebook.id)}
                         subject={false}

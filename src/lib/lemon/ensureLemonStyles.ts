@@ -71,6 +71,94 @@ const NOTEBOOK_PALETTE_CSS = `
 .notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; }
 .notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 1rem; }
 .notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.125rem; }
+.notebook-app-scope .NotebookPublicView {
+  /* Same stack as tailwind.config.js fontFamily.sans / blog ReaderView */
+  --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+  --font-title: var(--font-sans);
+  --font-button: var(--font-sans);
+  --markdown-notebook-inline-control-width: 0px;
+  --markdown-notebook-inline-control-gap: 0px;
+  --markdown-notebook-content-offset: 0px;
+  --color-text-primary: rgb(var(--text-primary));
+  --text-3000: rgb(var(--text-primary));
+  --tw-prose-body: rgb(var(--text-primary));
+  --tw-prose-headings: rgb(var(--text-primary));
+  --tw-prose-bold: rgb(var(--text-primary));
+  --tw-prose-quotes: rgb(var(--text-primary));
+  font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block,
+.notebook-app-scope .NotebookPublicView .prose {
+  font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
+  letter-spacing: normal !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+.notebook-app-scope[data-notebook-font='sm'] .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope[data-notebook-font='md'] .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope[data-notebook-font='lg'] .NotebookPublicView .MarkdownNotebook {
+  font-size: 15px !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block {
+  grid-column: 1;
+  padding-left: 0;
+  padding-right: 0;
+  line-height: 1.5 !important;
+  color: rgb(var(--text-primary)) !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__canvas {
+  max-width: none;
+  margin: 0;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__insert-boundary {
+  height: 0;
+  min-height: 0;
+}
+.notebook-app-scope .NotebookPublicView__article,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__main,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__canvas,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-row {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  max-width: none !important;
+}
+.notebook-app-scope .NotebookPublicView__title {
+  font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  letter-spacing: normal !important;
+  margin: 0 0 0.75rem !important;
+}
+.notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
+  font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
+  font-size: 1.4285714em !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+}
+.notebook-app-scope .NotebookPublicView h3.MarkdownNotebook__text-block--heading {
+  font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
+  font-size: 1.2857143em !important;
+  font-weight: 700 !important;
+  line-height: 1.5555556 !important;
+  letter-spacing: normal !important;
+}
 /* Portaled popovers may sit outside [data-scheme]; pin light/dark to host html class */
 html.light .notebook-app-scope,
 .light .notebook-app-scope:not(.dark) {
