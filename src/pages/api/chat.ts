@@ -21,13 +21,13 @@ import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contr
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
-import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
+import { incrementDailyUsage } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoint'
 import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
-import { estimateTokens, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 
 const GUEST_HOURLY_LIMIT = 30
 const AUTH_HOURLY_LIMIT = 100
@@ -270,6 +270,7 @@ export default async function handler(req: Request) {
                         ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
                         : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
                     retryAfterSec: hourly.retryAfterSec,
+                    code: 'QUOTA_EXCEEDED',
                 },
                 429,
                 { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
@@ -277,8 +278,26 @@ export default async function handler(req: Request) {
         }
     }
 
-    try {
-        if (!isDevEnv) {
+    const tokenTier: UserTier = isDevEnv ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
+    if (!isDevEnv) {
+        try {
+            const tokenQuota = await getTokenQuota(quotaSubject, tokenTier)
+            if (!tokenQuota.allowed) {
+                return json(
+                    {
+                        success: false,
+                        error: isPro
+                            ? `[app] Daily token budget reached. Quota resets at 00:00 UTC.`
+                            : user
+                            ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
+                            : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
+                        retryAfterSec: 86400,
+                        code: 'QUOTA_EXCEEDED',
+                    },
+                    429,
+                    { 'Retry-After': '86400' }
+                )
+            }
             const dailyCount = await incrementDailyUsage(quotaSubject)
             if (typeof dailyCount === 'number' && dailyCount > dailyLimit) {
                 return json(
@@ -290,15 +309,22 @@ export default async function handler(req: Request) {
                             ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
                             : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
                         retryAfterSec: 86400,
+                        code: 'QUOTA_EXCEEDED',
                     },
                     429,
                     { 'Retry-After': '86400' }
                 )
             }
-        }
-    } catch (err) {
-        if (!isChatStoreUnavailable(err)) {
-            console.warn('[chat] daily quota check failed', err)
+        } catch (err) {
+            console.warn('[chat] quota check failed closed', err)
+            return json(
+                {
+                    success: false,
+                    error: '[app] Inquiry quota could not be verified. Please try again.',
+                    code: 'QUOTA_UNAVAILABLE',
+                },
+                503
+            )
         }
     }
 
@@ -490,7 +516,6 @@ export default async function handler(req: Request) {
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
                     const totalTurnTokens = Math.max(10, inTokens + outTokens)
                     try {
-                        const tokenTier: UserTier = isDevEnv ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
                         const snapshot = await recordTokenUsage(quotaSubject, totalTurnTokens, tokenTier)
                         send({ type: 'token_usage', snapshot } as any)
                     } catch {
