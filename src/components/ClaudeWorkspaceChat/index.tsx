@@ -1108,8 +1108,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (
           sseRes.status === 429 ||
           errCode.startsWith("QUOTA_") ||
+          errCode === "RATE_LIMITED" ||
+          errCode === "RATE_LIMIT_UNAVAILABLE" ||
           errorMessage.includes("[app]") ||
-          (sseRes.status === 503 && (errCode.startsWith("QUOTA_") || errorMessage.includes("[app]")))
+          (sseRes.status === 503 &&
+            (errCode.startsWith("QUOTA_") ||
+              errCode === "RATE_LIMIT_UNAVAILABLE" ||
+              errorMessage.includes("[app]")))
         ) {
           fail.kind = "quota";
         } else if (
@@ -1418,12 +1423,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               errCode === 'CHAT_FAILED'
             ) {
               streamErrorKind = 'provider';
-            } else if (errCode.startsWith('QUOTA_') || (parsed.message || '').includes('[app]')) {
+            } else if (
+              errCode.startsWith('QUOTA_') ||
+              errCode === 'RATE_LIMITED' ||
+              errCode === 'RATE_LIMIT_UNAVAILABLE' ||
+              (parsed.message || '').includes('[app]')
+            ) {
               streamErrorKind = 'quota';
             } else {
               streamErrorKind = 'network';
             }
-            const safeMessage = parsed.message || 'Philosopher network unavailable.';
+            const safeMessage = scrubSecretMaterial(
+              String(parsed.message || 'Philosopher network unavailable.').trim()
+            ) || 'Philosopher network unavailable.';
             const hasPublicReply = Boolean(accumulatedContent.trim());
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: hasPublicReply
@@ -1582,15 +1594,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
         const displayContent = sanitizePublicAssistantText(accumulatedContent);
-        const rawError = String(err?.message || '');
-        const shortReason = rawError.replace(/\s+/g, ' ').trim().slice(0, 220)
+        const scrubbedError = scrubSecretMaterial(String(err?.message || '')).replace(/\s+/g, ' ').trim();
+        const errKind = ((err as any).kind || streamErrorKind) as Message["errorKind"] | undefined;
+        // Prefer product-safe inquiry copy over raw fetch/network dumps; keep no-content special-case.
+        const productSafeFallback =
+          errKind === 'quota'
+            ? 'Inquiry limit reached. Please try again shortly.'
+            : errKind === 'provider'
+              ? 'Philosopher network unavailable.'
+              : 'The reply could not be completed because of a connection error.';
         const errorMessage = displayContent
           ? displayContent
-          : rawError === 'AI returned no content'
+          : scrubbedError === 'AI returned no content'
             ? 'The model finished thinking but did not produce a public answer. Please try again.'
-            : shortReason
-              ? shortReason
-              : 'The reply could not be completed because of a connection error.';
+            : scrubbedError.startsWith('[app]')
+              ? scrubbedError.slice(0, 220)
+              : productSafeFallback;
 
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: errorMessage,
@@ -1599,7 +1618,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           isTypingDone: true,
           ...(displayContent.trim()
             ? {}
-            : { errorKind: (err as any).kind || streamErrorKind || 'network' }),
+            : { errorKind: errKind || 'network' }),
         });
       }
     } finally {
