@@ -46,7 +46,6 @@ test.describe('Ask AI harness', () => {
                 'insert_notebook_block',
                 'switch_mode',
                 'todo_write',
-                'ask_user',
                 'remember',
                 'finalize_plan',
                 'task',
