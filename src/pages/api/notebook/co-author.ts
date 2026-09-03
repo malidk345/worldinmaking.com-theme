@@ -17,6 +17,7 @@ import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 import { finalizeArtifactTurn } from '../../../lib/artifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
+import { stripLeakedToolMarkup } from '../../../lib/bots/tools/leak'
 import { checkRateLimitDurable } from '../../../lib/bots/rate-limit'
 import { getRuntimeEnv } from '../../../lib/bots/runtime-env'
 import { formatAiSseEvent, shouldAdvertiseQualityCorrection, toPublicProviderLabel, type AiSseEvent } from '../../../lib/ai/contracts'
@@ -242,7 +243,7 @@ export default async function handler(req: Request) {
                     { scrape: false }
                 )
                 const visibleReply =
-                    turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+                    turn.visibleText || stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(result.reply)))
 
                 // Match /api/chat: if the gate revised after a silent stream, flush canonical text.
                 if (livePublicTokensCount === 0 && visibleReply) {
