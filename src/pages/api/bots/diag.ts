@@ -8,13 +8,13 @@ export const runtime = 'edge'
 import { getRuntimeEnv, getProviderKeyFlags, hasCloudflareContext } from 'lib/bots/runtime-env'
 import { envFrom } from 'lib/bots/runtime-env'
 import { collectGeminiKeys, collectGroqKeys } from 'lib/bots/ai-gateway'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getClientIp } from 'lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body, null, 2), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -30,9 +30,26 @@ export default async function handler(req: Request) {
     if (!expectedSecret || !secret || secret !== expectedSecret) {
         return json({ error: 'Not found' }, 404)
     }
-    const rate = checkRateLimit(`diag:${getClientIp(req)}`, 10, 60 * 60 * 1000)
+    const rate = await checkRateLimitDurable(`diag:${getClientIp(req)}`, 10, 60 * 60 * 1000, env, {
+        failClosed: true,
+    })
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
     if (!rate.allowed) {
-        return json({ error: 'Rate limited', retryAfterSec: rate.retryAfterSec }, 429)
+        return json(
+            { error: 'Rate limited', code: 'RATE_LIMITED', retryAfterSec: rate.retryAfterSec },
+            429,
+            buildRateLimitHeaders(rate)
+        )
     }
 
     const flags = getProviderKeyFlags(env)
