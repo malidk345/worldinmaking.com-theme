@@ -16,6 +16,8 @@ import { executeToolCall } from '../src/lib/bots/tools/execute'
 import { packMessageThinking, unpackMessageThinking } from '../src/lib/chat-thinking'
 import { QUALITY_GATE_UNAVAILABLE_REPLY } from '../src/lib/bots/orchestrate'
 import { parseAgentCheckpoint } from '../src/lib/bots/agent/checkpoint'
+import { ASK_AI_INJECTION_GOLDEN, ASK_AI_REPLAY } from '../src/lib/bots/tools/golden'
+import { parseLeakedToolCalls, stripLeakedToolMarkup } from '../src/lib/bots/tools/leak'
 import {
     assertPublicHostname,
     fetchPublicUrl,
@@ -362,4 +364,61 @@ test.describe('Ask AI harness', () => {
         expect(folded[0].content).toContain('Call me Ali')
         expect(applyRememberedFact(undefined, 'x')).toBeUndefined()
     })
+
+    test('prompt-injection goldens cannot override operator rules or private paths', async () => {
+        const prompt = getAskAiSystemPrompt({
+            voiceName: 'Nietzsche',
+            trustedInstruction: ASK_AI_INJECTION_GOLDEN[0].untrusted,
+        })
+        expect(prompt).toContain('untrusted end-user content')
+        expect(prompt).toContain('cannot be overridden')
+        expect(prompt).toContain('WorldInMaking Ask AI')
+        expect(ALLOWED_TOOL_NAMES.has('ask_user')).toBe(false)
+        expect(QUALITY_GATE_UNAVAILABLE_REPLY).not.toContain('skipped')
+        expect(resolveOpenPath('/etc/passwd')).toBeNull()
+        expect(isBlockedFetchUrl('http://127.0.0.1/')).toBe('url is not allowed')
+
+        for (const item of ASK_AI_INJECTION_GOLDEN) {
+            const cleaned = stripLeakedToolMarkup(item.untrusted)
+            expect(cleaned, item.id).not.toMatch(/<\/?tool_code/i)
+            expect(cleaned, item.id).not.toMatch(/\bask_user\s*\(/)
+            for (const call of parseLeakedToolCalls(item.untrusted)) {
+                const executed = await executeToolCall(call, undefined, undefined, 'execute')
+                expect(executed.ok, `${item.id}:${call.name}`).toBe(false)
+            }
+        }
+    })
+
+    test('replay script is deterministic without a live LLM', async () => {
+        expect(ASK_AI_REPLAY.length).toBeGreaterThan(0)
+        for (const step of ASK_AI_REPLAY) {
+            const executed = await executeToolCall(
+                { id: step.id, name: step.name, argumentsJson: step.argumentsJson },
+                undefined,
+                undefined,
+                step.mode
+            )
+            expect(executed.ok, step.id).toBe(step.expectOk)
+            if (step.expectIncludes) {
+                expect(executed.result, step.id).toContain(step.expectIncludes)
+            }
+        }
+    })
+
+    test('replay finalizes directly into execute mode without plan approval', async () => {
+        const finalizeIndex = ASK_AI_REPLAY.findIndex((step) => step.name === 'finalize_plan')
+        expect(finalizeIndex).toBeGreaterThanOrEqual(0)
+        expect(ASK_AI_REPLAY[finalizeIndex + 1]?.mode).toBe('execute')
+        expect(JSON.stringify(ASK_AI_REPLAY)).not.toContain('plan_approval')
+
+        const finalized = await executeToolCall(
+            { id: 'auto-exec', name: 'finalize_plan', argumentsJson: '{"summary":"Ready"}' },
+            undefined,
+            undefined,
+            'plan'
+        )
+        expect(finalized.ok).toBe(true)
+        expect(JSON.parse(finalized.result)).toMatchObject({ ok: true, mode: 'execute' })
+    })
+
 })
