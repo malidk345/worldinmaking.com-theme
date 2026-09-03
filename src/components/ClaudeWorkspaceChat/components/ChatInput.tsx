@@ -149,8 +149,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  // Fail closed until quota is known (null = cold-start / still loading).
+  const quotaBlocksSend = quota?.allowed !== true;
+
   const handleSubmit = () => {
-    if ((!prompt.trim() && attachments.length === 0) || isStreaming || (quota && !quota.allowed)) return;
+    if ((!prompt.trim() && attachments.length === 0) || isStreaming || quotaBlocksSend) return;
     onSendMessage(prompt.trim(), attachments);
     setPrompt('');
     setAttachments([]);
@@ -503,9 +506,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={(!prompt.trim() && attachments.length === 0) || Boolean(quota && !quota.allowed)}
+                disabled={(!prompt.trim() && attachments.length === 0) || quotaBlocksSend}
                 className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs ${
-                   (prompt.trim() || attachments.length > 0) && !(quota && !quota.allowed)
+                   (prompt.trim() || attachments.length > 0) && !quotaBlocksSend
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
@@ -520,9 +523,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       <div className="mt-1.5 flex min-h-4 flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
         <span>Philosopher replies are public text. Double-check citations and claims.</span>
-        {quota?.unavailable ? (
+        {!quota ? (
+          <span className="font-medium text-primary">Checking daily quota…</span>
+        ) : quota.unavailable ? (
           <span className="font-medium text-primary">Couldn&apos;t verify daily quota</span>
-        ) : quota && quota.tier !== "dev" ? (
+        ) : quota.tier !== "dev" ? (
           <span className={quota.allowed ? "" : "font-medium text-primary"}>
             {quota.allowed
               ? `${quota.remainingTokens >= 1000 ? `${Math.round(quota.remainingTokens / 1000)}k` : quota.remainingTokens} tokens left`

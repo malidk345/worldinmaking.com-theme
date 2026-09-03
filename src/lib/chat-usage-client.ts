@@ -16,6 +16,9 @@ export interface TokenQuotaSnapshot {
 
 export const TOKEN_QUOTA_UPDATED_EVENT = 'wimTokenQuotaUpdated'
 
+/** Fail closed if the first quota fetch never settles (hung network / auth). */
+export const TOKEN_QUOTA_FETCH_TIMEOUT_MS = 8_000
+
 const CACHE_KEY = 'wim_token_quota_cache_v1'
 
 function unavailableQuotaSnapshot(): TokenQuotaSnapshot {
@@ -75,9 +78,13 @@ export function updateCachedTokenQuota(snapshot: TokenQuotaSnapshot): void {
 
 export async function fetchTokenQuota(): Promise<TokenQuotaSnapshot | null> {
     if (typeof window === 'undefined') return null
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), TOKEN_QUOTA_FETCH_TIMEOUT_MS)
+
     try {
         const headers = await chatAuthHeadersFresh()
-        const res = await fetch('/api/chat-quota', { headers })
+        const res = await fetch('/api/chat-quota', { headers, signal: controller.signal })
         if (res.ok) {
             const data = (await res.json()) as TokenQuotaSnapshot
             updateCachedTokenQuota(data)
@@ -96,24 +103,42 @@ export async function fetchTokenQuota(): Promise<TokenQuotaSnapshot | null> {
         window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: unavailable }))
         return unavailable
     } catch {
-        // Network failure with no response: prefer cache if present, else fail closed
+        // Network / abort / auth failure: prefer cache if present, else fail closed
         // so null never leaves the composer send-unlocked.
         const cached = getCachedTokenQuota()
         if (cached) return cached
         const unavailable = unavailableQuotaSnapshot()
         window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: unavailable }))
         return unavailable
+    } finally {
+        window.clearTimeout(timeoutId)
     }
 }
 
 export function useTokenQuota() {
+    // Cold start with no cache → null until fetch settles (ChatInput fails closed).
     const [quota, setQuota] = useState<TokenQuotaSnapshot | null>(getCachedTokenQuota)
 
     useEffect(() => {
         let mounted = true
+
         fetchTokenQuota().then((data) => {
             if (mounted && data) setQuota(data)
         })
+
+        // Belt-and-suspenders: if fetch hangs past abort (e.g. auth never resolves),
+        // still fail closed so send does not stay unlocked forever.
+        const hangId = window.setTimeout(() => {
+            if (!mounted) return
+            setQuota((current) => {
+                if (current) return current
+                const unavailable = unavailableQuotaSnapshot()
+                window.dispatchEvent(
+                    new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: unavailable })
+                )
+                return unavailable
+            })
+        }, TOKEN_QUOTA_FETCH_TIMEOUT_MS + 500)
 
         const handleUpdate = (e: Event) => {
             const customEv = e as CustomEvent<TokenQuotaSnapshot>
@@ -125,6 +150,7 @@ export function useTokenQuota() {
         window.addEventListener(TOKEN_QUOTA_UPDATED_EVENT, handleUpdate)
         return () => {
             mounted = false
+            window.clearTimeout(hangId)
             window.removeEventListener(TOKEN_QUOTA_UPDATED_EVENT, handleUpdate)
         }
     }, [])
