@@ -92,6 +92,8 @@ export interface BotRunInput {
 
 export type QualityGateOutcome = 'passed' | 'failed' | 'skipped'
 
+export const QUALITY_GATE_UNAVAILABLE_REPLY = 'Quality check is unavailable. Please try again.'
+
 export interface BotRunSuccess {
     success: true
     philosopher: string
@@ -487,7 +489,7 @@ async function applyQualityGate(
             detail: 'Quality check unavailable',
         })
         return {
-            reply: 'Quality check is unavailable. Please try again.',
+            reply: QUALITY_GATE_UNAVAILABLE_REPLY,
             qualityGate: 'failed',
         }
     }
