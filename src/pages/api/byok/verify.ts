@@ -22,7 +22,7 @@ function json(body: Record<string, unknown>, status = 200, headers: Record<strin
     })
 }
 
-const SUPPORTED = new Set(['gemini', 'groq', 'openai', 'anthropic'])
+const SUPPORTED = new Set(['gemini', 'groq', 'openai', 'anthropic', 'deepseek'])
 
 function invalidKeyMessage(provider: string): string {
     switch (provider) {
@@ -34,6 +34,8 @@ function invalidKeyMessage(provider: string): string {
             return 'Geçersiz OpenAI API Anahtarı'
         case 'anthropic':
             return 'Geçersiz Anthropic API Anahtarı'
+        case 'deepseek':
+            return 'Geçersiz DeepSeek API Anahtarı'
         default:
             return 'Geçersiz API anahtarı'
     }
@@ -49,7 +51,9 @@ function providerUnavailableMessage(provider: string, status: number): string {
                 ? 'OpenAI'
                 : provider === 'anthropic'
                   ? 'Anthropic'
-                  : 'Sağlayıcı'
+                  : provider === 'deepseek'
+                    ? 'DeepSeek'
+                    : 'Sağlayıcı'
     return `${label} doğrulaması başarısız (${status})`
 }
 
@@ -184,6 +188,34 @@ export default async function handler(req: Request) {
                 },
                 body: JSON.stringify({
                     model: 'gpt-4o-mini',
+                    messages: [{ role: 'user', content: 'ping' }],
+                    max_tokens: 2,
+                }),
+            })
+            if (res.ok) return json({ success: true, valid: true }, 200, rlHeaders)
+            await res.text().catch(() => '')
+            const authFail = res.status === 401
+            return json(
+                {
+                    success: false,
+                    valid: false,
+                    code: authFail ? 'INVALID_KEY' : 'PROVIDER_ERROR',
+                    error: authFail ? invalidKeyMessage(provider) : providerUnavailableMessage(provider, res.status),
+                },
+                200,
+                rlHeaders
+            )
+        }
+
+        if (provider === 'deepseek') {
+            const res = await fetch('https://api.deepseek.com/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
                     messages: [{ role: 'user', content: 'ping' }],
                     max_tokens: 2,
                 }),
