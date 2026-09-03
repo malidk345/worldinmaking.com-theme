@@ -75,13 +75,13 @@ export interface BotRunInput {
     onNode?: (event: NodeEvent) => void
     /** Plan/execute mode changes from switch_mode. */
     onMode?: (mode: AgentMode) => void
-    /** Human interrupt: ask_user or plan approval. */
+    /** Human interrupt: plan approval. */
     onHuman?: (turn: HumanTurn) => void
     /** Ordered host process log (thought tokens, tools, nodes). */
     onActivity?: (activity: AgentActivity) => void
     /** PostHog-style agent supermode. Default ask. */
     agentMode?: AgentMode
-    /** Resume a paused graph from ask_user / plan approval. */
+    /** Resume a paused graph from plan approval. */
     checkpoint?: AgentCheckpoint
     resumeAction?: ResumeAction
     resumePayload?: string
