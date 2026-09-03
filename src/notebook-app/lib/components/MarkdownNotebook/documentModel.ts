@@ -324,9 +324,15 @@ export function stripNotebookRefMarksFromNodes(nodes: NotebookBlockNode[], refId
             const refs = node.refs.filter((ref) => !refIds.has(ref.id))
             return { ...node, refs: refs.length ? refs : undefined }
         }
-        return mapNodeInlineChildren(node, (children) =>
-            [...refIds].reduce((current, refId) => removeInlineRefMark(current, refId), children)
-        )
+        return mapNodeInlineChildren(node, (children) => {
+            // ⚡ Bolt: Optimize performance by replacing `[...refIds].reduce` with `for...of` loop
+            // This avoids creating an unnecessary intermediate array allocation from a Set.
+            let current = children
+            for (const refId of refIds) {
+                current = removeInlineRefMark(current, refId)
+            }
+            return current
+        })
     })
 }
 
@@ -998,7 +1004,7 @@ function getReadOnlyNotebookContext(notebookMarkdown: string): string[] {
 export function getAskAIInlineNotebookQuery(
     userQuery: string,
     responseMarker: string,
-    notebookMarkdown: string = ''
+    notebookMarkdown = ''
 ): string {
     return [
         'The user is writing in a markdown notebook and asked WIM AI to continue inline.',
@@ -1026,7 +1032,7 @@ export function getAskAISelectionQuery(
     userQuery: string,
     responseMarker: string,
     refId?: string,
-    notebookMarkdown: string = ''
+    notebookMarkdown = ''
 ): string {
     const highlightedMarkdown = selectedMarkdown.trim()
     // A fence longer than any backtick run in the content, so embedded ``` can't close the block early

@@ -929,7 +929,12 @@ function parseListItemLine(line: string, listItemIndex: number): NotebookListBlo
 }
 
 function getListItemDepth(indentation: string): number {
-    const columns = [...indentation].reduce((total, character) => total + (character === '\t' ? 4 : 1), 0)
+    // ⚡ Bolt: Optimize performance by replacing `[...indentation].reduce` with `for...of` loop
+    // This avoids creating an unnecessary intermediate array allocation in high-frequency parsing.
+    let columns = 0
+    for (const character of indentation) {
+        columns += character === '\t' ? 4 : 1
+    }
     return Math.floor(columns / 2)
 }
 
@@ -1822,7 +1827,7 @@ function decodeHtmlEntities(text: string): string {
         .replace(/&amp;/g, '&')
 }
 
-export function makeEmptyParagraph(idSeed: string = 'empty'): NotebookTextBlockNode {
+export function makeEmptyParagraph(idSeed = 'empty'): NotebookTextBlockNode {
     const node: NotebookTextBlockNode = {
         id: '',
         type: 'paragraph',
@@ -1832,7 +1837,7 @@ export function makeEmptyParagraph(idSeed: string = 'empty'): NotebookTextBlockN
     return node
 }
 
-export function makeListItemId(idSeed: string = 'list-item'): string {
+export function makeListItemId(idSeed = 'list-item'): string {
     return makeGeneratedMarkdownId(idSeed)
 }
 
