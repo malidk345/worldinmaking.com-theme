@@ -127,10 +127,10 @@ const NOTEBOOK_PALETTE_CSS = `
 .notebook-app-scope .NotebookPublicView__title {
   font-family: var(--font-sans);
   color: rgb(var(--text-primary));
-  font-size: 1.75rem !important;
-  font-weight: 700 !important;
-  line-height: 1.25 !important;
-  letter-spacing: -0.025em !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  letter-spacing: normal !important;
 }
 .notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
