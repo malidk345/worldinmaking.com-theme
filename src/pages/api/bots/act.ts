@@ -31,7 +31,7 @@ import {
 } from 'lib/bots'
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { runPaperStep, type PaperStepKind } from 'lib/bots/actions/paper'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -127,8 +127,8 @@ export default async function handler(req: Request) {
     // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
     // Scoped per client IP so rotating bot names cannot bypass the bucket.
     const clientIp = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
-    const rl = checkRateLimit(`bot_act:${clientIp}`, 500, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env)
+    const rl = await checkRateLimitDurable(`bot_act:${clientIp}`, 500, 60 * 60 * 1000, env)
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         return json(
