@@ -1271,25 +1271,60 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'phase') {
-            if (parsed.phase?.phase === 'quality_gate') {
+            const phaseName = parsed.phase?.phase
+            const phaseStatus = parsed.phase?.status
+            const phaseDetailRaw =
+              typeof parsed.phase?.detail === 'string' ? parsed.phase.detail.trim() : ''
+            const safeDetail =
+              phaseDetailRaw.length > 0 && phaseDetailRaw.length < 120 ? phaseDetailRaw : undefined
+
+            if (phaseName === 'generation') {
+              const genId = 'lifecycle-generation'
+              const status =
+                phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
+              const providerLabel =
+                typeof parsed.phase?.provider === 'string' && parsed.phase.provider.trim()
+                  ? parsed.phase.provider.trim()
+                  : undefined
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: genId,
+                status,
+                title: 'Generating reply',
+                detail:
+                  status === 'error'
+                    ? safeDetail || 'Generation failed'
+                    : status === 'done'
+                      ? providerLabel
+                        ? `Reply ready (${providerLabel})`
+                        : 'Reply ready'
+                      : undefined,
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+              if (status === 'running') currentThinkingProcess.summary = 'Generating reply'
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                thinkingProcess: { ...currentThinkingProcess },
+              })
+            }
+
+            if (phaseName === 'quality_gate') {
               const qgId = 'lifecycle-quality-gate'
               const status =
-                parsed.phase.status === 'started'
-                  ? 'running'
-                  : parsed.phase.status === 'failed'
-                    ? 'error'
-                    : 'done'
-              const failedDetail =
-                typeof parsed.phase.detail === 'string' && parsed.phase.detail.trim().length > 0 && parsed.phase.detail.trim().length < 120
-                  ? parsed.phase.detail.trim()
-                  : 'Quality check flagged issues'
+                phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
               processItems = applyAgentActivity(processItems, {
                 seq: processItems.length + 1,
                 kind: 'node',
                 id: qgId,
                 status,
                 title: 'Checking reply quality',
-                detail: status === 'error' ? failedDetail : status === 'done' ? 'Reply quality verified' : undefined,
+                detail:
+                  status === 'error'
+                    ? safeDetail || 'Quality check flagged issues'
+                    : status === 'done'
+                      ? safeDetail || 'Reply quality verified'
+                      : undefined,
               })
               currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
               currentThinkingProcess.steps = [...currentThinkingProcess.steps]
@@ -1382,6 +1417,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'done') {
             appendStreamedArtifacts(parsed.artifacts);
             accumulatedContent = parsed.fullText || accumulatedContent;
+            if (parsed.corrected) {
+              const qgId = 'lifecycle-quality-gate'
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'done',
+                title: 'Checking reply quality',
+                detail: 'Reply revised for quality',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            }
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: sanitizePublicAssistantText(accumulatedContent),
               artifacts: streamedArtifacts,
