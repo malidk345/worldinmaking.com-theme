@@ -142,7 +142,8 @@ export function NotebookShareModal({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="notebook-share-title"
-                className="relative z-[1] w-full max-w-lg rounded-lg border border-border bg-[var(--bg-3000,#fff)] text-primary shadow-xl p-4 space-y-4"
+                data-scheme="secondary"
+                className="relative z-[1] w-full max-w-lg rounded-lg border border-primary bg-primary text-primary shadow-xl p-4 space-y-4"
             >
                 <div className="flex items-start justify-between gap-3">
                     <h2 id="notebook-share-title" className="text-base font-semibold m-0">
@@ -218,7 +219,7 @@ export function NotebookShareModal({
                             <label className="block space-y-1 min-w-0">
                                 <span className="text-xs font-semibold">Category</span>
                                 <select
-                                    className="w-full text-sm border border-border rounded px-2 py-1.5 bg-[var(--color-bg-fill-input,#fff)]"
+                                    className="w-full text-sm border border-primary rounded px-2 py-1.5 bg-[var(--color-bg-fill-input,#fff)]"
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
                                 >
@@ -242,7 +243,7 @@ export function NotebookShareModal({
                                         type="text"
                                         value={publicUrl}
                                         readOnly
-                                        className="flex-1 px-2 py-1.5 border border-border rounded text-xs bg-transparent"
+                                        className="flex-1 px-2 py-1.5 border border-primary rounded text-xs bg-transparent"
                                     />
                                     <LemonButton
                                         size="small"

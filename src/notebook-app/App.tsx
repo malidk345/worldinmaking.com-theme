@@ -1,8 +1,5 @@
-import React, { useState, useEffect, Component, useCallback, useRef } from 'react'
-import {
-    MarkdownNotebook,
-    type MarkdownNotebookAskAIRequest,
-} from './lib/components/MarkdownNotebook/MarkdownNotebook'
+import React, { useState, useEffect, Component, useCallback, useRef, useMemo } from 'react'
+import type { MarkdownNotebookAskAIRequest } from './lib/components/MarkdownNotebook/MarkdownNotebook'
 import { planOpenNotebookRemoteApply } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
@@ -15,8 +12,11 @@ import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebo
 import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
-import { BacklinksPanel } from './lib/components/MarkdownNotebook/BacklinksPanel'
-import { computeBacklinks } from './lib/components/MarkdownNotebook/wikilinks'
+import {
+    readNotebookChromeSettings,
+    writeNotebookChromeSettings,
+    type NotebookChromeSettings,
+} from './scenes/notebooks/notebookChromeSettings'
 
 import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
 import { playInlineEditorMarkdown, playInlineSelectionMarkdown } from './lib/wimai-typewriter'
@@ -44,13 +44,12 @@ import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
 import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
 import { NotebookShareModal, type NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
-import { NotebookHistory } from './scenes/notebooks/NotebookHistory'
-import { NotebookSyncInfo, NotebookExpandButton } from './scenes/notebooks/NotebookMeta'
+import { NotebookSyncInfo } from './scenes/notebooks/NotebookMeta'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
 import { AskAIDropdown } from './scenes/notebooks/AskAI'
-import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
+import { NotebookToolsSidebar } from './scenes/notebooks/NotebookToolsSidebar'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
@@ -63,9 +62,17 @@ import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '..
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
 
+const MarkdownNotebook = React.lazy(() =>
+    import('./lib/components/MarkdownNotebook/MarkdownNotebook').then((mod) => ({
+        default: mod.MarkdownNotebook,
+    }))
+)
+
 // ---- Error Boundary ----
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
-  state: { hasError: boolean; error: Error | null } = { hasError: false, error: null }
+type NotebookErrorBoundaryProps = { children: React.ReactNode }
+type NotebookErrorBoundaryState = { hasError: boolean; error: Error | null }
+class ErrorBoundary extends Component<NotebookErrorBoundaryProps, NotebookErrorBoundaryState> {
+  state: NotebookErrorBoundaryState = { hasError: false, error: null }
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error }
   }
@@ -169,14 +176,17 @@ export function App() {
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
+  const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
+  const isExpanded = chrome.wide
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareTab, setShareTab] = useState<NotebookShareTab>('private')
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
   const editorContainerRef = useRef<HTMLDivElement | null>(null)
+  const articleColumnRef = useRef<HTMLDivElement | null>(null)
+  const [notebookLibrary, setNotebookLibrary] = useState<StoredNotebook[]>(() => getNotebooks())
+  const [outlineMarkdown, setOutlineMarkdown] = useState('')
   const routeRef = useRef(route)
   const notebookRef = useRef(currentNotebook)
   const markdownRef = useRef(markdown)
@@ -436,7 +446,6 @@ export function App() {
       setRemoteMarkdown(nb.content)
       setTitle(nb.title)
       setSyncStatus('saved')
-      setShowHistory(false)
       if (appWindow && nb.title) {
         appActions.setWindowTitle(appWindow, nb.title)
       }
@@ -500,9 +509,9 @@ export function App() {
     setSyncStatus('edited')
     const timer = window.setTimeout(() => {
       persistOpenNotebookDraft('idle')
-    }, 1100)
+    }, chrome.autosaveMs)
     return () => window.clearTimeout(timer)
-  }, [markdown, title, currentNotebook?.id, route.page, persistOpenNotebookDraft])
+  }, [markdown, title, currentNotebook?.id, route.page, persistOpenNotebookDraft, chrome.autosaveMs])
 
   useEffect(() => {
     if (route.page !== 'editor' || !currentNotebook) return
@@ -752,6 +761,27 @@ export function App() {
     []
   )
 
+  useEffect(() => {
+    const reloadLibrary = () => setNotebookLibrary(getNotebooks())
+    reloadLibrary()
+    window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadLibrary)
+    window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadLibrary)
+    return () => {
+      window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadLibrary)
+      window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadLibrary)
+    }
+  }, [])
+
+  useEffect(() => {
+    setOutlineMarkdown(markdown)
+  }, [currentNotebook?.id])
+
+  useEffect(() => {
+    if (route.page !== 'editor') return
+    const timer = window.setTimeout(() => setOutlineMarkdown(markdown), 280)
+    return () => window.clearTimeout(timer)
+  }, [markdown, route.page])
+
   const convertExternalDataTransferToNodes = useCallback(async (dataTransfer: DataTransfer) => {
     const files = Array.from(dataTransfer.files || []).filter(isNotebookImageFile)
     if (!files.length) return null
@@ -772,17 +802,23 @@ export function App() {
     return nodes.length ? nodes : null
   }, [])
 
+  const shellClassName = [
+    'App notebook-app-scope w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden',
+    route.page === 'public' ? 'bg-transparent' : 'bg-[var(--bg-3000,#f3f4f5)]',
+    hostTheme === 'dark' ? 'dark' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   // Shell matches standalone posthog-notebook-app.
-  // `notebook-app-scope` on THIS root only (never body) so site OS chrome is not affected.
-  // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
+  // notebook-app-scope stays on this root only so site OS chrome is not affected.
   return (
     <div
-      className={`App notebook-app-scope w-full h-full min-h-full flex-1 flex flex-col text-[var(--text-3000,#1d1f27)] ${
-        route.page === 'public' ? 'bg-transparent' : 'bg-[var(--bg-3000,#f3f4f5)]'
-      } ${hostTheme === 'dark' ? 'dark' : ''}`}
-      theme={hostTheme}
-      data-lemon-scope
+      className={shellClassName}
+      data-lemon-scope="true"
       data-host-theme={hostTheme}
+      data-notebook-lock="true"
+      data-notebook-font={chrome.fontSize}
     >
       {/* ===== Main Content Area matching PostHog Notebook SceneContent ===== */}
       {/* pb so last lines aren't clipped under window edge when scrolling */}
@@ -790,9 +826,9 @@ export function App() {
         className={
           route.page === 'public'
             ? 'flex-1 w-full min-h-0 p-0 bg-primary text-primary'
-            : route.page === 'editor'
-              ? 'flex-1 w-full px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-3 sm:space-y-6'
-              : 'flex-1 w-full p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
+            : route.page === 'editor' && currentNotebook
+              ? 'flex-1 w-full min-h-0 h-full flex flex-col p-0 overflow-hidden'
+              : 'flex-1 w-full min-h-0 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
         }
       >
         <ErrorBoundary>
@@ -826,7 +862,39 @@ export function App() {
           {/* ---------- Notebook Editor Scene (100% matched to PostHog NotebookScene.tsx) ---------- */}
           {route.page === 'editor' && (
             currentNotebook ? (
-              <div className={`Notebook ${isExpanded ? 'Notebook--expanded' : 'Notebook--compact'}`}>
+              <div className={'Notebook flex-1 h-full min-h-0 flex items-stretch relative overflow-hidden ' + (isExpanded ? 'Notebook--expanded' : 'Notebook--compact')}>
+                <NotebookToolsSidebar
+                  markdown={outlineMarkdown}
+                  containerRef={editorContainerRef}
+                  articleRef={articleColumnRef}
+                  notebooks={notebookLibrary
+                    .slice()
+                    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+                    .map((nb) => ({ id: nb.id, title: nb.title }))}
+                  activeNotebookId={currentNotebook.id}
+                  notebookTitle={currentNotebook.title || title}
+                  currentContent={markdown}
+                  onSelectNotebook={handleSelectNotebook}
+                  onCreateNotebook={handleCreateNew}
+                  onSnapshotNow={handleHistorySnapshotNow}
+                  onHistoryRestored={handleHistoryRestored}
+                  chrome={chrome}
+                  onChromeChange={(next) => {
+                    const merged = { ...chrome, ...next }
+                    writeNotebookChromeSettings(merged)
+                    setChrome(merged)
+                  }}
+                  onShare={(tab) => {
+                    setShareTab(tab || 'private')
+                    setShowShareModal(true)
+                  }}
+                  people={presence.people}
+                />
+                <div
+                  ref={articleColumnRef}
+                  className="relative flex-1 min-w-0 min-h-0 flex flex-col"
+                >
+                <div className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20">
                 {/* Template Banner if template */}
                 {currentNotebook.isTemplate && (
                   <LemonBanner
@@ -885,15 +953,10 @@ export function App() {
                       notebookId={currentNotebook.id}
                       onDuplicate={handleDuplicate}
                       onDelete={handleDelete}
-                      onShowHistory={() => setShowHistory(!showHistory)}
                       onShare={(tab) => {
                         setShareTab(tab || 'private')
                         setShowShareModal(true)
                       }}
-                    />
-                    <NotebookExpandButton
-                      isExpanded={isExpanded}
-                      onToggleExpand={() => setIsExpanded(!isExpanded)}
                     />
                     <SidebarContextPanelMenu
                       onOpenShare={(tab) => {
@@ -905,8 +968,13 @@ export function App() {
                 </div>
 
                 {/* Main editor */}
-                <div className="w-full min-h-[600px] pt-2 sm:pt-3 mt-1 sm:mt-2 flex gap-6 items-start">
-                  <div className="flex-1 min-w-0" ref={editorContainerRef}>
+                <div className="w-full min-h-[600px] pt-2 sm:pt-3 mt-1 sm:mt-2">
+                  <div className="min-w-0" ref={editorContainerRef}>
+                    <React.Suspense
+                      fallback={
+                        <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
+                      }
+                    >
                     <MarkdownNotebook
                       key={`${currentNotebook.id}-${markdownVersion}`}
                       value={markdown}
@@ -928,31 +996,12 @@ export function App() {
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}
+                      spellCheck={chrome.spellcheck}
                     />
-
-                    {/* Bidirectional Backlinks Panel */}
-                    <BacklinksPanel
-                      backlinks={computeBacklinks(
-                        { id: currentNotebook.id, title: currentNotebook.title || title },
-                        getNotebooks()
-                      )}
-                      currentNotebookTitle={currentNotebook.title || title}
-                    />
+                    </React.Suspense>
                   </div>
                 </div>
-
-                {/* History Drawer Panel */}
-                {showHistory && (
-                  <NotebookHistory
-                    notebookId={currentNotebook.id}
-                    isOpen={showHistory}
-                    currentContent={markdown}
-                    currentTitle={title}
-                    onSnapshotNow={handleHistorySnapshotNow}
-                    onRestored={handleHistoryRestored}
-                    onClose={() => setShowHistory(false)}
-                  />
-                )}
+                </div>
 
                 {/* Share Modal */}
                 <NotebookShareModal
@@ -963,7 +1012,7 @@ export function App() {
                   initialTab={shareTab}
                   onPublish={handlePublish}
                 />
-
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">

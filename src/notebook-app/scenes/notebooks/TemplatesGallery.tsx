@@ -50,7 +50,7 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
             </div>
 
             {templates.length === 0 ? (
-                <div className="border border-border rounded-lg p-8 text-center space-y-2 bg-bg-light">
+                <div className="border border-primary rounded-lg p-8 text-center space-y-2 bg-bg-light">
                     <p className="text-sm text-primary font-medium m-0">No templates yet</p>
                     <p className="text-xs text-muted m-0 max-w-md mx-auto">
                         Start from <strong>Welcome to WIM</strong> in your notebooks list, or create a new notebook and
@@ -63,7 +63,7 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
                 {templates.map((template) => (
                     <div
                         key={template.id}
-                        className="border border-border rounded-lg p-4 flex flex-col justify-between hover:border-primary hover:shadow-sm transition-all cursor-pointer bg-bg-light"
+                        className="border border-primary rounded-lg p-4 flex flex-col justify-between hover:border-primary hover:shadow-sm transition-all cursor-pointer bg-bg-light"
                         onClick={() => onSelectTemplate(template)}
                     >
                         <div className="space-y-3">
@@ -79,7 +79,7 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
                             </p>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-primary">
                             <span className="text-[11px] text-muted">by WIM</span>
                             <LemonButton
                                 type="primary"

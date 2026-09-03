@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
-import { IconEllipsis, IconCopy, IconClock, IconShare, IconTrash, IconCheck } from '@posthog/icons'
+import { IconEllipsis, IconCopy, IconShare, IconTrash, IconCheck } from '@posthog/icons'
 import {
     exportNotebookAsMarkdown,
     exportNotebookAsJSON,
@@ -9,12 +9,12 @@ import {
     getNotebook,
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
+import { exportNotebookAsPdf } from './exportNotebookPdf'
 
 interface NotebookMenuProps {
     notebookId: string
     onDuplicate?: () => void
     onDelete?: () => void
-    onShowHistory?: () => void
     onShare?: (tab?: 'private' | 'publish') => void
 }
 
@@ -22,7 +22,6 @@ export function NotebookMenu({
     notebookId,
     onDuplicate,
     onDelete,
-    onShowHistory,
     onShare,
 }: NotebookMenuProps) {
     const [copied, setCopied] = useState<'md' | 'paper' | null>(null)
@@ -78,8 +77,8 @@ export function NotebookMenu({
         }
     }
 
-    const handlePrintPDF = () => {
-        window.print()
+    const handleDownloadPdf = () => {
+        void exportNotebookAsPdf(notebookId)
     }
 
     return (
@@ -103,8 +102,12 @@ export function NotebookMenu({
                     onClick: handleDownloadJSON,
                 },
                 {
-                    label: 'Export as PDF / Print',
-                    onClick: handlePrintPDF,
+                    label: 'Download PDF',
+                    onClick: handleDownloadPdf,
+                },
+                {
+                    label: 'Print',
+                    onClick: () => window.print(),
                 },
                 {
                     label: copied === 'md' ? 'Copied markdown' : 'Copy markdown',
@@ -115,11 +118,6 @@ export function NotebookMenu({
                     label: copied === 'paper' ? 'Copied for paper' : 'Copy for paper',
                     icon: copied === 'paper' ? <IconCheck /> : <IconCopy />,
                     onClick: handleCopyForPaper,
-                },
-                {
-                    label: 'History',
-                    icon: <IconClock />,
-                    onClick: onShowHistory,
                 },
                 {
                     label: 'Share',

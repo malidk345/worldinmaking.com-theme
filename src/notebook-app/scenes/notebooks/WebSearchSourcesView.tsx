@@ -66,7 +66,7 @@ export function WebSearchSourcesView({ query, results, status }: WebSearchSource
     const isRunning = status === 'running'
 
     return (
-        <div className="flex flex-col gap-1.5 my-2 px-3 py-2 rounded-lg bg-bg-light/60 dark:bg-accent-dark/40 border border-border/40 text-xs">
+        <div className="flex flex-col gap-1.5 my-2 px-3 py-2 rounded-lg bg-bg-light/60 dark:bg-accent-dark/40 border border-primary/40 text-xs">
             <div className="flex items-center gap-2 text-muted font-medium text-[11px]">
                 <IconGlobe className={`w-3.5 h-3.5 text-link ${isRunning ? 'animate-spin' : ''}`} />
                 <span>{isRunning ? `Searching web for "${query}"…` : `Web sources for "${query}"`}</span>

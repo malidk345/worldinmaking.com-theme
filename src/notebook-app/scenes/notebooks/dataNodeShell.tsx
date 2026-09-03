@@ -116,7 +116,7 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
     }
 
     return (
-        <div className="p-3 border rounded-md bg-bg-light border-border space-y-2">
+        <div className="p-3 border rounded-md bg-bg-light border-primary space-y-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {icon && <span className="w-4 h-4 text-secondary flex items-center justify-center">{icon}</span>}
@@ -130,7 +130,7 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
             {userAttributes.length > 0 && (
                 <div className="flex flex-wrap gap-2 text-xs py-1">
                     {userAttributes.map(([k, v]) => (
-                        <span key={k} className="bg-surface font-mono px-2 py-0.5 rounded border border-border">
+                        <span key={k} className="bg-surface font-mono px-2 py-0.5 rounded border border-primary">
                             <span className="text-muted">{attributeLabels[k] || k}:</span>{' '}
                             <span className="font-semibold">{String(v)}</span>
                         </span>

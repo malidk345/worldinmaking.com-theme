@@ -17,7 +17,8 @@ export function extractOutlineHeadings(markdown: string): OutlineHeading[] {
 
         for (const node of doc.nodes) {
             if (node.type !== 'heading') continue
-            const level = (node.level === 2 || node.level === 3 ? node.level : 1) as 1 | 2 | 3
+            const level = node.level
+            if (level !== 1 && level !== 2 && level !== 3) continue
             const text = getNodeText(node).replace(/\s+/g, ' ').trim()
             if (!text) continue
             headings.push({ id: node.id, level, text })

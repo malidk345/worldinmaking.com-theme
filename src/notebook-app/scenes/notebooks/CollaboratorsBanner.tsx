@@ -41,7 +41,7 @@ export function CollaboratorsBanner({
 
     const overlay = (
         <div className="w-80 p-3 space-y-3 text-xs">
-            <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center justify-between border-b border-primary pb-2">
                 <div className="flex items-center gap-1.5 font-semibold text-primary">
                     <IconClock className="w-4 h-4 text-muted" />
                     <span>Edit history</span>
@@ -94,7 +94,7 @@ export function CollaboratorsBanner({
         <LemonDropdown overlay={overlay} visible={isOpen} onClickOutside={() => setIsOpen(false)}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="UserActivityIndicator flex items-center gap-1.5 text-xs text-muted whitespace-nowrap p-1 rounded hover:bg-surface-secondary transition-all cursor-pointer border border-transparent hover:border-border"
+                className="UserActivityIndicator flex items-center gap-1.5 text-xs text-muted whitespace-nowrap p-1 rounded hover:bg-surface-secondary transition-all cursor-pointer border border-transparent hover:border-primary"
                 title={updatedAt ? `Last edited ${new Date(updatedAt).toLocaleString()}` : 'Edit history'}
             >
                 <span>Edited {when} by</span>

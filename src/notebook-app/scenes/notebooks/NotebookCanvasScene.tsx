@@ -60,7 +60,7 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
 
     return (
         <div className="NotebookCanvasScene flex flex-col" style={{ minHeight: '80vh' }}>
-            <header className="flex items-center justify-between mb-3 pb-2.5 border-b border-border">
+            <header className="flex items-center justify-between mb-3 pb-2.5 border-b border-primary">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
                     <h2 className="text-xl font-bold m-0">Canvas</h2>
                     <span className="text-xs text-muted">Scratch pad — save when you want to keep it.</span>

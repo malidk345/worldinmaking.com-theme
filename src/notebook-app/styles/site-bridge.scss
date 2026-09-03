@@ -3,17 +3,26 @@
  * Color tokens come from posthog-notebook-app (index.css + base.scss).
  */
 /* Fill the window when short; grow with content when long (parent WindowContent scrolls) */
+&.App,
 .App {
     min-height: 100%;
     height: auto;
     box-sizing: border-box;
 }
 
-.App.notebook-app-scope {
+&.App {
     min-height: 100%;
     height: auto;
     /* Prefer native page scroll inside AppWindow content pane */
     overflow: visible;
+}
+
+/* Editor: fill the window so the tools rail and mobile FAB stay put. */
+&.App[data-notebook-lock],
+.App[data-notebook-lock] {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /*
@@ -39,21 +48,25 @@
 /*
  * Host site Tailwind: border-primary → rgb(var(--border))
  * Notebook base: --border: rgb(0 0 0 / 15%)  ← NOT channel form → pure black frames.
- * Provide channel --border on product islands so host utilities don't go black.
+ * This file is imported INSIDE `.notebook-app-scope { }`, so use `&` — a nested
+ * `.notebook-app-scope` selector would compile to a descendant and never match the root.
+ * Channel values match site `.light [data-scheme=primary]` / `.dark [data-scheme=primary]`.
  */
-.notebook-app-scope:not(.dark) {
-    --border: 218 219 210;
-    --input-border: 218 219 210;
+&:not(.dark) {
+    --border: 192 192 192;
+    --input-border: 210 210 210;
 }
 
-.notebook-app-scope.dark,
-.notebook-app-scope .dark {
-    --border: 44 45 56;
-    --input-border: 44 45 56;
+&.dark,
+.dark &,
+html.dark &,
+[data-notebook-host-theme='dark'] & {
+    --border: 62 66 79;
+    --input-border: 50 52 63;
 }
 
 /* Non-panel notebook popovers keep a simple border; panel chrome is in notebook-dark-panel.scss */
-.notebook-app-scope.Popover:not(.notebook-popover-panel) > .Popover__box {
+&.Popover:not(.notebook-popover-panel) > .Popover__box {
     border-color: var(--secondary-3000-button-border, #ccc) !important;
 }
 
@@ -61,7 +74,7 @@
  * Force navy brand accents inside notebook islands (no PostHog orange).
  * Mirrors site Tailwind brand (#1D4ED8 family).
  */
-.notebook-app-scope {
+& {
     --color-posthog-brand-orange-hue: 221;
     --color-posthog-brand-orange-saturation: 83%;
     --color-posthog-brand-orange-lightness: 48%;
@@ -105,10 +118,10 @@
     --shadow-elevation-3000: 0 10px 38px rgba(0, 0, 0, 0.14);
 }
 
-.notebook-app-scope.dark,
-.notebook-app-scope .dark,
-html.dark .notebook-app-scope,
-[data-notebook-host-theme='dark'] .notebook-app-scope {
+&.dark,
+.dark &,
+html.dark &,
+[data-notebook-host-theme='dark'] & {
     --color-accent: #3b82f6;
     --color-accent-hover: #60a5fa;
     --color-accent-active: #2563eb;
@@ -148,7 +161,7 @@ html.dark .notebook-app-scope,
 }
 
 /* Portaled dropdowns: force shell to brand surfaces (no pure-black Popover boxes) */
-.notebook-app-scope.Popover > .Popover__box {
+&.Popover > .Popover__box {
     background: var(--color-bg-surface-popover) !important;
     border-color: var(--secondary-3000-button-border) !important;
     color: var(--color-text-primary, inherit);
@@ -170,6 +183,7 @@ html.dark .notebook-app-scope,
     }
 
     .notebook-app-scope .notebook-outline,
+    .notebook-app-scope .notebook-tools-sidebar,
     .notebook-app-scope .LemonButton,
     .notebook-app-scope [class*='floating'],
     .notebook-app-scope .MarkdownNotebook__format-toolbar,

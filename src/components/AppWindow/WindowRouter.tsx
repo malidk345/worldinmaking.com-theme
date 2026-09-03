@@ -37,7 +37,7 @@ import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
-import { canonicalWindowPath, isArtifactWindowPath, isPathRoutedWindow } from '../../lib/window-path'
+import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow } from '../../lib/window-path'
 import { ScratchpadWindow } from '../ScratchpadWindow'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
@@ -223,9 +223,14 @@ export const isBlogPath = (p: string): boolean => typeof p === 'string' && /^\/(
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => {
     const path = canonicalWindowPath(props.item?.path || props.item?.props?.path || '')
-    const fillHeight = isForumPath(path) || isAskAiPath(path) || isBlogPath(path) || isArtifactWindowPath(path)
-    // Forum / Ask AI / blog: fill the window so chrome (sidebar pin, settings)
-    // stays on the pane. Notebooks still grow and scroll the window.
+    const fillHeight =
+        isForumPath(path) ||
+        isAskAiPath(path) ||
+        isBlogPath(path) ||
+        isArtifactWindowPath(path) ||
+        isNotebookWindowPath(path)
+    // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
+    // settings, mobile FAB) stays on the pane. Content scrolls inside.
     return (
         <div
             data-scheme="primary"

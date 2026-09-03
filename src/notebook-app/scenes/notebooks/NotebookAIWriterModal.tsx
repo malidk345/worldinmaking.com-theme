@@ -146,7 +146,7 @@ export function NotebookAIWriterModal({
     return (
         <LemonModal isOpen={isOpen} onClose={onClose} width={640}>
             <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between border-b border-border pb-2">
+                <div className="flex items-center justify-between border-b border-primary pb-2">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-md bg-[#1D4ED8] flex items-center justify-center text-white">
                             <IconSparkles className="w-4 h-4" />
@@ -170,7 +170,7 @@ export function NotebookAIWriterModal({
                 <label
                     htmlFor="wim-ai-question-input"
                     data-writing-surface
-                    className="input-like flex flex-col cursor-text border border-border focus-within:border-primary bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#ffffff))] rounded-xl p-3"
+                    className="input-like flex flex-col cursor-text border border-primary focus-within:border-primary bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#ffffff))] rounded-xl p-3"
                 >
                     <textarea
                         id="wim-ai-question-input"
@@ -189,7 +189,7 @@ export function NotebookAIWriterModal({
                         }}
                     />
 
-                    <div className="flex items-center justify-between pt-2 border-t border-border text-[11px]">
+                    <div className="flex items-center justify-between pt-2 border-t border-primary text-[11px]">
                         <LemonSelect
                             value={mode}
                             onChange={(val) => setMode(val || 'write')}

@@ -88,6 +88,12 @@ export function isArtifactWindowPath(path?: string | null): boolean {
     return p === '/artifact' || p.startsWith('/artifact/')
 }
 
+/** Notebook list/editor — sidebar chrome must stay window-tall, not document-tall. */
+export function isNotebookWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/notebooks' || p.startsWith('/notebooks/')
+}
+
 export function notebookWindowPath(id?: string | null): string {
     const clean = String(id || '').trim()
     return clean ? `/notebooks/${clean}` : '/notebooks'

@@ -44,6 +44,7 @@ export type MarkdownNotebookProps = {
     placeholder?: string
     className?: string
     autoFocus?: boolean
+    spellCheck?: boolean
     'data-attr'?: string
 }
 

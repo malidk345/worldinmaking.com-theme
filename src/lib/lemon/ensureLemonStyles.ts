@@ -24,6 +24,12 @@ export const LEMON_SCOPE_CLASS = 'notebook-app-scope'
  */
 const NOTEBOOK_PALETTE_CSS = `
 .notebook-app-scope {
+  /* Host Tailwind: border-primary → rgb(var(--border)).
+     PostHog sets --border: rgb(0 0 0 / 15%) which makes rgb(var(--border))
+     invalid CSS and paints a solid black frame on every border-primary.
+     Do NOT set --bg here — that washes the list/editor to near-white. */
+  --border: 192 192 192;
+  --input-border: 210 210 210;
   --color-bg-surface-primary: rgb(var(--bg, 255 255 255));
   --color-bg-surface-secondary: rgb(var(--accent, 229 231 224));
   --color-bg-surface-tertiary: rgb(var(--accent, 229 231 224));
@@ -45,9 +51,31 @@ const NOTEBOOK_PALETTE_CSS = `
   --color-text-primary: rgb(var(--text-primary, 17 17 17));
   --text-3000: rgb(var(--text-primary, 17 17 17));
 }
+/* PostHog \`border-border\` is not a host utility — it fell through to currentColor (black). */
+.notebook-app-scope .border-border {
+  border-color: rgb(var(--border));
+}
+.notebook-app-scope .notebook-tools-sidebar {
+  background: rgb(var(--bg));
+  color: rgb(var(--text-primary));
+  border-color: rgb(var(--border));
+}
+.notebook-app-scope .notebook-tools-footer {
+  border-top: 1px solid rgb(var(--border));
+}
+.notebook-app-scope .notebook-tools-sidebar .notebook-rail-search input {
+  background: rgb(var(--input-bg));
+  border-color: rgb(var(--input-border));
+  color: rgb(var(--text-primary));
+}
+.notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; }
+.notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 1rem; }
+.notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.125rem; }
 /* Portaled popovers may sit outside [data-scheme]; pin light/dark to host html class */
 html.light .notebook-app-scope,
 .light .notebook-app-scope:not(.dark) {
+  --border: 192 192 192;
+  --input-border: 210 210 210;
   --color-bg-surface-primary: #ffffff;
   --color-bg-surface-secondary: #ffffff;
   --color-bg-surface-tertiary: #f5f5f5;
@@ -71,6 +99,8 @@ html.dark .notebook-app-scope,
 .notebook-app-scope.dark,
 [data-notebook-host-theme='dark'] .notebook-app-scope,
 [theme='dark'].notebook-app-scope {
+  --border: 62 66 79;
+  --input-border: 50 52 63;
   --color-bg-surface-primary: #1e1f23;
   --color-bg-surface-secondary: #232429;
   --color-bg-surface-tertiary: #2a2b31;
@@ -133,6 +163,7 @@ html.dark .MarkdownNotebook__wim-block,
 }
 @media print {
   .notebook-app-scope .notebook-outline,
+  .notebook-app-scope .notebook-tools-sidebar,
   .notebook-app-scope .MarkdownNotebook__format-toolbar,
   .notebook-app-scope .MarkdownNotebook__insert-menu,
   .notebook-app-scope .MarkdownNotebook__invite-picker {
@@ -156,7 +187,10 @@ export function ensureLemonStyles(): void {
         document.head.appendChild(style)
     }
 
-    if (!document.getElementById(PALETTE_STYLE_ID)) {
+    const existingPalette = document.getElementById(PALETTE_STYLE_ID)
+    if (existingPalette) {
+        existingPalette.innerHTML = NOTEBOOK_PALETTE_CSS
+    } else {
         const palette = document.createElement('style')
         palette.id = PALETTE_STYLE_ID
         palette.setAttribute('data-lemon-ui-palette', 'true')

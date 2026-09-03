@@ -53,8 +53,10 @@ import { mergeNotebookMarkdownChanges } from '../src/notebook-app/lib/components
 import { isNotebookImageFile, notebookImageExtension } from '../src/lib/notebook-upload-shared'
 import {
     compactHistoryForStorage,
+    createNotebook,
     deleteNotebook,
     getNotebookHistory,
+    restoreNotebookVersion,
     unpinNotebookFromDesktop,
     writeNotebookHistory,
     type StoredNotebook,
@@ -78,6 +80,8 @@ import {
 } from '../src/notebook-app/lib/components/MarkdownNotebook/documentModel'
 import { splitInlineNodesAt } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineContent'
 import { getInlineText } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
+import { computeBacklinks } from '../src/notebook-app/lib/components/MarkdownNotebook/wikilinks'
+import { extractOutlineHeadings } from '../src/notebook-app/scenes/notebooks/outlineModel'
 import type { NotebookTextBlockNode } from '../src/notebook-app/lib/components/MarkdownNotebook/types'
 import { documentMarkdown } from '../src/notebook-app/scenes/notebooks/notebookPublicMarkdown'
 
@@ -154,12 +158,32 @@ test.describe('notebook frontend helpers', () => {
         expect(restored?.focus.offset).toBe('hello /tab'.length)
     })
 
+    test('outline extracts H1–H3 in document order', () => {
+        const headings = extractOutlineHeadings('# Agora\n\nIntro\n\n## Forum\n\nText\n\n### Voice\n\nMore\n\n#### Skip')
+        expect(headings.map((item) => `${item.level}:${item.text}`)).toEqual(['1:Agora', '2:Forum', '3:Voice'])
+    })
+
+    test('backlinks scan other notebooks once, never the open page itself', () => {
+        const links = computeBacklinks(
+            { id: 'n1', title: 'Labor' },
+            [
+                { id: 'n1', title: 'Labor', content: 'See [[Capital]]' },
+                { id: 'n2', title: 'Wages', content: 'Compare [[Labor]] with surplus.' },
+                { id: 'n3', title: 'Notes', content: 'No links here.' },
+            ]
+        )
+        expect(links).toHaveLength(1)
+        expect(links[0].sourceNotebookId).toBe('n2')
+        expect(links[0].contextSnippet).toContain('Labor')
+    })
+
     test('list search matches title or body', () => {
         const notebook = { title: 'Market notes', content: '# Draft\n\nLook at **ARR** next week.' }
         expect(notebookMatchesQuery(notebook, '')).toBe(true)
         expect(notebookMatchesQuery(notebook, 'market')).toBe(true)
         expect(notebookMatchesQuery(notebook, 'arr')).toBe(true)
         expect(notebookMatchesQuery(notebook, 'missing')).toBe(false)
+        expect(notebookMatchesQuery({ title: 'Doc', content: '```js\nhidden\n```\nVisible ARR' }, 'arr')).toBe(true)
     })
 
     test('remote notebooks win only when they are newer', () => {
@@ -673,11 +697,24 @@ test.describe('notebook frontend helpers', () => {
         expect(compacted).toHaveLength(6)
         expect(compacted.slice(0, 3).every((entry) => !entry.content)).toBe(true)
         expect(compacted.slice(-3).map((entry) => entry.content)).toEqual(['body-4', 'body-5', 'body-6'])
+        expect(restoreNotebookVersion('missing-notebook', 1)).toBeUndefined()
         expect(() => writeNotebookHistory('nb-quota-test', entries)).not.toThrow()
         if (typeof localStorage !== 'undefined') {
             expect(getNotebookHistory('nb-quota-test').length).toBeGreaterThan(0)
             localStorage.removeItem('wim_notebook_history_nb-quota-test')
         }
+    })
+
+    test('restore refuses compacted snapshots that no longer store a body', () => {
+        if (typeof localStorage === 'undefined') return
+        const notebook = createNotebook('Restore test', 'live body')
+        writeNotebookHistory(notebook.id, [
+            { version: 1, title: 'Restore test', timestamp: '2026-01-01T00:00:00.000Z' },
+            { version: 2, content: 'kept body', title: 'Restore test', timestamp: '2026-01-02T00:00:00.000Z' },
+        ])
+        expect(restoreNotebookVersion(notebook.id, 1)).toBeUndefined()
+        expect(restoreNotebookVersion(notebook.id, 2)?.content).toBe('kept body')
+        deleteNotebook(notebook.id)
     })
 
     test('deleting a notebook automatically unpins it from desktop pinned items', () => {

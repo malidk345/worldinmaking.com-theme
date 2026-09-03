@@ -1,6 +1,6 @@
 import React from 'react'
 import type { AppWindow } from '../../context/Window'
-import { isArtifactWindowPath } from '../../lib/window-path'
+import { isArtifactWindowPath, isNotebookWindowPath } from '../../lib/window-path'
 import WindowErrorBoundary from './WindowErrorBoundary'
 
 interface WindowContentProps {
@@ -13,7 +13,7 @@ interface WindowContentProps {
 export default function WindowContent({ item, chrome, hasToolbar, children }: WindowContentProps) {
     const path = item.path || item.props?.path || ''
     // Forum (Inbox) is a fixed split layout (list + thread panel) like wimpos — needs
-    // overflow-hidden + h-full chain. Notebooks/docs still need overflow-y-auto to scroll.
+    // overflow-hidden + h-full chain. Blog + notebooks keep sidebar chrome window-tall.
     const isForumShell =
         /^\/questions/.test(path) ||
         /^\/forum/.test(path) ||
@@ -21,7 +21,8 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
             !path.startsWith('/community/profiles') &&
             !path.startsWith('/community/achievements'))
     const isBlogShell = /^\/(blog|posts)(\/|$)/.test(path)
-    const lockToWindow = isForumShell || isBlogShell || isArtifactWindowPath(path)
+    const lockToWindow =
+        isForumShell || isBlogShell || isArtifactWindowPath(path) || isNotebookWindowPath(path)
 
     return (
         <div

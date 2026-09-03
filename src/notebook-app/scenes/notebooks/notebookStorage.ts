@@ -731,7 +731,7 @@ export function restoreNotebookVersion(id: string, version: number): StoredNoteb
 
     const history = getNotebookHistory(id)
     const targetVersion = history.find((h) => h.version === version)
-    if (!targetVersion) return undefined
+    if (!targetVersion?.content) return undefined
 
     return saveNotebook(
         {

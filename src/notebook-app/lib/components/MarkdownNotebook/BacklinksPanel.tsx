@@ -31,7 +31,7 @@ export function BacklinksPanel({ backlinks, currentNotebookTitle }: BacklinksPan
     }
 
     return (
-        <div className="mt-8 pt-4 border-t border-border/60 font-sans text-sm select-none">
+        <div className="mt-8 pt-4 border-t border-primary/60 font-sans text-sm select-none">
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -54,7 +54,7 @@ export function BacklinksPanel({ backlinks, currentNotebookTitle }: BacklinksPan
                         <div
                             key={link.sourceNotebookId}
                             onClick={() => handleOpenReferencingNotebook(link.sourceNotebookId, link.sourceTitle)}
-                            className="group flex flex-col justify-between p-3 rounded-lg border border-border/50 bg-accent/10 hover:bg-accent/25 hover:border-border cursor-pointer transition-all shadow-2xs"
+                            className="group flex flex-col justify-between p-3 rounded-lg border border-primary/50 bg-accent/10 hover:bg-accent/25 hover:border-primary cursor-pointer transition-all shadow-2xs"
                         >
                             <div className="flex items-center justify-between gap-2 mb-1.5">
                                 <div className="flex items-center gap-1.5 font-medium text-foreground text-xs truncate">

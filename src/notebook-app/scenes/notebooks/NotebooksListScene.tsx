@@ -49,12 +49,18 @@ export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
 }: NotebooksListSceneProps): JSX.Element {
+    const [searchInput, setSearchInput] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [createdByFilter, setCreatedByFilter] = useState('all')
     const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
     const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
     const leavingIdsRef = useRef<Set<string>>(new Set())
     const { addToast } = useToast()
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => setSearchQuery(searchInput), 180)
+        return () => window.clearTimeout(timer)
+    }, [searchInput])
 
     const reloadNotebooks = useCallback(() => {
         const live = getNotebooks()
@@ -211,7 +217,7 @@ export function NotebooksListScene({
                 return (
                     <div className="whitespace-nowrap text-right">
                         <span
-                            className="whitespace-nowrap align-middle border-b border-dotted border-border text-xs text-muted font-normal cursor-help"
+                            className="whitespace-nowrap align-middle border-b border-dotted border-primary text-xs text-muted font-normal cursor-help"
                             title={new Date(notebook.createdAt).toLocaleString()}
                         >
                             {timeAgo(notebook.createdAt)}
@@ -229,7 +235,7 @@ export function NotebooksListScene({
                 return (
                     <div className="whitespace-nowrap text-right">
                         <span
-                            className="whitespace-nowrap align-middle border-b border-dotted border-border text-xs text-muted font-normal cursor-help"
+                            className="whitespace-nowrap align-middle border-b border-dotted border-primary text-xs text-muted font-normal cursor-help"
                             title={new Date(notebook.updatedAt).toLocaleString()}
                         >
                             {timeAgo(notebook.updatedAt)}
@@ -299,8 +305,8 @@ export function NotebooksListScene({
                     <LemonInput
                         type="search"
                         placeholder="Search titles or content"
-                        onChange={setSearchQuery}
-                        value={searchQuery}
+                        onChange={setSearchInput}
+                        value={searchInput}
                         data-attr="notebooks-search"
                         size="small"
                         className="w-full sm:w-72"
@@ -334,7 +340,7 @@ export function NotebooksListScene({
                         : `${filteredNotebooks.length} of ${notebooks.length}`}
                 </span>
                 <span className="hidden sm:inline select-none">
-                    <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-surface-secondary font-medium">
+                    <kbd className="px-1.5 py-0.5 rounded-md border border-primary bg-surface-secondary font-medium">
                         ⌘K
                     </kbd>{' '}
                     to jump
@@ -354,6 +360,7 @@ export function NotebooksListScene({
                     }
                     loading={false}
                     defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
+                    pagination={{ pageSize: 25, hideOnSinglePage: true }}
                     emptyState={
                         emptyLibrary ? (
                             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">

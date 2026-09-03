@@ -307,6 +307,7 @@ function MarkdownNotebookEditor({
     placeholder = 'Type / to insert a block, or just start writing…',
     className,
     autoFocus = false,
+    spellCheck = true,
     'data-attr': dataAttr = 'markdown-notebook',
 }: MarkdownNotebookProps): JSX.Element {
     const mergedRegistry = useMemo(
@@ -5879,6 +5880,7 @@ function MarkdownNotebookEditor({
                         ref={canvasRef}
                         data-writing-dock
                         contentEditable={mode === 'edit'}
+                        spellCheck={spellCheck}
                         suppressContentEditableWarning
                         data-markdown-notebook-editor
                         role={mode === 'edit' ? 'textbox' : undefined}

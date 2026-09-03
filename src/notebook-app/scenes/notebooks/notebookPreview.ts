@@ -20,7 +20,6 @@ export function notebookPreviewExcerpt(content: string, max = 92): string {
 export function notebookMatchesQuery(notebook: { title?: string; content?: string }, query: string): boolean {
     const q = query.trim().toLowerCase()
     if (!q) return true
-    return (
-        (notebook.title || '').toLowerCase().includes(q) || (notebook.content || '').toLowerCase().includes(q)
-    )
+    if ((notebook.title || '').toLowerCase().includes(q)) return true
+    return notebookPreviewExcerpt(notebook.content || '', 2000).toLowerCase().includes(q)
 }

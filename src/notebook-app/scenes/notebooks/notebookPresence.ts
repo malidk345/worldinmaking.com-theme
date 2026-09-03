@@ -98,6 +98,7 @@ export function useNotebookPresence({
     const [carets, setCarets] = useState<RemoteNotebookCaret[]>([])
     const [people, setPeople] = useState<NotebookPresencePerson[]>([])
     const positionRef = useRef<MarkdownNotebookCaretPosition | null>(null)
+    const caretTimerRef = useRef<number>(0)
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
     const versionRef = useRef(version)
     versionRef.current = version
@@ -152,6 +153,8 @@ export function useNotebookPresence({
             })
 
         return () => {
+            if (caretTimerRef.current) window.clearTimeout(caretTimerRef.current)
+            caretTimerRef.current = 0
             channelRef.current = null
             void supabase.removeChannel(channel)
             setCarets([])
@@ -167,7 +170,11 @@ export function useNotebookPresence({
     const publishCaret = useCallback(
         (position: MarkdownNotebookCaretPosition | null) => {
             positionRef.current = position
-            void publishNow()
+            if (caretTimerRef.current) return
+            caretTimerRef.current = window.setTimeout(() => {
+                caretTimerRef.current = 0
+                void publishNow()
+            }, 120)
         },
         [publishNow]
     )
