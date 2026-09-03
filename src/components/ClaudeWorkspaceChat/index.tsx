@@ -1432,8 +1432,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             }
           }
 
-          if ((parsed as any).type === 'token_usage' && (parsed as any).snapshot) {
-            updateCachedTokenQuota((parsed as any).snapshot);
+          if (parsed.type === 'token_usage' && parsed.snapshot) {
+            updateCachedTokenQuota(parsed.snapshot as Parameters<typeof updateCachedTokenQuota>[0]);
           }
 
           if (parsed.type === 'done') {

@@ -572,7 +572,7 @@ export default async function handler(req: Request) {
                     const totalTurnTokens = Math.max(10, inTokens + outTokens)
                     try {
                         const snapshot = await recordTokenUsage(quotaSubject, totalTurnTokens, tokenTier)
-                        send({ type: 'token_usage', snapshot } as any)
+                        send({ type: 'token_usage', snapshot })
                     } catch {
                         /* ignore tracking error */
                     }

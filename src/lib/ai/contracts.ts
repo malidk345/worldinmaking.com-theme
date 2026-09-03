@@ -108,10 +108,9 @@ export type AiSseEvent =
     | {
           type: 'human'
           human: {
-              kind: 'ask' | 'plan_approval'
+              kind: 'plan_approval'
               title: string
               status: 'pending' | 'answered' | 'approved' | 'revised'
-              questions?: Array<{ id: string; prompt: string; options?: string[] }>
               plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
               summary?: string
           }
@@ -147,6 +146,19 @@ export type AiSseEvent =
     | {
           type: 'action'
           action: import('../bots/tools/host').HostOsAction
+      }
+    | {
+          type: 'token_usage'
+          snapshot: {
+              subject: string
+              tier: string
+              usedTokens: number
+              limitTokens: number
+              remainingTokens: number
+              percentage: number
+              allowed: boolean
+              resetAtUtc: string
+          }
       }
     | {
           type: 'done'
