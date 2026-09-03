@@ -71,6 +71,54 @@ const NOTEBOOK_PALETTE_CSS = `
 .notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; }
 .notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 1rem; }
 .notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.125rem; }
+.notebook-app-scope .NotebookPublicView {
+  /* Same stack as tailwind.config.js fontFamily.sans / blog ReaderView */
+  --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+  --font-title: var(--font-sans);
+  --font-button: var(--font-sans);
+  font-family: var(--font-sans);
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block {
+  font-family: var(--font-sans);
+  letter-spacing: normal !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+.notebook-app-scope[data-notebook-font='sm'] .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope[data-notebook-font='md'] .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope[data-notebook-font='lg'] .NotebookPublicView .MarkdownNotebook {
+  font-size: 15px !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block {
+  line-height: 1.5 !important;
+}
+.notebook-app-scope .NotebookPublicView h1,
+.notebook-app-scope .NotebookPublicView h1.MarkdownNotebook__text-block--heading {
+  font-family: var(--font-sans);
+  font-size: 2.1428571em !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: normal !important;
+}
+.notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
+  font-family: var(--font-sans);
+  font-size: 1.4285714em !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+}
+.notebook-app-scope .NotebookPublicView h3.MarkdownNotebook__text-block--heading {
+  font-family: var(--font-sans);
+  font-size: 1.2857143em !important;
+  font-weight: 700 !important;
+  line-height: 1.5555556 !important;
+  letter-spacing: normal !important;
+}
 /* Portaled popovers may sit outside [data-scheme]; pin light/dark to host html class */
 html.light .notebook-app-scope,
 .light .notebook-app-scope:not(.dark) {
