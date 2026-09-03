@@ -150,7 +150,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleSubmit = () => {
-    if ((!prompt.trim() && attachments.length === 0) || isStreaming) return;
+    if ((!prompt.trim() && attachments.length === 0) || isStreaming || (quota && !quota.allowed)) return;
     onSendMessage(prompt.trim(), attachments);
     setPrompt('');
     setAttachments([]);
@@ -503,9 +503,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!prompt.trim() && attachments.length === 0}
+                disabled={(!prompt.trim() && attachments.length === 0) || Boolean(quota && !quota.allowed)}
                 className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs ${
-                  prompt.trim() || attachments.length > 0
+                   (prompt.trim() || attachments.length > 0) && !(quota && !quota.allowed)
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
