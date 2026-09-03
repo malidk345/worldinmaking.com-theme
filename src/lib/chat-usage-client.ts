@@ -10,17 +10,47 @@ export interface TokenQuotaSnapshot {
     percentage: number
     allowed: boolean
     resetAtUtc: string
+    /** True when /api/chat-quota could not be verified (fail closed). */
+    unavailable?: boolean
 }
 
 export const TOKEN_QUOTA_UPDATED_EVENT = 'wimTokenQuotaUpdated'
 
 const CACHE_KEY = 'wim_token_quota_cache_v1'
 
+function unavailableQuotaSnapshot(): TokenQuotaSnapshot {
+    return {
+        subject: 'unknown',
+        tier: 'guest',
+        usedTokens: 0,
+        limitTokens: 0,
+        remainingTokens: 0,
+        percentage: 100,
+        allowed: false,
+        resetAtUtc: new Date().toISOString(),
+        unavailable: true,
+    }
+}
+
+function clearCachedTokenQuota(): void {
+    if (typeof window === 'undefined') return
+    try {
+        window.localStorage.removeItem(CACHE_KEY)
+    } catch {
+        /* ignore */
+    }
+}
+
 export function getCachedTokenQuota(): TokenQuotaSnapshot | null {
     if (typeof window === 'undefined') return null
     try {
         const raw = window.localStorage.getItem(CACHE_KEY)
-        if (raw) return JSON.parse(raw)
+        if (raw) {
+            const parsed = JSON.parse(raw) as TokenQuotaSnapshot
+            // Never revive a fail-closed marker from storage as a real quota.
+            if (parsed?.unavailable) return null
+            return parsed
+        }
     } catch {
         /* ignore */
     }
@@ -29,6 +59,12 @@ export function getCachedTokenQuota(): TokenQuotaSnapshot | null {
 
 export function updateCachedTokenQuota(snapshot: TokenQuotaSnapshot): void {
     if (typeof window === 'undefined' || !snapshot) return
+    // Successful responses only — do not persist unavailable markers.
+    if (snapshot.unavailable) {
+        clearCachedTokenQuota()
+        window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: snapshot }))
+        return
+    }
     try {
         window.localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot))
         window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: snapshot }))
@@ -47,10 +83,27 @@ export async function fetchTokenQuota(): Promise<TokenQuotaSnapshot | null> {
             updateCachedTokenQuota(data)
             return data
         }
+
+        // Non-ok (incl. 503 QUOTA_UNAVAILABLE): fail closed — do not hide store
+        // outage behind a stale allowed:true cache.
+        try {
+            await res.json() // drain; body may include { code: 'QUOTA_UNAVAILABLE' }
+        } catch {
+            /* ignore body parse */
+        }
+        const unavailable = unavailableQuotaSnapshot()
+        clearCachedTokenQuota()
+        window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: unavailable }))
+        return unavailable
     } catch {
-        /* silent fallback */
+        // Network failure with no response: prefer cache if present, else fail closed
+        // so null never leaves the composer send-unlocked.
+        const cached = getCachedTokenQuota()
+        if (cached) return cached
+        const unavailable = unavailableQuotaSnapshot()
+        window.dispatchEvent(new CustomEvent(TOKEN_QUOTA_UPDATED_EVENT, { detail: unavailable }))
+        return unavailable
     }
-    return getCachedTokenQuota()
 }
 
 export function useTokenQuota() {

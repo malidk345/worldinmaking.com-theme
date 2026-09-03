@@ -520,7 +520,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       <div className="mt-1.5 flex min-h-4 flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
         <span>Philosopher replies are public text. Double-check citations and claims.</span>
-        {quota && quota.tier !== "dev" ? (
+        {quota?.unavailable ? (
+          <span className="font-medium text-primary">Couldn&apos;t verify daily quota</span>
+        ) : quota && quota.tier !== "dev" ? (
           <span className={quota.allowed ? "" : "font-medium text-primary"}>
             {quota.allowed
               ? `${quota.remainingTokens >= 1000 ? `${Math.round(quota.remainingTokens / 1000)}k` : quota.remainingTokens} tokens left`
