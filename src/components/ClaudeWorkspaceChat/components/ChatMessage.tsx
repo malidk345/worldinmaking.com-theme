@@ -26,7 +26,7 @@ interface ChatMessageProps {
   onFeedback?: (messageId: string, liked: boolean | null) => void;
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
-  onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
+  onHumanRespond?: (messageId: string, action: 'run' | 'revise', payload?: string) => void;
   onAddToNotebook?: (message: Message) => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
@@ -130,7 +130,7 @@ function HumanTurnCard({
 }: {
   turn: HumanTurn
   disabled?: boolean
-  onRespond: (action: 'run' | 'revise' | 'answer', payload?: string) => void
+  onRespond: (action: 'run' | 'revise', payload?: string) => void
 }) {
   const [draft, setDraft] = useState('')
   const pending = turn.status === 'pending' && !disabled
