@@ -44,7 +44,7 @@ import { NotebooksListScene } from './scenes/notebooks/NotebooksListScene'
 import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
 import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
-import { NotebookShareModal, type NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
+import type { NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
 import { NotebookInviteScene } from './scenes/notebooks/NotebookInviteScene'
 import { NotebookSyncInfo } from './scenes/notebooks/NotebookMeta'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
@@ -910,6 +910,10 @@ export function App() {
                     setShareTab(tab || 'private')
                     setShowShareModal(true)
                   }}
+                  shareOpen={showShareModal}
+                  onShareOpenChange={setShowShareModal}
+                  shareTab={shareTab}
+                  onPublish={handlePublish}
                   people={presence.people}
                 />
                 <div
@@ -1036,15 +1040,6 @@ export function App() {
                 </div>
                 </div>
 
-                {/* Share Modal */}
-                <NotebookShareModal
-                  isOpen={showShareModal}
-                  onClose={() => setShowShareModal(false)}
-                  notebookId={currentNotebook.id}
-                  notebookTitle={currentNotebook.title}
-                  initialTab={shareTab}
-                  onPublish={handlePublish}
-                />
                 </div>
               </div>
             ) : (
