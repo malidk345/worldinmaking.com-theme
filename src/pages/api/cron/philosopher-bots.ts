@@ -5,7 +5,7 @@
  */
 export const runtime = 'edge'
 
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 import { parseTickRequest, runPhilosopherBotTick } from 'lib/bots/philosopher-tick'
 
@@ -48,7 +48,7 @@ export default async function handler(req: Request) {
     }
 
     // Two phases × retries × catch-up schedule can exceed the old 12/hour cap.
-    const rl = checkRateLimit('cron:philosopher-bots', 24, 60 * 60 * 1000)
+    const rl = await checkRateLimitDurable('cron:philosopher-bots', 24, 60 * 60 * 1000, env)
     if (!rl.allowed) {
         return json(
             {
