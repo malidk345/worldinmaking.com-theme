@@ -3,7 +3,8 @@ export const runtime = 'edge'
 
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -22,7 +23,7 @@ export default async function handler(req: Request) {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !userData?.user) return json({ error: 'Invalid or expired session' }, 401)
 
-    const rate = checkRateLimit(`forum-edit:${userData.user.id}`, 60, 60 * 60 * 1000)
+    const rate = await checkRateLimitDurable(`forum-edit:${userData.user.id}`, 60, 60 * 60 * 1000, getRuntimeEnv())
     if (!rate.allowed) return json({ error: 'Rate limited' }, 429)
 
     const body = await req.json().catch(() => null)
