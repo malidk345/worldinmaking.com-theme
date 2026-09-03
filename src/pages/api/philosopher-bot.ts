@@ -62,8 +62,27 @@ export default async function handler(req: Request) {
     if (context === null) return json({ error: 'context must be a string', success: false, code: 'INVALID_CONTEXT' }, 400)
 
     const clientIp = getClientIp(req)
-    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 60, 60 * 60 * 1000, env)
-    const rl = await checkRateLimitDurable(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000, env)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 60, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(
+        `chat:${clientIp}:${philosopher.toLowerCase()}`,
+        30,
+        60 * 60 * 1000,
+        env,
+        { failClosed: true }
+    )
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)

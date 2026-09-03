@@ -23,8 +23,17 @@ export default async function handler(req: Request) {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !userData?.user) return json({ error: 'Invalid or expired session' }, 401)
 
-    const rate = await checkRateLimitDurable(`forum-edit:${userData.user.id}`, 60, 60 * 60 * 1000, getRuntimeEnv())
-    if (!rate.allowed) return json({ error: 'Rate limited' }, 429)
+    const rate = await checkRateLimitDurable(
+        `forum-edit:${userData.user.id}`,
+        60,
+        60 * 60 * 1000,
+        getRuntimeEnv(),
+        { failClosed: true }
+    )
+    if (rate.source === 'unavailable') {
+        return json({ error: 'Rate limit store temporarily unavailable', code: 'RATE_LIMIT_UNAVAILABLE' }, 503)
+    }
+    if (!rate.allowed) return json({ error: 'Rate limited', code: 'RATE_LIMITED' }, 429)
 
     const body = await req.json().catch(() => null)
     if (!body) return json({ error: 'Invalid JSON payload' }, 400)

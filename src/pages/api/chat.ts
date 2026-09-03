@@ -259,8 +259,26 @@ export default async function handler(req: Request) {
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     if (!isDevEnv) {
-        const hourly = await checkRateLimitDurable(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000, getRuntimeEnv())
+        const hourly = await checkRateLimitDurable(
+            `workspace-chat:${quotaSubject}`,
+            hourlyLimit,
+            60 * 60 * 1000,
+            getRuntimeEnv(),
+            { failClosed: true }
+        )
         if (!hourly.allowed) {
+            if (hourly.source === 'unavailable') {
+                return json(
+                    {
+                        success: false,
+                        error: '[app] Inquiry quota could not be verified. Please try again.',
+                        code: 'QUOTA_UNAVAILABLE',
+                        retryAfterSec: hourly.retryAfterSec,
+                    },
+                    503,
+                    { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
+                )
+            }
             return json(
                 {
                     success: false,

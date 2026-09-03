@@ -6,8 +6,9 @@
  *
  * `checkRateLimitDurable` — Upstash Redis (REST) fixed-window limiter that
  * survives isolate recycling. Falls back to the in-memory limiter when
- * UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are not configured or the
- * store is unreachable, so endpoints never hard-fail on infra issues.
+ * UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are not configured.
+ * When credentials are present but the store is unreachable, callers may pass
+ * `{ failClosed: true }` to deny the request instead of falling open to memory.
  */
 import { envFrom, getRuntimeEnv, type EnvStore } from './runtime-env'
 type Bucket = { count: number; resetAt: number }
@@ -38,6 +39,8 @@ export interface RateLimitResult {
     remaining: number
     resetSec: number
     retryAfterSec: number
+    /** Where the decision came from. `unavailable` only when failClosed and durable store failed. */
+    source?: 'durable' | 'memory' | 'unavailable'
 }
 
 /**
@@ -147,19 +150,34 @@ async function upstashRateLimit(
  * Preferred limiter for public LLM endpoints. Uses durable Upstash counters
  * when configured; otherwise degrades to the per-isolate in-memory bucket.
  * Never throws.
+ *
+ * @param opts.failClosed When Upstash creds are configured but the call fails,
+ *   deny the request (`source: 'unavailable'`) instead of falling back to memory.
+ *   Default false preserves the historical soft fallback.
  */
 export async function checkRateLimitDurable(
     key: string,
     limit = 20,
     windowMs = 60 * 60 * 1000,
-    env?: EnvStore
+    env?: EnvStore,
+    opts?: { failClosed?: boolean }
 ): Promise<RateLimitResult> {
     const creds = readUpstashCreds(env)
     if (creds) {
         const durable = await upstashRateLimit(creds, key, limit, windowMs)
-        if (durable) return durable
+        if (durable) return { ...durable, source: 'durable' }
+        if (opts?.failClosed) {
+            return {
+                allowed: false,
+                limit,
+                remaining: 0,
+                resetSec: 60,
+                retryAfterSec: 60,
+                source: 'unavailable',
+            }
+        }
     }
-    return checkRateLimit(key, limit, windowMs)
+    return { ...checkRateLimit(key, limit, windowMs), source: 'memory' }
 }
 
 export function resetRateLimit(key?: string): void {

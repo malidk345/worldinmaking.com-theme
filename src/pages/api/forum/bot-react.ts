@@ -24,7 +24,13 @@ export default async function handler(req: Request) {
 
     const env = getRuntimeEnv()
     const ip = getClientIp(req)
-    const burst = await checkRateLimitDurable(`forum-react:${ip}`, 20, 60 * 60 * 1000, env)
+    const burst = await checkRateLimitDurable(`forum-react:${ip}`, 20, 60 * 60 * 1000, env, { failClosed: true })
+    if (burst.source === 'unavailable') {
+        return json(
+            { success: false, code: 'RATE_LIMIT_UNAVAILABLE', error: 'Rate limit store temporarily unavailable', skipped: true, reason: 'rate_limit_unavailable' },
+            503
+        )
+    }
     if (!burst.allowed) {
         return json({ success: false, skipped: true, reason: 'rate_limited' }, 200)
     }
@@ -35,7 +41,13 @@ export default async function handler(req: Request) {
         return json({ success: false, error: 'postId required' }, 400)
     }
 
-    const recent = await checkRateLimitDurable(`forum-react-post:${postId}`, 1, 6 * 60 * 1000, env)
+    const recent = await checkRateLimitDurable(`forum-react-post:${postId}`, 1, 6 * 60 * 1000, env, { failClosed: true })
+    if (recent.source === 'unavailable') {
+        return json(
+            { success: false, code: 'RATE_LIMIT_UNAVAILABLE', error: 'Rate limit store temporarily unavailable', skipped: true, reason: 'rate_limit_unavailable' },
+            503
+        )
+    }
     if (!recent.allowed) {
         return json({ success: true, skipped: true, reason: 'cooldown' }, 200)
     }

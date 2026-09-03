@@ -129,10 +129,24 @@ export default async function handler(req: Request) {
 
     // Per-IP hourly cap for mutating / LLM-heavy actions (`status` already returned above).
     // Durable Upstash counters when configured so Cloudflare isolate recycling cannot bypass.
-    // Falls open to the in-memory bucket if Upstash is unset or unreachable (same as daily quota).
+    // Fail-closed when Upstash is configured but unreachable; memory fallback only when unset.
     const clientIp = getClientIp(req)
-    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env)
-    const rl = await checkRateLimitDurable(`bot_act:${clientIp}`, 500, 60 * 60 * 1000, env)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`bot_act:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                action,
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
