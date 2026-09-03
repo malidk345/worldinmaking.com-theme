@@ -208,43 +208,6 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
-            name: 'ask_user',
-            description:
-                'Ask the user a clarifying question and wait. Use when a choice, missing constraint, or confirmation is required before you can continue. The host shows a card. Do not keep guessing.',
-            parameters: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                    title: {
-                        type: 'string',
-                        description: 'Short card title.',
-                    },
-                    questions: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            additionalProperties: false,
-                            properties: {
-                                id: { type: 'string', description: 'Stable question id.' },
-                                prompt: { type: 'string', description: 'The question to show the user.' },
-                                options: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                    description: 'Optional short choices. Omit for free text.',
-                                },
-                            },
-                            required: ['prompt'],
-                        },
-                        description: 'One or more questions. Keep it short.',
-                    },
-                },
-                required: ['questions'],
-            },
-        },
-    },
-    {
-        type: 'function',
-        function: {
             name: 'remember',
             description:
                 'Store a durable fact about the user, this workspace, or a constraint that should persist across turns. Use when the user says remember this, or when a preference must not be forgotten.',
@@ -631,7 +594,6 @@ TOOL USE:
 - todo_write: create the plan once, then only update statuses with the SAME ids. Do not invent a second plan. Exactly one item in_progress. The host shows one locked plan in the thinking process.
 - switch_mode: YOU choose plan vs execute. The user has no plan toggle. Use plan when sequencing or research helps. Use execute when you need mutating tools.
 - finalize_plan: when you need mutating tools or the plan is ready, call this. The host continues in the same turn. Then do the work, including writing the requested piece.
-- ask_user: stop and ask when you need a choice or a missing constraint. Wait for the card.
 - remember: store a durable user/workspace fact so later turns can use it.
 - task: a focused read-only research slice. Use for one sub-question, not the whole job.
 - DOCUMENT & RESEARCH DIRECTIVE:
