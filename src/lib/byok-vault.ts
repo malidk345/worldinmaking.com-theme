@@ -52,6 +52,14 @@ const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
         enabled: false,
         status: 'idle',
     },
+    deepseek: {
+        providerId: 'deepseek',
+        name: 'DeepSeek',
+        apiKey: '',
+        preferredModel: 'deepseek-chat',
+        enabled: false,
+        status: 'idle',
+    },
 }
 
 export function loadByokConfigs(): Record<string, ByokProviderConfig> {
@@ -98,6 +106,7 @@ export type ByokPayload = {
     gemini?: string
     openai?: string
     anthropic?: string
+    deepseek?: string
 }
 
 /**
@@ -108,7 +117,7 @@ export type ByokPayload = {
 export function getActiveByokPayload(): ByokPayload {
     const configs = loadByokConfigs()
     const payload: ByokPayload = {}
-    for (const id of ['groq', 'gemini', 'openai', 'anthropic'] as const) {
+    for (const id of ['groq', 'gemini', 'openai', 'anthropic', 'deepseek'] as const) {
         const conf = configs[id]
         if (conf?.enabled && conf.apiKey.trim()) {
             payload[id] = conf.apiKey.trim()
