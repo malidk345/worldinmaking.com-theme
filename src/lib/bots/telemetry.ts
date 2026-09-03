@@ -21,6 +21,9 @@ export type AiTurnTelemetry = {
     errorCode?: string
     /** Correlates a turn with the HTTP request that produced it. */
     requestId?: string
+    qualityGate?: 'passed' | 'failed' | 'skipped'
+    interrupted?: boolean
+    usedTools?: boolean
 }
 
 export function recordAiTurn(event: AiTurnTelemetry): void {
