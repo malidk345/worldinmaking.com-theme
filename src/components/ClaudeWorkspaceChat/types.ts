@@ -21,8 +21,7 @@ export type AgentMode = 'ask' | 'plan' | 'execute'
 export type HumanTurn = {
   kind: 'plan_approval'
   title: string
-  status: 'pending' | 'answered' | 'approved' | 'revised'
-  questions?: Array<{ id: string; prompt: string; options?: string[] }>
+  status: 'pending' | 'approved' | 'revised'
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
 }
