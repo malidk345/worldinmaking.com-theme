@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { IconDownload, IconGear, IconShare } from '@posthog/icons'
 import OSButton from 'components/OSButton'
+import { LemonButton, LemonDropdown } from '~nb-lib/lemon-ui/index'
 import Link from 'components/Link'
 import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
@@ -18,7 +19,7 @@ import {
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf } from './exportNotebookPdf'
-import type { NotebookShareTab } from './NotebookShareModal'
+import { NotebookShareModal, type NotebookPublishPayload, type NotebookShareTab } from './NotebookShareModal'
 
 export function NotebookSettingsPopover({
     settings,
@@ -113,9 +114,39 @@ export function NotebookSettingsPopover({
     )
 }
 
-export function NotebookShareButton({ onShare }: { onShare: (tab?: NotebookShareTab) => void }): JSX.Element {
+export function NotebookShareButton({
+    notebookId,
+    notebookTitle,
+    onPublish,
+    initialTab = 'private',
+    isOpen,
+    onOpenChange,
+}: {
+    notebookId: string
+    notebookTitle: string
+    onPublish: (meta: NotebookPublishPayload) => void
+    initialTab?: NotebookShareTab
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
+}): JSX.Element {
     return (
-        <OSButton size="md" icon={<IconShare />} aria-label="Share" tooltip="Share" onClick={() => onShare('private')} />
+        <LemonDropdown
+            overlay={
+                <NotebookShareModal
+                    isOpen={isOpen !== false}
+                    onClose={() => onOpenChange?.(false)}
+                    notebookId={notebookId}
+                    notebookTitle={notebookTitle}
+                    initialTab={initialTab}
+                    onPublish={onPublish}
+                />
+            }
+            visible={isOpen}
+            onVisibilityChange={onOpenChange}
+            closeOnClickInside={false}
+        >
+            <LemonButton size="small" icon={<IconShare />} active={Boolean(isOpen)} tooltip="Share" aria-label="Share" />
+        </LemonDropdown>
     )
 }
 
