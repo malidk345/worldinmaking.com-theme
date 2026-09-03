@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { formatAiSseEvent, shouldAdvertiseQualityCorrection, toPublicProviderLabel } from '../src/lib/ai/contracts'
-import type { HumanTurn, HumanTurnKind } from '../src/lib/bots/agent/human'
+import type { HumanTurn, HumanTurnKind, HumanTurnStatus } from '../src/lib/bots/agent/human'
+import { parseResumeAction } from '../src/lib/bots/agent/checkpoint'
 import { publicBotSuccessFields, type BotRunSuccess } from '../src/lib/bots/orchestrate'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
 import { toolStatusLabel, toolResultSummary } from '../src/lib/bots/tools/labels'
@@ -99,6 +100,21 @@ test.describe('Human SSE is plan_approval-only', () => {
         }
         expect(turn.kind).toBe('plan_approval')
         expect(JSON.stringify(turn)).not.toContain('ask_user')
+    })
+
+    test('ResumeAction rejects answer; HumanTurnStatus has no answered', () => {
+        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('run')).toBe('run')
+        expect(parseResumeAction('revise')).toBe('revise')
+        const statuses: HumanTurnStatus[] = ['pending', 'approved', 'revised']
+        expect(statuses).toEqual(['pending', 'approved', 'revised'])
+        expect(statuses.includes('answered' as HumanTurnStatus)).toBe(false)
+        const turn: HumanTurn = {
+            kind: 'plan_approval',
+            title: 'Approve plan',
+            status: 'approved',
+        }
+        expect(['pending', 'approved', 'revised']).toContain(turn.status)
     })
 
     test('OPENAI_CHAT_TOOLS and mode toolkits still exclude ask_user', () => {
