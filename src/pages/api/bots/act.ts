@@ -31,7 +31,7 @@ import {
 } from 'lib/bots'
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { runPaperStep, type PaperStepKind } from 'lib/bots/actions/paper'
-import { checkRateLimitDurable } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -46,10 +46,13 @@ import {
     type ValidBotAction,
 } from 'lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+        },
     })
 }
 
@@ -124,21 +127,25 @@ export default async function handler(req: Request) {
 
     if (action === 'status') return json(getBotSystemStatus(env))
 
-    // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
-    // Scoped per client IP so rotating bot names cannot bypass the bucket.
+    // Per-IP hourly cap for mutating / LLM-heavy actions (`status` already returned above).
+    // Durable Upstash counters when configured so Cloudflare isolate recycling cannot bypass.
+    // Falls open to the in-memory bucket if Upstash is unset or unreachable (same as daily quota).
     const clientIp = getClientIp(req)
     const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env)
     const rl = await checkRateLimitDurable(`bot_act:${clientIp}`, 500, 60 * 60 * 1000, env)
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
+        const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
         return json(
             {
                 success: false,
+                code: 'RATE_LIMITED',
                 error: `Rate limited for ${action}/${bot}. Retry in ${retryAfterSec}s`,
                 action,
                 retryAfterSec,
             },
-            429
+            429,
+            rlHeaders
         )
     }
 
