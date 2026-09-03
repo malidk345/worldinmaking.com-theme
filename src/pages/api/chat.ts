@@ -11,7 +11,7 @@
 export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
@@ -259,7 +259,7 @@ export default async function handler(req: Request) {
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     if (!isDevEnv) {
-        const hourly = checkRateLimit(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000)
+        const hourly = await checkRateLimitDurable(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000, getRuntimeEnv())
         if (!hourly.allowed) {
             return json(
                 {
@@ -272,7 +272,7 @@ export default async function handler(req: Request) {
                     retryAfterSec: hourly.retryAfterSec,
                 },
                 429,
-                { 'Retry-After': String(hourly.retryAfterSec) }
+                { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
             )
         }
     }
