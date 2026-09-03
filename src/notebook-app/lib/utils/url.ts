@@ -14,45 +14,54 @@ export function toParams(obj: Record<string, any>, explodeArrays: boolean = fals
         return encodeURIComponent(val)
     }
 
-    return Object.entries(obj)
-        .filter((item) => item[1] != undefined && item[1] != null)
-        .reduce(
-            (acc, [key, val]) => {
-                /**
-                 *  query parameter arrays can be handled in two ways
-                 *  either they are encoded as a single query parameter
-                 *    a=[1, 2] => a=%5B1%2C2%5D
-                 *  or they are "exploded" so each item in the array is sent separately
-                 *    a=[1, 2] => a=1&a=2
-                 **/
-                if (explodeArrays && Array.isArray(val)) {
-                    val.forEach((v) => acc.push([key, v]))
-                } else {
-                    acc.push([key, val])
+    // ⚡ Bolt Performance Optimization: Replace .filter().reduce().map() chain with a single-pass loop
+    // to avoid intermediate array allocations and closure overhead.
+    const parts: string[] = []
+    for (const [key, val] of Object.entries(obj)) {
+        if (val != undefined && val != null) {
+            /**
+             *  query parameter arrays can be handled in two ways
+             *  either they are encoded as a single query parameter
+             *    a=[1, 2] => a=%5B1%2C2%5D
+             *  or they are "exploded" so each item in the array is sent separately
+             *    a=[1, 2] => a=1&a=2
+             **/
+            if (explodeArrays && Array.isArray(val)) {
+                for (let i = 0; i < val.length; i++) {
+                    parts.push(`${key}=${handleVal(val[i])}`)
                 }
-
-                return acc
-            },
-            [] as [string, any][]
-        )
-        .map(([key, val]) => `${key}=${handleVal(val)}`)
-        .join('&')
+            } else {
+                parts.push(`${key}=${handleVal(val)}`)
+            }
+        }
+    }
+    return parts.join('&')
 }
 
 export function fromParamsGivenUrl(url: string): Record<string, any> {
-    return !url
-        ? {}
-        : url
-              .replace(/^\?/, '')
-              .split('&')
-              .reduce(
-                  (paramsObject, paramString) => {
-                      const [key, value] = paramString.split('=')
-                      paramsObject[key] = decodeURIComponent(value)
-                      return paramsObject
-                  },
-                  {} as Record<string, any>
-              )
+    if (!url) {
+        return {}
+    }
+
+    const paramsObject: Record<string, any> = {}
+
+    // ⚡ Bolt Performance Optimization: Use a fast string split and standard for-loop
+    // instead of .replace().split().reduce() to eliminate intermediate array allocations
+    // and callback closures.
+    const params = url.startsWith('?') ? url.substring(1).split('&') : url.split('&')
+
+    for (let i = 0; i < params.length; i++) {
+        const paramString = params[i]
+        const eqIdx = paramString.indexOf('=')
+        if (eqIdx !== -1) {
+            paramsObject[paramString.substring(0, eqIdx)] = decodeURIComponent(paramString.substring(eqIdx + 1))
+        } else if (paramString) {
+            // Replicate original behavior where params without '=' decode undefined
+            paramsObject[paramString] = decodeURIComponent(undefined as any)
+        }
+    }
+
+    return paramsObject
 }
 
 export function fromParams(): Record<string, any> {
