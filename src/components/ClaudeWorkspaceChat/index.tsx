@@ -126,7 +126,9 @@ function toWorkspaceArtifact(artifact: AiArtifact): Artifact {
 }
 
 function sanitizePublicAssistantText(value: string): string {
-  return stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(value)));
+  return scrubSecretMaterial(
+    stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(value))),
+  );
 }
 
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
