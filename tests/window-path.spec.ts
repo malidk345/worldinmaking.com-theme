@@ -59,6 +59,8 @@ test.describe('window path', () => {
         })
         expect(parseNotebookRoute('/notebooks', '', '')).toEqual({ page: 'list' })
         expect(notebookPathForRoute({ page: 'editor', notebookId: 'nb-1' })).toBe('/notebooks/nb-1')
+        expect(extractNotebookId('/notebooks/invite/abc')).toBeNull()
+        expect(parseNotebookRoute('/notebooks/invite/abc')).toEqual({ page: 'invite', token: 'abc' })
     })
 
     test('published notebook links open the public reader, not the editor list', () => {

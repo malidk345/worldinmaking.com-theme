@@ -55,7 +55,7 @@ function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
     return headers
 }
 
-async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = false): Promise<HeadersInit> {
+export async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = false): Promise<HeadersInit> {
     const headers = { ...(notebookAuthHeaders(ownerKey, jsonBody) as Record<string, string>) }
     try {
         const { getStoredJwt } = await import('../../../lib/chat-remote')

@@ -1,6 +1,6 @@
 /** OS window paths: never keep Next.js `[slug]` placeholders, always prefer the live URL. */
 
-const NOTEBOOK_RESERVED = new Set(['templates', 'canvas', 'n', 'notebook'])
+const NOTEBOOK_RESERVED = new Set(['templates', 'canvas', 'n', 'notebook', 'invite'])
 
 export function isPlaceholderPath(path: string): boolean {
     return /\[(?:\.\.\.)?[^\]]+\]/.test(path)

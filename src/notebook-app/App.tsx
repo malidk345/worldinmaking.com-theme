@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component, useCallback, useRef, useMemo } from 'react'
 import type { MarkdownNotebookAskAIRequest } from './lib/components/MarkdownNotebook/MarkdownNotebook'
-import { planOpenNotebookRemoteApply } from './scenes/notebooks/notebookRemote'
+import { planOpenNotebookRemoteApply, pullNotebookById } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
     applyNotebookAIFailure,
@@ -30,6 +30,7 @@ import {
     deleteNotebook,
     duplicateNotebook,
     publishNotebook,
+    rememberRemoteNotebook,
     backfillNotebookActors,
     retryNotebookRemoteSync,
     WIM_NOTEBOOKS_CHANGED_EVENT,
@@ -44,6 +45,7 @@ import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
 import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
 import { NotebookShareModal, type NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
+import { NotebookInviteScene } from './scenes/notebooks/NotebookInviteScene'
 import { NotebookSyncInfo } from './scenes/notebooks/NotebookMeta'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
@@ -59,6 +61,7 @@ import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonS
 import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
 import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
+import { canWriteNotebook } from '../lib/notebook-sharing'
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
 
@@ -209,6 +212,7 @@ export function App() {
   const persistOpenNotebookDraft = useCallback((reason: 'idle' | 'flush'): boolean => {
     if (routeRef.current.page !== 'editor') return false
     if (!notebookRef.current) return false
+    if (!canWriteNotebook(notebookRef.current.access_role)) return false
     if (saveInFlightRef.current) {
       saveQueuedRef.current = true
       return false
@@ -458,12 +462,22 @@ export function App() {
     }
     setCurrentNotebook(null)
 
+    let cancelled = false
+    void pullNotebookById(route.notebookId).then((remote) => {
+      if (cancelled || !remote) return
+      rememberRemoteNotebook(remote)
+      apply(remote)
+    })
+
     const onHydrated = () => {
       const remote = getNotebook(route.notebookId)
       if (remote) apply(remote)
     }
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
-    return () => window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
+    return () => {
+      cancelled = true
+      window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
+    }
   }, [route, appWindow, appActions])
 
   useEffect(() => {
@@ -842,6 +856,14 @@ export function App() {
           )}
 
           {/* ---------- Notebooks List (Default Entry Scene) ---------- */}
+          {route.page === 'invite' && (
+            <NotebookInviteScene
+              token={route.token}
+              onJoined={(id) => navigate({ page: 'editor', notebookId: id })}
+              onBack={() => navigate({ page: 'list' })}
+            />
+          )}
+
           {route.page === 'list' && (
             <NotebooksListScene
               onSelectNotebook={handleSelectNotebook}
@@ -906,6 +928,11 @@ export function App() {
                     className="mb-6"
                   >
                     <b>This is a template.</b> You can create a copy of it to edit and use as your own.
+                  </LemonBanner>
+                )}
+                {currentNotebook.access_role === 'viewer' && (
+                  <LemonBanner type="info" className="mb-6">
+                    You can read this notebook. Ask the owner to give you edit access if you need to write.
                   </LemonBanner>
                 )}
 
@@ -983,14 +1010,16 @@ export function App() {
                       remoteCarets={presence.carets}
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}
+                      mode={canWriteNotebook(currentNotebook.access_role) ? 'edit' : 'view'}
                       focusAIPromptRequest={aiPromptRequest}
                       onChange={(val) => {
+                        if (!canWriteNotebook(currentNotebook.access_role)) return
                         setMarkdown(val)
                         const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
                         if (heading) setTitle(heading)
                       }}
-                      onAskAI={handleNotebookAskAI}
-                      isAskAIDisabled={isAskAIBusy}
+                      onAskAI={canWriteNotebook(currentNotebook.access_role) ? handleNotebookAskAI : undefined}
+                      isAskAIDisabled={isAskAIBusy || !canWriteNotebook(currentNotebook.access_role)}
                       extraInsertCommands={extraCommands}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
                       selectionAIActions={SELECTION_AI_ACTIONS}

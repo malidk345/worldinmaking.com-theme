@@ -22,6 +22,7 @@ import {
 } from '../../../lib/wim-identity'
 import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
+import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
 
 export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
 export const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
@@ -58,6 +59,7 @@ export interface StoredNotebook {
     isPublished?: boolean
     publish?: NotebookPublishMeta
     version: number
+    access_role?: NotebookAccessRole
     created_by?: NotebookPerson
     last_modified_by?: NotebookPerson
 }
@@ -178,8 +180,13 @@ function queueRemote(promise: Promise<unknown>): void {
         })
 }
 
+function canPushNotebook(notebook: StoredNotebook): boolean {
+    return notebook.access_role !== 'viewer'
+}
+
 function schedulePushNotebook(notebook: StoredNotebook): void {
     if (typeof window === 'undefined') return
+    if (!canPushNotebook(notebook)) return
     const history = getNotebookHistory(notebook.id)
     queueRemote(pushNotebookToRemote(notebook, history))
 }
@@ -187,7 +194,7 @@ function schedulePushNotebook(notebook: StoredNotebook): void {
 
 function schedulePushAll(): void {
     if (typeof window === 'undefined') return
-    const notebooks = readLocalNotebooks()
+    const notebooks = readLocalNotebooks().filter(canPushNotebook)
     if (!notebooks.length) return
     const history: Record<string, NotebookVersion[]> = {}
     for (const nb of notebooks) {
@@ -216,7 +223,12 @@ function mergeRemoteIntoLocal(
         if (deletedIds.includes(nb.id) || deletedIds.includes(nb.short_id)) return false
         const remoteNb = remoteById.get(nb.id)
         if (!remoteNb) return Boolean(options.pushMissing)
-        return pickNewerNotebook(nb, remoteNb) === nb && nb !== remoteNb && (nb.version || 0) > (remoteNb.version || 0)
+        return (
+            canPushNotebook(nb) &&
+            pickNewerNotebook(nb, remoteNb) === nb &&
+            nb !== remoteNb &&
+            (nb.version || 0) > (remoteNb.version || 0)
+        )
     })
     if (outgoing.length) {
         const history: Record<string, NotebookVersion[]> = {}
@@ -504,6 +516,43 @@ if (typeof window !== 'undefined') {
 
 export function getNotebook(id: string): StoredNotebook | undefined {
     return getNotebooks().find((n) => n.id === id || n.short_id === id)
+}
+
+/** Merge a remote/shared notebook into local storage without bumping version. */
+export function rememberRemoteNotebook(notebook: StoredNotebook): StoredNotebook {
+    const notebooks = getNotebooks()
+    const index = notebooks.findIndex((n) => n.id === notebook.id || n.short_id === notebook.short_id)
+    if (index >= 0) {
+        const merged = pickNewerNotebook(notebooks[index], notebook)
+        const next = {
+            ...merged,
+            access_role: notebook.access_role || merged.access_role,
+        }
+        notebooks[index] = next
+        writeAll(notebooks)
+        return next
+    }
+    notebooks.push(notebook)
+    writeAll(notebooks)
+    return notebook
+}
+
+export async function leaveSharedNotebook(id: string): Promise<boolean> {
+    const target = getNotebook(id)
+    if (!target) return false
+    try {
+        const { getAuthUserId } = await import('../../../lib/wim-identity')
+        const { removeNotebookPerson } = await import('../../../lib/notebook-collaborators-client')
+        const userId = getAuthUserId()
+        if (userId) await removeNotebookPerson(target.id, { userId })
+    } catch {
+        /* still drop locally */
+    }
+    const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
+    writeAll(notebooks)
+    unpinNotebookFromDesktop(id)
+    if (target.short_id) unpinNotebookFromDesktop(target.short_id)
+    return true
 }
 
 /** Public share URL for a published notebook. */

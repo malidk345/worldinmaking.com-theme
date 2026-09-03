@@ -37,10 +37,10 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[PACKAGES A–C COMPLETE]`
-- **Last Model Action:** Package C invite-to-comment shipped by Grok 4.6. Selection → Invite philosopher writes into a discussion thread. WIM AI editor stays persona-free.
+- **Current Status:** `[PACKAGES A–C COMPLETE]` + human notebook invites
+- **Last Model Action:** Human multi-writer invites shipped by Grok 4.6. Share modal invites by username/email or link; collaborators write through the existing markdown merge + presence; viewers are read-only. Philosopher invite-to-comment is unchanged.
 - **Instruction for Next AI Agent:**
-  > Optional follow-ups: more invite bots, comment @mentions, PDF export. Do not start a Yjs rewrite.
+  > Optional follow-ups: comment @mentions, PDF export, more invite bots. Do not start a Yjs rewrite.
 
 ---
 

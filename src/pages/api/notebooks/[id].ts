@@ -73,7 +73,7 @@ export default async function handler(req: Request) {
 
             const notebook = (body.notebook || { ...body, id }) as StoredNotebookDTO
             notebook.id = notebook.id || id
-            const saved = await upsertNotebook(notebook, auth.ownerKey)
+            const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId)
 
             if (Array.isArray(body.history_entries)) {
                 await replaceHistoryForOwner(saved.id, auth.ownerKey, body.history_entries as NotebookVersionDTO[])

@@ -6,6 +6,7 @@ export type NotebookRoute =
     | { page: 'canvas' }
     | { page: 'editor'; notebookId: string }
     | { page: 'public'; notebookId: string }
+    | { page: 'invite'; token: string }
 
 export function parseNotebookRoute(path: string, hash = '', search = ''): NotebookRoute {
     const hashFromPath = path.includes('#') ? path.slice(path.indexOf('#')) : ''
@@ -18,6 +19,7 @@ export function parseNotebookRoute(path: string, hash = '', search = ''): Notebo
         if (parts[1] === 'templates') return { page: 'templates' }
         if (parts[1] === 'canvas') return { page: 'canvas' }
         if (parts[1] === 'n' && parts[2]) return { page: 'public', notebookId: parts[2] }
+        if (parts[1] === 'invite' && parts[2]) return { page: 'invite', token: parts[2] }
     }
 
     const id = extractNotebookId(path) || extractNotebookId(`${clean}${query}`)
@@ -34,6 +36,7 @@ export function parseNotebookRoute(path: string, hash = '', search = ''): Notebo
 export function notebookPathForRoute(route: NotebookRoute): string {
     if (route.page === 'editor') return notebookWindowPath(route.notebookId)
     if (route.page === 'public') return `/notebooks/n/${route.notebookId}`
+    if (route.page === 'invite') return `/notebooks/invite/${route.token}`
     if (route.page === 'canvas') return '/notebooks/canvas'
     if (route.page === 'templates') return '/notebooks/templates'
     return '/notebooks'

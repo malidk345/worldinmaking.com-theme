@@ -23,6 +23,7 @@ import {
     getNotebooks,
     deleteNotebook,
     duplicateNotebook,
+    leaveSharedNotebook,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
     WIM_NOTEBOOKS_CHANGED_EVENT,
@@ -127,7 +128,10 @@ export function NotebooksListScene({
         if (createdByFilter === 'templates' && !nb.isTemplate) {
             return false
         }
-        if (createdByFilter === 'user' && nb.isTemplate) {
+        if (createdByFilter === 'user' && (nb.isTemplate || (nb.access_role && nb.access_role !== 'owner'))) {
+            return false
+        }
+        if (createdByFilter === 'shared' && (!nb.access_role || nb.access_role === 'owner')) {
             return false
         }
         return true
@@ -187,6 +191,11 @@ export function NotebooksListScene({
                         {notebook.isPublished && !notebook.isTemplate && (
                             <LemonTag type="completion" size="small">
                                 Live
+                            </LemonTag>
+                        )}
+                        {notebook.access_role && notebook.access_role !== 'owner' && (
+                            <LemonTag type="highlight" size="small">
+                                {notebook.access_role === 'viewer' ? 'Shared' : 'Shared · edit'}
                             </LemonTag>
                         )}
                     </a>
@@ -273,12 +282,24 @@ export function NotebooksListScene({
                                 label: 'Export JSON',
                                 onClick: () => handleExportJSON(notebook),
                             },
-                            {
-                                label: 'Delete',
-                                icon: <IconTrash />,
-                                status: 'danger' as const,
-                                onClick: () => handleDelete(notebook.id, notebook.title),
-                            },
+                            notebook.access_role && notebook.access_role !== 'owner'
+                                ? {
+                                      label: 'Leave',
+                                      icon: <IconTrash />,
+                                      status: 'danger' as const,
+                                      onClick: () => {
+                                          void leaveSharedNotebook(notebook.id).then(() => {
+                                              reloadNotebooks()
+                                              addToast({ description: `Left “${notebook.title}”` })
+                                          })
+                                      },
+                                  }
+                                : {
+                                      label: 'Delete',
+                                      icon: <IconTrash />,
+                                      status: 'danger' as const,
+                                      onClick: () => handleDelete(notebook.id, notebook.title),
+                                  },
                         ]}
                     >
                         <LemonButton aria-label="more" icon={<IconEllipsis />} size="small" />
@@ -323,6 +344,7 @@ export function NotebooksListScene({
                             options={[
                                 { value: 'all', label: 'All users' },
                                 { value: 'user', label: 'You' },
+                                { value: 'shared', label: 'Shared with you' },
                                 { value: 'templates', label: 'WIM Templates' },
                             ]}
                         />

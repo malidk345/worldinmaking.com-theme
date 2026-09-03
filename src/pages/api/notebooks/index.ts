@@ -76,7 +76,7 @@ export default async function handler(req: Request) {
                 const tagged = auth.userId
                     ? notebooks.map((nb) => ({ ...nb, auth_user_id: auth.userId }))
                     : notebooks
-                const count = await upsertNotebooks(tagged, ownerKey)
+                const count = await upsertNotebooks(tagged, ownerKey, auth.userId)
 
                 if (body.history && typeof body.history === 'object') {
                     const historyMap = body.history as Record<string, NotebookVersionDTO[]>
@@ -95,7 +95,7 @@ export default async function handler(req: Request) {
                 if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
                 // Tag with auth_user_id when JWT-authenticated
                 const tagged = auth.userId ? { ...notebook, auth_user_id: auth.userId } : notebook
-                const saved = await upsertNotebook(tagged, ownerKey)
+                const saved = await upsertNotebook(tagged, ownerKey, auth.userId)
 
                 if (Array.isArray(body.history_entries)) {
                     await replaceHistoryForOwner(
