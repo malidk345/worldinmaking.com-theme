@@ -680,31 +680,6 @@ async function runOneToolCall(
         const summary = typeof parsed?.summary === 'string' ? parsed.summary : undefined
         toolContent = enterExecute(state, params, summary)
     }
-    if (name === 'ask_user' && executed.ok) {
-        const parsed = parseJsonObject(executed.result)
-        const questions = Array.isArray(parsed?.questions)
-            ? parsed.questions
-                  .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
-                  .map((item, index) => ({
-                      id: String(item.id || `q_${index + 1}`),
-                      prompt: String(item.prompt || '').trim(),
-                      options: Array.isArray(item.options)
-                          ? item.options.map((option) => String(option)).filter(Boolean)
-                          : undefined,
-                  }))
-                  .filter((item) => item.prompt)
-            : []
-        if (questions.length > 0) {
-            state.interrupt = {
-                kind: 'ask',
-                title: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : 'A question',
-                status: 'pending',
-                questions,
-            }
-            toolContent = 'Waiting for the user to answer. Do not continue until they reply.'
-        }
-    }
-
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
     params.onTool?.({
         id: call.id,
