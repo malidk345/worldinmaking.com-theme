@@ -608,6 +608,10 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             })
             const rawReply = reply || cleanFallbackReply(loop.text)
             input.onAnalysisSummary?.(thinking)
+            const gatedReply =
+                loop.interrupt && !rawReply.trim()
+                    ? rawReply
+                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
                 ok: true,
                 stream: true,
@@ -617,14 +621,14 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 latencyMs: Date.now() - streamStarted,
                 attemptCount: 1,
                 promptChars: estimateChars([systemPrompt, userPrompt]),
-                completionChars: rawReply.length,
+                completionChars: gatedReply.length,
                 requestId: input.requestId,
             })
             return {
                 success: true,
                 philosopher: persona.name,
                 epistemicStance: persona.epistemicStance,
-                reply: rawReply,
+                reply: gatedReply,
                 thought: thinking.summary,
                 thinking,
                 provider,
@@ -807,6 +811,8 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
+    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+
     recordAiTurn({
         ok: true,
         stream: true,
@@ -816,7 +822,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         latencyMs: Date.now() - streamStarted,
         attemptCount: gen.attempts.length,
         promptChars: estimateChars([systemPrompt, userPrompt]),
-        completionChars: rawReply.length,
+        completionChars: gatedReply.length,
         requestId: input.requestId,
     })
 
@@ -824,7 +830,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: rawReply,
+        reply: gatedReply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
