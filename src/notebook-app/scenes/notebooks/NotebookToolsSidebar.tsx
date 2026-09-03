@@ -20,12 +20,10 @@ import { NotebookOutline } from './NotebookOutline'
 import { NotebookHistoryButton } from './NotebookHistory'
 import type { NotebookPresencePerson } from './notebookPresence'
 import type { NotebookChromeSettings } from './notebookChromeSettings'
-import type { NotebookPublishPayload, NotebookShareTab } from './NotebookShareModal'
 import { extractNotebookComments, extractNotebookSearchHits } from './notebookSidebarModel'
 import {
     NotebookExportButton,
     NotebookSettingsPopover,
-    NotebookShareButton,
     SidebarComments,
     SidebarPeople,
     SidebarSearchHits,
@@ -51,11 +49,6 @@ interface NotebookToolsSidebarProps {
     onHistoryRestored?: (payload: { content: string; title: string }) => void
     chrome?: NotebookChromeSettings
     onChromeChange?: (next: Partial<NotebookChromeSettings>) => void
-    onShare?: (tab?: NotebookShareTab) => void
-    shareOpen?: boolean
-    onShareOpenChange?: (open: boolean) => void
-    shareTab?: NotebookShareTab
-    onPublish?: (meta: NotebookPublishPayload) => void
     people?: NotebookPresencePerson[]
 }
 
@@ -116,10 +109,6 @@ function NotebookToolsSidebarInner({
     onHistoryRestored,
     chrome,
     onChromeChange,
-    shareOpen,
-    onShareOpenChange,
-    shareTab,
-    onPublish,
     people = [],
 }: NotebookToolsSidebarProps): JSX.Element {
     const { isMobile } = useAppSettings()
@@ -362,8 +351,9 @@ function NotebookToolsSidebarInner({
                         >
                             {isNarrow ? 'Close' : isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
                         </Tooltip>
-                        <div className={expanded ? 'ml-auto flex items-center gap-px' : 'ml-auto flex items-center'}>
-                                {expanded && activeNotebookId && onSnapshotNow && onHistoryRestored && (
+                        {expanded ? (
+                            <div className="ml-auto flex items-center gap-px">
+                                {activeNotebookId && onSnapshotNow && onHistoryRestored && (
                                     <NotebookHistoryButton
                                         notebookId={activeNotebookId}
                                         currentContent={currentContent || ''}
@@ -372,21 +362,12 @@ function NotebookToolsSidebarInner({
                                         onRestored={onHistoryRestored}
                                     />
                                 )}
-                                {onPublish && activeNotebookId && (
-                                    <NotebookShareButton
-                                        notebookId={activeNotebookId}
-                                        notebookTitle={notebookTitle || ''}
-                                        onPublish={onPublish}
-                                        initialTab={shareTab}
-                                        isOpen={shareOpen}
-                                        onOpenChange={onShareOpenChange}
-                                    />
-                                )}
-                                {expanded && activeNotebookId && <NotebookExportButton notebookId={activeNotebookId} />}
-                                {expanded && chrome && onChromeChange && (
+                                {activeNotebookId && <NotebookExportButton notebookId={activeNotebookId} />}
+                                {chrome && onChromeChange && (
                                     <NotebookSettingsPopover settings={chrome} onChange={onChromeChange} />
                                 )}
                             </div>
+                        ) : null}
                     </div>
         </>
     )
