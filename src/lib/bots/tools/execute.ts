@@ -143,7 +143,6 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     read_document: { doc: 'name', document: 'name', file: 'name', link: 'url', href: 'url', p: 'page', q: 'query' },
     write_scratchpad: { note: 'content', text: 'content', body: 'content', markdown: 'content', ref: 'source', url: 'source', document: 'source' },
     todo_write: { plan: 'tasks', todo: 'tasks', items: 'tasks', list: 'tasks' },
-    ask_user: { question: 'questions', prompt: 'questions', q: 'questions' },
     remember: { memory: 'fact', note: 'fact', text: 'fact', content: 'fact' },
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
@@ -347,9 +346,6 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     enter_plan: 'switch_mode',
     enter_execute: 'switch_mode',
     set_mode: 'switch_mode',
-    ask: 'ask_user',
-    ask_question: 'ask_user',
-    clarify: 'ask_user',
     save_memory: 'remember',
     memorize: 'remember',
     ready_plan: 'finalize_plan',
@@ -600,31 +596,6 @@ export async function executeToolCall(
                 ...executed,
                 summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
             }
-        }
-        if (name === 'ask_user') {
-            const rawQuestions = Array.isArray(args.questions)
-                ? args.questions
-                : typeof args.prompt === 'string' || typeof args.question === 'string'
-                  ? [{ prompt: args.prompt || args.question }]
-                  : []
-            const questions = rawQuestions
-                .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
-                .map((item, index) => ({
-                    id: asText(item.id || `q_${index + 1}`, 40).trim(),
-                    prompt: asText(item.prompt || item.question || item.text, 400).trim(),
-                    options: Array.isArray(item.options)
-                        ? item.options.map((option) => asText(option, 80).trim()).filter(Boolean).slice(0, 8)
-                        : undefined,
-                }))
-                .filter((item) => item.prompt.length > 0)
-                .slice(0, 6)
-            if (questions.length === 0) {
-                const result = JSON.stringify({ ok: false, error: 'ask_user requires at least one question' })
-                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
-            }
-            const title = asText(args.title, 80).trim() || 'A question'
-            const result = JSON.stringify({ ok: true, awaiting: true, title, questions })
-            return { ...base, ok: true, result, summary: questions[0].prompt }
         }
         if (name === 'remember') {
             const fact = asText(args.fact, 400).trim()
