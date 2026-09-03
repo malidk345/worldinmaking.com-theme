@@ -21,6 +21,7 @@ import { TOOL_FAMILY_ORDER } from '../src/lib/bots/tools/loop'
 import {
     modeAfterResume,
     parseAgentCheckpoint,
+    parseResumeAction,
     resumeUserMessage,
     snapshotCheckpoint,
 } from '../src/lib/bots/agent/checkpoint'
@@ -607,10 +608,14 @@ test.describe('Think skip and Groq-first', () => {
 
 test.describe('Graph checkpoint resume', () => {
     test('resume instructions switch mode instead of starting a new user turn', () => {
+        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('run')).toBe('run')
+        expect(parseResumeAction('revise')).toBe('revise')
         expect(modeAfterResume('run', 'plan')).toBe('execute')
         expect(modeAfterResume('revise', 'plan')).toBe('plan')
         expect(resumeUserMessage('run')).toContain('approved the plan')
-        expect(resumeUserMessage('answer', 'Use the PDF')).toContain('Use the PDF')
+        expect(resumeUserMessage('revise', 'Use the PDF')).toContain('Use the PDF')
+        expect(resumeUserMessage('revise')).toContain('revise the plan')
     })
 
     test('finalize_plan starts execute in the same turn without waiting', async () => {
