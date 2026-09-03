@@ -6,7 +6,7 @@
 export const runtime = 'edge'
 
 import { runBotTurn, type ThinkingDepth } from 'lib/bots'
-import { checkRateLimit, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -62,8 +62,8 @@ export default async function handler(req: Request) {
     if (context === null) return json({ error: 'context must be a string', success: false, code: 'INVALID_CONTEXT' }, 400)
 
     const clientIp = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 60, 60 * 60 * 1000)
-    const rl = checkRateLimit(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 60, 60 * 60 * 1000, env)
+    const rl = await checkRateLimitDurable(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000, env)
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
