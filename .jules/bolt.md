@@ -28,3 +28,7 @@
 ## 2025-05-19 - Avoid Reduce with Array Spread for Dynamic Layout Trees
 **Learning:** Using `reduce` combined with array spread syntax (`[...sourceA, ...sourceB].reduce(...)`) for complex tree structure traversal creates redundant intermediate arrays and memory churn. When this pattern is used in deep or frequently executed layout parsers (like `injectDynamicChildren` for the App Context menu), it significantly increases main thread overhead and execution time.
 **Action:** When aggregating multiple source arrays during layout construction or recursive rendering, use a direct `for...of` loop over each source array or a helper function instead of allocating intermediate flattened arrays to pass into `.reduce`.
+
+## 2025-05-19 - Avoid Chained Array Methods in Utility Functions
+**Learning:** Using chained array methods like `.filter().reduce().map()` in highly utilized utility functions (such as URL parameter parsing) creates unnecessary intermediate array allocations and closure overhead, which measurably impacts execution time in hot paths.
+**Action:** Replace chained array manipulations with single-pass `for` or `for...of` loops to prevent intermediate memory allocations and maximize CPU efficiency during data serialization and parsing.
