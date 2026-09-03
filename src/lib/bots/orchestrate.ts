@@ -437,10 +437,19 @@ async function applyQualityGate(
                   }
                 : undefined,
         })
+        const revised = Boolean(report.wasCorrected)
+        let detail: string | undefined
+        if (report.passed) {
+            detail = revised ? 'Reply revised for quality' : undefined
+        } else if (revised) {
+            detail = report.issues[0] || 'Quality issues remain after revision'
+        } else {
+            detail = report.issues[0]
+        }
         onLifecycle?.({
             phase: 'quality_gate',
             status: report.passed ? 'completed' : 'failed',
-            detail: report.issues[0],
+            detail,
         })
         if (!allowCorrection) return rawReply
         return report.correctedBody || rawReply
