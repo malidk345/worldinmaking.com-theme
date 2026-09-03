@@ -1,7 +1,7 @@
 /**
  * Forum actions for philosopher bots — create topic / reply in Supabase.
  */
-import { runBotTurn, type ThinkingDepth } from '../orchestrate'
+import { runBotTurn, publicBotSuccessFields, type ThinkingDepth } from '../orchestrate'
 import type { ThinkingProcess } from '../thinking'
 import { slugify, supabaseRest } from '../supabase-edge'
 import { clipForumTitle } from '../forum-moves'
@@ -215,7 +215,28 @@ export async function createForumTopic(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'thread_init' as const, phase: 'llm_failed' as const, persisted: false }
+        console.error('[forum] thread_init providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'thread_init' as const,
+            phase: 'llm_failed' as const,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
     // Derive title from first line or truncated reply
@@ -231,7 +252,7 @@ export async function createForumTopic(params: {
 
     if (!validation.isValid) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'thread_init' as const,
             phase: 'validation_failed' as const,
             persisted: false,
@@ -246,7 +267,7 @@ export async function createForumTopic(params: {
 
     if (params.dryRun) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'thread_init' as const,
             phase: 'dry_run' as const,
             persisted: false,
@@ -257,7 +278,7 @@ export async function createForumTopic(params: {
     const profile = await resolveBotProfile(params.botUsername)
     if (!profile.ok) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'thread_init' as const,
             phase: 'profile_missing' as const,
             persisted: false,
@@ -270,7 +291,7 @@ export async function createForumTopic(params: {
     const authorId = isUuid(profile.bot.id) ? profile.bot.id : ''
     if (!authorId) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'thread_init' as const,
             phase: 'persist_failed' as const,
             persisted: false,
@@ -295,7 +316,7 @@ export async function createForumTopic(params: {
 
     if (!insert.ok) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'thread_init' as const,
             phase: 'persist_failed' as const,
             persisted: false,
@@ -306,7 +327,7 @@ export async function createForumTopic(params: {
 
     const row = Array.isArray(insert.data) ? insert.data[0] : insert.data
     return {
-        ...llm,
+        ...publicBotSuccessFields(llm),
         action: 'thread_init' as const,
         phase: 'persisted' as const,
         persisted: true,
@@ -370,7 +391,28 @@ export async function createForumReply(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'forum_reply' as const, phase: 'llm_failed' as const, persisted: false }
+        console.error('[forum] forum_reply providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'forum_reply' as const,
+            phase: 'llm_failed' as const,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
     const replyValidation = validateForumReplyPayload({
@@ -380,7 +422,7 @@ export async function createForumReply(params: {
 
     if (!replyValidation.isValid) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'forum_reply' as const,
             phase: 'validation_failed' as const,
             persisted: false,
@@ -393,7 +435,7 @@ export async function createForumReply(params: {
 
     if (params.dryRun) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'forum_reply' as const,
             phase: 'dry_run' as const,
             persisted: false,
@@ -404,7 +446,7 @@ export async function createForumReply(params: {
     const profile = await resolveBotProfile(params.botUsername)
     if (!profile.ok) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'forum_reply' as const,
             phase: 'profile_missing' as const,
             persisted: false,
@@ -415,7 +457,7 @@ export async function createForumReply(params: {
     const authorId = isUuid(profile.bot.id) ? profile.bot.id : ''
     if (!authorId) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'forum_reply' as const,
             phase: 'persist_failed' as const,
             persisted: false,
@@ -436,7 +478,7 @@ export async function createForumReply(params: {
 
     if (!insert.ok) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'forum_reply' as const,
             phase: 'persist_failed' as const,
             persisted: false,
@@ -446,7 +488,7 @@ export async function createForumReply(params: {
 
     const row = Array.isArray(insert.data) ? insert.data[0] : insert.data
     return {
-        ...llm,
+        ...publicBotSuccessFields(llm),
         action: 'forum_reply' as const,
         phase: 'persisted' as const,
         persisted: true,

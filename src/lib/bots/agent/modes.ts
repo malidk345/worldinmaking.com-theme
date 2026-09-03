@@ -28,7 +28,6 @@ export const PLAN_TOOL_NAMES = [
     'write_scratchpad',
     'todo_write',
     'switch_mode',
-    'ask_user',
     'remember',
     'finalize_plan',
     'task',
@@ -78,7 +77,7 @@ If you use todo_write, keep the same ids after the first plan. Exactly one item 
 
 export const PLAN_TOOL_PROTOCOL = `
 PLAN MODE:
-- Mutating OS tools are locked. Research, todo_write, ask_user, remember, task, finalize_plan, and switch_mode are available.
+- Mutating OS tools are locked. Research, todo_write, remember, task, finalize_plan, and switch_mode are available.
 - Use them as needed. Write the public answer when you have it. Call finalize_plan when you need mutating tools; the host continues in the same turn.
 
 `.trim()

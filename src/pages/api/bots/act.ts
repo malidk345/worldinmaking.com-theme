@@ -27,11 +27,12 @@ import type { TaskType } from 'lib/persona-engine'
 import {
     runBotTurn,
     getBotSystemStatus,
+    publicBotSuccessFields,
     type ThinkingDepth,
 } from 'lib/bots'
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { runPaperStep, type PaperStepKind } from 'lib/bots/actions/paper'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -46,10 +47,13 @@ import {
     type ValidBotAction,
 } from 'lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+        },
     })
 }
 
@@ -124,21 +128,39 @@ export default async function handler(req: Request) {
 
     if (action === 'status') return json(getBotSystemStatus(env))
 
-    // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
-    // Scoped per client IP so rotating bot names cannot bypass the bucket.
+    // Per-IP hourly cap for mutating / LLM-heavy actions (`status` already returned above).
+    // Durable Upstash counters when configured so Cloudflare isolate recycling cannot bypass.
+    // Fail-closed when Upstash is configured but unreachable; memory fallback only when unset.
     const clientIp = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
-    const rl = checkRateLimit(`bot_act:${clientIp}`, 500, 60 * 60 * 1000)
-    if (!aggregate.allowed || !rl.allowed) {
-        const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`bot_act:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
         return json(
             {
                 success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                action,
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
+    if (!aggregate.allowed || !rl.allowed) {
+        const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
+        const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMITED',
                 error: `Rate limited for ${action}/${bot}. Retry in ${retryAfterSec}s`,
                 action,
                 retryAfterSec,
             },
-            429
+            429,
+            rlHeaders
         )
     }
 
@@ -242,7 +264,33 @@ export default async function handler(req: Request) {
         env,
     })
 
-    return json({ ...result, action: 'chat' }, result.success ? 200 : 503)
+    if (!result.success) {
+        console.error('[bots/act] chat providers failed', {
+            philosopher: result.philosopher,
+            error: result.error,
+            attempts: 'attempts' in result ? result.attempts : undefined,
+        })
+        const productReply =
+            typeof result.reply === 'string' && result.reply.trim()
+                ? result.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return json(
+            {
+                success: false,
+                action: 'chat',
+                philosopher: result.philosopher,
+                reply: productReply,
+                epistemicStance: result.epistemicStance,
+                code: 'PROVIDER_UNAVAILABLE',
+                error: 'Philosopher network unavailable',
+                latencyMs: result.latencyMs,
+                taskType: result.taskType,
+            },
+            503
+        )
+    }
+
+    return json({ ...publicBotSuccessFields(result), action: 'chat' }, 200)
     } catch (error) {
         console.error('[bots/act] unexpected failure', error)
         return json({ success: false, error: 'Bot action failed', action }, 503)

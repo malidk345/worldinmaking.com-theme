@@ -55,19 +55,16 @@ export async function getTokenQuota(
     if (memEntry && memEntry.day === day) {
         used = memEntry.tokens
     } else {
-        try {
-            const { data, error } = await supabaseAdmin
-                .from('wim_chat_token_usage')
-                .select('tokens')
-                .eq('subject', subject)
-                .eq('day', day)
-                .maybeSingle()
-            if (!error && data && typeof data.tokens === 'number') {
-                used = data.tokens
-                inMemoryUsage.set(memKey, { tokens: used, day })
-            }
-        } catch {
-            /* fallback to in-memory */
+        const { data, error } = await supabaseAdmin
+            .from('wim_chat_token_usage')
+            .select('tokens')
+            .eq('subject', subject)
+            .eq('day', day)
+            .maybeSingle()
+        if (error) throw error
+        if (data && typeof data.tokens === 'number') {
+            used = data.tokens
+            inMemoryUsage.set(memKey, { tokens: used, day })
         }
     }
 

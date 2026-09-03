@@ -30,8 +30,15 @@ export default async function handler(req: Request) {
 
         const quota = await getTokenQuota(quotaSubject, tier)
         return json(quota as any, 200)
-    } catch (err: any) {
-        return json({ error: err?.message || 'Failed to fetch token quota' }, 500)
+    } catch (err) {
+        // Fail closed: never leak store/exception text to the composer.
+        console.warn('[chat-quota] store check failed closed', err)
+        return json(
+            {
+                code: 'QUOTA_UNAVAILABLE',
+                error: 'Inquiry quota could not be verified. Please try again.',
+            },
+            503
+        )
     }
 }
-

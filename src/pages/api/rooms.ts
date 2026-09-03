@@ -5,14 +5,15 @@ export const runtime = 'edge'
 
 import { supabaseAdmin } from '../../../lib/supabase-admin'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
-import { checkRateLimit } from '../../lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from '../../lib/bots/rate-limit'
+import { getRuntimeEnv } from '../../lib/bots/runtime-env'
 import { getClientIp } from '../../lib/bots/request-validation'
 import { createRoomToken, parseWorldSnapshot } from '../../lib/world-snapshot'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -20,8 +21,27 @@ export default async function handler(req: Request) {
     if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
     const ip = getClientIp(req)
-    const rate = checkRateLimit(`room-create:${ip}`, 20, 60 * 60 * 1000)
-    if (!rate.allowed) return json({ error: 'Too many rooms. Try again later.' }, 429)
+    const rate = await checkRateLimitDurable(`room-create:${ip}`, 20, 60 * 60 * 1000, getRuntimeEnv(), {
+        failClosed: true,
+    })
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
+    if (!rate.allowed) {
+        return json(
+            { error: 'Too many rooms. Try again later.', code: 'RATE_LIMITED', retryAfterSec: rate.retryAfterSec },
+            429,
+            buildRateLimitHeaders(rate)
+        )
+    }
 
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null
     const snapshot = parseWorldSnapshot(body?.snapshot)

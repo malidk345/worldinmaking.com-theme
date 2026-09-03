@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { ModelOption, ThinkingProcess, ToolTrace } from '../types'
 import { toolStatusLabel } from '../../../lib/bots/tools/labels'
+import { scrubSecretMaterial } from '../../../lib/ai/scrub'
 import {
   buildThinkingTimeline,
   shouldShowLiveThinkingIndicator,
@@ -42,7 +43,7 @@ function toolIcon(name?: string) {
 }
 
 function ReasoningActivity({ item, isLive }: { item: TimelineItem; isLive: boolean }) {
-  const body = (item.detail || item.title || '').trim()
+  const body = scrubSecretMaterial((item.detail || item.title || '').trim())
   if (!body) return null
   const live = isLive && item.status === 'running'
   return (
@@ -61,17 +62,14 @@ function ReasoningActivity({ item, isLive }: { item: TimelineItem; isLive: boole
 
 function ToolActivity({ item }: { item: TimelineItem }) {
   const live = item.status === 'running'
-  const title =
+  const rawTitle =
     item.toolName === 'web_search' || item.toolName === 'search_site' || item.toolName === 'fetch_url'
       ? toolStatusLabel(item.toolName, item.status === 'running' ? 'running' : item.status === 'error' ? 'error' : 'done')
       : item.title || (item.toolName ? toolStatusLabel(item.toolName, item.status) : 'Tool')
-  const extra = item.detail && item.detail !== title ? item.detail : undefined
-  const details =
-    item.args || item.result ? (
-      <pre className="m-0 max-h-24 overflow-auto whitespace-pre-wrap break-words text-[11.5px] leading-[1.4] tracking-tight text-muted">
-        {item.result || item.args}
-      </pre>
-    ) : extra ? (
+  const title = scrubSecretMaterial(rawTitle)
+  const rawExtra = item.detail && item.detail !== rawTitle ? item.detail : undefined
+  const extra = rawExtra ? scrubSecretMaterial(rawExtra) : undefined
+  const details = extra ? (
       <p className="m-0 text-[11.5px] leading-[1.4] tracking-tight text-muted">{extra}</p>
     ) : null
   return (

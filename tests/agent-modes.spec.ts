@@ -21,7 +21,9 @@ import { TOOL_FAMILY_ORDER } from '../src/lib/bots/tools/loop'
 import {
     modeAfterResume,
     parseAgentCheckpoint,
+    parseResumeAction,
     resumeUserMessage,
+    snapshotCheckpoint,
 } from '../src/lib/bots/agent/checkpoint'
 
 test.describe('Agent modes', () => {
@@ -39,7 +41,6 @@ test.describe('Agent modes', () => {
         expect(names).toContain('switch_mode')
         expect(names).toContain('todo_write')
         expect(names).toContain('finalize_plan')
-        expect(names).toContain('ask_user')
         expect(names).toContain('remember')
         expect(names).not.toContain('create_artifact')
         expect(names).not.toContain('open_path')
@@ -607,10 +608,14 @@ test.describe('Think skip and Groq-first', () => {
 
 test.describe('Graph checkpoint resume', () => {
     test('resume instructions switch mode instead of starting a new user turn', () => {
+        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('run')).toBe('run')
+        expect(parseResumeAction('revise')).toBe('revise')
         expect(modeAfterResume('run', 'plan')).toBe('execute')
         expect(modeAfterResume('revise', 'plan')).toBe('plan')
         expect(resumeUserMessage('run')).toContain('approved the plan')
-        expect(resumeUserMessage('answer', 'Use the PDF')).toContain('Use the PDF')
+        expect(resumeUserMessage('revise', 'Use the PDF')).toContain('Use the PDF')
+        expect(resumeUserMessage('revise')).toContain('revise the plan')
     })
 
     test('finalize_plan starts execute in the same turn without waiting', async () => {
@@ -675,63 +680,66 @@ test.describe('Graph checkpoint resume', () => {
         expect(result.agentMode).toBe('execute')
     })
 
-    test('ask_user pauses the graph with a parseable checkpoint', async () => {
-        const result = await runAgentNodePipeline({
-            complete: async () => ({
-                ok: true as const,
-                content: '',
-                toolCalls: [
-                    {
-                        id: 'c1',
-                        name: 'ask_user',
-                        argumentsJson: JSON.stringify({
-                            title: 'Scope',
-                            questions: [{ prompt: 'Which source first?' }],
-                        }),
-                    },
-                ],
-            }),
-            baseMessages: [
+    test('plan_approval checkpoints stay parseable', () => {
+        const snap = snapshotCheckpoint({
+            messages: [
                 { role: 'system', content: 'sys' },
                 { role: 'user', content: 'plan a research pass' },
+                {
+                    role: 'assistant',
+                    content: null,
+                    tool_calls: [
+                        {
+                            id: 'c1',
+                            type: 'function',
+                            function: { name: 'todo_write', arguments: '{"tasks":[{"id":"t1","title":"Search","status":"pending"}]}' },
+                        },
+                    ],
+                },
+                { role: 'tool', tool_call_id: 'c1', content: 'ok' },
             ],
-            provider: 'test',
+            todos: [{ id: 't1', title: 'Search', status: 'pending' }],
+            scratchpad: [],
             agentMode: 'plan',
-            maxSteps: 3,
+            stepCount: 1,
+            usedTools: true,
+            usedWebSearch: false,
+            interrupt: {
+                kind: 'plan_approval',
+                title: 'Research plan',
+                status: 'pending',
+                summary: 'Search, then write.',
+                plan: [{ id: 't1', title: 'Search', status: 'pending' }],
+            },
         })
-        expect(result.status).toBe('awaiting_human')
-        expect(result.interrupt?.kind).toBe('ask')
-        const parsed = parseAgentCheckpoint(result.checkpoint)
+        const parsed = parseAgentCheckpoint(snap)
         expect(parsed?.v).toBe(1)
-        expect(parsed?.interrupt.kind).toBe('ask')
+        expect(parsed?.interrupt.kind).toBe('plan_approval')
         expect(parsed?.messages.some((message) => message.role === 'tool')).toBe(true)
     })
 
-    test('resuming from checkpoint continues ROOT without a blank state', async () => {
-        const paused = await runAgentNodePipeline({
-            complete: async () => ({
-                ok: true as const,
-                content: '',
-                toolCalls: [
-                    {
-                        id: 'c1',
-                        name: 'ask_user',
-                        argumentsJson: JSON.stringify({
-                            title: 'Scope',
-                            questions: [{ prompt: 'Which source first?' }],
-                        }),
-                    },
-                ],
-            }),
-            baseMessages: [
+    test('resuming from a plan_approval checkpoint continues ROOT without a blank state', async () => {
+        const snap = snapshotCheckpoint({
+            messages: [
                 { role: 'system', content: 'sys' },
                 { role: 'user', content: 'plan a research pass' },
+                { role: 'assistant', content: 'Drafted a short plan.' },
             ],
-            provider: 'test',
+            todos: [{ id: 't1', title: 'Use the PDF', status: 'in_progress' }],
+            scratchpad: [],
             agentMode: 'plan',
-            maxSteps: 3,
+            stepCount: 1,
+            usedTools: false,
+            usedWebSearch: false,
+            interrupt: {
+                kind: 'plan_approval',
+                title: 'Research plan',
+                status: 'pending',
+                summary: 'Use the PDF first.',
+                plan: [{ id: 't1', title: 'Use the PDF', status: 'in_progress' }],
+            },
         })
-        const checkpoint = parseAgentCheckpoint(paused.checkpoint)
+        const checkpoint = parseAgentCheckpoint(snap)
         expect(checkpoint).toBeTruthy()
         const resumed = await runAgentNodePipeline({
             complete: async () => ({
@@ -742,7 +750,7 @@ test.describe('Graph checkpoint resume', () => {
             baseMessages: [
                 { role: 'system', content: 'sys' },
                 ...(checkpoint?.messages || []),
-                { role: 'user', content: resumeUserMessage('answer', 'Use the PDF') },
+                { role: 'user', content: resumeUserMessage('run') },
             ],
             provider: 'test',
             agentMode: 'execute',

@@ -19,10 +19,9 @@ export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
 export type AgentMode = 'ask' | 'plan' | 'execute'
 
 export type HumanTurn = {
-  kind: 'ask' | 'plan_approval'
+  kind: 'plan_approval'
   title: string
-  status: 'pending' | 'answered' | 'approved' | 'revised'
-  questions?: Array<{ id: string; prompt: string; options?: string[] }>
+  status: 'pending' | 'approved' | 'revised'
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
 }
@@ -175,8 +174,15 @@ export interface Message {
   liked?: boolean | null
   editedFromId?: string
   osAction?: OSActionCard
-  provider?: string
+  /** Coarse gateway tier from SSE done — never raw model ids. */
+  provider?: 'groq' | 'gemini' | 'openai'
   humanTurn?: HumanTurn
+  errorKind?: 'quota' | 'provider' | 'network'
+  /**
+   * Soft honesty from SSE done.qualityGate.
+   * failed/skipped may still show a reply; never treated as errorKind.
+   */
+  qualityGate?: 'passed' | 'failed' | 'skipped'
   checkpoint?: AgentCheckpoint
 }
 

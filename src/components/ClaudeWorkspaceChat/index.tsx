@@ -54,7 +54,8 @@ import { finalizeArtifactTurn } from '../../lib/artifacts';
 import type { OSActionCard as OSActionCardType } from './types';
 import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
-import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
+import { parseAiSseEvent, toPublicProviderLabel, type AiArtifact } from 'lib/ai/contracts';
+import { scrubSecretMaterial } from 'lib/ai/scrub';
 import {
   activityFromToolEvent,
   applyAgentActivity,
@@ -90,6 +91,7 @@ import {
 } from '../../lib/chat-remote';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
+import { getActiveByokPayload } from '../../lib/byok-vault';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -124,7 +126,9 @@ function toWorkspaceArtifact(artifact: AiArtifact): Artifact {
 }
 
 function sanitizePublicAssistantText(value: string): string {
-  return stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(value)));
+  return scrubSecretMaterial(
+    stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(value))),
+  );
 }
 
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
@@ -398,6 +402,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
@@ -473,10 +478,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const fillComposer = (text: string) => {
-    setComposerDraft(text)
-    setComposerDraftNonce((value) => value + 1)
-  }
   const [shareBusy, setShareBusy] = useState(false);
 
   const persistOwnerRef = useRef(getChatStorageKey())
@@ -786,7 +787,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       historyOverride?: Message[]
       agentMode?: AgentMode
       resume?: AgentCheckpoint
-      resumeAction?: 'run' | 'revise' | 'answer'
+      resumeAction?: 'run' | 'revise'
       resumePayload?: string
       continueMessageId?: string
     }
@@ -901,6 +902,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     );
 
     setIsStreaming(true);
+    setStreamStatus('thinking');
     autoScrollRef.current = true;
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('auto'));
@@ -944,7 +946,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let streamedAction: OSActionCardType | undefined;
     let streamedHumanTurn: HumanTurn | undefined = continued?.humanTurn;
     let streamedCheckpoint: AgentCheckpoint | undefined = continued?.checkpoint;
-    let streamedProvider: string | undefined;
+    let streamedProvider: 'groq' | 'gemini' | 'openai' | undefined;
     let streamedToolTrace: ToolTrace[] = continued?.toolTrace ? [...continued.toolTrace] : [];
     const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
       if (!incoming || incoming.length === 0) return;
@@ -960,6 +962,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     let isStreamComplete = false;
     let backendError = false;
+    let streamErrorKind: Message["errorKind"] | undefined;
+    let streamedQualityGate: Message["qualityGate"] | undefined;
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1034,6 +1038,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           prompt: effectivePrompt,
+          byok: getActiveByokPayload(),
           modelId: selectedModelId,
           systemPrompt: activeProjectObj?.systemPrompt || '',
           styleSuffix: selectedStyle?.promptSuffix || '',
@@ -1091,13 +1096,38 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       if (!sseRes.ok || !sseRes.body) {
         let errorMessage = `Chat API ${sseRes.status}`;
+        let errCode = "";
         try {
           const errBody = await sseRes.json();
           if (errBody?.error) errorMessage = String(errBody.error);
+          if (typeof errBody?.code === "string") errCode = errBody.code;
         } catch {
           /* use status text */
         }
-        throw new Error(errorMessage);
+        const fail = new Error(errorMessage) as Error & { kind?: Message["errorKind"] };
+        if (
+          sseRes.status === 429 ||
+          errCode.startsWith("QUOTA_") ||
+          errCode === "RATE_LIMITED" ||
+          errCode === "RATE_LIMIT_UNAVAILABLE" ||
+          errorMessage.includes("[app]") ||
+          (sseRes.status === 503 &&
+            (errCode.startsWith("QUOTA_") ||
+              errCode === "RATE_LIMIT_UNAVAILABLE" ||
+              errorMessage.includes("[app]")))
+        ) {
+          fail.kind = "quota";
+        } else if (
+          errCode === "PROVIDER_UNAVAILABLE" ||
+          errCode === "EMPTY_REPLY" ||
+          errCode === "TOOLS_REQUIRED" ||
+          errCode === "CHAT_FAILED"
+        ) {
+          fail.kind = "provider";
+        } else {
+          fail.kind = "network";
+        }
+        throw fail;
       }
 
       const reader = sseRes.body.getReader();
@@ -1120,7 +1150,30 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (!parsed) continue;
 
           if (parsed.type === 'activity') {
-            processItems = applyAgentActivity(processItems, parsed.activity)
+            const scrubbedActivity = {
+              ...parsed.activity,
+              title:
+                typeof parsed.activity.title === 'string'
+                  ? scrubSecretMaterial(parsed.activity.title)
+                  : parsed.activity.title,
+              detail:
+                typeof parsed.activity.detail === 'string'
+                  ? scrubSecretMaterial(parsed.activity.detail)
+                  : parsed.activity.detail,
+              delta:
+                typeof parsed.activity.delta === 'string'
+                  ? scrubSecretMaterial(parsed.activity.delta)
+                  : parsed.activity.delta,
+              arguments:
+                typeof parsed.activity.arguments === 'string'
+                  ? scrubSecretMaterial(parsed.activity.arguments)
+                  : parsed.activity.arguments,
+              result:
+                typeof parsed.activity.result === 'string'
+                  ? scrubSecretMaterial(parsed.activity.result)
+                  : parsed.activity.result,
+            }
+            processItems = applyAgentActivity(processItems, scrubbedActivity)
             currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
             currentThinkingProcess.steps = [...currentThinkingProcess.steps]
             updateAssistantMessage(targetChatId, assistantMessageId, {
@@ -1140,9 +1193,29 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               )
             }
             const toolTitle = toolStatusLabel(parsed.tool.name, parsed.tool.status);
+            const safeToolDetail =
+              typeof parsed.tool.detail === 'string'
+                ? scrubSecretMaterial(parsed.tool.detail)
+                : parsed.tool.detail
+            const safeToolArguments =
+              typeof parsed.tool.arguments === 'string'
+                ? scrubSecretMaterial(parsed.tool.arguments)
+                : parsed.tool.arguments
+            const safeToolResult =
+              typeof parsed.tool.result === 'string'
+                ? scrubSecretMaterial(parsed.tool.result)
+                : parsed.tool.result
             processItems = applyAgentActivity(
               processItems,
-              activityFromToolEvent(parsed.tool, processItems.length + 1)
+              activityFromToolEvent(
+                {
+                  ...parsed.tool,
+                  detail: safeToolDetail,
+                  arguments: safeToolArguments,
+                  result: safeToolResult,
+                },
+                processItems.length + 1
+              )
             )
             currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
             currentThinkingProcess.steps = [...currentThinkingProcess.steps]
@@ -1151,9 +1224,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               id: parsed.tool.id,
               name: parsed.tool.name,
               status: parsed.tool.status,
-              arguments: parsed.tool.arguments,
-              result: parsed.tool.result,
-              detail: parsed.tool.detail,
+              arguments: safeToolArguments,
+              result: safeToolResult,
+              detail: safeToolDetail,
               thoughtSignature: parsed.tool.thoughtSignature,
             };
             const traceIdx = streamedToolTrace.findIndex((item) => item.id === nextTrace.id);
@@ -1226,6 +1299,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             const searchStatus =
               parsed.search.status === 'error' ? ('error' as const) : parsed.search.status === 'done' ? ('done' as const) : ('running' as const)
             const searchTitle = toolStatusLabel('web_search', searchStatus)
+            const safeSearchQuery =
+              typeof parsed.search.query === 'string'
+                ? scrubSecretMaterial(parsed.search.query)
+                : parsed.search.query
+            const safeSearchResults =
+              typeof parsed.search.results === 'string'
+                ? scrubSecretMaterial(parsed.search.results)
+                : parsed.search.results
             processItems = applyAgentActivity(
               processItems,
               activityFromToolEvent(
@@ -1233,9 +1314,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   id: 'host-search',
                   name: 'web_search',
                   status: searchStatus,
-                  detail: parsed.search.query,
-                  arguments: JSON.stringify({ query: parsed.search.query }),
-                  result: parsed.search.results || undefined,
+                  detail: safeSearchQuery,
+                  arguments: JSON.stringify({ query: safeSearchQuery }),
+                  result: safeSearchResults || undefined,
                 },
                 processItems.length + 1
               )
@@ -1248,7 +1329,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               name: 'web_search',
               status: parsed.search.status === 'error' ? 'error' : parsed.search.status === 'done' ? 'done' : 'running',
               detail: searchTitle,
-              result: parsed.search.results || undefined,
+              result: safeSearchResults || undefined,
             };
             const searchTraceIdx = streamedToolTrace.findIndex((item) => item.id === searchTrace.id);
             if (searchTraceIdx >= 0) streamedToolTrace[searchTraceIdx] = { ...streamedToolTrace[searchTraceIdx], ...searchTrace };
@@ -1265,6 +1346,75 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             updateAssistantMessage(targetChatId, assistantMessageId, {
               citations: streamedCitations,
             });
+          }
+
+          if (parsed.type === 'phase') {
+            const phaseName = parsed.phase?.phase
+            const phaseStatus = parsed.phase?.status
+            const phaseDetailRaw =
+              typeof parsed.phase?.detail === 'string'
+                ? scrubSecretMaterial(parsed.phase.detail.trim())
+                : ''
+            const safeDetail =
+              phaseDetailRaw.length > 0 && phaseDetailRaw.length < 120 ? phaseDetailRaw : undefined
+
+            if (phaseName === 'generation') {
+              if (phaseStatus === 'started') setStreamStatus('thinking')
+              else if (phaseStatus !== 'failed') setStreamStatus('answering')
+              const genId = 'lifecycle-generation'
+              const status =
+                phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
+              const providerLabel = toPublicProviderLabel(parsed.phase?.provider)
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: genId,
+                status,
+                title: 'Generating reply',
+                detail:
+                  status === 'error'
+                    ? safeDetail || 'Generation failed'
+                    : status === 'done'
+                      ? providerLabel
+                        ? `Reply ready (${providerLabel})`
+                        : 'Reply ready'
+                      : undefined,
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+              if (status === 'running') currentThinkingProcess.summary = 'Generating reply'
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                thinkingProcess: { ...currentThinkingProcess },
+              })
+            }
+
+            if (phaseName === 'quality_gate') {
+              if (phaseStatus === 'started') setStreamStatus('quality')
+              const qgId = 'lifecycle-quality-gate'
+              const status =
+                phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
+              const skipped = status === 'done' && /skipped/i.test(phaseDetailRaw)
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status,
+                title: skipped ? 'Quality check skipped' : 'Checking reply quality',
+                detail:
+                  status === 'error'
+                    ? safeDetail || 'Quality check flagged issues'
+                    : status === 'done'
+                      ? safeDetail || (skipped ? 'Checker unavailable — reply shown ungated' : 'Reply quality verified')
+                      : undefined,
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+              if (status === 'running') currentThinkingProcess.summary = 'Checking reply quality'
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                thinkingProcess: { ...currentThinkingProcess },
+              })
+            }
+            continue
           }
 
           if (parsed.type === 'node') {
@@ -1319,16 +1469,41 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'error') {
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
-            if (!accumulatedContent.trim()) {
-              updateAssistantMessage(targetChatId, assistantMessageId, {
-                content: parsed.message || 'Philosopher network unavailable.',
-              });
+            const errCode = (parsed as { code?: string }).code || '';
+            if (
+              errCode === 'PROVIDER_UNAVAILABLE' ||
+              errCode === 'EMPTY_REPLY' ||
+              errCode === 'TOOLS_REQUIRED' ||
+              errCode === 'CHAT_FAILED'
+            ) {
+              streamErrorKind = 'provider';
+            } else if (
+              errCode.startsWith('QUOTA_') ||
+              errCode === 'RATE_LIMITED' ||
+              errCode === 'RATE_LIMIT_UNAVAILABLE' ||
+              (parsed.message || '').includes('[app]')
+            ) {
+              streamErrorKind = 'quota';
+            } else {
+              streamErrorKind = 'network';
             }
+            const safeMessage = scrubSecretMaterial(
+              String(parsed.message || 'Philosopher network unavailable.').trim()
+            ) || 'Philosopher network unavailable.';
+            const hasPublicReply = Boolean(accumulatedContent.trim());
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: hasPublicReply
+                ? sanitizePublicAssistantText(accumulatedContent)
+                : safeMessage,
+              // Keep markdown bubble when tokens already streamed; InquiryStatusCard would wipe it.
+              ...(hasPublicReply ? {} : { errorKind: streamErrorKind }),
+            });
             continue;
           }
 
           if (parsed.type === 'token') {
             accumulatedContent += parsed.text;
+            setStreamStatus((prev) => (prev === 'quality' ? prev : 'answering'))
             const now = Date.now();
             if (now - lastTokenFlushTime > 24 || accumulatedContent.length < 40) {
               lastTokenFlushTime = now;
@@ -1339,21 +1514,64 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             }
           }
 
-          if ((parsed as any).type === 'token_usage' && (parsed as any).snapshot) {
-            updateCachedTokenQuota((parsed as any).snapshot);
+          if (parsed.type === 'token_usage' && parsed.snapshot) {
+            updateCachedTokenQuota(parsed.snapshot as Parameters<typeof updateCachedTokenQuota>[0]);
           }
 
           if (parsed.type === 'done') {
             appendStreamedArtifacts(parsed.artifacts);
             accumulatedContent = parsed.fullText || accumulatedContent;
+            const qgId = 'lifecycle-quality-gate'
+            const gate = (parsed as { qualityGate?: Message['qualityGate'] }).qualityGate
+            if (gate === 'passed' || gate === 'failed' || gate === 'skipped') {
+              streamedQualityGate = gate
+            }
+            if (gate === 'failed') {
+              // Keep failed status — never rewrite to success after a hard gate flag.
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'error',
+                title: 'Checking reply quality',
+                detail: 'Quality issues remain — reply shown with caveats',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            } else if (parsed.corrected && gate === 'passed') {
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'done',
+                title: 'Checking reply quality',
+                detail: 'Reply revised for quality',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            } else if (gate === 'skipped') {
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'done',
+                title: 'Quality check skipped',
+                detail: 'Checker unavailable — reply shown ungated',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            }
+            const publicProvider = toPublicProviderLabel(parsed.provider);
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: sanitizePublicAssistantText(accumulatedContent),
               artifacts: streamedArtifacts,
               citations: streamedCitations,
               thinkingProcess: { ...currentThinkingProcess },
-              provider: parsed.provider,
+              provider: publicProvider,
+              // Soft flag only — never map qualityGate onto errorKind (keeps reply bubble).
+              ...(streamedQualityGate ? { qualityGate: streamedQualityGate } : {}),
             });
-            if (parsed.provider) streamedProvider = parsed.provider;
+            if (publicProvider) streamedProvider = publicProvider;
           }
         }
       }
@@ -1411,6 +1629,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           humanTurn: streamedHumanTurn,
           checkpoint: streamedCheckpoint,
           provider: streamedProvider,
+          ...(streamedQualityGate ? { qualityGate: streamedQualityGate } : {}),
         });
       }
 
@@ -1430,26 +1649,37 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
         const displayContent = sanitizePublicAssistantText(accumulatedContent);
-        const rawError = String(err?.message || '');
-        const shortReason = rawError.replace(/\s+/g, ' ').trim().slice(0, 220)
+        const scrubbedError = scrubSecretMaterial(String(err?.message || '')).replace(/\s+/g, ' ').trim();
+        const errKind = ((err as any).kind || streamErrorKind) as Message["errorKind"] | undefined;
+        // Prefer product-safe inquiry copy over raw fetch/network dumps; keep no-content special-case.
+        const productSafeFallback =
+          errKind === 'quota'
+            ? 'Inquiry limit reached. Please try again shortly.'
+            : errKind === 'provider'
+              ? 'Philosopher network unavailable.'
+              : 'The reply could not be completed because of a connection error.';
         const errorMessage = displayContent
           ? displayContent
-          : rawError === 'AI returned no content'
+          : scrubbedError === 'AI returned no content'
             ? 'The model finished thinking but did not produce a public answer. Please try again.'
-            : shortReason
-              ? shortReason
-              : 'The reply could not be completed because of a connection error.';
+            : scrubbedError.startsWith('[app]')
+              ? scrubbedError.slice(0, 220)
+              : productSafeFallback;
 
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: errorMessage,
           thinkingProcess: { ...currentThinkingProcess },
           isStreaming: false,
           isTypingDone: true,
+          ...(displayContent.trim()
+            ? {}
+            : { errorKind: errKind || 'network' }),
         });
       }
     } finally {
       persistChatIdRef.current = targetChatId;
       setIsStreaming(false);
+      setStreamStatus(null);
       abortControllerRef.current = null;
     }
   };
@@ -1472,6 +1702,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const handleStopStreaming = () => {
     abortControllerRef.current?.abort()
     setIsStreaming(false)
+    setStreamStatus(null)
     const chatId = activeChat?.id
     const last = activeChat?.messages.at(-1)
     if (chatId && last?.role === 'assistant' && last.isStreaming) {
@@ -1604,18 +1835,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
+  const handleHumanRespond = (messageId: string, action: 'run' | 'revise', payload?: string) => {
     if (isStreaming || !activeChat) return
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
-    const nextStatus = action === 'run' ? 'approved' : action === 'revise' ? 'revised' : 'answered'
+    const nextStatus = action === 'run' ? 'approved' : 'revised'
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
-    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : 'ask'
+    const nextMode = action === 'run' ? 'execute' : 'plan'
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
     if (message.checkpoint) {
-      void handleSendMessage(action === 'answer' ? payload?.trim() || '' : '', [], {
+      void handleSendMessage('', [], {
         skipUserAppend: true,
         continueMessageId: messageId,
         agentMode: nextMode,
@@ -1629,12 +1860,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
       return
     }
-    if (action === 'revise') {
-      void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
-      return
-    }
-    if (!payload?.trim()) return
-    void handleSendMessage(payload.trim(), [])
+    void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
   }
 
   const handleDeleteChat = (id: string) => {

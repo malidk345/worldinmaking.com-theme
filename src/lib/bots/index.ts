@@ -10,7 +10,7 @@ export {
     shouldPromptThinkingTags,
 } from './thinking'
 export type { ThinkingProcess, ThinkingStage, ThinkingDepth } from './thinking'
-export { runBotTurn, getBotSystemStatus } from './orchestrate'
+export { runBotTurn, getBotSystemStatus, publicBotSuccessFields } from './orchestrate'
 export type { BotRunInput, BotRunResult, BotRunSuccess, BotRunFailure, BotAction } from './orchestrate'
 export { resolveBotProfile, createForumTopic, createForumReply } from './actions/forum'
 export { runPhilosopherBotTick, parseTickRequest, fetchRSSTopic, pickBot } from './philosopher-tick'

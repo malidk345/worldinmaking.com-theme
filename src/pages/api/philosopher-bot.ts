@@ -5,8 +5,8 @@
  */
 export const runtime = 'edge'
 
-import { runBotTurn, type ThinkingDepth } from 'lib/bots'
-import { checkRateLimit, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { runBotTurn, publicBotSuccessFields, type ThinkingDepth } from 'lib/bots'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import {
     getClientIp,
@@ -62,8 +62,27 @@ export default async function handler(req: Request) {
     if (context === null) return json({ error: 'context must be a string', success: false, code: 'INVALID_CONTEXT' }, 400)
 
     const clientIp = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 60, 60 * 60 * 1000)
-    const rl = checkRateLimit(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 60, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(
+        `chat:${clientIp}:${philosopher.toLowerCase()}`,
+        30,
+        60 * 60 * 1000,
+        env,
+        { failClosed: true }
+    )
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
@@ -110,15 +129,12 @@ export default async function handler(req: Request) {
         return json(
             {
                 success: false,
-                code: 'PROVIDER_FAILED',
+                code: 'PROVIDER_UNAVAILABLE',
                 error: 'Philosopher network unavailable',
                 philosopher: result.philosopher,
                 epistemicStance: result.epistemicStance,
                 reply: result.reply,
                 thought: result.thought,
-                thinking: result.thinking,
-                configured: result.configured,
-                attempts: result.attempts,
             },
             503,
             rlHeaders
@@ -127,21 +143,11 @@ export default async function handler(req: Request) {
 
     return json(
         {
-            success: true,
-            philosopher: result.philosopher,
-            epistemicStance: result.epistemicStance,
-            reply: result.reply,
-            thought: result.thought,
-            thinking: result.thinking,
-            provider: result.provider,
-            latencyMs: result.latencyMs,
-            taskType: result.taskType,
-            persona: result.persona,
+            ...publicBotSuccessFields(result),
         },
         200,
         {
             ...rlHeaders,
-            'X-WIM-AI-Provider': result.provider,
             'X-WIM-AI-Latency-Ms': String(result.latencyMs),
         }
     )

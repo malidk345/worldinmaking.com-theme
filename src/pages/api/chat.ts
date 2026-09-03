@@ -11,23 +11,23 @@
 export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { stripLeakedToolMarkup } from 'lib/bots/tools/leak'
-import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
+import { shouldAdvertiseQualityCorrection, formatAiSseEvent, toPublicProviderLabel, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
-import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
+import { incrementDailyUsage } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoint'
 import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
-import { estimateTokens, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 
 const GUEST_HOURLY_LIMIT = 30
 const AUTH_HOURLY_LIMIT = 100
@@ -70,6 +70,33 @@ function readOptionalBoundedString(
         return { ok: false, error: `${field} too long (max ${maxLength} characters)` }
     }
     return { ok: true, value: trimmed }
+}
+
+
+const BYOK_KEY_MAX = 200
+
+/** Read BYOK keys from the chat JSON body only (never from shared headers). */
+function readByokEnv(body: Record<string, unknown>): Record<string, string> {
+    const byokEnv: Record<string, string> = {}
+    const raw = body.byok
+    const fromBody =
+        raw && typeof raw === 'object' && !Array.isArray(raw)
+            ? (raw as Record<string, unknown>)
+            : null
+
+    const take = (provider: 'groq' | 'gemini' | 'openai' | 'anthropic', envName: string) => {
+        if (!fromBody) return
+        const candidate = fromBody[provider]
+        if (typeof candidate === 'string' && candidate.trim()) {
+            byokEnv[envName] = candidate.trim().slice(0, BYOK_KEY_MAX)
+        }
+    }
+
+    take('groq', 'GROQ_API_KEY')
+    take('gemini', 'GEMINI_API_KEY')
+    take('openai', 'OPENAI_API_KEY')
+    take('anthropic', 'ANTHROPIC_API_KEY')
+    return byokEnv
 }
 
 export default async function handler(req: Request) {
@@ -259,8 +286,26 @@ export default async function handler(req: Request) {
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     if (!isDevEnv) {
-        const hourly = checkRateLimit(`workspace-chat:${quotaSubject}`, hourlyLimit, 60 * 60 * 1000)
+        const hourly = await checkRateLimitDurable(
+            `workspace-chat:${quotaSubject}`,
+            hourlyLimit,
+            60 * 60 * 1000,
+            getRuntimeEnv(),
+            { failClosed: true }
+        )
         if (!hourly.allowed) {
+            if (hourly.source === 'unavailable') {
+                return json(
+                    {
+                        success: false,
+                        error: '[app] Inquiry quota could not be verified. Please try again.',
+                        code: 'QUOTA_UNAVAILABLE',
+                        retryAfterSec: hourly.retryAfterSec,
+                    },
+                    503,
+                    { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
+                )
+            }
             return json(
                 {
                     success: false,
@@ -270,15 +315,34 @@ export default async function handler(req: Request) {
                         ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
                         : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
                     retryAfterSec: hourly.retryAfterSec,
+                    code: 'QUOTA_EXCEEDED',
                 },
                 429,
-                { 'Retry-After': String(hourly.retryAfterSec) }
+                { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
             )
         }
     }
 
-    try {
-        if (!isDevEnv) {
+    const tokenTier: UserTier = isDevEnv ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
+    if (!isDevEnv) {
+        try {
+            const tokenQuota = await getTokenQuota(quotaSubject, tokenTier)
+            if (!tokenQuota.allowed) {
+                return json(
+                    {
+                        success: false,
+                        error: isPro
+                            ? `[app] Daily token budget reached. Quota resets at 00:00 UTC.`
+                            : user
+                            ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
+                            : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
+                        retryAfterSec: 86400,
+                        code: 'QUOTA_EXCEEDED',
+                    },
+                    429,
+                    { 'Retry-After': '86400' }
+                )
+            }
             const dailyCount = await incrementDailyUsage(quotaSubject)
             if (typeof dailyCount === 'number' && dailyCount > dailyLimit) {
                 return json(
@@ -290,15 +354,22 @@ export default async function handler(req: Request) {
                             ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
                             : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
                         retryAfterSec: 86400,
+                        code: 'QUOTA_EXCEEDED',
                     },
                     429,
                     { 'Retry-After': '86400' }
                 )
             }
-        }
-    } catch (err) {
-        if (!isChatStoreUnavailable(err)) {
-            console.warn('[chat] daily quota check failed', err)
+        } catch (err) {
+            console.warn('[chat] quota check failed closed', err)
+            return json(
+                {
+                    success: false,
+                    error: '[app] Inquiry quota could not be verified. Please try again.',
+                    code: 'QUOTA_UNAVAILABLE',
+                },
+                503
+            )
         }
     }
 
@@ -380,17 +451,10 @@ export default async function handler(req: Request) {
                       ? NOTEBOOK_AVAILABLE_INSTRUCTION
                       : ''
                 let livePublicTokensCount = 0
+                let livePublicText = ''
                 let liveThinkingAcc = ''
 
-                const byokEnv: Record<string, string> = {}
-                const byokGroq = req.headers.get('x-byok-groq')
-                const byokGemini = req.headers.get('x-byok-gemini')
-                const byokOpenai = req.headers.get('x-byok-openai')
-                const byokAnthropic = req.headers.get('x-byok-anthropic')
-                if (byokGroq) byokEnv.GROQ_API_KEY = byokGroq
-                if (byokGemini) byokEnv.GEMINI_API_KEY = byokGemini
-                if (byokOpenai) byokEnv.OPENAI_API_KEY = byokOpenai
-                if (byokAnthropic) byokEnv.ANTHROPIC_API_KEY = byokAnthropic
+                const byokEnv = readByokEnv(body)
                 const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
 
                 const result = await streamBotTurn(
@@ -419,6 +483,7 @@ export default async function handler(req: Request) {
                     },
                     (token) => {
                         livePublicTokensCount += 1
+                        livePublicText += token
                         send({ type: 'token', text: token })
                     },
                     (thinkingChunk) => {
@@ -431,11 +496,20 @@ export default async function handler(req: Request) {
                 if (!result.success) {
                     const attempts = 'attempts' in result ? result.attempts : []
                     console.error('[chat] providers failed', { error: result.error, attempts })
-                    const lastAttempt = (attempts[attempts.length - 1] || '').replace(/\s+/g, ' ').slice(0, 180)
+                    const productReply =
+                        typeof result.reply === 'string' && result.reply.trim()
+                            ? result.reply.trim()
+                            : 'The philosopher network is unavailable right now.'
+                    const errorCode =
+                        result.error === 'empty_public_reply'
+                            ? 'EMPTY_REPLY'
+                            : result.error === 'tools_required'
+                              ? 'TOOLS_REQUIRED'
+                              : 'PROVIDER_UNAVAILABLE'
                     send({
                         type: 'error',
-                        code: 'PROVIDER_UNAVAILABLE',
-                        message: lastAttempt ? `The reply could not be completed. ${lastAttempt}` : result.reply,
+                        code: errorCode,
+                        message: productReply,
                         retryable: true,
                     })
                     controller.close()
@@ -485,25 +559,32 @@ export default async function handler(req: Request) {
                 }
 
                 // Record & stream real token usage to update client sidebar
-                if (!byokGroq && !byokGemini && !byokOpenai && !byokAnthropic) {
+                if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY) {
                     const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
                     const totalTurnTokens = Math.max(10, inTokens + outTokens)
                     try {
-                        const tokenTier: UserTier = isDevEnv ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
                         const snapshot = await recordTokenUsage(quotaSubject, totalTurnTokens, tokenTier)
-                        send({ type: 'token_usage', snapshot } as any)
+                        send({ type: 'token_usage', snapshot })
                     } catch {
                         /* ignore tracking error */
                     }
                 }
 
+                const qualityGate = result.success ? result.qualityGate : undefined
+                const corrected = shouldAdvertiseQualityCorrection(
+                    qualityGate,
+                    livePublicText,
+                    visibleReply
+                )
                 send({
                     type: 'done',
                     fullText: visibleReply,
-                    provider: result.provider,
+                    provider: toPublicProviderLabel(result.provider),
                     artifacts: turn.artifacts as any,
                     latencyMs: result.latencyMs,
+                    ...(corrected ? { corrected: true } : {}),
+                    ...(qualityGate ? { qualityGate } : {}),
                 })
                 controller.close()
             } catch (error) {
@@ -524,6 +605,6 @@ export default async function handler(req: Request) {
         })
     } catch (err: any) {
         console.error('[chat] fatal handler error:', err)
-        return jsonError(err?.message || 'Internal chat handler error', 500)
+        return jsonError('Internal chat handler error', 500)
     }
 }

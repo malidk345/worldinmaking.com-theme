@@ -5,7 +5,8 @@
 export const runtime = 'edge'
 
 import { generateWithGateway } from 'lib/bots/ai-gateway'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'
 import {
     MAX_INVITE_NOTEBOOK,
@@ -17,10 +18,13 @@ import {
     resolveInviteBot,
 } from 'lib/bots/notebook-invite'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+        },
     })
 }
 
@@ -46,12 +50,30 @@ export default async function handler(req: Request) {
     const notebook =
         typeof parsed.body.notebook === 'string' ? parsed.body.notebook.slice(0, MAX_INVITE_NOTEBOOK) : ''
 
+    const env = getRuntimeEnv()
     const ip = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${ip}`, 60, 60 * 60 * 1000)
-    const rl = checkRateLimit(`invite:${ip}`, 20, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${ip}`, 60, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`invite:${ip}`, 20, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                ok: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
-        return json({ ok: false, error: `Rate limit exceeded. Retry in ${retryAfterSec}s`, retryAfterSec }, 429)
+        return json(
+            { ok: false, error: `Rate limit exceeded. Retry in ${retryAfterSec}s`, retryAfterSec },
+            429,
+            buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
+        )
     }
 
     const notes = (

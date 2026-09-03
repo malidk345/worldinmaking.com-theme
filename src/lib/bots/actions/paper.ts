@@ -2,7 +2,7 @@
  * Paper pipeline step — one dialectic step per call (edge-friendly).
  * Full multi-step WIMBot factory stays in lib/wimbot-orchestrator (Node/worker later).
  */
-import { runBotTurn, type ThinkingDepth } from '../orchestrate'
+import { runBotTurn, publicBotSuccessFields, type ThinkingDepth } from '../orchestrate'
 import { supabaseRest } from '../supabase-edge'
 
 export type PaperStepKind =
@@ -132,29 +132,49 @@ export async function runPaperStep(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'paper_step' as const, phase: 'llm_failed' as const, step, persisted: false }
+        console.error('[paper] paper_step providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+            step,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'paper_step' as const,
+            phase: 'llm_failed' as const,
+            step,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
-    // Qwen's native trace may be shown to the requesting UI, but never store it
-    // in collaborative paper metadata. Persist only the safe model summary.
-    const persistedThinking = {
-        ...llm.thinking,
-        stages: llm.thinking.stages.filter((stage) => stage.source !== 'provider_trace'),
-    }
-    const persistedSummary = persistedThinking.stages.map((stage) => stage.text).join('\n\n').slice(0, 2000)
+    // Persist only a safe model summary — never provider_trace, provider id, or full thinking.
+    const persistedSummary = llm.thinking.stages
+        .filter((stage) => stage.source !== 'provider_trace')
+        .map((stage) => stage.text)
+        .join('\n\n')
+        .slice(0, 2000)
     const contribution = {
         bot: params.botUsername,
         step,
         body: llm.reply,
         thought: persistedSummary,
-        thinking: { ...persistedThinking, summary: persistedSummary, source: persistedSummary ? 'model_summary' as const : 'none' as const },
-        provider: llm.provider,
         at: new Date().toISOString(),
     }
 
     if (params.dryRun || !params.paperId || !paper) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'paper_step' as const,
             phase: params.dryRun ? ('dry_run' as const) : ('llm_only' as const),
             step,
@@ -196,7 +216,7 @@ export async function runPaperStep(params: {
 
     if (!update.ok) {
         return {
-            ...llm,
+            ...publicBotSuccessFields(llm),
             action: 'paper_step' as const,
             phase: 'persist_failed' as const,
             step,
@@ -207,7 +227,7 @@ export async function runPaperStep(params: {
     }
 
     return {
-        ...llm,
+        ...publicBotSuccessFields(llm),
         action: 'paper_step' as const,
         phase: 'persisted' as const,
         step,

@@ -14,6 +14,13 @@ import {
 import { collectApiKeys, rotateKeys } from './search-keys'
 import { nextFamilyKeyStart, resetFamilyKeyCursor, setFamilyKeyStart } from './groq-key-cursor'
 import { isAuthDetail, isRateLimitDetail, isRequestTooLargeDetail } from './provider-errors'
+import { scrubSecretMaterial } from 'lib/ai/scrub'
+
+/** Strip API keys / bearer tokens from provider error text before it hits logs or SSE. */
+function scrubProviderDetail(detail: string): string {
+    return scrubSecretMaterial(detail)
+}
+
 
 export const GATEWAY_TOTAL_TIMEOUT_MS = 28_000
 export const FAILOVER_RESERVE_MS = 9_000
@@ -678,7 +685,7 @@ async function chatCompletionsStream(
 
         if (!fetchRes.ok) {
             const raw = await fetchRes.text()
-            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            const detail = scrubProviderDetail(`${fetchRes.status} ${raw.slice(0, 200)}`)
             if (!compact && isGroqEndpoint(url) && isRequestTooLarge(detail)) {
                 return chatCompletionsStream(
                     url,
@@ -745,7 +752,7 @@ async function chatCompletionsStream(
 
         return { ok: true, stream: streamGenerator() }
     } catch (e: any) {
-        return { ok: false, detail: e?.message || 'fetch error' }
+        return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
 async function chatCompletions(
@@ -784,7 +791,7 @@ async function chatCompletions(
         }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
-            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            const detail = scrubProviderDetail(`${fetchRes.status} ${raw.slice(0, 200)}`)
             if (!compact && isGroqEndpoint(url) && isRequestTooLarge(detail)) {
                 return chatCompletions(
                     url,
@@ -819,7 +826,7 @@ async function chatCompletions(
         }
         return { ok: true, text }
     } catch (e: any) {
-        return { ok: false, detail: e?.message || 'fetch error' }
+        return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
 
@@ -852,7 +859,7 @@ async function geminiGenerate(
         }, timeoutMs)
         const raw = await fetchRes.text()
         if (!fetchRes.ok) {
-            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            const detail = scrubProviderDetail(`${fetchRes.status} ${raw.slice(0, 200)}`)
             if (!disableNativeThinking && isGeminiThinkingUnsupported(detail)) {
                 return geminiGenerate(
                     apiKey,
@@ -879,7 +886,7 @@ async function geminiGenerate(
         if (!text) return { ok: false, detail: 'empty content' }
         return { ok: true, text }
     } catch (e: any) {
-        return { ok: false, detail: e?.message || 'fetch error' }
+        return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
 
@@ -912,7 +919,7 @@ async function geminiGenerateStream(
         }, timeoutMs)
         if (!fetchRes.ok) {
             const raw = await fetchRes.text()
-            const detail = `${fetchRes.status} ${raw.slice(0, 200)}`
+            const detail = scrubProviderDetail(`${fetchRes.status} ${raw.slice(0, 200)}`)
             if (!disableNativeThinking && isGeminiThinkingUnsupported(detail)) {
                 return geminiGenerateStream(
                     apiKey,
@@ -971,7 +978,7 @@ async function geminiGenerateStream(
 
         return { ok: true, stream: streamGenerator() }
     } catch (e: any) {
-        return { ok: false, detail: e?.message || 'fetch error' }
+        return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
 

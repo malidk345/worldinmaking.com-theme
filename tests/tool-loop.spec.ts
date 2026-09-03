@@ -30,7 +30,6 @@ test.describe('OpenAI tool protocol', () => {
         expect(OPENAI_CHAT_TOOLS.every((tool) => tool.type === 'function')).toBe(true)
         expect([...ALLOWED_TOOL_NAMES].sort()).toEqual([
             'annotate_notebook',
-            'ask_user',
             'create_artifact',
             'create_notebook',
             'fetch_url',
@@ -124,19 +123,7 @@ HAIC paradigmasının felsefi derinliğini Deleuze ile çarpıştırıyorum.`
         expect(result.artifact).toBeUndefined()
     })
 
-    test('ask_user, remember, finalize_plan, and task execute as host tools', async () => {
-        const asked = await executeToolCall({
-            id: 'ask-1',
-            name: 'ask_user',
-            argumentsJson: JSON.stringify({
-                title: 'Scope',
-                questions: [{ prompt: 'Which source first?', options: ['PDF', 'Web'] }],
-            }),
-        })
-        expect(asked.ok).toBe(true)
-        expect(JSON.parse(asked.result).awaiting).toBe(true)
-        expect(JSON.parse(asked.result).questions[0].prompt).toContain('source')
-
+    test('remember, finalize_plan, and task execute as host tools', async () => {
         const remembered = await executeToolCall({
             id: 'mem-1',
             name: 'remember',
@@ -381,7 +368,6 @@ HAIC paradigmasının felsefi derinliğini Deleuze ile çarpıştırıyorum.`
         const declarations = toGeminiFunctionDeclarations()
         expect(declarations.map((item) => item.name).sort()).toEqual([
             'annotate_notebook',
-            'ask_user',
             'create_artifact',
             'create_notebook',
             'fetch_url',

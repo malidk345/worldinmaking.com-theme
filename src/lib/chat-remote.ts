@@ -88,8 +88,6 @@ export function rememberDeletedChatId(chatId: string): void {
     }
 }
 
-import { getActiveByokHeaders } from './byok-vault'
-
 export function getStoredJwt(): string | null {
     if (typeof window === 'undefined') return null
     try {
@@ -123,11 +121,10 @@ export function getStoredJwt(): string | null {
 }
 
 export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()): HeadersInit {
-    const byokHeaders = getActiveByokHeaders()
+    // BYOK keys must not ride on shared auth headers (CDN/access-log leak).
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
-        ...byokHeaders,
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
     const jwt = getStoredJwt()
@@ -139,7 +136,6 @@ export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatO
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
-        ...getActiveByokHeaders(),
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
 

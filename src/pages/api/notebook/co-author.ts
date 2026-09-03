@@ -17,8 +17,10 @@ import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 import { finalizeArtifactTurn } from '../../../lib/artifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
-import { checkRateLimit } from '../../../lib/bots/rate-limit'
-import { formatAiSseEvent, type AiSseEvent } from '../../../lib/ai/contracts'
+import { stripLeakedToolMarkup } from '../../../lib/bots/tools/leak'
+import { checkRateLimitDurable } from '../../../lib/bots/rate-limit'
+import { getRuntimeEnv } from '../../../lib/bots/runtime-env'
+import { formatAiSseEvent, shouldAdvertiseQualityCorrection, toPublicProviderLabel, type AiSseEvent } from '../../../lib/ai/contracts'
 import { parseHostSnapshot } from '../../../lib/bots/tools/host'
 import {
     COAUTHOR_MODES,
@@ -79,10 +81,23 @@ export default async function handler(req: Request) {
 
     // Per-principal rate limit — this endpoint spends real LLM tokens.
     // Keep the IP bucket as a second guard for unauthenticated and shared networks.
+    const env = getRuntimeEnv()
     const clientIp = getClientIp(req)
     const principal = user?.id || clientIp
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
-    const rl = checkRateLimit(`coauthor:${principal}`, 500, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`coauthor:${principal}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         return json(
@@ -159,6 +174,9 @@ export default async function handler(req: Request) {
                     notebookTitle: typeof body.notebookTitle === 'string' ? body.notebookTitle : undefined,
                 })
 
+                let livePublicTokensCount = 0
+                let livePublicText = ''
+
                 const result = await streamBotTurn({
                     question: `User contribution:\n"""${nodeContent}"""`,
                     philosopher: botName,
@@ -185,6 +203,8 @@ export default async function handler(req: Request) {
                         }))
                     },
                 }, (token) => {
+                    livePublicTokensCount += 1
+                    livePublicText += token
                     send({ type: 'token', text: token });
                 }, (thinkingToken) => {
                     currentThinkingDetail += thinkingToken;
@@ -202,7 +222,16 @@ export default async function handler(req: Request) {
                 });
 
                 if (!result.success) {
-                    send({ type: 'error', code: 'provider_unavailable', message: result.reply, retryable: true })
+                    const productReply =
+                        typeof result.reply === 'string' && result.reply.trim()
+                            ? result.reply.trim()
+                            : 'The philosopher network is unavailable right now.'
+                    send({
+                        type: 'error',
+                        code: 'PROVIDER_UNAVAILABLE',
+                        message: productReply,
+                        retryable: true,
+                    })
                     controller.close()
                     return
                 }
@@ -214,7 +243,12 @@ export default async function handler(req: Request) {
                     { scrape: false }
                 )
                 const visibleReply =
-                    turn.visibleText || stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+                    turn.visibleText || stripLeakedToolMarkup(stripThinkingBlocks(stripChartArtifactMarkup(result.reply)))
+
+                // Match /api/chat: if the gate revised after a silent stream, flush canonical text.
+                if (livePublicTokensCount === 0 && visibleReply) {
+                    send({ type: 'token', text: visibleReply })
+                }
 
                 if (turn.artifacts.length > 0) {
                     send({ type: 'artifacts', artifacts: turn.artifacts as any })
@@ -235,16 +269,24 @@ export default async function handler(req: Request) {
                     send({ type: 'phase', phase: { phase: 'persistence', status: 'completed' } })
                 }
 
+                const qualityGate = result.qualityGate
+                const corrected = shouldAdvertiseQualityCorrection(
+                    qualityGate,
+                    livePublicText,
+                    visibleReply
+                )
                 send({
                     type: 'done',
                     fullText: visibleReply,
-                    provider: result.provider,
+                    provider: toPublicProviderLabel(result.provider),
                     artifacts: turn.artifacts as any,
+                    ...(corrected ? { corrected: true } : {}),
+                    ...(qualityGate ? { qualityGate } : {}),
                 })
                 controller.close()
             } catch (err: any) {
                 console.error('[NotebookCoAuthorAPI] Streaming error:', err?.message || err)
-                send({ type: 'error', code: 'coauthor_failed', message: 'Co-author service failed', retryable: true })
+                send({ type: 'error', code: 'COAUTHOR_FAILED', message: 'Co-author service failed', retryable: true })
                 controller.close()
             }
         },

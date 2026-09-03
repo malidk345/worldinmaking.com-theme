@@ -1,12 +1,13 @@
 export const runtime = 'edge'
 
 import { supabaseAdmin } from '../../../lib/supabase-admin'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -14,8 +15,31 @@ export default async function handler(req: Request) {
     if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rate = checkRateLimit(`contact:${ip}`, 12, 60 * 60 * 1000)
-    if (!rate.allowed) return json({ error: 'Too many messages sent. Please try again later.' }, 429)
+    const rate = await checkRateLimitDurable(`contact:${ip}`, 12, 60 * 60 * 1000, getRuntimeEnv(), {
+        failClosed: true,
+    })
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
+    if (!rate.allowed) {
+        return json(
+            {
+                error: 'Too many messages sent. Please try again later.',
+                code: 'RATE_LIMITED',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            429,
+            buildRateLimitHeaders(rate)
+        )
+    }
 
     const body = await req.json().catch(() => null)
     if (!body || typeof body !== 'object') {

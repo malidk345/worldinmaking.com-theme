@@ -439,6 +439,29 @@ function enterExecute(state: AgentState, params: AgentPipelineParams, summary?: 
     return [EXECUTION_TRANSITION_PROMPT, summary ? `Plan summary: ${summary}` : ''].filter(Boolean).join('\n\n')
 }
 
+/** Stop the loop. The client plan card + next resumeAction run|revise continues. */
+export function requestPlanApproval(state: AgentState, _params: AgentPipelineParams, summary?: string): string {
+    const plan = state.todos.map((todo) => ({
+        id: todo.id,
+        title: todo.title,
+        status: todo.status,
+    }))
+    const trimmed = typeof summary === 'string' ? summary.trim() : ''
+    state.interrupt = {
+        kind: 'plan_approval',
+        title: 'Run this plan?',
+        status: 'pending',
+        plan: plan.length ? plan : undefined,
+        summary: trimmed || undefined,
+    }
+    return JSON.stringify({
+        ok: true,
+        awaiting: 'plan_approval',
+        summary: trimmed || undefined,
+        instruction: 'Wait for the user to approve or revise. Do not call mutating tools.',
+    })
+}
+
 async function runTaskSubagent(
     goal: string,
     parentCall: ToolCall,
@@ -668,7 +691,7 @@ async function runOneToolCall(
         const parsed = parseJsonObject(executed.result)
         const next = parseAgentMode(parsed?.mode)
         if (next === 'execute') {
-            toolContent = enterExecute(state, params)
+            toolContent = state.agentMode === 'execute' ? executed.result : requestPlanApproval(state, params)
         } else if (next === 'plan') {
             state.agentMode = next
             params.onMode?.(next)
@@ -678,33 +701,9 @@ async function runOneToolCall(
     if (name === 'finalize_plan' && executed.ok) {
         const parsed = parseJsonObject(executed.result)
         const summary = typeof parsed?.summary === 'string' ? parsed.summary : undefined
-        toolContent = enterExecute(state, params, summary)
+        toolContent =
+            state.agentMode === 'execute' ? executed.result : requestPlanApproval(state, params, summary)
     }
-    if (name === 'ask_user' && executed.ok) {
-        const parsed = parseJsonObject(executed.result)
-        const questions = Array.isArray(parsed?.questions)
-            ? parsed.questions
-                  .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
-                  .map((item, index) => ({
-                      id: String(item.id || `q_${index + 1}`),
-                      prompt: String(item.prompt || '').trim(),
-                      options: Array.isArray(item.options)
-                          ? item.options.map((option) => String(option)).filter(Boolean)
-                          : undefined,
-                  }))
-                  .filter((item) => item.prompt)
-            : []
-        if (questions.length > 0) {
-            state.interrupt = {
-                kind: 'ask',
-                title: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : 'A question',
-                status: 'pending',
-                questions,
-            }
-            toolContent = 'Waiting for the user to answer. Do not continue until they reply.'
-        }
-    }
-
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
     params.onTool?.({
         id: call.id,

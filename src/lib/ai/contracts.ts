@@ -1,4 +1,5 @@
 import type { ChartSpec } from './chart-artifacts'
+import { scrubSecretMaterial } from './scrub'
 
 /**
  * Shared wire contract for every AI streaming surface.
@@ -25,11 +26,29 @@ export interface AiThinkingStep {
 export type AiLifecyclePhase = 'context' | 'generation' | 'quality_gate' | 'persistence'
 export type AiLifecycleStatus = 'started' | 'completed' | 'failed'
 
+/**
+ * Coarse gateway tier safe for public SSE / inquiry timeline.
+ * Never includes model ids, key fingerprints, or BYOK vendor detail.
+ */
+export type AiPublicProvider = 'groq' | 'gemini' | 'openai'
+
+/** Map an internal GatewayProvider (or similar) to a public coarse label. */
+export function toPublicProviderLabel(provider: unknown): AiPublicProvider | undefined {
+    if (typeof provider !== 'string') return undefined
+    const p = provider.trim().toLowerCase()
+    if (!p || p === 'none') return undefined
+    if (p.startsWith('groq')) return 'groq'
+    if (p.startsWith('gemini')) return 'gemini'
+    if (p.startsWith('openai')) return 'openai'
+    return undefined
+}
+
 export interface AiLifecycleEvent {
     phase: AiLifecyclePhase
     status: AiLifecycleStatus
     detail?: string
-    provider?: string
+    /** Coarse gateway tier for timeline labels — never raw model ids. */
+    provider?: AiPublicProvider
 }
 
 export interface AiCitation {
@@ -108,10 +127,9 @@ export type AiSseEvent =
     | {
           type: 'human'
           human: {
-              kind: 'ask' | 'plan_approval'
+              kind: 'plan_approval'
               title: string
-              status: 'pending' | 'answered' | 'approved' | 'revised'
-              questions?: Array<{ id: string; prompt: string; options?: string[] }>
+              status: 'pending' | 'approved' | 'revised'
               plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
               summary?: string
           }
@@ -149,12 +167,37 @@ export type AiSseEvent =
           action: import('../bots/tools/host').HostOsAction
       }
     | {
+          type: 'token_usage'
+          snapshot: {
+              subject: string
+              tier: string
+              usedTokens: number
+              limitTokens: number
+              remainingTokens: number
+              percentage: number
+              allowed: boolean
+              resetAtUtc: string
+          }
+      }
+    | {
           type: 'done'
           fullText: string
-          provider?: string
+          /** Coarse gateway tier — never raw model ids or BYOK detail. */
+          provider?: AiPublicProvider
           artifacts?: AiArtifact[]
           latencyMs?: number
           attemptCount?: number
+          /**
+           * True only when qualityGate === 'passed' AND the public reply differs from live tokens.
+           * Sanitize / skipped / failed diffs must not set this (see shouldAdvertiseQualityCorrection).
+           */
+          corrected?: boolean
+          /**
+           * Soft honesty flag for Ask AI timeline.
+           * failed = gate flagged issues but reply may still be shown;
+           * skipped = checker unavailable with a real reply (not interrupt-only omit).
+           */
+          qualityGate?: 'passed' | 'failed' | 'skipped'
       }
     | {
           type: 'error'
@@ -163,8 +206,38 @@ export type AiSseEvent =
           retryable?: boolean
       }
 
+
+/**
+ * Wire honesty for done.corrected: advertise a quality revision only when the
+ * gate actually passed a corrected body. Sanitize/skipped/failed text diffs
+ * must not claim "Reply revised for quality".
+ */
+export function shouldAdvertiseQualityCorrection(
+    qualityGate: 'passed' | 'failed' | 'skipped' | undefined,
+    livePublicText: string,
+    finalPublicText: string
+): boolean {
+    return qualityGate === 'passed' && livePublicText.trim() !== finalPublicText.trim()
+}
+
+/** Deep-walk an SSE payload and scrub every string leaf before wire serialize. */
+export function scrubAiSsePayload<T>(value: T): T {
+    return scrubJsonValue(value) as T
+}
+
+function scrubJsonValue(value: unknown): unknown {
+    if (typeof value === 'string') return scrubSecretMaterial(value)
+    if (value === null || typeof value !== 'object') return value
+    if (Array.isArray(value)) return value.map(scrubJsonValue)
+    const out: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        out[key] = scrubJsonValue(child)
+    }
+    return out
+}
+
 export function formatAiSseEvent(event: AiSseEvent): string {
-    return `data: ${JSON.stringify(event)}\n\n`
+    return `data: ${JSON.stringify(scrubAiSsePayload(event))}\n\n`
 }
 
 /** Parse one complete SSE frame. Incomplete frames return null. */

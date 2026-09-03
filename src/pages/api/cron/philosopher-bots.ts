@@ -5,7 +5,7 @@
  */
 export const runtime = 'edge'
 
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 import { parseTickRequest, runPhilosopherBotTick } from 'lib/bots/philosopher-tick'
 
@@ -48,7 +48,18 @@ export default async function handler(req: Request) {
     }
 
     // Two phases × retries × catch-up schedule can exceed the old 12/hour cap.
-    const rl = checkRateLimit('cron:philosopher-bots', 24, 60 * 60 * 1000)
+    const rl = await checkRateLimitDurable('cron:philosopher-bots', 24, 60 * 60 * 1000, env, { failClosed: true })
+    if (rl.source === 'unavailable') {
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable',
+                retryAfterSec: rl.retryAfterSec,
+            },
+            503
+        )
+    }
     if (!rl.allowed) {
         return json(
             {

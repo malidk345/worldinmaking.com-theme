@@ -1,7 +1,7 @@
 /**
  * Edge-safe graph checkpoint (LangGraph interrupt, without LangGraph).
  *
- * On ask_user the host snapshots the loop and stops. finalize_plan starts execution in the same turn.
+ * finalize_plan interrupts and snapshots. ResumeAction run enters execute; revise stays in plan.
  * The next request loads this snapshot and continues ROOT → TOOLS from the
  * same messages, todos, and mode. It does not start a new user turn.
  */
@@ -9,7 +9,7 @@
 import type { AgentMode } from './modes'
 import type { HumanTurn } from './human'
 
-export type ResumeAction = 'run' | 'revise' | 'answer'
+export type ResumeAction = 'run' | 'revise'
 
 export type CheckpointMessage = {
     role: 'system' | 'user' | 'assistant' | 'tool'
@@ -103,7 +103,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
     const interrupt = row.interrupt
     if (!interrupt || typeof interrupt !== 'object') return undefined
     const human = interrupt as HumanTurn
-    if (human.kind !== 'ask' && human.kind !== 'plan_approval') return undefined
+    if (human.kind !== 'plan_approval') return undefined
     const todos = Array.isArray(row.todos)
         ? row.todos
               .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
@@ -140,10 +140,9 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
         interrupt: {
             kind: human.kind,
             title: clip(human.title || 'Waiting', 80),
-            status: human.status === 'pending' || human.status === 'answered' || human.status === 'approved' || human.status === 'revised'
+            status: human.status === 'approved' || human.status === 'revised'
                 ? human.status
                 : 'pending',
-            questions: human.questions,
             plan: human.plan,
             summary: human.summary ? clip(human.summary, 400) : undefined,
         },
@@ -151,7 +150,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
 }
 
 export function parseResumeAction(value: unknown): ResumeAction | undefined {
-    if (value === 'run' || value === 'revise' || value === 'answer') return value
+    if (value === 'run' || value === 'revise') return value
     return undefined
 }
 
@@ -159,14 +158,10 @@ export function resumeUserMessage(action: ResumeAction, payload?: string): strin
     if (action === 'run') {
         return 'The user approved the plan. Continue in execution mode. Follow the todo list. Mark the current step in_progress, do the work, then mark it completed. Do not wait for another approval.'
     }
-    if (action === 'revise') {
-        const note = clip(payload, 800)
-        return note
-            ? `The user asked to revise the plan: ${note}. Update todo_write, research if needed, then call finalize_plan again.`
-            : 'The user asked to revise the plan. Update todo_write, then call finalize_plan again.'
-    }
-    const answer = clip(payload, 800) || '(no answer)'
-    return `The user answered: ${answer}`
+    const note = clip(payload, 800)
+    return note
+        ? `The user asked to revise the plan: ${note}. Update todo_write, research if needed, then call finalize_plan again.`
+        : 'The user asked to revise the plan. Update todo_write, then call finalize_plan again.'
 }
 
 export function modeAfterResume(action: ResumeAction, previous: AgentMode): AgentMode {

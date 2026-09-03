@@ -27,7 +27,7 @@ import { extractSearchQuery, needsLiveWeb } from './search-intent'
 import { formatSearchResults, searchWebSources } from './web-search'
 import { resolveWimKnowledge } from './wim-knowledge'
 import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
-import type { AiCitation, AiLifecycleEvent } from '../ai/contracts'
+import { toPublicProviderLabel, type AiCitation, type AiLifecycleEvent } from '../ai/contracts'
 import type { ArtifactDocument } from '../artifacts/kinds'
 import { createActivityClock, type AgentActivity } from './agent/activity'
 import type { AgentCheckpoint, ResumeAction } from './agent/checkpoint'
@@ -75,13 +75,13 @@ export interface BotRunInput {
     onNode?: (event: NodeEvent) => void
     /** Plan/execute mode changes from switch_mode. */
     onMode?: (mode: AgentMode) => void
-    /** Human interrupt: ask_user or plan approval. */
+    /** Human interrupt: plan approval. */
     onHuman?: (turn: HumanTurn) => void
     /** Ordered host process log (thought tokens, tools, nodes). */
     onActivity?: (activity: AgentActivity) => void
     /** PostHog-style agent supermode. Default ask. */
     agentMode?: AgentMode
-    /** Resume a paused graph from ask_user / plan approval. */
+    /** Resume a paused graph from plan approval. */
     checkpoint?: AgentCheckpoint
     resumeAction?: ResumeAction
     resumePayload?: string
@@ -89,6 +89,10 @@ export interface BotRunInput {
     /** Correlates telemetry with the originating HTTP request. */
     requestId?: string
 }
+
+export type QualityGateOutcome = 'passed' | 'failed' | 'skipped'
+
+export const QUALITY_GATE_UNAVAILABLE_REPLY = 'Quality check is unavailable. Please try again.'
 
 export interface BotRunSuccess {
     success: true
@@ -112,6 +116,12 @@ export interface BotRunSuccess {
     actions?: HostOsAction[]
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
+    /**
+     * Soft flag for SSE/UI honesty.
+     * Omitted when the gate was not applicable (e.g. plan-approval interrupt with no public reply).
+     * 'skipped' is reserved; infrastructure errors fail closed ('failed') and do not ship the ungated draft.
+     */
+    qualityGate?: QualityGateOutcome
 }
 
 export interface BotRunFailure {
@@ -132,6 +142,23 @@ export interface BotRunFailure {
 }
 
 export type BotRunResult = BotRunSuccess | BotRunFailure
+
+
+/**
+ * Client-safe subset of a successful runBotTurn for /api/bots/act handlers.
+ * Omits provider, persona, thinking stages, and other infra metadata.
+ */
+export function publicBotSuccessFields(result: BotRunSuccess) {
+    return {
+        success: true as const,
+        philosopher: result.philosopher,
+        epistemicStance: result.epistemicStance,
+        reply: result.reply,
+        thought: result.thought,
+        latencyMs: result.latencyMs,
+        taskType: result.taskType,
+    }
+}
 
 /**
  * Anti prompt-injection preamble, prepended to every system prompt.
@@ -268,7 +295,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         }
     }
 
-    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: gen.provider })
+    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(gen.provider) })
 
     const { thinking, reply } = parseThinkingAndReply(gen.text, taskType, input.thinkingDepth, {
         providerTrace: gen.trace,
@@ -297,7 +324,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         }
     }
 
-    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+    const gated = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
 
     recordAiTurn({
         ok: true,
@@ -308,7 +335,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         latencyMs: gen.latencyMs,
         attemptCount: 0,
         promptChars: estimateChars([systemPrompt, userPrompt]),
-        completionChars: gatedReply.length,
+        completionChars: gated.reply.length,
         requestId: input.requestId,
     })
 
@@ -316,7 +343,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: gatedReply,
+        reply: gated.reply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
@@ -328,6 +355,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
             epistemicStance: persona.epistemicStance,
             writingStyle: persona.writingStyle,
         },
+        qualityGate: gated.qualityGate,
     }
 }
 
@@ -417,7 +445,7 @@ async function applyQualityGate(
     runtimeEnv: EnvStore,
     onLifecycle: BotRunInput['onLifecycle'],
     allowCorrection: boolean
-): Promise<string> {
+): Promise<{ reply: string; qualityGate: QualityGateOutcome }> {
     onLifecycle?.({ phase: 'quality_gate', status: 'started' })
     try {
         const report = await runQualityGate(rawReply, persona, taskType, {
@@ -437,16 +465,33 @@ async function applyQualityGate(
                   }
                 : undefined,
         })
+        const revised = Boolean(report.wasCorrected)
+        let detail: string | undefined
+        if (report.passed) {
+            detail = revised ? 'Reply revised for quality' : undefined
+        } else if (revised) {
+            detail = report.issues[0] || 'Quality issues remain after revision'
+        } else {
+            detail = report.issues[0]
+        }
         onLifecycle?.({
             phase: 'quality_gate',
             status: report.passed ? 'completed' : 'failed',
-            detail: report.issues[0],
+            detail,
         })
-        return report.correctedBody || rawReply
+        const reply = !allowCorrection ? rawReply : report.correctedBody || rawReply
+        return { reply, qualityGate: report.passed ? 'passed' : 'failed' }
     } catch (error) {
-        console.warn('[orchestrate] quality gate skipped', error)
-        onLifecycle?.({ phase: 'quality_gate', status: 'failed', detail: 'Quality gate unavailable' })
-        return rawReply
+        console.warn('[orchestrate] quality gate unavailable', error)
+        onLifecycle?.({
+            phase: 'quality_gate',
+            status: 'failed',
+            detail: 'Quality check unavailable',
+        })
+        return {
+            reply: QUALITY_GATE_UNAVAILABLE_REPLY,
+            qualityGate: 'failed',
+        }
     }
 }
 
@@ -602,12 +647,18 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         const hasProduct = Boolean(loop.text.trim()) || loop.artifacts.length > 0 || Boolean(loop.interrupt)
         if (hasProduct) {
             const provider: GatewayProvider = loop.provider === 'gemini' ? 'gemini-fetch:tools' : 'groq'
-            input.onLifecycle?.({ phase: 'generation', status: 'completed', provider })
+            input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(provider) })
             const { thinking, reply } = parseThinkingAndReply(loop.text, taskType, input.thinkingDepth, {
                 philosopher: persona.name,
             })
             const rawReply = reply || cleanFallbackReply(loop.text)
             input.onAnalysisSummary?.(thinking)
+            // Interrupt-only / no public reply: QG is not applicable — omit the flag
+            // (do not fake 'skipped', which the client reads as "reply shown ungated").
+            const gated: { reply: string; qualityGate?: QualityGateOutcome } =
+                loop.interrupt && !rawReply.trim()
+                    ? { reply: rawReply }
+                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
                 ok: true,
                 stream: true,
@@ -617,14 +668,14 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 latencyMs: Date.now() - streamStarted,
                 attemptCount: 1,
                 promptChars: estimateChars([systemPrompt, userPrompt]),
-                completionChars: rawReply.length,
+                completionChars: gated.reply.length,
                 requestId: input.requestId,
             })
             return {
                 success: true,
                 philosopher: persona.name,
                 epistemicStance: persona.epistemicStance,
-                reply: rawReply,
+                reply: gated.reply,
                 thought: thinking.summary,
                 thinking,
                 provider,
@@ -642,6 +693,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 actions: loop.actions,
                 interrupt: loop.interrupt,
                 checkpoint: loop.checkpoint,
+                qualityGate: gated.qualityGate,
             }
         }
         if (liveWeb && hostCitations.length === 0 && !loop.usedTools) {
@@ -736,7 +788,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
-    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: gen.provider })
+    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(gen.provider) })
 
     let fullText = ''
     const demux = new ThinkingStreamDemux()
@@ -807,6 +859,8 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
+    const gated = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+
     recordAiTurn({
         ok: true,
         stream: true,
@@ -816,7 +870,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         latencyMs: Date.now() - streamStarted,
         attemptCount: gen.attempts.length,
         promptChars: estimateChars([systemPrompt, userPrompt]),
-        completionChars: rawReply.length,
+        completionChars: gated.reply.length,
         requestId: input.requestId,
     })
 
@@ -824,7 +878,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: rawReply,
+        reply: gated.reply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
@@ -836,6 +890,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             epistemicStance: persona.epistemicStance,
             writingStyle: persona.writingStyle,
         },
+        qualityGate: gated.qualityGate,
         citations: hostCitations,
         usedTools: hostCitations.length > 0,
     }

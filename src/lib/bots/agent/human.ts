@@ -3,13 +3,7 @@
  * The graph stops. The client shows a card. The next turn resumes.
  */
 
-export type HumanTurnKind = 'ask' | 'plan_approval'
-
-export type HumanQuestion = {
-    id: string
-    prompt: string
-    options?: string[]
-}
+export type HumanTurnKind = 'plan_approval'
 
 export type HumanPlanItem = {
     id: string
@@ -17,13 +11,12 @@ export type HumanPlanItem = {
     status: 'pending' | 'in_progress' | 'completed'
 }
 
-export type HumanTurnStatus = 'pending' | 'answered' | 'approved' | 'revised'
+export type HumanTurnStatus = 'pending' | 'approved' | 'revised'
 
 export type HumanTurn = {
     kind: HumanTurnKind
     title: string
     status: HumanTurnStatus
-    questions?: HumanQuestion[]
     plan?: HumanPlanItem[]
     summary?: string
 }
