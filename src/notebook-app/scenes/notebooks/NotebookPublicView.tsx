@@ -4,7 +4,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import type { StoredNotebook } from './notebookStorage'
 import { getNotebook, getNotebookPublicUrl } from './notebookStorage'
 import { pullPublishedNotebook } from './notebookRemote'
-import { notebookCommentSlug, pickPublicNotebook } from './notebookPublicMarkdown'
+import { documentMarkdown, notebookCommentSlug, pickPublicNotebook } from './notebookPublicMarkdown'
 import { Avatar, Questions } from 'components/Squeak'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
@@ -52,6 +52,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     const handle = person?.username || ''
     const href = handle ? profileHref(handle) : ''
     const postedAt = notebook.createdAt || notebook.updatedAt
+    const bodyMarkdown = documentMarkdown(documentMarkdown(notebook.content || '', displayTitle), notebook.title || displayTitle)
 
     const handleCopyLink = async () => {
         try {
@@ -112,7 +113,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
 
                 <div className="min-w-0 max-w-full box-border">
                     <article className="prose prose-sm dark:prose-invert max-w-none font-normal">
-                    <h1 className="!mt-0 !mb-2 break-words">{displayTitle}</h1>
+                    <h1 className="NotebookPublicView__title !mt-0 !mb-2 break-words">{displayTitle}</h1>
                     {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
@@ -121,12 +122,12 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                             </ZoomImage>
                         </div>
                     ) : null}
-                    {notebook.content?.trim() ? (
+                    {bodyMarkdown ? (
                         <React.Suspense
                             fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
                         >
                             <MarkdownNotebook
-                                value={notebook.content}
+                                value={bodyMarkdown}
                                 mode="view"
                                 spellCheck={false}
                                 autoFocus={false}
