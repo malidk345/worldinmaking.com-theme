@@ -13,18 +13,19 @@ import { useRouter } from 'next/router'
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
-import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/windowState'
 import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
 import { useWindowHistory } from 'hooks/useWindowHistory'
 import { useWindowShortcuts } from 'hooks/useWindowShortcuts'
+import { useWindowVisibility } from 'hooks/useWindowVisibility'
+import { useWindowSwitcher } from 'hooks/useWindowSwitcher'
+import { useWindowActions } from 'hooks/useWindowActions'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
-import { ACTIVE_WINDOWS_PANEL_RESERVE, layoutMissionControlWindow } from '../../lib/mission-control-layout'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -112,48 +113,16 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const size = item.size
     const position = item.position
 
-    const visibleWindows = useMemo(() => windows.filter((w) => !w.minimized), [windows])
-    const switcherIndex = useMemo(
-        () => visibleWindows.findIndex((w) => w.key === item.key),
-        [visibleWindows, item.key]
-    )
-
-    const missionControlLayout = useMemo(() => {
-        if (
-            !isActiveWindowsPanelOpen ||
-            isMobile ||
-            compact ||
-            item.minimized ||
-            switcherIndex === -1 ||
-            typeof window === 'undefined'
-        ) {
-            return null
-        }
-
-        return layoutMissionControlWindow({
-            index: switcherIndex,
-            count: visibleWindows.length,
-            size,
-            viewport: { width: window.innerWidth, height: window.innerHeight },
-            insets: {
-                top: Math.max(taskbarHeight, 48) + 12,
-                right: ACTIVE_WINDOWS_PANEL_RESERVE,
-                bottom: 24,
-                left: 24,
-            },
-        })
-    }, [
-        isActiveWindowsPanelOpen,
-        isMobile,
-        compact,
-        item.minimized,
-        switcherIndex,
-        visibleWindows.length,
-        size.width,
-        size.height,
+    const { switcherIndex, missionControlLayout, inSwitcher } = useWindowSwitcher({
+        item,
+        windows,
+        isActiveWindowsPanelOpen: !!isActiveWindowsPanelOpen,
+        isMobile: !!isMobile,
+        compact: !!compact,
+        size,
         taskbarHeight,
-    ])
-    const inSwitcher = !!missionControlLayout
+    })
+
     const [snapIndicator, setSnapIndicator] = useState<SnapZone | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
     const { canGoBack, canGoForward, goBack, goForward } = useWindowHistory(item)
@@ -200,29 +169,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const hasToolbar = item.appSettings?.toolbar
     const hideTitle = item.appSettings?.hideTitle
     const isCompositorActive = animating || dragging || isResizing || closing
-    const inView = useMemo(() => {
-        if (item.expanded) return true
 
-        const windowsAbove = windows.filter(
-            (window) => window !== item && window.zIndex > item.zIndex && !window.minimized
-        )
-
-        let coveredArea = 0
-        const currentArea = size.width * size.height
-
-        for (const windowAbove of windowsAbove) {
-            const left = Math.max(position.x, windowAbove.position.x)
-            const right = Math.min(position.x + size.width, windowAbove.position.x + windowAbove.size.width)
-            const top = Math.max(position.y, windowAbove.position.y)
-            const bottom = Math.min(position.y + size.height, windowAbove.position.y + windowAbove.size.height)
-
-            if (left < right && top < bottom) {
-                coveredArea += (right - left) * (bottom - top)
-            }
-        }
-
-        return coveredArea / currentArea < 0.8
-    }, [windows, item, position, size])
+    const { inView } = useWindowVisibility({ item, windows, position, size })
 
     const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
     const parent =
@@ -260,112 +208,21 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
     }, [focusedWindow?.key, item.key])
 
-    const toggleExpanded = () => {
-        if (item.fixedSize) return
-        const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
-
-        const isMax = isMaximizedWindow(item) || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
-
-        if (isMax) {
-            const prevSize = isMobile
-                ? {
-                      width: Math.min(item.previousSize?.width || fullW * 0.9, fullW * 0.92),
-                      height: Math.min(item.previousSize?.height || fullH * 0.78, fullH * 0.78),
-                  }
-                : item.previousSize || {
-                      width: Math.min(900, fullW * 0.8),
-                      height: Math.min(650, fullH * 0.8),
-                  }
-            const prevPos = isMobile
-                ? { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
-                : item.previousPosition || {
-                      x: Math.max(0, (fullW - prevSize.width) / 2),
-                      y: Math.max(0, (fullH - prevSize.height) / 2),
-                  }
-            updateWindow(item, {
-                size: prevSize,
-                position: prevPos,
-                ...windowModeFlags(transitionWindowMode('maximized', { type: 'toggle-maximize' })),
-            })
-        } else {
-            updateWindow(item, {
-                previousSize: item.size,
-                previousPosition: item.position,
-                size: { width: fullW, height: fullH },
-                position: { x: 0, y: 0 },
-                ...windowModeFlags(transitionWindowMode('normal', { type: 'toggle-maximize' })),
-            })
-        }
-    }
-
-    const handleDoubleClick = () => {
-        toggleExpanded()
-    }
+    const { toggleExpanded, handleDoubleClick, handleMouseDown, handleClose } = useWindowActions({
+        item,
+        router,
+        isMobile: !!isMobile,
+        taskbarHeight,
+        constraintsRef,
+        focusedWindow,
+        bringToFront,
+        updateWindow,
+        setClosing,
+    })
 
     useEffect(() => {
         setActiveInternalMenu(getActiveInternalMenu())
     }, [item?.path, getActiveInternalMenu])
-
-    const handleMouseDown = () => {
-        if (focusedWindow === item) return
-        // Mobile: never router.push on focus — pushState thread URLs would get wiped back
-        // to the stale window path (e.g. /questions) and the forum detail panel would close
-        // mid-scroll / mid-touch. Just raise z-index.
-        if (isMobile) {
-            bringToFront(item)
-            return
-        }
-        // Desktop: if the browser is already on a deeper path under this window (forum thread),
-        // don't clobber it with a shallower item.path.
-        try {
-            const browserPath = typeof window !== 'undefined' ? window.location.pathname : ''
-            const windowPath = item.path || ''
-            if (
-                windowPath.startsWith('/') &&
-                browserPath.startsWith(windowPath) &&
-                browserPath.length > windowPath.length
-            ) {
-                bringToFront(item)
-                return
-            }
-            // Forum shell always lives at /questions/* — never force-navigate to list root on focus
-            if (windowPath === '/questions' && browserPath.startsWith('/questions/')) {
-                bringToFront(item)
-                return
-            }
-        } catch {
-            /* ignore */
-        }
-        if (item.path.startsWith('/')) {
-            let next = `${item.path}${item.location?.search || ''}`
-            if (/\[[^\]]+\]/.test(next)) {
-                if (
-                    typeof window !== 'undefined' &&
-                    window.location.pathname &&
-                    !/\[[^\]]+\]/.test(window.location.pathname)
-                ) {
-                    next = `${window.location.pathname}${window.location.search || ''}`
-                } else {
-                    bringToFront(item)
-                    return
-                }
-            }
-            const current = `${router.asPath.split('#')[0]}`
-            if (current !== next) {
-                void router.push(next)
-            } else {
-                bringToFront(item)
-            }
-        } else {
-            bringToFront(item)
-        }
-    }
-
-    const handleClose = useCallback(() => {
-        setClosing(true)
-    }, [])
 
     useWindowShortcuts({
         item,
@@ -500,22 +357,22 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
+                    className={`group @container absolute pointer-events-auto !select-auto flex flex-col transition-shadow duration-200 ${
                         focusedWindow?.key === item.key
-                            ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
-                            : 'border-primary/40 shadow-sm opacity-[0.985]'
+                            ? 'border border-black/5 dark:border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.08),0_16px_80px_rgba(0,0,0,0.12)]'
+                            : 'border border-black/5 dark:border-white/5 shadow-sm opacity-[0.985]'
                     } ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg !shadow-none'
+                            ? 'border-t-0 rounded-t-none rounded-b-[24px] !shadow-none'
                             : item.snapped
                             ? `border-t-0 !shadow-none ${
                                   item.snapped === 'left'
-                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
-                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
+                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[24px]'
+                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[24px]'
                               }`
-                            : 'rounded-lg'
+                            : 'rounded-[24px]'
                     }`}
                     style={{
                         pointerEvents: 'auto',

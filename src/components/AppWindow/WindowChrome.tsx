@@ -1,4 +1,5 @@
 import type { PointerEvent } from 'react'
+import React from 'react'
 import { IconCollapse45Chevrons, IconMinus, IconSquare, IconX } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
@@ -30,9 +31,12 @@ export default function WindowChrome({
 
     return (
         <div
-            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
+            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-1 px-1.5' : ''}`}
             onPointerDown={hasToolbar && canDrag ? onDragHandlePointerDown : undefined}
             onDoubleClick={onDoubleClick}
+            style={{
+                boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.15)'
+            }}
         >
             {hasToolbar && (
                 <>
@@ -54,8 +58,8 @@ export default function WindowChrome({
             <div
                 data-scheme="tertiary"
                 onPointerDown={(event) => event.stopPropagation()}
-                className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
-                    hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
+                className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 opacity-60 hover:opacity-100 transition-opacity duration-100 ${
+                    hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1.5 top-1.5'
                 }`}
             >
                 <div className="window-minimize-control flex justify-end">
