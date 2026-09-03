@@ -17,7 +17,7 @@ import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { stripLeakedToolMarkup } from 'lib/bots/tools/leak'
-import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
+import { formatAiSseEvent, toPublicProviderLabel, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { isNotebookTask, NOTEBOOK_AVAILABLE_INSTRUCTION, NOTEBOOK_EDITOR_INSTRUCTION } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
@@ -575,7 +575,7 @@ export default async function handler(req: Request) {
                 send({
                     type: 'done',
                     fullText: visibleReply,
-                    provider: result.provider,
+                    provider: toPublicProviderLabel(result.provider),
                     artifacts: turn.artifacts as any,
                     latencyMs: result.latencyMs,
                     ...(corrected ? { corrected: true } : {}),

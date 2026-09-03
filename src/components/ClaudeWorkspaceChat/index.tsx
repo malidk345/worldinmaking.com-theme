@@ -54,7 +54,7 @@ import { finalizeArtifactTurn } from '../../lib/artifacts';
 import type { OSActionCard as OSActionCardType } from './types';
 import { dedupeArtifacts } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
-import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
+import { parseAiSseEvent, toPublicProviderLabel, type AiArtifact } from 'lib/ai/contracts';
 import {
   activityFromToolEvent,
   applyAgentActivity,
@@ -1103,13 +1103,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           /* use status text */
         }
         const fail = new Error(errorMessage) as Error & { kind?: Message["errorKind"] };
-        fail.kind =
+        if (
           sseRes.status === 429 ||
           errCode.startsWith("QUOTA_") ||
           errorMessage.includes("[app]") ||
           (sseRes.status === 503 && (errCode.startsWith("QUOTA_") || errorMessage.includes("[app]")))
-            ? "quota"
-            : "network";
+        ) {
+          fail.kind = "quota";
+        } else if (
+          errCode === "PROVIDER_UNAVAILABLE" ||
+          errCode === "EMPTY_REPLY" ||
+          errCode === "TOOLS_REQUIRED" ||
+          errCode === "CHAT_FAILED"
+        ) {
+          fail.kind = "provider";
+        } else {
+          fail.kind = "network";
+        }
         throw fail;
       }
 
@@ -1292,10 +1302,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               const genId = 'lifecycle-generation'
               const status =
                 phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
-              const providerLabel =
-                typeof parsed.phase?.provider === 'string' && parsed.phase.provider.trim()
-                  ? parsed.phase.provider.trim()
-                  : undefined
+              const providerLabel = toPublicProviderLabel(parsed.phase?.provider)
               processItems = applyAgentActivity(processItems, {
                 seq: processItems.length + 1,
                 kind: 'node',
@@ -1402,7 +1409,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             if (
               errCode === 'PROVIDER_UNAVAILABLE' ||
               errCode === 'EMPTY_REPLY' ||
-              errCode === 'TOOLS_REQUIRED'
+              errCode === 'TOOLS_REQUIRED' ||
+              errCode === 'CHAT_FAILED'
             ) {
               streamErrorKind = 'provider';
             } else if (errCode.startsWith('QUOTA_') || (parsed.message || '').includes('[app]')) {
@@ -1452,14 +1460,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
               currentThinkingProcess.steps = [...currentThinkingProcess.steps]
             }
+            const publicProvider = toPublicProviderLabel(parsed.provider);
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: sanitizePublicAssistantText(accumulatedContent),
               artifacts: streamedArtifacts,
               citations: streamedCitations,
               thinkingProcess: { ...currentThinkingProcess },
-              provider: parsed.provider,
+              provider: publicProvider,
             });
-            if (parsed.provider) streamedProvider = parsed.provider;
+            if (publicProvider) streamedProvider = publicProvider;
           }
         }
       }

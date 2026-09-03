@@ -25,11 +25,29 @@ export interface AiThinkingStep {
 export type AiLifecyclePhase = 'context' | 'generation' | 'quality_gate' | 'persistence'
 export type AiLifecycleStatus = 'started' | 'completed' | 'failed'
 
+/**
+ * Coarse gateway tier safe for public SSE / inquiry timeline.
+ * Never includes model ids, key fingerprints, or BYOK vendor detail.
+ */
+export type AiPublicProvider = 'groq' | 'gemini' | 'openai'
+
+/** Map an internal GatewayProvider (or similar) to a public coarse label. */
+export function toPublicProviderLabel(provider: unknown): AiPublicProvider | undefined {
+    if (typeof provider !== 'string') return undefined
+    const p = provider.trim().toLowerCase()
+    if (!p || p === 'none') return undefined
+    if (p.startsWith('groq')) return 'groq'
+    if (p.startsWith('gemini')) return 'gemini'
+    if (p.startsWith('openai')) return 'openai'
+    return undefined
+}
+
 export interface AiLifecycleEvent {
     phase: AiLifecyclePhase
     status: AiLifecycleStatus
     detail?: string
-    provider?: string
+    /** Coarse gateway tier for timeline labels — never raw model ids. */
+    provider?: AiPublicProvider
 }
 
 export interface AiCitation {
@@ -163,7 +181,8 @@ export type AiSseEvent =
     | {
           type: 'done'
           fullText: string
-          provider?: string
+          /** Coarse gateway tier — never raw model ids or BYOK detail. */
+          provider?: AiPublicProvider
           artifacts?: AiArtifact[]
           latencyMs?: number
           attemptCount?: number

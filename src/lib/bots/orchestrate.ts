@@ -27,7 +27,7 @@ import { extractSearchQuery, needsLiveWeb } from './search-intent'
 import { formatSearchResults, searchWebSources } from './web-search'
 import { resolveWimKnowledge } from './wim-knowledge'
 import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
-import type { AiCitation, AiLifecycleEvent } from '../ai/contracts'
+import { toPublicProviderLabel, type AiCitation, type AiLifecycleEvent } from '../ai/contracts'
 import type { ArtifactDocument } from '../artifacts/kinds'
 import { createActivityClock, type AgentActivity } from './agent/activity'
 import type { AgentCheckpoint, ResumeAction } from './agent/checkpoint'
@@ -284,7 +284,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         }
     }
 
-    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: gen.provider })
+    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(gen.provider) })
 
     const { thinking, reply } = parseThinkingAndReply(gen.text, taskType, input.thinkingDepth, {
         providerTrace: gen.trace,
@@ -628,7 +628,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         const hasProduct = Boolean(loop.text.trim()) || loop.artifacts.length > 0 || Boolean(loop.interrupt)
         if (hasProduct) {
             const provider: GatewayProvider = loop.provider === 'gemini' ? 'gemini-fetch:tools' : 'groq'
-            input.onLifecycle?.({ phase: 'generation', status: 'completed', provider })
+            input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(provider) })
             const { thinking, reply } = parseThinkingAndReply(loop.text, taskType, input.thinkingDepth, {
                 philosopher: persona.name,
             })
@@ -766,7 +766,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
-    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: gen.provider })
+    input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: toPublicProviderLabel(gen.provider) })
 
     let fullText = ''
     const demux = new ThinkingStreamDemux()
