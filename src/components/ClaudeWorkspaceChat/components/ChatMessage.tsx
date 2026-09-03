@@ -26,7 +26,7 @@ interface ChatMessageProps {
   onFeedback?: (messageId: string, liked: boolean | null) => void;
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
-  onHumanRespond?: (messageId: string, action: 'run' | 'revise', payload?: string) => void;
+  onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
   onAddToNotebook?: (message: Message) => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
@@ -98,27 +98,13 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
 }
 
-
-function QualityGateNote({ gate }: { gate: 'passed' | 'failed' | 'skipped' }) {
-  if (gate === 'passed') return null
-  const text =
-    gate === 'failed'
-      ? 'Quality check flagged issues — reply shown with caveats'
-      : 'Quality check skipped — reply shown ungated'
-  return (
-    <p className="m-0 mt-1.5 text-[11px] leading-snug text-muted" role="note">
-      {text}
-    </p>
-  )
-}
-
 function InquiryStatusCard({ kind, text }: { kind: 'quota' | 'provider' | 'network'; text: string }) {
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
-    <div className="mt-1.5 rounded-xl border border-primary/50 bg-accent/50 px-3 py-2.5">
-      <p className="m-0 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">{title}</p>
-      <p className="m-0 mt-1 text-[12.5px] leading-relaxed text-primary">{body || 'The inquiry could not continue.'}</p>
+    <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+      <p className="m-0 font-medium">{title}</p>
+      <p className="mt-1 mb-0 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
     </div>
   )
 }
@@ -130,23 +116,22 @@ function HumanTurnCard({
 }: {
   turn: HumanTurn
   disabled?: boolean
-  onRespond: (action: 'run' | 'revise', payload?: string) => void
+  onRespond: (action: 'run' | 'revise' | 'answer', payload?: string) => void
 }) {
   const [draft, setDraft] = useState('')
   const pending = turn.status === 'pending' && !disabled
   if (turn.kind === 'plan_approval') {
     return (
-      <div className="mt-2.5 rounded-xl border border-primary bg-surface-primary p-3 shadow-2xs space-y-2">
+      <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="m-0 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">Plan</p>
-            <p className="m-0 mt-0.5 font-semibold text-[13px] text-primary">{turn.title}</p>
+            <p className="m-0 font-medium">{turn.title}</p>
           </div>
           {pending ? (
             <button
               type="button"
               onClick={() => onRespond('run')}
-              className="shrink-0 rounded-md bg-[#1E3A8A] px-2.5 py-1 text-[12px] font-medium text-white hover:bg-[#1e40af] cursor-pointer"
+              className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
             >
               Run
             </button>
@@ -158,13 +143,13 @@ function HumanTurnCard({
         </div>
         {turn.summary ? <p className="m-0 text-[12.5px] leading-relaxed text-secondary">{turn.summary}</p> : null}
         {turn.plan && turn.plan.length > 0 ? (
-          <ol className="m-0 list-decimal space-y-1 pl-4 text-[12.5px] text-secondary">
+          <ul className="mt-2 mb-0 pl-4 space-y-1 text-secondary">
             {turn.plan.map((item) => (
               <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : item.status === 'in_progress' ? 'font-medium text-primary' : ''}>
                 {item.title}
               </li>
             ))}
-          </ol>
+          </ul>
         ) : null}
         {pending ? (
           <div className="flex items-center gap-2 pt-0.5">
@@ -362,12 +347,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               </>
             ) : null}
           </div>
-
-          {!message.errorKind &&
-          !isLiveAnswer &&
-          (message.qualityGate === 'failed' || message.qualityGate === 'skipped') ? (
-            <QualityGateNote gate={message.qualityGate} />
-          ) : null}
 
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
