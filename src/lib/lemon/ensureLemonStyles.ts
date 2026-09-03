@@ -124,13 +124,24 @@ const NOTEBOOK_PALETTE_CSS = `
   height: 0;
   min-height: 0;
 }
+.notebook-app-scope .NotebookPublicView__article,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__main,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__canvas,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-row {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  max-width: none !important;
+}
 .notebook-app-scope .NotebookPublicView__title {
   font-family: var(--font-sans);
   color: rgb(var(--text-primary));
-  font-size: 1.125rem !important;
+  font-size: 1rem !important;
   font-weight: 600 !important;
   line-height: 1.35 !important;
   letter-spacing: normal !important;
+  margin: 0 0 0.75rem !important;
 }
 .notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
