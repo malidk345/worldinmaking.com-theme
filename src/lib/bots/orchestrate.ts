@@ -442,6 +442,7 @@ async function applyQualityGate(
             status: report.passed ? 'completed' : 'failed',
             detail: report.issues[0],
         })
+        if (!allowCorrection) return rawReply
         return report.correctedBody || rawReply
     } catch (error) {
         console.warn('[orchestrate] quality gate skipped', error)
@@ -611,7 +612,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             const gatedReply =
                 loop.interrupt && !rawReply.trim()
                     ? rawReply
-                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+                    : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
             recordAiTurn({
                 ok: true,
                 stream: true,
@@ -811,7 +812,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
-    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
 
     recordAiTurn({
         ok: true,
