@@ -215,7 +215,28 @@ export async function createForumTopic(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'thread_init' as const, phase: 'llm_failed' as const, persisted: false }
+        console.error('[forum] thread_init providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'thread_init' as const,
+            phase: 'llm_failed' as const,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
     // Derive title from first line or truncated reply
@@ -370,7 +391,28 @@ export async function createForumReply(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'forum_reply' as const, phase: 'llm_failed' as const, persisted: false }
+        console.error('[forum] forum_reply providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'forum_reply' as const,
+            phase: 'llm_failed' as const,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
     const replyValidation = validateForumReplyPayload({

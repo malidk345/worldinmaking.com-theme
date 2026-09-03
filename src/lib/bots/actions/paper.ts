@@ -132,7 +132,30 @@ export async function runPaperStep(params: {
     })
 
     if (!llm.success) {
-        return { ...llm, action: 'paper_step' as const, phase: 'llm_failed' as const, step, persisted: false }
+        console.error('[paper] paper_step providers failed', {
+            philosopher: llm.philosopher,
+            error: llm.error,
+            attempts: 'attempts' in llm ? llm.attempts : undefined,
+            step,
+        })
+        const productReply =
+            typeof llm.reply === 'string' && llm.reply.trim()
+                ? llm.reply.trim()
+                : 'The philosopher network is unavailable right now.'
+        return {
+            success: false as const,
+            action: 'paper_step' as const,
+            phase: 'llm_failed' as const,
+            step,
+            persisted: false,
+            philosopher: llm.philosopher,
+            reply: productReply,
+            epistemicStance: llm.epistemicStance,
+            code: 'PROVIDER_UNAVAILABLE' as const,
+            error: 'Philosopher network unavailable',
+            latencyMs: llm.latencyMs,
+            taskType: llm.taskType,
+        }
     }
 
     // Qwen's native trace may be shown to the requesting UI, but never store it
