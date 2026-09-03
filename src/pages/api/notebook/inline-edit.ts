@@ -6,6 +6,7 @@ export const runtime = 'edge'
 
 import { generateWithGateway } from 'lib/bots/ai-gateway'
 import { checkRateLimit, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { toPublicProviderLabel } from 'lib/ai/contracts'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'
 import {
     MAX_WIMAI_INSTRUCTION,
@@ -95,11 +96,16 @@ export default async function handler(req: Request) {
     }
 
     return json(
-        { ok: true, markdown, bot: WIMAI_BOT_NAME, provider: result.provider, latencyMs: result.latencyMs },
+        {
+            ok: true,
+            markdown,
+            bot: WIMAI_BOT_NAME,
+            provider: toPublicProviderLabel(result.provider),
+            latencyMs: result.latencyMs,
+        },
         200,
         {
             ...rlHeaders,
-            'X-WIM-AI-Provider': result.provider,
             'X-WIM-AI-Latency-Ms': String(result.latencyMs),
         }
     )
