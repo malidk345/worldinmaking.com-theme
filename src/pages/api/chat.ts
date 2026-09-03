@@ -572,10 +572,11 @@ export default async function handler(req: Request) {
                 }
 
                 const qualityGate = result.success ? result.qualityGate : undefined
-                // Only advertise "corrected" as a clean revision when the gate passed.
-                // A failed gate must not be rewritten as success by the client timeline.
+                // Only advertise "corrected" when the quality gate actually passed a revision.
+                // skipped/undefined text diffs (sanitize, artifact strip, flush) must not claim
+                // "Reply revised for quality"; failed gates must never look like success.
                 const corrected =
-                    qualityGate !== 'failed' && livePublicText.trim() !== visibleReply.trim()
+                    qualityGate === 'passed' && livePublicText.trim() !== visibleReply.trim()
                 send({
                     type: 'done',
                     fullText: visibleReply,

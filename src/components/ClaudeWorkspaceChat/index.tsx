@@ -1542,7 +1542,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               })
               currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
               currentThinkingProcess.steps = [...currentThinkingProcess.steps]
-            } else if (parsed.corrected && gate !== 'failed') {
+            } else if (parsed.corrected && gate === 'passed') {
               processItems = applyAgentActivity(processItems, {
                 seq: processItems.length + 1,
                 kind: 'node',
