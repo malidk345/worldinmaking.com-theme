@@ -104,6 +104,26 @@ export function withPlanBoard<T extends { role: string; content: string | null }
     })
 }
 
+/** Host scratchpad memories plus facts remembered this turn. */
+export function memoriesForHostContext(
+    hostMemories: Array<{ fact: string; category?: string }> | undefined,
+    scratchpad: Array<{ note: string; source?: string }>
+): Array<{ fact: string; category?: string }> {
+    const out: Array<{ fact: string; category?: string }> = []
+    const seen = new Set<string>()
+    const add = (fact: string, category?: string) => {
+        const key = fact.trim()
+        if (!key || seen.has(key)) return
+        seen.add(key)
+        out.push({ fact: key, category })
+    }
+    for (const item of hostMemories || []) add(item.fact, item.category)
+    for (const item of scratchpad) {
+        if (item.source === 'memory') add(item.note)
+    }
+    return out.slice(0, 12)
+}
+
 /** Fold plan, private thought, and host reminders into the system turn — never as a fake user message. */
 export function withHostContext<T extends { role: string; content: string | null }>(
     messages: T[],
