@@ -17,7 +17,8 @@ import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 import { finalizeArtifactTurn } from '../../../lib/artifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
-import { checkRateLimit } from '../../../lib/bots/rate-limit'
+import { checkRateLimitDurable } from '../../../lib/bots/rate-limit'
+import { getRuntimeEnv } from '../../../lib/bots/runtime-env'
 import { formatAiSseEvent, toPublicProviderLabel, type AiSseEvent } from '../../../lib/ai/contracts'
 import { parseHostSnapshot } from '../../../lib/bots/tools/host'
 import {
@@ -79,10 +80,23 @@ export default async function handler(req: Request) {
 
     // Per-principal rate limit — this endpoint spends real LLM tokens.
     // Keep the IP bucket as a second guard for unauthenticated and shared networks.
+    const env = getRuntimeEnv()
     const clientIp = getClientIp(req)
     const principal = user?.id || clientIp
-    const aggregate = checkRateLimit(`llm:${clientIp}`, 500, 60 * 60 * 1000)
-    const rl = checkRateLimit(`coauthor:${principal}`, 500, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${clientIp}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`coauthor:${principal}`, 500, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                success: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         return json(

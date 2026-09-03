@@ -5,7 +5,8 @@
 export const runtime = 'edge'
 
 import { generateWithGateway } from 'lib/bots/ai-gateway'
-import { checkRateLimit, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { toPublicProviderLabel } from 'lib/ai/contracts'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'
 import {
@@ -54,9 +55,23 @@ export default async function handler(req: Request) {
     const notebook =
         typeof parsed.body.notebook === 'string' ? parsed.body.notebook.slice(0, MAX_WIMAI_NOTEBOOK) : ''
 
+    const env = getRuntimeEnv()
     const ip = getClientIp(req)
-    const aggregate = checkRateLimit(`llm:${ip}`, 60, 60 * 60 * 1000)
-    const rl = checkRateLimit(`wimai:${ip}`, 40, 60 * 60 * 1000)
+    const aggregate = await checkRateLimitDurable(`llm:${ip}`, 60, 60 * 60 * 1000, env, { failClosed: true })
+    const rl = await checkRateLimitDurable(`wimai:${ip}`, 40, 60 * 60 * 1000, env, { failClosed: true })
+    if (aggregate.source === 'unavailable' || rl.source === 'unavailable') {
+        const blocked = aggregate.source === 'unavailable' ? aggregate : rl
+        return json(
+            {
+                ok: false,
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: blocked.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(blocked)
+        )
+    }
     if (!aggregate.allowed || !rl.allowed) {
         const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         const rlHeaders = buildRateLimitHeaders(!aggregate.allowed ? aggregate : rl)
