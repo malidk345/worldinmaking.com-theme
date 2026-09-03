@@ -517,7 +517,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       </div>
 
       <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
-        wim's ai bots can make mistakes. please double-check responses.
+        Philosopher replies are public text. Double-check citations and claims.
       </p>
     </div>
   );
