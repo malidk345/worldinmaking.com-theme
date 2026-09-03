@@ -13,6 +13,17 @@ import { toolResultSummary, toolStatusLabel } from '../src/lib/bots/tools/labels
 import { finalizeArtifactTurn } from '../src/lib/artifacts'
 import { executeToolCall } from '../src/lib/bots/tools/execute'
 import { packMessageThinking, unpackMessageThinking } from '../src/lib/chat-thinking'
+import { QUALITY_GATE_UNAVAILABLE_REPLY } from '../src/lib/bots/orchestrate'
+import { modeAfterResume, parseAgentCheckpoint, parseResumeAction } from '../src/lib/bots/agent/checkpoint'
+import { requestPlanApproval, type AgentPipelineParams, type AgentState } from '../src/lib/bots/tools/pipeline'
+import {
+    assertPublicHostname,
+    fetchPublicUrl,
+    isBlockedAddress,
+    isBlockedFetchUrl,
+    isPrivateIPv4,
+    isPrivateIPv6,
+} from '../src/lib/bots/tools/fetch-url'
 
 test.describe('Ask AI harness', () => {
     test('Ask AI Groq tool loop defaults to gpt-oss, not Qwen', () => {
@@ -204,5 +215,106 @@ test.describe('Ask AI harness', () => {
         expect(host?.notebookId).toBe('nb-1')
         expect(host?.scratchpad?.memories?.[0].fact).toContain('Turkish')
         expect(parseHostSnapshot(null)).toBeUndefined()
+    })
+
+    test('finalize_plan interrupt waits for run or revise', () => {
+        const state = {
+            todos: [{ id: 'task_1', title: 'Draft the post', status: 'in_progress' }],
+        } as AgentState
+        const body = requestPlanApproval(state, {} as AgentPipelineParams, 'Draft then publish')
+        expect(JSON.parse(body).awaiting).toBe('plan_approval')
+        expect(state.interrupt?.kind).toBe('plan_approval')
+        expect(state.interrupt?.status).toBe('pending')
+        expect(state.interrupt?.plan?.[0].title).toBe('Draft the post')
+        expect(state.agentMode).toBeUndefined()
+        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('run')).toBe('run')
+        expect(modeAfterResume('run', 'plan')).toBe('execute')
+        expect(modeAfterResume('revise', 'plan')).toBe('plan')
+    })
+
+    test('plan-approval checkpoint replays without ask_user leftovers', () => {
+        const parsed = parseAgentCheckpoint({
+            v: 1,
+            messages: [{ role: 'user', content: 'Write a post' }],
+            todos: [{ id: 'task_1', title: 'Draft', status: 'in_progress' }],
+            scratchpad: [],
+            agentMode: 'plan',
+            stepCount: 2,
+            usedTools: true,
+            usedWebSearch: false,
+            interrupt: { kind: 'plan_approval', title: 'Run this plan?', status: 'pending' },
+        })
+        expect(parsed?.interrupt.kind).toBe('plan_approval')
+        expect(parsed?.agentMode).toBe('plan')
+        expect(parseAgentCheckpoint({ v: 1, messages: [], interrupt: { kind: 'ask' } })).toBeUndefined()
+    })
+
+    test('mutating tools stay locked until execute mode', async () => {
+        const locked = await executeToolCall(
+            {
+                id: 'm1',
+                name: 'create_notebook',
+                argumentsJson: JSON.stringify({ title: 'Nope' }),
+            },
+            undefined,
+            undefined,
+            'plan'
+        )
+        expect(locked.ok).toBe(false)
+        expect(locked.result).toContain('finalize_plan')
+        const ready = await executeToolCall({
+            id: 'm2',
+            name: 'finalize_plan',
+            argumentsJson: JSON.stringify({ summary: 'Ready' }),
+        }, undefined, undefined, 'plan')
+        expect(ready.ok).toBe(true)
+    })
+
+    test('quality gate infra failure does not ship the draft', () => {
+        expect(QUALITY_GATE_UNAVAILABLE_REPLY).toBe('Quality check is unavailable. Please try again.')
+        expect(QUALITY_GATE_UNAVAILABLE_REPLY).not.toContain('skipped')
+    })
+
+    test('fetch_url blocks private literals and metadata names', () => {
+        expect(isPrivateIPv4('169.254.169.254')).toBe(true)
+        expect(isPrivateIPv4('8.8.8.8')).toBe(false)
+        expect(isPrivateIPv6('::1')).toBe(true)
+        expect(isPrivateIPv6('fe80::1')).toBe(true)
+        expect(isPrivateIPv6('::ffff:127.0.0.1')).toBe(true)
+        expect(isBlockedAddress('10.0.0.1')).toBe(true)
+        expect(isBlockedFetchUrl('http://127.0.0.1/')).toBe('url is not allowed')
+        expect(isBlockedFetchUrl('http://metadata.google.internal/')).toBe('url is not allowed')
+        expect(isBlockedFetchUrl('file:///etc/passwd')).toBe('url must be http or https')
+        expect(isBlockedFetchUrl('https://example.com/x')).toBeNull()
+    })
+
+    test('fetch_url DoH private answers and post-fetch rebound drop the body', async () => {
+        const original = globalThis.fetch
+        let dnsHits = 0
+        globalThis.fetch = (async (input: RequestInfo | URL) => {
+            const url = String(input)
+            if (url.includes('dns-query')) {
+                dnsHits += 1
+                const typeA = url.includes('type=A') && !url.includes('type=AAAA')
+                const ip = dnsHits <= 4 ? '1.1.1.1' : '169.254.169.254'
+                const payload = typeA
+                    ? { Status: 0, Answer: [{ type: 1, data: ip }] }
+                    : { Status: 0, Answer: [] }
+                return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/dns-json' } })
+            }
+            if (url.startsWith('https://example.com')) {
+                return new Response('<p>secret</p>', { status: 200 })
+            }
+            throw new Error('unexpected fetch')
+        }) as typeof fetch
+        try {
+            expect(await assertPublicHostname('evil.example')).toBeNull()
+            const rebound = await fetchPublicUrl('https://example.com/page')
+            expect(rebound.ok).toBe(false)
+            if (!rebound.ok) expect(rebound.error).toBe('url is not allowed')
+        } finally {
+            globalThis.fetch = original
+        }
     })
 })
