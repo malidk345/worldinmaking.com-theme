@@ -117,7 +117,7 @@ export interface BotRunSuccess {
     /**
      * Soft flag for SSE/UI honesty.
      * Omitted when the gate was not applicable (e.g. plan-approval interrupt with no public reply).
-     * 'skipped' only when a reply is shown ungated because the gate threw / was unavailable.
+     * 'skipped' is reserved; infrastructure errors fail closed ('failed') and do not ship the ungated draft.
      */
     qualityGate?: QualityGateOutcome
 }
@@ -480,14 +480,16 @@ async function applyQualityGate(
         const reply = !allowCorrection ? rawReply : report.correctedBody || rawReply
         return { reply, qualityGate: report.passed ? 'passed' : 'failed' }
     } catch (error) {
-        // Soft-skip: reply continues ungated. Do not mark failed — that lies when done succeeds.
-        console.warn('[orchestrate] quality gate skipped', error)
+        console.warn('[orchestrate] quality gate unavailable', error)
         onLifecycle?.({
             phase: 'quality_gate',
-            status: 'completed',
-            detail: 'Quality check skipped',
+            status: 'failed',
+            detail: 'Quality check unavailable',
         })
-        return { reply: rawReply, qualityGate: 'skipped' }
+        return {
+            reply: 'Quality check is unavailable. Please try again.',
+            qualityGate: 'failed',
+        }
     }
 }
 
