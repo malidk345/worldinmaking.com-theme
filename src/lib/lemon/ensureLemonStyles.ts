@@ -76,12 +76,24 @@ const NOTEBOOK_PALETTE_CSS = `
   --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
   --font-title: var(--font-sans);
   --font-button: var(--font-sans);
+  --markdown-notebook-inline-control-width: 0px;
+  --markdown-notebook-inline-control-gap: 0px;
+  --markdown-notebook-content-offset: 0px;
+  --color-text-primary: rgb(var(--text-primary));
+  --text-3000: rgb(var(--text-primary));
+  --tw-prose-body: rgb(var(--text-primary));
+  --tw-prose-headings: rgb(var(--text-primary));
+  --tw-prose-bold: rgb(var(--text-primary));
+  --tw-prose-quotes: rgb(var(--text-primary));
   font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
 }
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook,
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
-.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block {
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block,
+.notebook-app-scope .NotebookPublicView .prose {
   font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
   letter-spacing: normal !important;
 }
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook,
@@ -95,11 +107,27 @@ const NOTEBOOK_PALETTE_CSS = `
   font-size: 15px !important;
 }
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block {
+  grid-column: 1;
+  padding-left: 0;
+  padding-right: 0;
   line-height: 1.5 !important;
+  color: rgb(var(--text-primary)) !important;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__canvas {
+  max-width: none;
+  margin: 0;
+}
+.notebook-app-scope .NotebookPublicView .MarkdownNotebook__insert-boundary {
+  height: 0;
+  min-height: 0;
 }
 .notebook-app-scope .NotebookPublicView h1,
 .notebook-app-scope .NotebookPublicView h1.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
   font-size: 2.1428571em !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
@@ -107,6 +135,7 @@ const NOTEBOOK_PALETTE_CSS = `
 }
 .notebook-app-scope .NotebookPublicView h2.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
   font-size: 1.4285714em !important;
   font-weight: 700 !important;
   line-height: 1.4 !important;
@@ -114,6 +143,7 @@ const NOTEBOOK_PALETTE_CSS = `
 }
 .notebook-app-scope .NotebookPublicView h3.MarkdownNotebook__text-block--heading {
   font-family: var(--font-sans);
+  color: rgb(var(--text-primary));
   font-size: 1.2857143em !important;
   font-weight: 700 !important;
   line-height: 1.5555556 !important;
