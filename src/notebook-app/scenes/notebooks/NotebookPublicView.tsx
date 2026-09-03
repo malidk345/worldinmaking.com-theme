@@ -43,7 +43,7 @@ function authorName(notebook: StoredNotebook): string {
  */
 export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookPublicViewProps): JSX.Element {
     const { addToast } = useToast()
-    const displayTitle = notebook.publish?.publicTitle || notebook.title
+    const displayTitle = String(notebook.publish?.publicTitle || notebook.title || '').replace(/^#+\s+/, '').trim()
     const subtitle = notebook.publish?.subtitle
     const coverUrl = notebook.publish?.coverUrl
     const category = notebook.publish?.category
@@ -65,25 +65,22 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
 
     return (
         <div data-scheme="primary" className="NotebookPublicView bg-primary text-primary min-h-full pb-16">
-            <div className="flex flex-col w-full max-w-2xl mx-auto p-4">
-                <div className="flex items-start gap-2.5 w-full min-w-0">
+            <div className="flex flex-col w-full p-4">
+                <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-2">
                     {href ? (
-                        <Link className="size-10 shrink-0 rounded-full overflow-hidden !no-underline" to={href}>
-                            <Avatar className="size-10" image={person?.avatar_url || null} />
-                        </Link>
-                    ) : (
-                        <div className="size-10 shrink-0 rounded-full overflow-hidden">
-                            <Avatar className="size-10" image={person?.avatar_url || null} />
-                        </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-1">
-                    {href ? (
-                        <Link className="relative !no-underline hover:!underline" to={href}>
+                        <Link className="flex items-center relative !no-underline hover:!underline" to={href}>
+                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
+                                <Avatar className="size-10" image={person?.avatar_url || null} />
+                            </div>
                             <strong>{name}</strong>
                         </Link>
                     ) : (
-                        <strong>{name}</strong>
+                        <span className="flex items-center">
+                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
+                                <Avatar className="size-10" image={person?.avatar_url || null} />
+                            </div>
+                            <strong>{name}</strong>
+                        </span>
                     )}
                     {postedAt ? (
                         <span suppressHydrationWarning className="text-sm text-muted">
@@ -112,9 +109,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                             />
                         ) : null}
                     </div>
-                    </div>
-                    <article className="prose prose-sm dark:prose-invert max-w-none font-normal">
-                    <h1 className="NotebookPublicView__title !mt-0 !mb-2 break-words">{displayTitle}</h1>
+                </div>
+                    <article className="NotebookPublicView__article prose prose-sm dark:prose-invert max-w-none font-normal">
+                    <p className="NotebookPublicView__title">{displayTitle}</p>
                     {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
@@ -139,8 +136,6 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
                     )}
                     </article>
-                    </div>
-                </div>
 
                 <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 pb-8">
                     <Questions
