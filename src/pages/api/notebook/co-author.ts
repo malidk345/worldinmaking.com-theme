@@ -18,7 +18,7 @@ import { finalizeArtifactTurn } from '../../../lib/artifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
 import { checkRateLimit } from '../../../lib/bots/rate-limit'
-import { formatAiSseEvent, type AiSseEvent } from '../../../lib/ai/contracts'
+import { formatAiSseEvent, toPublicProviderLabel, type AiSseEvent } from '../../../lib/ai/contracts'
 import { parseHostSnapshot } from '../../../lib/bots/tools/host'
 import {
     COAUTHOR_MODES,
@@ -238,7 +238,7 @@ export default async function handler(req: Request) {
                 send({
                     type: 'done',
                     fullText: visibleReply,
-                    provider: result.provider,
+                    provider: toPublicProviderLabel(result.provider),
                     artifacts: turn.artifacts as any,
                 })
                 controller.close()
