@@ -103,7 +103,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
     const interrupt = row.interrupt
     if (!interrupt || typeof interrupt !== 'object') return undefined
     const human = interrupt as HumanTurn
-    if (human.kind !== 'ask' && human.kind !== 'plan_approval') return undefined
+    if (human.kind !== 'plan_approval') return undefined
     const todos = Array.isArray(row.todos)
         ? row.todos
               .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
