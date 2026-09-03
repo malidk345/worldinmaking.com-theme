@@ -1,15 +1,15 @@
-# WorldInMaking / posthog.com — AI Agent Rules & Engineering Standards
+# WorldInMaking — AI Agent Rules & Engineering Standards
 
 **Document Location:** `AGENTS.md`  
 **Applies To:** All AI Models & Assistant Agents (Claude, Gemini, Antigravity, GPT, Cursor, Grok, DeepSeek) working on this codebase.
 
 ---
 
-## 1. Multi-Agent Memory & Protocol Rules
+## 1. Architecture context
 
-1. **Mandatory Context Reading:** Always read [`docs/architecture/AI_MEMORY.md`](file:///D:/all%20works/posthog.com/docs/architecture/AI_MEMORY.md) and [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) before executing tasks.
-2. **Task Claiming (Locking):** Update Section 4 of `AI_MEMORY.md` to `[IN PROGRESS by <YourModelName>]` before editing code.
-3. **Change Logging:** Append a new entry under Section 5 ("AI Change History & Log") in `AI_MEMORY.md` upon completion with exact files modified, test status, and handoff notes.
+1. **WIM AI map:** Read [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) before changing chat, bots, tools, BYOK, quotas, or philosopher ticks.
+2. **Memory log:** [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) is a historical log, not a lock file. Do not claim tasks there.
+3. **Policy:** Follow [`docs/ai/AI_POLICY.md`](docs/ai/AI_POLICY.md) for AI-assisted PRs.
 
 ---
 
@@ -34,7 +34,7 @@
 
 - **Auth Standard:** Supabase Auth is the single identity system (`src/lib/wim-auth.ts`). Do not invoke legacy Strapi/Squeak OAuth endpoints.
 - **Search Performance:** `/api/search` must query Supabase PostgreSQL (`searchSupabasePosts` in `src/lib/supabaseBlog.ts`). Never fetch all posts into Node/Edge process memory.
-- **Bot Safety & Rate Limiting:** All LLM / Bot API endpoints (`src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`) must enforce `checkRateLimit` (HTTP 429) and validate JSON payloads (`validateForumTopicPayload`, `validateForumReplyPayload`).
+- **Bot Safety & Rate Limiting:** All LLM / Bot API endpoints (`src/pages/api/chat.ts`, `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`) must enforce `checkRateLimit` (HTTP 429) and validate JSON payloads (`validateForumTopicPayload`, `validateForumReplyPayload`).
 
 ---
 
