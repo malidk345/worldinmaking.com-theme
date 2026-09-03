@@ -3,12 +3,13 @@ export const runtime = 'edge'
 
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
-import { checkRateLimit } from 'lib/bots/rate-limit'
+import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -22,8 +23,32 @@ export default async function handler(req: Request) {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !userData?.user) return json({ error: 'Invalid or expired session' }, 401)
 
-    const rate = checkRateLimit(`forum-resolve:${userData.user.id}`, 40, 60 * 60 * 1000)
-    if (!rate.allowed) return json({ error: 'Rate limited' }, 429)
+    const env = getRuntimeEnv()
+    const rate = await checkRateLimitDurable(
+        `forum-resolve:${userData.user.id}`,
+        40,
+        60 * 60 * 1000,
+        env,
+        { failClosed: true }
+    )
+    if (rate.source === 'unavailable') {
+        return json(
+            {
+                code: 'RATE_LIMIT_UNAVAILABLE',
+                error: 'Rate limit store temporarily unavailable. Please try again.',
+                retryAfterSec: rate.retryAfterSec,
+            },
+            503,
+            buildRateLimitHeaders(rate)
+        )
+    }
+    if (!rate.allowed) {
+        return json(
+            { error: 'Rate limited', code: 'RATE_LIMITED', retryAfterSec: rate.retryAfterSec },
+            429,
+            buildRateLimitHeaders(rate)
+        )
+    }
 
     const body = await req.json().catch(() => null)
     const postId = String((body as { postId?: unknown })?.postId || '').trim()
