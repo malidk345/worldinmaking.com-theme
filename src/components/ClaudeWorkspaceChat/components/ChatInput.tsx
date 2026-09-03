@@ -12,6 +12,7 @@ import {
 } from '@posthog/icons';
 import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { parseDocumentFile } from '../../../lib/document-parser';
+import { useTokenQuota } from '../../../lib/chat-usage-client';
 import { ScratchpadStore } from '../../../lib/scratchpad-store';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
@@ -75,6 +76,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeSelection, setActiveSelection] = useState('');
+  const { quota } = useTokenQuota();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -516,9 +518,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       </div>
 
-      <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
-        Philosopher replies are public text. Double-check citations and claims.
-      </p>
+      <div className="mt-1.5 flex min-h-4 flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
+        <span>Philosopher replies are public text. Double-check citations and claims.</span>
+        {quota && quota.tier !== "dev" ? (
+          <span className={quota.allowed ? "" : "font-medium text-primary"}>
+            {quota.allowed
+              ? `${quota.remainingTokens >= 1000 ? `${Math.round(quota.remainingTokens / 1000)}k` : quota.remainingTokens} tokens left`
+              : "Daily token quota reached"}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 };
