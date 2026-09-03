@@ -960,6 +960,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     let isStreamComplete = false;
     let backendError = false;
+    let streamErrorKind: Message["errorKind"] | undefined;
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1097,7 +1098,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } catch {
           /* use status text */
         }
-        throw new Error(errorMessage);
+        const fail = new Error(errorMessage) as Error & { kind?: Message["errorKind"] };
+        fail.kind = sseRes.status === 429 || errorMessage.includes("[app]") ? "quota" : "network";
+        throw fail;
       }
 
       const reader = sseRes.body.getReader();
@@ -1319,9 +1322,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'error') {
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
+            streamErrorKind = (parsed as { code?: string }).code === 'PROVIDER_UNAVAILABLE' ? 'provider' : 'network';
             if (!accumulatedContent.trim()) {
               updateAssistantMessage(targetChatId, assistantMessageId, {
                 content: parsed.message || 'Philosopher network unavailable.',
+                errorKind: streamErrorKind,
               });
             }
             continue;
@@ -1445,6 +1450,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           thinkingProcess: { ...currentThinkingProcess },
           isStreaming: false,
           isTypingDone: true,
+          errorKind: (err as any).kind || streamErrorKind || 'network',
         });
       }
     } finally {
