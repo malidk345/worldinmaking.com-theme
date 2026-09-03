@@ -188,6 +188,12 @@ export type AiSseEvent =
           attemptCount?: number
           /** True when quality-gate (or finalize) changed the public reply vs live streamed tokens. */
           corrected?: boolean
+          /**
+           * Soft honesty flag for Ask AI timeline.
+           * failed = gate flagged issues but reply may still be shown;
+           * skipped = checker unavailable / interrupt short-circuit (not a hard failure).
+           */
+          qualityGate?: 'passed' | 'failed' | 'skipped'
       }
     | {
           type: 'error'

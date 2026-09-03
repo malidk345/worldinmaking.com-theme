@@ -90,6 +90,8 @@ export interface BotRunInput {
     requestId?: string
 }
 
+export type QualityGateOutcome = 'passed' | 'failed' | 'skipped'
+
 export interface BotRunSuccess {
     success: true
     philosopher: string
@@ -112,6 +114,8 @@ export interface BotRunSuccess {
     actions?: HostOsAction[]
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
+    /** Soft flag for SSE/UI honesty when the gate soft-fails or is skipped. */
+    qualityGate?: QualityGateOutcome
 }
 
 export interface BotRunFailure {
@@ -132,6 +136,7 @@ export interface BotRunFailure {
 }
 
 export type BotRunResult = BotRunSuccess | BotRunFailure
+
 
 /**
  * Client-safe subset of a successful runBotTurn for /api/bots/act handlers.
@@ -313,7 +318,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         }
     }
 
-    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+    const gated = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
 
     recordAiTurn({
         ok: true,
@@ -324,7 +329,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         latencyMs: gen.latencyMs,
         attemptCount: 0,
         promptChars: estimateChars([systemPrompt, userPrompt]),
-        completionChars: gatedReply.length,
+        completionChars: gated.reply.length,
         requestId: input.requestId,
     })
 
@@ -332,7 +337,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: gatedReply,
+        reply: gated.reply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
@@ -344,6 +349,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
             epistemicStance: persona.epistemicStance,
             writingStyle: persona.writingStyle,
         },
+        qualityGate: gated.qualityGate,
     }
 }
 
@@ -433,7 +439,7 @@ async function applyQualityGate(
     runtimeEnv: EnvStore,
     onLifecycle: BotRunInput['onLifecycle'],
     allowCorrection: boolean
-): Promise<string> {
+): Promise<{ reply: string; qualityGate: QualityGateOutcome }> {
     onLifecycle?.({ phase: 'quality_gate', status: 'started' })
     try {
         const report = await runQualityGate(rawReply, persona, taskType, {
@@ -467,12 +473,17 @@ async function applyQualityGate(
             status: report.passed ? 'completed' : 'failed',
             detail,
         })
-        if (!allowCorrection) return rawReply
-        return report.correctedBody || rawReply
+        const reply = !allowCorrection ? rawReply : report.correctedBody || rawReply
+        return { reply, qualityGate: report.passed ? 'passed' : 'failed' }
     } catch (error) {
+        // Soft-skip: reply continues ungated. Do not mark failed — that lies when done succeeds.
         console.warn('[orchestrate] quality gate skipped', error)
-        onLifecycle?.({ phase: 'quality_gate', status: 'failed', detail: 'Quality gate unavailable' })
-        return rawReply
+        onLifecycle?.({
+            phase: 'quality_gate',
+            status: 'completed',
+            detail: 'Quality check skipped',
+        })
+        return { reply: rawReply, qualityGate: 'skipped' }
     }
 }
 
@@ -634,9 +645,9 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             })
             const rawReply = reply || cleanFallbackReply(loop.text)
             input.onAnalysisSummary?.(thinking)
-            const gatedReply =
+            const gated =
                 loop.interrupt && !rawReply.trim()
-                    ? rawReply
+                    ? { reply: rawReply, qualityGate: 'skipped' as QualityGateOutcome }
                     : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
                 ok: true,
@@ -647,14 +658,14 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 latencyMs: Date.now() - streamStarted,
                 attemptCount: 1,
                 promptChars: estimateChars([systemPrompt, userPrompt]),
-                completionChars: gatedReply.length,
+                completionChars: gated.reply.length,
                 requestId: input.requestId,
             })
             return {
                 success: true,
                 philosopher: persona.name,
                 epistemicStance: persona.epistemicStance,
-                reply: gatedReply,
+                reply: gated.reply,
                 thought: thinking.summary,
                 thinking,
                 provider,
@@ -672,6 +683,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 actions: loop.actions,
                 interrupt: loop.interrupt,
                 checkpoint: loop.checkpoint,
+                qualityGate: gated.qualityGate,
             }
         }
         if (liveWeb && hostCitations.length === 0 && !loop.usedTools) {
@@ -837,7 +849,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         }
     }
 
-    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+    const gated = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
 
     recordAiTurn({
         ok: true,
@@ -848,7 +860,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         latencyMs: Date.now() - streamStarted,
         attemptCount: gen.attempts.length,
         promptChars: estimateChars([systemPrompt, userPrompt]),
-        completionChars: gatedReply.length,
+        completionChars: gated.reply.length,
         requestId: input.requestId,
     })
 
@@ -856,7 +868,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: gatedReply,
+        reply: gated.reply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
@@ -868,6 +880,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             epistemicStance: persona.epistemicStance,
             writingStyle: persona.writingStyle,
         },
+        qualityGate: gated.qualityGate,
         citations: hostCitations,
         usedTools: hostCitations.length > 0,
     }

@@ -571,7 +571,11 @@ export default async function handler(req: Request) {
                     }
                 }
 
-                const corrected = livePublicText.trim() !== visibleReply.trim()
+                const qualityGate = result.success ? result.qualityGate : undefined
+                // Only advertise "corrected" as a clean revision when the gate passed.
+                // A failed gate must not be rewritten as success by the client timeline.
+                const corrected =
+                    qualityGate !== 'failed' && livePublicText.trim() !== visibleReply.trim()
                 send({
                     type: 'done',
                     fullText: visibleReply,
@@ -579,6 +583,7 @@ export default async function handler(req: Request) {
                     artifacts: turn.artifacts as any,
                     latencyMs: result.latencyMs,
                     ...(corrected ? { corrected: true } : {}),
+                    ...(qualityGate ? { qualityGate } : {}),
                 })
                 controller.close()
             } catch (error) {

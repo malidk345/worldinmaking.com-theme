@@ -945,7 +945,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let streamedAction: OSActionCardType | undefined;
     let streamedHumanTurn: HumanTurn | undefined = continued?.humanTurn;
     let streamedCheckpoint: AgentCheckpoint | undefined = continued?.checkpoint;
-    let streamedProvider: string | undefined;
+    let streamedProvider: 'groq' | 'gemini' | 'openai' | undefined;
     let streamedToolTrace: ToolTrace[] = continued?.toolTrace ? [...continued.toolTrace] : [];
     const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
       if (!incoming || incoming.length === 0) return;
@@ -1330,17 +1330,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               const qgId = 'lifecycle-quality-gate'
               const status =
                 phaseStatus === 'started' ? 'running' : phaseStatus === 'failed' ? 'error' : 'done'
+              const skipped = status === 'done' && /skipped/i.test(phaseDetailRaw)
               processItems = applyAgentActivity(processItems, {
                 seq: processItems.length + 1,
                 kind: 'node',
                 id: qgId,
                 status,
-                title: 'Checking reply quality',
+                title: skipped ? 'Quality check skipped' : 'Checking reply quality',
                 detail:
                   status === 'error'
                     ? safeDetail || 'Quality check flagged issues'
                     : status === 'done'
-                      ? safeDetail || 'Reply quality verified'
+                      ? safeDetail || (skipped ? 'Checker unavailable — reply shown ungated' : 'Reply quality verified')
                       : undefined,
               })
               currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
@@ -1447,8 +1448,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'done') {
             appendStreamedArtifacts(parsed.artifacts);
             accumulatedContent = parsed.fullText || accumulatedContent;
-            if (parsed.corrected) {
-              const qgId = 'lifecycle-quality-gate'
+            const qgId = 'lifecycle-quality-gate'
+            const gate = (parsed as { qualityGate?: 'passed' | 'failed' | 'skipped' }).qualityGate
+            if (gate === 'failed') {
+              // Keep failed status — never rewrite to success after a hard gate flag.
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'error',
+                title: 'Checking reply quality',
+                detail: 'Quality issues remain — reply shown with caveats',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            } else if (parsed.corrected && gate !== 'failed') {
               processItems = applyAgentActivity(processItems, {
                 seq: processItems.length + 1,
                 kind: 'node',
@@ -1456,6 +1470,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 status: 'done',
                 title: 'Checking reply quality',
                 detail: 'Reply revised for quality',
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+            } else if (gate === 'skipped') {
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status: 'done',
+                title: 'Quality check skipped',
+                detail: 'Checker unavailable — reply shown ungated',
               })
               currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
               currentThinkingProcess.steps = [...currentThinkingProcess.steps]
