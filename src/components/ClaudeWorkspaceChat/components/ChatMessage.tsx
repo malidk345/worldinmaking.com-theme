@@ -173,57 +173,7 @@ function HumanTurnCard({
     )
   }
 
-  return (
-    <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
-      <p className="m-0 font-medium">{turn.title}</p>
-      <div className="mt-2 space-y-2">
-        {(turn.questions || []).map((question) => (
-          <div key={question.id}>
-            <p className="m-0 text-secondary">{question.prompt}</p>
-            {pending && question.options && question.options.length > 0 ? (
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {question.options.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => onRespond('answer', option)}
-                    className="rounded-md border border-primary/50 px-2 py-0.5 text-[12px] text-secondary hover:text-primary hover:border-primary cursor-pointer"
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
-      {pending ? (
-        <form
-          className="mt-2.5 flex items-center gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (!draft.trim()) return
-            onRespond('answer', draft.trim())
-          }}
-        >
-          <input
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Type an answer"
-            className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
-          />
-          <button
-            type="submit"
-            className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
-          >
-            Send
-          </button>
-        </form>
-      ) : turn.status === 'answered' ? (
-        <p className="mt-2 mb-0 text-muted">Answered.</p>
-      ) : null}
-    </div>
-  )
+  return null
 }
 
 const ChatMessageComponent: React.FC<ChatMessageProps> = ({
