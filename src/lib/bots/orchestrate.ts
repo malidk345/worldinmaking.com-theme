@@ -114,7 +114,11 @@ export interface BotRunSuccess {
     actions?: HostOsAction[]
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
-    /** Soft flag for SSE/UI honesty when the gate soft-fails or is skipped. */
+    /**
+     * Soft flag for SSE/UI honesty.
+     * Omitted when the gate was not applicable (e.g. plan-approval interrupt with no public reply).
+     * 'skipped' only when a reply is shown ungated because the gate threw / was unavailable.
+     */
     qualityGate?: QualityGateOutcome
 }
 
@@ -645,9 +649,11 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             })
             const rawReply = reply || cleanFallbackReply(loop.text)
             input.onAnalysisSummary?.(thinking)
-            const gated =
+            // Interrupt-only / no public reply: QG is not applicable — omit the flag
+            // (do not fake 'skipped', which the client reads as "reply shown ungated").
+            const gated: { reply: string; qualityGate?: QualityGateOutcome } =
                 loop.interrupt && !rawReply.trim()
-                    ? { reply: rawReply, qualityGate: 'skipped' as QualityGateOutcome }
+                    ? { reply: rawReply }
                     : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
                 ok: true,
