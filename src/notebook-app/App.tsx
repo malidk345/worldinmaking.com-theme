@@ -989,7 +989,9 @@ export function App() {
                       isOpen={showShareModal}
                       onOpenChange={(open) => {
                         setShowShareModal(open)
-                        if (!open) setShareTab('private')
+                        // Button click only (menu sets shareTab before visible).
+                        if (open) setShareTab('publish')
+                        else setShareTab('private')
                       }}
                     />
                   </div>
