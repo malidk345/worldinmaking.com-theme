@@ -135,7 +135,6 @@ export default async function handler(req: Request) {
                 epistemicStance: result.epistemicStance,
                 reply: result.reply,
                 thought: result.thought,
-                thinking: result.thinking,
             },
             503,
             rlHeaders
@@ -150,15 +149,12 @@ export default async function handler(req: Request) {
             reply: result.reply,
             thought: result.thought,
             thinking: result.thinking,
-            provider: result.provider,
             latencyMs: result.latencyMs,
             taskType: result.taskType,
-            persona: result.persona,
         },
         200,
         {
             ...rlHeaders,
-            'X-WIM-AI-Provider': result.provider,
             'X-WIM-AI-Latency-Ms': String(result.latencyMs),
         }
     )
