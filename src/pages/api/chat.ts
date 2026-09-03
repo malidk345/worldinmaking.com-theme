@@ -424,6 +424,7 @@ export default async function handler(req: Request) {
                       ? NOTEBOOK_AVAILABLE_INSTRUCTION
                       : ''
                 let livePublicTokensCount = 0
+                let livePublicText = ''
                 let liveThinkingAcc = ''
 
                 const byokEnv: Record<string, string> = {}
@@ -463,6 +464,7 @@ export default async function handler(req: Request) {
                     },
                     (token) => {
                         livePublicTokensCount += 1
+                        livePublicText += token
                         send({ type: 'token', text: token })
                     },
                     (thinkingChunk) => {
@@ -541,12 +543,14 @@ export default async function handler(req: Request) {
                     }
                 }
 
+                const corrected = livePublicText.trim() !== visibleReply.trim()
                 send({
                     type: 'done',
                     fullText: visibleReply,
                     provider: result.provider,
                     artifacts: turn.artifacts as any,
                     latencyMs: result.latencyMs,
+                    ...(corrected ? { corrected: true } : {}),
                 })
                 controller.close()
             } catch (error) {

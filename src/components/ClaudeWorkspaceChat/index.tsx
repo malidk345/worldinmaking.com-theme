@@ -1270,6 +1270,37 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             });
           }
 
+          if (parsed.type === 'phase') {
+            if (parsed.phase?.phase === 'quality_gate') {
+              const qgId = 'lifecycle-quality-gate'
+              const status =
+                parsed.phase.status === 'started'
+                  ? 'running'
+                  : parsed.phase.status === 'failed'
+                    ? 'error'
+                    : 'done'
+              const failedDetail =
+                typeof parsed.phase.detail === 'string' && parsed.phase.detail.trim().length > 0 && parsed.phase.detail.trim().length < 120
+                  ? parsed.phase.detail.trim()
+                  : 'Quality check flagged issues'
+              processItems = applyAgentActivity(processItems, {
+                seq: processItems.length + 1,
+                kind: 'node',
+                id: qgId,
+                status,
+                title: 'Checking reply quality',
+                detail: status === 'error' ? failedDetail : status === 'done' ? 'Reply quality verified' : undefined,
+              })
+              currentThinkingProcess.steps = processItems.map(processItemToThinkingStep)
+              currentThinkingProcess.steps = [...currentThinkingProcess.steps]
+              if (status === 'running') currentThinkingProcess.summary = 'Checking reply quality'
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                thinkingProcess: { ...currentThinkingProcess },
+              })
+            }
+            continue
+          }
+
           if (parsed.type === 'node') {
             continue
           }

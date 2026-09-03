@@ -155,6 +155,8 @@ export type AiSseEvent =
           artifacts?: AiArtifact[]
           latencyMs?: number
           attemptCount?: number
+          /** True when quality-gate (or finalize) changed the public reply vs live streamed tokens. */
+          corrected?: boolean
       }
     | {
           type: 'error'
