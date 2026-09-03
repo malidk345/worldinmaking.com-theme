@@ -1,0 +1,8 @@
+Refactor AppWindow by extracting logic into custom hooks
+
+Extracted visibility, switcher and actions into separate custom hooks:
+- useWindowVisibility
+- useWindowSwitcher
+- useWindowActions
+
+This improves modularity and cleans up the AppWindow component according to architectural guidelines.
