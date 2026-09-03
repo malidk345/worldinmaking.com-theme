@@ -90,6 +90,7 @@ import {
 } from '../../lib/chat-remote';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
+import { getActiveByokPayload } from '../../lib/byok-vault';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -1035,6 +1036,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           prompt: effectivePrompt,
+          byok: getActiveByokPayload(),
           modelId: selectedModelId,
           systemPrompt: activeProjectObj?.systemPrompt || '',
           styleSuffix: selectedStyle?.promptSuffix || '',

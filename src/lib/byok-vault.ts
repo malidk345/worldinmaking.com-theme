@@ -93,27 +93,41 @@ export function removeByokKey(providerId: string): void {
     }
 }
 
-/**
- * Returns active user custom API keys formatted for request headers.
- */
-export function getActiveByokHeaders(): Record<string, string> {
-    const configs = loadByokConfigs()
-    const headers: Record<string, string> = {}
+export type ByokPayload = {
+    groq?: string
+    gemini?: string
+    openai?: string
+    anthropic?: string
+}
 
-    for (const [provider, conf] of Object.entries(configs)) {
-        if (conf.enabled && conf.apiKey.trim()) {
-            headers[`x-byok-${provider}`] = conf.apiKey.trim()
-            if (conf.preferredModel) {
-                headers[`x-byok-${provider}-model`] = conf.preferredModel.trim()
-            }
+/**
+ * Active user API keys for the chat request body only.
+ * Never put these on shared auth headers — they would leak onto unrelated
+ * chat-remote calls and into CDN/access logs.
+ */
+export function getActiveByokPayload(): ByokPayload {
+    const configs = loadByokConfigs()
+    const payload: ByokPayload = {}
+    for (const id of ['groq', 'gemini', 'openai', 'anthropic'] as const) {
+        const conf = configs[id]
+        if (conf?.enabled && conf.apiKey.trim()) {
+            payload[id] = conf.apiKey.trim()
         }
     }
+    return payload
+}
 
+/** @deprecated Prefer getActiveByokPayload() on /api/chat body. Kept for one release. */
+export function getActiveByokHeaders(): Record<string, string> {
+    const payload = getActiveByokPayload()
+    const headers: Record<string, string> = {}
+    for (const [provider, key] of Object.entries(payload)) {
+        if (key) headers[`x-byok-${provider}`] = key
+    }
     return headers
 }
 
 export function hasActiveByok(): boolean {
-    const headers = getActiveByokHeaders()
-    return Object.keys(headers).length > 0
+    return Object.keys(getActiveByokPayload()).length > 0
 }
 

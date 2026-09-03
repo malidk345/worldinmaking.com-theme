@@ -72,6 +72,40 @@ function readOptionalBoundedString(
     return { ok: true, value: trimmed }
 }
 
+
+const BYOK_KEY_MAX = 200
+
+/** Read BYOK keys from JSON body (preferred). Header fallback for one release only. */
+function readByokEnv(body: Record<string, unknown>, req: Request): Record<string, string> {
+    const byokEnv: Record<string, string> = {}
+    const raw = body.byok
+    const fromBody =
+        raw && typeof raw === 'object' && !Array.isArray(raw)
+            ? (raw as Record<string, unknown>)
+            : null
+
+    const take = (provider: 'groq' | 'gemini' | 'openai' | 'anthropic', envName: string) => {
+        let value = ''
+        if (fromBody) {
+            const candidate = fromBody[provider]
+            if (typeof candidate === 'string' && candidate.trim()) {
+                value = candidate.trim().slice(0, BYOK_KEY_MAX)
+            }
+        }
+        if (!value) {
+            const header = req.headers.get(`x-byok-${provider}`)
+            if (header?.trim()) value = header.trim().slice(0, BYOK_KEY_MAX)
+        }
+        if (value) byokEnv[envName] = value
+    }
+
+    take('groq', 'GROQ_API_KEY')
+    take('gemini', 'GEMINI_API_KEY')
+    take('openai', 'OPENAI_API_KEY')
+    take('anthropic', 'ANTHROPIC_API_KEY')
+    return byokEnv
+}
+
 export default async function handler(req: Request) {
     if (req.method !== 'POST') return jsonError('Method not allowed', 405)
 
@@ -427,15 +461,7 @@ export default async function handler(req: Request) {
                 let livePublicText = ''
                 let liveThinkingAcc = ''
 
-                const byokEnv: Record<string, string> = {}
-                const byokGroq = req.headers.get('x-byok-groq')
-                const byokGemini = req.headers.get('x-byok-gemini')
-                const byokOpenai = req.headers.get('x-byok-openai')
-                const byokAnthropic = req.headers.get('x-byok-anthropic')
-                if (byokGroq) byokEnv.GROQ_API_KEY = byokGroq
-                if (byokGemini) byokEnv.GEMINI_API_KEY = byokGemini
-                if (byokOpenai) byokEnv.OPENAI_API_KEY = byokOpenai
-                if (byokAnthropic) byokEnv.ANTHROPIC_API_KEY = byokAnthropic
+                const byokEnv = readByokEnv(body, req)
                 const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
 
                 const result = await streamBotTurn(
@@ -540,7 +566,7 @@ export default async function handler(req: Request) {
                 }
 
                 // Record & stream real token usage to update client sidebar
-                if (!byokGroq && !byokGemini && !byokOpenai && !byokAnthropic) {
+                if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY) {
                     const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
                     const totalTurnTokens = Math.max(10, inTokens + outTokens)
