@@ -63,7 +63,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     }
 
     return (
-        <div data-scheme="primary" className="bg-primary text-primary min-h-full pb-16">
+        <div data-scheme="primary" className="NotebookPublicView bg-primary text-primary min-h-full pb-16">
             <div className="flex flex-col w-full max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
                     {href ? (
@@ -111,8 +111,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                 </div>
 
                 <div className="pb-4 min-w-0 max-w-full box-border pl-5 pr-8">
-                    <h3 className="text-base font-semibold !m-0 pb-1 leading-5 break-words">{displayTitle}</h3>
-                    {subtitle ? <p className="text-sm text-secondary m-0 mb-3 leading-relaxed">{subtitle}</p> : null}
+                    <article className="prose prose-sm dark:prose-invert max-w-none font-normal">
+                    <h1 className="!mt-0 !mb-2 break-words">{displayTitle}</h1>
+                    {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
                             <ZoomImage>
@@ -135,6 +136,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     ) : (
                         <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>
                     )}
+                    </article>
                 </div>
 
                 <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 px-4 pb-8">
