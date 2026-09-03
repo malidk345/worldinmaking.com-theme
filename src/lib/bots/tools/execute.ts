@@ -34,6 +34,7 @@ const MAX_TITLE = 80
 const MAX_ARTIFACT_BODY = 24_000
 const MAX_SEARCH_QUERY = 300
 const MAX_TOOL_RESULT = 4_000
+const MAX_READ_RESULT = 8_000
 
 export type ToolCall = {
     id: string
@@ -404,7 +405,7 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: fetched.error })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const result = clip(`UNTRUSTED page text for ${url}:\n${fetched.text}`, MAX_TOOL_RESULT)
+            const result = clip(`UNTRUSTED page text for ${url}:\n${fetched.text}`, MAX_READ_RESULT)
             return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
         }
         if (name === 'read_document') {
@@ -421,7 +422,7 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: executed.error })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const result = clip(executed.text, MAX_TOOL_RESULT)
+            const result = clip(executed.text, MAX_READ_RESULT)
             return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
         }
         if (name === 'write_scratchpad') {

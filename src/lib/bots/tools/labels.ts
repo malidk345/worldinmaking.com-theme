@@ -44,10 +44,76 @@ export function toolStatusLabel(name: string, status: ToolRunStatus): string {
     return row[1]
 }
 
+function pickArg(args: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+        const value = args[key]
+        if (typeof value === 'string' && value.trim()) return clipSummary(value, 72)
+    }
+    return ''
+}
+
+/** Short argument preview for the workbench (query, URL, path, title). */
+export function parseToolArgPreview(name: string, raw?: string): string {
+    if (!raw) return ''
+    try {
+        const args = JSON.parse(raw) as Record<string, unknown>
+        if (!args || typeof args !== 'object' || Array.isArray(args)) return ''
+        if (name === 'web_search' || name === 'search_site') return pickArg(args, ['query', 'q', 'search'])
+        if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
+        if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
+        if (name === 'read_post') return pickArg(args, ['slug', 'id'])
+        if (name === 'read_document') return pickArg(args, ['name', 'url', 'query'])
+        if (name === 'read_notebook') return pickArg(args, ['notebook_id', 'notebookId', 'title'])
+        if (name === 'create_artifact' || name === 'create_notebook' || name === 'publish_to_forum') {
+            return pickArg(args, ['title', 'name'])
+        }
+        if (name === 'task') return pickArg(args, ['goal', 'prompt'])
+        if (name === 'remember') return pickArg(args, ['fact', 'memory'])
+        if (name === 'write_scratchpad') return pickArg(args, ['title', 'content'])
+        if (name === 'manage_windows') return pickArg(args, ['action', 'path'])
+        return pickArg(args, ['title', 'query', 'path', 'url', 'goal'])
+    } catch {
+        return ''
+    }
+}
+
+/** Running-row title that includes the query/URL when we have arguments. */
+export function toolActivityTitle(name: string, status: ToolRunStatus, args?: string): string {
+    const base = toolStatusLabel(name, status)
+    const preview = parseToolArgPreview(name, args)
+    if (!preview) return base
+    if (name === 'web_search' || name === 'search_site') {
+        if (status === 'running') return `Searching: ${preview}`
+        if (status === 'error') return `Search failed: ${preview}`
+        return `Searched: ${preview}`
+    }
+    if (name === 'fetch_url') {
+        if (status === 'running') return `Fetching ${preview}`
+        if (status === 'error') return `Failed ${preview}`
+        return `Fetched ${preview}`
+    }
+    return `${base}: ${preview}`
+}
+
 function clipSummary(value: string, max = 140): string {
     const text = value.replace(/\s+/g, ' ').trim()
     if (!text) return ''
     return text.length <= max ? text : `${text.slice(0, max - 1)}…`
+}
+
+function humanToolError(name: string, raw: string): string {
+    const text = scrubSecretMaterial(raw).replace(/\s+/g, ' ').trim()
+    const lower = text.toLowerCase()
+    if (lower.includes('query required') || lower.includes('query cannot')) return 'Need a search query'
+    if (lower.includes('timeout') || lower.includes('timed out') || lower.includes('aborted')) {
+        return 'Timed out — try again'
+    }
+    if (lower.includes('blocked') || lower.includes('private') || lower.includes('not allowed')) {
+        return name === 'fetch_url' ? 'That page isn’t reachable' : 'That action isn’t allowed'
+    }
+    if (lower.includes('not found') || lower.includes('no notebook')) return 'Couldn’t find that notebook'
+    if (text.length > 120 && (text.startsWith('{') || text.startsWith('['))) return toolStatusLabel(name, 'error')
+    return clipSummary(text, 80) || toolStatusLabel(name, 'error')
 }
 
 /** One-line outcome for the workbench row. Never "Artifact created" for unrelated tools. */
@@ -56,12 +122,12 @@ export function toolResultSummary(name: string, ok: boolean, result: string): st
         try {
             const parsed = JSON.parse(result) as { error?: unknown }
             if (parsed && typeof parsed.error === 'string' && parsed.error.trim()) {
-                return clipSummary(scrubSecretMaterial(parsed.error), 160)
+                return humanToolError(name, parsed.error)
             }
         } catch {
             /* plain error body */
         }
-        return clipSummary(scrubSecretMaterial(result), 160) || toolStatusLabel(name, 'error')
+        return humanToolError(name, result)
     }
     if (name === 'web_search' || name === 'search_site') {
         const lines = result.split('\n').filter((line) => line.trim() && !line.startsWith('UNTRUSTED') && !line.startsWith('Site search'))

@@ -118,11 +118,11 @@ export function Activity({
                         )}
                     </div>
                 )}
-                <div className="flex min-h-[18px] min-w-0 flex-1 flex-col justify-center">
-                    <div className={`min-w-0 leading-[18px] ${allowWrap ? '' : 'flex min-h-[18px] items-center'}`}>
+                <div className="flex min-h-[18px] min-w-0 flex-1 flex-col justify-center overflow-visible">
+                    <div className={`min-w-0 w-full overflow-visible ${allowWrap ? '' : 'flex min-h-[18px] items-center leading-[18px]'}`}>
                         {allowWrap ? (
                             <span
-                                className={`whitespace-pre-wrap break-words ${
+                                className={`block w-full min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${
                                     compactBody ? 'text-[11.5px] leading-[1.4] tracking-tight' : 'leading-[18px]'
                                 } ${live ? 'text-muted' : ''}`}
                             >

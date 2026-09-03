@@ -90,7 +90,7 @@ export function formatPlanBoard(todos: PlanTodo[]): string {
         return `${index + 1}. [${mark}] ${todo.id}: ${todo.title}${pointer}`
     })
     const instruction = current
-        ? `Work ONLY on "${current.title}". Do not rewrite this list. When that step is done, call todo_write with the SAME ids: mark it completed and the next pending item in_progress.`
+        ? `Next step: "${current.title}". You may use several tools for it. Do not rewrite this list. When that step is done, call todo_write with the SAME ids: mark it completed and the next pending item in_progress.`
         : 'All steps are completed. Write the user-visible answer. Do not create a new plan.'
     return `<plan_board>\nLocked plan — same ids on every todo_write.\n${lines.join('\n')}\n${instruction}\n</plan_board>`
 }

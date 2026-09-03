@@ -55,12 +55,14 @@ test.describe('Agent modes', () => {
         expect(isToolAllowedInMode('create_artifact', 'ask')).toBe(true)
     })
 
-    test('plan mode prompt is required and tells the model to call todo_write first', () => {
+    test('plan mode prompt offers todo_write without requiring it first', () => {
         expect(modeSystemPrompt('plan')).toContain('todo_write')
         expect(modeSystemPrompt('plan')).toContain('finalize_plan')
+        expect(modeSystemPrompt('plan')).toContain('You choose the next move')
         expect(modeSystemPrompt('ask')).toBe('')
         expect(modeSystemPrompt('execute')).toContain('execution mode')
         expect(PLAN_TOOL_PROTOCOL).toContain('todo_write')
+        expect(PLAN_TOOL_PROTOCOL).toContain('Do not call todo_write unless a sequence helps')
         expect(PLAN_USER_PREFIX).toContain('Plan mode is ON')
     })
 
@@ -532,6 +534,29 @@ test.describe('Think skip and Groq-first', () => {
 
     test('tool loop prefers Groq before Gemini', () => {
         expect([...TOOL_FAMILY_ORDER]).toEqual(['groq', 'gemini', 'nvidia', 'openai'])
+    })
+
+    test('plan mode does not force todo_write; the model may answer or research', async () => {
+        const choices: string[] = []
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools, toolChoice }) => {
+                if (omitTools || toolChoice === 'none') {
+                    return { ok: true as const, content: '', toolCalls: [] }
+                }
+                choices.push(String(toolChoice))
+                return { ok: true as const, content: 'Direct answer without a plan.', toolCalls: [] }
+            },
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'what is dialectics?' },
+            ],
+            provider: 'test',
+            agentMode: 'plan',
+            maxSteps: 3,
+        })
+        expect(choices[0]).toBe('auto')
+        expect(choices).not.toContain('todo_write')
+        expect(result.text).toContain('Direct answer')
     })
 
     test('plan mode publishes a written answer when there are no tool calls', async () => {

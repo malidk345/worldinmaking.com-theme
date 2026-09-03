@@ -29,6 +29,13 @@ const SLASH_COMMANDS = [
   { id: 'chart', label: '/chart', hint: 'Interactive data chart', insert: 'Create an interactive chart visualizing ' },
 ] as const
 
+export const ASK_STARTERS = [
+  { label: 'Bu notu düzelt', prompt: 'Seçili veya bağlı notu düzelt: ' },
+  { label: 'Deftere yaz', prompt: 'Bunu bağlı notebooka yaz: ' },
+  { label: 'Bunu araştır', prompt: 'Bunu canlı kaynaklarla araştır: ' },
+  { label: 'Kısaca anlat', prompt: 'Bunu sade ve kısa anlat: ' },
+] as const
+
 interface ChatInputProps {
   onSendMessage: (prompt: string, attachments: FileAttachment[]) => void;
   onStopStreaming?: () => void;
@@ -66,6 +73,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const plusRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (incomingAttachments && incomingAttachments.length > 0) {
@@ -98,6 +107,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       textareaRef.current?.focus()
     }
   }, [draftNonce, draftPrompt])
+
+  useEffect(() => {
+    if (!plusOpen) return
+    const onPointer = (event: MouseEvent) => {
+      if (plusRef.current && !plusRef.current.contains(event.target as Node)) setPlusOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPlusOpen(false)
+    }
+    window.addEventListener('mousedown', onPointer)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onPointer)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [plusOpen])
 
   // Auto-resize textarea without collapsing the first line
   useEffect(() => {
@@ -319,11 +344,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {boundNotebookTitle && (
           <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/80 border border-primary/50 px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
             <div className="flex items-center gap-1.5 min-w-0 truncate">
-              <span className="shrink-0 font-semibold text-[#1E3A8A] dark:text-blue-400 flex items-center gap-1">
-                <IconDocument className="size-3.5" />
-                Notebook:
-              </span>
+              <IconDocument className="size-3.5 shrink-0 text-[#1E3A8A] dark:text-blue-400" />
               <span className="truncate font-medium text-primary">{boundNotebookTitle}</span>
+              <span className="shrink-0 text-muted">· bağlı</span>
             </div>
             {onDismissNotebookContext && (
               <button
@@ -411,15 +434,46 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className="mt-0.5 flex items-center justify-between gap-2">
           {/* Left Side: + Icon & Bot Selector */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 overflow-hidden">
-            {/* (+) Attachment Button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
-              title="Add attachment"
-            >
-              <IconPlus className={TOOLBAR_ICON} />
-            </button>
+            <div ref={plusRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setPlusOpen((open) => !open)}
+                className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
+                title="Add"
+                aria-expanded={plusOpen}
+              >
+                <IconPlus className={TOOLBAR_ICON} />
+              </button>
+              {plusOpen && (
+                <div className="absolute bottom-full left-0 z-40 mb-1.5 w-56 overflow-hidden rounded-md border border-primary bg-primary py-0.5 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlusOpen(false)
+                      fileInputRef.current?.click()
+                    }}
+                    className="flex w-full items-center px-2.5 py-1.5 text-left text-[12px] text-primary hover:bg-accent cursor-pointer"
+                  >
+                    Attach a file
+                  </button>
+                  <div className="my-0.5 border-t border-primary/40" />
+                  {SLASH_COMMANDS.map((command) => (
+                    <button
+                      key={command.id}
+                      type="button"
+                      onClick={() => {
+                        setPlusOpen(false)
+                        applySlashCommand(command.insert)
+                      }}
+                      className="flex w-full items-center justify-between gap-2 px-2.5 py-1 text-left text-[12px] hover:bg-accent cursor-pointer"
+                    >
+                      <span className="font-medium text-primary">{command.label}</span>
+                      <span className="truncate text-[11px] text-secondary">{command.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {/* Philosopher Bot Selector using Notebook LemonSelect */}
             <LemonSelect
               value={selectedModelId}
@@ -454,7 +508,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   options: models.map((opt) => ({
                     value: opt.id,
                     label: (
-                      <span className="flex items-center gap-2 font-medium text-xs">
+                      <span className="flex items-center gap-2 font-medium text-xs min-w-0">
                         <div className="size-4 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                           {opt.avatarUrl ? (
                             <img src={opt.avatarUrl} alt={opt.name} className="size-full object-cover" />
@@ -464,7 +518,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             </span>
                           )}
                         </div>
-                        <span className="truncate">{opt.name}</span>
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate">{opt.name}</span>
+                          {opt.badge ? <span className="truncate text-[10px] font-normal text-muted">{opt.badge}</span> : null}
+                        </span>
                       </span>
                     ),
                   })),

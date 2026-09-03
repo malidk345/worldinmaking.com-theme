@@ -24,7 +24,7 @@ import {
 import { executeToolCall, resolveToolName, type ToolCall, type ToolExecution } from './execute'
 import { splitLeakedToolContent, stripLeakedToolMarkup } from './leak'
 import type { HostOsAction, HostSnapshot } from './host'
-import { toolResultSummary, toolStatusLabel } from './labels'
+import { toolActivityTitle, toolResultSummary } from './labels'
 import type { EnvStore } from '../runtime-env'
 import type { GeminiPart } from './gemini'
 
@@ -299,11 +299,9 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const isLastStep = state.stepCount >= state.maxSteps - 1
     const toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' = isLastStep
         ? 'none'
-        : state.agentMode === 'plan' && state.todos.length === 0
-          ? 'todo_write'
-          : state.stepCount === 0 && params.forceWebSearch
-            ? 'web_search'
-            : 'auto'
+        : state.stepCount === 0 && params.forceWebSearch
+          ? 'web_search'
+          : 'auto'
 
     const emitPublic = (text: string) => {
         const cleaned = stripLeakedToolMarkup(text)
@@ -314,6 +312,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
 
     let streamedThought = 0
     let heldPublic = ''
+    let streamedPublicLength = 0
     const round = await params.complete({
         messages: withHostContext(compactLoopMessages(state.messages), {
             todos: state.todos,
@@ -324,6 +323,8 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         toolChoice,
         onToken: (text) => {
             heldPublic += text
+            streamedPublicLength += text.length
+            emitPublic(text)
         },
         onThinking: (delta) => {
             if (!delta) return
@@ -379,7 +380,10 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     }
 
     if (leftover) {
-        emitPublic(leftover)
+        const remainingUnstreamed = leftover.slice(streamedPublicLength)
+        if (remainingUnstreamed) {
+            emitPublic(remainingUnstreamed)
+        }
         state.publicText += leftover
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
@@ -434,7 +438,7 @@ function enterExecute(state: AgentState, params: AgentPipelineParams, summary?: 
         state.todos.find((todo) => todo.status === 'in_progress') ||
         state.todos.find((todo) => todo.status !== 'completed')
     state.pendingReminder = current
-        ? `Plan is locked. Execute now. Current step: ${current.title}. Call the tools needed, then todo_write with the SAME ids. Do not wait for the user.`
+        ? `Plan is locked. Execute now. Current step: ${current.title}. Call the tools needed (several at once if they are independent), then todo_write with the SAME ids. Do not wait for the user.`
         : 'Write the full user-requested piece in the public bubble now. If they asked for a long article or word count, write that length. No more planning.'
     return [EXECUTION_TRANSITION_PROMPT, summary ? `Plan summary: ${summary}` : ''].filter(Boolean).join('\n\n')
 }
@@ -498,13 +502,13 @@ async function runTaskSubagent(
                 name: nestedName,
                 status: 'running',
                 arguments: nested.argumentsJson.slice(0, 800),
-                detail: toolStatusLabel(nestedName, 'running'),
+                detail: toolActivityTitle(nestedName, 'running', nested.argumentsJson),
             })
             emitActivity(params, {
                 kind: 'tool',
                 id: `tool-${nested.id}`,
                 status: 'running',
-                title: toolStatusLabel(nestedName, 'running'),
+                title: toolActivityTitle(nestedName, 'running', nested.argumentsJson),
                 toolName: nestedName,
                 arguments: nested.argumentsJson.slice(0, 800),
             })
@@ -573,14 +577,14 @@ function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {
         name,
         status: 'running',
         arguments: call.argumentsJson.slice(0, 800),
-        detail: toolStatusLabel(name, 'running'),
+        detail: toolActivityTitle(name, 'running', call.argumentsJson),
         thoughtSignature: call.thoughtSignature,
     })
     emitActivity(params, {
         kind,
         id: activityId,
         status: 'running',
-        title: toolStatusLabel(name, 'running'),
+        title: toolActivityTitle(name, 'running', call.argumentsJson),
         toolName: name,
         arguments: call.argumentsJson.slice(0, 800),
     })
@@ -681,6 +685,10 @@ async function runOneToolCall(
         toolContent = enterExecute(state, params, summary)
     }
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
+    if (!executed.ok) {
+        const retry = `Last tool (${name}) failed: ${summary}. Fix the arguments and retry, or pick a different tool. Do not dump the error in the bubble.`
+        state.pendingReminder = state.pendingReminder ? `${state.pendingReminder}\n${retry}` : retry
+    }
     params.onTool?.({
         id: call.id,
         name,
@@ -747,7 +755,10 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
     emitNode(params, 'tools', 'completed', cycle)
     const current = state.todos.find((todo) => todo.status === 'in_progress')
     if (current && !state.interrupt) {
-        state.pendingReminder = `Current locked step: ${current.title}. Do that work now. Then todo_write with the SAME ids.`
+        const step = `Current step: ${current.title}. Do that work now. You may call several tools. Then todo_write with the SAME ids.`
+        state.pendingReminder = state.pendingReminder && state.pendingReminder !== step
+            ? `${step}\n${state.pendingReminder}`
+            : step
     }
     state.cycleThought = ''
     if (state.interrupt) {

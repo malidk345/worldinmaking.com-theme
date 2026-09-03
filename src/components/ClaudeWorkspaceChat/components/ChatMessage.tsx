@@ -28,6 +28,7 @@ interface ChatMessageProps {
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
   onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
   onAddToNotebook?: (message: Message) => void;
+  onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
 
@@ -98,13 +99,40 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
 }
 
-function InquiryStatusCard({ kind, text }: { kind: 'quota' | 'provider' | 'network'; text: string }) {
+function InquiryStatusCard({
+  kind,
+  text,
+  onRetry,
+  onOpenByok,
+}: {
+  kind: 'quota' | 'provider' | 'network'
+  text: string
+  onRetry?: () => void
+  onOpenByok?: () => void
+}) {
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
     <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
       <p className="m-0 font-medium">{title}</p>
-      <p className="mt-1 mb-0 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
+      <p className="mt-1 mb-2 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
+      {kind === 'quota' && onOpenByok ? (
+        <button
+          type="button"
+          onClick={onOpenByok}
+          className="m-0 rounded-md border border-primary/60 bg-primary px-2 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+        >
+          Use your own key
+        </button>
+      ) : onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="m-0 rounded-md border border-primary/60 bg-primary px-2 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+        >
+          Try again
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -186,6 +214,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   onExecuteOSAction,
   onHumanRespond,
   onAddToNotebook,
+  onOpenByok,
   typewriterSpeed = 'smooth',
 }) => {
   const isUser = message.role === 'user';
@@ -277,7 +306,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         </div>
       ) : (
         /* ASSISTANT MESSAGE: philosopher header with thinking on the same row, full-width reply */
-        <div className="space-y-1 text-primary">
+        <div className="space-y-1.5 text-primary">
           <div className="w-full min-w-0">
             <ThinkingBlock
               model={
@@ -299,12 +328,18 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             />
           </div>
 
+          <div className="wim-ask-reply space-y-1">
           {/* Response Text with Ultra-Compact High-Density Typography */}
           <div
-            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
+            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
           >
             {message.errorKind ? (
-              <InquiryStatusCard kind={message.errorKind} text={displayedText} />
+              <InquiryStatusCard
+                kind={message.errorKind}
+                text={displayedText}
+                onRetry={onRetry ? () => onRetry(message.id) : undefined}
+                onOpenByok={onOpenByok}
+              />
             ) : displayedText ? (
               <>
                 <ReactMarkdown
@@ -507,6 +542,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               )}
             </div>
           )}
+          </div>
         </div>
       )}
     </div>

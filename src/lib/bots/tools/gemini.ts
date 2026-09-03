@@ -310,6 +310,9 @@ export async function geminiToolCompletion(params: {
                                     params.onThinking?.(text)
                                 } else {
                                     content += text
+                                    if (toolCalls.length === 0) {
+                                        params.onToken?.(text)
+                                    }
                                 }
                             }
                         }
@@ -330,7 +333,6 @@ export async function geminiToolCompletion(params: {
             }
         }
 
-        if (toolCalls.length === 0 && content) params.onToken?.(content)
         return { ok: true, content, toolCalls, modelParts, reasoning }
     } catch (error) {
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
