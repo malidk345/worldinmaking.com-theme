@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
-import { IconDownload, IconGear, IconShare } from '@posthog/icons'
+import { IconDownload, IconGear } from '@posthog/icons'
 import OSButton from 'components/OSButton'
-import { LemonButton, LemonDropdown } from '~nb-lib/lemon-ui/index'
 import Link from 'components/Link'
 import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
@@ -19,7 +18,6 @@ import {
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf } from './exportNotebookPdf'
-import { NotebookShareModal, type NotebookPublishPayload, type NotebookShareTab } from './NotebookShareModal'
 
 export function NotebookSettingsPopover({
     settings,
@@ -111,47 +109,6 @@ export function NotebookSettingsPopover({
                 </p>
             </div>
         </Popover>
-    )
-}
-
-export function NotebookShareButton({
-    notebookId,
-    notebookTitle,
-    onPublish,
-    initialTab = 'private',
-    isOpen,
-    onOpenChange,
-}: {
-    notebookId: string
-    notebookTitle: string
-    onPublish: (meta: NotebookPublishPayload) => void
-    initialTab?: NotebookShareTab
-    isOpen?: boolean
-    onOpenChange?: (open: boolean) => void
-}): JSX.Element {
-    return (
-        <LemonDropdown
-            overlay={
-                <NotebookShareModal
-                    isOpen={isOpen !== false}
-                    onClose={() => onOpenChange?.(false)}
-                    notebookId={notebookId}
-                    notebookTitle={notebookTitle}
-                    initialTab={initialTab}
-                    onPublish={onPublish}
-                />
-            }
-            visible={isOpen}
-            onVisibilityChange={onOpenChange}
-            closeOnClickInside={false}
-            // Footer trigger: same idea as Settings/Export (side="top").
-            // top-start keeps the panel's left edge on the button and opens into
-            // the editor; top-end + a 28rem panel shifts into the viewport center.
-            placement="top-start"
-            fallbackPlacements={['top-end', 'right-start', 'bottom-start']}
-        >
-            <LemonButton size="small" icon={<IconShare />} active={Boolean(isOpen)} tooltip="Share" aria-label="Share" />
-        </LemonDropdown>
     )
 }
 
