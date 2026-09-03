@@ -134,6 +134,22 @@ export interface BotRunFailure {
 export type BotRunResult = BotRunSuccess | BotRunFailure
 
 /**
+ * Client-safe subset of a successful runBotTurn for /api/bots/act handlers.
+ * Omits provider, persona, thinking stages, and other infra metadata.
+ */
+export function publicBotSuccessFields(result: BotRunSuccess) {
+    return {
+        success: true as const,
+        philosopher: result.philosopher,
+        epistemicStance: result.epistemicStance,
+        reply: result.reply,
+        thought: result.thought,
+        latencyMs: result.latencyMs,
+        taskType: result.taskType,
+    }
+}
+
+/**
  * Anti prompt-injection preamble, prepended to every system prompt.
  * The `question` and `context` fields below come directly from end users
  * (public API, forum posts, notebook content) and MUST be treated as data

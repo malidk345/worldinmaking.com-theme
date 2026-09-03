@@ -27,6 +27,7 @@ import type { TaskType } from 'lib/persona-engine'
 import {
     runBotTurn,
     getBotSystemStatus,
+    publicBotSuccessFields,
     type ThinkingDepth,
 } from 'lib/bots'
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
@@ -289,7 +290,7 @@ export default async function handler(req: Request) {
         )
     }
 
-    return json({ ...result, action: 'chat' }, 200)
+    return json({ ...publicBotSuccessFields(result), action: 'chat' }, 200)
     } catch (error) {
         console.error('[bots/act] unexpected failure', error)
         return json({ success: false, error: 'Bot action failed', action }, 503)
