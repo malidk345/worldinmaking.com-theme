@@ -6,7 +6,7 @@ import { Chat, Message, Artifact } from '../types';
  */
 export function parseHtmlChatExport(htmlContent: string, fileName?: string): Chat {
   // 1. Extract Title
-  let title = 'İçe Aktarılan Claude Sohbeti';
+  let title = 'Imported Claude chat';
   const titleMatch = htmlContent.match(/<title>([\s\S]*?)<\/title>/i) || htmlContent.match(/property="og:title" content="([\s\S]*?)"/i);
   if (titleMatch && titleMatch[1]) {
     title = titleMatch[1].replace(' - Claude', '').trim();
@@ -38,7 +38,7 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
           userText = youSaidMatch[1].replace(/<[^>]+>/g, ' ').trim();
         }
         if (!userText) {
-          userText = 'Soru metni yükleniyor...';
+          userText = 'Loading question text...';
         }
 
         messages.push({
@@ -71,7 +71,7 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
 
         artMatches.forEach((artHtml, aIdx) => {
           const artTitleMatch = artHtml.match(/aria-label="View\s+([^"]+)"/i) || artHtml.match(/<div[^>]*class="[^"]*font-medium[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-          const rawTitle = artTitleMatch ? artTitleMatch[1].replace(/<[^>]+>/g, '').trim() : `Artifact_Dokumani_${aIdx + 1}.md`;
+          const rawTitle = artTitleMatch ? artTitleMatch[1].replace(/<[^>]+>/g, '').trim() : `Artifact_Document_${aIdx + 1}.md`;
           const artTitle = rawTitle.endsWith('.md') || rawTitle.endsWith('.html') || rawTitle.endsWith('.tsx') || rawTitle.endsWith('.css') ? rawTitle : `${rawTitle}.md`;
 
           artifacts.push({
@@ -79,14 +79,14 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
             title: artTitle,
             type: artTitle.endsWith('.tsx') ? 'react' : artTitle.endsWith('.html') ? 'html' : artTitle.endsWith('.css') ? 'code' : 'markdown',
             language: artTitle.endsWith('.tsx') ? 'tsx' : artTitle.endsWith('.html') ? 'html' : artTitle.endsWith('.css') ? 'css' : 'markdown',
-            description: `İçe aktarılan ${artTitle} dokümanı`,
+            description: `Imported ${artTitle} document`,
             version: 1,
             createdAt: new Date().toISOString(),
-            content: `# ${artTitle}\n\nİçe aktarılan Claude Artifact içeriği.`,
+            content: `# ${artTitle}\n\nImported Claude artifact content.`,
           });
         });
 
-        const fullContent = summaryText ? `${summaryText}\n\n${textParts.join('\n\n')}` : textParts.join('\n\n') || 'Claude yanıtı yüklendi.';
+        const fullContent = summaryText ? `${summaryText}\n\n${textParts.join('\n\n')}` : textParts.join('\n\n') || 'Claude reply loaded.';
 
         messages.push({
           id: `m-imp-asst-${idx}-${Date.now()}`,
@@ -98,13 +98,13 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
           thinkingProcess: {
             durationSeconds: 2.5,
             tokenCount: 950,
-            summary: 'İçe aktarılan sohbet yanıtı ve düşünme süreci',
+            summary: 'Imported chat reply and thinking process',
             steps: [
               {
                 id: `st-imp-${idx}`,
                 stepNumber: 1,
-                title: 'HTML İçe Aktarma Mantık Analizi',
-                detail: 'SingleFile Claude HTML dosyasındaki mesaj dizilimi ve artifact verileri derlendi.',
+                title: 'HTML import parse',
+                detail: 'Message order and artifact data from the SingleFile Claude HTML export were compiled.',
                 completed: true,
               },
             ],
@@ -116,7 +116,7 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
   } else {
     // Fallback parser if standard aria-label is not found
     const userTextMatch = cleanHtml.match(/You said:\s*([\s\S]*?)(?=Claude responded:|$)/i) || cleanHtml.match(/bu kod posthog[\s\S]*?(?=WordPress|$)/i);
-    let userQuery = 'Sohbet metni içe aktarıldı.';
+    let userQuery = 'Chat text imported.';
 
     if (userTextMatch && userTextMatch[1]) {
       const rawUser = userTextMatch[1].replace(/<[^>]+>/g, ' ').trim();
@@ -133,7 +133,7 @@ export function parseHtmlChatExport(htmlContent: string, fileName?: string): Cha
     messages.push({
       id: `m-imp-asst-fallback-${Date.now()}`,
       role: 'assistant',
-      content: 'İçe aktarılan sohbet içeriği başarıyla Claude Workspace alanına eklendi.',
+      content: 'Imported chat content was added to the workspace.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       modelUsed: 'claude-3-7-sonnet',
       isTypingDone: true,

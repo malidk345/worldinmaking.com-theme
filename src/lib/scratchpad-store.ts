@@ -3,7 +3,7 @@
  *
  * Provides a cognitive graph / working memory canvas of:
  * 1. Active Documents (PDFs, Book Chapters, Uploaded Files)
- * 2. Knowledge Nodes (Citations/Atıflar, Concepts/Kavramlar, Quotes, Excerpts, Syntheses)
+ * 2. Knowledge Nodes (Citations, Concepts, Quotes, Excerpts, Syntheses)
  * 3. Execution Tasks & Plans
  *
  * Synchronized live across Ask AI, the OS Desktop Window (/scratchpad),
@@ -269,12 +269,12 @@ export const ScratchpadStore = {
             state.nodes.forEach((n, idx) => {
                 const typeLabel =
                     n.type === 'citation'
-                        ? 'Atıf / Citation'
+                        ? 'Citation'
                         : n.type === 'concept'
-                        ? 'Kavram / Concept'
+                        ? 'Concept'
                         : n.type === 'source'
-                        ? 'Kaynak / Source'
-                        : 'Not / Synthesis'
+                        ? 'Source'
+                        : 'Synthesis'
                 parts.push(`### [${typeLabel}] ${n.title || `Node ${idx + 1}`}${n.source ? ` — ${n.source}` : ''}`)
                 parts.push(n.content)
                 parts.push('')

@@ -30,10 +30,10 @@ const SLASH_COMMANDS = [
 ] as const
 
 export const ASK_STARTERS = [
-  { label: 'Bu notu düzelt', prompt: 'Seçili veya bağlı notu düzelt: ' },
-  { label: 'Deftere yaz', prompt: 'Bunu bağlı notebooka yaz: ' },
-  { label: 'Bunu araştır', prompt: 'Bunu canlı kaynaklarla araştır: ' },
-  { label: 'Kısaca anlat', prompt: 'Bunu sade ve kısa anlat: ' },
+  { label: 'Edit this note', prompt: 'Edit the selected or bound note: ' },
+  { label: 'Write to notebook', prompt: 'Write this into the bound notebook: ' },
+  { label: 'Research this', prompt: 'Research this with live sources: ' },
+  { label: 'Explain briefly', prompt: 'Explain this simply and briefly: ' },
 ] as const
 
 interface ChatInputProps {
@@ -346,7 +346,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <div className="flex items-center gap-1.5 min-w-0 truncate">
               <IconDocument className="size-3.5 shrink-0 text-[#1E3A8A] dark:text-blue-400" />
               <span className="truncate font-medium text-primary">{boundNotebookTitle}</span>
-              <span className="shrink-0 text-muted">· bağlı</span>
+              <span className="shrink-0 text-muted">· bound</span>
             </div>
             {onDismissNotebookContext && (
               <button
