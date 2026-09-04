@@ -380,9 +380,23 @@ export default async function handler(req: Request) {
     }
 
     const encoder = new TextEncoder()
+    // Client Stop / window close aborts fetch; Edge surfaces that as req.signal.
+    // ReadableStream.cancel fires when the consumer drops the body.
+    const turnAbort = new AbortController()
+    const onReqAbort = () => turnAbort.abort()
+    if (req.signal.aborted) turnAbort.abort()
+    else req.signal.addEventListener('abort', onReqAbort, { once: true })
+
     const stream = new ReadableStream({
         async start(controller) {
-            const send = (event: AiSseEvent) => controller.enqueue(encoder.encode(formatAiSseEvent(event)))
+            const send = (event: AiSseEvent) => {
+                if (turnAbort.signal.aborted) return
+                try {
+                    controller.enqueue(encoder.encode(formatAiSseEvent(event)))
+                } catch {
+                    turnAbort.abort()
+                }
+            }
 
             try {
                 let webSearchContext = ''
@@ -485,6 +499,7 @@ export default async function handler(req: Request) {
                         checkpoint: checkpoint && resumeAction ? checkpoint : undefined,
                         resumeAction,
                         resumePayload,
+                        abortSignal: turnAbort.signal,
                         onTool: (event) => send({ type: 'tool', tool: event }),
                         onNode: (event) => send({ type: 'node', node: event }),
                         onMode: (mode) => send({ type: 'mode', mode }),
@@ -503,6 +518,15 @@ export default async function handler(req: Request) {
                 )
 
                 clearInterval(heartbeat)
+
+                if (turnAbort.signal.aborted || ('error' in result && result.error === 'aborted')) {
+                    try {
+                        controller.close()
+                    } catch {
+                        /* already closed */
+                    }
+                    return
+                }
 
                 if (!result.success) {
                     const attempts = 'attempts' in result ? result.attempts : []
@@ -599,10 +623,24 @@ export default async function handler(req: Request) {
                 })
                 controller.close()
             } catch (error) {
+                if (turnAbort.signal.aborted) {
+                    try {
+                        controller.close()
+                    } catch {
+                        /* already closed */
+                    }
+                    return
+                }
                 console.error('[chat] request failed', error)
                 send({ type: 'error', code: 'CHAT_FAILED', message: 'AI service failed', retryable: true })
                 controller.close()
+            } finally {
+                req.signal.removeEventListener('abort', onReqAbort)
             }
+        },
+        cancel() {
+            turnAbort.abort()
+            req.signal.removeEventListener('abort', onReqAbort)
         },
     })
 
