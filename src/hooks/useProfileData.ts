@@ -106,6 +106,7 @@ export function useProfileData(identifier?: string | number) {
         {
             revalidateOnFocus: false,
             shouldRetryOnError: false,
+            keepPreviousData: true,
         }
     )
 

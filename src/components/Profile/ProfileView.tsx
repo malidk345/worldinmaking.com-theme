@@ -896,6 +896,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
     const { addToast } = useToast()
     const { user, getJwt, fetchUser } = useUser()
     const [isEditing, setIsEditing] = useState(false)
+    const { navigate, appWindow } = useWindow()
 
     const { profileData: data, error, isLoading, isCurrentUser, isModerator, mutate } = useProfileData(rawId)
 
@@ -1091,10 +1092,20 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                 if (error) throw new Error(error)
 
                 await fetchUser()
-                await mutate()
                 const previousUsername = String(profile?.username || '').trim()
-                if (nextUsername && nextUsername !== previousUsername && router?.replace) {
-                    void router.replace(`/profile/${encodeURIComponent(nextUsername)}`)
+                const usernameChanged =
+                    !!nextUsername && nextUsername.toLowerCase() !== previousUsername.toLowerCase()
+                if (usernameChanged) {
+                    const nextPath = `/profile/${encodeURIComponent(nextUsername)}`
+                    // Revalidating the old handle 404s (row is gone). Move the window
+                    // first; SWR keepPreviousData covers the new-key fetch.
+                    if (appWindow && navigate) {
+                        navigate(nextPath)
+                    } else if (router?.replace) {
+                        await router.replace(nextPath)
+                    }
+                } else {
+                    await mutate()
                 }
                 addToast({
                     description: (
@@ -1118,7 +1129,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
         },
     })
 
-    if (!profile && (isLoading || !isReady)) {
+    if (!profile && (isLoading || !isReady || isSubmitting)) {
         return <ProfileSkeleton />
     } else if (!profile && !isLoading && isReady) {
         return <NotFoundPage />
