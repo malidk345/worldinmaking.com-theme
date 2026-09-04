@@ -13,10 +13,9 @@ export default function CommunityCTA() {
                 />
             </div>
             <div className="max-w-[400px]">
-                <h3 className="m-0">Join the PostHog.com community</h3>
+                <h3 className="m-0">Join the community</h3>
                 <p className="mt-2 mb-5">
-                    Get help or answer questions from the PostHog community, vote on the roadmap, and get early access
-                    to new features.
+                    Ask questions, share notebooks, and take part in discussion on worldinmaking.
                 </p>
                 <CallToAction size="sm" to="/community" state={{ newWindow: true }}>
                     Check it out

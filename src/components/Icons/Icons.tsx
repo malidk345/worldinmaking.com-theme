@@ -239,6 +239,38 @@ export const Twitter = ({ className }: { className: string }): JSX.Element => {
     )
 }
 
+export const Instagram = ({ className }: { className: string }): JSX.Element => {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            aria-hidden
+        >
+            <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm10.5 1.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+        </svg>
+    )
+}
+
+export const Telegram = ({ className }: { className: string }): JSX.Element => {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            aria-hidden
+        >
+            <path d="M21.43 3.27 2.86 10.5c-1.27.5-1.26 1.16-.23 1.46l4.77 1.49 11.05-6.97c.52-.32.99-.14.6.2l-8.94 8.07-.34 4.82c.5 0 .72-.23.99-.5l2.38-2.31 4.94 3.64c.91.5 1.56.24 1.79-.84l3.24-15.28c.33-1.32-.48-1.92-1.38-1.51z" />
+        </svg>
+    )
+}
+
 export const GitHub = ({ className = '' }: { className?: string }): JSX.Element => {
     return (
         <svg

@@ -13,11 +13,22 @@ interface NewsletterFormProps {
     placement?: string
 }
 
-export const NewsletterForm = ({ className = '', placement }: NewsletterFormProps): JSX.Element => {
+/** No WorldInMaking newsletter yet — hide the leftover PostHog Substack form. */
+const SHOW_NEWSLETTER_FORM = false
+
+export const NewsletterForm = ({ className = '', placement }: NewsletterFormProps): JSX.Element | null => {
     const { user } = useUser()
     const posthog = usePostHog()
     const [email, setEmail] = useState('')
     const [submitted, setSubmitted] = useState(false)
+
+    useEffect(() => {
+        if (user?.email) {
+            setEmail(user.email)
+        }
+    }, [user])
+
+    if (!SHOW_NEWSLETTER_FORM) return null
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -33,12 +44,6 @@ export const NewsletterForm = ({ className = '', placement }: NewsletterFormProp
             : placement === 'community'
             ? 'border-0'
             : 'border-y !mt-6 !mb-0 !py-4'
-
-    useEffect(() => {
-        if (user?.email) {
-            setEmail(user.email)
-        }
-    }, [user])
 
     return (
         <div className="@container">

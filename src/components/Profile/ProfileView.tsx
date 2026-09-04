@@ -1137,7 +1137,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
     return (
         <div data-scheme="primary" className="pt-4 h-full min-h-full bg-primary text-primary flex flex-col">
-            <SEO title={`${name}'s profile - PostHog`} />
+            <SEO title={`${name}'s profile`} />
 
             <ScrollArea className="min-h-0 h-full">
                 <div className="mx-auto max-w-screen-xl px-4 pb-4 @container">

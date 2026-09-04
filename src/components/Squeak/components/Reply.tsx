@@ -417,7 +417,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         delay={0}
                     >
                         <p>
-                            PostHog AI is our resident AI assistant.
+                            This is an AI assistant.
                             <br />
                             Double-check responses for accuracy.
                         </p>
