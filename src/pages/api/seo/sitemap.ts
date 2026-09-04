@@ -15,8 +15,16 @@ const STATIC_PATHS = [
     '/notebooks',
     '/community',
     '/archive',
+    '/contact',
+    '/pricing',
     '/terms',
     '/privacy',
+    '/cookies',
+    '/refund',
+    '/guidelines',
+    '/copyright',
+    '/dpa',
+    '/subprocessors',
 ]
 
 const MAX_POSTS = 2000

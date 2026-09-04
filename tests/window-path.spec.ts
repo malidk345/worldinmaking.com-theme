@@ -40,6 +40,7 @@ test.describe('window path', () => {
         expect(isPathRoutedWindow('/workspace-chat')).toBe(true)
         expect(isPathRoutedWindow('/pricing')).toBe(true)
         expect(isPathRoutedWindow('/home')).toBe(true)
+        expect(isPathRoutedWindow('/account')).toBe(true)
     })
 
     test('home window path is the guest landing, not other apps', () => {

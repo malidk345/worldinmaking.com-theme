@@ -78,7 +78,7 @@ const primary = cntl`
     dark:text-white
     dark:hover:text-white
     border-button
-    dark:border-button-dark
+    dark:border-button
     dark:bg-orange
 `
 
@@ -124,6 +124,8 @@ const containerTypes = {
     primary: cntl`
         bg-button-shadow
         dark:bg-button-shadow-dark
+        border-button-shadow
+        dark:border-button-shadow-dark
         !no-underline
     `,
     secondary: cntl`
@@ -166,7 +168,7 @@ export const container = (type = 'primary', size = 'lg', width = 'auto') => cntl
     w-${width}
     text-primary
     block
-    border-button
+    ${type === 'primary' ? '' : 'border-button'}
     text-center
     group
     disabled:opacity-50

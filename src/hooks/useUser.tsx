@@ -12,6 +12,7 @@ import {
     signUpWithPassword,
     signInWithGoogle,
     updatePassword as updateWimPassword,
+    updateEmail as updateWimEmail,
 } from 'lib/wim-auth'
 import {
     addUserBookmark,
@@ -98,6 +99,7 @@ type UserContextValue = {
     login: (args: { email: string; password: string }) => Promise<User | null | { error: string }>
     loginWithGoogle: () => Promise<{ error?: string }>
     updatePassword: (password: string) => Promise<{ error?: string }>
+    updateEmail: (email: string) => Promise<{ error?: string }>
     loginWithProvider: (args: {
         provider: 'posthog'
         accessToken: string
@@ -157,6 +159,7 @@ export const UserContext = createContext<UserContextValue>({
     login: async () => null,
     loginWithGoogle: async () => ({}),
     updatePassword: async () => ({}),
+    updateEmail: async () => ({}),
     loginWithProvider: async () => null,
     createWithProvider: async () => null,
     linkExisting: async () => null,
@@ -378,6 +381,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
     const updatePassword = async (password: string): Promise<{ error?: string }> => {
         return updateWimPassword(password)
+    }
+
+    const updateEmail = async (email: string): Promise<{ error?: string }> => {
+        return updateWimEmail(email)
     }
 
     const loginWithProvider = async (_args: {
@@ -655,6 +662,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         login,
         loginWithGoogle,
         updatePassword,
+        updateEmail,
         loginWithProvider,
         createWithProvider,
         linkExisting,

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { initPostHog, trackPageView, identifyUser, resetUser, trackEvent } from '../src/lib/wim-posthog'
+import { initPostHog, trackPageView, identifyUser, resetUser, trackEvent, applyAnalyticsConsent } from '../src/lib/wim-posthog'
 
 test.describe('PostHog Client Integration', () => {
     test('module exports core functions safely', () => {
@@ -8,6 +8,7 @@ test.describe('PostHog Client Integration', () => {
         expect(typeof identifyUser).toBe('function')
         expect(typeof resetUser).toBe('function')
         expect(typeof trackEvent).toBe('function')
+        expect(typeof applyAnalyticsConsent).toBe('function')
     })
 
     test('functions do not throw in non-browser or unconfigured environments', () => {

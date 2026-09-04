@@ -1,4 +1,4 @@
-import { Logo } from '@posthog/brand/logo'
+import WimLogo from 'components/WimLogo'
 import React from 'react'
 import dayjs from 'dayjs'
 import { IconSpinner } from '@posthog/icons'
@@ -54,12 +54,7 @@ export default function OrderHistory({ orders }: { orders: any[] }) {
                                 <div className="p-6 font-mono text-sm">
                                     <header className="text-center mb-6">
                                         <div className="flex justify-center">
-                                            <Logo
-                                                variant="mono"
-                                                color="currentColor"
-                                                width="auto"
-                                                className="text-primary"
-                                            />
+                                            <WimLogo className="size-8" />
                                         </div>
                                     </header>
 

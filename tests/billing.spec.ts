@@ -6,6 +6,7 @@ import {
     BILLING_DISCOUNT,
     discountedUsd,
     lemonSqueezyMissingConfig,
+    lemonCancelSubscriptionBody,
     subscriptionEntitlement,
 } from '../src/lib/wim-billing'
 
@@ -73,5 +74,15 @@ test.describe('billing & subscriptions', () => {
         expect(subscriptionEntitlement('cancelled')).toBe('member')
         const future = new Date(Date.now() + 86400000).toISOString()
         expect(subscriptionEntitlement('cancelled', future)).toBe('pro')
+    })
+
+    test('lemon cancel payload marks the subscription cancelled', () => {
+        expect(lemonCancelSubscriptionBody('sub_9')).toEqual({
+            data: {
+                type: 'subscriptions',
+                id: 'sub_9',
+                attributes: { cancelled: true },
+            },
+        })
     })
 })

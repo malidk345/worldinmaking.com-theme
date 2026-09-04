@@ -175,8 +175,8 @@ export default function PricingWindow() {
                             </ul>
                             <div className="mt-auto">
                                 {isStudy ? (
-                                    <OSButton size="md" disabled>
-                                        study is on
+                                    <OSButton size="md" asLink to="/account">
+                                        Account
                                     </OSButton>
                                 ) : (
                                     <OSButton size="md" variant="primary" onClick={handleUpgrade} disabled={loading}>

@@ -10,6 +10,7 @@ import BlogPost from '../../templates/BlogPost'
 import PostListing from '../../templates/PostListing'
 import DisplayOptions from 'components/DisplayOptions'
 import Legal from 'components/Legal'
+import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
 import TapePlayer from 'components/TapePlayer'
@@ -32,6 +33,7 @@ import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
 import ContactWindow from 'components/Contact/ContactWindow'
 import HomeWindow from 'components/Home/HomeWindow'
+import AccountWindow from 'components/Account/AccountWindow'
 import { AboutContent } from '../../pages/about'
 import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
@@ -88,6 +90,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/home') {
         return <HomeWindow />
+    }
+
+    if (path === '/account') {
+        return <AccountWindow />
     }
 
     if (isAskAiPath(path)) {
@@ -179,7 +185,7 @@ function WindowRouterInner({ item }: WindowRouterProps) {
         // (comments already resolve by slug; content previously did not)
         return <BlogPost {...props} path={path} />
     }
-    if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
+    if ((LEGAL_PATHS as readonly string[]).includes(path)) {
         return <Legal defaultTab={path}>{(item.element as any)?.element || item.element || item.children}</Legal>
     }
 

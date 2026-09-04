@@ -341,6 +341,17 @@ export async function updatePassword(password: string): Promise<{ error?: string
     return {}
 }
 
+export async function updateEmail(email: string): Promise<{ error?: string }> {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured' }
+    const next = String(email || '').trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+        return { error: 'Enter a valid email address' }
+    }
+    const { error } = await supabase.auth.updateUser({ email: next })
+    if (error) return { error: error.message }
+    return {}
+}
+
 export async function updateWimProfile(
     userId: string,
     patch: Partial<

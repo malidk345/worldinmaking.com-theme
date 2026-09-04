@@ -5,13 +5,10 @@ import {
     IconNotification,
     IconLock,
     IconBookmark,
-    IconUpload,
-    IconCode,
-    IconFeatures,
-    IconPencil,
-    IconPinFilled,
     IconBadge,
     IconApps,
+    IconGear,
+    IconChat,
 } from '@posthog/icons'
 import { useApp, useAppActions } from '../../context/App'
 
@@ -21,9 +18,7 @@ import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useUser } from 'hooks/useUser'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
-import { useMenuData } from './menuData'
 import CloudinaryImage from 'components/CloudinaryImage'
-import MediaUploadModal from 'components/MediaUploadModal'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import AmbientPlayer from 'components/AmbientPlayer'
 import Link from 'components/Link'
@@ -35,7 +30,6 @@ function TaskBarMenu() {
         openSearch,
         openSignIn,
         setIsNotificationsPanelOpen,
-        addWindow,
         taskbarRef,
     } = useAppActions()
     const {
@@ -47,7 +41,6 @@ function TaskBarMenu() {
     const [isAnimating, setIsAnimating] = useState(false)
 
     const { user, notifications, logout, isModerator } = useUser()
-    const menuData = useMenuData()
 
     const isLoggedIn = !!user
 
@@ -91,25 +84,6 @@ function TaskBarMenu() {
 
     const avatarURL = getAvatarURL(user?.profile)
 
-    // Format site navigation menus for inclusion inside the Person Icon dropdown
-    const mainNavSections = menuData.slice(1).flatMap((menuSection, idx) => {
-        const sectionItems: any[] = []
-        if (typeof menuSection.trigger === 'string') {
-            sectionItems.push({
-                type: 'item' as const,
-                label: menuSection.trigger,
-                disabled: true,
-            })
-        }
-        if (Array.isArray(menuSection.items)) {
-            sectionItems.push(...menuSection.items)
-        }
-        if (idx < menuData.length - 2) {
-            sectionItems.push({ type: 'separator' as const })
-        }
-        return sectionItems
-    })
-
     const accountMenu: MenuType[] = [
         {
             trigger: (
@@ -137,139 +111,64 @@ function TaskBarMenu() {
                     )}
                 </>
             ),
-            items: [
-                ...(user
-                    ? [
-                          {
-                              type: 'item' as const,
-                              label: 'User Account',
-                              disabled: true,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: `Notifications${
-                                  notifications?.length > 0 ? ` (${notifications.length})` : ''
-                              }`,
-                              onClick: () => setIsNotificationsPanelOpen(true),
-                              icon: (
-                                  <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />
-                              ),
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'My profile',
-                              link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
-                              icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          ...(isModerator
-                              ? [
-                                    {
-                                        type: 'item' as const,
-                                        label: 'Admin OS Dashboard',
-                                        link: '/admin',
-                                        icon: <IconBadge className="opacity-75 text-yellow size-4" />,
-                                    },
-                                ]
-                              : []),
-                          {
-                              type: 'item' as const,
-                              label: 'Bookmarks',
-                              link: '/bookmarks',
-                              icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'separator' as const,
-                          },
-                      ]
-                    : [
-                          {
-                              type: 'item' as const,
-                              label: 'Account',
-                              disabled: true,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Sign in',
-                              onClick: handleSignInClick,
-                              icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'separator' as const,
-                          },
-                      ]),
-
-                // All site navigation menus (Community, Company, Resources, etc.) placed inside Person Icon
-                ...mainNavSections,
-
-                ...(isModerator
-                    ? [
-                          {
-                              type: 'separator' as const,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Moderator tools',
-                              disabled: true,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Upload media',
-                              icon: <IconUpload className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                              onClick: () =>
-                                  addWindow(
-                                      <MediaUploadModal
-                                          newWindow
-                                          location={{ pathname: `media-upload` }}
-                                          key={`media-upload`}
-                                      />
-                                  ),
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Components',
-                              link: '/components',
-                              icon: <IconCode className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Art library',
-                              link: '/art-library',
-                              icon: <IconPencil className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Feature matrix',
-                              link: '/feature-matrix',
-                              icon: <IconFeatures className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Community directory',
-                              link: '/community/directory',
-                              icon: <IconBadge className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Image annotation',
-                              link: '/image-annotator',
-                              icon: <IconPinFilled className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                      ]
-                    : []),
-                ...(user
-                    ? [
-                          {
-                              type: 'separator' as const,
-                          },
-                          {
-                              type: 'item' as const,
-                              label: 'Community logout',
-                              onClick: () => logout(),
-                              icon: <IconLock className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                          },
-                      ]
-                    : []),
-            ],
+            items: user
+                ? [
+                      {
+                          type: 'item' as const,
+                          label: 'Profile',
+                          link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
+                          icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                      {
+                          type: 'item' as const,
+                          label: `Notifications${notifications?.length > 0 ? ` (${notifications.length})` : ''}`,
+                          onClick: () => setIsNotificationsPanelOpen(true),
+                          icon: <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                      {
+                          type: 'item' as const,
+                          label: 'Bookmarks',
+                          link: '/bookmarks',
+                          icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                      {
+                          type: 'item' as const,
+                          label: 'WIM AI',
+                          link: '/workspace-chat',
+                          icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                      ...(isModerator
+                          ? [
+                                {
+                                    type: 'item' as const,
+                                    label: 'Admin',
+                                    link: '/admin',
+                                    icon: <IconBadge className="opacity-75 text-yellow size-4" />,
+                                },
+                            ]
+                          : []),
+                      { type: 'separator' as const },
+                      {
+                          type: 'item' as const,
+                          label: 'Account',
+                          link: '/account',
+                          icon: <IconGear className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                      {
+                          type: 'item' as const,
+                          label: 'Sign out',
+                          onClick: () => logout(),
+                          icon: <IconLock className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                  ]
+                : [
+                      {
+                          type: 'item' as const,
+                          label: 'Sign in',
+                          onClick: handleSignInClick,
+                          icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
+                  ],
         },
     ]
 

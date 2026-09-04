@@ -6,6 +6,7 @@ import { useUser, type User } from 'hooks/useUser'
 import { requestPasswordReset } from 'lib/wim-auth'
 import { supabase } from 'lib/supabase'
 import OSButton from 'components/OSButton'
+import Link from 'components/Link'
 
 type AuthView = 'sign-in' | 'sign-up' | 'forgot-password'
 
@@ -55,6 +56,7 @@ export default function AuthModal({
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const [successMsg, setSuccessMsg] = useState<string | null>(null)
+    const [ageOk, setAgeOk] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
@@ -63,6 +65,7 @@ export default function AuthModal({
             setSuccessMsg(null)
             setPassword('')
             setShowPassword(false)
+            setAgeOk(false)
         }
     }, [isOpen, initialView])
 
@@ -98,6 +101,10 @@ export default function AuthModal({
                     setErrorMsg('Password must be at least 6 characters')
                     return
                 }
+                if (!ageOk) {
+                    setErrorMsg('You must be at least 16 years old.')
+                    return
+                }
                 const result = await signUp({ email, password, firstName, lastName })
                 if (!result) {
                     setErrorMsg('Sign up failed. Please try again.')
@@ -117,6 +124,10 @@ export default function AuthModal({
     }
 
     const handleMagicLink = async () => {
+        if (mode === 'sign-up' && !ageOk) {
+            setErrorMsg('You must be at least 16 years old.')
+            return
+        }
         if (!email || !email.includes('@')) {
             setErrorMsg('Please enter your email above first.')
             return
@@ -146,6 +157,10 @@ export default function AuthModal({
     }
 
     const handleGoogle = async () => {
+        if (mode === 'sign-up' && !ageOk) {
+            setErrorMsg('You must be at least 16 years old.')
+            return
+        }
         setErrorMsg(null)
         setSuccessMsg(null)
         setLoading(true)
@@ -252,7 +267,7 @@ export default function AuthModal({
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@yourcompany.com"
+                                    placeholder="you@email.com"
                                     className="w-full bg-white/80 dark:bg-black/35 backdrop-blur-md border border-black/15 dark:border-white/15 rounded-md px-3.5 py-2.5 text-sm text-primary placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-inner transition-all"
                                 />
                             </div>
@@ -309,7 +324,7 @@ export default function AuthModal({
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="you@yourcompany.com"
+                                        placeholder="you@email.com"
                                         className="w-full bg-white/80 dark:bg-black/35 backdrop-blur-md border border-black/15 dark:border-white/15 rounded-md px-3.5 py-2.5 text-sm text-primary placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-inner transition-all"
                                     />
                                 </div>
@@ -396,6 +411,35 @@ export default function AuthModal({
                                     <Key className="size-5 text-[#8567ff]" />
                                 </button>
                             </div>
+
+                            {mode === 'sign-up' ? (
+                                <div className="mt-4 space-y-2">
+                                    <label className="flex items-start gap-2 text-[11px] text-muted leading-relaxed cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="mt-0.5"
+                                            checked={ageOk}
+                                            onChange={(e) => setAgeOk(e.target.checked)}
+                                        />
+                                        <span>I am at least 16 years old.</span>
+                                    </label>
+                                    <p className="text-[11px] text-muted text-center mb-0 leading-relaxed">
+                                        By creating an account you agree to the{' '}
+                                        <Link href="/terms" className="underline hover:text-primary">
+                                            Terms
+                                        </Link>
+                                        ,{' '}
+                                        <Link href="/privacy" className="underline hover:text-primary">
+                                            Privacy Policy
+                                        </Link>
+                                        , and{' '}
+                                        <Link href="/cookies" className="underline hover:text-primary">
+                                            Cookies
+                                        </Link>
+                                        .
+                                    </p>
+                                </div>
+                            ) : null}
 
                             {/* Bottom Mode Switch */}
                             <div className="mt-6 pt-1 text-center">

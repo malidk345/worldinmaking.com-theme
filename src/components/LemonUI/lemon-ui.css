@@ -733,9 +733,9 @@
   --color-brand-primary-hue: 19;
   --color-brand-primary-saturation: 100%;
   --color-brand-primary-lightness: 48%;
-  --primary-3000-button-bg: #1d4aff;
-  --primary-3000-button-border: #1d4aff;
-  --primary-3000-frame-bg: #1034c6;
+  --primary-3000-button-bg: #2563eb;
+  --primary-3000-button-border: #2563eb;
+  --primary-3000-frame-bg: #1e3a8a;
   --secondary-3000-button-border: rgba(0, 0, 0, 0.15);
   --secondary-3000-button-border-hover: rgba(0, 0, 0, 0.3);
   --secondary-3000-frame-bg: rgba(0, 0, 0, 0.08);

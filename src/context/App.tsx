@@ -517,6 +517,22 @@ const appSettings: AppSettings = {
             center: true,
         },
     },
+    '/account': {
+        size: {
+            min: {
+                width: 520,
+                height: 480,
+            },
+            max: {
+                width: 720,
+                height: 900,
+            },
+            fixed: false,
+        },
+        position: {
+            center: true,
+        },
+    },
     '/about': {
         size: {
             min: {
@@ -581,6 +597,111 @@ const appSettings: AppSettings = {
         },
     },
     '/privacy': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/cookies': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/refund': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/guidelines': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/copyright': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/dpa': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/baa': {
+        size: {
+            min: {
+                width: 1,
+                height: 1,
+            },
+            max: {
+                width: 10000,
+                height: 10000,
+            },
+        },
+        position: {
+            center: true,
+        },
+    },
+    '/subprocessors': {
         size: {
             min: {
                 width: 1,
@@ -1832,6 +1953,26 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     ? 'WIM AI'
                     : path === '/pricing'
                     ? 'Study'
+                    : path === '/account'
+                    ? 'Account'
+                    : path === '/terms'
+                    ? 'Terms'
+                    : path === '/privacy'
+                    ? 'Privacy'
+                    : path === '/cookies'
+                    ? 'Cookies'
+                    : path === '/refund'
+                    ? 'Refund'
+                    : path === '/guidelines'
+                    ? 'Community'
+                    : path === '/copyright'
+                    ? 'Copyright'
+                    : path === '/dpa'
+                    ? 'DPA'
+                    : path === '/baa'
+                    ? 'BAA'
+                    : path === '/subprocessors'
+                    ? 'Subprocessors'
                     : path === '/posts' || path === '/blog'
                     ? 'Posts'
                     : path === '/login' || path === '/signup'

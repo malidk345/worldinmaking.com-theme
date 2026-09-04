@@ -10,6 +10,9 @@ Code is already wired:
 | Checkout API | `src/pages/api/billing/checkout.ts` |
 | Webhook | `src/pages/api/webhooks/lemonsqueezy.ts` |
 | Pricing UI | `src/components/Pricing/PricingWindow.tsx` |
+| Account UI | `src/components/Account/AccountWindow.tsx` |
+| Cancel study | `src/pages/api/billing/cancel.ts` |
+| Delete membership | `src/pages/api/account/delete.ts` |
 | Table | `supabase/migrations/20260830_subscriptions.sql` |
 
 Checkout does **not** fake a payment when keys are missing. Upgrade fails until the store is configured.

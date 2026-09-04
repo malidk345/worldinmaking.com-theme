@@ -1,5 +1,5 @@
 import cntl from 'cntl'
-import { Logo } from '@posthog/brand/logo'
+import WimLogo from 'components/WimLogo'
 import Link from 'next/link'
 import React from 'react'
 
@@ -75,15 +75,7 @@ export default function Breadcrumbs({
             {logo && (
                 <Crumb
                     url="/"
-                    title={
-                        <Logo
-                            className="w-5 h-4"
-                            variant={linkColor ? 'mono' : 'gradient'}
-                            color={linkColor}
-                            layout="logomark"
-                            width="auto"
-                        />
-                    }
+                    title={<WimLogo className="w-5 h-4" />}
                 />
             )}
             {children ||

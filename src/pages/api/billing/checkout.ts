@@ -18,7 +18,7 @@ export default async function handler(req: Request) {
     try {
         const user = await getSupabaseUserFromRequest(req)
         if (!user) {
-            return json({ error: 'Please sign in to upgrade to Pro.' }, 401)
+            return json({ error: 'sign in to open study.' }, 401)
         }
 
         const body = (await req.json().catch(() => ({}))) as Record<string, any>

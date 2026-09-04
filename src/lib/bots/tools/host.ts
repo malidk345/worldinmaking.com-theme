@@ -179,6 +179,7 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
     { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
     { name: 'Study', path: '/pricing', aliases: ['pro', 'upgrade', 'pricing', 'study', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
+    { name: 'Account', path: '/account', aliases: ['account', 'hesap', 'membership', 'cancel', 'delete'] },
     { name: 'Scratchpad', path: '/scratchpad', aliases: ['scratchpad', 'karalama defteri', 'working memory', 'memory', 'notes-draft', 'draft'] },
 ]
 

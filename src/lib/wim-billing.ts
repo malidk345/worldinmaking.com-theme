@@ -261,3 +261,72 @@ export async function createCheckoutSession(params: {
         return { ok: false, error: e?.message || 'Failed to initialize checkout session' }
     }
 }
+
+export function lemonCancelSubscriptionBody(subscriptionId: string) {
+    const id = String(subscriptionId)
+    return {
+        data: {
+            type: 'subscriptions',
+            id,
+            attributes: { cancelled: true },
+        },
+    }
+}
+
+export async function cancelLemonSubscription(
+    subscriptionId: string,
+    env?: EnvStore
+): Promise<{ ok: boolean; status?: string; endsAt?: string | null; error?: string }> {
+    const cfg = getLemonSqueezyConfig(env)
+    if (!cfg.apiKey) return { ok: false, error: 'Lemon Squeezy API key is not configured.' }
+    const id = String(subscriptionId || '').trim()
+    if (!id) return { ok: false, error: 'No Lemon Squeezy subscription id.' }
+
+    try {
+        const res = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            headers: {
+                Accept: 'application/vnd.api+json',
+                'Content-Type': 'application/vnd.api+json',
+                Authorization: `Bearer ${cfg.apiKey}`,
+            },
+            body: JSON.stringify(lemonCancelSubscriptionBody(id)),
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) {
+            const msg = data?.errors?.[0]?.detail || `Lemon Squeezy API error: ${res.status}`
+            return { ok: false, error: msg }
+        }
+        const attrs = data?.data?.attributes || {}
+        return {
+            ok: true,
+            status: attrs.status || 'cancelled',
+            endsAt: attrs.ends_at || attrs.renews_at || null,
+        }
+    } catch (e: any) {
+        return { ok: false, error: e?.message || 'Failed to cancel subscription' }
+    }
+}
+
+export async function getLemonCustomerPortalUrl(
+    subscriptionId: string,
+    env?: EnvStore
+): Promise<string | null> {
+    const cfg = getLemonSqueezyConfig(env)
+    const id = String(subscriptionId || '').trim()
+    if (!cfg.apiKey || !id) return null
+    try {
+        const res = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${encodeURIComponent(id)}`, {
+            headers: {
+                Accept: 'application/vnd.api+json',
+                Authorization: `Bearer ${cfg.apiKey}`,
+            },
+        })
+        if (!res.ok) return null
+        const data = await res.json().catch(() => null)
+        const urls = data?.data?.attributes?.urls || {}
+        return urls.customer_portal || urls.update_payment_method || null
+    } catch {
+        return null
+    }
+}

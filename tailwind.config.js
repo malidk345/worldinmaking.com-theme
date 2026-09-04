@@ -97,8 +97,10 @@ module.exports = {
                 'accent-light': '#e4e4e4',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
-                button: '#1D4ED8',
-                'button-dark': '#1E40AF',
+                button: '#2563EB',
+                'button-dark': '#2563EB',
+                'button-shadow': '#1E3A8A',
+                'button-shadow-dark': '#172554',
                 'button-secondary-dark': '#2563EB',
                 accent: 'rgb(var(--accent) / <alpha-value>)',
 
@@ -151,8 +153,8 @@ module.exports = {
                 // 3000 orange family → navy family (token names kept for class compatibility)
                 'burnt-orange': '#2563EB',
                 'burnt-orange-dark': '#1E3A8A',
-                orange: '#1D4ED8',
-                'orange-dark': '#1E40AF',
+                orange: '#2563EB',
+                'orange-dark': '#1E3A8A',
                 creamsicle: '#93C5FD',
                 'creamsicle-dark': '#3B82F6',
                 fuchsia: '#A621C8',
@@ -195,10 +197,10 @@ module.exports = {
                 // Brand yellow accent → navy blue (dark:text-yellow etc.)
                 yellow: '#3B82F6',
 
-                'button-shadow': '#1E40AF',
-                'button-border': '#1D4ED8',
-                'button-shadow-dark': '#1E3A8A',
-                'button-secondary-shadow-dark': '#172554',
+                'button-shadow': '#1E3A8A',
+                'button-border': '#2563EB',
+                'button-shadow-dark': '#172554',
+                'button-secondary-shadow-dark': '#0F172A',
 
                 border: 'rgb(var(--border) / <alpha-value>)',
                 primary: 'rgb(var(--bg) / <alpha-value>)',

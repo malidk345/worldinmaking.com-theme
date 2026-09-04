@@ -1,4 +1,5 @@
 import posthog from 'posthog-js'
+import { readConsent } from './wim-consent'
 
 function getPostHogKey(): string {
     if (typeof window !== 'undefined') {
@@ -43,27 +44,35 @@ export function initPostHog(): void {
     }
 
     const host = getPostHogHost()
+    const allowed = readConsent() === 'yes'
 
     try {
         posthog.init(key, {
             api_host: host,
             ui_host: host.includes('eu') ? 'https://eu.posthog.com' : 'https://us.posthog.com',
             capture_pageview: false, // Handled explicitly via Next.js router events
-            capture_pageleave: true,
-            autocapture: true,
-            person_profiles: 'always',
-            session_recording: {
-                maskAllInputs: false,
-                maskInputOptions: {
-                    password: true,
-                },
-            },
+            capture_pageleave: allowed,
+            autocapture: allowed,
+            person_profiles: 'identified_only',
+            persistence: allowed ? 'localStorage+cookie' : 'memory',
+            opt_out_capturing_by_default: !allowed,
+            disable_session_recording: !allowed,
+            session_recording: allowed
+                ? {
+                      maskAllInputs: false,
+                      maskInputOptions: {
+                          password: true,
+                      },
+                  }
+                : undefined,
             loaded: (ph) => {
                 isInitialized = true
                 if (typeof window !== 'undefined') {
                     ;(window as any).posthog = ph
                 }
-                console.info('[PostHog] Initialized successfully with host:', host)
+                if (!allowed) {
+                    ph.opt_out_capturing()
+                }
             },
         })
 
@@ -75,11 +84,37 @@ export function initPostHog(): void {
     }
 }
 
-/**
- * Safely track pageview on Next.js route change.
- */
+/** Turn product analytics on or off after the visitor answers the banner. */
+export function applyAnalyticsConsent(accepted: boolean): void {
+    if (typeof window === 'undefined') return
+    try {
+        if (accepted) {
+            posthog.set_config({
+                persistence: 'localStorage+cookie',
+                autocapture: true,
+                capture_pageleave: true,
+                disable_session_recording: false,
+            })
+            posthog.opt_in_capturing()
+            posthog.startSessionRecording?.()
+        } else {
+            posthog.stopSessionRecording?.()
+            posthog.opt_out_capturing()
+            posthog.set_config({
+                persistence: 'memory',
+                autocapture: false,
+                capture_pageleave: false,
+                disable_session_recording: true,
+            })
+        }
+    } catch {
+        // Fail silent
+    }
+}
+
 export function trackPageView(url?: string): void {
     if (typeof window === 'undefined') return
+    if (readConsent() !== 'yes') return
     try {
         posthog.capture('$pageview', {
             $current_url: url || window.location.href,
@@ -94,6 +129,7 @@ export function trackPageView(url?: string): void {
  */
 export function identifyUser(userId: string, traits?: Record<string, any>): void {
     if (typeof window === 'undefined' || !userId) return
+    if (readConsent() !== 'yes') return
     try {
         posthog.identify(userId, traits)
     } catch {
@@ -118,6 +154,7 @@ export function resetUser(): void {
  */
 export function trackEvent(eventName: string, properties?: Record<string, any>): void {
     if (typeof window === 'undefined') return
+    if (readConsent() !== 'yes') return
     try {
         posthog.capture(eventName, properties)
     } catch {
