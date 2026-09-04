@@ -331,7 +331,9 @@ function MarkdownNotebookEditor({
         [registry]
     )
     const [document, setDocument] = useState<NotebookDocument>(() =>
-        ensureEditableNotebookDocument(parseMarkdownNotebook(value))
+        mode === 'edit'
+            ? ensureEditableNotebookDocument(parseMarkdownNotebook(value))
+            : parseMarkdownNotebook(value)
     )
     const [floatingToolbar, setFloatingToolbar] = useState<FloatingToolbarState | null>(null)
     const [insertMenu, setInsertMenu] = useState<InsertMenuState | null>(null)
@@ -603,9 +605,13 @@ function MarkdownNotebookEditor({
             ? getCollapsedSelectionRestoreRequest(window.getSelection(), notebookRef.current)
             : null
         const previousDocument = documentRef.current
-        const reconciledDocument = ensureEditableNotebookDocument(
-            reconcileNotebookDocuments(previousDocument, parseMarkdownNotebook(value)).document
-        )
+        const parsedIncoming = parseMarkdownNotebook(value)
+        const reconciledDocument =
+            mode === 'edit'
+                ? ensureEditableNotebookDocument(
+                      reconcileNotebookDocuments(previousDocument, parsedIncoming).document
+                  )
+                : parsedIncoming
         // An external value change (artifact apply, restore, AI edit) rebases the undo
         // history over the incoming operations instead of clearing it, so CMD+Z keeps
         // reverting only this user's edits.
@@ -5017,7 +5023,7 @@ function MarkdownNotebookEditor({
     }
 
     const renderNotebookRow = (node: NotebookBlockNode, index: number): JSX.Element => {
-        const isTitleRow = index === 0
+        const isTitleRow = mode === 'edit' && index === 0
         const isAIWritingNode = aiWritingNodeIndexSet.has(index)
         const nodeMode = isAIWritingNode ? 'view' : mode
         const isInsertMenuOpen = insertMenu?.nodeId === node.id

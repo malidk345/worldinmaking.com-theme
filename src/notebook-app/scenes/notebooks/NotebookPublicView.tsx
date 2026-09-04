@@ -43,7 +43,9 @@ function authorName(notebook: StoredNotebook): string {
  */
 export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookPublicViewProps): JSX.Element {
     const { addToast } = useToast()
-    const displayTitle = String(notebook.publish?.publicTitle || notebook.title || '').replace(/^#+\s+/, '').trim()
+    const rawTitle = notebook.publish?.publicTitle || notebook.title
+    const leadingHeadingMatch = notebook.content?.match(/^\s*(?:<!--wim-block:[^>]*-->\s*)*#\s+(.+?)(?:\r?\n|$)/)
+    const displayTitle = String(rawTitle || leadingHeadingMatch?.[1] || '').replace(/^#+\s+/, '').trim()
     const subtitle = notebook.publish?.subtitle
     const coverUrl = notebook.publish?.coverUrl
     const category = notebook.publish?.category
@@ -52,7 +54,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     const handle = person?.username || ''
     const href = handle ? profileHref(handle) : ''
     const postedAt = notebook.createdAt || notebook.updatedAt
-    const bodyMarkdown = documentMarkdown(documentMarkdown(notebook.content || '', displayTitle), notebook.title || displayTitle)
+    const bodyMarkdown = documentMarkdown(notebook.content || '', displayTitle)
 
     const handleCopyLink = async () => {
         try {

@@ -130,6 +130,13 @@ test.describe('notebook frontend helpers', () => {
         expect(documentMarkdown('# Hello\n\nBody text', 'Hello')).toBe('Body text')
         expect(documentMarkdown('<ph-query />\n\nKept', 'Other')).toBe('Kept')
         expect(documentMarkdown('<ph-callout>hidden</ph-callout>\nVisible', 'T')).toBe('Visible')
+        // Leading whitespace, CRLF, and wim-block annotations
+        expect(documentMarkdown('\r\n\r\n# Hello\r\n\r\nBody text', 'Hello')).toBe('Body text')
+        expect(documentMarkdown('<!--wim-block:abc-123-->\n# Hello\n\nBody text', 'Hello')).toBe('Body text')
+        // Even when user modified the title in the publish modal, leading H1 is the notebook title and is dropped
+        expect(documentMarkdown('# Hello Draft\n\nBody text', 'Hello Published')).toBe('Body text')
+        // Subheadings that don't match the title are preserved
+        expect(documentMarkdown('## Chapter 1\n\nBody text', 'My Book')).toBe('## Chapter 1\n\nBody text')
     })
 
     test('public links ignore unpublished local drafts', () => {
