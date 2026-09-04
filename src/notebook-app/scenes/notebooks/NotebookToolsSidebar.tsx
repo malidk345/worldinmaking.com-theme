@@ -20,12 +20,10 @@ import { NotebookOutline } from './NotebookOutline'
 import { NotebookHistoryButton } from './NotebookHistory'
 import type { NotebookPresencePerson } from './notebookPresence'
 import type { NotebookChromeSettings } from './notebookChromeSettings'
-import type { NotebookShareTab } from './NotebookShareModal'
 import { extractNotebookComments, extractNotebookSearchHits } from './notebookSidebarModel'
 import {
     NotebookExportButton,
     NotebookSettingsPopover,
-    NotebookShareButton,
     SidebarComments,
     SidebarPeople,
     SidebarSearchHits,
@@ -51,7 +49,6 @@ interface NotebookToolsSidebarProps {
     onHistoryRestored?: (payload: { content: string; title: string }) => void
     chrome?: NotebookChromeSettings
     onChromeChange?: (next: Partial<NotebookChromeSettings>) => void
-    onShare?: (tab?: NotebookShareTab) => void
     people?: NotebookPresencePerson[]
 }
 
@@ -112,7 +109,6 @@ function NotebookToolsSidebarInner({
     onHistoryRestored,
     chrome,
     onChromeChange,
-    onShare,
     people = [],
 }: NotebookToolsSidebarProps): JSX.Element {
     const { isMobile } = useAppSettings()
@@ -366,7 +362,6 @@ function NotebookToolsSidebarInner({
                                         onRestored={onHistoryRestored}
                                     />
                                 )}
-                                {onShare && <NotebookShareButton onShare={onShare} />}
                                 {activeNotebookId && <NotebookExportButton notebookId={activeNotebookId} />}
                                 {chrome && onChromeChange && (
                                     <NotebookSettingsPopover settings={chrome} onChange={onChromeChange} />

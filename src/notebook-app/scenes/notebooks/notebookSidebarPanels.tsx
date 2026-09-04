@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { IconDownload, IconGear, IconShare } from '@posthog/icons'
+import { IconDownload, IconGear } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Link from 'components/Link'
 import { Popover } from 'components/RadixUI/Popover'
@@ -18,7 +18,6 @@ import {
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf } from './exportNotebookPdf'
-import type { NotebookShareTab } from './NotebookShareModal'
 
 export function NotebookSettingsPopover({
     settings,
@@ -110,12 +109,6 @@ export function NotebookSettingsPopover({
                 </p>
             </div>
         </Popover>
-    )
-}
-
-export function NotebookShareButton({ onShare }: { onShare: (tab?: NotebookShareTab) => void }): JSX.Element {
-    return (
-        <OSButton size="md" icon={<IconShare />} aria-label="Share" tooltip="Share" onClick={() => onShare('private')} />
     )
 }
 
