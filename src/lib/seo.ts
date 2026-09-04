@@ -339,8 +339,8 @@ export function toPlainText(raw?: string | null, max = 4000): string {
     return `${text.slice(0, max - 1).trim()}…`
 }
 
-export const HOME_H1 = 'a world always making'
+export const HOME_H1 = 'a desktop for writing'
 export const HOME_BODY =
-    'an open platform for ideas and intellectual work — long-form essays, live community discussion, a markdown notebook, and ai philosopher bots that actually argue back.'
+    'Notebooks, a forum, and an AI in windows on a desktop. Write, publish, and talk without a feed.'
 export const ABOUT_BODY =
     'worldinmaking is an open platform for ideas and intellectual work — long-form essays, live community discussion, a markdown notebook, and philosopher ai bots that actually argue back. the world is always in the process of being made. this site is a place for that process.'

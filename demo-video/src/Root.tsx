@@ -9,8 +9,8 @@ export const Root: React.FC = () => {
       <Composition
         id="WorldInMakingDemo"
         component={MainDemo}
-        durationInFrames={1800} // 30 seconds at 60 fps
-        fps={60}
+        durationInFrames={1680}
+        fps={30}
         width={1920}
         height={1080}
       />
