@@ -22,7 +22,11 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
             !path.startsWith('/community/achievements'))
     const isBlogShell = /^\/(blog|posts)(\/|$)/.test(path)
     const lockToWindow =
-        isForumShell || isBlogShell || isArtifactWindowPath(path) || isNotebookWindowPath(path)
+        isForumShell ||
+        isBlogShell ||
+        isArtifactWindowPath(path) ||
+        isNotebookWindowPath(path) ||
+        path === '/display-options'
 
     return (
         <div

@@ -15,6 +15,7 @@ import pixelForumsIcon from '../../images/icons/pixel-forums.png'
 import pixelPricingIcon from '../../images/icons/pixel-pricing.png'
 import pixelEnvelopeIcon from '../../images/icons/pixel-envelope.png'
 import pixelPageIcon from '../../images/icons/pixel-page.png'
+import pixelDocIcon from '../../images/icons/pixel-doc.png'
 import usePostHog from 'hooks/usePostHog'
 import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
@@ -60,6 +61,7 @@ const PRODUCT_ICON_MAP = {
     doc: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/doc_classic_7f14381c43.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/doc_2fa451a8e4.png',
+        pixel: importedSrc(pixelDocIcon),
     },
     folder: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/folder_classic_d2fdf96f82.png',
@@ -137,6 +139,7 @@ const PRODUCT_ICON_MAP = {
     pdf: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/pdf_classic_069acad91b.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/pdf_64c653db35.png',
+        pixel: importedSrc(pixelDocIcon),
     },
     pdf_locked: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/pdf_locked_classic_395a6801c4.png',
