@@ -21,6 +21,18 @@ function scrubProviderDetail(detail: string): string {
     return scrubSecretMaterial(detail)
 }
 
+function isClientAbortDetail(detail: string): boolean {
+    const d = detail.toLowerCase()
+    return d.includes('client request aborted') || d.includes('aborterror') || d === 'aborted'
+}
+
+function isAbortError(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false
+    const name = (err as { name?: unknown }).name
+    if (name === 'AbortError') return true
+    const message = String((err as { message?: unknown }).message || '').toLowerCase()
+    return message.includes('client request aborted') || message.includes('aborterror')
+}
 
 export const GATEWAY_TOTAL_TIMEOUT_MS = 28_000
 export const FAILOVER_RESERVE_MS = 9_000
@@ -658,8 +670,12 @@ async function chatCompletionsStream(
     history?: GatewayMessage[],
     thinkingDepth?: ThinkingDepth,
     compact?: boolean,
+    signal?: AbortSignal,
 ): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
     try {
+        if (signal?.aborted) {
+            return { ok: false, detail: 'client request aborted' }
+        }
         const timeoutMs = resolveRequestTimeoutMs(model, deadline)
         const payload = resolveChatPayload(url, model, systemPrompt, userPrompt, history, thinkingDepth, compact)
         if (payload.skip) {
@@ -681,6 +697,7 @@ async function chatCompletionsStream(
                 stream: true,
                 ...providerBodyExtras(model, thinkingDepth),
             }),
+            signal,
         }, timeoutMs)
 
         if (!fetchRes.ok) {
@@ -699,6 +716,7 @@ async function chatCompletionsStream(
                     history,
                     thinkingDepth,
                     true,
+                    signal,
                 )
             }
             return { ok: false, detail }
@@ -714,10 +732,32 @@ async function chatCompletionsStream(
             let buffer = ''
             
             const wrapState: ReasoningWrapState = { opened: false, closed: false }
+            const onAbort = () => {
+                try {
+                    void reader.cancel('client-abort')
+                } catch {
+                    /* already closed */
+                }
+            }
+            if (signal) {
+                if (signal.aborted) {
+                    onAbort()
+                } else {
+                    signal.addEventListener('abort', onAbort, { once: true })
+                }
+            }
 
             try {
                 while (true) {
-                    const { done, value } = await reader.read()
+                    if (signal?.aborted) break
+                    let chunk: ReadableStreamReadResult<Uint8Array>
+                    try {
+                        chunk = await reader.read()
+                    } catch (err) {
+                        if (signal?.aborted || isAbortError(err)) break
+                        throw err
+                    }
+                    const { done, value } = chunk
                     if (done) break
                     
                     buffer += decoder.decode(value, { stream: true })
@@ -746,12 +786,20 @@ async function chatCompletionsStream(
                     yield piece
                 }
             } finally {
-                reader.releaseLock()
+                if (signal) signal.removeEventListener('abort', onAbort)
+                try {
+                    reader.releaseLock()
+                } catch {
+                    /* cancelled */
+                }
             }
         }
 
         return { ok: true, stream: streamGenerator() }
     } catch (e: any) {
+        if (signal?.aborted || isAbortError(e)) {
+            return { ok: false, detail: 'client request aborted' }
+        }
         return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
@@ -900,8 +948,12 @@ async function geminiGenerateStream(
     history?: GatewayMessage[],
     thinkingDepth?: ThinkingDepth,
     disableNativeThinking = false,
+    signal?: AbortSignal,
 ): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
     try {
+        if (signal?.aborted) {
+            return { ok: false, detail: 'client request aborted' }
+        }
         const timeoutMs = geminiRequestTimeoutMs(model, disableNativeThinking ? 'brief' : thinkingDepth, deadline)
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`
         const fetchRes = await fetchWithTimeout(url, {
@@ -916,6 +968,7 @@ async function geminiGenerateStream(
                     temperature,
                 ),
             }),
+            signal,
         }, timeoutMs)
         if (!fetchRes.ok) {
             const raw = await fetchRes.text()
@@ -931,6 +984,7 @@ async function geminiGenerateStream(
                     history,
                     thinkingDepth,
                     true,
+                    signal,
                 )
             }
             return { ok: false, detail }
@@ -942,9 +996,31 @@ async function geminiGenerateStream(
             const decoder = new TextDecoder()
             const wrapState: ReasoningWrapState = { opened: false, closed: false }
             let buffer = ''
+            const onAbort = () => {
+                try {
+                    void reader.cancel('client-abort')
+                } catch {
+                    /* already closed */
+                }
+            }
+            if (signal) {
+                if (signal.aborted) {
+                    onAbort()
+                } else {
+                    signal.addEventListener('abort', onAbort, { once: true })
+                }
+            }
             try {
                 while (true) {
-                    const { value, done } = await reader.read()
+                    if (signal?.aborted) break
+                    let chunk: ReadableStreamReadResult<Uint8Array>
+                    try {
+                        chunk = await reader.read()
+                    } catch (err) {
+                        if (signal?.aborted || isAbortError(err)) break
+                        throw err
+                    }
+                    const { value, done } = chunk
                     if (done) break
                     buffer += decoder.decode(value, { stream: true })
                     const lines = buffer.split('\n')
@@ -972,12 +1048,20 @@ async function geminiGenerateStream(
                     yield piece
                 }
             } finally {
-                reader.releaseLock()
+                if (signal) signal.removeEventListener('abort', onAbort)
+                try {
+                    reader.releaseLock()
+                } catch {
+                    /* cancelled */
+                }
             }
         }
 
         return { ok: true, stream: streamGenerator() }
     } catch (e: any) {
+        if (signal?.aborted || isAbortError(e)) {
+            return { ok: false, detail: 'client request aborted' }
+        }
         return { ok: false, detail: scrubProviderDetail(e?.message || 'fetch error') }
     }
 }
@@ -1255,15 +1339,29 @@ export async function streamWithGateway(params: {
     env?: EnvStore
     thinkingDepth?: ThinkingDepth
     skipFamilies?: ProviderFamily[]
+    /** Abort in-flight provider fetch / SSE when the client disconnects or hits Stop. */
+    signal?: AbortSignal
 }): Promise<StreamResult | GenerateFailure> {
     const started = Date.now()
     const runtimeEnv = params.env ?? getRuntimeEnv()
     const deadline = started + GATEWAY_TOTAL_TIMEOUT_MS
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
+    const signal = params.signal
 
     const systemPrompt = params.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
     const userPrompt = params.userPrompt.slice(0, MAX_USER_PROMPT_CHARS)
+
+    if (signal?.aborted) {
+        return {
+            ok: false,
+            provider: 'none',
+            attempts: ['client aborted before stream'],
+            configured,
+            error: 'client request aborted',
+            latencyMs: 0,
+        }
+    }
 
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(runtimeEnv))
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
@@ -1275,6 +1373,10 @@ export async function streamWithGateway(params: {
     })
 
     for (const family of getFamilyOrder(params.skipFamilies, nextPrimaryFamilyStart())) {
+        if (signal?.aborted) {
+            attempts.push('client aborted')
+            break
+        }
         if (Date.now() >= deadline) {
             attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
             break
@@ -1282,6 +1384,10 @@ export async function streamWithGateway(params: {
 
         if (family === 'groq' && groqKeys.length > 0) {
             for (const key of groqKeys) {
+                if (signal?.aborted) {
+                    attempts.push('client aborted')
+                    break
+                }
                 if (Date.now() >= deadline) break
                 const r = await chatCompletionsStream(
                     'https://api.groq.com/openai/v1/chat/completions',
@@ -1294,6 +1400,8 @@ export async function streamWithGateway(params: {
                     deadline,
                     params.history,
                     params.thinkingDepth,
+                    undefined,
+                    signal,
                 )
                 if (r.ok) {
                     resetKeyCooldownStreak('groq', key)
@@ -1303,13 +1411,24 @@ export async function streamWithGateway(params: {
                     })
                     return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
                 }
+                attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
+                if (isClientAbortDetail(r.detail)) {
+                    return {
+                        ok: false,
+                        provider: 'none',
+                        attempts,
+                        configured,
+                        error: 'client request aborted',
+                        latencyMs: Date.now() - started,
+                    }
+                }
                 if (isRateLimitDetail(r.detail)) {
                     markGroqKeyCooling(key)
                 } else if (isAuthDetail(r.detail)) {
                     markGroqKeyCooling(key, AUTH_KEY_COOLDOWN_MS)
                 }
-                attempts.push(`groq(${groqModel})[${groqKeys.indexOf(key) + 1}/${groqKeys.length} …${keyId(key)}]: ${r.detail}`)
             }
+            if (signal?.aborted) break
             if (groqKeys.length > 0 && groqKeys.every((key) => isGroqKeyCooling(key))) {
                 markFamilyCooling('groq')
             }
@@ -1319,10 +1438,18 @@ export async function streamWithGateway(params: {
 
         if (family === 'gemini' && geminiKeys.length > 0) {
             for (const key of geminiKeys) {
+                if (signal?.aborted) {
+                    attempts.push('client aborted')
+                    break
+                }
                 if (Date.now() >= deadline) break
                 const keyIdx = geminiKeys.indexOf(key) + 1
                 let skipRestOfKey = false
                 for (const model of GEMINI_MODELS) {
+                    if (signal?.aborted) {
+                        attempts.push('client aborted')
+                        break
+                    }
                     if (Date.now() >= deadline || skipRestOfKey) break
                     const r = await geminiGenerateStream(
                         key,
@@ -1333,6 +1460,8 @@ export async function streamWithGateway(params: {
                         deadline,
                         params.history,
                         params.thinkingDepth,
+                        false,
+                        signal,
                     )
                     if (r.ok) {
                         resetKeyCooldownStreak('gemini', key)
@@ -1343,6 +1472,16 @@ export async function streamWithGateway(params: {
                         return { ok: true, provider: `gemini-fetch:${model}`, stream: r.stream, attempts, configured }
                     }
                     attempts.push(`gemini[${keyIdx}/${geminiKeys.length} …${keyId(key)}](${model}): ${r.detail}`)
+                    if (isClientAbortDetail(r.detail)) {
+                        return {
+                            ok: false,
+                            provider: 'none',
+                            attempts,
+                            configured,
+                            error: 'client request aborted',
+                            latencyMs: Date.now() - started,
+                        }
+                    }
                     if (isRateLimitDetail(r.detail)) {
                         markFamilyKeyCooling('gemini', key)
                         skipRestOfKey = true
@@ -1353,7 +1492,9 @@ export async function streamWithGateway(params: {
                         skipRestOfKey = true
                     }
                 }
+                if (signal?.aborted) break
             }
+            if (signal?.aborted) break
             if (geminiKeys.length > 0 && geminiKeys.every((key) => isFamilyKeyCooling('gemini', key))) {
                 markFamilyCooling('gemini')
             }
@@ -1367,7 +1508,7 @@ export async function streamWithGateway(params: {
         provider: 'none',
         attempts,
         configured,
-        error: 'All streaming providers failed.',
+        error: signal?.aborted ? 'client request aborted' : 'All streaming providers failed.',
         latencyMs: Date.now() - started,
     }
 }
