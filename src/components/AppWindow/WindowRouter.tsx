@@ -234,7 +234,8 @@ const WindowRouter = (props: WindowRouterProps) => {
         isAskAiPath(path) ||
         isBlogPath(path) ||
         isArtifactWindowPath(path) ||
-        isNotebookWindowPath(path)
+        isNotebookWindowPath(path) ||
+        isProfilePath(path)
     // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
     // settings, mobile FAB) stays on the pane. Content scrolls inside.
     return (

@@ -320,11 +320,11 @@ const AvatarBlock = ({
         <div className={isEditing ? 'mb-4 space-y-3' : 'flex items-start gap-3 mb-4'}>
             <div className={`relative flex-shrink-0 ${isEditing ? 'w-20' : 'w-16'}`}>
                 <Avatar
-                    className="w-full rounded-full border border-primary bg-accent"
+                    className="w-full rounded border border-primary bg-accent"
                     src={imageURL}
                 />
                 {isEditing && (
-                    <div className="absolute -right-1 -bottom-1 flex items-center rounded-full overflow-hidden border border-primary bg-primary">
+                    <div className="absolute -right-1 -bottom-1 flex items-center rounded overflow-hidden border border-primary bg-primary">
                         <div className="relative p-1 overflow-hidden">
                             <IconUpload className="size-3.5" />
                             <input
@@ -550,15 +550,15 @@ const Details = ({
 
 const ProfileSkeleton = () => {
     return (
-        <div data-scheme="secondary" className="h-full bg-primary">
+        <div data-scheme="primary" className="h-full min-h-full bg-primary text-primary">
             <ScrollArea>
-                <div data-scheme="primary" className="mx-auto max-w-screen-xl px-4 pb-4 @container">
+                <div className="mx-auto max-w-screen-xl px-4 pb-4 @container">
                     <div className="flex flex-col @2xl:flex-row gap-6 p-6">
                         {/* Left sidebar skeleton */}
                         <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4">
                             {/* Avatar section skeleton */}
                             <div className="flex items-start gap-3 mb-4">
-                                <div className="w-16 h-16 rounded-full bg-accent animate-pulse border border-primary flex-shrink-0" />
+                                <div className="w-16 h-16 rounded bg-accent animate-pulse border border-primary flex-shrink-0" />
                                 <div className="pt-1 space-y-2">
                                     <div className="h-4 w-28 bg-accent animate-pulse rounded" />
                                     <div className="h-3 w-20 bg-accent animate-pulse rounded" />
@@ -584,13 +584,10 @@ const ProfileSkeleton = () => {
 
                         {/* Right content skeleton */}
                         <div className="flex-grow @container">
-                            {/* Tabs skeleton */}
-                            <div className="bg-primary rounded-md border border-primary mb-6">
-                                <div className="p-6 space-y-4">
-                                    <div className="h-4 w-full bg-accent animate-pulse rounded" />
-                                    <div className="h-4 w-3/4 bg-accent animate-pulse rounded" />
-                                    <div className="h-4 w-1/2 bg-accent animate-pulse rounded" />
-                                </div>
+                            <div className="space-y-4 pt-2">
+                                <div className="h-4 w-full bg-accent animate-pulse rounded" />
+                                <div className="h-4 w-3/4 bg-accent animate-pulse rounded" />
+                                <div className="h-4 w-1/2 bg-accent animate-pulse rounded" />
                             </div>
                         </div>
                     </div>
@@ -851,9 +848,13 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
     }, [])
 
     return (
-        <div data-scheme="secondary">
-            <OSTabs tabs={tabs} defaultValue={initialTab} className="h-auto" triggerDataScheme="primary" />
-        </div>
+        <OSTabs
+            tabs={tabs}
+            defaultValue={initialTab}
+            className="h-auto"
+            triggerDataScheme="primary"
+            tabContentDataScheme="primary"
+        />
     )
 }
 
@@ -1124,11 +1125,11 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
     }
 
     return (
-        <div data-scheme="secondary" className="pt-4 h-full bg-primary text-primary flex flex-col">
+        <div data-scheme="primary" className="pt-4 h-full min-h-full bg-primary text-primary flex flex-col">
             <SEO title={`${name}'s profile - PostHog`} />
 
             <ScrollArea className="min-h-0 h-full">
-                <div data-scheme="primary" className="mx-auto max-w-screen-xl px-4 pb-4 @container">
+                <div className="mx-auto max-w-screen-xl px-4 pb-4 @container">
                     <div className="flex flex-col @2xl:flex-row gap-6 p-4">
                         <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4 space-y-4">
                             <AvatarBlock

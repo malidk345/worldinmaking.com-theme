@@ -1,6 +1,7 @@
 import React from 'react'
 import type { AppWindow } from '../../context/Window'
 import { isArtifactWindowPath, isNotebookWindowPath } from '../../lib/window-path'
+import { isProfilePath } from '../../lib/profile-path'
 import WindowErrorBoundary from './WindowErrorBoundary'
 
 interface WindowContentProps {
@@ -26,6 +27,7 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
         isBlogShell ||
         isArtifactWindowPath(path) ||
         isNotebookWindowPath(path) ||
+        isProfilePath(path) ||
         path === '/display-options'
 
     return (
