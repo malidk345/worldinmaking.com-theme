@@ -95,7 +95,10 @@
                 siteSettings.wallpaper = 'keyboard-mint'
             }
             siteSettings.reduceTransparency = true
-            siteSettings.siteDefaultsVersion = 2
+        }
+        if (version < 3) {
+            siteSettings.iconSet = 'pixel'
+            siteSettings.siteDefaultsVersion = 3
             try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (e) {}
         }
         wallpaper = siteSettings.wallpaper || 'keyboard-mint'
@@ -106,6 +109,7 @@
             preferredTheme = siteSettings.colorMode
         }
         document.body.setAttribute('data-wallpaper', wallpaper)
+        document.body.setAttribute('data-icon-set', siteSettings.iconSet === 'default' ? 'default' : 'pixel')
         document.body.setAttribute(
             'data-reduce-transparency',
             siteSettings.reduceTransparency === false ? 'false' : 'true'

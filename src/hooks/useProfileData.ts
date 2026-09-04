@@ -112,7 +112,22 @@ export function useProfileData(identifier?: string | number) {
 
     // Fallback: If logged-in user matches or data query is pending/empty, populate from session immediately
     const profileData = useMemo(() => {
-        if (data) return data
+        if (data) {
+            if (!isCurrentUser || !user?.profile) return data
+            const fromSession = user.profile
+            return {
+                ...data,
+                attributes: {
+                    ...data.attributes,
+                    github: data.attributes?.github || fromSession.github || null,
+                    twitter: data.attributes?.twitter || fromSession.twitter || null,
+                    linkedin: data.attributes?.linkedin || fromSession.linkedin || null,
+                    website: data.attributes?.website || fromSession.website || null,
+                    contactEmail: data.attributes?.contactEmail || fromSession.contactEmail || null,
+                    biography: data.attributes?.biography || fromSession.biography || '',
+                },
+            }
+        }
         if (isCurrentUser && user) {
             const username = user.username || 'user'
             return {

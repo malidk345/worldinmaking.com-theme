@@ -87,6 +87,21 @@ const stripUrlPrefix = (url: string) => {
     return url.replace(/^https?:\/\/(www\.)?/, '')
 }
 
+const emptyToNull = (value: unknown): string | null => {
+    if (value == null) return null
+    const trimmed = String(value).trim()
+    return trimmed ? trimmed : null
+}
+
+const toHref = (value: unknown): string | null => {
+    const raw = emptyToNull(value)
+    if (!raw) return null
+    if (/^(https?:|mailto:)/i.test(raw)) return raw
+    if (raw.startsWith('//')) return `https:${raw}`
+    if (raw.startsWith('@')) return `https://x.com/${raw.slice(1)}`
+    return `https://${raw.replace(/^\/+/, '')}`
+}
+
 const Links = ({
     profile,
     isEditing,
@@ -100,9 +115,9 @@ const Links = ({
     formValues: any
     errors: any
 }) => {
-    return (
-        <ul className={`flex m-0 p-0 list-none ${isEditing ? 'flex-col space-y-3' : 'space-x-3'}`}>
-            {isEditing ? (
+    if (isEditing) {
+        return (
+            <ul className="flex m-0 p-0 list-none flex-col space-y-3">
                 <li>
                     <Input
                         error={errors.github}
@@ -112,23 +127,6 @@ const Links = ({
                         onChange={(e) => setFieldValue('github', e.target.value)}
                     />
                 </li>
-            ) : (
-                profile.github && (
-                    <li>
-                        <Tooltip
-                            delay={0}
-                            trigger={
-                                <Link href={profile.github} externalNoIcon>
-                                    <GitHub className="w-6 h-6 opacity-80 hover:opacity-100 transition-opacity" />
-                                </Link>
-                            }
-                        >
-                            {stripUrlPrefix(profile.github)}
-                        </Tooltip>
-                    </li>
-                )
-            )}
-            {isEditing ? (
                 <li>
                     <Input
                         error={errors.twitter}
@@ -138,23 +136,6 @@ const Links = ({
                         onChange={(e) => setFieldValue('twitter', e.target.value)}
                     />
                 </li>
-            ) : (
-                profile.twitter && (
-                    <li>
-                        <Tooltip
-                            delay={0}
-                            trigger={
-                                <Link href={profile.twitter} externalNoIcon>
-                                    <Twitter className="w-6 h-6 opacity-80 hover:opacity-100 transition-opacity" />
-                                </Link>
-                            }
-                        >
-                            {stripUrlPrefix(profile.twitter)}
-                        </Tooltip>
-                    </li>
-                )
-            )}
-            {isEditing ? (
                 <li>
                     <Input
                         error={errors.linkedin}
@@ -164,23 +145,6 @@ const Links = ({
                         onChange={(e) => setFieldValue('linkedin', e.target.value)}
                     />
                 </li>
-            ) : (
-                profile.linkedin && (
-                    <li>
-                        <Tooltip
-                            delay={0}
-                            trigger={
-                                <Link href={profile.linkedin} externalNoIcon>
-                                    <LinkedIn className="w-6 h-6 opacity-80 hover:opacity-100 transition-opacity" />
-                                </Link>
-                            }
-                        >
-                            {stripUrlPrefix(profile.linkedin)}
-                        </Tooltip>
-                    </li>
-                )
-            )}
-            {isEditing ? (
                 <li>
                     <Input
                         error={errors.website}
@@ -190,23 +154,6 @@ const Links = ({
                         onChange={(e) => setFieldValue('website', e.target.value)}
                     />
                 </li>
-            ) : (
-                profile.website && (
-                    <li>
-                        <Tooltip
-                            delay={0}
-                            trigger={
-                                <Link href={profile.website} externalNoIcon>
-                                    <WebsiteIcon />
-                                </Link>
-                            }
-                        >
-                            {stripUrlPrefix(profile.website)}
-                        </Tooltip>
-                    </li>
-                )
-            )}
-            {isEditing ? (
                 <li>
                     <Input
                         error={errors.contactEmail}
@@ -217,22 +164,40 @@ const Links = ({
                         onChange={(e) => setFieldValue('contactEmail', e.target.value)}
                     />
                 </li>
-            ) : (
-                profile.contactEmail && (
-                    <li>
-                        <Tooltip
-                            delay={0}
-                            trigger={
-                                <Link href={`mailto:${profile.contactEmail}`} externalNoIcon>
-                                    <EmailIcon />
-                                </Link>
-                            }
-                        >
-                            {profile.contactEmail}
-                        </Tooltip>
-                    </li>
-                )
-            )}
+            </ul>
+        )
+    }
+
+    const items = [
+        { key: 'github', href: toHref(profile.github), label: 'GitHub', icon: <GitHub className="w-4 h-4" /> },
+        { key: 'twitter', href: toHref(profile.twitter), label: 'X', icon: <Twitter className="w-4 h-4" /> },
+        { key: 'linkedin', href: toHref(profile.linkedin), label: 'LinkedIn', icon: <LinkedIn className="w-4 h-4" /> },
+        { key: 'website', href: toHref(profile.website), label: 'Website', icon: <WebsiteIcon /> },
+        {
+            key: 'email',
+            href: profile.contactEmail ? `mailto:${profile.contactEmail}` : null,
+            label: 'Email',
+            icon: <EmailIcon />,
+            text: profile.contactEmail,
+        },
+    ].filter((item) => item.href)
+
+    if (!items.length) return null
+
+    return (
+        <ul className="flex flex-col m-0 p-0 list-none space-y-1.5">
+            {items.map((item) => (
+                <li key={item.key}>
+                    <Link
+                        href={item.href || '#'}
+                        externalNoIcon
+                        className="flex items-center gap-2 text-sm text-primary hover:text-primary min-w-0"
+                    >
+                        <span className="flex-shrink-0 opacity-80">{item.icon}</span>
+                        <span className="truncate">{item.text || stripUrlPrefix(item.href || '')}</span>
+                    </Link>
+                </li>
+            ))}
         </ul>
     )
 }
@@ -623,8 +588,7 @@ const SavedPosts = () => {
 const Block = ({ title, children, url, className }) => {
     return (
         <Fieldset
-            data-scheme="secondary"
-            className={`bg-primary ${className}`}
+            className={className}
             legend={
                 url ? (
                     <Link className="font-semibold group" to={url} state={{ newWindow: true }}>
@@ -839,11 +803,11 @@ const ValidationSchema = Yup.object().shape({
         .required('Required')
         .test('username', '2–32 letters, numbers, _ or -', (value) => isValidProfileUsername(value)),
     birthDate: Yup.string().nullable(),
-    website: Yup.string().url('Invalid URL').nullable(),
-    github: Yup.string().url('Invalid URL').nullable(),
-    linkedin: Yup.string().url('Invalid URL').nullable(),
-    twitter: Yup.string().url('Invalid URL').nullable(),
-    contactEmail: Yup.string().transform((v) => (v === '' ? null : v)).email('Invalid email').nullable(),
+    website: Yup.string().transform(toHref).url('Invalid URL').nullable(),
+    github: Yup.string().transform(toHref).url('Invalid URL').nullable(),
+    linkedin: Yup.string().transform(toHref).url('Invalid URL').nullable(),
+    twitter: Yup.string().transform(toHref).url('Invalid URL').nullable(),
+    contactEmail: Yup.string().transform((v) => emptyToNull(v)).email('Invalid email').nullable(),
     biography: Yup.string().max(3000, 'Please limit your bio to 3,000 characters, you wordsmith!').nullable(),
     location: Yup.string().nullable(),
 })
@@ -1026,11 +990,11 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     last_name: String(values.lastName || '').trim() || null,
                     bio: values.biography ?? null,
                     location: values.location ?? null,
-                    website: values.website ?? null,
-                    contact_email: values.contactEmail?.trim() || null,
-                    github: values.github ?? null,
-                    linkedin: values.linkedin ?? null,
-                    twitter: values.twitter ?? null,
+                    website: toHref(values.website),
+                    contact_email: emptyToNull(values.contactEmail),
+                    github: toHref(values.github),
+                    linkedin: toHref(values.linkedin),
+                    twitter: toHref(values.twitter),
                     pronouns: values.pronouns ?? null,
                     birth_date: values.birthDate ? String(values.birthDate).slice(0, 10) : null,
                     preferred_language: values.preferredLanguage || 'en',
@@ -1126,8 +1090,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             )}
 
                             {(isEditing || profile.biography) && (
-                                isEditing ? (
-                                    <Block title="Bio">
+                                <Block title="Bio">
+                                    {isEditing ? (
                                         <div className="space-y-1" data-writing-surface>
                                             <textarea
                                                 name="biography"
@@ -1142,12 +1106,12 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                                 <p className="text-red text-xs font-bold m-0">{errors.biography}</p>
                                             )}
                                         </div>
-                                    </Block>
-                                ) : (
-                                    <Markdown className="prose dark:prose-invert prose-sm max-w-full m-0">
-                                        {profile.biography}
-                                    </Markdown>
-                                )
+                                    ) : (
+                                        <Markdown className="prose dark:prose-invert prose-sm max-w-full m-0">
+                                            {profile.biography}
+                                        </Markdown>
+                                    )}
+                                </Block>
                             )}
 
                             {(isEditing ||
@@ -1155,26 +1119,28 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 profile.twitter ||
                                 profile.linkedin ||
                                 profile.website ||
-                                profile.contactEmail) && (
-                                isEditing ? (
-                                    <Block title="Links">
-                                        <Links
-                                            errors={errors}
-                                            setFieldValue={setFieldValue}
-                                            formValues={values}
-                                            profile={profile}
-                                            isEditing={isEditing}
-                                        />
-                                    </Block>
-                                ) : (
+                                profile.contactEmail ||
+                                values.github ||
+                                values.twitter ||
+                                values.linkedin ||
+                                values.website ||
+                                values.contactEmail) && (
+                                <Block title="Links">
                                     <Links
                                         errors={errors}
                                         setFieldValue={setFieldValue}
                                         formValues={values}
-                                        profile={profile}
+                                        profile={{
+                                            ...profile,
+                                            github: profile.github || values.github,
+                                            twitter: profile.twitter || values.twitter,
+                                            linkedin: profile.linkedin || values.linkedin,
+                                            website: profile.website || values.website,
+                                            contactEmail: profile.contactEmail || values.contactEmail,
+                                        }}
                                         isEditing={isEditing}
                                     />
-                                )
+                                </Block>
                             )}
 
                             {(isCurrentUser || (isModerator && user?.webmaster)) && (

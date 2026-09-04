@@ -10,8 +10,9 @@ export type ResolvedTheme = 'light' | 'dark'
 
 export const DEFAULT_WALLPAPER: WallpaperName = 'keyboard-mint'
 export const DEFAULT_REDUCE_TRANSPARENCY = true
+export const DEFAULT_ICON_SET = 'pixel' as const
 /** Bump when product appearance defaults change so existing local settings pick them up once. */
-export const SITE_APPEARANCE_DEFAULTS_VERSION = 2
+export const SITE_APPEARANCE_DEFAULTS_VERSION = 3
 const PREVIOUS_DEFAULT_WALLPAPER: WallpaperName = 'draft-world'
 
 export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
@@ -53,24 +54,33 @@ export function resolveKeptWallpaper(wallpaper: string | null | undefined): Wall
 export function migrateAppearanceSettings<T extends {
     wallpaper?: string
     reduceTransparency?: boolean
+    iconSet?: string
     siteDefaultsVersion?: number
 }>(settings: T): T {
     const version = Number(settings.siteDefaultsVersion || 0)
+    let next: T = {
+        ...settings,
+        wallpaper: resolveKeptWallpaper(settings.wallpaper),
+    }
     if (version >= SITE_APPEARANCE_DEFAULTS_VERSION) {
-        return {
-            ...settings,
-            wallpaper: resolveKeptWallpaper(settings.wallpaper),
+        return next
+    }
+    if (version < 2) {
+        const raw = settings.wallpaper
+        next = {
+            ...next,
+            wallpaper:
+                !raw || raw === PREVIOUS_DEFAULT_WALLPAPER || !KEPT_WALLPAPERS.includes(raw as WallpaperName)
+                    ? DEFAULT_WALLPAPER
+                    : resolveKeptWallpaper(raw),
+            reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         }
     }
-    const raw = settings.wallpaper
-    const wallpaper =
-        !raw || raw === PREVIOUS_DEFAULT_WALLPAPER || !KEPT_WALLPAPERS.includes(raw as WallpaperName)
-            ? DEFAULT_WALLPAPER
-            : resolveKeptWallpaper(raw)
+    if (version < 3) {
+        next = { ...next, iconSet: DEFAULT_ICON_SET }
+    }
     return {
-        ...settings,
-        wallpaper,
-        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
+        ...next,
         siteDefaultsVersion: SITE_APPEARANCE_DEFAULTS_VERSION,
     }
 }

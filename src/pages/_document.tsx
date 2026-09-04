@@ -1,5 +1,6 @@
 import { Html, Head, Main, NextScript } from 'next/document'
 import {
+    DEFAULT_ICON_SET,
     DEFAULT_REDUCE_TRANSPARENCY,
     DEFAULT_WALLPAPER,
     DEFAULT_WALLPAPER_THEME_COLOR,
@@ -25,18 +26,25 @@ const themeScript = `(function () {
     if (colorMode === 'light' || colorMode === 'dark') theme = colorMode
     var skin = siteSettings.skinMode || siteSettings.skin || 'modern'
     var DEFAULT_WALLPAPER = ${JSON.stringify(DEFAULT_WALLPAPER)}
+    var DEFAULT_ICON_SET = ${JSON.stringify(DEFAULT_ICON_SET)}
     var KEPT = ${JSON.stringify(KEPT_WALLPAPERS)}
     var DEFAULTS_VERSION = ${JSON.stringify(SITE_APPEARANCE_DEFAULTS_VERSION)}
     var version = Number(siteSettings.siteDefaultsVersion || 0)
-    if (version < DEFAULTS_VERSION) {
+    if (version < 2) {
         if (!siteSettings.wallpaper || siteSettings.wallpaper === 'draft-world' || KEPT.indexOf(siteSettings.wallpaper) === -1) {
             siteSettings.wallpaper = DEFAULT_WALLPAPER
         }
         siteSettings.reduceTransparency = ${JSON.stringify(DEFAULT_REDUCE_TRANSPARENCY)}
+    }
+    if (version < 3) {
+        siteSettings.iconSet = DEFAULT_ICON_SET
+    }
+    if (version < DEFAULTS_VERSION) {
         siteSettings.siteDefaultsVersion = DEFAULTS_VERSION
         try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (err) {/* ignore */ }
     }
     var wallpaper = siteSettings.wallpaper || DEFAULT_WALLPAPER
+    var iconSet = siteSettings.iconSet === 'default' ? 'default' : DEFAULT_ICON_SET
     var reduceTransparency = siteSettings.reduceTransparency === false ? 'false' : 'true'
     var THEME_COLORS = ${JSON.stringify(WALLPAPER_THEME_COLORS)}
     if (KEPT.indexOf(wallpaper) === -1) wallpaper = DEFAULT_WALLPAPER
@@ -86,6 +94,7 @@ const themeScript = `(function () {
         el.className = theme
         el.setAttribute('data-skin', skin)
         el.setAttribute('data-wallpaper', wallpaper)
+        el.setAttribute('data-icon-set', iconSet)
         el.setAttribute('data-reduce-transparency', reduceTransparency)
     }
 
@@ -159,7 +168,7 @@ export default function Document() {
                 <meta name="color-scheme" content="light dark" />
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
-            <body data-scheme="primary" data-skin="modern" data-wallpaper={DEFAULT_WALLPAPER} data-reduce-transparency="true" suppressHydrationWarning>
+            <body data-scheme="primary" data-skin="modern" data-wallpaper={DEFAULT_WALLPAPER} data-icon-set={DEFAULT_ICON_SET} data-reduce-transparency="true" suppressHydrationWarning>
                 <Main />
                 <NextScript />
             </body>

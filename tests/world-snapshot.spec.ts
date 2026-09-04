@@ -4,6 +4,7 @@ import {
     DEFAULT_REDUCE_TRANSPARENCY,
     DEFAULT_WALLPAPER,
     migrateAppearanceSettings,
+    SITE_APPEARANCE_DEFAULTS_VERSION,
 } from '../src/lib/wallpaperChrome'
 import { isCancelledRouteError } from '../src/lib/swallow-cancelled-route'
 import { createRoomToken, parseWorldSnapshot } from '../src/lib/world-snapshot'
@@ -83,6 +84,23 @@ test.describe('world snapshot parse', () => {
         })
         expect(kept.wallpaper).toBe('hogzilla')
         expect(kept.reduceTransparency).toBe(false)
+    })
+
+    test('v3 migrates icon set to pixel once without clobbering later custom choice', () => {
+        expect(SITE_APPEARANCE_DEFAULTS_VERSION).toBe(3)
+        const migrated = migrateAppearanceSettings({
+            wallpaper: 'hogzilla',
+            iconSet: 'default',
+            siteDefaultsVersion: 2,
+        })
+        expect(migrated.iconSet).toBe('pixel')
+        expect(migrated.wallpaper).toBe('hogzilla')
+        const kept = migrateAppearanceSettings({
+            wallpaper: 'hogzilla',
+            iconSet: 'default',
+            siteDefaultsVersion: 3,
+        })
+        expect(kept.iconSet).toBe('default')
     })
 
     test('browser chrome color follows the wallpaper field, not a generic page bg', () => {

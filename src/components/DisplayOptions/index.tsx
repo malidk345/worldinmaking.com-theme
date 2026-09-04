@@ -131,8 +131,8 @@ export default function DisplayOptions(): JSX.Element {
                     <ToggleGroup
                         title="Desktop icons"
                         options={[
-                            { label: 'Default', value: 'default', default: true },
-                            { label: 'Pixel', value: 'pixel' },
+                            { label: 'Pixel', value: 'pixel', default: true },
+                            { label: 'Custom', value: 'default' },
                         ]}
                         onValueChange={(value) => {
                             updateSiteSettings({

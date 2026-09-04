@@ -26,6 +26,7 @@ import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
 import {
     applyWallpaperBrowserChrome,
+    DEFAULT_ICON_SET,
     DEFAULT_REDUCE_TRANSPARENCY,
     DEFAULT_WALLPAPER,
     migrateAppearanceSettings,
@@ -291,7 +292,7 @@ export const Context = createContext<AppContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        iconSet: 'default',
+        iconSet: DEFAULT_ICON_SET,
         wallpaper: DEFAULT_WALLPAPER,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
@@ -385,7 +386,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
-        iconSet: 'default',
+        iconSet: DEFAULT_ICON_SET,
         wallpaper: DEFAULT_WALLPAPER,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
@@ -970,7 +971,7 @@ const getInitialSiteSettings = (): SiteSettings => {
         performanceBoost: false,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         ...stored,
-        iconSet: stored.iconSet === 'pixel' ? 'pixel' : 'default',
+        iconSet: stored.iconSet === 'default' || stored.iconSet === 'pixel' ? stored.iconSet : DEFAULT_ICON_SET,
     })
 
     siteSettings.wallpaper = resolveKeptWallpaper(siteSettings.wallpaper)
@@ -1054,7 +1055,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         colorMode: 'light',
         theme: 'light',
         skinMode: 'modern',
-        iconSet: 'default',
+        iconSet: DEFAULT_ICON_SET,
         wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,
