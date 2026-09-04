@@ -1,18 +1,14 @@
 import { IconComment, IconDocument, IconPeople } from '@posthog/icons'
 
-import { COMMON_INSERT_COMMAND_CATEGORY, InsertCommand } from '../../lib/components/MarkdownNotebook/InsertMenu'
-import { NotebookComponentProps } from '../../lib/components/MarkdownNotebook/types'
+import type { InsertCommand, MarkdownNotebookInsertMenuApi } from '../../lib/components/MarkdownNotebook/editorTypes'
+import { COMMON_INSERT_COMMAND_CATEGORY } from '../../lib/components/MarkdownNotebook/InsertMenu'
 import { createNotebook } from './notebookStorage'
 
-export type MarkdownNotebookInsertMenuApi = {
-    insertComponent: (targetNodeId: string, tagName: string, props: NotebookComponentProps) => void
-    openAIPrompt?: () => void
-    openPhilosopherInvite?: (targetNodeId: string) => void
-    openPeopleInvite?: () => void
-    openInlineComment?: (targetNodeId: string) => void
-}
-
-/** Slash already ships WIM AI (inline editor). Page creates a real child notebook. */
+/**
+ * Slash extras that are not a registry `insertCommand`.
+ * Page creates a notebook then inserts `<SubPage />`.
+ * Comment / Philosopher / Invite open pickers instead of dropping a tag.
+ */
 export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): InsertCommand[] {
     if (!api) return []
     const commands: InsertCommand[] = [
@@ -38,8 +34,8 @@ export function buildExtraInsertCommands(api?: MarkdownNotebookInsertMenuApi): I
             key: 'inline-comment',
             label: 'Comment',
             category: COMMON_INSERT_COMMAND_CATEGORY,
-            description: 'Leave a note on this block',
-            aliases: ['comment', 'yorum', 'note', 'not'],
+            description: 'Discussion thread on this block',
+            aliases: ['comment', 'yorum', 'thread', 'discussion'],
             icon: <IconComment />,
             closeOnRun: false,
             run: (targetNodeId) => api.openInlineComment?.(targetNodeId),

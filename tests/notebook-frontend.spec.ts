@@ -75,15 +75,48 @@ import {
     getSlashCommandQuery,
     getSlashTokenAt,
     mergeDetachedSlashMenuBack,
+    planDeleteEmptyCodeBlock,
+    planDeleteTextAtSelection,
+    planInsertEmptyParagraphAfter,
+    planInsertMarkdownAfter,
+    planInsertNodesAfter,
+    planInsertNodesAtBoundary,
+    planMergeAdjacentTextBlocks,
+    planPasteInlineChildren,
+    planPasteIntoTextBlock,
+    shouldPasteInlineMarkdown,
+    planMergeTextIntoPreviousNonText,
+    planReplaceCodeBlockRange,
+    shouldInsertParagraphBelowTrailingCode,
     slashMenuRestoreText,
     splitTextBlockAtSlashToken,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/documentModel'
 import { splitInlineNodesAt } from '../src/notebook-app/lib/components/MarkdownNotebook/inlineContent'
+import { htmlStringToInlineNodes } from '../src/notebook-app/lib/components/MarkdownNotebook/markdown'
 import { getInlineText } from '../src/notebook-app/lib/components/MarkdownNotebook/utils'
 import { computeBacklinks } from '../src/notebook-app/lib/components/MarkdownNotebook/wikilinks'
 import { extractOutlineHeadings } from '../src/notebook-app/scenes/notebooks/outlineModel'
 import type { NotebookTextBlockNode } from '../src/notebook-app/lib/components/MarkdownNotebook/types'
 import { documentMarkdown, pickPublicNotebook } from '../src/notebook-app/scenes/notebooks/notebookPublicMarkdown'
+import {
+    findDuplicateStrings,
+    slashCatalogKeys,
+    SLASH_REMOVED_KEYS,
+    SLASH_REGISTRY_TAGS,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/insertCatalog'
+import {
+    nextBeginSlashInsertMenuState,
+    nextOpenInsertMenuState,
+    planDismissSlashMenu,
+    planInsertAtBoundary,
+    planRemoveTemporaryInsertNode,
+    planSlashInsertAtTextCaret,
+    planSplitTextBlock,
+    planTextBlockTypedSlash,
+} from '../src/notebook-app/lib/components/MarkdownNotebook/insertMenuModel'
+import type { InsertMenuState } from '../src/notebook-app/lib/components/MarkdownNotebook/editorTypes'
+import { planDeleteListItemAtStart, planSplitListItem } from '../src/notebook-app/lib/components/MarkdownNotebook/listModel'
+import { planInsertTableRow } from '../src/notebook-app/lib/components/MarkdownNotebook/tableModel'
 
 test.describe('notebook frontend helpers', () => {
     test('list timeAgo uses hours between 1h and 24h', () => {
@@ -144,6 +177,444 @@ test.describe('notebook frontend helpers', () => {
         expect(slashLine).toEqual({ start: 6, query: 'wim' })
         const remainder = splitInlineNodesAt([{ type: 'text', text: 'hello /wim' }], slashLine!.start)[0]
         expect(getInlineText(remainder).trim()).toBe('hello')
+    })
+
+    test('slash catalog is one WIM list without duplicate keys or leftover PostHog inserts', () => {
+        const keys = slashCatalogKeys()
+        expect(findDuplicateStrings(keys)).toEqual([])
+        expect(keys).toEqual(
+            expect.arrayContaining([
+                'media-table',
+                'component-Image',
+                'component-Embed',
+                'component-Latex',
+                'component-Callout',
+                'component-Toggle',
+                'component-DatabaseTable',
+                'component-Comment',
+                'page-subpage',
+                'inline-comment',
+            ])
+        )
+        for (const removed of SLASH_REMOVED_KEYS) {
+            expect(keys).not.toContain(removed)
+        }
+        expect(SLASH_REGISTRY_TAGS).not.toEqual(expect.arrayContaining(['Query', 'FeatureFlag', 'Experiment', 'SubPage']))
+        expect(keys.some((key) => /FeatureFlag|Query|Experiment|Recording/.test(key))).toBe(false)
+    })
+
+    test('insert menu plans keep slash and + boundary in one place', () => {
+        const paragraph = {
+            id: 'p1',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'Hello' }],
+        }
+        expect(planInsertAtBoundary([paragraph], 0)).toBeNull()
+
+        const atEnd = planInsertAtBoundary([paragraph], 1)
+        expect(atEnd?.insertedId).toBeTruthy()
+        expect(atEnd?.nodes).toHaveLength(2)
+        expect(atEnd?.nodes[1].id).toBe(atEnd?.insertedId)
+        expect(atEnd?.nodes[1]).toMatchObject({ type: 'paragraph', startsGroup: true })
+        expect(atEnd?.rejoinNodeIdOnClose).toBeUndefined()
+
+        const between = planInsertAtBoundary(
+            [
+                paragraph,
+                { id: 'p2', type: 'paragraph' as const, children: [{ type: 'text' as const, text: 'World' }] },
+            ],
+            1
+        )
+        expect(between?.nodes).toHaveLength(3)
+        expect(between?.rejoinNodeIdOnClose).toBe('p2')
+        expect(between?.nodes[2]).toMatchObject({ id: 'p2', startsGroup: true })
+
+        const current: InsertMenuState = {
+            nodeId: 'p1',
+            query: 'ta',
+            selectedIndex: 2,
+            mode: 'tools',
+            detached: true,
+            source: 'slash',
+        }
+        expect(nextOpenInsertMenuState(current, 'p1', 'ta').selectedIndex).toBe(2)
+        expect(nextOpenInsertMenuState(current, 'p1', 'tab').selectedIndex).toBe(0)
+        expect(nextBeginSlashInsertMenuState(current, 'p2', 'img', { detached: true })).toMatchObject({
+            nodeId: 'p2',
+            query: 'img',
+            source: 'slash',
+            detached: true,
+            selectedIndex: 0,
+        })
+
+        const slashNode = {
+            id: 'slash',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'tab' }],
+        }
+        const restored = planDismissSlashMenu(
+            [
+                { ...paragraph, children: [{ type: 'text' as const, text: 'Hello ' }] },
+                slashNode,
+            ],
+            { nodeId: 'slash', query: 'tab', selectedIndex: 0, mode: 'tools', detached: true, source: 'slash' }
+        )
+        expect(restored?.removedNodeId).toBe('slash')
+        expect(restored?.focus.nodeId).toBe('p1')
+
+        const tempRemoved = planRemoveTemporaryInsertNode(
+            [paragraph, { id: 'tmp', type: 'paragraph' as const, children: [], startsGroup: true }],
+            {
+                nodeId: 'tmp',
+                query: '',
+                selectedIndex: 0,
+                mode: 'tools',
+                removeNodeOnClose: true,
+            }
+        )
+        expect(tempRemoved?.map((node) => node.id)).toEqual(['p1'])
+    })
+
+    test('Enter split and typed slash share one insert plan', () => {
+        const paragraph = {
+            id: 'p2',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'Hello world' }],
+        }
+        const split = planSplitTextBlock(paragraph, 1, 5, 5)
+        expect(split.focus.start).toBe(0)
+        expect(split.replacementNodes).toHaveLength(2)
+        expect(getInlineText((split.replacementNodes[0] as typeof paragraph).children)).toBe('Hello')
+
+        const titleSplit = planSplitTextBlock(
+            { id: 't1', type: 'paragraph', children: [{ type: 'text', text: 'Title more' }] },
+            0,
+            5,
+            5
+        )
+        expect(titleSplit.replacementNodes[0]).toMatchObject({ type: 'heading', level: 1 })
+
+        const caretSlash = planSlashInsertAtTextCaret(paragraph, 6, 6, '')
+        expect(caretSlash.commandNodeId).toBeTruthy()
+        expect(caretSlash.replacementNodes.length).toBeGreaterThanOrEqual(2)
+
+        const wholeLine = planTextBlockTypedSlash(
+            { id: 'p3', type: 'paragraph', children: [{ type: 'text', text: '/table' }] },
+            1,
+            [{ type: 'text', text: '/table' }],
+            6
+        )
+        expect(wholeLine).toMatchObject({ type: 'same-node', query: 'table' })
+
+        const midLine = planTextBlockTypedSlash(
+            paragraph,
+            1,
+            [{ type: 'text', text: 'Hello /tab' }],
+            10
+        )
+        expect(midLine?.type).toBe('split')
+        if (midLine?.type === 'split') {
+            expect(midLine.query).toBe('tab')
+            expect(midLine.nodes.length).toBeGreaterThanOrEqual(2)
+        }
+        expect(planTextBlockTypedSlash(paragraph, 0, paragraph.children, 5)).toBeNull()
+    })
+
+    test('list Enter/Backspace and table Enter share one edit plan', () => {
+        const list = {
+            id: 'l1',
+            type: 'list' as const,
+            ordered: false,
+            items: [
+                {
+                    id: 'i1',
+                    children: [{ type: 'text' as const, text: 'Alpha' }],
+                    depth: 0,
+                    ordered: false,
+                },
+                {
+                    id: 'i2',
+                    children: [{ type: 'text' as const, text: 'Beta' }],
+                    depth: 1,
+                    ordered: false,
+                },
+            ],
+        }
+
+        const split = planSplitListItem(list, 0, 3, 3)
+        expect(split?.kind).toBe('split')
+        expect(split?.items).toHaveLength(3)
+        expect(split?.focus.listItemIndex).toBe(1)
+        expect(getInlineText(split?.items?.[0].children ?? [])).toBe('Alp')
+
+        const emptyNested = {
+            ...list,
+            items: [
+                list.items[0],
+                { id: 'i2', children: [], depth: 1, ordered: false },
+            ],
+        }
+        const outdent = planSplitListItem(emptyNested, 1, 0, 0)
+        expect(outdent?.kind).toBe('outdent')
+        expect(outdent?.items?.[1].depth).toBe(0)
+
+        const unwrap = planDeleteListItemAtStart(
+            { ...list, items: [{ id: 'i1', children: [], depth: 0, ordered: false }] },
+            0,
+            'backward'
+        )
+        expect(unwrap?.kind).toBe('unwrap')
+        expect(unwrap?.replacementNodes?.[0]).toMatchObject({ type: 'paragraph' })
+
+        expect(
+            planDeleteListItemAtStart(list, 0, 'forward')
+        ).toBeNull()
+
+        const table = {
+            id: 't1',
+            type: 'table' as const,
+            headers: [{ children: [{ type: 'text' as const, text: 'A' }] }],
+            rows: [[{ children: [{ type: 'text' as const, text: '1' }] }]],
+        }
+        expect(planInsertTableRow(table, { section: 'header', rowIndex: 0, columnIndex: 0 }).kind).toBe('focus-body')
+        const inserted = planInsertTableRow(table, { section: 'body', rowIndex: 0, columnIndex: 0 })
+        expect(inserted.kind).toBe('insert-row')
+        if (inserted.kind === 'insert-row') {
+            expect(inserted.rows).toHaveLength(2)
+            expect(inserted.focus.tableCell).toEqual({ section: 'body', rowIndex: 1, columnIndex: 0 })
+        }
+    })
+
+    test('Backspace at the start of a block merges or focuses, never deletes the previous block', () => {
+        const first = {
+            id: 'p1',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'Hello' }],
+        }
+        const second = {
+            id: 'p2',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'World' }],
+        }
+        const range = planDeleteTextAtSelection([first, second], 1, 1, 4, 'backward')
+        expect(range?.kind).toBe('replace')
+        if (range?.kind === 'replace') {
+            expect(getInlineText((range.nodes[1] as typeof second).children)).toBe('Wd')
+        }
+
+        expect(planDeleteTextAtSelection([first], 0, 0, 0, 'backward')?.kind).toBe('noop')
+        expect(planDeleteTextAtSelection([first, second], 1, 2, 2, 'backward')).toBeNull()
+
+        const merged = planMergeAdjacentTextBlocks([first, second], 1)
+        expect(merged?.kind).toBe('replace')
+        if (merged?.kind === 'replace') {
+            expect(merged.nodes).toHaveLength(1)
+            expect(getInlineText((merged.nodes[0] as typeof first).children)).toBe('HelloWorld')
+            expect(merged.focus.start).toBe(5)
+        }
+
+        const headingAfterList = planDeleteTextAtSelection(
+            [
+                {
+                    id: 'l1',
+                    type: 'list' as const,
+                    ordered: false,
+                    items: [{ id: 'i1', children: [{ type: 'text' as const, text: 'Item' }], depth: 0, ordered: false }],
+                },
+                { id: 'h1', type: 'heading' as const, level: 2, children: [{ type: 'text' as const, text: 'Title' }] },
+            ],
+            1,
+            0,
+            0,
+            'backward'
+        )
+        expect(headingAfterList?.kind).toBe('replace')
+        if (headingAfterList?.kind === 'replace') {
+            expect(headingAfterList.nodes[1]).toMatchObject({ type: 'paragraph', id: 'h1' })
+        }
+
+        const intoList = planMergeTextIntoPreviousNonText(
+            [
+                {
+                    id: 'l1',
+                    type: 'list' as const,
+                    ordered: false,
+                    items: [{ id: 'i1', children: [{ type: 'text' as const, text: 'Item' }], depth: 0, ordered: false }],
+                },
+                second,
+            ],
+            1
+        )
+        expect(intoList?.kind).toBe('replace')
+        if (intoList?.kind === 'replace') {
+            const list = intoList.nodes[0]
+            expect(list.type).toBe('list')
+            if (list.type === 'list') {
+                expect(getInlineText(list.items[0].children)).toBe('ItemWorld')
+            }
+            expect(intoList.nodes).toHaveLength(1)
+        }
+
+        const emptyAfterCode = planMergeTextIntoPreviousNonText(
+            [
+                { id: 'c1', type: 'code' as const, text: 'const x = 1' },
+                { id: 'p3', type: 'paragraph' as const, children: [] },
+            ],
+            1
+        )
+        expect(emptyAfterCode?.kind).toBe('replace')
+        if (emptyAfterCode?.kind === 'replace') {
+            expect(emptyAfterCode.nodes.map((node) => node.id)).toEqual(['c1'])
+            expect(emptyAfterCode.focus.start).toBe('const x = 1'.length)
+        }
+
+        const filledAfterCode = planMergeTextIntoPreviousNonText(
+            [
+                { id: 'c1', type: 'code' as const, text: 'const x = 1' },
+                second,
+            ],
+            1
+        )
+        expect(filledAfterCode).toEqual({ kind: 'focus', nodeId: 'c1', offset: 'const x = 1'.length })
+    })
+
+    test('code Enter inserts a real newline and empty code deletes through the model', () => {
+        const code = { id: 'c1', type: 'code' as const, text: 'ab' }
+        const newline = planReplaceCodeBlockRange(code, 1, 1, '\n')
+        expect(newline.node.text).toBe('a\nb')
+        expect(newline.focus).toEqual({ nodeId: 'c1', start: 2, end: 2 })
+
+        const indent = planReplaceCodeBlockRange(code, 0, 0, '    ')
+        expect(indent.node.text).toBe('    ab')
+        expect(indent.focus.start).toBe(4)
+
+        const replaced = planReplaceCodeBlockRange(code, 0, 2, 'z')
+        expect(replaced.node.text).toBe('z')
+        expect(replaced.focus.start).toBe(1)
+
+        expect(planDeleteEmptyCodeBlock([{ id: 'c1', type: 'code', text: 'keep' }], 'c1')).toBeNull()
+        expect(planDeleteEmptyCodeBlock([{ id: 'c1', type: 'code', text: '' }, { id: 'p1', type: 'paragraph', children: [] }], 'c1')?.map((node) => node.id)).toEqual(
+            ['p1']
+        )
+
+        expect(shouldInsertParagraphBelowTrailingCode([code], 0, 2)).toBe(true)
+        expect(shouldInsertParagraphBelowTrailingCode([code, { id: 'p1', type: 'paragraph', children: [] }], 0, 2)).toBe(
+            false
+        )
+        expect(shouldInsertParagraphBelowTrailingCode([{ id: 'c1', type: 'code', text: 'a\nb' }], 0, 1)).toBe(false)
+
+        const after = planInsertEmptyParagraphAfter([code], 'c1')
+        expect(after?.kind).toBe('insert')
+        if (after?.kind === 'insert') {
+            expect(after.nodes).toHaveLength(2)
+            expect(after.nodes[1]).toMatchObject({ type: 'paragraph' })
+        }
+        expect(
+            planInsertEmptyParagraphAfter(
+                [code, { id: 'p1', type: 'paragraph', children: [] }],
+                'c1'
+            )
+        ).toEqual({ kind: 'focus-existing', nodeId: 'p1' })
+    })
+
+    test('paste inserts after a node, never before the title, and inlines a single paragraph', () => {
+        const title = {
+            id: 't1',
+            type: 'heading' as const,
+            level: 1 as const,
+            children: [{ type: 'text' as const, text: 'Title' }],
+        }
+        const body = {
+            id: 'p1',
+            type: 'paragraph' as const,
+            children: [{ type: 'text' as const, text: 'Hello' }],
+        }
+        const pasted = [
+            { id: 'x', type: 'paragraph' as const, children: [{ type: 'text' as const, text: 'X' }] },
+        ]
+
+        const after = planInsertNodesAfter([title, body], 'p1', pasted)
+        expect(after?.nodes.map((node) => node.id)).toEqual(['t1', 'p1', 'x'])
+        expect(after?.focus).toMatchObject({ kind: 'text', nodeId: 'x' })
+
+        const atStart = planInsertNodesAtBoundary([title, body], pasted, 0)
+        expect(atStart?.[0].id).toBe('t1')
+        expect(atStart).toHaveLength(3)
+
+        const fromMarkdown = planInsertMarkdownAfter([title], 't1', 'Pasted line', 'seed')
+        expect(fromMarkdown?.nodes).toHaveLength(2)
+        expect(fromMarkdown?.nodes[1].type).toBe('paragraph')
+
+        const inline = planPasteIntoTextBlock(body, false, 5, 5, pasted, 'X')
+        expect(inline?.kind).toBe('update')
+        if (inline?.kind === 'update') {
+            expect(getInlineText(inline.nextNode.children)).toBe('HelloX')
+            expect(inline.focus.start).toBe(6)
+        }
+
+        const multi = planPasteIntoTextBlock(body, false, 5, 5, [
+            { id: 'a', type: 'paragraph', children: [{ type: 'text', text: 'A' }] },
+            { id: 'b', type: 'paragraph', children: [{ type: 'text', text: 'B' }] },
+        ], 'A\n\nB')
+        expect(multi?.kind).toBe('replace-nodes')
+        if (multi?.kind === 'replace-nodes') {
+            expect(multi.replacementNodes.length).toBeGreaterThanOrEqual(3)
+            expect(getInlineText((multi.replacementNodes[0] as typeof body).children)).toBe('Hello')
+        }
+
+        const titlePaste = planPasteIntoTextBlock(title, true, 5, 5, pasted, 'Hello')
+        expect(titlePaste?.kind).toBe('update')
+        if (titlePaste?.kind === 'update') {
+            expect(titlePaste.nextNode).toMatchObject({ type: 'heading', level: 1 })
+            expect(getInlineText(titlePaste.nextNode.children)).toBe('TitleX')
+        }
+
+        const titleWithBody = planPasteIntoTextBlock(title, true, 5, 5, pasted, 'Hello\n\nWorld')
+        expect(titleWithBody?.kind).toBe('replace-nodes')
+        if (titleWithBody?.kind === 'replace-nodes') {
+            expect(titleWithBody.replacementNodes[0]).toMatchObject({ type: 'heading', level: 1 })
+            expect(titleWithBody.replacementNodes.length).toBeGreaterThanOrEqual(2)
+        }
+
+        const inlineChildren = planPasteInlineChildren(
+            [{ type: 'text', text: 'Hello' }],
+            5,
+            5,
+            [{ type: 'text', text: 'X' }]
+        )
+        expect(getInlineText(inlineChildren.children)).toBe('HelloX')
+        expect(inlineChildren.start).toBe(6)
+        const replaced = planPasteInlineChildren(
+            [{ type: 'text', text: 'Hello' }],
+            1,
+            4,
+            [{ type: 'text', text: 'XX' }]
+        )
+        expect(getInlineText(replaced.children)).toBe('HXX' + 'o')
+        expect(shouldPasteInlineMarkdown('Hello', '', { type: 'doc', nodes: [body], errors: [] })).toBe(true)
+        expect(
+            shouldPasteInlineMarkdown('Hello\n\nWorld', '', {
+                type: 'doc',
+                nodes: [body, { id: 'p2', type: 'paragraph', children: [{ type: 'text', text: 'World' }] }],
+                errors: [],
+            })
+        ).toBe(false)
+
+        expect(htmlStringToInlineNodes('')).toEqual([])
+        const htmlNodes =
+            typeof document === 'undefined'
+                ? [{ type: 'text' as const, text: 'X', marks: [{ type: 'bold' as const }] }]
+                : htmlStringToInlineNodes('<strong>X</strong>')
+        if (typeof document !== 'undefined') {
+            expect(getInlineText(htmlStringToInlineNodes('<b>Hi</b>'))).toBe('Hi')
+        }
+        const fromHtml = planPasteInlineChildren([{ type: 'text', text: 'Hello' }], 5, 5, htmlNodes)
+        expect(getInlineText(fromHtml.children)).toBe('HelloX')
+        expect(
+            fromHtml.children.some(
+                (child) => child.type === 'text' && child.marks?.some((mark) => mark.type === 'bold')
+            )
+        ).toBe(true)
     })
 
     test('slash token splits a paragraph and restores /query on cancel', () => {

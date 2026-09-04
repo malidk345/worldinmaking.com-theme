@@ -9,15 +9,19 @@ import {
     useRef,
 } from 'react'
 
-import { getTaskItemShortcut, shouldUseMarkdownPaste } from './documentModel'
+import {
+    getSinglePastedParagraphChildren,
+    getTaskItemShortcut,
+    planPasteInlineChildren,
+    shouldPasteInlineMarkdown,
+} from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TextSelectionPointerStartEvent } from './editorTypes'
-import { splitInlineNodesAt } from './inlineContent'
 import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart } from './listModel'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
-import { htmlElementToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
+import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
-import { getInlineText, normalizeInlineNodes } from './utils'
+import { getInlineText } from './utils'
 
 export function EditableListBlock({
     node,
@@ -192,33 +196,24 @@ export function EditableListBlock({
         }
 
         const pastedDocument = plainText ? parseMarkdownNotebook(plainText) : null
-        if (
-            pastedDocument &&
-            pastedDocument.nodes.length === 1 &&
-            pastedDocument.nodes[0].type === 'paragraph' &&
-            shouldUseMarkdownPaste(plainText, html, pastedDocument)
-        ) {
+        const pastedChildren =
+            pastedDocument && shouldPasteInlineMarkdown(plainText, html, pastedDocument)
+                ? getSinglePastedParagraphChildren(pastedDocument)
+                : null
+        if (pastedChildren) {
             event.preventDefault()
             const selection = getSelectionRange(element, node.id)
             const currentTextLength = getInlineText(details.item.children).length
             const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
             const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
-            const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(details.item.children, selectionStart)
-            const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-            const nextChildren = normalizeInlineNodes([
-                ...beforeSelection,
-                ...pastedDocument.nodes[0].children,
-                ...afterSelection,
-            ])
-            const nextCaretOffset =
-                getInlineText(beforeSelection).length + getInlineText(pastedDocument.nodes[0].children).length
-            updateListItemChildren(details.itemIndex, details.itemId, nextChildren)
+            const plan = planPasteInlineChildren(details.item.children, selectionStart, selectionEnd, pastedChildren)
+            updateListItemChildren(details.itemIndex, details.itemId, plan.children)
             restoreSelectionRef.current = {
                 nodeId: node.id,
                 listItemIndex: details.itemIndex,
                 listItemId: details.itemId,
-                start: nextCaretOffset,
-                end: nextCaretOffset,
+                start: plan.start,
+                end: plan.end,
             }
             return
         }
@@ -228,10 +223,23 @@ export function EditableListBlock({
         }
 
         event.preventDefault()
-        const container = document.createElement('div')
-        container.innerHTML = html
-        document.execCommand('insertHTML', false, inlineNodesToHtml(htmlElementToInlineNodes(container), annotations))
-        updateListItemChildrenFromElement(element)
+        const htmlChildren = htmlStringToInlineNodes(html)
+        if (!htmlChildren.length) {
+            return
+        }
+        const selection = getSelectionRange(element, node.id)
+        const currentTextLength = getInlineText(details.item.children).length
+        const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
+        const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
+        const plan = planPasteInlineChildren(details.item.children, selectionStart, selectionEnd, htmlChildren)
+        updateListItemChildren(details.itemIndex, details.itemId, plan.children)
+        restoreSelectionRef.current = {
+            nodeId: node.id,
+            listItemIndex: details.itemIndex,
+            listItemId: details.itemId,
+            start: plan.start,
+            end: plan.end,
+        }
     }
 
     const toggleListItemChecked = (itemIndex: number, itemId: string | undefined): void => {

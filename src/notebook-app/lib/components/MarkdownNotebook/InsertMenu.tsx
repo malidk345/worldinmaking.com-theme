@@ -14,6 +14,7 @@ import {
     InsertMenuSelectionDirection,
 } from './editorTypes'
 import { makeEmptyParagraph } from './markdown'
+import { isSlashRegistryTag } from './insertCatalog'
 import { getMarkdownNotebookComponentDefaultProps } from './registry'
 import {
     NotebookBlockNode,
@@ -300,40 +301,23 @@ export function buildInsertCommands(
           ]
         : []
 
+    // Native markdown blocks live here. Component tags (Image, Embed, LaTeX, Callout…)
+    // must opt in through `definition.insertCommand` so slash has one catalog, not two.
     const mediaCommands: InsertCommand[] = [
-        {
-            key: 'media-image',
-            label: 'Image',
-            category: 'Media',
-            icon: <IconList />,
-            run: (targetNodeId) => insertRegisteredComponent(targetNodeId, 'Image'),
-        },
         {
             key: 'media-table',
             label: 'Table',
             category: 'Media',
+            description: 'Markdown table',
+            aliases: ['grid', 'spreadsheet', 'gfm'],
             icon: <IconList />,
             run: insertTable,
-        },
-        {
-            key: 'media-iframe',
-            label: 'Iframe',
-            category: 'Media',
-            icon: <IconList />,
-            run: (targetNodeId) => insertRegisteredComponent(targetNodeId, 'Embed'),
-        },
-        {
-            key: 'media-latex',
-            label: 'LaTeX',
-            category: 'Media',
-            icon: <IconList />,
-            run: (targetNodeId) => insertRegisteredComponent(targetNodeId, 'Latex'),
         },
     ]
 
     const componentCommands: InsertCommand[] = Object.values(registry.components).flatMap((definition) => {
         const insertCommand = definition.insertCommand
-        if (!insertCommand) {
+        if (!insertCommand || !isSlashRegistryTag(definition.tagName)) {
             return []
         }
 

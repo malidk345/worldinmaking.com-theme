@@ -3,7 +3,6 @@ import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
 import { IconEllipsis } from '@posthog/icons'
 import { uuid } from '../../lib/utils/dom'
 import { MarkdownNotebook } from '../../lib/components/MarkdownNotebook/MarkdownNotebook'
-import { NOTEBOOK_MARKDOWN_REGISTRY } from './markdownNotebookRegistry'
 import { buildExtraInsertCommands } from './extraInsertCommands.tsx'
 import { createNotebook } from './notebookStorage'
 
@@ -91,10 +90,9 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
                 <MarkdownNotebook
                     value={content}
                     onChange={(newContent: string) => setContent(newContent)}
-                    isEditable={true}
-                    registry={NOTEBOOK_MARKDOWN_REGISTRY}
+                    mode="edit"
                     extraInsertCommands={buildExtraInsertCommands}
-                    placeholder="Start exploring on this canvas..."
+                    placeholder="Type / to insert a block, or just start writing…"
                 />
             </div>
         </div>

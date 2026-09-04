@@ -7,6 +7,29 @@ export {
     omitInsertCommands,
 } from './InsertMenu'
 export {
+    planDeleteEmptyCodeBlock,
+    planDeleteTextAtSelection,
+    planInsertEmptyParagraphAfter,
+    planInsertMarkdownAfter,
+    planInsertNodesAfter,
+    planInsertNodesAtBoundary,
+    planMergeAdjacentTextBlocks,
+    planPasteInlineChildren,
+    planPasteIntoTextBlock,
+    shouldPasteInlineMarkdown,
+    planMergeTextIntoPreviousNonText,
+    planReplaceCodeBlockRange,
+    shouldInsertParagraphBelowTrailingCode,
+} from './documentModel'
+export {
+    planInsertAtBoundary,
+    planDismissSlashMenu,
+    planRemoveTemporaryInsertNode,
+    planSplitTextBlock,
+    planSlashInsertAtTextCaret,
+    planTextBlockTypedSlash,
+} from './insertMenuModel'
+export {
     getMarkdownNotebookDefaultRegistry,
     createMarkdownNotebookRegistry,
     getMarkdownNotebookComponentDefinition,
@@ -15,7 +38,7 @@ export {
 } from './registry'
 export { NotebookComponentRunStatusContext } from './componentRunStatus'
 export type { NotebookComponentRunStatus, NotebookComponentRunStatusResolver } from './componentRunStatus'
-export { parseMarkdownNotebook, serializeMarkdownNotebook, htmlElementToInlineNodes } from './markdown'
+export { parseMarkdownNotebook, serializeMarkdownNotebook, htmlElementToInlineNodes, htmlStringToInlineNodes } from './markdown'
 export { MarkdownTextDiff } from './MarkdownTextDiff'
 export type { MarkdownTextDiffProps } from './MarkdownTextDiff'
 export { reconcileNotebookDocuments } from './reconcile'

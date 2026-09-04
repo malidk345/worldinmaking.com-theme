@@ -18,11 +18,9 @@ import {
     getSlashTokenAt,
     SlashToken,
     getTextBlockShortcutReplacement,
-    getTitleChildrenFromMarkdownLine,
-    getTitlePasteParts,
     isTextBlockNode,
-    normalizeNotebookTitlePasteBodyNode,
-    rekeyNotebookNodes,
+    planPasteInlineChildren,
+    planPasteIntoTextBlock,
     shouldUseMarkdownPaste,
 } from './documentModel'
 import {
@@ -40,7 +38,7 @@ import {
 } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
 import { editableHtmlMatches, noteChipsAreCurrent, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
-import { htmlElementToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
+import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
@@ -216,122 +214,29 @@ export function EditableTextBlock({
         pastedNodes: NotebookBlockNode[],
         pastedMarkdown: string
     ): void => {
-        const freshPastedNodes = rekeyNotebookNodes(pastedNodes, `paste-${node.id}-${pastedMarkdown.length}`)
-        if (!freshPastedNodes.length) {
-            return
-        }
-
         const selection = getSelectionRange(element, node.id)
         const currentTextLength = getInlineText(node.children).length
         const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
         const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
-        const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-        const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-
-        if (isTitleBlock) {
-            const titlePaste = getTitlePasteParts(pastedMarkdown)
-            const firstPastedNode = freshPastedNodes[0]
-            const firstLineChildren: NotebookInlineNode[] = titlePaste.hasBodyMarkdown
-                ? getTitleChildrenFromMarkdownLine(titlePaste.titleMarkdown)
-                : firstPastedNode && isTextBlockNode(firstPastedNode)
-                  ? firstPastedNode.children
-                  : [{ type: 'text', text: titlePaste.titleMarkdown }]
-            const nextTitleChildren = normalizeInlineNodes([
-                ...beforeSelection,
-                ...firstLineChildren,
-                ...(titlePaste.hasBodyMarkdown ? [] : afterSelection),
-            ])
-
-            if (!titlePaste.hasBodyMarkdown) {
-                updateNode(node.id, (currentNode) => {
-                    if (!isTextBlockNode(currentNode)) {
-                        return currentNode
-                    }
-                    return { ...currentNode, type: 'heading', level: 1, children: nextTitleChildren }
-                })
-                restoreSelectionRef.current = {
-                    nodeId: node.id,
-                    start: getInlineText(nextTitleChildren).length,
-                    end: getInlineText(nextTitleChildren).length,
-                }
-                return
-            }
-
-            const bodyNodes = rekeyNotebookNodes(
-                parseMarkdownNotebook(titlePaste.bodyMarkdown).nodes.map(normalizeNotebookTitlePasteBodyNode),
-                `paste-title-body-${node.id}-${pastedMarkdown.length}`
-            )
-            const trailingParagraph =
-                afterSelection.length || !bodyNodes.length
-                    ? {
-                          ...makeEmptyParagraph(`paste-title-after-${node.id}`),
-                          children: afterSelection,
-                      }
-                    : null
-            const replacementNodes = [
-                { ...node, type: 'heading' as const, level: 1 as const, children: nextTitleChildren },
-                ...bodyNodes,
-                ...(trailingParagraph ? [trailingParagraph] : []),
-            ]
-
-            replaceNodeWithNodes(node.id, replacementNodes)
-
-            const focusNode = trailingParagraph ?? [...bodyNodes].reverse().find(isTextBlockNode)
-            if (focusNode && isTextBlockNode(focusNode)) {
-                const caretOffset = getInlineText(focusNode.children).length
-                restoreSelectionRef.current = { nodeId: focusNode.id, start: caretOffset, end: caretOffset }
-            }
+        const plan = planPasteIntoTextBlock(
+            node,
+            isTitleBlock,
+            selectionStart,
+            selectionEnd,
+            pastedNodes,
+            pastedMarkdown
+        )
+        if (!plan) {
             return
         }
-
-        const firstPastedNode = freshPastedNodes[0]
-
-        if (
-            freshPastedNodes.length === 1 &&
-            firstPastedNode &&
-            firstPastedNode.type === 'paragraph' &&
-            (node.type === 'paragraph' || getInlineText(node.children).trim().length > 0)
-        ) {
-            const nextChildren = normalizeInlineNodes([
-                ...beforeSelection,
-                ...firstPastedNode.children,
-                ...afterSelection,
-            ])
-            const nextCaretOffset =
-                getInlineText(beforeSelection).length + getInlineText(firstPastedNode.children).length
-            updateNode(node.id, (currentNode) => {
-                if (!isTextBlockNode(currentNode)) {
-                    return currentNode
-                }
-                return { ...currentNode, children: nextChildren }
-            })
-            restoreSelectionRef.current = { nodeId: node.id, start: nextCaretOffset, end: nextCaretOffset }
+        if (plan.kind === 'update') {
+            updateNode(node.id, (currentNode) => (isTextBlockNode(currentNode) ? plan.nextNode : currentNode))
+            restoreSelectionRef.current = plan.focus
             return
         }
-
-        const replacementNodes: NotebookBlockNode[] = []
-        if (beforeSelection.length) {
-            replacementNodes.push({ ...node, children: beforeSelection })
-        }
-        replacementNodes.push(...freshPastedNodes)
-
-        const afterNode = afterSelection.length
-            ? {
-                  ...makeEmptyParagraph(`paste-after-${node.id}`),
-                  children: afterSelection,
-              }
-            : null
-        if (afterNode) {
-            replacementNodes.push(afterNode)
-        }
-
-        replaceNodeWithNodes(node.id, replacementNodes)
-
-        const focusNode = afterNode ?? [...freshPastedNodes].reverse().find(isTextBlockNode)
-        if (focusNode && isTextBlockNode(focusNode)) {
-            const caretOffset = afterNode ? 0 : getInlineText(focusNode.children).length
-            restoreSelectionRef.current = { nodeId: focusNode.id, start: caretOffset, end: caretOffset }
-            return
+        replaceNodeWithNodes(node.id, plan.replacementNodes)
+        if (plan.focus) {
+            restoreSelectionRef.current = plan.focus
         }
     }
 
@@ -411,10 +316,19 @@ export function EditableTextBlock({
         }
 
         event.preventDefault()
-        const container = document.createElement('div')
-        container.innerHTML = html
-        document.execCommand('insertHTML', false, toHtml(htmlElementToInlineNodes(container)))
-        updateFromElement(event.currentTarget)
+        const pastedChildren = htmlStringToInlineNodes(html)
+        if (!pastedChildren.length) {
+            return
+        }
+        const selection = getSelectionRange(event.currentTarget, node.id)
+        const currentTextLength = getInlineText(node.children).length
+        const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
+        const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
+        const plan = planPasteInlineChildren(node.children, selectionStart, selectionEnd, pastedChildren)
+        updateNode(node.id, (currentNode) =>
+            isTextBlockNode(currentNode) ? { ...currentNode, children: plan.children } : currentNode
+        )
+        restoreSelectionRef.current = { nodeId: node.id, start: plan.start, end: plan.end }
     }
 
     const handleBlur = (event: FormEvent<HTMLElement>): void => {

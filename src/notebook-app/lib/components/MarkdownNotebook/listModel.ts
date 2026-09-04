@@ -1,5 +1,6 @@
+import type { RestoreInlineSelectionRequest } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
-import { makeEmptyParagraph } from './markdown'
+import { makeEmptyParagraph, makeListItemId } from './markdown'
 import {
     NotebookBlockNode,
     NotebookInlineNode,
@@ -249,4 +250,105 @@ export function getListItemIndex(items: NotebookListItem[], fallbackIndex: numbe
     }
 
     return fallbackIndex
+}
+
+export type ListEditPlan = {
+    kind: 'outdent' | 'unwrap' | 'split'
+    items?: NotebookListItem[]
+    replacementNodes?: NotebookBlockNode[]
+    focus: RestoreInlineSelectionRequest
+}
+
+function planUnwrapOrOutdentListItem(node: NotebookListBlockNode, targetItemIndex: number): ListEditPlan | null {
+    const item = node.items[targetItemIndex]
+    if (!item) {
+        return null
+    }
+
+    if (item.depth > 0) {
+        const nextItems = shiftListItemSubtreeDepth(node.items, targetItemIndex, 'out', node.ordered)
+        if (!nextItems) {
+            return null
+        }
+        return {
+            kind: 'outdent',
+            items: nextItems,
+            focus: {
+                nodeId: node.id,
+                listItemIndex: targetItemIndex,
+                listItemId: item.id,
+                start: 0,
+                end: 0,
+            },
+        }
+    }
+
+    const replacement = getListItemParagraphReplacement(node, targetItemIndex)
+    if (!replacement) {
+        return null
+    }
+    return {
+        kind: 'unwrap',
+        replacementNodes: replacement.replacementNodes,
+        focus: { nodeId: replacement.paragraphId, start: 0, end: 0 },
+    }
+}
+
+export function planSplitListItem(
+    node: NotebookListBlockNode,
+    targetItemIndex: number,
+    selectionStart: number,
+    selectionEnd: number
+): ListEditPlan | null {
+    const item = node.items[targetItemIndex]
+    if (!item) {
+        return null
+    }
+
+    const textLength = getInlineText(item.children).length
+    const start = Math.max(0, Math.min(selectionStart, textLength))
+    const end = Math.max(start, Math.min(selectionEnd, textLength))
+
+    if (!textLength && start === 0 && end === 0) {
+        return planUnwrapOrOutdentListItem(node, targetItemIndex)
+    }
+
+    const [before, selectionAndAfter] = splitInlineNodesAt(item.children, start)
+    const [, after] = splitInlineNodesAt(selectionAndAfter, end - start)
+    const nextItem: NotebookListItem = {
+        id: makeListItemId(`split-${node.id}-${item.id ?? String(targetItemIndex)}`),
+        children: after,
+        depth: item.depth,
+        ordered: item.ordered ?? node.ordered,
+        checked: item.checked !== undefined ? false : undefined,
+    }
+    const nextItems = [...node.items]
+    nextItems[targetItemIndex] = { ...item, children: before }
+    nextItems.splice(targetItemIndex + 1, 0, nextItem)
+    return {
+        kind: 'split',
+        items: nextItems,
+        focus: {
+            nodeId: node.id,
+            listItemIndex: targetItemIndex + 1,
+            listItemId: nextItem.id,
+            start: 0,
+            end: 0,
+        },
+    }
+}
+
+export function planDeleteListItemAtStart(
+    node: NotebookListBlockNode,
+    targetItemIndex: number,
+    direction: 'backward' | 'forward'
+): ListEditPlan | null {
+    const item = node.items[targetItemIndex]
+    if (!item) {
+        return null
+    }
+    if (direction === 'forward' && getInlineText(item.children).length) {
+        return null
+    }
+    return planUnwrapOrOutdentListItem(node, targetItemIndex)
 }

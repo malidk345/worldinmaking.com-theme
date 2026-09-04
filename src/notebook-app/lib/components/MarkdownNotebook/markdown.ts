@@ -658,6 +658,15 @@ export function htmlElementToInlineNodes(element: HTMLElement): NotebookInlineNo
     return normalizeInlineNodes(htmlChildNodesToInlineNodes(element, []))
 }
 
+export function htmlStringToInlineNodes(html: string): NotebookInlineNode[] {
+    if (typeof document === 'undefined' || !html) {
+        return []
+    }
+    const container = document.createElement('div')
+    container.innerHTML = html
+    return htmlElementToInlineNodes(container)
+}
+
 export function inlineNodesToHtml(nodes: NotebookInlineNode[], annotations?: NotebookAnnotationMap): string {
     return nodes.map((node) => inlineNodeToHtml(node, annotations)).join('')
 }

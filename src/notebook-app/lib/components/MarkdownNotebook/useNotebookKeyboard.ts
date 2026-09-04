@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type KeyboardEvent, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useRef, type KeyboardEvent, type MutableRefObject } from 'react'
 
 import {
     getFocusedComponentNode,
@@ -82,7 +82,18 @@ export function useNotebookKeyboard({
     startInsertMenuAtCurrentTextSelection: () => boolean
 }): {
     handleNotebookKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+    consumePendingEnterSplit: () => boolean
 } {
+    const pendingEnterSplitRef = useRef(false)
+
+    const consumePendingEnterSplit = useCallback((): boolean => {
+        if (!pendingEnterSplitRef.current) {
+            return false
+        }
+        pendingEnterSplitRef.current = false
+        return true
+    }, [])
+
     useEffect(() => {
         const notebookElement = notebookElementRef.current
         if (!notebookElement) {
@@ -114,6 +125,10 @@ export function useNotebookKeyboard({
                     insertTableRowAtCurrentSelection() ||
                     splitTextBlockAtCurrentSelection())
             ) {
+                pendingEnterSplitRef.current = true
+                queueMicrotask(() => {
+                    pendingEnterSplitRef.current = false
+                })
                 event.preventDefault()
                 event.stopPropagation()
                 return
@@ -455,5 +470,5 @@ export function useNotebookKeyboard({
         ]
     )
 
-    return { handleNotebookKeyDown }
+    return { handleNotebookKeyDown, consumePendingEnterSplit }
 }

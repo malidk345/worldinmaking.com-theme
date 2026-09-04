@@ -1,4 +1,4 @@
-import { InsertMenuSelectionDirection, TableCellPosition } from './editorTypes'
+import { InsertMenuSelectionDirection, RestoreInlineSelectionRequest, TableCellPosition } from './editorTypes'
 import { NotebookTableBlockNode, NotebookTableCell } from './types'
 
 export function getTableCellRefKey(nodeId: string, position: TableCellPosition): string {
@@ -15,6 +15,39 @@ export function normalizeTableRow(row: NotebookTableCell[], columnCount: number)
 
 export function makeEmptyTableRow(columnCount: number): NotebookTableCell[] {
     return Array.from({ length: columnCount }, () => ({ children: [] }))
+}
+
+export type TableEnterPlan =
+    | { kind: 'focus-body'; position: TableCellPosition }
+    | {
+          kind: 'insert-row'
+          rows: NotebookTableCell[][]
+          focus: RestoreInlineSelectionRequest
+      }
+
+export function planInsertTableRow(node: NotebookTableBlockNode, position: TableCellPosition): TableEnterPlan {
+    if (position.section === 'header' && node.rows.length) {
+        return {
+            kind: 'focus-body',
+            position: { section: 'body', rowIndex: 0, columnIndex: position.columnIndex },
+        }
+    }
+
+    const columnCount = getTableColumnCount(node)
+    const insertIndex =
+        position.section === 'header' ? 0 : Math.max(0, Math.min(position.rowIndex + 1, node.rows.length))
+    const nextRows = node.rows.map((row) => normalizeTableRow(row, columnCount))
+    nextRows.splice(insertIndex, 0, makeEmptyTableRow(columnCount))
+    return {
+        kind: 'insert-row',
+        rows: nextRows,
+        focus: {
+            nodeId: node.id,
+            tableCell: { section: 'body', rowIndex: insertIndex, columnIndex: position.columnIndex },
+            start: 0,
+            end: 0,
+        },
+    }
 }
 
 export function getTableCellPositions(node: NotebookTableBlockNode): TableCellPosition[] {

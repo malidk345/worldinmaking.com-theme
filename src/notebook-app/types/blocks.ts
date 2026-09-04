@@ -1,3 +1,8 @@
+/**
+ * Schema for the Database writing block (`<DatabaseTable />`), not the editor document.
+ * The live editor model is `NotebookBlockNode` in MarkdownNotebook — markdown is the source of truth.
+ * Do not add a second block tree or wire Craft-style handles to this type.
+ */
 export type BlockType =
     | 'paragraph'
     | 'heading_1' | 'heading_2' | 'heading_3'

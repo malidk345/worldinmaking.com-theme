@@ -15,15 +15,18 @@ import {
 import { IconMinus, IconPlus } from '@posthog/icons'
 import { LemonButton } from '@posthog/lemon-ui'
 
-import { shouldUseMarkdownPaste } from './documentModel'
+import {
+    getSinglePastedParagraphChildren,
+    planPasteInlineChildren,
+    shouldPasteInlineMarkdown,
+} from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TableCellPosition, TextSelectionPointerStartEvent } from './editorTypes'
-import { splitInlineNodesAt } from './inlineContent'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
-import { htmlElementToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
+import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow } from './tableModel'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTableBlockNode, NotebookTableCell } from './types'
-import { getInlineText, normalizeInlineNodes } from './utils'
+import { getInlineText } from './utils'
 
 export type TableStructureControlLayout = {
     tableLeft: number
@@ -679,32 +682,23 @@ export function EditableTableCellContent({
         }
 
         const pastedDocument = plainText ? parseMarkdownNotebook(plainText) : null
-        if (
-            pastedDocument &&
-            pastedDocument.nodes.length === 1 &&
-            pastedDocument.nodes[0].type === 'paragraph' &&
-            shouldUseMarkdownPaste(plainText, html, pastedDocument)
-        ) {
+        const pastedChildren =
+            pastedDocument && shouldPasteInlineMarkdown(plainText, html, pastedDocument)
+                ? getSinglePastedParagraphChildren(pastedDocument)
+                : null
+        if (pastedChildren) {
             event.preventDefault()
             const selection = getSelectionRange(event.currentTarget, node.id)
             const currentTextLength = getInlineText(cell.children).length
             const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
             const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
-            const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(cell.children, selectionStart)
-            const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-            const nextChildren = normalizeInlineNodes([
-                ...beforeSelection,
-                ...pastedDocument.nodes[0].children,
-                ...afterSelection,
-            ])
-            const nextCaretOffset =
-                getInlineText(beforeSelection).length + getInlineText(pastedDocument.nodes[0].children).length
-            updateChildren(nextChildren)
+            const plan = planPasteInlineChildren(cell.children, selectionStart, selectionEnd, pastedChildren)
+            updateChildren(plan.children)
             restoreSelectionRef.current = {
                 nodeId: node.id,
                 tableCell: position,
-                start: nextCaretOffset,
-                end: nextCaretOffset,
+                start: plan.start,
+                end: plan.end,
             }
             return
         }
@@ -714,10 +708,22 @@ export function EditableTableCellContent({
         }
 
         event.preventDefault()
-        const container = document.createElement('div')
-        container.innerHTML = html
-        document.execCommand('insertHTML', false, toHtml(htmlElementToInlineNodes(container)))
-        updateChildren(htmlElementToInlineNodes(event.currentTarget))
+        const htmlChildren = htmlStringToInlineNodes(html)
+        if (!htmlChildren.length) {
+            return
+        }
+        const selection = getSelectionRange(event.currentTarget, node.id)
+        const currentTextLength = getInlineText(cell.children).length
+        const selectionStart = selection ? Math.min(selection.start, selection.end) : currentTextLength
+        const selectionEnd = selection ? Math.max(selection.start, selection.end) : currentTextLength
+        const plan = planPasteInlineChildren(cell.children, selectionStart, selectionEnd, htmlChildren)
+        updateChildren(plan.children)
+        restoreSelectionRef.current = {
+            nodeId: node.id,
+            tableCell: position,
+            start: plan.start,
+            end: plan.end,
+        }
     }
 
     return (

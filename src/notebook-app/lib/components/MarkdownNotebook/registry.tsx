@@ -6,20 +6,15 @@ import {
     IconComment,
     IconDatabase,
     IconDocument,
-    IconFlag,
-    IconFlask,
-    IconGraph,
     IconInfo,
-    IconMap,
     IconMinus,
-    IconPeople,
     IconPencil,
-    IconRewindPlay,
     IconUpload,
 } from '@posthog/icons'
 import { LemonButton, LemonInput, LemonTextArea } from '@posthog/lemon-ui'
 
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
+import { isSlashRegistryTag } from './insertCatalog'
 import {
     CalloutBlock,
     DatabaseTableBlock,
@@ -74,7 +69,6 @@ export function getMarkdownNotebookComponentDefaultProps(
 
 export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry {
     return createMarkdownNotebookRegistry([
-        makeQueryDefinition(),
         makeDefinition({
             tagName: 'Image',
             label: 'Image',
@@ -87,6 +81,7 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             exclusiveEditPanel: true,
             ViewComponent: ImageUploadBlock,
             EditComponent: ImageUploadBlock,
+            insertCommand: {},
         }),
         makeDefinition({
             tagName: 'Callout',
@@ -142,6 +137,7 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             exclusiveEditPanel: true,
             ViewComponent: SubpageBlock,
             EditComponent: SubpageBlock,
+            // Slash insert is extraInsertCommands `page-subpage` — it creates a real notebook first.
         }),
         makeDefinition({
             tagName: 'Divider',
@@ -158,10 +154,10 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
         }),
         makeDefinition({
             tagName: 'Comment',
-            label: 'Comment',
+            label: 'Note',
             category: 'Text',
-            description: 'Inline note, stored as a markdown comment',
-            aliases: ['note', 'annotation', 'todo'],
+            description: 'Hidden note stored as a markdown comment',
+            aliases: ['note', 'annotation', 'todo', 'hidden comment'],
             icon: <IconComment />,
             defaultProps: { text: '' },
             getTitle: (node) => summarizeText(getStringProp(node.props.text)),
@@ -179,6 +175,9 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             getTitle: getEmbedComponentTitle,
             ViewComponent: EmbedView,
             EditComponent: EmbedEdit,
+            insertCommand: {
+                aliases: ['iframe', 'url', 'embed', 'video'],
+            },
         }),
         makeDefinition({
             tagName: 'Latex',
@@ -190,161 +189,11 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             getTitle: (node) => getStringProp(node.props.title) ?? summarizeText(getStringProp(node.props.content)),
             ViewComponent: LatexView,
             EditComponent: LatexEdit,
-        }),
-        makeDefinition({
-            tagName: 'Python',
-            label: 'Python',
-            category: 'Code',
-            description: 'Python analysis block',
-            icon: <IconCode />,
-            defaultProps: { code: '', title: 'Python' },
-            getTitle: (node) => getCodeComponentTitle(node, 'Python'),
-            ViewComponent: CodeView,
-        }),
-        makeDefinition({
-            tagName: 'DuckSQL',
-            label: 'SQL (DuckDB)',
-            category: 'Code',
-            description: 'DuckDB SQL block',
-            icon: <IconDatabase />,
-            defaultProps: { code: '', returnVariable: 'duck_df', title: 'SQL (DuckDB)' },
-            getTitle: (node) => getCodeComponentTitle(node, 'SQL (DuckDB)'),
-            ViewComponent: CodeView,
-        }),
-        makeDefinition({
-            tagName: 'HogQLSQL',
-            label: 'SQL (HogQL)',
-            category: 'Code',
-            description: 'HogQL SQL block',
-            icon: <IconDatabase />,
-            defaultProps: { code: '', returnVariable: 'hogql_df', title: 'SQL (HogQL)' },
-            getTitle: (node) => getCodeComponentTitle(node, 'SQL (HogQL)'),
-            ViewComponent: CodeView,
-        }),
-        makeDefinition({
-            tagName: 'RecordingPlaylist',
-            label: 'Session recordings',
-            category: 'Data',
-            description: 'Session replay playlist',
-            icon: <IconRewindPlay />,
-            defaultProps: { title: 'Session recordings' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'FeatureFlag',
-            label: 'Feature flag',
-            category: 'PostHog',
-            icon: <IconFlag />,
-            defaultProps: { id: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Experiment',
-            label: 'Experiment',
-            category: 'PostHog',
-            icon: <IconFlask />,
-            defaultProps: { id: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Survey',
-            label: 'Survey',
-            category: 'PostHog',
-            defaultProps: { id: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Person',
-            label: 'Person',
-            category: 'Data',
-            icon: <IconPeople />,
-            defaultProps: { id: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Group',
-            label: 'Group',
-            category: 'Data',
-            icon: <IconPeople />,
-            defaultProps: { type: '', key: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Cohort',
-            label: 'Cohort',
-            category: 'Data',
-            icon: <IconPeople />,
-            defaultProps: { id: '' },
-            ViewComponent: SummaryView,
-        }),
-        makeDefinition({
-            tagName: 'Map',
-            label: 'Map',
-            category: 'Data',
-            icon: <IconMap />,
-            defaultProps: { title: 'Map' },
-            ViewComponent: SummaryView,
-        }),
-        ...[
-            'Backlink',
-            'ReplayTimestamp',
-            'PersonFeed',
-            'PersonProperties',
-            'GroupProperties',
-            'TaskCreate',
-            'LLMTrace',
-            'Issues',
-            'UsageMetrics',
-            'ZendeskTickets',
-            'RelatedGroups',
-            'CustomerJourney',
-            'SupportTickets',
-            'EarlyAccessFeature',
-            'FeatureFlagCodeExample',
-            'Recording',
-        ].map((tagName) =>
-            makeDefinition({
-                tagName,
-                label: splitTagName(tagName),
-                category: 'PostHog',
-                defaultProps: { title: splitTagName(tagName) },
-                ViewComponent: SummaryView,
-            })
-        ),
-    ])
-}
-
-function makeQueryDefinition(): NotebookComponentDefinition {
-    return makeDefinition({
-        tagName: 'Query',
-        label: 'Query',
-        category: 'Insight',
-        description: 'Insight or query-backed block',
-        icon: <IconGraph />,
-        getTitle: getQueryComponentTitle,
-        defaultProps: {
-            query: {
-                kind: 'DataTableNode',
-                source: {
-                    kind: 'EventsQuery',
-                    select: ['*', 'event', 'person', 'timestamp'],
-                    after: '-24h',
-                    limit: 100,
-                },
+            insertCommand: {
+                aliases: ['math', 'formula', 'equation', 'tex'],
             },
-        },
-        validateProps: (props) => {
-            const query = props.query
-            if (!query || typeof query !== 'object' || Array.isArray(query)) {
-                return ['Query requires a query object']
-            }
-            if (!('kind' in query)) {
-                return ['Query object requires a kind field']
-            }
-            return []
-        },
-        ViewComponent: QueryView,
-    })
+        }),
+    ])
 }
 
 function makeDefinition(
@@ -356,17 +205,13 @@ function makeDefinition(
         EditComponent: GenericComponentEdit,
         getTitle: getDefaultComponentTitle,
         ...definition,
+        insertCommand:
+            definition.insertCommand !== undefined
+                ? definition.insertCommand
+                : isSlashRegistryTag(definition.tagName)
+                  ? {}
+                  : undefined,
     }
-}
-
-function QueryView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const query = node.props.query
-
-    return (
-        <div className="MarkdownNotebook__component-preview">
-            <pre>{JSON.stringify(query, null, 2)}</pre>
-        </div>
-    )
 }
 
 function DividerView(_: NotebookComponentRenderProps): JSX.Element {
@@ -377,34 +222,6 @@ function DividerView(_: NotebookComponentRenderProps): JSX.Element {
 function CommentView({ node }: NotebookComponentRenderProps): JSX.Element {
     const text = typeof node.props.text === 'string' ? node.props.text : ''
     return <div className="MarkdownNotebook__comment-chip">{text || 'Comment'}</div>
-}
-
-function ImageView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : ''
-
-    return src ? (
-        <img className="MarkdownNotebook__image" src={src} alt={alt} />
-    ) : (
-        <SummaryView node={node} mode="view" updateProps={() => {}} deleteNode={() => {}} />
-    )
-}
-
-function ImageEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Element {
-    const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const alt = typeof node.props.alt === 'string' ? node.props.alt : ''
-
-    return (
-        <div className="MarkdownNotebook__component-form">
-            <LemonInput
-                value={src}
-                onChange={(value) => updateProps({ src: value })}
-                placeholder="Image URL"
-                autoFocus={wasNotebookNodeJustInserted(node.id)}
-            />
-            <LemonInput value={alt} onChange={(value) => updateProps({ alt: value })} placeholder="Alt text" />
-        </div>
-    )
 }
 
 function EmbedView({ node }: NotebookComponentRenderProps): JSX.Element {
@@ -460,16 +277,6 @@ function LatexEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Ele
     )
 }
 
-function CodeView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const code = typeof node.props.code === 'string' ? node.props.code : ''
-
-    return (
-        <div className="MarkdownNotebook__code-component">
-            <pre>{code || 'No code yet'}</pre>
-        </div>
-    )
-}
-
 function SummaryView({ node }: NotebookComponentRenderProps): JSX.Element {
     return (
         <div className="MarkdownNotebook__component-preview">
@@ -502,65 +309,8 @@ function getEmbedComponentTitle(node: NotebookComponentBlockNode): string | null
     return getStringProp(node.props.title) ?? getStringProp(node.props.src) ?? getDefaultComponentTitle(node)
 }
 
-function getCodeComponentTitle(node: NotebookComponentBlockNode, fallback: string): string | null {
-    // Never suggest the code/SQL body itself as a title — fall back to the language label
-    return getStringProp(node.props.title) ?? fallback
-}
-
-function getQueryComponentTitle(node: NotebookComponentBlockNode): string | null {
-    const explicitTitle = getStringProp(node.props.title)
-    if (explicitTitle) {
-        return explicitTitle
-    }
-
-    const query = getObjectProp(node.props.query)
-    const source = getObjectProp(query?.source)
-    const queryKind = getStringProp(query?.kind)
-    const sourceKind = getStringProp(source?.kind)
-
-    if (queryKind === 'SavedInsightNode') {
-        return getStringProp(query?.name) ?? getStringProp(query?.shortId) ?? 'Saved insight'
-    }
-    if (sourceKind === 'HogQLQuery') {
-        // Leave SQL queries untitled initially — never suggest the SQL body or a generic label
-        return null
-    }
-    if (sourceKind === 'TrendsQuery') {
-        return source ? (getSeriesSummary(source) ?? 'Trend') : 'Trend'
-    }
-    if (sourceKind === 'FunnelsQuery') {
-        return 'Funnel'
-    }
-    if (sourceKind === 'EventsQuery') {
-        return 'Events'
-    }
-    if (sourceKind === 'ActorsQuery') {
-        return 'People'
-    }
-
-    // Don't suggest raw schema kinds (e.g. "DataTableNode") as a title
-    return getDefaultComponentTitle(node)
-}
-
-function getSeriesSummary(query: Record<string, NotebookPropValue>): string | null {
-    const series = query.series
-    if (!Array.isArray(series)) {
-        return null
-    }
-
-    const names = series
-        .map((seriesItem) => (getObjectProp(seriesItem) ? getStringProp(getObjectProp(seriesItem)?.event) : null))
-        .filter(Boolean)
-
-    return names.length ? names.join(', ') : null
-}
-
 function getStringProp(value: NotebookPropValue | undefined): string | null {
     return typeof value === 'string' && value.trim() ? value.trim() : null
-}
-
-function getObjectProp(value: NotebookPropValue | undefined): Record<string, NotebookPropValue> | null {
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : null
 }
 
 function summarizeText(value: string | null): string | null {

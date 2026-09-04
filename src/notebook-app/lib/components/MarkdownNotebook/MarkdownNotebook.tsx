@@ -83,12 +83,6 @@ import {
     getMarkdownNotebookVisualGroups,
     getNotebookStringProp,
     getPromptSource,
-    getSlashCommandQuery,
-    collectSlashSplitNodes,
-    mergeDetachedSlashMenuBack,
-    slashMenuRestoreText,
-    splitListItemAtSlashToken,
-    splitTextBlockAtSlashToken,
     getTaskItemShortcut,
     getTextBlockShortcutReplacement,
     hasNotebookContent,
@@ -98,14 +92,22 @@ import {
     isGroupedBlockquoteNode,
     isPromptComponentNode,
     isTextBlockNode,
-    isTextGroupNode,
     makeEmptyNotebookTitle,
     removeNotebookNodesWithRefCleanup,
     stripNotebookRefMarksFromNodes,
     mapRestoreSelectionThroughDocumentChange,
-    rekeyNotebookNodes,
     setsEqual,
     textBlocksShareContinuationStyle,
+    planDeleteEmptyCodeBlock,
+    planDeleteTextAtSelection,
+    planInsertEmptyParagraphAfter,
+    planInsertMarkdownAfter,
+    planInsertNodesAtBoundary,
+    planMergeAdjacentTextBlocks,
+    planMergeTextIntoPreviousNonText,
+    planReplaceCodeBlockRange,
+    shouldInsertParagraphBelowTrailingCode,
+    type TextBackspacePlan,
     updateNotebookCodeBlockText,
     withoutLeadingEmptyTitleGroup,
     withPreservedGroupStart,
@@ -194,17 +196,30 @@ import {
     omitInsertCommands,
 } from './InsertMenu'
 import {
+    nextBeginSlashInsertMenuState,
+    nextOpenInsertMenuState,
+    planDismissSlashMenu,
+    planInsertAtBoundary,
+    planListItemTypedSlash,
+    planRemoveTemporaryInsertNode,
+    planSlashInsertAtListCaret,
+    planSlashInsertAtTextCaret,
+    planSplitTextBlock,
+    planTextBlockTypedSlash,
+} from './insertMenuModel'
+import {
     deleteListItemSelectionRange,
     getListItemIndex,
-    getListItemParagraphReplacement,
     getListItemRefKey,
+    planDeleteListItemAtStart,
+    planSplitListItem,
     shiftListItemSubtreeDepth,
+    type ListEditPlan,
 } from './listModel'
 import {
     htmlElementToInlineNodes,
     inlineNodesToHtml,
     makeEmptyParagraph,
-    makeListItemId,
     parseInlineMarkdown,
     parseMarkdownNotebook,
     sanitizeNotebookLinkHref,
@@ -236,6 +251,7 @@ import {
     getTableEdgeCellPosition,
     makeEmptyTableRow,
     normalizeTableRow,
+    planInsertTableRow,
     tableCellPositionsEqual,
 } from './tableModel'
 import {
@@ -245,7 +261,6 @@ import {
     NotebookDocument,
     NotebookInlineMark,
     NotebookInlineNode,
-    NotebookListItem,
     NotebookMode,
     NotebookTableBlockNode,
     NotebookTextBlockNode,
@@ -1176,50 +1191,50 @@ function MarkdownNotebookEditor({
         const selectionEnd = expandedSelection
             ? Math.max(selectionStart, Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength))
             : selectionStart
-        const [before, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-        const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-        let replacementNodes: NotebookBlockNode[]
-
-        if (nodeIndex === 0) {
-            const nextParagraph = makeEmptyParagraph(`after-title-${node.id}`)
-            nextParagraph.children = after
-            replacementNodes = [{ ...node, type: 'heading', level: 1, children: before }, nextParagraph]
-            restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
-        } else if (node.type === 'heading') {
-            if (selectionStart === 0) {
-                const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                replacementNodes = [previousParagraph, { ...node, children: after }]
-                restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
-            } else {
-                const nextHeading = { ...node, id: makeEmptyParagraph(`after-${node.id}`).id, children: after }
-                replacementNodes = [{ ...node, children: before }, nextHeading]
-                restoreSelectionRef.current = { nodeId: nextHeading.id, start: 0, end: 0 }
-            }
-        } else if (node.type === 'blockquote') {
-            if (selectionStart === 0) {
-                const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                replacementNodes = [previousParagraph, { ...node, children: after }]
-                restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
-            } else {
-                const nextBlockquote = { ...node, id: makeEmptyParagraph(`after-${node.id}`).id, children: after }
-                replacementNodes = [{ ...node, children: before }, nextBlockquote]
-                restoreSelectionRef.current = { nodeId: nextBlockquote.id, start: 0, end: 0 }
-            }
-        } else {
-            const nextParagraph = makeEmptyParagraph(`after-${node.id}`)
-            nextParagraph.children = after
-            replacementNodes = [{ ...node, children: before }, nextParagraph]
-            restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
-        }
+        const plan = planSplitTextBlock(node, nodeIndex, selectionStart, selectionEnd)
+        restoreSelectionRef.current = plan.focus
 
         commitDocument({
             ...currentDocument,
             nodes: nodes.flatMap((currentNode) =>
-                currentNode.id === node.id ? withPreservedGroupStart(node, replacementNodes) : [currentNode]
+                currentNode.id === node.id ? withPreservedGroupStart(node, plan.replacementNodes) : [currentNode]
             ),
         })
         return true
     }, [commitDocument, insertMenu?.nodeId])
+
+    const applyListEditPlan = useCallback(
+        (nodeId: string, plan: ListEditPlan): boolean => {
+            const currentDocument = documentRef.current
+            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+            const node = nodes.find((currentNode) => currentNode.id === nodeId)
+            if (!node || node.type !== 'list') {
+                return false
+            }
+
+            restoreSelectionRef.current = plan.focus
+            if (plan.kind === 'unwrap' && plan.replacementNodes) {
+                commitDocument({
+                    ...currentDocument,
+                    nodes: nodes.flatMap((currentNode) =>
+                        currentNode.id === node.id ? plan.replacementNodes ?? [currentNode] : [currentNode]
+                    ),
+                })
+                return true
+            }
+            if (!plan.items) {
+                return false
+            }
+            commitDocument({
+                ...currentDocument,
+                nodes: nodes.map((currentNode) =>
+                    currentNode.id === node.id ? { ...node, items: plan.items } : currentNode
+                ),
+            })
+            return true
+        },
+        [commitDocument]
+    )
 
     const splitListItemAtCurrentSelection = useCallback((): boolean => {
         const notebookElement = notebookRef.current
@@ -1262,72 +1277,9 @@ function MarkdownNotebookEditor({
             ? Math.max(selectionStart, Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength))
             : selectionStart
 
-        if (!textLength && selectionStart === 0 && selectionEnd === 0) {
-            if (item.depth > 0) {
-                const nextItems = shiftListItemSubtreeDepth(node.items, targetItemIndex, 'out', node.ordered)
-                if (!nextItems) {
-                    return false
-                }
-
-                restoreSelectionRef.current = {
-                    nodeId: node.id,
-                    listItemIndex: targetItemIndex,
-                    listItemId: item.id,
-                    start: 0,
-                    end: 0,
-                }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.map((currentNode) =>
-                        currentNode.id === node.id ? { ...node, items: nextItems } : currentNode
-                    ),
-                })
-                return true
-            }
-
-            const replacement = getListItemParagraphReplacement(node, targetItemIndex)
-            if (!replacement) {
-                return false
-            }
-
-            restoreSelectionRef.current = { nodeId: replacement.paragraphId, start: 0, end: 0 }
-            commitDocument({
-                ...currentDocument,
-                nodes: nodes.flatMap((currentNode) =>
-                    currentNode.id === node.id ? replacement.replacementNodes : [currentNode]
-                ),
-            })
-            return true
-        }
-
-        const [before, selectionAndAfter] = splitInlineNodesAt(item.children, selectionStart)
-        const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-        const nextItem: NotebookListItem = {
-            id: makeListItemId(`split-${node.id}-${item.id ?? String(targetItemIndex)}`),
-            children: after,
-            depth: item.depth,
-            ordered: item.ordered ?? node.ordered,
-            // A new item split off a task starts as an unchecked task
-            checked: item.checked !== undefined ? false : undefined,
-        }
-        const nextItems = [...node.items]
-        nextItems[targetItemIndex] = { ...item, children: before }
-        nextItems.splice(targetItemIndex + 1, 0, nextItem)
-        restoreSelectionRef.current = {
-            nodeId: node.id,
-            listItemIndex: targetItemIndex + 1,
-            listItemId: nextItem.id,
-            start: 0,
-            end: 0,
-        }
-        commitDocument({
-            ...currentDocument,
-            nodes: nodes.map((currentNode) =>
-                currentNode.id === node.id ? { ...node, items: nextItems } : currentNode
-            ),
-        })
-        return true
-    }, [commitDocument])
+        const plan = planSplitListItem(node, targetItemIndex, selectionStart, selectionEnd)
+        return plan ? applyListEditPlan(node.id, plan) : false
+    }, [applyListEditPlan])
 
     const shiftListItemDepthAtCurrentSelection = useCallback(
         (direction: 'in' | 'out'): boolean => {
@@ -1413,57 +1365,15 @@ function MarkdownNotebookEditor({
 
             const itemId = element.dataset.markdownNotebookListItemId
             const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
-            const item = node.items[targetItemIndex]
-            if (!item) {
-                return false
-            }
-
             const selection = getCollapsedSelectionRange(element, node.id)
             if (!selection || selection.start !== 0 || selection.end !== 0) {
                 return false
             }
 
-            if (direction === 'forward' && getInlineText(item.children).length) {
-                return false
-            }
-
-            if (item.depth > 0) {
-                const nextItems = shiftListItemSubtreeDepth(node.items, targetItemIndex, 'out', node.ordered)
-                if (!nextItems) {
-                    return false
-                }
-
-                restoreSelectionRef.current = {
-                    nodeId: node.id,
-                    listItemIndex: targetItemIndex,
-                    listItemId: item.id,
-                    start: 0,
-                    end: 0,
-                }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.map((currentNode) =>
-                        currentNode.id === node.id ? { ...node, items: nextItems } : currentNode
-                    ),
-                })
-                return true
-            }
-
-            const replacement = getListItemParagraphReplacement(node, targetItemIndex)
-            if (!replacement) {
-                return false
-            }
-
-            restoreSelectionRef.current = { nodeId: replacement.paragraphId, start: 0, end: 0 }
-            commitDocument({
-                ...currentDocument,
-                nodes: nodes.flatMap((currentNode) =>
-                    currentNode.id === node.id ? replacement.replacementNodes : [currentNode]
-                ),
-            })
-            return true
+            const plan = planDeleteListItemAtStart(node, targetItemIndex, direction)
+            return plan ? applyListEditPlan(node.id, plan) : false
         },
-        [commitDocument]
+        [applyListEditPlan]
     )
 
     // A ranged selection that reaches a list item's edge (e.g. the whole item selected up to
@@ -1595,13 +1505,9 @@ function MarkdownNotebookEditor({
             return false
         }
 
-        if (position.section === 'header' && node.rows.length) {
-            const targetPosition: TableCellPosition = {
-                section: 'body',
-                rowIndex: 0,
-                columnIndex: position.columnIndex,
-            }
-            const cellElement = tableCellRefs.current[getTableCellRefKey(node.id, targetPosition)]
+        const plan = planInsertTableRow(node, position)
+        if (plan.kind === 'focus-body') {
+            const cellElement = tableCellRefs.current[getTableCellRefKey(node.id, plan.position)]
             if (cellElement) {
                 cellElement.focus()
                 restoreSelection(cellElement, 0, 0)
@@ -1609,20 +1515,10 @@ function MarkdownNotebookEditor({
             return true
         }
 
-        const columnCount = getTableColumnCount(node)
-        const insertIndex =
-            position.section === 'header' ? 0 : Math.max(0, Math.min(position.rowIndex + 1, node.rows.length))
-        const nextRows = node.rows.map((row) => normalizeTableRow(row, columnCount))
-        nextRows.splice(insertIndex, 0, makeEmptyTableRow(columnCount))
-        restoreSelectionRef.current = {
-            nodeId: node.id,
-            tableCell: { section: 'body', rowIndex: insertIndex, columnIndex: position.columnIndex },
-            start: 0,
-            end: 0,
-        }
+        restoreSelectionRef.current = plan.focus
         commitDocument({
             ...currentDocument,
-            nodes: nodes.map((currentNode) => (currentNode.id === node.id ? { ...node, rows: nextRows } : currentNode)),
+            nodes: nodes.map((currentNode) => (currentNode.id === node.id ? { ...node, rows: plan.rows } : currentNode)),
         })
         return true
     }, [commitDocument])
@@ -1710,38 +1606,8 @@ function MarkdownNotebookEditor({
                           Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
                       )
                     : selectionStart
-                const [before, selectionAndAfter] = splitInlineNodesAt(item.children, selectionStart)
-                const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-                const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
-                commandNode.children = query ? [{ type: 'text', text: query }] : []
-
-                const beforeItems = node.items.slice(0, itemIndex)
-                if (getInlineText(before).length > 0) {
-                    beforeItems.push({ ...item, children: normalizeInlineNodes(before) })
-                }
-                const afterItems: typeof node.items = []
-                if (getInlineText(after).length > 0) {
-                    afterItems.push({
-                        ...item,
-                        id: makeListItemId(`after-slash-${item.id ?? String(itemIndex)}`),
-                        children: normalizeInlineNodes(after),
-                    })
-                }
-                afterItems.push(...node.items.slice(itemIndex + 1))
-
-                const replacementNodes: NotebookBlockNode[] = []
-                if (beforeItems.length) {
-                    replacementNodes.push({ ...node, items: beforeItems })
-                }
-                replacementNodes.push(commandNode)
-                if (afterItems.length) {
-                    replacementNodes.push({
-                        ...node,
-                        id: makeEmptyParagraph(`after-slash-list-${node.id}`).id,
-                        items: afterItems,
-                    })
-                }
-                return openDetachedMenu(replacementNodes, commandNode.id)
+                const plan = planSlashInsertAtListCaret(node, itemIndex, selectionStart, selectionEnd, query)
+                return plan ? openDetachedMenu(plan.replacementNodes, plan.commandNodeId) : false
             }
 
             if (!isTextBlockNode(node)) {
@@ -1758,31 +1624,50 @@ function MarkdownNotebookEditor({
                       Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
                   )
                 : selectionStart
-
-            const [before, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-            const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-            const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
-            commandNode.children = query ? [{ type: 'text', text: query }] : []
-            const replacementNodes: NotebookBlockNode[] = []
-
-            if (getInlineText(before).length > 0) {
-                replacementNodes.push({ ...node, children: normalizeInlineNodes(before) })
-            }
-
-            replacementNodes.push(commandNode)
-
-            if (getInlineText(after).length > 0) {
-                const afterNodeId = makeEmptyParagraph(`after-slash-command-${node.id}`).id
-                replacementNodes.push({
-                    ...node,
-                    id: afterNodeId,
-                    children: normalizeInlineNodes(after),
-                })
-            }
-
-            return openDetachedMenu(replacementNodes, commandNode.id)
+            const plan = planSlashInsertAtTextCaret(node, selectionStart, selectionEnd, query)
+            return openDetachedMenu(plan.replacementNodes, plan.commandNodeId)
         },
         [commitDocument, onInteractionStateChange]
+    )
+
+    const applyTextBackspacePlan = useCallback(
+        (plan: TextBackspacePlan): boolean => {
+            if (plan.kind === 'noop') {
+                restoreSelectionRef.current = plan.focus
+                return true
+            }
+            if (plan.kind === 'focus') {
+                if (plan.tableCell) {
+                    const element = tableCellRefs.current[getTableCellRefKey(plan.nodeId, plan.tableCell)]
+                    if (element) {
+                        element.focus()
+                        restoreSelection(element, plan.offset ?? 0, plan.offset ?? 0)
+                    }
+                    return true
+                }
+                if (plan.component) {
+                    blockRefs.current[plan.nodeId]?.focus()
+                    return true
+                }
+                const element = blockRefs.current[plan.nodeId]
+                if (element) {
+                    element.focus()
+                    restoreSelection(element, plan.offset ?? 0, plan.offset ?? 0)
+                }
+                return true
+            }
+
+            restoreSelectionRef.current = plan.focus
+            if (plan.focusNodeId) {
+                focusNodeRef.current = plan.focusNodeId
+            }
+            commitDocument({
+                ...documentRef.current,
+                nodes: plan.nodes,
+            })
+            return true
+        },
+        [commitDocument]
     )
 
     // Backspace at the start of a text block whose previous sibling is not a text block: the
@@ -1791,129 +1676,11 @@ function MarkdownNotebookEditor({
     // characters.
     const mergeTextBlockIntoPreviousBlock = useCallback(
         (nodeIndex: number): boolean => {
-            const currentDocument = documentRef.current
-            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const node = nodes[nodeIndex]
-            const previousNode = nodes[nodeIndex - 1]
-            if (!node || !isTextBlockNode(node) || !previousNode || isTextBlockNode(previousNode)) {
-                return false
-            }
-
-            const isEmptyTextBlock = !getInlineText(node.children).length
-
-            if (previousNode.type === 'list') {
-                const lastItemIndex = previousNode.items.length - 1
-                const lastItem = previousNode.items[lastItemIndex]
-                if (!lastItem) {
-                    return false
-                }
-
-                const lastItemTextLength = getInlineText(lastItem.children).length
-                restoreSelectionRef.current = {
-                    nodeId: previousNode.id,
-                    listItemIndex: lastItemIndex,
-                    listItemId: lastItem.id,
-                    start: lastItemTextLength,
-                    end: lastItemTextLength,
-                }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.flatMap((currentNode, index) => {
-                        if (index === nodeIndex - 1 && currentNode.type === 'list') {
-                            return [
-                                {
-                                    ...currentNode,
-                                    items: currentNode.items.map((item, itemIndex) =>
-                                        itemIndex === lastItemIndex
-                                            ? {
-                                                  ...item,
-                                                  children: normalizeInlineNodes([...item.children, ...node.children]),
-                                              }
-                                            : item
-                                    ),
-                                },
-                            ]
-                        }
-                        if (index === nodeIndex) {
-                            return []
-                        }
-                        return [currentNode]
-                    }),
-                })
-                return true
-            }
-
-            if (previousNode.type === 'code') {
-                const codeTextLength = previousNode.text.length
-                if (isEmptyTextBlock) {
-                    restoreSelectionRef.current = {
-                        nodeId: previousNode.id,
-                        start: codeTextLength,
-                        end: codeTextLength,
-                    }
-                    commitDocument({
-                        ...currentDocument,
-                        nodes: nodes.filter((_, index) => index !== nodeIndex),
-                    })
-                    return true
-                }
-
-                const element = blockRefs.current[previousNode.id]
-                if (element) {
-                    element.focus()
-                    restoreSelection(element, codeTextLength, codeTextLength)
-                }
-                return true
-            }
-
-            if (previousNode.type === 'table') {
-                const lastCellPosition = getTableEdgeCellPosition(previousNode, 'previous')
-                if (!lastCellPosition) {
-                    return false
-                }
-
-                const offset = getInlineText(
-                    getTableCellAtPosition(previousNode, lastCellPosition)?.children ?? []
-                ).length
-                if (isEmptyTextBlock) {
-                    restoreSelectionRef.current = {
-                        nodeId: previousNode.id,
-                        tableCell: lastCellPosition,
-                        start: offset,
-                        end: offset,
-                    }
-                    commitDocument({
-                        ...currentDocument,
-                        nodes: nodes.filter((_, index) => index !== nodeIndex),
-                    })
-                    return true
-                }
-
-                const element = tableCellRefs.current[getTableCellRefKey(previousNode.id, lastCellPosition)]
-                if (element) {
-                    element.focus()
-                    restoreSelection(element, offset, offset)
-                }
-                return true
-            }
-
-            if (previousNode.type === 'component') {
-                if (isEmptyTextBlock && node.type === 'paragraph') {
-                    focusNodeRef.current = previousNode.id
-                    commitDocument({
-                        ...currentDocument,
-                        nodes: nodes.filter((_, index) => index !== nodeIndex),
-                    })
-                    return true
-                }
-
-                blockRefs.current[previousNode.id]?.focus()
-                return true
-            }
-
-            return false
+            const nodes = documentRef.current.nodes.length ? documentRef.current.nodes : [emptyNodeRef.current]
+            const plan = planMergeTextIntoPreviousNonText(nodes, nodeIndex)
+            return plan ? applyTextBackspacePlan(plan) : false
         },
-        [commitDocument]
+        [applyTextBackspacePlan]
     )
 
     const deleteTextAtCurrentSelection = useCallback(
@@ -1954,94 +1721,10 @@ function MarkdownNotebookEditor({
                   )
                 : selectionStart
 
-            if (selectionStart !== selectionEnd) {
-                const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-                const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-                const nextChildren = normalizeInlineNodes([...beforeSelection, ...afterSelection])
-
-                restoreSelectionRef.current = { nodeId: node.id, start: selectionStart, end: selectionStart }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.map((currentNode) =>
-                        currentNode.id === node.id && isTextBlockNode(currentNode)
-                            ? { ...currentNode, children: nextChildren }
-                            : currentNode
-                    ),
-                })
-                return true
-            }
-
-            if (direction === 'backward' && selectionStart === 0 && nodeIndex === 0) {
-                restoreSelectionRef.current = { nodeId: node.id, start: 0, end: 0 }
-                return true
-            }
-
-            if (direction === 'forward' || selectionStart !== 0 || nodeIndex <= 0) {
-                return false
-            }
-
-            const previousNode = nodes[nodeIndex - 1]
-            if (textLength === 0 && node.type === 'paragraph' && previousNode?.type === 'component') {
-                focusNodeRef.current = previousNode.id
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.filter((_, index) => index !== nodeIndex),
-                })
-                return true
-            }
-
-            if (
-                (node.type === 'heading' || node.type === 'blockquote') &&
-                (!isTextBlockNode(previousNode) || !textBlocksShareContinuationStyle(previousNode, node))
-            ) {
-                restoreSelectionRef.current = { nodeId: node.id, start: 0, end: 0 }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.map((currentNode) =>
-                        currentNode.id === node.id && isTextBlockNode(currentNode)
-                            ? {
-                                  ...currentNode,
-                                  // A quoted heading downgrades to quote text, staying in the quote
-                                  type: currentNode.blockquote ? 'blockquote' : 'paragraph',
-                                  level: undefined,
-                                  blockquote: undefined,
-                              }
-                            : currentNode
-                    ),
-                })
-                return true
-            }
-
-            if (isTextBlockNode(previousNode)) {
-                const previousTextLength = getInlineText(previousNode.children).length
-                const mergedNode: NotebookTextBlockNode = {
-                    ...previousNode,
-                    children: normalizeInlineNodes([...previousNode.children, ...node.children]),
-                }
-
-                restoreSelectionRef.current = {
-                    nodeId: previousNode.id,
-                    start: previousTextLength,
-                    end: previousTextLength,
-                }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.flatMap((currentNode, index) => {
-                        if (index === nodeIndex - 1) {
-                            return [mergedNode]
-                        }
-                        if (index === nodeIndex) {
-                            return []
-                        }
-                        return [currentNode]
-                    }),
-                })
-                return true
-            }
-
-            return mergeTextBlockIntoPreviousBlock(nodeIndex)
+            const plan = planDeleteTextAtSelection(nodes, nodeIndex, selectionStart, selectionEnd, direction)
+            return plan ? applyTextBackspacePlan(plan) : false
         },
-        [commitDocument, mergeTextBlockIntoPreviousBlock]
+        [applyTextBackspacePlan]
     )
 
     // Chrome's default insertParagraph inside the code <pre> appends <br> elements, which are
@@ -2065,16 +1748,11 @@ function MarkdownNotebookEditor({
         const textLength = node.text.length
         const start = range ? Math.max(0, Math.min(Math.min(range.start, range.end), textLength)) : textLength
         const end = range ? Math.max(start, Math.min(Math.max(range.start, range.end), textLength)) : textLength
-        const nextText = `${node.text.slice(0, start)}\n${node.text.slice(end)}`
-
-        restoreSelectionRef.current = { nodeId, start: start + 1, end: start + 1 }
+        const plan = planReplaceCodeBlockRange(node, start, end, '\n')
+        restoreSelectionRef.current = plan.focus
         commitDocument({
             ...currentDocument,
-            nodes: nodes.map((currentNode) =>
-                currentNode.id === nodeId && currentNode.type === 'code'
-                    ? { ...currentNode, text: nextText }
-                    : currentNode
-            ),
+            nodes: nodes.map((currentNode) => (currentNode.id === nodeId ? plan.node : currentNode)),
         })
         return true
     }, [commitDocument])
@@ -2226,46 +1904,28 @@ function MarkdownNotebookEditor({
         [commitDocument]
     )
 
-    const insertNodesAfterNode = useCallback(
-        (nodeId: string, insertedNodes: NotebookBlockNode[]): void => {
-            if (!insertedNodes.length) {
-                return
-            }
-
-            const currentDocument = documentRef.current
-            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            if (nodeIndex === -1) {
-                return
-            }
-
-            commitDocument({
-                ...currentDocument,
-                nodes: [...nodes.slice(0, nodeIndex + 1), ...insertedNodes, ...nodes.slice(nodeIndex + 1)],
-            })
-
-            const firstInsertedNode = insertedNodes[0]
-            if (firstInsertedNode.type === 'component') {
-                focusNodeRef.current = firstInsertedNode.id
-            } else if (isTextBlockNode(firstInsertedNode)) {
-                const offset = getInlineText(firstInsertedNode.children).length
-                restoreSelectionRef.current = { nodeId: firstInsertedNode.id, start: offset, end: offset }
-            }
-        },
-        [commitDocument]
-    )
-
     const insertMarkdownAfterNode = useCallback(
         (nodeId: string, markdown: string, seed: string): boolean => {
-            const pastedNodes = rekeyNotebookNodes(parseMarkdownNotebook(markdown).nodes, seed)
-            if (!pastedNodes.length) {
+            const currentDocument = documentRef.current
+            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+            const plan = planInsertMarkdownAfter(nodes, nodeId, markdown, seed)
+            if (!plan) {
                 return false
             }
 
-            insertNodesAfterNode(nodeId, pastedNodes)
+            commitDocument({ ...currentDocument, nodes: plan.nodes })
+            if (plan.focus?.kind === 'component') {
+                focusNodeRef.current = plan.focus.nodeId
+            } else if (plan.focus?.kind === 'text') {
+                restoreSelectionRef.current = {
+                    nodeId: plan.focus.nodeId,
+                    start: plan.focus.start,
+                    end: plan.focus.end,
+                }
+            }
             return true
         },
-        [insertNodesAfterNode]
+        [commitDocument]
     )
 
     const deleteNodeBefore = useCallback(
@@ -2283,31 +1943,8 @@ function MarkdownNotebookEditor({
                 if (options.requireSameTextStyle && !textBlocksShareContinuationStyle(previousNode, currentNode)) {
                     return false
                 }
-
-                const previousTextLength = getInlineText(previousNode.children).length
-                const mergedNode: NotebookTextBlockNode = {
-                    ...previousNode,
-                    children: normalizeInlineNodes([...previousNode.children, ...currentNode.children]),
-                }
-
-                restoreSelectionRef.current = {
-                    nodeId: previousNode.id,
-                    start: previousTextLength,
-                    end: previousTextLength,
-                }
-                commitDocument({
-                    ...currentDocument,
-                    nodes: nodes.flatMap((node, index) => {
-                        if (index === nodeIndex - 1) {
-                            return [mergedNode]
-                        }
-                        if (index === nodeIndex) {
-                            return []
-                        }
-                        return [node]
-                    }),
-                })
-                return true
+                const plan = planMergeAdjacentTextBlocks(nodes, nodeIndex)
+                return plan ? applyTextBackspacePlan(plan) : false
             }
 
             if (options.requireSameTextStyle) {
@@ -2316,7 +1953,7 @@ function MarkdownNotebookEditor({
 
             return mergeTextBlockIntoPreviousBlock(nodeIndex)
         },
-        [commitDocument, mergeTextBlockIntoPreviousBlock]
+        [applyTextBackspacePlan, mergeTextBlockIntoPreviousBlock]
     )
 
     const openAIPrompt = useCallback(
@@ -3658,19 +3295,7 @@ function MarkdownNotebookEditor({
     const openInsertMenu = (nodeId: string, query: string = ''): void => {
         onInteractionStateChange?.(true)
         setInvitePicker(null)
-        setInsertMenu((currentMenu) => {
-            const sameNode = currentMenu?.nodeId === nodeId
-            return {
-                nodeId,
-                query,
-                selectedIndex: sameNode && currentMenu.query === query ? currentMenu.selectedIndex : 0,
-                mode: sameNode && currentMenu.mode === 'ai' ? 'ai' : 'tools',
-                detached: sameNode ? currentMenu.detached : undefined,
-                removeNodeOnClose: sameNode ? currentMenu.removeNodeOnClose : undefined,
-                rejoinNodeIdOnClose: sameNode ? currentMenu.rejoinNodeIdOnClose : undefined,
-                source: sameNode ? currentMenu.source : undefined,
-            }
-        })
+        setInsertMenu((currentMenu) => nextOpenInsertMenuState(currentMenu, nodeId, query))
     }
 
     const beginSlashInsertMenu = (
@@ -3680,16 +3305,7 @@ function MarkdownNotebookEditor({
     ): void => {
         onInteractionStateChange?.(true)
         restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
-        setInsertMenu((currentMenu) => ({
-            nodeId,
-            query,
-            selectedIndex: 0,
-            mode: 'tools',
-            detached: options?.detached ?? (currentMenu?.nodeId === nodeId ? currentMenu.detached : undefined),
-            removeNodeOnClose: currentMenu?.nodeId === nodeId ? currentMenu.removeNodeOnClose : undefined,
-            rejoinNodeIdOnClose: currentMenu?.nodeId === nodeId ? currentMenu.rejoinNodeIdOnClose : undefined,
-            source: 'slash',
-        }))
+        setInsertMenu((currentMenu) => nextBeginSlashInsertMenuState(currentMenu, nodeId, query, options))
     }
 
     const openDetachedInsertMenuFromNode = useCallback(
@@ -3737,29 +3353,17 @@ function MarkdownNotebookEditor({
 
     const removeTemporaryInsertMenuNode = useCallback(
         (menu: InsertMenuState | null): void => {
-            if (!menu?.removeNodeOnClose) {
+            if (!menu) {
                 return
             }
-
             const currentDocument = documentRef.current
-            const nodeIndex = currentDocument.nodes.findIndex((node) => node.id === menu.nodeId)
-            const node = currentDocument.nodes[nodeIndex]
-            if (!node || !isTextBlockNode(node)) {
+            const nextNodes = planRemoveTemporaryInsertNode(currentDocument.nodes, menu)
+            if (!nextNodes) {
                 return
             }
 
             delete blockRefs.current[menu.nodeId]
-            commitDocument(
-                {
-                    ...currentDocument,
-                    nodes: currentDocument.nodes
-                        .filter((_, index) => index !== nodeIndex)
-                        .map((node) =>
-                            node.id === menu.rejoinNodeIdOnClose ? { ...node, startsGroup: undefined } : node
-                        ),
-                },
-                { addToHistory: false }
-            )
+            commitDocument({ ...currentDocument, nodes: nextNodes }, { addToHistory: false })
         },
         [commitDocument]
     )
@@ -3771,46 +3375,20 @@ function MarkdownNotebookEditor({
             return
         }
 
-        if (insertMenu?.source === 'slash' && (insertMenu.mode === undefined || insertMenu.mode === 'tools')) {
-            const currentDocument = documentRef.current
-            if (insertMenu.detached) {
-                const restored = mergeDetachedSlashMenuBack(
-                    currentDocument.nodes,
-                    insertMenu.nodeId,
-                    insertMenu.query
-                )
-                if (restored) {
-                    delete blockRefs.current[insertMenu.nodeId]
-                    restoreSelectionRef.current = {
-                        nodeId: restored.focus.nodeId,
-                        start: restored.focus.offset,
-                        end: restored.focus.offset,
-                    }
-                    commitDocument({ ...currentDocument, nodes: restored.nodes }, { addToHistory: false })
-                    setInsertMenu(null)
-                    return
+        if (insertMenu) {
+            const restored = planDismissSlashMenu(documentRef.current.nodes, insertMenu)
+            if (restored) {
+                if (restored.removedNodeId) {
+                    delete blockRefs.current[restored.removedNodeId]
                 }
-            }
-
-            const node = currentDocument.nodes.find((candidate) => candidate.id === insertMenu.nodeId)
-            if (node && isTextBlockNode(node)) {
-                const restoredText = slashMenuRestoreText(insertMenu.query)
-                commitDocument(
-                    {
-                        ...currentDocument,
-                        nodes: currentDocument.nodes.map((candidate) =>
-                            candidate.id === node.id
-                                ? { ...node, children: [{ type: 'text', text: restoredText }] }
-                                : candidate
-                        ),
-                    },
-                    { addToHistory: false }
-                )
                 restoreSelectionRef.current = {
-                    nodeId: node.id,
-                    start: restoredText.length,
-                    end: restoredText.length,
+                    nodeId: restored.focus.nodeId,
+                    start: restored.focus.offset,
+                    end: restored.focus.offset,
                 }
+                commitDocument({ ...documentRef.current, nodes: restored.nodes }, { addToHistory: false })
+                setInsertMenu(null)
+                return
             }
         }
 
@@ -3996,43 +3574,23 @@ function MarkdownNotebookEditor({
     }, [dismissInsertMenu, insertMenu])
 
     const openInsertMenuAtBoundary = (boundaryIndex: number): void => {
-        if (boundaryIndex <= 0) {
+        const currentDocument = documentRef.current
+        const plan = planInsertAtBoundary(currentDocument.nodes, boundaryIndex)
+        if (!plan) {
             return
         }
 
-        const currentDocument = documentRef.current
-        const nodes = currentDocument.nodes
-        const insertedNode: NotebookBlockNode = {
-            ...makeEmptyParagraph(`boundary-${String(boundaryIndex)}`),
-            startsGroup: true,
-        }
-        const clampedBoundaryIndex = Math.max(1, Math.min(boundaryIndex, nodes.length))
-        // The block that followed the boundary starts its own card too, or it would join the
-        // inserted one instead of staying with the text it was grouped with.
-        const followingNode = nodes[clampedBoundaryIndex]
-        const rejoinNodeIdOnClose =
-            followingNode && isTextGroupNode(followingNode) && !followingNode.startsGroup ? followingNode.id : undefined
-
-        commitDocument({
-            ...currentDocument,
-            nodes: [
-                ...nodes.slice(0, clampedBoundaryIndex),
-                insertedNode,
-                ...nodes
-                    .slice(clampedBoundaryIndex)
-                    .map((node) => (node.id === rejoinNodeIdOnClose ? { ...node, startsGroup: true } : node)),
-            ],
-        })
-        restoreSelectionRef.current = { nodeId: insertedNode.id, start: 0, end: 0 }
+        commitDocument({ ...currentDocument, nodes: plan.nodes })
+        restoreSelectionRef.current = { nodeId: plan.insertedId, start: 0, end: 0 }
         onInteractionStateChange?.(true)
         setInsertMenu({
-            nodeId: insertedNode.id,
+            nodeId: plan.insertedId,
             query: '',
             selectedIndex: 0,
             mode: 'tools',
             detached: true,
             removeNodeOnClose: true,
-            rejoinNodeIdOnClose,
+            rejoinNodeIdOnClose: plan.rejoinNodeIdOnClose,
         })
     }
 
@@ -4040,29 +3598,22 @@ function MarkdownNotebookEditor({
         (nodeId: string): void => {
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            if (nodeIndex === -1) {
+            const plan = planInsertEmptyParagraphAfter(nodes, nodeId)
+            if (!plan) {
                 return
             }
-
-            const nextNode = nodes[nodeIndex + 1]
-            if (isBlankInsertMenuButtonRow(nextNode)) {
-                const nextElement = blockRefs.current[nextNode.id]
+            if (plan.kind === 'focus-existing') {
+                const nextElement = blockRefs.current[plan.nodeId]
                 if (nextElement) {
                     nextElement.focus()
                     restoreSelection(nextElement, 0, 0)
                     return
                 }
-                restoreSelectionRef.current = { nodeId: nextNode.id, start: 0, end: 0 }
+                restoreSelectionRef.current = { nodeId: plan.nodeId, start: 0, end: 0 }
                 return
             }
-
-            const insertedNode = makeEmptyParagraph(`after-${nodeId}`)
-            commitDocument({
-                ...currentDocument,
-                nodes: [...nodes.slice(0, nodeIndex + 1), insertedNode, ...nodes.slice(nodeIndex + 1)],
-            })
-            restoreSelectionRef.current = { nodeId: insertedNode.id, start: 0, end: 0 }
+            commitDocument({ ...currentDocument, nodes: plan.nodes })
+            restoreSelectionRef.current = { nodeId: plan.nodeId, start: 0, end: 0 }
         },
         [commitDocument]
     )
@@ -4202,16 +3753,13 @@ function MarkdownNotebookEditor({
 
         const currentDocument = documentRef.current
         const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const node = nodes.find((currentNode) => currentNode.id === nodeId)
-        if (!node || node.type !== 'code' || node.text.length) {
+        const nextNodes = planDeleteEmptyCodeBlock(nodes, nodeId)
+        if (!nextNodes) {
             return false
         }
 
         requestFocusAfterRemovingNode(nodeId)
-        commitDocument({
-            ...currentDocument,
-            nodes: nodes.filter((currentNode) => currentNode.id !== nodeId),
-        })
+        commitDocument({ ...currentDocument, nodes: nextNodes })
         return true
     }, [commitDocument, requestFocusAfterRemovingNode])
 
@@ -4224,13 +3772,8 @@ function MarkdownNotebookEditor({
 
         const nodes = documentRef.current.nodes.length ? documentRef.current.nodes : [emptyNodeRef.current]
         const nodeIndex = nodes.findIndex((currentNode) => currentNode.id === nodeId)
-        const node = nodes[nodeIndex]
-        if (!node || node.type !== 'code' || nodeIndex !== nodes.length - 1) {
-            return false
-        }
-
         const range = getCollapsedSelectionRange(element, nodeId)
-        if (!range || range.end < node.text.lastIndexOf('\n') + 1) {
+        if (!range || !shouldInsertParagraphBelowTrailingCode(nodes, nodeIndex, range.end)) {
             return false
         }
 
@@ -4433,15 +3976,25 @@ function MarkdownNotebookEditor({
             return false
         }
 
-        window.document.execCommand('insertText', false, '    ')
-        updateNode(nodeId, (currentNode) => {
-            if (currentNode.type !== 'code') {
-                return currentNode
-            }
-            return updateNotebookCodeBlockText(currentNode, element.textContent ?? '')
+        const currentDocument = documentRef.current
+        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
+        const node = nodes.find((currentNode) => currentNode.id === nodeId)
+        if (!node || node.type !== 'code') {
+            return false
+        }
+
+        const range = getSelectionRange(element, nodeId)
+        const textLength = node.text.length
+        const start = range ? Math.max(0, Math.min(Math.min(range.start, range.end), textLength)) : textLength
+        const end = range ? Math.max(start, Math.min(Math.max(range.start, range.end), textLength)) : textLength
+        const plan = planReplaceCodeBlockRange(node, start, end, '    ')
+        restoreSelectionRef.current = plan.focus
+        commitDocument({
+            ...currentDocument,
+            nodes: nodes.map((currentNode) => (currentNode.id === nodeId ? plan.node : currentNode)),
         })
         return true
-    }, [updateNode])
+    }, [commitDocument])
 
     const handleMainMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || event.button !== 0 || event.defaultPrevented) {
@@ -4593,19 +4146,14 @@ function MarkdownNotebookEditor({
     }
 
     const insertExternalNodesAtBoundary = (insertedNodes: NotebookBlockNode[], boundaryIndex: number): void => {
-        if (!insertedNodes.length) {
-            return
-        }
-
         const currentDocument = documentRef.current
         const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        // The title block always stays first: nothing may drop before it.
-        const clampedBoundaryIndex = Math.max(1, Math.min(boundaryIndex, nodes.length))
+        const nextNodes = planInsertNodesAtBoundary(nodes, insertedNodes, boundaryIndex)
+        if (!nextNodes) {
+            return
+        }
         insertedNodes.forEach((node) => markNotebookNodeFreshlyInserted(node.id))
-        commitDocument({
-            ...currentDocument,
-            nodes: [...nodes.slice(0, clampedBoundaryIndex), ...insertedNodes, ...nodes.slice(clampedBoundaryIndex)],
-        })
+        commitDocument({ ...currentDocument, nodes: nextNodes })
     }
 
     const {
@@ -4631,7 +4179,7 @@ function MarkdownNotebookEditor({
         updateNode,
     })
 
-    const { handleNotebookKeyDown } = useNotebookKeyboard({
+    const { handleNotebookKeyDown, consumePendingEnterSplit } = useNotebookKeyboard({
         mode,
         insertMenu,
         documentRef,
@@ -4757,7 +4305,6 @@ function MarkdownNotebookEditor({
             const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
             const node = nodes[nodeIndex]
             const nextText = getInlineText(nextChildren)
-            const slashQuery = getSlashCommandQuery(nextText)
             if (node && isPromptComponentNode(node)) {
                 rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren, documentRef.current.annotations)
                 if (getNotebookStringProp(node.props.question) !== nextText) {
@@ -4787,35 +4334,29 @@ function MarkdownNotebookEditor({
                     return
                 }
             }
-            if (node && isTextBlockNode(node) && insertMenu?.nodeId !== nodeId && nodeIndex > 0) {
+            if (node && isTextBlockNode(node)) {
                 const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
-                const slashToken = getSlashTokenAt(nextText, caret)
-                if (slashToken) {
-                    if (slashToken.start === 0 && slashQuery !== null) {
-                        const queryChildren: NotebookInlineNode[] = slashQuery ? [{ type: 'text', text: slashQuery }] : []
-                        const nextHtml = inlineNodesToHtml(queryChildren, documentRef.current.annotations)
-                        rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
-                        if (inlineEditableElement.innerHTML !== nextHtml) {
-                            inlineEditableElement.innerHTML = nextHtml
-                        }
-                        restoreSelection(
-                            inlineEditableElement,
-                            getInlineText(queryChildren).length,
-                            getInlineText(queryChildren).length
-                        )
-                        updateNode(nodeId, (currentNode) => {
-                            if (!isTextBlockNode(currentNode)) {
-                                return currentNode
-                            }
-                            return { ...currentNode, children: queryChildren }
-                        })
-                        beginSlashInsertMenu(nodeId, slashQuery)
-                        return
+                const slashPlan = planTextBlockTypedSlash(node, nodeIndex, nextChildren, caret, insertMenu?.nodeId)
+                if (slashPlan?.type === 'same-node') {
+                    const nextHtml = inlineNodesToHtml(slashPlan.children, documentRef.current.annotations)
+                    rootEditableInputHtmlByNodeIdRef.current[nodeId] = nextHtml
+                    if (inlineEditableElement.innerHTML !== nextHtml) {
+                        inlineEditableElement.innerHTML = nextHtml
                     }
-
-                    const parts = splitTextBlockAtSlashToken(node, nextChildren, slashToken)
-                    beginSlashInsertMenu(parts.command.id, slashToken.query, { detached: true })
-                    replaceNodeWithNodes(nodeId, collectSlashSplitNodes(parts))
+                    restoreSelection(
+                        inlineEditableElement,
+                        getInlineText(slashPlan.children).length,
+                        getInlineText(slashPlan.children).length
+                    )
+                    updateNode(nodeId, (currentNode) =>
+                        isTextBlockNode(currentNode) ? { ...currentNode, children: slashPlan.children } : currentNode
+                    )
+                    beginSlashInsertMenu(nodeId, slashPlan.query)
+                    return
+                }
+                if (slashPlan?.type === 'split') {
+                    beginSlashInsertMenu(slashPlan.commandId, slashPlan.query, { detached: true })
+                    replaceNodeWithNodes(nodeId, slashPlan.nodes)
                     return
                 }
             }
@@ -4843,22 +4384,20 @@ function MarkdownNotebookEditor({
             }
 
             const listNode = nodes.find((node) => node.id === nodeId)
-            if (listNode?.type === 'list' && insertMenu?.nodeId !== nodeId) {
+            if (listNode?.type === 'list') {
                 const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
-                const slashToken = getSlashTokenAt(nextText, caret)
-                if (slashToken) {
-                    const targetItemIndex = getListItemIndex(listNode.items, itemIndex, itemId)
-                    if (listNode.items[targetItemIndex]) {
-                        const { replacementNodes, commandNodeId } = splitListItemAtSlashToken(
-                            listNode,
-                            targetItemIndex,
-                            nextChildren,
-                            slashToken
-                        )
-                        beginSlashInsertMenu(commandNodeId, slashToken.query, { detached: true })
-                        replaceNodeWithNodes(nodeId, replacementNodes)
-                        return
-                    }
+                const targetItemIndex = getListItemIndex(listNode.items, itemIndex, itemId)
+                const listSlash = planListItemTypedSlash(
+                    listNode,
+                    targetItemIndex,
+                    nextChildren,
+                    caret,
+                    insertMenu?.nodeId
+                )
+                if (listSlash) {
+                    beginSlashInsertMenu(listSlash.commandNodeId, listSlash.query ?? '', { detached: true })
+                    replaceNodeWithNodes(nodeId, listSlash.replacementNodes)
+                    return
                 }
             }
             let taskShortcut: ReturnType<typeof getTaskItemShortcut> = null
@@ -5206,6 +4745,20 @@ function MarkdownNotebookEditor({
             !event.metaKey &&
             !event.ctrlKey &&
             focusFormattingToolbar()
+        ) {
+            event.preventDefault()
+            event.stopPropagation()
+            return
+        }
+
+        if (
+            mode === 'edit' &&
+            event.key === 'Enter' &&
+            !event.shiftKey &&
+            !event.altKey &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            consumePendingEnterSplit()
         ) {
             event.preventDefault()
             event.stopPropagation()
@@ -5755,30 +5308,38 @@ function MarkdownNotebookEditor({
                     moveFocusToAdjacentNode,
                     openInsertMenu: (query = '') => openInsertMenu(node.id, query),
                     openSlashMenuAtToken: (token, children) => {
-                        if (index === 0 || !isTextBlockNode(node)) {
+                        if (!isTextBlockNode(node)) {
                             return false
                         }
-                        if (token.start === 0) {
-                            const queryChildren = token.query ? [{ type: 'text' as const, text: token.query }] : []
+                        const caret = token.start + 1 + token.query.length
+                        const slashPlan = planTextBlockTypedSlash(
+                            node,
+                            index,
+                            children,
+                            caret,
+                            insertMenu?.nodeId
+                        )
+                        if (slashPlan?.type === 'same-node') {
                             const element = blockRefs.current[node.id]
-                            const nextHtml = inlineNodesToHtml(queryChildren, documentRef.current.annotations)
+                            const nextHtml = inlineNodesToHtml(slashPlan.children, documentRef.current.annotations)
                             rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
                             if (element && element.innerHTML !== nextHtml) {
                                 element.innerHTML = nextHtml
                             }
-                            updateNode(node.id, (currentNode) => {
-                                if (!isTextBlockNode(currentNode)) {
-                                    return currentNode
-                                }
-                                return { ...currentNode, children: queryChildren }
-                            })
-                            beginSlashInsertMenu(node.id, token.query)
+                            updateNode(node.id, (currentNode) =>
+                                isTextBlockNode(currentNode)
+                                    ? { ...currentNode, children: slashPlan.children }
+                                    : currentNode
+                            )
+                            beginSlashInsertMenu(node.id, slashPlan.query)
                             return true
                         }
-                        const parts = splitTextBlockAtSlashToken(node, children, token)
-                        beginSlashInsertMenu(parts.command.id, token.query, { detached: true })
-                        replaceNodeWithNodes(node.id, collectSlashSplitNodes(parts))
-                        return true
+                        if (slashPlan?.type === 'split') {
+                            beginSlashInsertMenu(slashPlan.commandId, slashPlan.query, { detached: true })
+                            replaceNodeWithNodes(node.id, slashPlan.nodes)
+                            return true
+                        }
+                        return false
                     },
                     openDetachedInsertMenu: () => openDetachedInsertMenuFromNode(node.id),
                     updateAIPromptQuery: (query) => updateAIPromptQuery(node.id, query),

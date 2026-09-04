@@ -1,4 +1,4 @@
-import { RestoreInlineSelectionRequest, RestoreSelectionRequest } from './editorTypes'
+import { RestoreInlineSelectionRequest, RestoreSelectionRequest, TableCellPosition } from './editorTypes'
 import { removeInlineRefMark, splitInlineNodesAt } from './inlineContent'
 import {
     COMMENT_COMPONENT_TAG,
@@ -356,6 +356,74 @@ export function updateNotebookCodeBlockText(node: NotebookCodeBlockNode, nextTex
     return { ...node, text: nextText, refs: refs.length ? refs : undefined }
 }
 
+export type CodeEditPlan = {
+    node: NotebookCodeBlockNode
+    focus: RestoreInlineSelectionRequest
+}
+
+export function planReplaceCodeBlockRange(
+    node: NotebookCodeBlockNode,
+    selectionStart: number,
+    selectionEnd: number,
+    insertText: string
+): CodeEditPlan {
+    const textLength = node.text.length
+    const start = Math.max(0, Math.min(Math.min(selectionStart, selectionEnd), textLength))
+    const end = Math.max(start, Math.min(Math.max(selectionStart, selectionEnd), textLength))
+    const nextText = `${node.text.slice(0, start)}${insertText}${node.text.slice(end)}`
+    const focusOffset = start + insertText.length
+    return {
+        node: updateNotebookCodeBlockText(node, nextText),
+        focus: { nodeId: node.id, start: focusOffset, end: focusOffset },
+    }
+}
+
+export function planDeleteEmptyCodeBlock(nodes: NotebookBlockNode[], nodeId: string): NotebookBlockNode[] | null {
+    const node = nodes.find((candidate) => candidate.id === nodeId)
+    if (!node || node.type !== 'code' || node.text.length) {
+        return null
+    }
+    return nodes.filter((candidate) => candidate.id !== nodeId)
+}
+
+export function shouldInsertParagraphBelowTrailingCode(
+    nodes: NotebookBlockNode[],
+    nodeIndex: number,
+    caretEnd: number
+): boolean {
+    const node = nodes[nodeIndex]
+    if (!node || node.type !== 'code' || nodeIndex !== nodes.length - 1) {
+        return false
+    }
+    return caretEnd >= node.text.lastIndexOf('\n') + 1
+}
+
+export type InsertParagraphAfterPlan =
+    | { kind: 'focus-existing'; nodeId: string }
+    | { kind: 'insert'; nodes: NotebookBlockNode[]; nodeId: string }
+
+export function planInsertEmptyParagraphAfter(
+    nodes: NotebookBlockNode[],
+    nodeId: string
+): InsertParagraphAfterPlan | null {
+    const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
+    if (nodeIndex === -1) {
+        return null
+    }
+
+    const nextNode = nodes[nodeIndex + 1]
+    if (isBlankInsertMenuButtonRow(nextNode)) {
+        return { kind: 'focus-existing', nodeId: nextNode.id }
+    }
+
+    const insertedNode = makeEmptyParagraph(`after-${nodeId}`)
+    return {
+        kind: 'insert',
+        nodeId: insertedNode.id,
+        nodes: [...nodes.slice(0, nodeIndex + 1), insertedNode, ...nodes.slice(nodeIndex + 1)],
+    }
+}
+
 export function isCommentComponentNode(node: NotebookBlockNode): node is NotebookComponentBlockNode {
     return node.type === 'component' && node.tagName === COMMENT_COMPONENT_TAG
 }
@@ -370,6 +438,227 @@ export function textBlocksShareContinuationStyle(left: NotebookTextBlockNode, ri
     }
 
     return left.type !== 'heading' || (left.level ?? 1) === (right.level ?? 1)
+}
+
+export type TextBackspacePlan =
+    | { kind: 'noop'; focus: RestoreInlineSelectionRequest }
+    | { kind: 'replace'; nodes: NotebookBlockNode[]; focus: RestoreInlineSelectionRequest; focusNodeId?: string }
+    | {
+          kind: 'focus'
+          nodeId: string
+          offset?: number
+          tableCell?: TableCellPosition
+          component?: boolean
+      }
+
+function replaceNodeAt(
+    nodes: NotebookBlockNode[],
+    nodeIndex: number,
+    nextNode: NotebookBlockNode
+): NotebookBlockNode[] {
+    return nodes.map((node, index) => (index === nodeIndex ? nextNode : node))
+}
+
+function removeNodeAt(nodes: NotebookBlockNode[], nodeIndex: number): NotebookBlockNode[] {
+    return nodes.filter((_, index) => index !== nodeIndex)
+}
+
+export function planMergeAdjacentTextBlocks(
+    nodes: NotebookBlockNode[],
+    nodeIndex: number
+): TextBackspacePlan | null {
+    const node = nodes[nodeIndex]
+    const previousNode = nodes[nodeIndex - 1]
+    if (!node || !isTextBlockNode(node) || !previousNode || !isTextBlockNode(previousNode)) {
+        return null
+    }
+
+    const previousTextLength = getInlineText(previousNode.children).length
+    const mergedNode: NotebookTextBlockNode = {
+        ...previousNode,
+        children: normalizeInlineNodes([...previousNode.children, ...node.children]),
+    }
+    return {
+        kind: 'replace',
+        nodes: nodes.flatMap((current, index) => {
+            if (index === nodeIndex - 1) {
+                return [mergedNode]
+            }
+            if (index === nodeIndex) {
+                return []
+            }
+            return [current]
+        }),
+        focus: { nodeId: previousNode.id, start: previousTextLength, end: previousTextLength },
+    }
+}
+
+/** Backspace at the start of a text block whose previous sibling is not a text block. */
+export function planMergeTextIntoPreviousNonText(
+    nodes: NotebookBlockNode[],
+    nodeIndex: number
+): TextBackspacePlan | null {
+    const node = nodes[nodeIndex]
+    const previousNode = nodes[nodeIndex - 1]
+    if (!node || !isTextBlockNode(node) || !previousNode || isTextBlockNode(previousNode)) {
+        return null
+    }
+
+    const isEmptyTextBlock = !getInlineText(node.children).length
+
+    if (previousNode.type === 'list') {
+        const lastItemIndex = previousNode.items.length - 1
+        const lastItem = previousNode.items[lastItemIndex]
+        if (!lastItem) {
+            return null
+        }
+        const lastItemTextLength = getInlineText(lastItem.children).length
+        const nextList: NotebookListBlockNode = {
+            ...previousNode,
+            items: previousNode.items.map((item, itemIndex) =>
+                itemIndex === lastItemIndex
+                    ? { ...item, children: normalizeInlineNodes([...item.children, ...node.children]) }
+                    : item
+            ),
+        }
+        return {
+            kind: 'replace',
+            nodes: nodes.flatMap((current, index) => {
+                if (index === nodeIndex - 1) {
+                    return [nextList]
+                }
+                if (index === nodeIndex) {
+                    return []
+                }
+                return [current]
+            }),
+            focus: {
+                nodeId: previousNode.id,
+                listItemIndex: lastItemIndex,
+                listItemId: lastItem.id,
+                start: lastItemTextLength,
+                end: lastItemTextLength,
+            },
+        }
+    }
+
+    if (previousNode.type === 'code') {
+        const codeTextLength = previousNode.text.length
+        if (isEmptyTextBlock) {
+            return {
+                kind: 'replace',
+                nodes: removeNodeAt(nodes, nodeIndex),
+                focus: { nodeId: previousNode.id, start: codeTextLength, end: codeTextLength },
+            }
+        }
+        return { kind: 'focus', nodeId: previousNode.id, offset: codeTextLength }
+    }
+
+    if (previousNode.type === 'table') {
+        const lastCellPosition = getTableEdgeCellPosition(previousNode, 'previous')
+        if (!lastCellPosition) {
+            return null
+        }
+        const offset = getInlineText(getTableCellAtPosition(previousNode, lastCellPosition)?.children ?? []).length
+        if (isEmptyTextBlock) {
+            return {
+                kind: 'replace',
+                nodes: removeNodeAt(nodes, nodeIndex),
+                focus: {
+                    nodeId: previousNode.id,
+                    tableCell: lastCellPosition,
+                    start: offset,
+                    end: offset,
+                },
+            }
+        }
+        return {
+            kind: 'focus',
+            nodeId: previousNode.id,
+            offset,
+            tableCell: lastCellPosition,
+        }
+    }
+
+    if (previousNode.type === 'component') {
+        if (isEmptyTextBlock && node.type === 'paragraph') {
+            return {
+                kind: 'replace',
+                nodes: removeNodeAt(nodes, nodeIndex),
+                focus: { nodeId: previousNode.id, start: 0, end: 0 },
+                focusNodeId: previousNode.id,
+            }
+        }
+        return { kind: 'focus', nodeId: previousNode.id, component: true }
+    }
+
+    return null
+}
+
+export function planDeleteTextAtSelection(
+    nodes: NotebookBlockNode[],
+    nodeIndex: number,
+    selectionStart: number,
+    selectionEnd: number,
+    direction: 'backward' | 'forward'
+): TextBackspacePlan | null {
+    const node = nodes[nodeIndex]
+    if (!node || !isTextBlockNode(node)) {
+        return null
+    }
+
+    const textLength = getInlineText(node.children).length
+    const start = Math.max(0, Math.min(Math.min(selectionStart, selectionEnd), textLength))
+    const end = Math.max(start, Math.min(Math.max(selectionStart, selectionEnd), textLength))
+
+    if (start !== end) {
+        const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, start)
+        const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, end - start)
+        return {
+            kind: 'replace',
+            nodes: replaceNodeAt(nodes, nodeIndex, {
+                ...node,
+                children: normalizeInlineNodes([...beforeSelection, ...afterSelection]),
+            }),
+            focus: { nodeId: node.id, start, end: start },
+        }
+    }
+
+    if (direction === 'backward' && start === 0 && nodeIndex === 0) {
+        return { kind: 'noop', focus: { nodeId: node.id, start: 0, end: 0 } }
+    }
+
+    if (direction === 'forward' || start !== 0 || nodeIndex <= 0) {
+        return null
+    }
+
+    const previousNode = nodes[nodeIndex - 1]
+    if (textLength === 0 && node.type === 'paragraph' && previousNode?.type === 'component') {
+        return {
+            kind: 'replace',
+            nodes: removeNodeAt(nodes, nodeIndex),
+            focus: { nodeId: previousNode.id, start: 0, end: 0 },
+            focusNodeId: previousNode.id,
+        }
+    }
+
+    if (
+        (node.type === 'heading' || node.type === 'blockquote') &&
+        (!previousNode || !isTextBlockNode(previousNode) || !textBlocksShareContinuationStyle(previousNode, node))
+    ) {
+        return {
+            kind: 'replace',
+            nodes: replaceNodeAt(nodes, nodeIndex, {
+                ...node,
+                type: node.blockquote ? 'blockquote' : 'paragraph',
+                level: undefined,
+                blockquote: undefined,
+            }),
+            focus: { nodeId: node.id, start: 0, end: 0 },
+        }
+    }
+
+    return planMergeAdjacentTextBlocks(nodes, nodeIndex) ?? planMergeTextIntoPreviousNonText(nodes, nodeIndex)
 }
 
 export function isInlineInsertMenuRow(node: NotebookBlockNode | undefined, insertMenuNodeId?: string): boolean {
@@ -1154,4 +1443,210 @@ export function rekeyNotebookNodes(nodes: NotebookBlockNode[], seed: string): No
             id,
         }
     })
+}
+
+export type InsertedNodesFocus =
+    | { kind: 'component'; nodeId: string }
+    | { kind: 'text'; nodeId: string; start: number; end: number }
+
+export function getFocusAfterInsertedNodes(insertedNodes: NotebookBlockNode[]): InsertedNodesFocus | null {
+    const firstInsertedNode = insertedNodes[0]
+    if (!firstInsertedNode) {
+        return null
+    }
+    if (firstInsertedNode.type === 'component') {
+        return { kind: 'component', nodeId: firstInsertedNode.id }
+    }
+    if (isTextBlockNode(firstInsertedNode)) {
+        const offset = getInlineText(firstInsertedNode.children).length
+        return { kind: 'text', nodeId: firstInsertedNode.id, start: offset, end: offset }
+    }
+    return null
+}
+
+export function planInsertNodesAfter(
+    nodes: NotebookBlockNode[],
+    nodeId: string,
+    insertedNodes: NotebookBlockNode[]
+): { nodes: NotebookBlockNode[]; focus: InsertedNodesFocus | null } | null {
+    if (!insertedNodes.length) {
+        return null
+    }
+    const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
+    if (nodeIndex === -1) {
+        return null
+    }
+    return {
+        nodes: [...nodes.slice(0, nodeIndex + 1), ...insertedNodes, ...nodes.slice(nodeIndex + 1)],
+        focus: getFocusAfterInsertedNodes(insertedNodes),
+    }
+}
+
+export function planInsertNodesAtBoundary(
+    nodes: NotebookBlockNode[],
+    insertedNodes: NotebookBlockNode[],
+    boundaryIndex: number
+): NotebookBlockNode[] | null {
+    if (!insertedNodes.length) {
+        return null
+    }
+    const clampedBoundaryIndex = Math.max(1, Math.min(boundaryIndex, nodes.length))
+    return [...nodes.slice(0, clampedBoundaryIndex), ...insertedNodes, ...nodes.slice(clampedBoundaryIndex)]
+}
+
+export function planInsertMarkdownAfter(
+    nodes: NotebookBlockNode[],
+    nodeId: string,
+    markdown: string,
+    seed: string
+): { nodes: NotebookBlockNode[]; focus: InsertedNodesFocus | null } | null {
+    return planInsertNodesAfter(nodes, nodeId, rekeyNotebookNodes(parseMarkdownNotebook(markdown).nodes, seed))
+}
+
+export type InlineChildrenPastePlan = {
+    children: NotebookInlineNode[]
+    start: number
+    end: number
+}
+
+export function planPasteInlineChildren(
+    currentChildren: NotebookInlineNode[],
+    selectionStart: number,
+    selectionEnd: number,
+    pastedChildren: NotebookInlineNode[]
+): InlineChildrenPastePlan {
+    const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(currentChildren, selectionStart)
+    const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, Math.max(0, selectionEnd - selectionStart))
+    const nextChildren = normalizeInlineNodes([...beforeSelection, ...pastedChildren, ...afterSelection])
+    const caret = getInlineText(beforeSelection).length + getInlineText(pastedChildren).length
+    return { children: nextChildren, start: caret, end: caret }
+}
+
+export function shouldPasteInlineMarkdown(
+    plainText: string,
+    html: string,
+    pastedDocument: NotebookDocument | null
+): boolean {
+    return Boolean(
+        pastedDocument &&
+            pastedDocument.nodes.length === 1 &&
+            pastedDocument.nodes[0].type === 'paragraph' &&
+            shouldUseMarkdownPaste(plainText, html, pastedDocument)
+    )
+}
+
+export function getSinglePastedParagraphChildren(document: NotebookDocument): NotebookInlineNode[] | null {
+    const node = document.nodes[0]
+    return document.nodes.length === 1 && node?.type === 'paragraph' ? node.children : null
+}
+
+export type TextPastePlan =
+    | { kind: 'update'; nextNode: NotebookTextBlockNode; focus: RestoreInlineSelectionRequest }
+    | { kind: 'replace-nodes'; replacementNodes: NotebookBlockNode[]; focus: RestoreInlineSelectionRequest | null }
+
+export function planPasteIntoTextBlock(
+    node: NotebookTextBlockNode,
+    isTitleBlock: boolean,
+    selectionStart: number,
+    selectionEnd: number,
+    pastedNodes: NotebookBlockNode[],
+    pastedMarkdown: string
+): TextPastePlan | null {
+    const freshPastedNodes = rekeyNotebookNodes(pastedNodes, `paste-${node.id}-${pastedMarkdown.length}`)
+    if (!freshPastedNodes.length) {
+        return null
+    }
+
+    const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
+    const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, Math.max(0, selectionEnd - selectionStart))
+
+    if (isTitleBlock) {
+        const titlePaste = getTitlePasteParts(pastedMarkdown)
+        const firstPastedNode = freshPastedNodes[0]
+        const firstLineChildren: NotebookInlineNode[] = titlePaste.hasBodyMarkdown
+            ? getTitleChildrenFromMarkdownLine(titlePaste.titleMarkdown)
+            : firstPastedNode && isTextBlockNode(firstPastedNode)
+              ? firstPastedNode.children
+              : [{ type: 'text', text: titlePaste.titleMarkdown }]
+        const nextTitleChildren = normalizeInlineNodes([
+            ...beforeSelection,
+            ...firstLineChildren,
+            ...(titlePaste.hasBodyMarkdown ? [] : afterSelection),
+        ])
+        const nextTitle: NotebookTextBlockNode = {
+            ...node,
+            type: 'heading',
+            level: 1,
+            children: nextTitleChildren,
+        }
+
+        if (!titlePaste.hasBodyMarkdown) {
+            const caret = getInlineText(nextTitleChildren).length
+            return {
+                kind: 'update',
+                nextNode: nextTitle,
+                focus: { nodeId: node.id, start: caret, end: caret },
+            }
+        }
+
+        const bodyNodes = rekeyNotebookNodes(
+            parseMarkdownNotebook(titlePaste.bodyMarkdown).nodes.map(normalizeNotebookTitlePasteBodyNode),
+            `paste-title-body-${node.id}-${pastedMarkdown.length}`
+        )
+        const trailingParagraph =
+            afterSelection.length || !bodyNodes.length
+                ? { ...makeEmptyParagraph(`paste-title-after-${node.id}`), children: afterSelection }
+                : null
+        const replacementNodes = [
+            nextTitle,
+            ...bodyNodes,
+            ...(trailingParagraph ? [trailingParagraph] : []),
+        ]
+        const focusNode = trailingParagraph ?? [...bodyNodes].reverse().find(isTextBlockNode)
+        let focus: RestoreInlineSelectionRequest | null = null
+        if (focusNode && isTextBlockNode(focusNode)) {
+            const caretOffset = getInlineText(focusNode.children).length
+            focus = { nodeId: focusNode.id, start: caretOffset, end: caretOffset }
+        }
+        return { kind: 'replace-nodes', replacementNodes, focus }
+    }
+
+    const firstPastedNode = freshPastedNodes[0]
+    if (
+        freshPastedNodes.length === 1 &&
+        firstPastedNode &&
+        firstPastedNode.type === 'paragraph' &&
+        (node.type === 'paragraph' || getInlineText(node.children).trim().length > 0)
+    ) {
+        const inline = planPasteInlineChildren(
+            node.children,
+            selectionStart,
+            selectionEnd,
+            firstPastedNode.children
+        )
+        return {
+            kind: 'update',
+            nextNode: { ...node, children: inline.children },
+            focus: { nodeId: node.id, start: inline.start, end: inline.end },
+        }
+    }
+
+    const replacementNodes: NotebookBlockNode[] = []
+    if (beforeSelection.length) {
+        replacementNodes.push({ ...node, children: beforeSelection })
+    }
+    replacementNodes.push(...freshPastedNodes)
+    const afterNode = afterSelection.length
+        ? { ...makeEmptyParagraph(`paste-after-${node.id}`), children: afterSelection }
+        : null
+    if (afterNode) {
+        replacementNodes.push(afterNode)
+    }
+    const focusNode = afterNode ?? [...freshPastedNodes].reverse().find(isTextBlockNode)
+    let focus: RestoreInlineSelectionRequest | null = null
+    if (focusNode && isTextBlockNode(focusNode)) {
+        const caretOffset = afterNode ? 0 : getInlineText(focusNode.children).length
+        focus = { nodeId: focusNode.id, start: caretOffset, end: caretOffset }
+    }
+    return { kind: 'replace-nodes', replacementNodes, focus }
 }
