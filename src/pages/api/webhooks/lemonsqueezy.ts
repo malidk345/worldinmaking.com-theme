@@ -1,6 +1,8 @@
 export const runtime = 'edge'
 
 import { supabaseRest } from '../../../lib/bots/supabase-edge'
+import { envFrom, getRuntimeEnv } from '../../../lib/bots/runtime-env'
+import { subscriptionEntitlement, verifyLemonSqueezySignature } from '../../../lib/wim-billing'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -9,27 +11,18 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
-async function verifyLemonSqueezySignatureEdge(rawBody: string, signature: string, secret: string): Promise<boolean> {
-    if (!rawBody || !signature || !secret) return false
-    try {
-        const encoder = new TextEncoder()
-        const key = await crypto.subtle.importKey(
-            'raw',
-            encoder.encode(secret),
-            { name: 'HMAC', hash: 'SHA-256' },
-            false,
-            ['verify', 'sign']
-        )
-        const hex = signature.trim()
-        const bytes = new Uint8Array(hex.length / 2)
-        for (let i = 0; i < hex.length; i += 2) {
-            bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
-        }
-        return await crypto.subtle.verify('HMAC', key, bytes, encoder.encode(rawBody))
-    } catch {
-        return false
-    }
-}
+const SUBSCRIPTION_EVENTS = new Set([
+    'subscription_created',
+    'subscription_updated',
+    'subscription_resumed',
+    'subscription_unpaused',
+    'subscription_paused',
+    'subscription_cancelled',
+    'subscription_expired',
+    'subscription_payment_success',
+    'subscription_payment_failed',
+    'subscription_payment_recovered',
+])
 
 export default async function handler(req: Request) {
     if (req.method !== 'POST') {
@@ -39,72 +32,80 @@ export default async function handler(req: Request) {
     try {
         const rawBody = await req.text()
         const signature = req.headers.get('x-signature') || ''
-        const webhookSecret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || ''
+        const env = getRuntimeEnv()
+        const webhookSecret = envFrom(env, 'LEMON_SQUEEZY_WEBHOOK_SECRET')
 
-        // In production, signature verification is strictly enforced
-        if (webhookSecret) {
-            const isValid = await verifyLemonSqueezySignatureEdge(rawBody, signature, webhookSecret)
-            if (!isValid) {
-                console.warn('[LemonSqueezy Webhook] Invalid signature')
-                return json({ error: 'Invalid webhook signature' }, 401)
-            }
+        if (!webhookSecret) {
+            console.error('[LemonSqueezy Webhook] LEMON_SQUEEZY_WEBHOOK_SECRET is not set')
+            return json({ error: 'Webhook secret is not configured' }, 500)
+        }
+
+        const isValid = await verifyLemonSqueezySignature(rawBody, signature, webhookSecret)
+        if (!isValid) {
+            console.warn('[LemonSqueezy Webhook] Invalid signature')
+            return json({ error: 'Invalid webhook signature' }, 401)
         }
 
         const payload = JSON.parse(rawBody)
         const eventName = payload?.meta?.event_name as string
         const customData = payload?.meta?.custom_data as Record<string, any> | undefined
-        const dataAttributes = payload?.data?.attributes
-        const userId = customData?.user_id || dataAttributes?.user_id
+        const dataAttributes = payload?.data?.attributes || {}
+        const userId = String(customData?.user_id || dataAttributes?.user_id || '').trim()
 
-        console.info(`[LemonSqueezy Webhook] Received event: ${eventName} for user: ${userId}`)
+        console.info(`[LemonSqueezy Webhook] Received event: ${eventName} for user: ${userId || 'unknown'}`)
+
+        if (!SUBSCRIPTION_EVENTS.has(eventName)) {
+            return json({ received: true, event: eventName, note: 'ignored' }, 200)
+        }
 
         if (!userId) {
             console.warn('[LemonSqueezy Webhook] Missing user_id in custom_data')
             return json({ received: true, note: 'No user_id found' }, 200)
         }
 
-        if (eventName === 'subscription_created' || eventName === 'subscription_updated' || eventName === 'subscription_resumed') {
-            const status = dataAttributes?.status || 'active'
-            const currentPeriodEnd = dataAttributes?.renews_at || dataAttributes?.ends_at
-            const subscriptionId = String(payload?.data?.id || '')
-            const customerId = String(dataAttributes?.customer_id || '')
+        const status = String(dataAttributes?.status || 'active')
+        const currentPeriodEnd = dataAttributes?.renews_at || dataAttributes?.ends_at || null
+        const subscriptionId = String(payload?.data?.id || '')
+        const customerId = String(dataAttributes?.customer_id || '')
+        const variantId = dataAttributes?.variant_id != null ? String(dataAttributes.variant_id) : null
+        const interval = dataAttributes?.variant_id
+            ? dataAttributes?.first_subscription_item?.interval || null
+            : null
+        const role = subscriptionEntitlement(status, currentPeriodEnd)
 
-            // 1. Upgrade user profile to 'pro'
-            if (status === 'active' || status === 'on_trial') {
-                await supabaseRest(`profiles?id=eq.${userId}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ role: 'pro', updated_at: new Date().toISOString() }),
-                })
-
-                // 2. Save subscription details
-                await supabaseRest('subscriptions', {
-                    method: 'POST',
-                    headers: { Prefer: 'resolution=merge-duplicates' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        subscription_id: subscriptionId,
-                        customer_id: customerId,
-                        status: status,
-                        plan: 'pro',
-                        current_period_end: currentPeriodEnd,
-                        updated_at: new Date().toISOString(),
-                    }),
-                })
-            }
-        } else if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
-            // Downgrade to standard member
-            await supabaseRest(`profiles?id=eq.${userId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ role: 'member', updated_at: new Date().toISOString() }),
-            })
-
-            await supabaseRest(`subscriptions?user_id=eq.${userId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status: 'cancelled', updated_at: new Date().toISOString() }),
-            })
+        const profilePatch = await supabaseRest(`profiles?id=eq.${encodeURIComponent(userId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ role, updated_at: new Date().toISOString() }),
+            env,
+        })
+        if (!profilePatch.ok) {
+            console.error('[LemonSqueezy Webhook] profile patch failed', profilePatch.detail || profilePatch.error)
+            return json({ error: 'Failed to update profile entitlement' }, 502)
         }
 
-        return json({ success: true, event: eventName }, 200)
+        const subscriptionRow = {
+            user_id: userId,
+            subscription_id: subscriptionId || null,
+            customer_id: customerId || null,
+            variant_id: variantId,
+            status,
+            plan: role === 'pro' ? 'pro' : 'free',
+            current_period_end: currentPeriodEnd,
+            updated_at: new Date().toISOString(),
+        }
+
+        const upsert = await supabaseRest('subscriptions?on_conflict=user_id', {
+            method: 'POST',
+            headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify(subscriptionRow),
+            env,
+        })
+        if (!upsert.ok) {
+            console.error('[LemonSqueezy Webhook] subscription upsert failed', upsert.detail || upsert.error)
+            return json({ error: 'Failed to persist subscription' }, 502)
+        }
+
+        return json({ success: true, event: eventName, role, interval: interval || undefined }, 200)
     } catch (err: any) {
         console.error('[LemonSqueezy Webhook Error]:', err)
         return json({ error: err?.message || 'Webhook processing failed' }, 500)

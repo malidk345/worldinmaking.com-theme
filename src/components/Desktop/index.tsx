@@ -13,7 +13,8 @@ import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { apps, useProductLinks } from './desktopApps'
-import { extractNotebookId, notebookWindowPath } from '../../lib/window-path'
+import { extractNotebookId, isHomeWindowPath, notebookWindowPath } from '../../lib/window-path'
+import { useUser } from 'hooks/useUser'
 import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
 import { getNotebooks, WIM_NOTEBOOKS_CHANGED_EVENT, WIM_NOTEBOOKS_HYDRATED_EVENT } from '../../notebook-app/scenes/notebooks/notebookStorage'
 
@@ -25,6 +26,7 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
     const productLinks = useProductLinks()
+    const { user } = useUser()
     const { setConfetti, addWindow, updateWindow, handleSnapToSide } = useAppActions()
     const { siteSettings, isMobile } = useAppSettings()
     const { windows } = useAppWindows()
@@ -131,7 +133,10 @@ function Desktop() {
                   }
                 : app
         )
-    const leftApps = applyGlow([...productLinks, ...pinnedApps])
+    const visiblePinned = user
+        ? pinnedApps.filter((app) => !isHomeWindowPath(app.url))
+        : pinnedApps
+    const leftApps = applyGlow([...productLinks, ...visiblePinned])
     const rightApps = applyGlow(apps)
 
     const mobileIconListClassName = 'list-none m-0 p-0 flex flex-row flex-wrap pointer-events-auto w-full sm:hidden'

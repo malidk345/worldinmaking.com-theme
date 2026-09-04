@@ -48,17 +48,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                 <span>Current Plan:</span>
                 {isPro ? (
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">Thinker Pro</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">study</span>
                 ) : user ? (
-                  <span className="text-stone-700 dark:text-stone-300 font-medium">Explorer Free</span>
+                  <span className="text-stone-700 dark:text-stone-300 font-medium">desk</span>
                 ) : (
                   <span className="text-stone-500 font-medium">Guest Session</span>
                 )}
               </div>
               <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
                 {isPro
-                  ? 'Frontier reasoning models and persistent semantic memory active.'
-                  : 'Upgrade to Thinker Pro for frontier reasoning, panel inquiries & persistent memory.'}
+                  ? 'deeper models and notebook memory are on.'
+                  : 'open study for deeper models, panel debates, and memory that lasts.'}
               </div>
             </div>
             <button

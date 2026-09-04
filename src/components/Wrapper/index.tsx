@@ -2,6 +2,7 @@ import React from 'react'
 import dynamic from 'next/dynamic'
 import { useAppActions, useAppSettings, useAppWindows } from '../../context/App'
 import Desktop from 'components/Desktop'
+import GuestHomeGate from 'components/Home/GuestHomeGate'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
 import CookieBannerToast from 'components/CookieBanner/ToastVersion'
@@ -74,6 +75,7 @@ export default function Wrapper() {
                 <div ref={constraintsRef} className={`flex-grow relative min-h-0 overflow-hidden touch-none`}>
                     <VisitingRoomBanner />
                     <Desktop />
+                    <GuestHomeGate />
                     <WindowList />
                 </div>
                 {/*             

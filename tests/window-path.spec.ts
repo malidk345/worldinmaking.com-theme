@@ -5,6 +5,7 @@ import {
     extractNotebookId,
     extractPublicNotebookId,
     isArtifactWindowPath,
+    isHomeWindowPath,
     isPathRoutedWindow,
     isPlaceholderPath,
     notebookPublicPath,
@@ -38,6 +39,16 @@ test.describe('window path', () => {
         expect(canonicalWindowPath('/questions/99/?a=1')).toBe('/questions/99')
         expect(isPathRoutedWindow('/workspace-chat')).toBe(true)
         expect(isPathRoutedWindow('/pricing')).toBe(true)
+        expect(isPathRoutedWindow('/home')).toBe(true)
+    })
+
+    test('home window path is the guest landing, not other apps', () => {
+        expect(isHomeWindowPath('/home')).toBe(true)
+        expect(isHomeWindowPath('/home/')).toBe(true)
+        expect(isHomeWindowPath('/')).toBe(true)
+        expect(isHomeWindowPath('/desktop')).toBe(true)
+        expect(isHomeWindowPath('/posts')).toBe(false)
+        expect(isHomeWindowPath('/notebooks')).toBe(false)
     })
 
     test('desktop-pinned notebooks keep their id instead of collapsing to the list', () => {

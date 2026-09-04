@@ -27,6 +27,7 @@
     "bot:worker": "node scripts/bot-worker.js",
     "supabase:bootstrap": "node scripts/wim-supabase-bootstrap.mjs",
     "supabase:smoke": "node scripts/wim-smoke-check.mjs",
+    "billing:setup": "node scripts/lemon-squeezy-setup.mjs",
     "test:smoke": "playwright test",
     "typecheck:shell": "node scripts/typecheck-shell.mjs",
     "format": "prettier --write \"**/*.{html,js,ts,tsx,json,yml,css,scss}\"",

@@ -153,10 +153,17 @@ export function repairWindowPath(windowPath: string, live: string): string {
     return current
 }
 
+/** Guest landing window. Signed-in users should not keep these open. */
+export function isHomeWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/home' || p === '/' || p === '/desktop'
+}
+
 /** Routes WindowRouter can resolve without the Next.js page element. */
 export function isPathRoutedWindow(path: string): boolean {
     const p = canonicalWindowPath(path)
     return (
+        p === '/home' ||
         /^\/workspace-chat(\/|$)/.test(p) ||
         /^\/scratchpad(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||

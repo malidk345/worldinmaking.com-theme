@@ -419,7 +419,7 @@ const Details = ({
                     <span className="font-semibold">Plan</span>
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide bg-navy/10 text-navy border border-navy/20 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-navy dark:bg-blue-400" />
-                        {proLabel || 'Thinker Pro'}
+                        {proLabel || 'study'}
                     </span>
                 </p>
             )}
@@ -1010,9 +1010,9 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
     const proBadgeLabel = useMemo(() => {
         const role = profile?.companyRole || (isCurrentUser ? (typeof user?.role === 'object' ? user?.role?.type : user?.role) : '')
-        if (role === 'admin') return 'Pro · Admin'
-        if (role === 'moderator') return 'Pro · Moderator'
-        return 'Thinker Pro'
+        if (role === 'admin') return 'study · admin'
+        if (role === 'moderator') return 'study · moderator'
+        return 'study'
     }, [profile, user, isCurrentUser])
 
     const { submitForm, isSubmitting, setFieldValue, values, resetForm, errors } = useFormik({

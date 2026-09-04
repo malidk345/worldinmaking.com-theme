@@ -1,16 +1,25 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import SEO from 'components/seo'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
 import WimLogo from 'components/WimLogo'
 import { useUser } from 'hooks/useUser'
 import { useAppActions } from 'context/App'
+import { useWindow } from 'context/Window'
 import LiveTour from './LiveTour'
 import WimDeskDemo from './WimDeskDemo'
 
 export default function HomeWindow() {
-    const { user } = useUser()
-    const { openSignIn } = useAppActions()
+    const { user, isValidating } = useUser()
+    const { openSignIn, closeWindow } = useAppActions()
+    const { appWindow } = useWindow()
+
+    useEffect(() => {
+        if (isValidating || !user || !appWindow) return
+        closeWindow(appWindow)
+    }, [user, isValidating, appWindow, closeWindow])
+
+    if (user) return null
 
     return (
         <div data-scheme="primary" className="bg-transparent text-primary h-full min-h-0 flex flex-col">

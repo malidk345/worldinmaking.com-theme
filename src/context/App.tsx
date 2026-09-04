@@ -12,7 +12,7 @@ import React, {
 import dynamic from 'next/dynamic'
 import { AppWindow } from './Window'
 import { isSafeInternalPath } from 'lib/utils'
-import { User } from 'hooks/useUser'
+import { User, useUser } from 'hooks/useUser'
 import Start from 'components/Start'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
@@ -32,7 +32,13 @@ import {
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
 import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
-import { canonicalWindowPath, extractNotebookId, isArtifactWindowPath, repairWindowPath } from '../lib/window-path'
+import {
+    canonicalWindowPath,
+    extractNotebookId,
+    isArtifactWindowPath,
+    isHomeWindowPath,
+    repairWindowPath,
+} from '../lib/window-path'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
@@ -479,6 +485,22 @@ const appSettings: AppSettings = {
             },
         },
     },
+    '/home': {
+        size: {
+            min: {
+                width: 700,
+                height: 500,
+            },
+            max: {
+                width: 1200,
+                height: 1500,
+            },
+            fixed: false,
+        },
+        position: {
+            center: true,
+        },
+    },
     '/desktop': {
         size: {
             min: {
@@ -848,6 +870,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const isSSR = typeof window === 'undefined'
     const [hasMounted, setHasMounted] = useState(false)
     const layoutRestoredRef = useRef(false)
+    const { user } = useUser()
+    const signedInUserRef = useRef(user)
+    signedInUserRef.current = user
 
     useEffect(() => {
         setHasMounted(true)
@@ -1669,6 +1694,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 location?.pathname ||
                 (typeof window !== 'undefined' ? window.location.pathname : '/')
         )
+        if (isHomeWindowPath(targetPath) && signedInUserRef.current) {
+            return
+        }
         const targetLocation = element?.props?.location || location
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
@@ -1720,6 +1748,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             return
         }
         if (path.startsWith('/auth')) {
+            return
+        }
+        if (isHomeWindowPath(path) && signedInUserRef.current) {
             return
         }
 
@@ -1799,6 +1830,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     ? 'Home'
                     : path === '/workspace-chat' || path.startsWith('/workspace-chat/')
                     ? 'WIM AI'
+                    : path === '/pricing'
+                    ? 'Study'
                     : path === '/posts' || path === '/blog'
                     ? 'Posts'
                     : path === '/login' || path === '/signup'

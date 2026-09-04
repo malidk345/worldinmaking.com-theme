@@ -42,7 +42,6 @@ export default async function handler(req: Request) {
         return json({
             success: true,
             checkoutUrl: session.checkoutUrl,
-            isTestMode: session.isTestMode || false,
         }, 200)
     } catch (err: any) {
         return json({ error: err?.message || 'Checkout initiation failed' }, 500)

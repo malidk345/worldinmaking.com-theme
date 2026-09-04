@@ -1,8 +1,9 @@
 /**
  * WorldInMaking Billing & Subscription System
- * Powered by Lemon Squeezy (Merchant of Record for individual creators / solo developers without a company).
- * Handles checkout creation, webhook signature verification, and plan entitlement checks.
+ * Powered by Lemon Squeezy (Merchant of Record).
  */
+
+import { envFrom, getRuntimeEnv, type EnvStore } from './bots/runtime-env'
 
 export type SubscriptionPlan = 'free' | 'pro' | 'patron'
 
@@ -24,34 +25,57 @@ export type SubscriptionRecord = {
 export const BILLING_PLANS = {
     free: {
         id: 'free',
-        name: 'Explorer (Free)',
+        name: 'desk',
         priceMonthlyUsd: 0,
         hourlyChatLimit: 15,
         dailyChatLimit: 30,
         features: [
-            'Standard intelligence & fast response models',
-            'Standard daily inquiry capacity',
-            'Full notebook editor & desktop OS tools',
-            'Community forum reading and discussions',
+            'the OS: notebooks, forum, WIM AI in a window',
+            'standard daily inquiry budget',
+            'fast models for ordinary questions',
+            'published pages and public threads',
         ],
     },
     pro: {
         id: 'pro',
-        name: 'Thinker (Pro)',
+        name: 'study',
         priceMonthlyUsd: 9.99,
-        priceYearlyUsd: 99.0,
+        priceYearlyUsd: 99.99,
         hourlyChatLimit: 60,
         dailyChatLimit: 300,
         features: [
-            'Next-generation frontier reasoning & deep thinking models',
-            'Expanded high-volume inquiry capacity',
-            'Multi-mind philosophical debate & panel inquiries',
-            'Persistent semantic memory across past notes & chats',
-            'Deep notebook structural overhaul & inline margin notes',
-            'Unlimited live React sandboxes, charts & Mermaid artifacts',
-            'Pro Thinker profile badge & exclusive desktop themes',
+            'deeper models when a question needs to sit',
+            'a larger daily inquiry budget',
+            'panel debates — several philosophers at once',
+            'memory that follows you across notebooks',
+            'more room for charts, mermaid, and live sandboxes',
+            'a study mark on your profile',
         ],
     },
+}
+
+/** Test/live launch coupon from Lemon Squeezy. Duration `once` = first invoice only. */
+export const BILLING_DISCOUNT = {
+    code: 'WIM25',
+    percent: 25,
+    duration: 'once' as const,
+}
+
+export function discountedUsd(priceUsd: number, percent = BILLING_DISCOUNT.percent): number {
+    return Math.round(priceUsd * (100 - percent)) / 100
+}
+
+const PRO_STATUSES = new Set(['active', 'on_trial', 'paused', 'past_due'])
+
+/** Lemon Squeezy subscription status → site role. Cancelled stays Pro until period end. */
+export function subscriptionEntitlement(
+    status?: string | null,
+    periodEnd?: string | null
+): 'pro' | 'member' {
+    const normalized = String(status || '').toLowerCase()
+    if (PRO_STATUSES.has(normalized)) return 'pro'
+    if (normalized === 'cancelled' && periodEnd && Date.parse(periodEnd) > Date.now()) return 'pro'
+    return 'member'
 }
 
 /** Check if current user is subscribed to Pro (or is admin/moderator) */
@@ -77,46 +101,97 @@ export function isUserPro(user?: { email?: string; role?: { type?: string } | st
     )
 }
 
-/** Verify Lemon Squeezy HMAC SHA256 Webhook Signature */
-export function verifyLemonSqueezySignature(rawBody: string, signature: string, secret: string): boolean {
+function hexToBytes(hex: string): Uint8Array | null {
+    const clean = hex.trim()
+    if (!clean || clean.length % 2 !== 0 || /[^0-9a-f]/i.test(clean)) return null
+    const bytes = new Uint8Array(clean.length / 2)
+    for (let i = 0; i < clean.length; i += 2) {
+        bytes[i / 2] = parseInt(clean.substring(i, i + 2), 16)
+    }
+    return bytes
+}
+
+/** Verify Lemon Squeezy HMAC SHA256 webhook signature (Edge + Node). */
+export async function verifyLemonSqueezySignature(
+    rawBody: string,
+    signature: string,
+    secret: string
+): Promise<boolean> {
     if (!rawBody || !signature || !secret) return false
     try {
-        const crypto = require('crypto')
-        const hmac = crypto.createHmac('sha256', secret)
-        const digest = Buffer.from(hmac.update(rawBody).digest('hex'), 'utf8')
-        const signatureBuffer = Buffer.from(signature, 'utf8')
-        return digest.length === signatureBuffer.length && crypto.timingSafeEqual(digest, signatureBuffer)
+        const bytes = hexToBytes(signature)
+        if (!bytes) return false
+        const encoder = new TextEncoder()
+        const key = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        )
+        return await crypto.subtle.verify('HMAC', key, bytes, encoder.encode(rawBody))
     } catch {
         return false
     }
 }
 
-/** Create Lemon Squeezy Checkout URL for individual creator */
+export function getLemonSqueezyConfig(env?: EnvStore) {
+    const store = env ?? getRuntimeEnv()
+    return {
+        apiKey: envFrom(store, 'LEMON_SQUEEZY_API_KEY'),
+        storeId: envFrom(store, 'LEMON_SQUEEZY_STORE_ID'),
+        webhookSecret: envFrom(store, 'LEMON_SQUEEZY_WEBHOOK_SECRET'),
+        monthlyVariantId: envFrom(store, 'LEMON_SQUEEZY_VARIANT_ID_PRO_MONTHLY'),
+        yearlyVariantId: envFrom(store, 'LEMON_SQUEEZY_VARIANT_ID_PRO_YEARLY'),
+        discountCode: envFrom(store, 'LEMON_SQUEEZY_DISCOUNT_CODE') || BILLING_DISCOUNT.code,
+        appUrl: envFrom(store, 'NEXT_PUBLIC_APP_URL') || 'https://worldinmaking.com',
+    }
+}
+
+export function lemonSqueezyMissingConfig(env?: EnvStore, interval?: 'month' | 'year'): string[] {
+    const cfg = getLemonSqueezyConfig(env)
+    const missing: string[] = []
+    if (!cfg.apiKey) missing.push('LEMON_SQUEEZY_API_KEY')
+    if (!cfg.storeId) missing.push('LEMON_SQUEEZY_STORE_ID')
+    if (interval === 'year') {
+        if (!cfg.yearlyVariantId) missing.push('LEMON_SQUEEZY_VARIANT_ID_PRO_YEARLY')
+    } else if (interval === 'month') {
+        if (!cfg.monthlyVariantId) missing.push('LEMON_SQUEEZY_VARIANT_ID_PRO_MONTHLY')
+    } else if (!cfg.monthlyVariantId && !cfg.yearlyVariantId) {
+        missing.push('LEMON_SQUEEZY_VARIANT_ID_PRO_MONTHLY')
+        missing.push('LEMON_SQUEEZY_VARIANT_ID_PRO_YEARLY')
+    }
+    return missing
+}
+
+/** Create Lemon Squeezy Checkout URL */
 export async function createCheckoutSession(params: {
     userId: string
     userEmail: string
     userName?: string
     planInterval?: 'month' | 'year'
     redirectUrl?: string
-}): Promise<{ ok: boolean; checkoutUrl?: string; error?: string; isTestMode?: boolean }> {
-    const apiKey = process.env.LEMON_SQUEEZY_API_KEY
-    const storeId = process.env.LEMON_SQUEEZY_STORE_ID
-    const monthlyVariantId = process.env.LEMON_SQUEEZY_VARIANT_ID_PRO_MONTHLY
-    const yearlyVariantId = process.env.LEMON_SQUEEZY_VARIANT_ID_PRO_YEARLY
-
-    // Test / Sandbox Fallback when API keys are not yet configured in env
-    if (!apiKey || !storeId) {
-        const fallbackUrl = `/profile?billing_demo=true&plan=pro&interval=${params.planInterval || 'month'}`
+    env?: EnvStore
+}): Promise<{ ok: boolean; checkoutUrl?: string; error?: string }> {
+    const cfg = getLemonSqueezyConfig(params.env)
+    const planInterval = params.planInterval === 'year' ? 'year' : 'month'
+    const missing = lemonSqueezyMissingConfig(params.env, planInterval)
+    if (missing.length) {
         return {
-            ok: true,
-            checkoutUrl: fallbackUrl,
-            isTestMode: true,
+            ok: false,
+            error: `Lemon Squeezy is not configured (${missing.join(', ')}). Add the keys in .env.local and Cloudflare Pages, then run pnpm billing:setup.`,
         }
     }
 
-    const variantId = params.planInterval === 'year' ? (yearlyVariantId || monthlyVariantId) : monthlyVariantId
+    const variantId = planInterval === 'year' ? cfg.yearlyVariantId : cfg.monthlyVariantId
     if (!variantId) {
-        return { ok: false, error: 'Lemon Squeezy Variant ID is not configured.' }
+        return {
+            ok: false,
+            error:
+                planInterval === 'year'
+                    ? 'Yearly Lemon Squeezy variant is not configured.'
+                    : 'Monthly Lemon Squeezy variant is not configured.',
+        }
     }
 
     try {
@@ -125,7 +200,7 @@ export async function createCheckoutSession(params: {
             headers: {
                 Accept: 'application/vnd.api+json',
                 'Content-Type': 'application/vnd.api+json',
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${cfg.apiKey}`,
             },
             body: JSON.stringify({
                 data: {
@@ -135,18 +210,28 @@ export async function createCheckoutSession(params: {
                             email: params.userEmail,
                             name: params.userName || undefined,
                             custom: {
-                                user_id: params.userId,
+                                user_id: String(params.userId),
                             },
+                            ...(cfg.discountCode && cfg.discountCode !== 'none'
+                                ? { discount_code: cfg.discountCode }
+                                : {}),
+                        },
+                        checkout_options: {
+                            embed: false,
+                            media: false,
+                            logo: true,
                         },
                         product_options: {
-                            redirect_url: params.redirectUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://worldinmaking.com'}/profile?upgraded=true`,
+                            redirect_url:
+                                params.redirectUrl || `${cfg.appUrl.replace(/\/$/, '')}/profile?upgraded=true`,
+                            enabled_variants: [Number(variantId) || variantId],
                         },
                     },
                     relationships: {
                         store: {
                             data: {
                                 type: 'stores',
-                                id: String(storeId),
+                                id: String(cfg.storeId),
                             },
                         },
                         variant: {
@@ -161,13 +246,16 @@ export async function createCheckoutSession(params: {
         })
 
         if (!res.ok) {
-            const errData = await res.json()
+            const errData = await res.json().catch(() => null)
             const msg = errData?.errors?.[0]?.detail || `Lemon Squeezy API error: ${res.status}`
             return { ok: false, error: msg }
         }
 
         const data = await res.json()
         const checkoutUrl = data?.data?.attributes?.url
+        if (!checkoutUrl) {
+            return { ok: false, error: 'Lemon Squeezy did not return a checkout URL.' }
+        }
         return { ok: true, checkoutUrl }
     } catch (e: any) {
         return { ok: false, error: e?.message || 'Failed to initialize checkout session' }

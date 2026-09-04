@@ -46,17 +46,22 @@ function accountDesktopApp(user: ReturnType<typeof useUser>['user'], openSignIn:
 }
 
 export const useProductLinks = () => {
-    const { user } = useUser()
+    const { user, isValidating } = useUser()
     const { openSignIn } = useAppActions()
     const account = React.useMemo(() => accountDesktopApp(user, openSignIn), [user, openSignIn])
+    const showHome = !user && !isValidating
     return React.useMemo(
         () => [
-            {
-                label: 'Home',
-                Icon: <AppIcon name="home" />,
-                url: '/home',
-                source: 'desktop',
-            },
+            ...(showHome
+                ? [
+                      {
+                          label: 'Home',
+                          Icon: <AppIcon name="home" />,
+                          url: '/home',
+                          source: 'desktop',
+                      } as AppItem,
+                  ]
+                : []),
             {
                 label: 'Community',
                 Icon: <AppIcon name="forums" />,
@@ -83,13 +88,13 @@ export const useProductLinks = () => {
             },
             account,
         ],
-        [account]
+        [account, showHome]
     )
 }
 
 export const apps: AppItem[] = [
     {
-        label: 'Pro Plan',
+        label: 'Study',
         Icon: <AppIcon name="pricing" />,
         url: '/pricing',
         source: 'desktop',

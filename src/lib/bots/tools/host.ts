@@ -178,7 +178,7 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Contact', path: '/contact', aliases: ['iletişim', 'contact'] },
     { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
     { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
-    { name: 'Pricing', path: '/pricing', aliases: ['pro', 'upgrade', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
+    { name: 'Study', path: '/pricing', aliases: ['pro', 'upgrade', 'pricing', 'study', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
     { name: 'Scratchpad', path: '/scratchpad', aliases: ['scratchpad', 'karalama defteri', 'working memory', 'memory', 'notes-draft', 'draft'] },
 ]
 
@@ -203,7 +203,7 @@ export function resolveOpenPath(raw: string): string | null {
 
 export function describeWorkspace(host?: HostSnapshot, opts?: { nodePreview?: boolean }): string {
     const userLine = host?.user?.name || host?.user?.username
-        ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.plan ? ` | Plan: ${host.user.plan === 'pro' ? 'PRO (Thinker Pro)' : 'FREE'}` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
+        ? `Logged-in User: ${host.user.name || host.user.username}${host.user.username && host.user.name && host.user.username !== host.user.name ? ` (@${host.user.username})` : ''}${host.user.plan ? ` | desk: ${host.user.plan === 'pro' ? 'study' : 'desk'}` : ''}${host.user.bio ? ` | Bio: ${clip(host.user.bio, 120)}` : ''}${host.user.location ? ` | Location: ${host.user.location}` : ''}${host.user.pronouns ? ` | Pronouns: ${host.user.pronouns}` : ''}${host.user.role ? ` | Role: ${host.user.role}` : ''}`
         : 'User: Guest / Anonymous'
     const windows = (host?.windows || [])
         .slice(0, 12)
