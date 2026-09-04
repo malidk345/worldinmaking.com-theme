@@ -3,6 +3,28 @@ import type { HostSnapshot } from './host'
 
 const MAX_BYTES = 500_000
 const MAX_DOC_CHARS = 6_000
+
+
+function applyKeywordFilter(content: string, filterQuery: string, label: string): { ok: true; content: string } | { ok: false; error: string } {
+    if (!filterQuery) return { ok: true, content }
+    const paragraphs = content.split(/\n\n+/).map((p) => p.trim()).filter(Boolean)
+    const matched = paragraphs.filter((p) => p.toLowerCase().includes(filterQuery))
+    if (matched.length === 0) {
+        // Also try a single-pass includes on the whole doc before failing closed
+        if (content.toLowerCase().includes(filterQuery)) {
+            const idx = content.toLowerCase().indexOf(filterQuery)
+            const start = Math.max(0, idx - 200)
+            const end = Math.min(content.length, idx + filterQuery.length + 400)
+            return { ok: true, content: content.slice(start, end) }
+        }
+        return {
+            ok: false,
+            error: `No passages matching "${filterQuery}" found in ${label} (keyword/substring filter — not embedding search). Do not invent citations from this document.`,
+        }
+    }
+    return { ok: true, content: matched.join('\n\n') }
+}
+
 const FETCH_TIMEOUT_MS = 10_000
 
 export interface ReadDocumentArgs {
@@ -115,9 +137,15 @@ export async function executeReadDocument(
                     nb.id.toLowerCase() === docName.toLowerCase()
             )
             if (matchedNb) {
+                const filtered = applyKeywordFilter(
+                    matchedNb.content || 'Empty document',
+                    filterQuery,
+                    `notebook "${matchedNb.title}"`
+                )
+                if (!filtered.ok) return filtered
                 return {
                     ok: true,
-                    text: `[Notebook: ${matchedNb.title}]\n${(matchedNb.content || 'Empty document').slice(0, MAX_DOC_CHARS)}`,
+                    text: `[Notebook: ${matchedNb.title}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
                 }
             }
         }
@@ -128,15 +156,15 @@ export async function executeReadDocument(
                     docName.toLowerCase().includes(doc.name.toLowerCase())
             )
             if (matchedScratchDoc) {
-                let content = (matchedScratchDoc as any).content || ''
-                if (filterQuery) {
-                    const paragraphs = content.split(/\n\n+/)
-                    const matched = paragraphs.filter((p: string) => p.toLowerCase().includes(filterQuery))
-                    if (matched.length > 0) content = matched.join('\n\n')
-                }
+                const filtered = applyKeywordFilter(
+                    (matchedScratchDoc as any).content || '',
+                    filterQuery,
+                    `scratchpad document "${matchedScratchDoc.name}"`
+                )
+                if (!filtered.ok) return filtered
                 return {
                     ok: true,
-                    text: `[Scratchpad Document: ${matchedScratchDoc.name}]\n${content.slice(0, MAX_DOC_CHARS)}`,
+                    text: `[Scratchpad Document: ${matchedScratchDoc.name}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
                 }
             }
         }
@@ -147,15 +175,15 @@ export async function executeReadDocument(
                     docName.toLowerCase().includes(att.name.toLowerCase())
             )
             if (matchedAtt) {
-                let content = matchedAtt.content || ''
-                if (filterQuery) {
-                    const paragraphs = content.split(/\n\n+/)
-                    const matched = paragraphs.filter((p) => p.toLowerCase().includes(filterQuery))
-                    if (matched.length > 0) content = matched.join('\n\n')
-                }
+                const filtered = applyKeywordFilter(
+                    matchedAtt.content || '',
+                    filterQuery,
+                    `attachment "${matchedAtt.name}"`
+                )
+                if (!filtered.ok) return filtered
                 return {
                     ok: true,
-                    text: `[Attached Document: ${matchedAtt.name}]\n${content.slice(0, MAX_DOC_CHARS)}`,
+                    text: `[Attached Document: ${matchedAtt.name}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
                 }
             }
         }
@@ -248,13 +276,11 @@ export async function executeReadDocument(
             return { ok: false, error: 'document contained no readable text' }
         }
 
-        // Apply keyword filter if requested
+        // Apply keyword filter if requested (fail closed — do not return whole doc as a "match")
         if (filterQuery) {
-            const paragraphs = extracted.split(/\n\n+/)
-            const matched = paragraphs.filter((p) => p.toLowerCase().includes(filterQuery))
-            if (matched.length > 0) {
-                extracted = matched.join('\n\n')
-            }
+            const filtered = applyKeywordFilter(extracted, filterQuery, `document ${rawUrl}`)
+            if (!filtered.ok) return filtered
+            extracted = filtered.content
         }
 
         const trimmed = extracted.slice(0, MAX_DOC_CHARS)
