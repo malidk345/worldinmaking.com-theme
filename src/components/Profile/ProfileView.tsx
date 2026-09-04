@@ -25,7 +25,7 @@ import {
     IconExternal,
     IconSparkles,
 } from '@posthog/icons'
-import { isUserPro } from 'lib/wim-billing'
+
 import { Fieldset } from 'components/OSFieldset'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
@@ -274,6 +274,8 @@ const Input = ({
     )
 }
 
+const HIDDEN_PUBLIC_ROLES = new Set(['pro', 'member', 'user', 'admin', 'moderator', 'study', 'desk', 'free'])
+
 const AvatarBlock = ({
     profile,
     isEditing,
@@ -281,8 +283,6 @@ const AvatarBlock = ({
     setFieldValue,
     values,
     errors,
-    isPro,
-    proLabel,
 }: {
     profile: ProfileData
     isEditing: boolean
@@ -290,8 +290,6 @@ const AvatarBlock = ({
     setFieldValue: (field: string, value: unknown) => void
     values: any
     errors: any
-    isPro?: boolean
-    proLabel?: string
 }) => {
     const { isModerator } = useUser()
     const inputRef = useRef<HTMLInputElement>(null)
@@ -374,23 +372,12 @@ const AvatarBlock = ({
                 </div>
             ) : (
                 <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <h2 className="text-sm font-semibold m-0 leading-tight">{name}</h2>
-                        {isPro && (
-                            <span
-                                title={proLabel || 'Pro Member'}
-                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-navy/10 text-navy border border-navy/30 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30"
-                            >
-                                PRO
-                            </span>
-                        )}
-                    </div>
+                    <h2 className="text-sm font-semibold m-0 leading-tight">{name}</h2>
                     {profile.username && (
                         <p className="text-xs text-muted m-0 mt-0.5">@{profile.username}</p>
                     )}
                     {profile.companyRole &&
-                        !isPro &&
-                        !['member', 'user'].includes(String(profile.companyRole).toLowerCase()) && (
+                        !HIDDEN_PUBLIC_ROLES.has(String(profile.companyRole).toLowerCase()) && (
                             <p className="text-secondary text-xs m-0 mt-0.5">{profile.companyRole}</p>
                         )}
                 </div>
@@ -405,16 +392,12 @@ const Details = ({
     setFieldValue,
     values,
     errors,
-    isPro,
-    proLabel,
 }: {
     profile: ProfileData
     isEditing: boolean
     setFieldValue: (field: string, value: string) => void
     values: any
     errors: any
-    isPro?: boolean
-    proLabel?: string
 }) => {
     const [showPronounsInput, setShowPronounsInput] = useState(!!values.pronouns)
 
@@ -424,15 +407,6 @@ const Details = ({
     }, [values.pronouns])
     return (
         <div className="text-xs space-y-1.5">
-            {isPro && !isEditing && (
-                <p className="flex justify-between items-center m-0">
-                    <span className="text-muted">Plan</span>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide bg-navy/10 text-navy border border-navy/20 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-navy dark:bg-blue-400" />
-                        {proLabel || 'study'}
-                    </span>
-                </p>
-            )}
             {!isEditing && (
                 <p className="flex justify-between m-0">
                     <span className="text-muted">Joined</span>
@@ -1012,29 +986,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
     const name = [firstName, lastName].filter(Boolean).join(' ') || profile?.username || 'Profile'
 
-    const isProfilePro = useMemo(() => {
-        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
-            .split(',')
-            .map((e) => e.trim().toLowerCase())
-            .filter(Boolean)
-        const email = profile?.contactEmail || (isCurrentUser ? user?.email : '')
-        const role = profile?.companyRole || (isCurrentUser ? (typeof user?.role === 'object' ? user?.role?.type : user?.role) : '')
-        return (
-            (!!email && adminEmails.includes(email.toLowerCase())) ||
-            role === 'pro' ||
-            role === 'admin' ||
-            role === 'moderator' ||
-            (isCurrentUser && isUserPro(user))
-        )
-    }, [profile, user, isCurrentUser])
-
-    const proBadgeLabel = useMemo(() => {
-        const role = profile?.companyRole || (isCurrentUser ? (typeof user?.role === 'object' ? user?.role?.type : user?.role) : '')
-        if (role === 'admin') return 'study · admin'
-        if (role === 'moderator') return 'study · moderator'
-        return 'study'
-    }, [profile, user, isCurrentUser])
-
     const { submitForm, isSubmitting, setFieldValue, values, resetForm, errors } = useFormik({
         validationSchema: ValidationSchema,
         enableReinitialize: true,
@@ -1150,11 +1101,9 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 setFieldValue={setFieldValue}
                                 values={values}
                                 errors={errors}
-                                isPro={isProfilePro}
-                                proLabel={proBadgeLabel}
                             />
 
-                            {(isEditing || profile.pronouns || profile.location || profile.birthDate || isProfilePro) && (
+                            {(isEditing || profile.pronouns || profile.location || profile.birthDate) && (
                                 isEditing ? (
                                     <Block title="Details">
                                         <Details
@@ -1163,8 +1112,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                             setFieldValue={setFieldValue}
                                             values={values}
                                             errors={errors}
-                                            isPro={isProfilePro}
-                                            proLabel={proBadgeLabel}
                                         />
                                     </Block>
                                 ) : (
@@ -1174,8 +1121,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                         setFieldValue={setFieldValue}
                                         values={values}
                                         errors={errors}
-                                        isPro={isProfilePro}
-                                        proLabel={proBadgeLabel}
                                     />
                                 )
                             )}

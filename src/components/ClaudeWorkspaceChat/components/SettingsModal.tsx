@@ -65,7 +65,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               onClick={() => {
                 onClose();
-                app?.addWindow?.({ path: '/pricing' });
+                app?.addWindow?.({ path: isPro ? '/account' : '/pricing' });
               }}
               className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary hover:bg-accent text-primary transition-all cursor-pointer shrink-0 flex items-center gap-1"
             >

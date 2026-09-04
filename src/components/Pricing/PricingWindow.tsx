@@ -15,7 +15,6 @@ const COMPARISON: Array<{ label: string; desk: string; study: string }> = [
     { label: 'philosopher panel', desk: '—', study: 'several voices at once' },
     { label: 'memory across notebooks', desk: 'session', study: 'persistent' },
     { label: 'artifacts (charts, mermaid, sandboxes)', desk: 'yes', study: 'more, faster' },
-    { label: 'profile mark', desk: '—', study: 'study' },
 ]
 
 function money(n: number) {
@@ -176,7 +175,7 @@ export default function PricingWindow() {
                             <div className="mt-auto">
                                 {isStudy ? (
                                     <OSButton size="md" asLink to="/account">
-                                        Account
+                                        Manage membership
                                     </OSButton>
                                 ) : (
                                     <OSButton size="md" variant="primary" onClick={handleUpgrade} disabled={loading}>

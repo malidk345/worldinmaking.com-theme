@@ -17,8 +17,6 @@ export const Profile = ({ className, profile }: ProfileProps) => {
         profile?.id ||
         ''
     const href = profileHref(handle)
-    const role = profile?.attributes?.companyRole || (profile?.attributes as any)?.role
-    const isPro = role === 'pro' || role === 'admin' || role === 'moderator'
 
     return profile?.attributes ? (
         <Link
@@ -33,11 +31,6 @@ export const Profile = ({ className, profile }: ProfileProps) => {
                 />
             </div>
             <strong>{profile.attributes.firstName || 'Anonymous'}</strong>
-            {isPro && (
-                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-sm bg-[#1E3A8A] text-white text-[9px] font-bold tracking-wider uppercase">
-                    PRO
-                </span>
-            )}
         </Link>
     ) : null
 }

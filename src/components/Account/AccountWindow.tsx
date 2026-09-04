@@ -198,8 +198,18 @@ export default function AccountWindow() {
     const period = when(status?.subscription?.currentPeriodEnd)
     const expectedConfirm = handle || email
     const subStatus = (status?.subscription?.status || '').toLowerCase()
-    const canLeaveStudy =
-        !!status?.subscription?.hasLemonId && !['cancelled', 'expired'].includes(subStatus)
+    const hasPaidSub = !!status?.subscription?.hasLemonId
+    const canLeaveStudy = hasPaidSub && !['cancelled', 'expired'].includes(subStatus)
+    const membershipStatus =
+        subStatus === 'cancelled' && period
+            ? `Cancels ${period}`
+            : subStatus === 'past_due'
+              ? 'Past due'
+              : subStatus === 'paused'
+                ? 'Paused'
+                : subStatus === 'on_trial'
+                  ? 'Trial'
+                  : null
 
     return (
         <div data-scheme="primary" className="h-full min-h-0 bg-transparent text-primary flex flex-col">
@@ -216,13 +226,19 @@ export default function AccountWindow() {
                         </div>
                     ) : (
                         <>
-                            <Fieldset className="mb-4" legend="Membership">
+                            <Fieldset className="mb-4" legend={hasPaidSub ? 'Manage membership' : 'Membership'}>
                                 <div className="text-sm space-y-3">
                                     <p className="flex justify-between m-0 gap-3">
                                         <span className="font-semibold">Plan</span>
                                         <span>{busy === 'status' ? '…' : membership}</span>
                                     </p>
-                                    {period ? (
+                                    {hasPaidSub && membershipStatus ? (
+                                        <p className="flex justify-between m-0 gap-3">
+                                            <span className="font-semibold">Status</span>
+                                            <span>{membershipStatus}</span>
+                                        </p>
+                                    ) : null}
+                                    {hasPaidSub && period && subStatus !== 'cancelled' ? (
                                         <p className="flex justify-between m-0 gap-3">
                                             <span className="font-semibold">Paid through</span>
                                             <span>{period}</span>
@@ -254,7 +270,7 @@ export default function AccountWindow() {
                                             </>
                                         ) : (
                                             <OSButton size="md" onClick={() => setConfirmCancel(true)}>
-                                                Cancel study
+                                                Cancel plan
                                             </OSButton>
                                         )
                                     ) : membership === 'Desk' ? (
@@ -262,7 +278,7 @@ export default function AccountWindow() {
                                             Upgrade
                                         </OSButton>
                                     ) : null}
-                                    {status?.subscription?.portalUrl ? (
+                                    {hasPaidSub && status?.subscription?.portalUrl ? (
                                         <OSButton
                                             size="md"
                                             asLink
@@ -273,6 +289,11 @@ export default function AccountWindow() {
                                         </OSButton>
                                     ) : null}
                                 </div>
+                                {confirmCancel && canLeaveStudy ? (
+                                    <p className="text-xs text-muted m-0 mt-2">
+                                        Study stays through {period || 'the paid period'}, then the desk remains.
+                                    </p>
+                                ) : null}
                             </Fieldset>
 
                             <Fieldset className="mb-4" legend="Email">

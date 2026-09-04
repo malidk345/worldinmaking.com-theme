@@ -49,7 +49,6 @@ export const BILLING_PLANS = {
             'panel debates — several philosophers at once',
             'memory that follows you across notebooks',
             'more room for charts, mermaid, and live sandboxes',
-            'a study mark on your profile',
         ],
     },
 }
