@@ -473,14 +473,19 @@ export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
 
 export { WALLPAPER_THEME_COLORS, getWallpaperThemeColor } from '../../lib/wallpaperChrome'
 
-export default function Wallpapers(_props?: {
+export default function Wallpapers(props?: {
     wallpaper?: string
     reduceMotion?: boolean
 }): JSX.Element {
+    const active = props?.wallpaper || 'keyboard-mint'
     return (
-        <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none">
-            {SCENES.map(({ key, Scene, visible }) => (
-                <div key={key} className={`hidden ${visible} absolute inset-0`}>
+        <div className="absolute inset-0 z-0 select-none overflow-hidden pointer-events-none">
+            {SCENES.map(({ key, Scene }) => (
+                <div
+                    key={key}
+                    className={`absolute inset-0 ${key === active ? 'block' : 'hidden'}`}
+                    aria-hidden={key !== active}
+                >
                     <Scene />
                 </div>
             ))}

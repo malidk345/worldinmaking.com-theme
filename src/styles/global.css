@@ -640,7 +640,7 @@ body.dark {
     min-width: 0;
     overflow: hidden;
     overscroll-behavior: none;
-    background-color: var(--browser-chrome);
+    background-color: transparent;
 }
 
 [data-app='AppWindow']:focus-visible {

@@ -38,7 +38,10 @@
                 : theme === 'dark'
                   ? pair.dark
                   : pair.light
-        if (document.documentElement) document.documentElement.style.setProperty('--browser-chrome', active)
+        if (document.documentElement) {
+            document.documentElement.style.setProperty('--browser-chrome', active)
+            document.documentElement.style.backgroundColor = active
+        }
         if (document.body) document.body.style.backgroundColor = active
         var metas = head.querySelectorAll('meta[name="theme-color"]')
         var keep = metas[0]

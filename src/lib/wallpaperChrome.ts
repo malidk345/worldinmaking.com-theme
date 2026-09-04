@@ -160,6 +160,7 @@ export function applyWallpaperBrowserChrome(opts: {
 
     const root = document.documentElement
     root.style.setProperty('--browser-chrome', active)
+    root.style.backgroundColor = active
     if (document.body) document.body.style.backgroundColor = active
 
     syncThemeColorMeta(active)
