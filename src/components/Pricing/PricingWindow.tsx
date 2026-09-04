@@ -22,7 +22,7 @@ function money(n: number) {
 }
 
 export default function PricingWindow() {
-    const { user } = useUser()
+    const { user, getJwt } = useUser()
     const { addToast } = useToast()
     const { openSignIn } = useAppActions()
     const isStudy = isUserPro(user as any)
@@ -45,11 +45,14 @@ export default function PricingWindow() {
 
         setLoading(true)
         try {
-            const { chatAuthHeadersFresh } = await import('lib/chat-remote')
-            const authHeaders = await chatAuthHeadersFresh(true)
+            const token = await getJwt()
             const res = await fetch('/api/billing/checkout', {
                 method: 'POST',
-                headers: authHeaders,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({ interval }),
             })
 

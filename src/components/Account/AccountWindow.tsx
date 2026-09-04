@@ -31,7 +31,7 @@ function when(iso?: string | null) {
 }
 
 export default function AccountWindow() {
-    const { user, logout, isValidating, updatePassword, updateEmail } = useUser()
+    const { user, logout, isValidating, getJwt, updatePassword, updateEmail } = useUser()
     const { openSignIn } = useAppActions()
     const { addToast } = useToast()
     const isStudy = isUserPro(user as any)
@@ -40,7 +40,7 @@ export default function AccountWindow() {
 
     const [status, setStatus] = useState<BillingStatus | null>(null)
     const [busy, setBusy] = useState<'status' | 'cancel' | 'delete' | 'password' | 'email' | 'export' | null>(
-        user ? 'status' : null
+        'status'
     )
     const [confirmCancel, setConfirmCancel] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
@@ -49,7 +49,16 @@ export default function AccountWindow() {
     const [passwordConfirm, setPasswordConfirm] = useState('')
     const [nextEmail, setNextEmail] = useState('')
 
+    const authHeaders = async (jsonBody = false): Promise<Record<string, string>> => {
+        const headers: Record<string, string> = { Accept: 'application/json' }
+        if (jsonBody) headers['Content-Type'] = 'application/json'
+        const token = await getJwt()
+        if (token) headers.Authorization = `Bearer ${token}`
+        return headers
+    }
+
     const loadStatus = async () => {
+        if (isValidating) return
         if (!user) {
             setStatus(null)
             setBusy(null)
@@ -57,11 +66,21 @@ export default function AccountWindow() {
         }
         setBusy('status')
         try {
-            const { chatAuthHeadersFresh } = await import('lib/chat-remote')
-            const headers = await chatAuthHeadersFresh()
-            const res = await fetch('/api/billing/status', { headers })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(data.error || 'Could not load account')
+            const headers = await authHeaders()
+            let res = await fetch('/api/billing/status', { headers })
+            let data = await res.json().catch(() => ({}))
+            if (res.status === 401) {
+                const retryHeaders = await authHeaders()
+                res = await fetch('/api/billing/status', { headers: retryHeaders })
+                data = await res.json().catch(() => ({}))
+            }
+            if (!res.ok) {
+                throw new Error(
+                    res.status === 401
+                        ? 'Could not verify your session. Try signing in again.'
+                        : data.error || 'Could not load account'
+                )
+            }
             setStatus(data as BillingStatus)
         } catch (err: any) {
             addToast({ error: true, description: err?.message || 'Could not load account' })
@@ -77,8 +96,7 @@ export default function AccountWindow() {
     }, [user?.id, isValidating])
 
     const authFetch = async (url: string, body?: Record<string, unknown>) => {
-        const { chatAuthHeadersFresh } = await import('lib/chat-remote')
-        const headers = await chatAuthHeadersFresh(!!body)
+        const headers = await authHeaders(!!body)
         return fetch(url, {
             method: 'POST',
             headers,
@@ -132,8 +150,7 @@ export default function AccountWindow() {
     const handleExport = async () => {
         setBusy('export')
         try {
-            const { chatAuthHeadersFresh } = await import('lib/chat-remote')
-            const headers = await chatAuthHeadersFresh()
+            const headers = await authHeaders()
             const res = await fetch('/api/account/export', { headers })
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}))
@@ -217,7 +234,14 @@ export default function AccountWindow() {
             <ScrollArea className="flex-1 min-h-0">
                 <div className="min-h-full flex items-center justify-center px-5 py-8">
                     <div className="w-full max-w-sm">
-                    {!user ? (
+                    {isValidating || (busy === 'status' && !user) ? (
+                        <div className="text-center text-sm text-secondary">
+                            <span className="inline-flex items-center gap-2">
+                                <IconSpinner className="size-4 animate-spin" />
+                                Loading account
+                            </span>
+                        </div>
+                    ) : !user ? (
                         <div className="text-center">
                             <p className="text-sm text-secondary mb-4">Sign in to manage membership.</p>
                             <OSButton size="md" variant="primary" onClick={() => openSignIn()}>

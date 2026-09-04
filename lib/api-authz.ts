@@ -52,15 +52,18 @@ export async function getSupabaseUserFromBearer(
     const serviceKey =
         envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-    if (!base || !anon) return null
+    const apikey = serviceKey || anon
+    if (!base || !apikey) return null
 
     try {
+        // Do not set RequestInit.cache — Cloudflare workerd throws
+        // "The 'cache' field on 'RequestInitializerDict' is not implemented"
+        // and the catch below would treat a signed-in user as anonymous.
         const res = await fetch(`${base.replace(/\/$/, '')}/auth/v1/user`, {
             headers: {
                 Authorization: `Bearer ${token}`,
-                apikey: anon,
+                apikey,
             },
-            cache: 'no-store',
         })
         if (!res.ok) return null
         const user = (await res.json()) as Record<string, any>
@@ -75,7 +78,6 @@ export async function getSupabaseUserFromBearer(
                             Authorization: `Bearer ${serviceKey}`,
                             apikey: serviceKey,
                         },
-                        cache: 'no-store',
                     }
                 )
                 if (profileRes.ok) {
@@ -180,7 +182,6 @@ export async function resolveForumBotAuth(req: Request): Promise<BotAuthOk | Aut
                 apikey: serviceKey,
                 Authorization: `Bearer ${serviceKey}`,
             },
-            cache: 'no-store',
         })
 
         if (!botRes.ok) {
