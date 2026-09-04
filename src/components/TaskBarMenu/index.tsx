@@ -27,6 +27,7 @@ import KeyboardShortcut from 'components/KeyboardShortcut'
 import AmbientPlayer from 'components/AmbientPlayer'
 import WimLogo from 'components/WimLogo'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
+import { useT } from 'lib/i18n/t'
 
 function TaskBarMenu() {
     const {
@@ -44,6 +45,7 @@ function TaskBarMenu() {
     const [isAnimating, setIsAnimating] = useState(false)
 
     const { user, notifications, logout, isModerator } = useUser()
+    const { t } = useT()
 
     const isLoggedIn = !!user
 
@@ -99,21 +101,21 @@ function TaskBarMenu() {
             items: [
                 {
                     type: 'item' as const,
-                    label: 'About',
+                    label: t('chrome.about'),
                     link: '/about',
                     icon: <IconInfo className="opacity-50 group-hover/item:opacity-75 size-4" />,
                 },
                 { type: 'separator' as const },
                 {
                     type: 'item' as const,
-                    label: 'Display options',
+                    label: t('chrome.display'),
                     link: '/display-options',
                     icon: <IconBrightness className="opacity-50 group-hover/item:opacity-75 size-4" />,
                     shortcut: [','],
                 },
                 {
                     type: 'item' as const,
-                    label: 'Keyboard shortcuts',
+                    label: t('chrome.keyboard'),
                     link: '/kbd',
                     icon: <IconKeyboard className="opacity-50 group-hover/item:opacity-75 size-4" />,
                     shortcut: ['.'],
@@ -153,25 +155,25 @@ function TaskBarMenu() {
                 ? [
                       {
                           type: 'item' as const,
-                          label: 'Profile',
+                          label: t('chrome.profile'),
                           link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
                           icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
                       {
                           type: 'item' as const,
-                          label: `Notifications${notifications?.length > 0 ? ` (${notifications.length})` : ''}`,
+                          label: `${t('chrome.notifications')}${notifications?.length > 0 ? ` (${notifications.length})` : ''}`,
                           onClick: () => setIsNotificationsPanelOpen(true),
                           icon: <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
                       {
                           type: 'item' as const,
-                          label: 'Bookmarks',
+                          label: t('chrome.bookmarks'),
                           link: '/bookmarks',
                           icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
                       {
                           type: 'item' as const,
-                          label: 'WIM AI',
+                          label: t('chrome.wimAi'),
                           link: '/workspace-chat',
                           icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
@@ -179,7 +181,7 @@ function TaskBarMenu() {
                           ? [
                                 {
                                     type: 'item' as const,
-                                    label: 'Admin',
+                                    label: t('chrome.admin'),
                                     link: '/admin',
                                     icon: <IconBadge className="opacity-75 text-yellow size-4" />,
                                 },
@@ -188,13 +190,13 @@ function TaskBarMenu() {
                       { type: 'separator' as const },
                       {
                           type: 'item' as const,
-                          label: 'Account',
+                          label: t('chrome.account'),
                           link: '/account',
                           icon: <IconGear className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
                       {
                           type: 'item' as const,
-                          label: 'Sign out',
+                          label: t('auth.signOut'),
                           onClick: () => logout(),
                           icon: <IconLock className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
@@ -202,7 +204,7 @@ function TaskBarMenu() {
                 : [
                       {
                           type: 'item' as const,
-                          label: 'Sign in',
+                          label: t('auth.signIn'),
                           onClick: handleSignInClick,
                           icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },

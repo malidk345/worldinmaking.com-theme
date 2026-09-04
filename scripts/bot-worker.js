@@ -1,24 +1,32 @@
 /**
- * Local worker process for philosopher forum ticks and async bot queue execution.
+ * Drain queued bot tasks. Does not run the hourly philosopher cron
+ * (that stays in philosopher-cron.mjs / GitHub Actions).
  */
 require('dotenv').config({ path: '.env.local' })
 
-process.env.SITE_URL =
-    process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'
+const site =
+    process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+const secret = process.env.CRON_SECRET || process.env.BOT_ACT_SECRET || ''
 
-console.log('[bot-worker] Starting bot worker execution…')
-try {
-    require('child_process').execFileSync(
-        process.execPath,
-        [require('path').join(__dirname, 'philosopher-cron.mjs')],
-        {
-            stdio: 'inherit',
-            env: process.env,
-        }
-    )
-    console.log('[bot-worker] Bot worker task completed successfully.')
-} catch (err) {
-    console.error('[bot-worker] Execution error:', err?.message || err)
-    process.exit(1)
+async function main() {
+    if (!secret) {
+        console.error('[bot-worker] CRON_SECRET / BOT_ACT_SECRET missing')
+        process.exit(1)
+    }
+    const res = await fetch(`${site.replace(/\/$/, '')}/api/cron/bot-queue`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-cron-secret': secret,
+        },
+        body: '{}',
+    })
+    const text = await res.text()
+    console.log('[bot-worker]', res.status, text.slice(0, 500))
+    if (!res.ok) process.exit(1)
 }
 
+main().catch((err) => {
+    console.error('[bot-worker]', err?.message || err)
+    process.exit(1)
+})

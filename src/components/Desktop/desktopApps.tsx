@@ -4,6 +4,7 @@ import { useUser } from 'hooks/useUser'
 import { useAppActions } from 'context/App'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
 import { profileHref } from 'lib/profile-path'
+import { useT } from 'lib/i18n/t'
 
 function ProfilePhotoIcon({ src, name }: { src?: string; name: string }) {
     if (src) {
@@ -48,14 +49,19 @@ function accountDesktopApp(user: ReturnType<typeof useUser>['user'], openSignIn:
 export const useProductLinks = () => {
     const { user, isValidating } = useUser()
     const { openSignIn } = useAppActions()
-    const account = React.useMemo(() => accountDesktopApp(user, openSignIn), [user, openSignIn])
+    const { t } = useT()
+    const account = React.useMemo(() => {
+        const item = accountDesktopApp(user, openSignIn)
+        if (!user) return { ...item, label: t('chrome.signInDesktop') }
+        return item
+    }, [user, openSignIn, t])
     const showHome = !user && !isValidating
     return React.useMemo(
         () => [
             ...(showHome
                 ? [
                       {
-                          label: 'Home',
+                          label: t('chrome.home'),
                           Icon: <AppIcon name="home" />,
                           url: '/home',
                           source: 'desktop',
@@ -63,19 +69,19 @@ export const useProductLinks = () => {
                   ]
                 : []),
             {
-                label: 'Community',
+                label: t('chrome.community'),
                 Icon: <AppIcon name="forums" />,
                 url: '/community',
                 source: 'desktop',
             },
             {
-                label: 'Notebooks',
+                label: t('chrome.notebooks'),
                 Icon: <AppIcon name="notebook" />,
                 url: '/notebooks',
                 source: 'desktop',
             },
             {
-                label: 'WIM AI',
+                label: t('chrome.wimAi'),
                 Icon: <AppIcon name="wimAi" />,
                 url: '/workspace-chat',
                 source: 'desktop',
@@ -88,7 +94,7 @@ export const useProductLinks = () => {
             },
             account,
         ],
-        [account, showHome]
+        [account, showHome, t]
     )
 }
 

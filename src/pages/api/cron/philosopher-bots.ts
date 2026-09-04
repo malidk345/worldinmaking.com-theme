@@ -81,9 +81,15 @@ export default async function handler(req: Request) {
         req.headers.get('x-wim-async') === '1'
 
     if (isAsync) {
-        const { enqueueBotTask } = await import('lib/bots/bot-queue')
-        const taskId = await enqueueBotTask('philosopher_tick', { tickReq })
-        return json({ success: true, queued: true, taskId, phase: tickReq.phase || 'full' }, 202)
+        const { enqueueBotTask, philosopherTickIdempotencyKey } = await import('lib/bots/bot-queue')
+        const phase = String(tickReq.phase || 'full')
+        const topicId = tickReq.topicId != null ? String(tickReq.topicId) : undefined
+        const taskId = await enqueueBotTask(
+            'philosopher_tick',
+            { tickReq },
+            philosopherTickIdempotencyKey(phase, topicId)
+        )
+        return json({ success: true, queued: true, taskId, phase }, 202)
     }
 
     try {

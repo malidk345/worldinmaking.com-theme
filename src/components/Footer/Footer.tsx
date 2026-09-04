@@ -185,8 +185,8 @@ const linklist: IProps[] = [
                 url: '/tracks',
             },
             {
-                title: 'Merch',
-                url: '/merch',
+                title: 'Community',
+                url: '/community',
             },
             {
                 title: 'Contributors',
@@ -203,8 +203,8 @@ const linklist: IProps[] = [
                 url: '/about',
             },
             {
-                title: 'Roadmap',
-                url: '/roadmap',
+                title: 'Notebooks',
+                url: '/notebooks',
             },
             {
                 title: 'Changelog',
@@ -215,16 +215,16 @@ const linklist: IProps[] = [
                 url: '/people',
             },
             {
-                title: 'Small teams',
-                url: '/teams',
+                title: 'People',
+                url: '/community/directory',
             },
             {
                 title: 'Blog',
                 url: '/blog/all',
             },
             {
-                title: 'Investors',
-                url: '/handbook/strategy/investors',
+                title: 'About',
+                url: '/about',
             },
             {
                 title: 'Press',
@@ -236,7 +236,7 @@ const linklist: IProps[] = [
             },
             {
                 title: 'Security',
-                url: '/handbook/company/security',
+                url: '/privacy',
             },
             {
                 title: 'Support',

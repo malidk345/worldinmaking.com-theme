@@ -1,11 +1,7 @@
 /**
- * Async Bot Task Queue — WorldInMaking
- *
- * Edge endpoints return HTTP 202 Accepted immediately after enqueueing,
- * preventing Cloudflare Edge 10s execution timeouts during long multi-persona LLM calls.
+ * Durable bot task queue. Edge endpoints may enqueue; a worker claims rows.
  */
 import { supabaseAdmin } from '../../../lib/supabase-admin'
-
 
 export interface BotQueueTask {
     id: string
@@ -15,84 +11,96 @@ export interface BotQueueTask {
     created_at: string
     updated_at: string
     error?: string
+    idempotency_key?: string | null
 }
 
-// In-memory fallback queue for environments before DB table migration
-const memoryQueue: BotQueueTask[] = []
+export function philosopherTickIdempotencyKey(phase: string, topicId?: string): string {
+    const hour = new Date().toISOString().slice(0, 13)
+    const topic = topicId ? `:${topicId}` : ''
+    return `philosopher_tick:${hour}:${phase || 'full'}${topic}`
+}
 
-export async function enqueueBotTask(taskType: string, payload: Record<string, unknown>): Promise<string> {
+export async function enqueueBotTask(
+    taskType: string,
+    payload: Record<string, unknown>,
+    idempotencyKey?: string
+): Promise<string> {
     const id = `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const now = new Date().toISOString()
-    const task: BotQueueTask = {
-        id,
-        task_type: taskType,
-        payload,
-        status: 'pending',
-        created_at: now,
-        updated_at: now,
+    const key = idempotencyKey || null
+
+    if (key) {
+        const { data: existing } = await supabaseAdmin
+            .from('wim_bot_tasks')
+            .select('id')
+            .eq('idempotency_key', key)
+            .maybeSingle()
+        if (existing?.id) return existing.id as string
     }
 
-    try {
-        const { error } = await supabaseAdmin.from('wim_bot_tasks').insert({
+    const { data, error } = await supabaseAdmin
+        .from('wim_bot_tasks')
+        .insert({
             id,
             task_type: taskType,
             payload,
             status: 'pending',
             created_at: now,
             updated_at: now,
+            idempotency_key: key,
         })
+        .select('id')
+        .maybeSingle()
 
-        if (error) {
-            // Table might not exist yet — fallback to in-memory queue
-            memoryQueue.push(task)
+    if (error) {
+        if (key && /duplicate|unique/i.test(error.message)) {
+            const { data: again } = await supabaseAdmin
+                .from('wim_bot_tasks')
+                .select('id')
+                .eq('idempotency_key', key)
+                .maybeSingle()
+            if (again?.id) return again.id as string
         }
-    } catch {
-        memoryQueue.push(task)
+        throw error
     }
-
-    return id
+    return (data?.id as string) || id
 }
 
 export async function popPendingBotTasks(limit = 5): Promise<BotQueueTask[]> {
-    try {
-        const { data, error } = await supabaseAdmin
+    const claimed: BotQueueTask[] = []
+    for (let i = 0; i < limit; i++) {
+        const { data: pending, error: findError } = await supabaseAdmin
             .from('wim_bot_tasks')
-            .select('*')
+            .select('id')
             .eq('status', 'pending')
             .order('created_at', { ascending: true })
-            .limit(limit)
+            .limit(1)
+            .maybeSingle()
+        if (findError) throw findError
+        if (!pending?.id) break
 
-        if (!error && data && data.length > 0) {
-            const tasks = data as BotQueueTask[]
-            const ids = tasks.map((t) => t.id)
-            await supabaseAdmin
-                .from('wim_bot_tasks')
-                .update({ status: 'processing', updated_at: new Date().toISOString() })
-                .in('id', ids)
-            return tasks
-        }
-    } catch {
-        /* fallback to memory */
+        const { data, error } = await supabaseAdmin
+            .from('wim_bot_tasks')
+            .update({ status: 'processing', updated_at: new Date().toISOString() })
+            .eq('id', pending.id)
+            .eq('status', 'pending')
+            .select('*')
+            .maybeSingle()
+        if (error) throw error
+        if (data) claimed.push(data as BotQueueTask)
     }
-
-    const pending = memoryQueue.splice(0, limit)
-    pending.forEach((t) => (t.status = 'processing'))
-    return pending
+    return claimed
 }
 
 export async function markBotTaskComplete(id: string, success: boolean, errorMsg?: string): Promise<void> {
     const status = success ? 'completed' : 'failed'
-    const now = new Date().toISOString()
-    try {
-        await supabaseAdmin
-            .from('wim_bot_tasks')
-            .update({
-                status,
-                updated_at: now,
-                error: errorMsg || null,
-            })
-            .eq('id', id)
-    } catch {
-        /* memory fallback task complete */
-    }
+    const { error } = await supabaseAdmin
+        .from('wim_bot_tasks')
+        .update({
+            status,
+            updated_at: new Date().toISOString(),
+            error: errorMsg || null,
+        })
+        .eq('id', id)
+    if (error) throw error
 }

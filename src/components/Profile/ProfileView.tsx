@@ -317,33 +317,39 @@ const AvatarBlock = ({
     }, [values.avatar])
 
     return (
-        <div className="relative flex flex-col items-center mb-4 bg-primary rounded-md overflow-hidden border border-primary">
-            {isEditing && (
-                <div className="absolute right-0 top-0 flex items-center">
-                    <div className="relative p-2 border-l border-b border-primary rounded-bl-md bg-primary overflow-hidden">
-                        <IconUpload className="size-5" />
-                        <input
-                            ref={inputRef}
-                            onChange={handleChange}
-                            accept=".jpg, .png, .gif, .jpeg, .webp"
-                            className="opacity-0 absolute w-full h-full top-0 left-0 cursor-pointer z-10"
-                            name="avatar"
-                            type="file"
-                        />
+        <div className={isEditing ? 'mb-4 space-y-3' : 'flex items-start gap-3 mb-4'}>
+            <div className={`relative flex-shrink-0 ${isEditing ? 'w-20' : 'w-16'}`}>
+                <Avatar
+                    className="w-full rounded-full border border-primary bg-accent"
+                    src={imageURL}
+                />
+                {isEditing && (
+                    <div className="absolute -right-1 -bottom-1 flex items-center rounded-full overflow-hidden border border-primary bg-primary">
+                        <div className="relative p-1 overflow-hidden">
+                            <IconUpload className="size-3.5" />
+                            <input
+                                ref={inputRef}
+                                onChange={handleChange}
+                                accept=".jpg, .png, .gif, .jpeg, .webp"
+                                className="opacity-0 absolute w-full h-full top-0 left-0 cursor-pointer z-10"
+                                name="avatar"
+                                type="file"
+                            />
+                        </div>
+                        {imageURL && !isModerator && (
+                            <button
+                                type="button"
+                                onClick={() => setFieldValue('avatar', null)}
+                                className="p-1 border-l border-primary"
+                            >
+                                <IconX className="size-3.5" />
+                            </button>
+                        )}
                     </div>
-                    {imageURL && !isModerator && (
-                        <button
-                            onClick={() => setFieldValue('avatar', null)}
-                            className="p-2 border-l border-b border-primary bg-primary"
-                        >
-                            <IconX className="size-5" />
-                        </button>
-                    )}
-                </div>
-            )}
-            <Avatar className="w-full border-b border-primary" src={imageURL} />
+                )}
+            </div>
             {isEditing ? (
-                <div className="p-3 w-full space-y-3">
+                <div className="space-y-3">
                     <Input
                         label="First name"
                         name="firstName"
@@ -367,9 +373,9 @@ const AvatarBlock = ({
                     />
                 </div>
             ) : (
-                <div className="my-2 text-center flex flex-col items-center px-3 w-full">
-                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        <h2 className="uppercase text-base font-bold m-0">{name}</h2>
+                <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <h2 className="text-sm font-semibold m-0 leading-tight">{name}</h2>
                         {isPro && (
                             <span
                                 title={proLabel || 'Pro Member'}
@@ -379,11 +385,15 @@ const AvatarBlock = ({
                             </span>
                         )}
                     </div>
-                    {profile.username && <p className="text-sm text-muted m-0 mt-0.5">@{profile.username}</p>}
+                    {profile.username && (
+                        <p className="text-xs text-muted m-0 mt-0.5">@{profile.username}</p>
+                    )}
+                    {profile.companyRole &&
+                        !isPro &&
+                        !['member', 'user'].includes(String(profile.companyRole).toLowerCase()) && (
+                            <p className="text-secondary text-xs m-0 mt-0.5">{profile.companyRole}</p>
+                        )}
                 </div>
-            )}
-            {!isEditing && profile.companyRole && !isPro && (
-                <p className="text-secondary text-sm m-0 mb-2 -mt-1">{profile.companyRole}</p>
             )}
         </div>
     )
@@ -413,10 +423,10 @@ const Details = ({
         setShowPronounsInput(!!values.pronouns)
     }, [values.pronouns])
     return (
-        <div className="text-sm space-y-3">
+        <div className="text-xs space-y-1.5">
             {isPro && !isEditing && (
                 <p className="flex justify-between items-center m-0">
-                    <span className="font-semibold">Plan</span>
+                    <span className="text-muted">Plan</span>
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide bg-navy/10 text-navy border border-navy/20 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-400/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-navy dark:bg-blue-400" />
                         {proLabel || 'study'}
@@ -425,8 +435,8 @@ const Details = ({
             )}
             {!isEditing && (
                 <p className="flex justify-between m-0">
-                    <span className="font-semibold">Community member since</span>
-                    <span suppressHydrationWarning>{dayjs(profile.createdAt).format('MMMM D, YYYY')}</span>
+                    <span className="text-muted">Joined</span>
+                    <span suppressHydrationWarning>{dayjs(profile.createdAt).format('MMM D, YYYY')}</span>
                 </p>
             )}
             {isEditing ? (
@@ -441,7 +451,7 @@ const Details = ({
             ) : (
                 profile.birthDate && (
                     <p className="flex justify-between m-0">
-                        <span className="font-semibold">Age:</span>
+                        <span className="text-muted">Age</span>
                         <span>
                             {ageFromBirthDate(profile.birthDate) ?? '—'}
                             <span className="text-muted">
@@ -475,7 +485,7 @@ const Details = ({
             ) : (
                 profile.preferredLanguage && (
                     <p className="flex justify-between m-0">
-                        <span className="font-semibold">Language:</span>
+                        <span className="text-muted">Language</span>
                         <span>{profile.preferredLanguage === 'tr' ? 'Türkçe' : 'English'}</span>
                     </p>
                 )
@@ -491,7 +501,7 @@ const Details = ({
             ) : (
                 profile.location && (
                     <p className="flex justify-between m-0">
-                        <span className="font-semibold">Location:</span>
+                        <span className="text-muted">Location</span>
                         <span>{profile.location}</span>
                     </p>
                 )
@@ -528,7 +538,7 @@ const Details = ({
             ) : (
                 profile.pronouns && (
                     <p className="flex justify-between m-0">
-                        <span className="font-semibold">Pronouns:</span>
+                        <span className="text-muted">Pronouns</span>
                         <span>{profile.pronouns}</span>
                     </p>
                 )
@@ -547,49 +557,29 @@ const ProfileSkeleton = () => {
                         {/* Left sidebar skeleton */}
                         <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4">
                             {/* Avatar section skeleton */}
-                            <div className="flex flex-col items-center mb-6 bg-primary rounded-md overflow-hidden border border-primary">
-                                <div className="w-full aspect-square bg-accent animate-pulse border-b border-primary" />
-                                <div className="flex items-center space-x-2 my-2">
-                                    <div className="h-6 w-32 bg-accent animate-pulse rounded" />
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-16 h-16 rounded-full bg-accent animate-pulse border border-primary flex-shrink-0" />
+                                <div className="pt-1 space-y-2">
+                                    <div className="h-4 w-28 bg-accent animate-pulse rounded" />
+                                    <div className="h-3 w-20 bg-accent animate-pulse rounded" />
                                 </div>
-                                <div className="h-4 w-24 bg-accent animate-pulse rounded mb-2" />
                             </div>
 
-                            {/* Details block skeleton */}
-                            <Fieldset data-scheme="secondary" className="bg-primary mb-6" legend="Details">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <div className="h-4 w-24 bg-accent animate-pulse rounded" />
-                                        <div className="h-4 w-16 bg-accent animate-pulse rounded" />
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <div className="h-4 w-20 bg-accent animate-pulse rounded" />
-                                        <div className="h-4 w-12 bg-accent animate-pulse rounded" />
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <div className="h-4 w-16 bg-accent animate-pulse rounded" />
-                                        <div className="h-4 w-20 bg-accent animate-pulse rounded" />
-                                    </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <div className="h-3 w-16 bg-accent animate-pulse rounded" />
+                                    <div className="h-3 w-20 bg-accent animate-pulse rounded" />
                                 </div>
-                            </Fieldset>
-
-                            {/* Links block skeleton */}
-                            <Fieldset data-scheme="secondary" className="bg-primary mb-6" legend="Links">
-                                <div className="flex space-x-3">
-                                    <div className="w-6 h-6 bg-accent animate-pulse rounded" />
-                                    <div className="w-6 h-6 bg-accent animate-pulse rounded" />
-                                    <div className="w-6 h-6 bg-accent animate-pulse rounded" />
+                                <div className="flex justify-between">
+                                    <div className="h-3 w-14 bg-accent animate-pulse rounded" />
+                                    <div className="h-3 w-12 bg-accent animate-pulse rounded" />
                                 </div>
-                            </Fieldset>
-
-                            {/* Achievements block skeleton */}
-                            <Fieldset data-scheme="secondary" className="bg-primary mb-6" legend="Achievements">
-                                <div className="grid grid-cols-7 gap-2">
-                                    {Array.from({ length: 7 }).map((_, i) => (
-                                        <div key={i} className="aspect-square bg-accent animate-pulse rounded" />
-                                    ))}
-                                </div>
-                            </Fieldset>
+                            </div>
+                            <div className="flex space-x-2 pt-1">
+                                <div className="w-5 h-5 bg-accent animate-pulse rounded" />
+                                <div className="w-5 h-5 bg-accent animate-pulse rounded" />
+                                <div className="w-5 h-5 bg-accent animate-pulse rounded" />
+                            </div>
                         </div>
 
                         {/* Right content skeleton */}
@@ -614,7 +604,7 @@ const Avatar = (props: { className?: string; src?: string; color?: string }) => 
     return (
         <div className={`overflow-hidden aspect-square bg-${props.color} ${props.className}`}>
             {props.src ? (
-                <img className="w-full object-fill" alt="" src={props.src} />
+                <img className="w-full h-full object-cover" alt="" src={props.src} />
             ) : (
                 <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -1121,7 +1111,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     error: true,
                     duration: 4000,
                 })
-                throw error
             } finally {
                 setIsEditing(false)
             }
@@ -1141,7 +1130,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             <ScrollArea className="min-h-0 h-full">
                 <div data-scheme="primary" className="mx-auto max-w-screen-xl px-4 pb-4 @container">
                     <div className="flex flex-col @2xl:flex-row gap-6 p-4">
-                        <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4">
+                        <div className="@2xl:max-w-xs w-full flex-shrink-0 pb-4 space-y-4">
                             <AvatarBlock
                                 profile={profile}
                                 isEditing={isEditing}
@@ -1154,7 +1143,19 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             />
 
                             {(isEditing || profile.pronouns || profile.location || profile.birthDate || isProfilePro) && (
-                                <Block title="Details">
+                                isEditing ? (
+                                    <Block title="Details">
+                                        <Details
+                                            profile={profile}
+                                            isEditing={isEditing}
+                                            setFieldValue={setFieldValue}
+                                            values={values}
+                                            errors={errors}
+                                            isPro={isProfilePro}
+                                            proLabel={proBadgeLabel}
+                                        />
+                                    </Block>
+                                ) : (
                                     <Details
                                         profile={profile}
                                         isEditing={isEditing}
@@ -1164,12 +1165,12 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                         isPro={isProfilePro}
                                         proLabel={proBadgeLabel}
                                     />
-                                </Block>
+                                )
                             )}
 
                             {(isEditing || profile.biography) && (
-                                <Block title="Bio">
-                                    {isEditing ? (
+                                isEditing ? (
+                                    <Block title="Bio">
                                         <div className="space-y-1" data-writing-surface>
                                             <textarea
                                                 name="biography"
@@ -1184,12 +1185,12 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                                 <p className="text-red text-xs font-bold m-0">{errors.biography}</p>
                                             )}
                                         </div>
-                                    ) : (
-                                        <Markdown className="prose dark:prose-invert prose-sm max-w-full m-0">
-                                            {profile.biography}
-                                        </Markdown>
-                                    )}
-                                </Block>
+                                    </Block>
+                                ) : (
+                                    <Markdown className="prose dark:prose-invert prose-sm max-w-full m-0">
+                                        {profile.biography}
+                                    </Markdown>
+                                )
                             )}
 
                             {(isEditing ||
@@ -1198,7 +1199,17 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                 profile.linkedin ||
                                 profile.website ||
                                 profile.contactEmail) && (
-                                <Block title="Links">
+                                isEditing ? (
+                                    <Block title="Links">
+                                        <Links
+                                            errors={errors}
+                                            setFieldValue={setFieldValue}
+                                            formValues={values}
+                                            profile={profile}
+                                            isEditing={isEditing}
+                                        />
+                                    </Block>
+                                ) : (
                                     <Links
                                         errors={errors}
                                         setFieldValue={setFieldValue}
@@ -1206,7 +1217,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                         profile={profile}
                                         isEditing={isEditing}
                                     />
-                                </Block>
+                                )
                             )}
 
                             {(isCurrentUser || (isModerator && user?.webmaster)) && (
@@ -1257,47 +1268,43 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     </div>
                 </div>
             </ScrollArea>
-            <div className="border-primary sticky border-t bottom-0">
-                <HeaderBar
-                    rightActionButtons={
-                        <>
-                            {isModerator && (
-                                <div className="flex gap-px">
-                                    <OSButton
-                                        asLink
-                                        size="md"
-                                        to={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/plugin::users-permissions.user/${profile?.user?.data?.id}`}
-                                        tooltip={
-                                            <>
-                                                View in Strapi{' '}
-                                                <IconExternal className="size-4 text-secondary inline-block relative -top-px" />
-                                            </>
-                                        }
-                                        icon={<IconStrapi />}
-                                        iconClassName="size-5"
-                                        external
-                                    />
+            {isModerator && (
+                <div className="border-primary sticky border-t bottom-0">
+                    <HeaderBar
+                        rightActionButtons={
+                            <div className="flex gap-px">
+                                <OSButton
+                                    asLink
+                                    size="md"
+                                    to={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/plugin::users-permissions.user/${profile?.user?.data?.id}`}
+                                    tooltip={
+                                        <>
+                                            View in Strapi{' '}
+                                            <IconExternal className="size-4 text-secondary inline-block relative -top-px" />
+                                        </>
+                                    }
+                                    icon={<IconStrapi />}
+                                    iconClassName="size-5"
+                                    external
+                                />
 
-                                    <OSButton
-                                        size="md"
-                                        tooltip={
-                                            profile?.user?.data?.attributes?.blocked ? 'Unblock user?' : 'Block user'
-                                        }
-                                        icon={
-                                            profile?.user?.data?.attributes?.blocked ? <IconNoEntry /> : <IconNoEntry />
-                                        }
-                                        iconClassName="size-5"
-                                        className={`${
-                                            profile?.user?.data?.attributes?.blocked ? '!bg-red !text-white' : ''
-                                        }`}
-                                        onClick={() => handleBlock(!profile?.user?.data?.attributes?.blocked)}
-                                    />
-                                </div>
-                            )}
-                        </>
-                    }
-                />
-            </div>
+                                <OSButton
+                                    size="md"
+                                    tooltip={
+                                        profile?.user?.data?.attributes?.blocked ? 'Unblock user?' : 'Block user'
+                                    }
+                                    icon={<IconNoEntry />}
+                                    iconClassName="size-5"
+                                    className={`${
+                                        profile?.user?.data?.attributes?.blocked ? '!bg-red !text-white' : ''
+                                    }`}
+                                    onClick={() => handleBlock(!profile?.user?.data?.attributes?.blocked)}
+                                />
+                            </div>
+                        }
+                    />
+                </div>
+            )}
         </div>
     )
 }

@@ -2,6 +2,17 @@
 
 PostHog.com code originally used Squeak/Strapi for community auth. **WIM uses Supabase exclusively.**
 
+## Email confirmation (optional)
+
+Live signup stays **autoconfirm on** until SMTP is configured. To require email confirm:
+
+1. Dashboard → Project Settings → Auth → SMTP (host, user, password, sender).
+2. Set `WIM_REQUIRE_EMAIL_CONFIRM=1` in host env.
+3. PATCH auth: `mailer_autoconfirm: false` (or re-run bootstrap with that env).
+4. Optional captcha: `WIM_AUTH_CAPTCHA=1` plus hCaptcha site/secret in the Auth captcha settings.
+
+Signup UI already shows “check your email” when the session is missing after `signUp`.
+
 ## Automated setup
 
 ```bash

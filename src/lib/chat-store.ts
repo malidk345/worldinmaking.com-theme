@@ -221,14 +221,10 @@ export async function listChatsWithMessages(ownerKey: string, userId?: string): 
     return rows.map((row) => rowToChat(row, byChat.get(row.id) || []))
 }
 
-export async function getChatForOwner(chatId: string, ownerKey: string): Promise<Chat | null> {
-    const { data, error } = await supabaseAdmin
-        .from('wim_chats')
-        .select('*')
-        .eq('id', chatId)
-        .eq('owner_key', ownerKey)
-        .is('deleted_at', null)
-        .maybeSingle()
+export async function getChatForOwner(chatId: string, ownerKey: string, userId?: string): Promise<Chat | null> {
+    let query = supabaseAdmin.from('wim_chats').select('*').eq('id', chatId).is('deleted_at', null)
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query.maybeSingle()
     if (error) throw error
     if (!data) return null
     const messages = await listMessages(chatId)
@@ -293,7 +289,11 @@ export async function upsertChatWithMessages(
         .eq('id', chatId)
         .maybeSingle()
     if (existingError) throw existingError
-    if (existing && (existing as ChatRow).owner_key !== ownerKey) {
+    if (
+        existing &&
+        (existing as ChatRow).owner_key !== ownerKey &&
+        (existing as ChatRow).auth_user_id !== ownerKey
+    ) {
         throw Object.assign(new Error('Forbidden'), { status: 403 })
     }
     if (existing && (existing as ChatRow).deleted_at) {
@@ -307,7 +307,13 @@ export async function upsertChatWithMessages(
         // Preserve an already-issued share token unless the client is explicitly sharing.
         row.share_token = (existing as ChatRow).share_token
         row.is_shared = (existing as ChatRow).is_shared
-        const { error } = await supabaseAdmin.from('wim_chats').update(row).eq('id', chatId).eq('owner_key', ownerKey)
+        if (userId) {
+            row.owner_key = userId
+            row.auth_user_id = userId
+        }
+        let update = supabaseAdmin.from('wim_chats').update(row).eq('id', chatId)
+        update = applyOwnerScope(update, ownerKey, userId)
+        const { error } = await update
         if (error) throw error
     } else {
         const { error } = await supabaseAdmin.from('wim_chats').insert(row)
@@ -339,7 +345,7 @@ export async function upsertChatWithMessages(
         if (updateError) throw updateError
     }
 
-    return getChatForOwner(chatId, ownerKey) as Promise<Chat>
+    return getChatForOwner(chatId, ownerKey, userId) as Promise<Chat>
 }
 
 export async function patchChatForOwner(
@@ -355,9 +361,11 @@ export async function patchChatForOwner(
     if (patch.webSearchEnabled !== undefined) updates.web_search_enabled = !!patch.webSearchEnabled
     if (patch.projectId !== undefined) updates.project_id = patch.projectId ? clampText(patch.projectId, 80) : null
 
-    const { error } = await supabaseAdmin.from('wim_chats').update(updates).eq('id', chatId).eq('owner_key', ownerKey)
+    let update = supabaseAdmin.from('wim_chats').update(updates).eq('id', chatId)
+    update = applyOwnerScope(update, ownerKey, ownerKey)
+    const { error } = await update
     if (error) throw error
-    return getChatForOwner(chatId, ownerKey)
+    return getChatForOwner(chatId, ownerKey, ownerKey)
 }
 
 export async function setMessageLiked(chatId: string, ownerKey: string, messageId: string, liked: boolean | null): Promise<void> {

@@ -118,7 +118,7 @@ type UserContextValue = {
         password: string
         firstName: string
         lastName: string
-    }) => Promise<User | null | { error: string }>
+    }) => Promise<User | null | { error: string; needsEmailConfirm?: boolean }>
     isSubscribed: (contentType: 'topic' | 'question', id: number | string) => Promise<boolean>
     setSubscription: (args: {
         contentType: 'topic' | 'question'
@@ -446,7 +446,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         password: string
         firstName: string
         lastName: string
-    }): Promise<User | null | { error: string }> => {
+    }): Promise<User | null | { error: string; needsEmailConfirm?: boolean }> => {
         setIsLoading(true)
 
         try {
@@ -465,6 +465,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                         (needsEmailConfirm
                             ? 'Check your email to confirm your account, then sign in.'
                             : 'Sign up failed'),
+                    needsEmailConfirm: !!needsEmailConfirm,
                 }
             }
 

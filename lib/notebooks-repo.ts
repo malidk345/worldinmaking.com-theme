@@ -112,18 +112,6 @@ export async function resolveNotebookAccess(
     return getCollaboratorRole(row.id, userId)
 }
 
-async function claimNotebookRow(row: StoredNotebookRow, userId: string): Promise<StoredNotebookRow> {
-    if (row.auth_user_id === userId && row.owner_key === userId) return row
-    const { data, error } = await supabaseAdmin
-        .from('wim_notebooks')
-        .update({ owner_key: userId, auth_user_id: userId })
-        .eq('id', row.id)
-        .select('*')
-        .maybeSingle()
-    if (error) throw error
-    return (data as StoredNotebookRow) || { ...row, owner_key: userId, auth_user_id: userId }
-}
-
 export function dtoToRow(nb: StoredNotebookDTO, ownerKey: string): Omit<StoredNotebookRow, never> {
     return {
         id: nb.id,
@@ -292,13 +280,6 @@ export async function getNotebookByIdOrShort(
         const extra = (options.extraOwnerKeys || []).filter(Boolean)
         const role = await resolveNotebookAccess(row, options.ownerKey, options.userId, extra)
         if (!role) return null
-        if (
-            role === 'owner' &&
-            options.userId &&
-            (row.owner_key !== options.userId || row.auth_user_id !== options.userId)
-        ) {
-            row = await claimNotebookRow(row, options.userId)
-        }
         return rowToDTO(row, role)
     }
     return rowToDTO(row)
@@ -439,7 +420,10 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
                 err.status = 403
                 throw err
             }
-            persistOwnerKey = current.owner_key
+            persistOwnerKey = role === 'owner' && userId ? userId : current.owner_key
+            if (role === 'owner' && userId) {
+                nb.auth_user_id = userId
+            }
             if (current.deleted_at) continue
             if (await hasSyncTombstone('notebook', nb.id)) continue
             const currentDbVersion = Number(current.version || 1)

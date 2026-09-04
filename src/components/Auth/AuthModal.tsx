@@ -7,6 +7,7 @@ import { requestPasswordReset } from 'lib/wim-auth'
 import { supabase } from 'lib/supabase'
 import OSButton from 'components/OSButton'
 import Link from 'components/Link'
+import { useT } from 'lib/i18n/t'
 
 type AuthView = 'sign-in' | 'sign-up' | 'forgot-password'
 
@@ -47,6 +48,7 @@ export default function AuthModal({
     onSuccess,
 }: AuthModalProps) {
     const { login, signUp, loginWithGoogle } = useUser()
+    const { t } = useT()
     const [mode, setMode] = useState<AuthView>(initialView)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -84,7 +86,7 @@ export default function AuthModal({
             if (mode === 'sign-in') {
                 const result = await login({ email, password })
                 if (!result) {
-                    setErrorMsg('Sign in failed. Please check your credentials.')
+                    setErrorMsg(t('auth.signInFailed'))
                     return
                 }
                 if ('error' in result && result.error) {
@@ -94,20 +96,24 @@ export default function AuthModal({
                 finishSuccess(result as User)
             } else if (mode === 'sign-up') {
                 if (!firstName.trim()) {
-                    setErrorMsg('Please enter your first name')
+                    setErrorMsg(t('auth.firstNameRequired'))
                     return
                 }
-                if (password.length < 6) {
-                    setErrorMsg('Password must be at least 6 characters')
+                if (password.length < 8) {
+                    setErrorMsg(t('auth.passwordMin'))
                     return
                 }
                 if (!ageOk) {
-                    setErrorMsg('You must be at least 16 years old.')
+                    setErrorMsg(t('auth.ageGate'))
                     return
                 }
                 const result = await signUp({ email, password, firstName, lastName })
                 if (!result) {
-                    setErrorMsg('Sign up failed. Please try again.')
+                    setErrorMsg(t('auth.signUpFailed'))
+                    return
+                }
+                if ('needsEmailConfirm' in result && result.needsEmailConfirm) {
+                    setSuccessMsg(result.error || t('auth.checkEmail'))
                     return
                 }
                 if ('error' in result && result.error) {
@@ -125,7 +131,7 @@ export default function AuthModal({
 
     const handleMagicLink = async () => {
         if (mode === 'sign-up' && !ageOk) {
-            setErrorMsg('You must be at least 16 years old.')
+            setErrorMsg(t('auth.ageGate'))
             return
         }
         if (!email || !email.includes('@')) {
@@ -158,7 +164,7 @@ export default function AuthModal({
 
     const handleGoogle = async () => {
         if (mode === 'sign-up' && !ageOk) {
-            setErrorMsg('You must be at least 16 years old.')
+            setErrorMsg(t('auth.ageGate'))
             return
         }
         setErrorMsg(null)
@@ -225,7 +231,7 @@ export default function AuthModal({
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 text-muted hover:text-primary p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                        aria-label="Close modal"
+                        aria-label={t('auth.close')}
                     >
                         <IconX className="size-4" />
                     </button>
@@ -233,15 +239,21 @@ export default function AuthModal({
                     {/* Header: Title + Subtitle */}
                     <div className="text-center mb-6">
                         <h2 className="text-[21px] font-bold text-primary tracking-tight flex items-center justify-center flex-wrap gap-1.5">
-                            <span>{mode === 'sign-in' ? 'Log in to' : mode === 'sign-up' ? 'Sign up for' : 'Reset password for'}</span>
+                            <span>
+                                {mode === 'sign-in'
+                                    ? t('auth.loginTo')
+                                    : mode === 'sign-up'
+                                      ? t('auth.signUpFor')
+                                      : t('auth.resetFor')}
+                            </span>
                             <span className="bg-[#3b82f6]/15 dark:bg-[#3b82f6]/25 text-[#1d4ed8] dark:text-[#93c5fd] border border-[#3b82f6]/20 font-bold px-2 py-0.5 rounded-md text-[18px]">
                                 @worldinmaking
                             </span>
                         </h2>
                         <p className="text-[13px] text-muted mt-1.5 font-normal">
-                            {mode === 'sign-in' && "Welcome back. Let's make something."}
-                            {mode === 'sign-up' && "Join the workspace. The world is always in the making."}
-                            {mode === 'forgot-password' && 'Enter your email to receive recovery instructions.'}
+                            {mode === 'sign-in' && t('auth.welcomeBack')}
+                            {mode === 'sign-up' && t('auth.joinWorkspace')}
+                            {mode === 'forgot-password' && t('auth.resetHint')}
                         </p>
                     </div>
 

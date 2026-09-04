@@ -30,6 +30,10 @@ export type WimProfileRow = {
     last_name?: string | null
 }
 
+/** Columns granted to anon/authenticated. `select('*')` fails (contact_email / birth_date are private). */
+export const WIM_PROFILE_PUBLIC_COLUMNS =
+    'id, username, first_name, last_name, avatar_url, bio, website, github, linkedin, twitter, pronouns, location, cover_url, role, is_bot, created_at, updated_at, preferred_language'
+
 export function isWimAuthReady(): boolean {
     return isSupabaseConfigured
 }
@@ -209,7 +213,11 @@ async function fetchWimPrivate(userId: string): Promise<{ contact_email: string 
 }
 
 export async function fetchWimProfile(userId: string): Promise<WimProfileRow | null> {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(WIM_PROFILE_PUBLIC_COLUMNS)
+        .eq('id', userId)
+        .maybeSingle()
     if (error) {
         console.warn('[wim-auth] fetch profile', error.message)
         return null
@@ -258,7 +266,11 @@ export async function ensureWimProfile(
         last_name: extras?.lastName || (meta.last_name as string) || (meta.lastName as string) || null,
     }
 
-    const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' }).select('*').single()
+    const { error } = await supabase
+        .from('profiles')
+        .upsert(row, { onConflict: 'id' })
+        .select(WIM_PROFILE_PUBLIC_COLUMNS)
+        .single()
     if (error) {
         // RLS or race: re-fetch
         console.warn('[wim-auth] ensure profile upsert', error.message)
@@ -433,10 +445,20 @@ export async function updateWimProfile(
             return { profile: null, error: privError.message }
         }
     }
-    if (Object.keys(publicPatch).length === 0) {
+    const cleaned: Record<string, string | null> = {}
+    for (const [key, value] of Object.entries(publicPatch)) {
+        if (value === undefined) continue
+        cleaned[key] = typeof value === 'string' && value.trim() === '' ? null : (value as string | null)
+    }
+    if (Object.keys(cleaned).length === 0) {
         return { profile: await fetchWimProfile(userId) }
     }
-    const { data, error } = await supabase.from('profiles').update(publicPatch).eq('id', userId).select('*').single()
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...cleaned, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+        .select(WIM_PROFILE_PUBLIC_COLUMNS)
+        .single()
     if (error) {
         const taken = /duplicate|unique/i.test(error.message)
         return { profile: null, error: taken ? 'That username is already taken' : error.message }
