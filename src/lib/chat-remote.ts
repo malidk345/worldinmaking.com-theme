@@ -309,7 +309,7 @@ export function subscribeToWorkspaceChats(onChange: () => void): () => void {
     try {
         const channel = supabase
             .channel(`wim-chats-live-${userId}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats', filter: `owner_id=eq.${userId}` }, () => onChange())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats', filter: `auth_user_id=eq.${userId}` }, () => onChange())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chat_messages' }, () => onChange())
             .subscribe((status) => {
                 if (status === 'CHANNEL_ERROR') {

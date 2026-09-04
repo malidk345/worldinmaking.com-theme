@@ -7,10 +7,8 @@ import { envFrom, getRuntimeEnv, type EnvStore } from './runtime-env'
 export function getSupabaseConfig(env?: EnvStore) {
     const store = env ?? getRuntimeEnv()
     const url = envFrom(store, 'NEXT_PUBLIC_SUPABASE_URL').replace(/\/$/, '')
-    const key =
-        envFrom(store, 'SUPABASE_SERVICE_ROLE_KEY') ||
-        envFrom(store, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
-    return { url, key, hasServiceRole: !!envFrom(store, 'SUPABASE_SERVICE_ROLE_KEY') }
+    const key = envFrom(store, 'SUPABASE_SERVICE_ROLE_KEY')
+    return { url, key, hasServiceRole: !!key }
 }
 
 export type SupabaseRestResult<T> =

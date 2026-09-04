@@ -11,6 +11,7 @@ import { loadForumThread } from 'lib/bots/forum-thread'
 import { checkRateLimitDurable } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp } from 'lib/bots/request-validation'
+import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -21,6 +22,11 @@ function json(body: Record<string, unknown>, status = 200) {
 
 export default async function handler(req: Request) {
     if (req.method !== 'POST') return json({ success: false, error: 'Method not allowed' }, 405)
+
+    const user = await getSupabaseUserFromRequest(req)
+    if (!user?.id) {
+        return json({ success: false, error: 'Authentication required' }, 401)
+    }
 
     const env = getRuntimeEnv()
     const ip = getClientIp(req)

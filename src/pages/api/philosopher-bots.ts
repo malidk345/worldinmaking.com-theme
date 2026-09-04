@@ -22,7 +22,7 @@ export default async function handler(req: Request) {
 
     const env = getRuntimeEnv()
     const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL').replace(/\/$/, '')
-    const supabaseKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    const supabaseKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
         return json({
             bots: [],

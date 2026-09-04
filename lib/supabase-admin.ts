@@ -68,9 +68,13 @@ let cachedClient: SupabaseClient | null = null
 function getSupabaseClient(): SupabaseClient {
     if (cachedClient) return cachedClient
     const env = getRuntimeEnv()
-    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL') || 'https://placeholder.supabase.co'
-    const supabaseServiceKey =
-        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY') || 'placeholder-key'
+    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
+    const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error(
+            'Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
+        )
+    }
     cachedClient = createClient(supabaseUrl, supabaseServiceKey, {
         auth: {
             autoRefreshToken: false,

@@ -31,13 +31,21 @@ function json(body: Record<string, unknown>, status = 200, cache?: string) {
     return new Response(JSON.stringify(body), { status, headers })
 }
 
+function sanitizeIlike(raw: string): string {
+    return raw.replace(/[%_,.()"'\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
+}
+
 async function searchNotebooks(query: string): Promise<SearchHit[]> {
     if (!isSupabaseConfigured || !supabase) return []
+    const needle = sanitizeIlike(query)
+    if (needle.length < 2) return []
     try {
         const { data, error } = await supabase
-            .from('notebooks')
-            .select('id, title, text_content, content, updated_at')
-            .or(`title.ilike.%${query}%,text_content.ilike.%${query}%`)
+            .from('wim_notebooks')
+            .select('id, short_id, title, content, updated_at')
+            .eq('is_published', true)
+            .is('deleted_at', null)
+            .or(`title.ilike.%${needle}%,content.ilike.%${needle}%`)
             .limit(25)
 
         if (error || !data || data.length === 0) return []
@@ -45,9 +53,9 @@ async function searchNotebooks(query: string): Promise<SearchHit[]> {
         const docs: SemanticDocument[] = data.map((nb: any) => ({
             id: nb.id,
             title: nb.title || 'Untitled Notebook',
-            content: nb.text_content || (typeof nb.content === 'string' ? nb.content : JSON.stringify(nb.content || '')) || '',
+            content: typeof nb.content === 'string' ? nb.content : JSON.stringify(nb.content || ''),
             type: 'notebook',
-            slug: `/notebooks/${nb.id}`,
+            slug: `/notebooks/${nb.short_id || nb.id}`,
         }))
 
         const lexicalHits = searchLexicalDocuments(query, docs, 15)

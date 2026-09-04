@@ -27,22 +27,9 @@ export function getBearerToken(req: Request): string | null {
     return token || null
 }
 
-function decodeJwtPayload(token: string): Record<string, any> | null {
-    try {
-        const parts = token.split('.')
-        if (parts.length !== 3) return null
-        const payload = parts[1]
-        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-        const pad = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4))
-        const json = atob(base64 + pad)
-        return JSON.parse(json)
-    } catch {
-        return null
-    }
-}
-
 /**
- * Validate Supabase user JWT via Auth REST, with resilient service role profile lookup.
+ * Validate Supabase user JWT via Auth REST only (signature + expiry checked by GoTrue).
+ * Never decode an unverified JWT. Never embed project keys in source.
  */
 export async function getSupabaseUserFromBearer(
     token: string | null | undefined
@@ -54,92 +41,55 @@ export async function getSupabaseUserFromBearer(
         envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL') ||
         process.env.NEXT_PUBLIC_SUPABASE_URL ||
         process.env.SUPABASE_URL ||
-        'https://iydypisgfaksqkjdraiu.supabase.co'
+        ''
 
     const anon =
         envFrom(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY') ||
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
         process.env.SUPABASE_ANON_KEY ||
-        'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
+        ''
 
     const serviceKey =
-        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') ||
-        process.env.SUPABASE_SERVICE_ROLE_KEY ||
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-    if (!base) return null
+    if (!base || !anon) return null
 
     try {
-        if (anon) {
-            try {
-                const res = await fetch(`${base.replace(/\/$/, '')}/auth/v1/user`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        apikey: anon,
-                    },
-                    cache: 'no-store',
-                })
-                if (res.ok) {
-                    const user = (await res.json()) as Record<string, any>
-                    if (user?.id && typeof user.id === 'string') {
-                        // Fetch user profile from public.profiles for role & metadata
-                        try {
-                            const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
-                                headers: {
-                                    Authorization: `Bearer ${serviceKey || token}`,
-                                    apikey: serviceKey || anon,
-                                },
-                                cache: 'no-store',
-                            })
-                            if (profileRes.ok) {
-                                const profiles = (await profileRes.json()) as Record<string, any>[]
-                                if (Array.isArray(profiles) && profiles.length > 0) {
-                                    user.profile = profiles[0]
-                                    if (profiles[0].role) {
-                                        user.role = profiles[0].role
-                                    }
-                                }
-                            }
-                        } catch {
-                            /* ignore profile fetch error */
-                        }
-                        return user
-                    }
-                }
-            } catch {
-                /* fallback to JWT decode + service key lookup */
-            }
-        }
+        const res = await fetch(`${base.replace(/\/$/, '')}/auth/v1/user`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                apikey: anon,
+            },
+            cache: 'no-store',
+        })
+        if (!res.ok) return null
+        const user = (await res.json()) as Record<string, any>
+        if (!user?.id || typeof user.id !== 'string') return null
 
-        // Fallback: If token expired or network hiccup, decode JWT payload and verify user profile via service key
         if (serviceKey) {
-            const payload = decodeJwtPayload(token)
-            const userId = payload?.sub
-            if (userId && typeof userId === 'string') {
-                const profileRes = await fetch(`${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${userId}&select=*`, {
-                    headers: {
-                        Authorization: `Bearer ${serviceKey}`,
-                        apikey: serviceKey,
-                    },
-                    cache: 'no-store',
-                })
+            try {
+                const profileRes = await fetch(
+                    `${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=*`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${serviceKey}`,
+                            apikey: serviceKey,
+                        },
+                        cache: 'no-store',
+                    }
+                )
                 if (profileRes.ok) {
                     const profiles = (await profileRes.json()) as Record<string, any>[]
                     if (Array.isArray(profiles) && profiles.length > 0) {
-                        return {
-                            id: userId,
-                            email: payload?.email || profiles[0].contact_email,
-                            profile: profiles[0],
-                            role: profiles[0].role || 'member',
-                            user_metadata: payload?.user_metadata || {},
-                            app_metadata: payload?.app_metadata || {},
-                        }
+                        user.profile = profiles[0]
+                        if (profiles[0].role) user.role = profiles[0].role
                     }
                 }
+            } catch {
+                /* profile enrichment is optional */
             }
         }
-
-        return null
+        return user
     } catch {
         return null
     }
@@ -196,14 +146,12 @@ export async function resolveNotebookOwner(
 export async function resolveForumBotAuth(req: Request): Promise<BotAuthOk | AuthzFail> {
     const env = getRuntimeEnv()
     const serviceKey =
-        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') ||
-        process.env.SUPABASE_SERVICE_ROLE_KEY ||
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     const base =
         envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL') ||
         process.env.NEXT_PUBLIC_SUPABASE_URL ||
         process.env.SUPABASE_URL ||
-        'https://iydypisgfaksqkjdraiu.supabase.co'
+        ''
     if (!serviceKey || !base) {
         return { ok: false, status: 500, error: 'Server misconfigured: missing Supabase service credentials' }
     }

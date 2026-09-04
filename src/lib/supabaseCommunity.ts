@@ -159,14 +159,22 @@ async function getAuthedRestHeaders(): Promise<{ headers: Record<string, string>
 }
 
 /** Fire-and-forget: one philosopher answers after a human writes. */
-export function requestForumBotFollowUp(postId: string | number): Promise<void> {
-    return fetch('/api/forum/bot-react', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: String(postId) }),
-    })
-        .then(() => undefined)
-        .catch(() => undefined)
+export async function requestForumBotFollowUp(postId: string | number): Promise<void> {
+    try {
+        const { data } = await supabase.auth.getSession()
+        const token = data.session?.access_token
+        if (!token) return
+        await fetch('/api/forum/bot-react', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ postId: String(postId) }),
+        })
+    } catch {
+        /* ignore follow-up failures */
+    }
 }
 
 export async function postSupabaseCommunityQuestion(
