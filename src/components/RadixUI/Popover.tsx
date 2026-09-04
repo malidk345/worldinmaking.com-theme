@@ -16,6 +16,8 @@ interface PopoverProps {
     align?: 'start' | 'center' | 'end'
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    /** Wrap children in ScrollArea. Set false when the caller scrolls itself (avoids nested scroll traps). @default true */
+    scrollable?: boolean
 }
 
 export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
@@ -33,6 +35,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
             align = 'center',
             open,
             onOpenChange,
+            scrollable = true,
         },
         ref
     ) => {
@@ -64,9 +67,9 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
                         collisionPadding={12}
                         side={side}
                     >
-                        <div className="flex flex-col gap-2.5 h-full">
+                        <div className="flex flex-col gap-2.5 min-h-0 max-h-[inherit]">
                             {header && (
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center shrink-0">
                                     {title && <strong>{title}</strong>}
                                     <div className="flex items-center">
                                         <RadixPopover.Close aria-label="Close" asChild>
@@ -77,9 +80,15 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
                                     </div>
                                 </div>
                             )}
-                            <div ref={scrollRef}>
-                                <ScrollArea className="h-full">{children}</ScrollArea>
-                            </div>
+                            {scrollable ? (
+                                <div ref={scrollRef} className="min-h-0 flex-1 overflow-hidden">
+                                    <ScrollArea className="h-full min-h-0 max-h-full">{children}</ScrollArea>
+                                </div>
+                            ) : (
+                                <div ref={scrollRef} className="min-h-0">
+                                    {children}
+                                </div>
+                            )}
                         </div>
                         <RadixPopover.Arrow className="fill-white" />
                     </RadixPopover.Content>

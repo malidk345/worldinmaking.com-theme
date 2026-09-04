@@ -100,12 +100,16 @@ const WallpaperSelect = ({ value, onValueChange, title }: WallpaperSelectProps) 
             <Popover
                 trigger={trigger}
                 dataScheme="secondary"
-                contentClassName="@container bg-primary w-screen md:w-[800px] max-w-full max-h-full"
+                contentClassName="@container bg-primary w-screen md:w-[800px] max-w-full max-h-[var(--radix-popover-content-available-height)]"
                 sideOffset={8}
                 open={isOpen}
                 onOpenChange={setIsOpen}
+                scrollable={false}
             >
-                <ScrollArea className="min-h-0 !overflow-y-auto overscroll-contain max-h-[calc(var(--radix-popover-content-available-height)-0.75rem)]">
+                <ScrollArea
+                    className="min-h-0 max-h-[calc(var(--radix-popover-content-available-height)-1rem)]"
+                    viewportClasses="overscroll-contain"
+                >
                     <div className="@container">
                         <div className="grid md:@xl:grid-cols-2 md:@2xl:grid-cols-3 md:@xl:gap-2 p-2">
                             {themeOptions.map((option) => {

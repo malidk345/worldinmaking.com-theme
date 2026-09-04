@@ -3,7 +3,11 @@
     function setTheme(newTheme) {
         window.__theme = newTheme
         preferredTheme = newTheme
-        document.body.className = newTheme
+        // Toggle only light/dark — do not wipe other body classes.
+        if (document.body) {
+            document.body.classList.remove('light', 'dark')
+            document.body.classList.add(newTheme)
+        }
         window.__onThemeChange(newTheme)
         applyBrowserChrome()
     }
@@ -71,7 +75,8 @@
         colorMode = theme === 'system' ? 'system' : newTheme
         setTheme(newTheme)
         try {
-            localStorage.setItem('theme', newTheme)
+            // Persist the preference (including "system"), not only the resolved theme.
+            localStorage.setItem('theme', theme === 'system' ? 'system' : newTheme)
         } catch (err) {}
         return newTheme
     }
@@ -93,6 +98,10 @@
         wallpaper = siteSettings.wallpaper || 'keyboard-mint'
         if (KEPT.indexOf(wallpaper) === -1) wallpaper = 'keyboard-mint'
         colorMode = siteSettings.colorMode || preferredTheme || 'light'
+        // Prefer stored colorMode when localStorage.theme was previously overwritten with resolved light/dark.
+        if (siteSettings.colorMode === 'system' || siteSettings.colorMode === 'light' || siteSettings.colorMode === 'dark') {
+            preferredTheme = siteSettings.colorMode
+        }
         document.body.setAttribute('data-wallpaper', wallpaper)
         document.body.setAttribute(
             'data-reduce-transparency',
