@@ -32,7 +32,7 @@ export type WimProfileRow = {
 
 /** Columns granted to anon/authenticated. `select('*')` fails (contact_email / birth_date are private). */
 export const WIM_PROFILE_PUBLIC_COLUMNS =
-    'id, username, first_name, last_name, avatar_url, bio, website, github, linkedin, twitter, pronouns, location, cover_url, role, is_bot, created_at, updated_at, preferred_language'
+    'id, username, first_name, last_name, avatar_url, bio, website, github, linkedin, twitter, pronouns, location, cover_url, role, is_bot, created_at, updated_at, preferred_language, contact_email'
 
 export function isWimAuthReady(): boolean {
     return isSupabaseConfigured
@@ -225,13 +225,10 @@ export async function fetchWimProfile(userId: string): Promise<WimProfileRow | n
     if (!data) return null
     const row = data as WimProfileRow
     const priv = await fetchWimPrivate(userId)
-    if (!priv) {
-        return { ...row, contact_email: row.contact_email ?? null, birth_date: row.birth_date ?? null }
-    }
     return {
         ...row,
-        contact_email: priv.contact_email ?? row.contact_email ?? null,
-        birth_date: priv.birth_date ?? row.birth_date ?? null,
+        contact_email: row.contact_email ?? null,
+        birth_date: priv?.birth_date ?? row.birth_date ?? null,
     }
 }
 
@@ -430,13 +427,12 @@ export async function updateWimProfile(
         >
     >
 ): Promise<{ profile: WimProfileRow | null; error?: string }> {
-    const { contact_email, birth_date, ...publicPatch } = patch
-    if (contact_email !== undefined || birth_date !== undefined) {
+    const { birth_date, ...publicPatch } = patch
+    if (birth_date !== undefined) {
         const { error: privError } = await supabase.from('profile_private').upsert(
             {
                 user_id: userId,
-                ...(contact_email !== undefined ? { contact_email } : {}),
-                ...(birth_date !== undefined ? { birth_date } : {}),
+                birth_date,
                 updated_at: new Date().toISOString(),
             },
             { onConflict: 'user_id' }
