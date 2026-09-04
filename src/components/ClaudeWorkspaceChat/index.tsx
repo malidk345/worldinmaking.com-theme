@@ -131,6 +131,12 @@ function sanitizePublicAssistantText(value: string): string {
   );
 }
 
+function isAbortError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const name = (err as { name?: unknown }).name
+  return name === 'AbortError'
+}
+
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
@@ -404,6 +410,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
   const isStreamingRef = useRef(false);
@@ -565,6 +572,29 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       void pushChatToRemote(chat)
     }
   }, [chats, isStreaming]);
+
+  const abortActiveStream = useCallback(() => {
+    const controller = abortControllerRef.current
+    if (controller && !controller.signal.aborted) {
+      controller.abort()
+    }
+    const reader = streamReaderRef.current
+    streamReaderRef.current = null
+    if (reader) {
+      try {
+        void reader.cancel('client-stop')
+      } catch {
+        /* already closed */
+      }
+    }
+  }, [])
+
+  // Unmount / window close must cancel in-flight /api/chat work (industry-standard AbortController).
+  useEffect(() => {
+    return () => {
+      abortActiveStream()
+    }
+  }, [abortActiveStream])
 
   const activeChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
   isStreamingRef.current =
@@ -751,6 +781,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   // Handle New Chat Creation
   const handleNewChat = (projId?: string) => {
+    if (isStreamingRef.current) {
+      abortActiveStream()
+      setIsStreaming(false)
+      setStreamStatus(null)
+    }
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
       title: notebookBind?.title ? `Notebook: ${notebookBind.title}` : 'New chat',
@@ -906,7 +941,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     autoScrollRef.current = true;
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('auto'));
+    abortActiveStream();
     abortControllerRef.current = new AbortController();
+    streamReaderRef.current = null;
 
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
     const activeProjectObj = projects.find((p) => p.id === activeProjectId);
@@ -1131,13 +1168,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       const reader = sseRes.body.getReader();
+      streamReaderRef.current = reader;
       const decoder = new TextDecoder();
       let buffer = '';
       let streamedCitations: Message['citations'] = [];
 
       let lastTokenFlushTime = 0;
+      const streamSignal = abortControllerRef.current?.signal;
 
       while (true) {
+        if (streamSignal?.aborted) {
+          const abortErr = new DOMException('The operation was aborted.', 'AbortError')
+          throw abortErr
+        }
         const { value, done } = await reader.read();
         if (done) break;
 
@@ -1635,7 +1678,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
-      if (err.name === 'AbortError') {
+      if (isAbortError(err)) {
         const stoppedText = sanitizePublicAssistantText(accumulatedContent)
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: stoppedText,
@@ -1680,6 +1723,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       persistChatIdRef.current = targetChatId;
       setIsStreaming(false);
       setStreamStatus(null);
+      streamReaderRef.current = null;
       abortControllerRef.current = null;
     }
   };
@@ -1700,7 +1744,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
   const handleStopStreaming = () => {
-    abortControllerRef.current?.abort()
+    abortActiveStream()
     setIsStreaming(false)
     setStreamStatus(null)
     const chatId = activeChat?.id
@@ -2086,6 +2130,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         chats={chats}
         activeChatId={activeChatId}
         onSelectChat={(id) => {
+          if (id !== activeChatId && isStreamingRef.current) {
+            abortActiveStream()
+            setIsStreaming(false)
+            setStreamStatus(null)
+          }
           setActiveChatId(id)
           setComposerDraftNonce((n) => n + 1)
         }}
