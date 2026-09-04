@@ -12,6 +12,7 @@ import { getSessionAccessToken } from 'lib/wim-auth'
 import { runAdminAction } from 'lib/admin-client'
 import { clearSupabaseCache } from 'lib/supabase-rest'
 import { useState, useEffect, useCallback } from 'react'
+import { forumProfileAttributes } from 'lib/forum-profile'
 
 type UseQuestionOptions = {
     data?: StrapiRecord<QuestionData>
@@ -22,6 +23,7 @@ function mapReplies(replies: any[], includeHidden: boolean) {
         .filter((r) => includeHidden || !r.is_hidden)
         .map((r) => {
         const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+        const mapped = forumProfileAttributes(pObj)
         const votes = Array.isArray(r.community_reply_votes) ? r.community_reply_votes : []
         const upvoteProfiles = votes
             .filter((v: any) => v.vote === 1)
@@ -40,12 +42,13 @@ function mapReplies(replies: any[], includeHidden: boolean) {
                     data: {
                         id: pObj?.id || r.author_id || 'community',
                         attributes: {
-                            username: pObj?.username || '',
-                            firstName: pObj?.username || 'Community Member',
-                            lastName: '',
+                            username: mapped.username,
+                            firstName: mapped.firstName,
+                            lastName: mapped.lastName,
                             gravatarURL:
-                                pObj?.avatar_url ||
+                                mapped.gravatarURL ||
                                 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                            avatar: mapped.avatar,
                         },
                     },
                 },

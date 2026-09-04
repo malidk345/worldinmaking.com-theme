@@ -321,13 +321,28 @@ export function planOpenNotebookRemoteApply(input: {
 }
 
 export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void {
-    if (typeof window === 'undefined' || !isSupabaseConfigured || !getAuthUserId()) {
+    if (typeof window === 'undefined' || !isSupabaseConfigured) {
         return () => {}
     }
-    const channel = supabase
-        .channel(`wim-notebooks-live-${getAuthUserId()}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_notebooks' }, () => onChange())
-        .subscribe()
+    const userId = getAuthUserId()
+    const ownerKey = getOrCreateOwnerKey()
+    if (!userId && !ownerKey) return () => {}
+    let channel = supabase.channel(`wim-notebooks-live-${userId || ownerKey}`)
+    if (userId) {
+        channel = channel.on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `auth_user_id=eq.${userId}` },
+            () => onChange()
+        )
+    }
+    if (ownerKey) {
+        channel = channel.on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `owner_key=eq.${ownerKey}` },
+            () => onChange()
+        )
+    }
+    channel.subscribe()
     return () => {
         void supabase.removeChannel(channel)
     }

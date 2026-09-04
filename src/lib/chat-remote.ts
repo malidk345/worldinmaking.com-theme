@@ -13,6 +13,8 @@ import {
     getDeviceOwnerKey,
     namespacedStorageKey,
 } from './wim-identity'
+import { adoptDeviceCacheToAccount, adoptStringIdLists } from './adopt-device-cache'
+import { mergeChats } from './chat-merge'
 
 export { mergeChats, mergeMessages } from './chat-merge'
 
@@ -29,6 +31,31 @@ export function getChatStorageKey(): string {
 
 export function getChatDeletedStorageKey(): string {
     return namespacedStorageKey(CHAT_DELETED_BASE, getChatOwnerKey())
+}
+
+/** Move this device's guest chat cache onto the signed-in account key. */
+export function adoptGuestChatsIntoAccount(): void {
+    if (typeof window === 'undefined') return
+    const authId = getAuthUserId()
+    if (!authId) return
+    const deviceKey = getDeviceOwnerKey(DEVICE_CHAT_OWNER_KEY)
+    const accountKey = namespacedStorageKey(CHAT_CACHE_BASE, authId)
+    adoptDeviceCacheToAccount({
+        storage: window.localStorage,
+        accountKey,
+        sourceKeys: [
+            namespacedStorageKey(CHAT_CACHE_BASE, deviceKey),
+            CHAT_CACHE_BASE,
+            'claude_workspace_chats_v6',
+            'claude_workspace_chats_v4',
+        ],
+        merge: (fromSources, existing) => mergeChats(fromSources as Chat[], existing as Chat[]),
+    })
+    adoptStringIdLists({
+        storage: window.localStorage,
+        accountKey: namespacedStorageKey(CHAT_DELETED_BASE, authId),
+        sourceKeys: [namespacedStorageKey(CHAT_DELETED_BASE, deviceKey), CHAT_DELETED_BASE],
+    })
 }
 
 export function readLocalDeletedChatIds(): string[] {
@@ -191,6 +218,7 @@ async function parseJson<T>(res: Response): Promise<T | null> {
 
 export async function claimDeviceAccountOnLogin(): Promise<boolean> {
     if (typeof window === 'undefined' || !getAuthUserId()) return false
+    adoptGuestChatsIntoAccount()
     const keys = Array.from(
         new Set([getDeviceOwnerKey(DEVICE_CHAT_OWNER_KEY), getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)])
     ).filter((key) => key && key !== getAuthUserId())
@@ -304,18 +332,35 @@ export function subscribeToWorkspaceChats(onChange: () => void): () => void {
         return () => {}
     }
     const userId = getAuthUserId()
-    if (!userId) return () => {}
+    const ownerKey = getChatOwnerKey()
+    if (!userId && !ownerKey) return () => {}
 
     try {
-        const channel = supabase
-            .channel(`wim-chats-live-${userId}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chats', filter: `auth_user_id=eq.${userId}` }, () => onChange())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'wim_chat_messages' }, () => onChange())
-            .subscribe((status) => {
-                if (status === 'CHANNEL_ERROR') {
-                    console.warn('[chat-remote] realtime channel error, falling back to polling')
-                }
-            })
+        let channel = supabase.channel(`wim-chats-live-${userId || ownerKey}`)
+        if (userId) {
+            channel = channel.on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'wim_chats', filter: `auth_user_id=eq.${userId}` },
+                () => onChange()
+            )
+        }
+        if (ownerKey) {
+            channel = channel.on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'wim_chats', filter: `owner_key=eq.${ownerKey}` },
+                () => onChange()
+            )
+        }
+        channel = channel.on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'wim_chat_messages' },
+            () => onChange()
+        )
+        channel.subscribe((status) => {
+            if (status === 'CHANNEL_ERROR') {
+                console.warn('[chat-remote] realtime channel error, falling back to polling')
+            }
+        })
         return () => {
             void supabase.removeChannel(channel)
         }

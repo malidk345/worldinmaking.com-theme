@@ -81,6 +81,8 @@ export type ProfileData = {
     pronouns?: string | null
     username?: string | null
     birthDate?: string | null
+    coverUrl?: string | null
+    preferredLanguage?: string | null
     country: string | null
     amaEnabled: boolean | null
     teams?: {

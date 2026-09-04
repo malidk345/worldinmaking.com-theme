@@ -241,22 +241,8 @@ function EditProfile({ profile, mutate }) {
         try {
             posthog?.capture('wim profile update start', { profileId: id, ...values })
 
-            // Optional local avatar: store as data URL on profiles.avatar_url (text)
-            let avatarUrl: string | undefined
-            if (avatar instanceof File) {
-                avatarUrl = await new Promise((resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.onloadend = () => resolve(String(reader.result || ''))
-                    reader.onerror = reject
-                    reader.readAsDataURL(avatar)
-                })
-            } else if (avatar === null) {
-                avatarUrl = ''
-            } else if (typeof avatar === 'string') {
-                avatarUrl = avatar
-            } else if (avatar?.url) {
-                avatarUrl = avatar.url
-            }
+            const { resolveProfileFileField } = await import('lib/profile-media')
+            const avatarUrl = await resolveProfileFileField(id, avatar, 'avatar')
 
             const { updateWimProfile } = await import('lib/wim-auth')
             const patch: Record<string, string | null> = {

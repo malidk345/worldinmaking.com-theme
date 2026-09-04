@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test'
 import { mergeChats, mergeMessages } from '../src/lib/chat-merge'
 import { mergeNotebookLists } from '../src/notebook-app/scenes/notebooks/notebookRemote'
 import { isSafeOwnerKey } from '../src/lib/account-claim'
+import { adoptDeviceCacheToAccount } from '../src/lib/adopt-device-cache'
+import { formatDisplayName } from '../src/lib/display-name'
 
 const chat = (id: string, updatedAt: string, title = id) =>
     ({
@@ -79,5 +81,33 @@ test.describe('account sync merge', () => {
         expect(isSafeOwnerKey('owner_1786815367503_mhsfyb35')).toBe(true)
         expect(isSafeOwnerKey('bad key')).toBe(false)
         expect(isSafeOwnerKey('x')).toBe(false)
+    })
+
+    test('guest device cache is copied onto the account key', () => {
+        const store: Record<string, string> = {
+            'chats:device': JSON.stringify([chat('guest', '2026-09-01T00:00:00.000Z', 'Guest')]),
+            'chats:account': JSON.stringify([chat('mine', '2026-09-02T00:00:00.000Z', 'Mine')]),
+        }
+        const storage = {
+            getItem: (key: string) => store[key] ?? null,
+            setItem: (key: string, value: string) => {
+                store[key] = value
+            },
+        }
+        const merged = adoptDeviceCacheToAccount({
+            storage,
+            accountKey: 'chats:account',
+            sourceKeys: ['chats:device'],
+            merge: (fromSources, existing) => mergeChats(fromSources as any, existing as any),
+        })
+        expect(merged.map((item: any) => item.id).sort()).toEqual(['guest', 'mine'])
+        expect(JSON.parse(store['chats:account']).map((item: any) => item.id).sort()).toEqual(['guest', 'mine'])
+    })
+
+    test('display name prefers first/last over username', () => {
+        expect(formatDisplayName({ first_name: 'Ada', last_name: 'Lovelace', username: 'ada' }).fullName).toBe(
+            'Ada Lovelace'
+        )
+        expect(formatDisplayName({ username: 'nietzsche' }).firstName).toBe('nietzsche')
     })
 })

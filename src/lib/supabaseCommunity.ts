@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { fetchWithCache, clearSupabaseCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
 import { resolveUserOrPhilosopherAvatar } from './user-portraits'
+import { FORUM_PROFILE_EMBED, forumProfileAttributes } from './forum-profile'
 
 export { supabase, fetchWithCache, clearSupabaseCache, SUPABASE_URL, SUPABASE_ANON_KEY }
 
@@ -18,6 +19,8 @@ export interface SupabaseCommunityPost {
         id: string
         username: string
         avatar_url: string
+        first_name?: string
+        last_name?: string
     }
 }
 
@@ -32,6 +35,8 @@ export interface SupabaseCommunityReply {
         id: string
         username: string
         avatar_url: string
+        first_name?: string
+        last_name?: string
     }
 }
 
@@ -40,7 +45,7 @@ export async function fetchSupabaseCommunityPosts(
     postId?: number | string,
     options?: { authorId?: string; limit?: number }
 ): Promise<SupabaseCommunityPost[]> {
-    let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,is_pinned,is_archived,resolved_reply_id,profiles!community_posts_author_id_fkey(id,username,avatar_url),community_post_votes(user_id,vote)&order=created_at.desc`
+    let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,is_pinned,is_archived,resolved_reply_id,profiles!community_posts_author_id_fkey(${FORUM_PROFILE_EMBED}),community_post_votes(user_id,vote)&order=created_at.desc`
     const isCleanForumSlug = !slug || /^\/?(?:questions|forum|community|desktop)(?:\/|$)/i.test(slug.trim())
     if (postId || (slug && !isNaN(Number(slug)))) {
         const idToUse = postId || slug
@@ -61,14 +66,15 @@ export async function fetchSupabaseCommunityPosts(
 }
 
 export async function fetchSupabaseCommunityReplies(postId: number | string): Promise<SupabaseCommunityReply[]> {
-    const url = `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,is_hidden,profiles!community_replies_author_id_fkey(id,username,avatar_url),community_reply_votes(user_id,vote)&order=created_at.asc`
+    const url = `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,is_hidden,profiles!community_replies_author_id_fkey(${FORUM_PROFILE_EMBED}),community_reply_votes(user_id,vote)&order=created_at.asc`
     return fetchWithCache(url)
 }
 
 export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
     const profileObj = Array.isArray(post.profiles) ? (post.profiles as any)[0] : post.profiles
-    const username = profileObj?.username || 'Community Member'
+    const mapped = forumProfileAttributes(profileObj)
     const avatarUrl =
+        mapped.gravatarURL ||
         resolveUserOrPhilosopherAvatar(profileObj?.username, profileObj?.avatar_url) ||
         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
 
@@ -113,9 +119,9 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
                 data: {
                     id: profileObj?.id || post.author_id || '1',
                     attributes: {
-                        username: profileObj?.username || '',
-                        firstName: username,
-                        lastName: '',
+                        username: mapped.username,
+                        firstName: mapped.firstName,
+                        lastName: mapped.lastName,
                         gravatarURL: avatarUrl,
                         avatar: {
                             data: {
@@ -285,8 +291,9 @@ export async function fetchSupabasePostBySlug(slug: string) {
             if (replies && replies.length > 0) {
                 strapiObj.attributes.replies.data = replies.map((r: any) => {
                     const profileObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
-                    const username = profileObj?.username || 'Philosopher / Community Member'
+                    const mappedReply = forumProfileAttributes(profileObj)
                     const avatarUrl =
+                        mappedReply.gravatarURL ||
                         resolveUserOrPhilosopherAvatar(profileObj?.username, profileObj?.avatar_url) ||
                         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
                     const votes = Array.isArray(r.community_reply_votes) ? r.community_reply_votes : []
@@ -307,8 +314,9 @@ export async function fetchSupabasePostBySlug(slug: string) {
                                 data: {
                                     id: profileObj?.id || '1',
                                     attributes: {
-                                        firstName: username,
-                                        lastName: '',
+                                        username: mappedReply.username,
+                                        firstName: mappedReply.firstName,
+                                        lastName: mappedReply.lastName,
                                         gravatarURL: avatarUrl,
                                         avatar: { data: { attributes: { url: avatarUrl } } },
                                     },

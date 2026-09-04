@@ -191,7 +191,7 @@ export async function listPublishedNotebooksByAuthor(username: string): Promise<
         .limit(40)
 
     if (profile?.id) {
-        query = query.eq('auth_user_id', profile.id)
+        query = query.or(`auth_user_id.eq.${profile.id},owner_key.eq.${profile.id}`)
     } else {
         query = query.contains('created_by', { username: handle })
     }

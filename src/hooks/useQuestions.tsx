@@ -5,6 +5,7 @@ import {
     formatSupabaseCommunityToStrapi,
 } from 'lib/supabaseCommunity'
 import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
+import { forumProfileAttributes } from 'lib/forum-profile'
 
 type UseQuestionsOptions = {
     slug?: string
@@ -27,6 +28,8 @@ async function formatCommunityPost(post: any) {
         if (replies?.length) {
             fmt.attributes.replies.data = replies.map((r) => {
                 const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+                const mapped = forumProfileAttributes(pObj)
+                const url = mapped.gravatarURL || resolveUserOrPhilosopherAvatar(pObj?.username, pObj?.avatar_url)
                 return {
                     id: r.id,
                     attributes: {
@@ -38,16 +41,11 @@ async function formatCommunityPost(post: any) {
                             data: {
                                 id: pObj?.id || r.author_id || 'community',
                                 attributes: {
-                                    username: pObj?.username || '',
-                                    firstName: pObj?.username || 'Community Member',
-                                    lastName: '',
-                                    gravatarURL: resolveUserOrPhilosopherAvatar(pObj?.username, pObj?.avatar_url),
-                                    avatar: (() => {
-                                        const url = resolveUserOrPhilosopherAvatar(pObj?.username, pObj?.avatar_url)
-                                        return url
-                                            ? { data: { attributes: { url } } }
-                                            : null
-                                    })(),
+                                    username: mapped.username,
+                                    firstName: mapped.firstName,
+                                    lastName: mapped.lastName,
+                                    gravatarURL: url,
+                                    avatar: url ? { data: { attributes: { url } } } : null,
                                 },
                             },
                         },

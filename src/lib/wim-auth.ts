@@ -148,7 +148,9 @@ export function mapSupabaseToUser(
         reputation: 0,
         username,
         birthDate: profile?.birth_date ?? null,
-    }
+        coverUrl: profile?.cover_url ?? null,
+        preferredLanguage: profile?.preferred_language ?? null,
+    } as ProfileData & { id: string }
 
     // Site User historically used numeric Strapi ids; WIM uses UUID strings throughout.
     const user = {
@@ -371,6 +373,7 @@ export async function updateWimProfile(
             | 'birth_date'
             | 'first_name'
             | 'last_name'
+            | 'preferred_language'
         >
     >
 ): Promise<{ profile: WimProfileRow | null; error?: string }> {
@@ -379,5 +382,23 @@ export async function updateWimProfile(
         const taken = /duplicate|unique/i.test(error.message)
         return { profile: null, error: taken ? 'That username is already taken' : error.message }
     }
-    return { profile: data as WimProfileRow }
+    const profile = data as WimProfileRow
+    void syncOwnedNotebookPeople(userId, profile)
+    return { profile }
+}
+
+async function syncOwnedNotebookPeople(userId: string, profile: WimProfileRow): Promise<void> {
+    const person = {
+        first_name: profile.first_name || profile.username || 'You',
+        last_name: profile.last_name || undefined,
+        username: profile.username || undefined,
+        avatar_url: profile.avatar_url || undefined,
+    }
+    const { error } = await supabase
+        .from('wim_notebooks')
+        .update({ created_by: person })
+        .or(`auth_user_id.eq.${userId},owner_key.eq.${userId}`)
+    if (error) {
+        console.warn('[wim-auth] notebook people sync', error.message)
+    }
 }

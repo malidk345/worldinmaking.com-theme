@@ -72,6 +72,7 @@ import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyl
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId } from '../../lib/window-path';
 import {
+  adoptGuestChatsIntoAccount,
   chatAuthHeaders,
   chatAuthHeadersFresh,
   claimDeviceAccountOnLogin,
@@ -545,6 +546,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }, 350)
     }
     const onIdentity = () => {
+      adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       setChats(Array.isArray(stored) ? stored : [])

@@ -18,8 +18,11 @@ import {
     DEVICE_NOTEBOOK_OWNER_KEY,
     WIM_IDENTITY_EVENT,
     getActiveOwnerKey,
+    getAuthUserId,
+    getDeviceOwnerKey,
     namespacedStorageKey,
 } from '../../../lib/wim-identity'
+import { adoptDeviceCacheToAccount, adoptStringIdLists } from '../../../lib/adopt-device-cache'
 import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
 import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
@@ -243,7 +246,7 @@ function refreshNotebooksFromRemote(claim = false): void {
             if (claim) await claimDeviceAccountOnLogin()
             const remote = await pullNotebooksFromRemote({ force: true })
             if (!remote) return false
-            mergeRemoteIntoLocal(remote, { pushMissing: false })
+            mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
             return true
         })()
@@ -370,34 +373,53 @@ function writeAll(notebooks: StoredNotebook[]): void {
 
 function isWeakPerson(person?: NotebookPerson): boolean {
     if (!person) return true
-    return person.first_name === 'You' && !person.username && !person.email && !person.avatar_url
+    const name = (person.first_name || '').trim()
+    return (
+        (!name || name === 'You' || name === 'WIM') &&
+        !person.username &&
+        !person.email &&
+        !person.avatar_url
+    )
 }
 
-/** Fill missing or placeholder actors from the signed-in profile (old local rows). */
+function sameNotebookPerson(person?: NotebookPerson, actor?: NotebookPerson): boolean {
+    if (!person || !actor) return false
+    const personUser = (person.username || '').trim().toLowerCase()
+    const actorUser = (actor.username || '').trim().toLowerCase()
+    if (personUser && actorUser && personUser === actorUser) return true
+    const personEmail = (person.email || '').trim().toLowerCase()
+    const actorEmail = (actor.email || '').trim().toLowerCase()
+    if (personEmail && actorEmail && personEmail === actorEmail) return true
+    return isWeakPerson(person)
+}
+
+function personChanged(left?: NotebookPerson, right?: NotebookPerson): boolean {
+    return JSON.stringify(left || null) !== JSON.stringify(right || null)
+}
+
+/** Fill missing or stale actors from the signed-in profile. */
 export function backfillNotebookActors(): boolean {
     if (typeof window === 'undefined') return false
     const actor = getNotebookActor()
-    const actorIsWeak = isWeakPerson(actor)
+    if (isWeakPerson(actor)) return false
     const notebooks = readLocalNotebooks()
     let changed = false
     const next = notebooks.map((nb) => {
         let created_by = nb.created_by
         let last_modified_by = nb.last_modified_by
 
-        if (!created_by) {
-            created_by = actor
-            changed = true
-        } else if (!actorIsWeak && isWeakPerson(created_by)) {
-            created_by = actor
-            changed = true
+        if (!created_by || sameNotebookPerson(created_by, actor)) {
+            if (personChanged(created_by, actor)) {
+                created_by = actor
+                changed = true
+            }
         }
 
-        if (!last_modified_by) {
-            last_modified_by = actor
-            changed = true
-        } else if (!actorIsWeak && isWeakPerson(last_modified_by)) {
-            last_modified_by = actor
-            changed = true
+        if (!last_modified_by || sameNotebookPerson(last_modified_by, actor)) {
+            if (personChanged(last_modified_by, actor)) {
+                last_modified_by = actor
+                changed = true
+            }
         }
 
         if (created_by === nb.created_by && last_modified_by === nb.last_modified_by) return nb
@@ -492,7 +514,37 @@ export function getNotebooks(): StoredNotebook[] {
     return readLocalNotebooks()
 }
 
+export function adoptGuestNotebooksIntoAccount(): void {
+    if (typeof window === 'undefined') return
+    const authId = getAuthUserId()
+    if (!authId) return
+    const deviceKey = getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)
+    const accountKey = namespacedStorageKey(STORAGE_KEY_BASE, authId)
+    adoptDeviceCacheToAccount({
+        storage: window.localStorage,
+        accountKey,
+        sourceKeys: [
+            namespacedStorageKey(STORAGE_KEY_BASE, deviceKey),
+            STORAGE_KEY_BASE,
+            'wim_notebooks_v2',
+            'wim_notebooks_v1',
+            'ph_standalone_notebooks',
+        ],
+        merge: (fromSources, existing) =>
+            mergeNotebookLists(fromSources as StoredNotebook[], existing as StoredNotebook[]),
+    })
+    adoptStringIdLists({
+        storage: window.localStorage,
+        accountKey: namespacedStorageKey('wim_notebook_deleted_ids', authId),
+        sourceKeys: [
+            namespacedStorageKey('wim_notebook_deleted_ids', deviceKey),
+            'wim_notebook_deleted_ids',
+        ],
+    })
+}
+
 export function rehydrateNotebooksForIdentity(): void {
+    adoptGuestNotebooksIntoAccount()
     inMemoryNotebooksCache = null
     hydrateStarted = false
     resetNotebookPullThrottle()

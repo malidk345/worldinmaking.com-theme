@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import useSWR from 'swr'
 import { supabase } from 'lib/supabase'
 import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
+import { formatDisplayName } from 'lib/display-name'
 
 const PROFILES_PER_PAGE = 25
 
@@ -27,16 +28,11 @@ export type CommunityProfilesFilters = {
 
 function mapRow(row: any): CommunityProfile {
     const username = row.username || null
-    const display = username
-        ? username
-              .split(/[-_]/)
-              .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(' ')
-        : null
+    const names = formatDisplayName(row)
     return {
         id: row.id,
-        firstName: display,
-        lastName: null,
+        firstName: names.firstName,
+        lastName: names.lastName || null,
         email: null,
         createdAt: row.created_at || null,
         reputation: null,
@@ -72,7 +68,7 @@ export async function fetchAllCommunityProfiles(
     for (let page = 0; page < 30; page++) {
         let q = supabase
             .from('profiles')
-            .select('id, username, avatar_url, role, created_at, is_bot')
+            .select('id, username, first_name, last_name, avatar_url, role, created_at, is_bot')
             .order('created_at', { ascending: false })
             .range(from, from + pageSize - 1)
         q = applyFilters(q, filters)
@@ -117,7 +113,7 @@ export function useCommunityProfiles({
 
             let q = supabase
                 .from('profiles')
-                .select('id, username, avatar_url, role, created_at, is_bot')
+                .select('id, username, first_name, last_name, avatar_url, role, created_at, is_bot')
                 .order('created_at', { ascending: false })
                 .range(from, to)
             q = applyFilters(q, filters)

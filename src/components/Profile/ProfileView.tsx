@@ -287,7 +287,7 @@ const AvatarBlock = ({
     profile: ProfileData
     isEditing: boolean
     name: string
-    setFieldValue: (field: string, value: string) => void
+    setFieldValue: (field: string, value: unknown) => void
     values: any
     errors: any
     isPro?: boolean
@@ -295,7 +295,11 @@ const AvatarBlock = ({
 }) => {
     const { isModerator } = useUser()
     const inputRef = useRef<HTMLInputElement>(null)
+    const coverRef = useRef<HTMLInputElement>(null)
     const [imageURL, setImageURL] = useState(values?.avatar)
+    const [coverPreview, setCoverPreview] = useState(
+        typeof values?.cover === 'string' ? values.cover : profile.coverUrl || ''
+    )
 
     const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
         const file = e.target.files[0]
@@ -308,6 +312,15 @@ const AvatarBlock = ({
         reader.readAsDataURL(file)
     }
 
+    const handleCover: ChangeEventHandler<HTMLInputElement> = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setFieldValue('cover', file)
+        const reader = new FileReader()
+        reader.onloadend = () => setCoverPreview(String(reader.result || ''))
+        reader.readAsDataURL(file)
+    }
+
     useEffect(() => {
         if (!values.avatar && inputRef?.current) {
             inputRef.current.value = null
@@ -316,16 +329,56 @@ const AvatarBlock = ({
         setImageURL(values.avatar)
     }, [values.avatar])
 
+    useEffect(() => {
+        if (values.cover === null) {
+            setCoverPreview('')
+            return
+        }
+        if (typeof values.cover === 'string') setCoverPreview(values.cover)
+    }, [values.cover])
+
     return (
         <div className="relative flex flex-col items-center mb-4 bg-primary rounded-md overflow-hidden border border-primary">
+            <div
+                className="w-full h-24 bg-accent bg-cover bg-center border-b border-primary relative"
+                style={coverPreview ? { backgroundImage: `url(${coverPreview})` } : undefined}
+            >
+                {isEditing && (
+                    <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                        <label className="relative px-2 py-1 text-[11px] font-semibold rounded bg-primary/90 border border-primary cursor-pointer">
+                            Cover
+                            <input
+                                ref={coverRef}
+                                onChange={handleCover}
+                                accept=".jpg, .png, .gif, .jpeg, .webp"
+                                className="opacity-0 absolute w-full h-full top-0 left-0 cursor-pointer"
+                                name="cover"
+                                type="file"
+                            />
+                        </label>
+                        {coverPreview && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setFieldValue('cover', null)
+                                    setCoverPreview('')
+                                }}
+                                className="px-2 py-1 text-[11px] rounded bg-primary/90 border border-primary"
+                            >
+                                Remove
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
             {isEditing && (
-                <div className="absolute right-0 top-0 flex items-center">
+                <div className="absolute right-0 top-24 flex items-center">
                     <div className="relative p-2 border-l border-b border-primary rounded-bl-md bg-primary overflow-hidden">
                         <IconUpload className="size-5" />
                         <input
                             ref={inputRef}
                             onChange={handleChange}
-                            accept=".jpg, .png, .gif, .jpeg"
+                            accept=".jpg, .png, .gif, .jpeg, .webp"
                             className="opacity-0 absolute w-full h-full top-0 left-0 cursor-pointer z-10"
                             name="avatar"
                             type="file"
@@ -449,6 +502,34 @@ const Details = ({
                                 ({dayjs(profile.birthDate).format('MMM D, YYYY')})
                             </span>
                         </span>
+                    </p>
+                )
+            )}
+            {isEditing ? (
+                <div className="space-y-1">
+                    <label className="text-sm font-semibold" htmlFor="preferredLanguage">
+                        Language
+                    </label>
+                    <Select
+                        placeholder="Language"
+                        value={values.preferredLanguage || 'en'}
+                        onValueChange={(value) => setFieldValue('preferredLanguage', value)}
+                        groups={[
+                            {
+                                label: 'Language',
+                                items: [
+                                    { value: 'en', label: 'English' },
+                                    { value: 'tr', label: 'Türkçe' },
+                                ],
+                            },
+                        ]}
+                    />
+                </div>
+            ) : (
+                profile.preferredLanguage && (
+                    <p className="flex justify-between m-0">
+                        <span className="font-semibold">Language:</span>
+                        <span>{profile.preferredLanguage === 'tr' ? 'Türkçe' : 'English'}</span>
                     </p>
                 )
             )}
@@ -1025,6 +1106,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             linkedin: profile?.linkedin,
             github: profile?.github,
             avatar: getAvatarURL(profile),
+            cover: profile?.coverUrl || '',
+            preferredLanguage: profile?.preferredLanguage || 'en',
             firstName: profile?.firstName,
             lastName: profile?.lastName,
             username: profile?.username || '',
@@ -1035,7 +1118,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             images: [],
             companyRole: profile?.companyRole,
         },
-        onSubmit: async ({ avatar, images, ...values }) => {
+        onSubmit: async ({ avatar, cover, images, ...values }) => {
             try {
                 const userId = String(data?.id || user?.id || '')
                 if (!userId) throw new Error('Not signed in')
@@ -1043,17 +1126,9 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     throw new Error('Username must be 2–32 letters, numbers, _ or -')
                 }
 
-                let avatarUrl: string | undefined
-                if (avatar instanceof File) {
-                    avatarUrl = await new Promise((resolve, reject) => {
-                        const reader = new FileReader()
-                        reader.onloadend = () => resolve(String(reader.result || ''))
-                        reader.onerror = reject
-                        reader.readAsDataURL(avatar)
-                    })
-                } else if (avatar === null) {
-                    avatarUrl = ''
-                }
+                const { resolveProfileFileField } = await import('lib/profile-media')
+                const avatarUrl = await resolveProfileFileField(userId, avatar, 'avatar')
+                const coverUrl = await resolveProfileFileField(userId, cover, 'cover')
 
                 const { updateWimProfile } = await import('lib/wim-auth')
                 const patch: Record<string, string | null> = {
@@ -1069,9 +1144,13 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     twitter: values.twitter ?? null,
                     pronouns: values.pronouns ?? null,
                     birth_date: values.birthDate ? String(values.birthDate).slice(0, 10) : null,
+                    preferred_language: values.preferredLanguage || 'en',
                 }
                 if (avatarUrl !== undefined) {
                     patch.avatar_url = avatarUrl || null
+                }
+                if (coverUrl !== undefined) {
+                    patch.cover_url = coverUrl || null
                 }
 
                 const { error } = await updateWimProfile(userId, patch as any)
