@@ -4,6 +4,17 @@ import Link from 'components/Link'
 import { useRef } from 'react'
 import useTheme from '../../hooks/useTheme'
 import { useAppSettings } from '../../context/App'
+import pixelHomeIcon from '../../images/icons/pixel-home.png'
+import pixelPostsIcon from '../../images/icons/pixel-posts.png'
+import pixelWimAiIcon from '../../images/icons/pixel-wimai.png'
+import pixelArchiveIcon from '../../images/icons/pixel-archive.png'
+import pixelNotebookIcon from '../../images/icons/pixel-notebook.png'
+import pixelSignInIcon from '../../images/icons/pixel-signin.png'
+import pixelTrashIcon from '../../images/icons/pixel-trash.png'
+import pixelForumsIcon from '../../images/icons/pixel-forums.png'
+import pixelPricingIcon from '../../images/icons/pixel-pricing.png'
+import pixelEnvelopeIcon from '../../images/icons/pixel-envelope.png'
+import pixelPageIcon from '../../images/icons/pixel-page.png'
 import usePostHog from 'hooks/usePostHog'
 import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
@@ -40,6 +51,7 @@ const importedSrc = (mod: unknown): string => {
 type AppIconVariants = {
     classic?: string
     modern?: string
+    pixel?: string
     default: string
 }
 
@@ -68,10 +80,12 @@ const PRODUCT_ICON_MAP = {
     pricing: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/pricing_b461c2e5dd.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/pricing_04a97aa301.png',
+        pixel: importedSrc(pixelPricingIcon),
     },
     notebook: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/document_bb8267664e.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/document_001e7ec29a.png',
+        pixel: importedSrc(pixelNotebookIcon),
     },
     compass: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/tour_8ae29710fc.png',
@@ -88,6 +102,7 @@ const PRODUCT_ICON_MAP = {
     forums: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/forums_a48a37683e.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/forums_b1926ec5fa.png',
+        pixel: importedSrc(pixelForumsIcon),
     },
     games: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/games_6931a0e3a5.png',
@@ -108,6 +123,7 @@ const PRODUCT_ICON_MAP = {
     trash: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/trash_classic_20ed394a8d.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/trash_modern_b4f09eff8f.png',
+        pixel: importedSrc(pixelTrashIcon),
     },
     video: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/video_classic_beadf43e4b.png',
@@ -116,6 +132,7 @@ const PRODUCT_ICON_MAP = {
     page: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/page_classic_0100e05522.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/page_modern_e1fe37aea9.png',
+        pixel: importedSrc(pixelPageIcon),
     },
     pdf: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/pdf_classic_069acad91b.png',
@@ -203,6 +220,7 @@ const PRODUCT_ICON_MAP = {
     envelope: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/envelope_classic_8ccd5e8abc.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/envelope_modern_f1c74ae9dd.png',
+        pixel: importedSrc(pixelEnvelopeIcon),
     },
     bookmark: {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/bookmark_classic_925f7242d3.png',
@@ -231,22 +249,27 @@ const PRODUCT_ICON_MAP = {
     archive: {
         classic: importedSrc(archiveClassicIcon),
         default: importedSrc(archiveModernIcon),
+        pixel: importedSrc(pixelArchiveIcon),
     },
     wimAi: {
         classic: importedSrc(wimAiClassicIcon),
         default: importedSrc(wimAiModernIcon),
+        pixel: importedSrc(pixelWimAiIcon),
     },
     posts: {
         classic: importedSrc(postsClassicIcon),
         default: importedSrc(postsModernIcon),
+        pixel: importedSrc(pixelPostsIcon),
     },
     signIn: {
         classic: importedSrc(signInClassicIcon),
         default: importedSrc(signInModernIcon),
+        pixel: importedSrc(pixelSignInIcon),
     },
     home: {
         classic: importedSrc(homeClassicIcon),
         default: importedSrc(homeModernIcon),
+        pixel: importedSrc(pixelHomeIcon),
     },
     bang: {
         classic: importedSrc(bangClassicIcon),
@@ -291,7 +314,9 @@ export const IconImage = ({ url, className }: IconImageProps) => (
 )
 
 export const AppIcon = ({ name, className, ...props }: AppIconProps) => {
+    const { siteSettings } = useAppSettings()
     const [currentSkin, setCurrentSkin] = useState<'modern' | 'classic'>('modern')
+    const iconSet = siteSettings?.iconSet === 'pixel' ? 'pixel' : 'default'
 
     useEffect(() => {
         const updateSkin = () => {
@@ -301,10 +326,8 @@ export const AppIcon = ({ name, className, ...props }: AppIconProps) => {
             }
         }
 
-        // Initial update
         updateSkin()
 
-        // Watch for changes using MutationObserver
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-skin') {
@@ -332,7 +355,9 @@ export const AppIcon = ({ name, className, ...props }: AppIconProps) => {
             return ''
         }
 
-        // Prefer skin-specific variant if available, else fall back to default
+        if (iconSet === 'pixel' && iconVariants.pixel) {
+            return iconVariants.pixel
+        }
         if (currentSkin === 'modern' && iconVariants.modern) {
             return iconVariants.modern
         }

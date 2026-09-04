@@ -291,6 +291,7 @@ export const Context = createContext<AppContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
+        iconSet: 'default',
         wallpaper: DEFAULT_WALLPAPER,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
@@ -384,6 +385,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
         theme: 'light',
         colorMode: 'light',
         skinMode: 'modern',
+        iconSet: 'default',
         wallpaper: DEFAULT_WALLPAPER,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         clickBehavior: 'double',
@@ -934,6 +936,7 @@ export interface SiteSettings {
     /** Stored theme; runtime may briefly pass broader strings from window.__onThemeChange. */
     theme: 'light' | 'dark' | string
     skinMode: 'modern' | 'classic'
+    iconSet: 'default' | 'pixel'
     wallpaper:
         | 'cobalt'
         | 'hogzilla'
@@ -964,11 +967,13 @@ const getInitialSiteSettings = (): SiteSettings => {
         colorMode: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         theme: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         skinMode: 'modern',
+        iconSet: stored.iconSet === 'pixel' ? 'pixel' : 'default',
         wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,
         reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
         ...stored,
+        iconSet: stored.iconSet === 'pixel' ? 'pixel' : 'default',
     })
 
     siteSettings.wallpaper = resolveKeptWallpaper(siteSettings.wallpaper)
@@ -1052,6 +1057,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         colorMode: 'light',
         theme: 'light',
         skinMode: 'modern',
+        iconSet: 'default',
         wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,
@@ -2490,6 +2496,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             if (siteSettings.wallpaper) {
                 el.setAttribute('data-wallpaper', siteSettings.wallpaper)
             }
+            el.setAttribute('data-icon-set', siteSettings.iconSet === 'pixel' ? 'pixel' : 'default')
             el.setAttribute('data-reduce-transparency', siteSettings.reduceTransparency ? 'true' : 'false')
         }
 

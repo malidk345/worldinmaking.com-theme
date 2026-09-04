@@ -178,6 +178,20 @@ export default function DisplayOptions(): JSX.Element {
                         onValueChange={handleColorModeChange}
                         value={siteSettings.colorMode}
                     />
+                    <ToggleGroup
+                        title="Desktop icons"
+                        options={[
+                            { label: 'Default', value: 'default', default: true },
+                            { label: 'Pixel', value: 'pixel' },
+                        ]}
+                        onValueChange={(value) => {
+                            updateSiteSettings({
+                                ...siteSettings,
+                                iconSet: value === 'pixel' ? 'pixel' : 'default',
+                            })
+                        }}
+                        value={siteSettings.iconSet === 'pixel' ? 'pixel' : 'default'}
+                    />
                 </div>
                 <div className="grid grid-cols-2 gap-2 my-2">
                     <WallpaperSelect
