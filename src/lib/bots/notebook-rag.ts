@@ -1,8 +1,9 @@
 /**
- * Notebook & Document RAG (Retrieval-Augmented Generation) Engine — WorldInMaking
+ * Lexical notebook & document retrieval — WorldInMaking
  *
- * Edge-compatible semantic chunking, BM25-like relevance scoring, and citation generator
- * across user notebooks and uploaded research documents.
+ * Honest mechanism: heading/paragraph chunking + keyword/substring term scoring.
+ * This is NOT embedding / vector-database RAG and NOT BM25 (no IDF corpus stats).
+ * Callers and prompts must describe it as lexical search, not "semantic RAG".
  */
 
 import type { AiCitation } from '../ai/contracts'
@@ -29,7 +30,7 @@ export interface RAGSearchResult {
 }
 
 /**
- * Splits a markdown or plain text document into logical semantic chunks based on headings & paragraph bounds.
+ * Splits markdown/plain text into chunks on headings and paragraph bounds.
  */
 export function chunkDocumentContent(
     documentId: string,
@@ -63,7 +64,7 @@ export function chunkDocumentContent(
                             sourceType,
                         })
                     }
-                    pos += maxChunkChars - 120 // 120 chars overlap for semantic continuity
+                    pos += maxChunkChars - 120 // overlap for continuity across chunk boundaries
                 }
             } else {
                 chunks.push({
@@ -116,7 +117,8 @@ export function extractSearchTerms(query: string): string[] {
 }
 
 /**
- * Searches across notebooks and uploaded documents, ranking by term frequency and heading match.
+ * Lexical search across notebooks and uploaded documents (term frequency + heading boost).
+ * Returns empty context/citations when nothing matches — callers must not invent sources.
  */
 export function searchKnowledgeWorkspace(
     query: string,
@@ -154,7 +156,7 @@ export function searchKnowledgeWorkspace(
         return { contextText: '', citations: [], chunks: [] }
     }
 
-    // 3. Score chunks
+    // 3. Score chunks (keyword / substring counts — not embeddings)
     for (const chunk of allChunks) {
         let score = 0
         const lowerText = chunk.text.toLowerCase()
@@ -191,7 +193,11 @@ export function searchKnowledgeWorkspace(
         }
     }
 
-    // 5. Generate formatted context & citations
+    if (!topChunks.length) {
+        return { contextText: '', citations: [], chunks: [] }
+    }
+
+    // 5. Generate formatted context & citations (label mechanism honestly)
     const citations: AiCitation[] = topChunks.map((chunk, idx) => ({
         id: idx + 1,
         title: chunk.heading ? `${chunk.title} › ${chunk.heading}` : chunk.title,
@@ -200,7 +206,10 @@ export function searchKnowledgeWorkspace(
         source: chunk.sourceType === 'notebook' ? 'Workspace Notebook' : 'Uploaded Research Document',
     }))
 
-    const contextLines: string[] = ['### Verified Workspace & Document Context (RAG):']
+    const contextLines: string[] = [
+        '### Lexical notebook/document matches (keyword score — not embedding/vector RAG):',
+        'Cite only the numbered sources below. If they do not answer the query, say so — do not invent citations.',
+    ]
     topChunks.forEach((chunk, idx) => {
         const citationId = idx + 1
         const header = `[Source ${citationId}] "${chunk.title}"${chunk.heading ? ` > ${chunk.heading}` : ''} (${chunk.sourceType}):`
@@ -232,10 +241,17 @@ export function searchNotebookWorkspace(
     }))
 }
 
+/**
+ * Build prompt context from lexical notebook matches.
+ * Fail closed: when nothing matches, return an explicit not-found note (empty → models invent citations).
+ */
 export function buildNotebookRAGContext(
     query: string,
     notebooks: Array<{ id: string; title: string; content: string }>
 ): string {
     const res = searchKnowledgeWorkspace(query, { notebooks }, 4)
+    if (!res.chunks.length) {
+        return '### Notebook lexical search\nNo matching passages found in the notebook (keyword/substring search — not embedding RAG). Do not invent notebook citations.'
+    }
     return res.contextText
 }
