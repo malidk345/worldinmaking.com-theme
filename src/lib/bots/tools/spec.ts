@@ -90,7 +90,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'read_document',
             description:
-                'Read and analyze a document, PDF, CSV, JSON, Markdown, or text file from a public URL or from the active workspace. Supports targeting specific pages and keyword filtering.',
+                'Read and analyze a document, PDF, CSV, JSON, Markdown, or text file from a public URL or from the active workspace. Optional query uses keyword/substring filtering only (not embedding or vector RAG). If query matches nothing, the tool fails closed — do not invent citations.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -109,7 +109,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     },
                     query: {
                         type: 'string',
-                        description: 'Optional keyword or topic to locate relevant sections in the document.',
+                        description: 'Optional keyword/substring filter (lexical only — not semantic/embedding search). Empty match → not found.',
                     },
                 },
             },
@@ -600,6 +600,7 @@ TOOL USE:
 - task: a focused read-only research slice. Use for one sub-question, not the whole job.
 - DOCUMENT & RESEARCH DIRECTIVE:
   * Answer the Query / Prompt. Notebook, scratchpad, and OS snapshot are optional background — use those tools only when the query needs them.
+  * Notebook/document retrieval is lexical (host snapshot + keyword/substring tools). There is no embedding/vector RAG. If a tool says not found, say so — do not invent notebook citations.
   * Attached documents and live facts: read or search first. A writing request: write the piece in the public bubble, using tools if they help.
   * write_scratchpad only when the user asked to save notes, or when extracting from a document they asked you to read.
 - If a tool returns an error, fix the arguments and call it again. Do not dump the failed source in the bubble.
