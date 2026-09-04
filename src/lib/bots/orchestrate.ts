@@ -88,6 +88,8 @@ export interface BotRunInput {
     host?: HostSnapshot
     /** Correlates telemetry with the originating HTTP request. */
     requestId?: string
+    /** Abort when the HTTP client disconnects or the user hits Stop. */
+    abortSignal?: AbortSignal
 }
 
 export type QualityGateOutcome = 'passed' | 'failed' | 'skipped'
@@ -765,9 +767,38 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         env: runtimeEnv,
         temperature: persona.temperature,
         thinkingDepth: input.thinkingDepth,
+        signal: input.abortSignal,
     })
 
     if (!gen.ok) {
+        const aborted =
+            input.abortSignal?.aborted ||
+            gen.error === 'client request aborted' ||
+            gen.attempts.some((a) => a.toLowerCase().includes('client aborted'))
+        if (aborted) {
+            return {
+                success: false,
+                philosopher: persona.name,
+                epistemicStance: persona.epistemicStance,
+                reply: '',
+                thought: '',
+                thinking: {
+                    summary: '',
+                    stages: [],
+                    structured: false,
+                    depth: input.thinkingDepth || 'standard',
+                    source: 'none',
+                },
+                provider: 'none',
+                confident: false,
+                error: 'aborted',
+                host: 'cloudflare-pages-edge',
+                configured: gen.configured,
+                attempts: gen.attempts.length ? gen.attempts : ['client aborted during generation'],
+                latencyMs: gen.latencyMs,
+                taskType,
+            }
+        }
         input.onLifecycle?.({ phase: 'generation', status: 'failed', detail: 'All providers failed' })
         const emptyThinking: ThinkingProcess = {
             summary: '',
@@ -815,6 +846,31 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         demux.push(token, onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
     }
     demux.finish(onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
+
+    if (input.abortSignal?.aborted) {
+        return {
+            success: false,
+            philosopher: persona.name,
+            epistemicStance: persona.epistemicStance,
+            reply: '',
+            thought: '',
+            thinking: {
+                summary: '',
+                stages: [],
+                structured: false,
+                depth: input.thinkingDepth || 'standard',
+                source: 'none',
+            },
+            provider: 'none',
+            confident: false,
+            error: 'aborted',
+            host: 'cloudflare-pages-edge',
+            configured: getProviderKeyFlags(runtimeEnv),
+            attempts: ['client aborted during gateway stream'],
+            latencyMs: Date.now() - streamStarted,
+            taskType,
+        }
+    }
 
     const { thinking, reply } = parseThinkingAndReply(fullText, taskType, input.thinkingDepth, {
         philosopher: persona.name,
