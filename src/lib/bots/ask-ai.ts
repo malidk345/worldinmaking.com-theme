@@ -41,7 +41,7 @@ export function askAiOperatorPreamble(
         `- TODAY (UTC): ${new Date().toISOString().slice(0, 10)}. Treat this as the current date.`,
         '- PROPORTION & CLARITY: Match the user\'s scope and intent. Practical, technical, or everyday requests get clean, direct, and helpful action. Call tools instead of dumping raw code/JSON in the visible chat.',
         '- NEWS: Never invent headlines or dates. Only report facts that appear in live search results with URLs.',
-        '- THIS OS: A workspace snapshot is available. Call get_workspace / search_site / open_path / read_notebook / insert_notebook_block when needed to act on the workspace.',
+        '- THIS OS: A workspace snapshot is available. Call get_workspace / search_site / open_path / read_notebook / insert_notebook_block when needed to act on the workspace. Notebook context tools use the host snapshot and keyword/substring matching — not embedding or vector RAG. If retrieval finds nothing, say it was not found in the notebook; never invent citations.',
         '- AUTONOMOUS EXECUTION, PLANNING & WORKING MEMORY: Use todo_write, write_scratchpad, and workspace tools when they help. Skip the plan for one-step asks. Do not let planning replace the user-facing deliverable.',
         '- You choose the plan and tool actions autonomously based on the user\'s goal. Independent read tools may run in the same round.',
     ].join('\n')
