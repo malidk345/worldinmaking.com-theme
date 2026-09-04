@@ -10,7 +10,7 @@ Canonical map of WorldInMaking AI as implemented in malidk345/worldinmaking.com-
 1. POST `/api/chat` (runtime=edge). Prompt max 8000 chars. Default persona `nietzsche`.
 2. Supabase auth via `getSupabaseUserFromRequest`. Guest vs member vs Pro.
 3. Quotas (skipped in local/dev): hourly inquiries guest 30 / member 100 / Pro 300 (`checkRateLimit`, in-memory isolate). Daily inquiries 100 / 300 / 1000. Daily tokens 50k / 200k / 2M (`src/lib/token-quota.ts`). BYOK turns skip `recordTokenUsage`.
-4. User context is labeled untrusted (systemPrompt, notebook, scratchpad, attachments, history).
+4. User context is labeled untrusted (systemPrompt, notebook, scratchpad, attachments, history). Notebook/document retrieval is lexical (keyword/TF + host snapshot tools), not embedding/vector RAG; empty matches fail closed — do not invent notebook citations.
 5. BYOK headers `x-byok-groq|gemini|openai|anthropic` overlay provider env for that turn only.
 6. Tools: `runToolLoop` in `src/lib/bots/tools/`. Graph `pipeline.ts` (THINK / ACT / TOOLS), max 16 steps. Public text only when an ACT round has zero tool_calls.
 7. SSE: mode, token, tool, node, human, checkpoint, citations, artifacts, token_usage, done or typed error. Heartbeat 15s.
