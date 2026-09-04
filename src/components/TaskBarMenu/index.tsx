@@ -9,6 +9,10 @@ import {
     IconApps,
     IconGear,
     IconChat,
+    IconChevronDown,
+    IconInfo,
+    IconKeyboard,
+    IconBrightness,
 } from '@posthog/icons'
 import { useApp, useAppActions } from '../../context/App'
 
@@ -21,7 +25,6 @@ import getAvatarURL from 'components/Squeak/util/getAvatar'
 import CloudinaryImage from 'components/CloudinaryImage'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import AmbientPlayer from 'components/AmbientPlayer'
-import Link from 'components/Link'
 import WimLogo from 'components/WimLogo'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
 
@@ -83,6 +86,41 @@ function TaskBarMenu() {
     }
 
     const avatarURL = getAvatarURL(user?.profile)
+
+    const siteMenu: MenuType[] = [
+        {
+            trigger: (
+                <span className="flex items-center gap-1" aria-label="worldinmaking menu">
+                    <WimLogo className="size-6" />
+                    <IconChevronDown className="size-4 opacity-70 translate-y-px" />
+                </span>
+            ),
+            hideChevron: true,
+            items: [
+                {
+                    type: 'item' as const,
+                    label: 'About',
+                    link: '/about',
+                    icon: <IconInfo className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                },
+                { type: 'separator' as const },
+                {
+                    type: 'item' as const,
+                    label: 'Display options',
+                    link: '/display-options',
+                    icon: <IconBrightness className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                    shortcut: [','],
+                },
+                {
+                    type: 'item' as const,
+                    label: 'Keyboard shortcuts',
+                    link: '/kbd',
+                    icon: <IconKeyboard className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                    shortcut: ['.'],
+                },
+            ],
+        },
+    ]
 
     const accountMenu: MenuType[] = [
         {
@@ -209,14 +247,8 @@ function TaskBarMenu() {
                         }}
                     />
                     <div className="mx-auto transition-all duration-300 flex justify-between items-center w-full max-w-full">
-                        <div className="flex items-center pl-1.5 py-0.5">
-                            <Link
-                                href="/"
-                                className="flex items-center p-1.5 rounded hover:bg-primary/10 transition-colors"
-                                aria-label="worldinmaking home"
-                            >
-                                <WimLogo className="size-6 transition-transform hover:scale-105" />
-                            </Link>
+                        <div className="flex items-center pl-1 py-0.5">
+                            <MenuBar menus={siteMenu} className="[&_button]:px-2" />
                         </div>
                         <aside data-scheme="secondary" className="flex items-center gap-0.5 py-1">
                             <AmbientPlayer />
