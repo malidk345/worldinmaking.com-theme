@@ -1,5 +1,6 @@
 /**
- * Local search over Supabase posts and notebooks with hybrid semantic scoring.
+ * Local search over Supabase posts and notebooks with lexical (keyword/TF) scoring.
+ * Not embedding/vector RAG — see src/lib/semantic-search.ts.
  * Response shape (`hits`, `nbHits`, `facets`) is kept so existing clients stay compatible.
  * Cloudflare Pages (next-on-pages) requires Edge Runtime + Web Response API.
  */
@@ -7,7 +8,7 @@ export const runtime = 'edge'
 
 import { searchSupabasePosts } from '../../lib/supabaseBlog'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
-import { searchSemanticDocuments, type SemanticDocument } from '../../lib/semantic-search'
+import { searchLexicalDocuments, type SemanticDocument } from '../../lib/semantic-search'
 
 type SearchHit = {
     objectID: string
@@ -49,8 +50,8 @@ async function searchNotebooks(query: string): Promise<SearchHit[]> {
             slug: `/notebooks/${nb.id}`,
         }))
 
-        const semanticHits = searchSemanticDocuments(query, docs, 15)
-        return semanticHits.map((h) => ({
+        const lexicalHits = searchLexicalDocuments(query, docs, 15)
+        return lexicalHits.map((h) => ({
             objectID: h.objectID,
             title: h.title,
             excerpt: h.excerpt,
@@ -95,8 +96,8 @@ export default async function handler(req: Request) {
                 type: 'post',
                 slug: post.slug || `/posts/${post.id}`,
             }))
-            const semanticPosts = searchSemanticDocuments(query, postDocs, 15)
-            postHits = semanticPosts.map((h) => ({
+            const lexicalPosts = searchLexicalDocuments(query, postDocs, 15)
+            postHits = lexicalPosts.map((h) => ({
                 objectID: h.objectID,
                 title: h.title,
                 excerpt: h.excerpt,
@@ -120,7 +121,7 @@ export default async function handler(req: Request) {
                 hits: combinedHits.slice(0, 20),
                 nbHits: combinedHits.length,
                 facets: { type: typeFacets },
-                engine: 'supabase-hybrid-semantic',
+                engine: 'supabase-lexical',
             },
             200,
             cache
