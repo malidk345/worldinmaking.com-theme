@@ -670,14 +670,27 @@ export async function runToolLoop(params: {
             }
             lastError = step.error
             if (isClientAbortDetail(step.error)) {
+                if (step.kind === 'failed') {
+                    return {
+                        ok: false,
+                        usedTools: step.usedTools,
+                        usedWebSearch: step.usedWebSearch,
+                        text: step.text,
+                        artifacts: step.artifacts,
+                        citations: step.citations,
+                        actions: step.actions,
+                        provider: 'none',
+                        error: 'client request aborted',
+                    }
+                }
                 return {
                     ok: false,
-                    usedTools: step.usedTools,
-                    usedWebSearch: step.usedWebSearch,
-                    text: step.text,
-                    artifacts: step.artifacts,
-                    citations: step.citations,
-                    actions: step.actions,
+                    usedTools: false,
+                    usedWebSearch: false,
+                    text: '',
+                    artifacts: [],
+                    citations: [],
+                    actions: [],
                     provider: 'none',
                     error: 'client request aborted',
                 }
@@ -732,14 +745,27 @@ export async function runToolLoop(params: {
                 }
                 lastError = step.error
                 if (isClientAbortDetail(step.error)) {
+                    if (step.kind === 'failed') {
+                        return {
+                            ok: false,
+                            usedTools: step.usedTools,
+                            usedWebSearch: step.usedWebSearch,
+                            text: step.text,
+                            artifacts: step.artifacts,
+                            citations: step.citations,
+                            actions: step.actions,
+                            provider: 'none',
+                            error: 'client request aborted',
+                        }
+                    }
                     return {
                         ok: false,
-                        usedTools: step.usedTools,
-                        usedWebSearch: step.usedWebSearch,
-                        text: step.text,
-                        artifacts: step.artifacts,
-                        citations: step.citations,
-                        actions: step.actions,
+                        usedTools: false,
+                        usedWebSearch: false,
+                        text: '',
+                        artifacts: [],
+                        citations: [],
+                        actions: [],
                         provider: 'none',
                         error: 'client request aborted',
                     }

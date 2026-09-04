@@ -34,6 +34,12 @@ export function isWimAuthReady(): boolean {
     return isSupabaseConfigured
 }
 
+function applyPreferredLanguage(code?: string | null): void {
+    if (typeof document === 'undefined') return
+    const lang = String(code || 'en').toLowerCase()
+    document.documentElement.lang = lang === 'tr' ? 'tr' : 'en'
+}
+
 /** Split display name into first/last for legacy form fields. */
 function splitName(meta: Record<string, unknown> | undefined, username: string | null): {
     firstName: string | null
@@ -169,6 +175,7 @@ export function mapSupabaseToUser(
         hasPosthogLogin: false,
     } satisfies User
 
+    applyPreferredLanguage(profile?.preferred_language)
     return user
 }
 
@@ -184,13 +191,40 @@ export async function getAuthUser() {
     return data.user ?? null
 }
 
+async function fetchWimPrivate(userId: string): Promise<{ contact_email: string | null; birth_date: string | null } | null> {
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (sessionData.session?.user?.id !== userId) return null
+    const { data, error } = await supabase
+        .from('profile_private')
+        .select('contact_email, birth_date')
+        .eq('user_id', userId)
+        .maybeSingle()
+    if (error) {
+        if (!/schema cache|does not exist|relation/i.test(error.message)) {
+            console.warn('[wim-auth] fetch private profile', error.message)
+        }
+        return null
+    }
+    return data
+}
+
 export async function fetchWimProfile(userId: string): Promise<WimProfileRow | null> {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
     if (error) {
         console.warn('[wim-auth] fetch profile', error.message)
         return null
     }
-    return data as WimProfileRow | null
+    if (!data) return null
+    const row = data as WimProfileRow
+    const priv = await fetchWimPrivate(userId)
+    if (!priv) {
+        return { ...row, contact_email: row.contact_email ?? null, birth_date: row.birth_date ?? null }
+    }
+    return {
+        ...row,
+        contact_email: priv.contact_email ?? row.contact_email ?? null,
+        birth_date: priv.birth_date ?? row.birth_date ?? null,
+    }
 }
 
 /**
@@ -224,13 +258,19 @@ export async function ensureWimProfile(
         last_name: extras?.lastName || (meta.last_name as string) || (meta.lastName as string) || null,
     }
 
-    const { data, error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' }).select('*').single()
+    const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' }).select('*').single()
     if (error) {
         // RLS or race: re-fetch
         console.warn('[wim-auth] ensure profile upsert', error.message)
         return fetchWimProfile(authUser.id)
     }
-    return data as WimProfileRow
+    if (authUser.email) {
+        await supabase.from('profile_private').upsert(
+            { user_id: authUser.id, contact_email: authUser.email, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id' }
+        )
+    }
+    return fetchWimProfile(authUser.id)
 }
 
 export async function loadCurrentWimUser(): Promise<User | null> {
@@ -304,6 +344,7 @@ export async function signUpWithPassword(args: {
 export async function signOutWim(): Promise<void> {
     if (!isSupabaseConfigured) return
     await supabase.auth.signOut()
+    applyPreferredLanguage('en')
 }
 
 export async function requestPasswordReset(email: string): Promise<{ error?: string }> {
@@ -377,12 +418,31 @@ export async function updateWimProfile(
         >
     >
 ): Promise<{ profile: WimProfileRow | null; error?: string }> {
-    const { data, error } = await supabase.from('profiles').update(patch).eq('id', userId).select('*').single()
+    const { contact_email, birth_date, ...publicPatch } = patch
+    if (contact_email !== undefined || birth_date !== undefined) {
+        const { error: privError } = await supabase.from('profile_private').upsert(
+            {
+                user_id: userId,
+                ...(contact_email !== undefined ? { contact_email } : {}),
+                ...(birth_date !== undefined ? { birth_date } : {}),
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+        )
+        if (privError && !/schema cache|does not exist|relation/i.test(privError.message)) {
+            return { profile: null, error: privError.message }
+        }
+    }
+    if (Object.keys(publicPatch).length === 0) {
+        return { profile: await fetchWimProfile(userId) }
+    }
+    const { data, error } = await supabase.from('profiles').update(publicPatch).eq('id', userId).select('*').single()
     if (error) {
         const taken = /duplicate|unique/i.test(error.message)
         return { profile: null, error: taken ? 'That username is already taken' : error.message }
     }
-    const profile = data as WimProfileRow
+    const profile = (await fetchWimProfile(userId)) || (data as WimProfileRow)
+    applyPreferredLanguage(profile.preferred_language)
     void syncOwnedNotebookPeople(userId, profile)
     return { profile }
 }

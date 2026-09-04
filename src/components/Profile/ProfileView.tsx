@@ -295,11 +295,7 @@ const AvatarBlock = ({
 }) => {
     const { isModerator } = useUser()
     const inputRef = useRef<HTMLInputElement>(null)
-    const coverRef = useRef<HTMLInputElement>(null)
     const [imageURL, setImageURL] = useState(values?.avatar)
-    const [coverPreview, setCoverPreview] = useState(
-        typeof values?.cover === 'string' ? values.cover : profile.coverUrl || ''
-    )
 
     const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
         const file = e.target.files[0]
@@ -312,15 +308,6 @@ const AvatarBlock = ({
         reader.readAsDataURL(file)
     }
 
-    const handleCover: ChangeEventHandler<HTMLInputElement> = (e) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        setFieldValue('cover', file)
-        const reader = new FileReader()
-        reader.onloadend = () => setCoverPreview(String(reader.result || ''))
-        reader.readAsDataURL(file)
-    }
-
     useEffect(() => {
         if (!values.avatar && inputRef?.current) {
             inputRef.current.value = null
@@ -329,50 +316,10 @@ const AvatarBlock = ({
         setImageURL(values.avatar)
     }, [values.avatar])
 
-    useEffect(() => {
-        if (values.cover === null) {
-            setCoverPreview('')
-            return
-        }
-        if (typeof values.cover === 'string') setCoverPreview(values.cover)
-    }, [values.cover])
-
     return (
         <div className="relative flex flex-col items-center mb-4 bg-primary rounded-md overflow-hidden border border-primary">
-            <div
-                className="w-full h-24 bg-accent bg-cover bg-center border-b border-primary relative"
-                style={coverPreview ? { backgroundImage: `url(${coverPreview})` } : undefined}
-            >
-                {isEditing && (
-                    <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                        <label className="relative px-2 py-1 text-[11px] font-semibold rounded bg-primary/90 border border-primary cursor-pointer">
-                            Cover
-                            <input
-                                ref={coverRef}
-                                onChange={handleCover}
-                                accept=".jpg, .png, .gif, .jpeg, .webp"
-                                className="opacity-0 absolute w-full h-full top-0 left-0 cursor-pointer"
-                                name="cover"
-                                type="file"
-                            />
-                        </label>
-                        {coverPreview && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setFieldValue('cover', null)
-                                    setCoverPreview('')
-                                }}
-                                className="px-2 py-1 text-[11px] rounded bg-primary/90 border border-primary"
-                            >
-                                Remove
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
             {isEditing && (
-                <div className="absolute right-0 top-24 flex items-center">
+                <div className="absolute right-0 top-0 flex items-center">
                     <div className="relative p-2 border-l border-b border-primary rounded-bl-md bg-primary overflow-hidden">
                         <IconUpload className="size-5" />
                         <input
@@ -1106,7 +1053,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             linkedin: profile?.linkedin,
             github: profile?.github,
             avatar: getAvatarURL(profile),
-            cover: profile?.coverUrl || '',
             preferredLanguage: profile?.preferredLanguage || 'en',
             firstName: profile?.firstName,
             lastName: profile?.lastName,
@@ -1118,21 +1064,21 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             images: [],
             companyRole: profile?.companyRole,
         },
-        onSubmit: async ({ avatar, cover, images, ...values }) => {
+        onSubmit: async ({ avatar, images, ...values }) => {
             try {
                 const userId = String(data?.id || user?.id || '')
                 if (!userId) throw new Error('Not signed in')
-                if (!isValidProfileUsername(values.username)) {
+                const nextUsername = String(values.username || '').trim()
+                if (!isValidProfileUsername(nextUsername)) {
                     throw new Error('Username must be 2–32 letters, numbers, _ or -')
                 }
 
                 const { resolveProfileFileField } = await import('lib/profile-media')
                 const avatarUrl = await resolveProfileFileField(userId, avatar, 'avatar')
-                const coverUrl = await resolveProfileFileField(userId, cover, 'cover')
 
                 const { updateWimProfile } = await import('lib/wim-auth')
                 const patch: Record<string, string | null> = {
-                    username: String(values.username).trim(),
+                    username: nextUsername,
                     first_name: String(values.firstName || '').trim() || null,
                     last_name: String(values.lastName || '').trim() || null,
                     bio: values.biography ?? null,
@@ -1149,15 +1095,16 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                 if (avatarUrl !== undefined) {
                     patch.avatar_url = avatarUrl || null
                 }
-                if (coverUrl !== undefined) {
-                    patch.cover_url = coverUrl || null
-                }
 
                 const { error } = await updateWimProfile(userId, patch as any)
                 if (error) throw new Error(error)
 
                 await fetchUser()
                 await mutate()
+                const previousUsername = String(profile?.username || '').trim()
+                if (nextUsername && nextUsername !== previousUsername && router?.replace) {
+                    void router.replace(`/profile/${encodeURIComponent(nextUsername)}`)
+                }
                 addToast({
                     description: (
                         <>

@@ -129,8 +129,6 @@ export async function setPostLike(
             post_id: id,
             post_slug: slug || id,
             vote: 1,
-            vote_type: 'up',
-            vote_count: 1,
             updated_at: new Date().toISOString(),
         })
         if (e2) return { ok: false, error: e2.message }

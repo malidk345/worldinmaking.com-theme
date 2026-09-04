@@ -1,3 +1,6 @@
+-- HISTORICAL. Do not apply to production.
+-- Live source of truth: docs/architecture/SUPABASE_LIVE_SCHEMA.md
+-- Votes in production are integer `vote` (+1/-1), not `vote_type` text.
 -- WorldInMaking (WIM) Complete Supabase Master Schema Migration
 -- Safe to re-run multiple times (Idempotent: uses IF NOT EXISTS & guarded policies)
 

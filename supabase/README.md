@@ -1,5 +1,10 @@
 # Supabase (WIM)
 
+**Source of truth:** live project inventory in [`docs/architecture/SUPABASE_LIVE_SCHEMA.md`](../docs/architecture/SUPABASE_LIVE_SCHEMA.md).  
+Do **not** re-run `migrations/20260808_master_schema.sql` against production (column names there drift: `vote_type` vs live `vote integer`).
+
+New environments: apply files in `migrations/` in filename order, ending with `20260907_schema_alignment.sql`.
+
 ## Notebooks migration
 
 File: `migrations/20260806_wim_notebooks.sql`

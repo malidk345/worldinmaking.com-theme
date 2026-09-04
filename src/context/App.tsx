@@ -965,7 +965,6 @@ const getInitialSiteSettings = (): SiteSettings => {
         colorMode: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         theme: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         skinMode: 'modern',
-        iconSet: stored.iconSet === 'pixel' ? 'pixel' : 'default',
         wallpaper: DEFAULT_WALLPAPER,
         clickBehavior: 'double',
         performanceBoost: false,

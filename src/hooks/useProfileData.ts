@@ -4,6 +4,7 @@ import { ProfileData, StrapiRecord } from 'lib/strapi'
 import { useUser } from 'hooks/useUser'
 import { supabase } from 'lib/supabase'
 import { resolveUserOrPhilosopherAvatar } from 'lib/user-portraits'
+import { fetchWimProfile as fetchAuthProfile } from 'lib/wim-auth'
 
 function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
     const username = dbProfile.username || 'user'
@@ -57,20 +58,19 @@ async function fetchWimProfile(identifier: string): Promise<StrapiRecord<Profile
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId)
 
-    let query = supabase.from('profiles').select('*')
-    if (isUuid) {
-        query = query.eq('id', cleanId)
-    } else {
-        query = query.ilike('username', cleanId)
+    let userId = cleanId
+    if (!isUuid) {
+        const { data, error } = await supabase.from('profiles').select('id').ilike('username', cleanId).maybeSingle()
+        if (error) {
+            console.warn('[useProfileData]', error.message)
+            return null
+        }
+        if (!data?.id) return null
+        userId = data.id
     }
-
-    const { data, error } = await query.maybeSingle()
-    if (error) {
-        console.warn('[useProfileData]', error.message)
-        return null
-    }
-    if (!data) return null
-    return mapDbProfileToStrapi(data)
+    const row = await fetchAuthProfile(userId)
+    if (!row) return null
+    return mapDbProfileToStrapi(row)
 }
 
 export function useProfileData(identifier?: string | number) {

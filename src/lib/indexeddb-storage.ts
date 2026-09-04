@@ -17,18 +17,35 @@ export interface DocumentSnapshot {
     changeSummary?: string
 }
 
-const DB_NAME = 'wim_local_first_db'
+const LEGACY_DB_NAME = 'wim_local_first_db'
 const DB_VERSION = 1
 const STORE_NOTEBOOKS = 'notebooks'
 const STORE_SNAPSHOTS = 'snapshots'
 
-function openDB(): Promise<IDBDatabase> {
+function currentOwnerKey(): string {
+    if (typeof window === 'undefined') return 'server'
+    try {
+        const auth = window.localStorage.getItem('wim_auth_user_id')
+        if (auth && auth.length >= 8) return auth
+        const device = window.localStorage.getItem('wim_notebook_owner_key')
+        if (device && device.length >= 8) return device
+    } catch {
+        /* ignore */
+    }
+    return 'local'
+}
+
+function dbNameForOwner(ownerKey: string): string {
+    return `${LEGACY_DB_NAME}:${ownerKey}`
+}
+
+function openNamedDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         if (typeof window === 'undefined' || !window.indexedDB) {
             return reject(new Error('IndexedDB is not supported in this environment'))
         }
 
-        const request = window.indexedDB.open(DB_NAME, DB_VERSION)
+        const request = window.indexedDB.open(name, DB_VERSION)
 
         request.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result
@@ -45,6 +62,93 @@ function openDB(): Promise<IDBDatabase> {
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error)
     })
+}
+
+function copyStore(source: IDBObjectStore, target: IDBObjectStore): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const req = source.openCursor()
+        req.onerror = () => reject(req.error)
+        req.onsuccess = () => {
+            const cursor = req.result
+            if (!cursor) {
+                resolve()
+                return
+            }
+            target.put(cursor.value)
+            cursor.continue()
+        }
+    })
+}
+
+async function adoptLegacyIfNeeded(ownerKey: string, target: IDBDatabase): Promise<void> {
+    if (typeof window === 'undefined') return
+    const flag = `wim_idb_adopted:${ownerKey}`
+    try {
+        if (window.localStorage.getItem(flag) === '1') return
+    } catch {
+        /* continue */
+    }
+
+    const sources = [LEGACY_DB_NAME]
+    const device = (() => {
+        try {
+            return window.localStorage.getItem('wim_notebook_owner_key')
+        } catch {
+            return null
+        }
+    })()
+    if (device && device !== ownerKey) sources.push(dbNameForOwner(device))
+
+    for (const name of sources) {
+        let sourceDb: IDBDatabase | null = null
+        try {
+            sourceDb = await openNamedDB(name)
+            if (sourceDb === target) continue
+            const hasNotes = sourceDb.objectStoreNames.contains(STORE_NOTEBOOKS)
+            const hasSnaps = sourceDb.objectStoreNames.contains(STORE_SNAPSHOTS)
+            if (!hasNotes && !hasSnaps) {
+                sourceDb.close()
+                continue
+            }
+            await new Promise<void>((resolve, reject) => {
+                const stores = [hasNotes ? STORE_NOTEBOOKS : null, hasSnaps ? STORE_SNAPSHOTS : null].filter(
+                    Boolean
+                ) as string[]
+                if (!stores.length) {
+                    resolve()
+                    return
+                }
+                const readTx = sourceDb!.transaction(stores, 'readonly')
+                const writeTx = target.transaction(stores, 'readwrite')
+                writeTx.oncomplete = () => resolve()
+                writeTx.onerror = () => reject(writeTx.error)
+                readTx.onerror = () => reject(readTx.error)
+                for (const storeName of stores) {
+                    void copyStore(readTx.objectStore(storeName), writeTx.objectStore(storeName))
+                }
+            })
+            sourceDb.close()
+        } catch {
+            try {
+                sourceDb?.close()
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    try {
+        window.localStorage.setItem(flag, '1')
+    } catch {
+        /* ignore */
+    }
+}
+
+async function openDB(): Promise<IDBDatabase> {
+    const ownerKey = currentOwnerKey()
+    const db = await openNamedDB(dbNameForOwner(ownerKey))
+    await adoptLegacyIfNeeded(ownerKey, db)
+    return db
 }
 
 /**
