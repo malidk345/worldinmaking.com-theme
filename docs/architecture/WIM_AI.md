@@ -3,6 +3,7 @@ Canonical map of WorldInMaking AI as implemented in malidk345/worldinmaking.com-
 
 ## Two products, one orchestrator
 - Workspace Ask AI: `src/pages/api/chat.ts` (Edge SSE) -> `streamBotTurn` in `src/lib/bots/orchestrate.ts` with tools on.
+- **Abort / Stop**: client `AbortController` cancels `fetch('/api/chat')` (Stop button, Meta+., unmount/close, chat switch). Edge `req.signal` + stream `cancel()` abort the turn and linked provider fetches in the tool loop.
 - Forum / philosopher / paper: `src/pages/api/bots/act.ts` and `src/pages/api/philosopher-bot.ts` -> `runBotTurn`, tools off.
 - `src/lib/bots/index.ts` re-exports the orchestrator. Do not add a second generation path.
 
