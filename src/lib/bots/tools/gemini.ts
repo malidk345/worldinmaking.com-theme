@@ -177,12 +177,21 @@ export async function geminiToolCompletion(params: {
     maxTokens?: number
     timeoutMs?: number
     tools?: OpenAiToolSpec[]
+    signal?: AbortSignal
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; modelParts: GeminiPart[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), params.timeoutMs || 45_000)
+    const onExternalAbort = () => controller.abort()
+    if (params.signal) {
+        if (params.signal.aborted) {
+            clearTimeout(timer)
+            return { ok: false, detail: 'client request aborted' }
+        }
+        params.signal.addEventListener('abort', onExternalAbort, { once: true })
+    }
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(params.apiKey)}`
         const functionCallingConfig =
@@ -335,8 +344,10 @@ export async function geminiToolCompletion(params: {
 
         return { ok: true, content, toolCalls, modelParts, reasoning }
     } catch (error) {
+        if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
         clearTimeout(timer)
+        params.signal?.removeEventListener('abort', onExternalAbort)
     }
 }
