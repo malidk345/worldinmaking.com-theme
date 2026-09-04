@@ -1,8 +1,9 @@
 /**
- * Hybrid Semantic Search & Vector Similarity Engine — worldinmaking (wim)
+ * Lexical notebook/post search — worldinmaking (wim)
  *
- * Computes semantic relevance, n-gram TF-IDF vector cosine similarity,
- * and extracts relevant paragraph excerpts across notebooks and thoughts.
+ * Honest mechanism: bag-of-words term frequency + cosine similarity on tokens,
+ * plus substring/keyword boosts. This is NOT embedding / vector-database RAG,
+ * NOT TF-IDF, and NOT learned semantic similarity.
  */
 
 export interface SemanticDocument {
@@ -24,6 +25,11 @@ export interface SemanticSearchHit {
     fields: { slug: string; type?: string }
 }
 
+/** Prefer this name in new code; same shape as SemanticDocument (legacy name). */
+export type LexicalDocument = SemanticDocument
+/** Prefer this name in new code; same shape as SemanticSearchHit (legacy name). */
+export type LexicalSearchHit = SemanticSearchHit
+
 const STOP_WORDS = new Set([
     'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'in', 'for', 'to', 'of', 'with',
     'bir', 've', 'veya', 'bu', 'şu', 'o', 'için', 'ile', 'de', 'da', 'mi', 'mu', 'ise', 'gibi',
@@ -31,7 +37,7 @@ const STOP_WORDS = new Set([
 ])
 
 /**
- * Tokenizes text into normalized semantic terms and character n-grams.
+ * Tokenizes text into normalized lexical terms (words only; no embeddings).
  */
 export function tokenizeText(text: string): string[] {
     if (!text) return []
@@ -45,7 +51,7 @@ export function tokenizeText(text: string): string[] {
 }
 
 /**
- * Computes term frequency vector for a given token stream.
+ * Computes raw term-frequency counts for a token stream.
  */
 export function computeTermFrequency(tokens: string[]): Map<string, number> {
     const tf = new Map<string, number>()
@@ -56,7 +62,7 @@ export function computeTermFrequency(tokens: string[]): Map<string, number> {
 }
 
 /**
- * Computes cosine similarity between two term frequency vectors.
+ * Cosine similarity between two term-frequency maps (lexical, not embedding vectors).
  */
 export function cosineSimilarity(
     vecA: Map<string, number>,
@@ -83,7 +89,7 @@ export function cosineSimilarity(
 }
 
 /**
- * Extracts the most relevant paragraph excerpt containing query terms.
+ * Extracts a paragraph excerpt that contains query terms (substring match).
  */
 export function extractRelevantExcerpt(content: string, queryTokens: string[], maxLen = 180): string {
     if (!content) return ''
@@ -113,9 +119,10 @@ export function extractRelevantExcerpt(content: string, queryTokens: string[], m
 }
 
 /**
- * Executes a semantic vector & keyword hybrid search across a collection of documents.
+ * Lexical search across documents: TF cosine + keyword/substring boosts.
+ * Prefer this name in new code. No embedding model or vector index is used.
  */
-export function searchSemanticDocuments(
+export function searchLexicalDocuments(
     query: string,
     documents: SemanticDocument[],
     limit = 20
@@ -174,3 +181,8 @@ export function searchSemanticDocuments(
     scoredHits.sort((a, b) => b.score - a.score)
     return scoredHits.slice(0, limit)
 }
+
+/**
+ * @deprecated Name claimed "semantic"; implementation is lexical. Use searchLexicalDocuments.
+ */
+export const searchSemanticDocuments = searchLexicalDocuments
