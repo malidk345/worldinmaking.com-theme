@@ -25,6 +25,28 @@ export type TableEnterPlan =
           focus: RestoreInlineSelectionRequest
       }
 
+/** UI row-add controls use body rowIndex (-1 = before first). Shared insert-row math. */
+export function planAddTableRowAfter(
+    node: NotebookTableBlockNode,
+    rowIndex: number,
+    columnIndex: number
+): Extract<TableEnterPlan, { kind: 'insert-row' }> {
+    const columnCount = getTableColumnCount(node)
+    const insertIndex = Math.max(0, Math.min(rowIndex + 1, node.rows.length))
+    const nextRows = node.rows.map((row) => normalizeTableRow(row, columnCount))
+    nextRows.splice(insertIndex, 0, makeEmptyTableRow(columnCount))
+    return {
+        kind: 'insert-row',
+        rows: nextRows,
+        focus: {
+            nodeId: node.id,
+            tableCell: { section: 'body', rowIndex: insertIndex, columnIndex },
+            start: 0,
+            end: 0,
+        },
+    }
+}
+
 export function planInsertTableRow(node: NotebookTableBlockNode, position: TableCellPosition): TableEnterPlan {
     if (position.section === 'header' && node.rows.length) {
         return {
@@ -33,21 +55,9 @@ export function planInsertTableRow(node: NotebookTableBlockNode, position: Table
         }
     }
 
-    const columnCount = getTableColumnCount(node)
-    const insertIndex =
-        position.section === 'header' ? 0 : Math.max(0, Math.min(position.rowIndex + 1, node.rows.length))
-    const nextRows = node.rows.map((row) => normalizeTableRow(row, columnCount))
-    nextRows.splice(insertIndex, 0, makeEmptyTableRow(columnCount))
-    return {
-        kind: 'insert-row',
-        rows: nextRows,
-        focus: {
-            nodeId: node.id,
-            tableCell: { section: 'body', rowIndex: insertIndex, columnIndex: position.columnIndex },
-            start: 0,
-            end: 0,
-        },
-    }
+    // Header Enter with no body rows inserts at 0 (rowIndex -1); body Enter inserts after the focused row.
+    const rowIndex = position.section === 'header' ? -1 : position.rowIndex
+    return planAddTableRowAfter(node, rowIndex, position.columnIndex)
 }
 
 export function getTableCellPositions(node: NotebookTableBlockNode): TableCellPosition[] {
