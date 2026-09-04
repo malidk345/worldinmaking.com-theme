@@ -179,7 +179,7 @@ export async function searchSupabasePosts(query: string): Promise<SupabasePost[]
     try {
         const encoded = encodeURIComponent(`*${cleanQuery}*`)
         const url = restPostsUrl(
-            `or=(title.ilike.${encoded},excerpt.ilike.${encoded},content.ilike.${encoded})&select=*&order=created_at.desc&limit=40`
+            `published=eq.true&or=(title.ilike.${encoded},excerpt.ilike.${encoded},content.ilike.${encoded})&select=${LIST_SELECT}&order=created_at.desc&limit=40`
         )
         const data = await fetchWithCache(url)
         return Array.isArray(data) ? data : []

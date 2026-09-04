@@ -1,15 +1,5 @@
 import React from 'react'
-import {
-    IconBook,
-    IconCompass,
-    IconCopy,
-    IconGraduationCap,
-    IconHeart,
-    IconNewspaper,
-    IconPeople,
-    IconPlug,
-    IconPuzzle,
-} from '@posthog/icons'
+import { IconBook, IconNewspaper, IconPeople, IconUser } from '@posthog/icons'
 import { capitalizeFirstLetter } from '../../utils'
 
 type TypeConfig = {
@@ -19,44 +9,31 @@ type TypeConfig = {
     aliases: string[]
 }
 
-// Presentation and search aliases for result categories.
 const typeConfig: TypeConfig[] = [
     {
         type: 'notebook',
         label: 'Notebooks',
         icon: <IconBook />,
-        aliases: ['notebooks', 'notebook', 'defter', 'defterler', 'notes', 'thoughts', 'düşünceler'],
+        aliases: ['notebooks', 'notebook', 'defter', 'defterler', 'notes'],
     },
     {
         type: 'post',
-        label: 'Posts & Essays',
+        label: 'Posts',
         icon: <IconNewspaper />,
-        aliases: ['posts', 'post', 'makale', 'yazı', 'essays', 'articles'],
+        aliases: ['posts', 'post', 'yazı', 'yazilar', 'essays', 'articles', 'blog'],
     },
-    { type: 'docs', label: 'Docs', icon: <IconBook />, aliases: ['docs', 'documentation', 'reference', 'manual'] },
-    { type: 'apps', label: 'Apps', icon: <IconPuzzle />, aliases: ['apps'] },
-    {
-        type: 'tutorial',
-        label: 'Tutorials',
-        icon: <IconGraduationCap />,
-        aliases: ['tutorials', 'guides', 'how-to', 'walkthrough'],
-    },
-    { type: 'blog', label: 'Blog', icon: <IconNewspaper />, aliases: ['blog', 'articles', 'news'] },
-    {
-        type: 'handbook',
-        label: 'Handbook',
-        icon: <IconCompass />,
-        aliases: ['handbook', 'company', 'culture'],
-    },
-    { type: 'customers', label: 'Customers', icon: <IconHeart />, aliases: ['customers'] },
-    { type: 'templates', label: 'Templates', icon: <IconCopy />, aliases: ['templates'] },
     {
         type: 'community',
         label: 'Community',
         icon: <IconPeople />,
-        aliases: ['questions', 'community', 'forum', 'answers'],
+        aliases: ['community', 'forum', 'questions', 'threads', 'topluluk'],
     },
-    { type: 'cdp', label: 'CDP', icon: <IconPlug />, aliases: ['cdp', 'pipelines', 'destinations'] },
+    {
+        type: 'person',
+        label: 'People',
+        icon: <IconUser />,
+        aliases: ['people', 'person', 'profiles', 'users', 'kişiler', 'kisiler', 'authors'],
+    },
 ]
 
 export const configForType = (type: string): TypeConfig =>
@@ -78,5 +55,4 @@ export const matchCategory = (query: string): string | null => {
     return null
 }
 
-// null is "All categories" and clears the filter.
 export const filterOptions: (string | null)[] = [null, ...typeConfig.map(({ type }) => type)]

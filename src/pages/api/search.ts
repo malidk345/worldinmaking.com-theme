@@ -1,23 +1,11 @@
 /**
- * Local search over Supabase posts and notebooks with lexical (keyword/TF) scoring.
- * Not embedding/vector RAG — see src/lib/semantic-search.ts.
- * Response shape (`hits`, `nbHits`, `facets`) is kept so existing clients stay compatible.
- * Cloudflare Pages (next-on-pages) requires Edge Runtime + Web Response API.
+ * Public site search over posts, community threads, people, and published notebooks.
+ * Anon key + RLS only. Response shape (`hits`, `nbHits`, `facets`) stays compatible.
  */
 export const runtime = 'edge'
 
-import { searchSupabasePosts } from '../../lib/supabaseBlog'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
-import { searchLexicalDocuments, type SemanticDocument } from '../../lib/semantic-search'
-
-type SearchHit = {
-    objectID: string
-    title: string
-    excerpt: string
-    type: string
-    slug: string
-    fields: { slug: string; type?: string }
-}
+import { runPublicSearch } from '../../lib/public-search'
 
 const getFacetValues = (value: string | string[] | null): string[] => {
     if (!value) return []
@@ -31,48 +19,6 @@ function json(body: Record<string, unknown>, status = 200, cache?: string) {
     return new Response(JSON.stringify(body), { status, headers })
 }
 
-function sanitizeIlike(raw: string): string {
-    return raw.replace(/[%_,.()"'\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
-}
-
-async function searchNotebooks(query: string): Promise<SearchHit[]> {
-    if (!isSupabaseConfigured || !supabase) return []
-    const needle = sanitizeIlike(query)
-    if (needle.length < 2) return []
-    try {
-        const { data, error } = await supabase
-            .from('wim_notebooks')
-            .select('id, short_id, title, content, updated_at')
-            .eq('is_published', true)
-            .is('deleted_at', null)
-            .or(`title.ilike.%${needle}%,content.ilike.%${needle}%`)
-            .limit(25)
-
-        if (error || !data || data.length === 0) return []
-
-        const docs: SemanticDocument[] = data.map((nb: any) => ({
-            id: nb.id,
-            title: nb.title || 'Untitled Notebook',
-            content: typeof nb.content === 'string' ? nb.content : JSON.stringify(nb.content || ''),
-            type: 'notebook',
-            slug: `/notebooks/${nb.short_id || nb.id}`,
-        }))
-
-        const lexicalHits = searchLexicalDocuments(query, docs, 15)
-        return lexicalHits.map((h) => ({
-            objectID: h.objectID,
-            title: h.title,
-            excerpt: h.excerpt,
-            type: 'notebook',
-            slug: h.slug,
-            fields: { slug: h.slug, type: 'notebook' },
-        }))
-    } catch (e) {
-        console.error('[searchNotebooks]', e)
-        return []
-    }
-}
-
 export default async function handler(req: Request) {
     if (req.method !== 'GET') {
         return json({ error: 'Method not allowed' }, 405)
@@ -80,62 +26,36 @@ export default async function handler(req: Request) {
 
     const url = new URL(req.url)
     const query = String(url.searchParams.get('q') || url.searchParams.get('query') || '').trim()
-    const facetFilters = getFacetValues(url.searchParams.getAll('facetFilters').length
-        ? url.searchParams.getAll('facetFilters')
-        : url.searchParams.get('facetFilters'))
+    const facetFilters = getFacetValues(
+        url.searchParams.getAll('facetFilters').length
+            ? url.searchParams.getAll('facetFilters')
+            : url.searchParams.get('facetFilters')
+    )
     const requestedType = facetFilters.find((filter) => filter.startsWith('type:'))?.replace('type:', '')
-
-    const cache = 's-maxage=300, stale-while-revalidate=600'
+    const cache = 's-maxage=120, stale-while-revalidate=300'
 
     if (query.length < 2) {
         return json({ hits: [], nbHits: 0, facets: { type: {} } }, 200, cache)
     }
 
+    if (!isSupabaseConfigured || !supabase) {
+        return json({ hits: [], nbHits: 0, facets: { type: {} }, error: 'search_unavailable' }, 200, cache)
+    }
+
     try {
-        let postHits: SearchHit[] = []
-        let notebookHits: SearchHit[] = []
-
-        if (!requestedType || requestedType === 'post') {
-            const posts = await searchSupabasePosts(query)
-            const postDocs: SemanticDocument[] = posts.map((post) => ({
-                id: post.id,
-                title: post.title,
-                content: post.excerpt || post.content || '',
-                type: 'post',
-                slug: post.slug || `/posts/${post.id}`,
-            }))
-            const lexicalPosts = searchLexicalDocuments(query, postDocs, 15)
-            postHits = lexicalPosts.map((h) => ({
-                objectID: h.objectID,
-                title: h.title,
-                excerpt: h.excerpt,
-                type: 'post',
-                slug: h.slug.startsWith('/') ? h.slug : `/posts/${h.slug}`,
-                fields: { slug: h.slug.startsWith('/') ? h.slug : `/posts/${h.slug}` },
-            }))
-        }
-
-        if (!requestedType || requestedType === 'notebook') {
-            notebookHits = await searchNotebooks(query)
-        }
-
-        const combinedHits = [...notebookHits, ...postHits]
-        const typeFacets: Record<string, number> = {}
-        if (postHits.length > 0) typeFacets.post = postHits.length
-        if (notebookHits.length > 0) typeFacets.notebook = notebookHits.length
-
+        const { hits, facets } = await runPublicSearch(supabase, query, requestedType)
         return json(
             {
-                hits: combinedHits.slice(0, 20),
-                nbHits: combinedHits.length,
-                facets: { type: typeFacets },
-                engine: 'supabase-lexical',
+                hits,
+                nbHits: hits.length,
+                facets: { type: facets },
+                engine: 'public-lexical',
             },
             200,
             cache
         )
     } catch (error) {
-        console.error('[local-search]', error)
+        console.error('[public-search]', error)
         return json({ hits: [], nbHits: 0, facets: { type: {} }, error: 'search_unavailable' }, 200, cache)
     }
 }
