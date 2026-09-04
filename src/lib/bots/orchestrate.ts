@@ -88,6 +88,8 @@ export interface BotRunInput {
     host?: HostSnapshot
     /** Correlates telemetry with the originating HTTP request. */
     requestId?: string
+    /** Abort when the HTTP client disconnects or the user hits Stop. */
+    abortSignal?: AbortSignal
 }
 
 export type QualityGateOutcome = 'passed' | 'failed' | 'skipped'
@@ -551,6 +553,31 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
     const runtimeEnv = input.env ?? getRuntimeEnv()
     const persona = extractPersona('', philosopher)
 
+    if (input.abortSignal?.aborted) {
+        return {
+            success: false,
+            philosopher: persona.name,
+            epistemicStance: persona.epistemicStance,
+            reply: '',
+            thought: '',
+            thinking: {
+                summary: '',
+                stages: [],
+                structured: false,
+                depth: input.thinkingDepth || 'standard',
+                source: 'none',
+            },
+            provider: 'none',
+            confident: false,
+            error: 'aborted',
+            host: 'cloudflare-pages-edge',
+            configured: getProviderKeyFlags(runtimeEnv),
+            attempts: ['client aborted before generation'],
+            latencyMs: 0,
+            taskType,
+        }
+    }
+
     const systemPrompt = buildTurnSystemPrompt(input, persona, mood, taskType)
 
     let userPrompt = buildUserPrompt(input, taskType)
@@ -571,6 +598,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 userPrompt,
                 history: input.messages,
                 env: runtimeEnv,
+                signal: input.abortSignal,
                 onToken: (text) => demux.push(text, onToken, (chunk) => onThinkingChunk?.(chunk)),
                 onThinking: (text) => onThinkingChunk?.(text),
                 onTool: input.onTool,
@@ -649,6 +677,31 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             }
         }
         demux.finish(onToken, (chunk) => onThinkingChunk?.(chunk))
+        if (input.abortSignal?.aborted || loop.error === 'client request aborted') {
+            return {
+                success: false,
+                philosopher: persona.name,
+                epistemicStance: persona.epistemicStance,
+                reply: '',
+                thought: '',
+                thinking: {
+                    summary: '',
+                    stages: [],
+                    structured: false,
+                    depth: input.thinkingDepth || 'standard',
+                    source: 'none',
+                },
+                provider: 'none',
+                confident: false,
+                error: 'aborted',
+                host: 'cloudflare-pages-edge',
+                configured: getProviderKeyFlags(runtimeEnv),
+                attempts: ['client aborted during generation'],
+                latencyMs: Date.now() - streamStarted,
+                taskType,
+            }
+        }
+
         console.info('[tools] loop', {
             ok: loop.ok,
             usedTools: loop.usedTools,

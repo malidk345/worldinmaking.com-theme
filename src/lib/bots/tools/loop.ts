@@ -88,6 +88,23 @@ const REQUEST_TIMEOUT_MS = 45_000
 const GEMINI_TIMEOUT_MS = 45_000
 const MAX_TOKENS = 8_192
 
+function linkAbortSignal(controller: AbortController, external?: AbortSignal): () => void {
+    if (!external) return () => {}
+    if (external.aborted) {
+        controller.abort()
+        return () => {}
+    }
+    const onAbort = () => controller.abort()
+    external.addEventListener('abort', onAbort, { once: true })
+    return () => external.removeEventListener('abort', onAbort)
+}
+
+function isClientAbortDetail(detail: string): boolean {
+    const d = detail.toLowerCase()
+    return d.includes('client request aborted') || d.includes('aborterror') || d === 'aborted'
+}
+
+
 export const TOOL_FAMILY_ORDER = ['groq', 'gemini', 'nvidia', 'openai'] as const
 
 export type ToolLoopResult = {
@@ -160,13 +177,16 @@ async function openaiCompletion(params: {
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
     maxTokens?: number
+    signal?: AbortSignal
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const unlink = linkAbortSignal(controller, params.signal)
     try {
+        if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         const url = params.baseUrl || 'https://api.openai.com/v1/chat/completions'
         const res = await fetch(url, {
             method: 'POST',
@@ -255,9 +275,11 @@ async function openaiCompletion(params: {
         const toolCalls = assembleToolCalls(buckets)
         return { ok: true, content, toolCalls, reasoning: reasoning.trim() || undefined }
     } catch (error) {
+        if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
         clearTimeout(timer)
+        unlink()
     }
 }
 
@@ -271,13 +293,16 @@ async function groqCompletion(params: {
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
     maxTokens?: number
+    signal?: AbortSignal
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const unlink = linkAbortSignal(controller, params.signal)
     try {
+        if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -367,9 +392,11 @@ async function groqCompletion(params: {
         if (toolCalls.length === 0 && content && buckets.size > 0) params.onToken?.(content)
         return { ok: true, content, toolCalls, reasoning }
     } catch (error) {
+        if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         return { ok: false, detail: error instanceof Error ? error.message : 'fetch error' }
     } finally {
         clearTimeout(timer)
+        unlink()
     }
 }
 
@@ -512,7 +539,22 @@ export async function runToolLoop(params: {
     checkpoint?: AgentCheckpoint
     resumeAction?: ResumeAction
     resumePayload?: string
+    /** Client disconnect / Stop — abort in-flight provider fetches. */
+    signal?: AbortSignal
 }): Promise<ToolLoopResult> {
+    if (params.signal?.aborted) {
+        return {
+            ok: false,
+            usedTools: false,
+            usedWebSearch: false,
+            text: '',
+            artifacts: [],
+            citations: [],
+            actions: [],
+            provider: 'none',
+            error: 'client request aborted',
+        }
+    }
     const env = params.env ?? getRuntimeEnv()
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(env)).filter((key) => !isGroqKeyCooling(key))
     const groqModels = resolveGroqToolModels(env)
@@ -569,6 +611,19 @@ export async function runToolLoop(params: {
     const families = nextToolFamilyOrder()
 
     for (const family of families) {
+        if (params.signal?.aborted) {
+            return {
+                ok: false,
+                usedTools: false,
+                usedWebSearch: false,
+                text: '',
+                artifacts: [],
+                citations: [],
+                actions: [],
+                provider: 'none',
+                error: 'client request aborted',
+            }
+        }
         if (family === 'openai' && byokOpenai) {
             const step = await runToolSteps({
                 provider: 'openai',
@@ -597,6 +652,7 @@ export async function runToolLoop(params: {
                         omitTools,
                         maxTokens,
                         tools: toolsForAgentMode(agentMode),
+                        signal: params.signal,
                     }),
             })
             if (step.kind === 'done') return step.result
@@ -613,6 +669,19 @@ export async function runToolLoop(params: {
                 }
             }
             lastError = step.error
+            if (isClientAbortDetail(step.error)) {
+                return {
+                    ok: false,
+                    usedTools: step.usedTools,
+                    usedWebSearch: step.usedWebSearch,
+                    text: step.text,
+                    artifacts: step.artifacts,
+                    citations: step.citations,
+                    actions: step.actions,
+                    provider: 'none',
+                    error: 'client request aborted',
+                }
+            }
         }
 
         if (family === 'nvidia' && nvidiaKey) {
@@ -645,6 +714,7 @@ export async function runToolLoop(params: {
                             omitTools,
                             maxTokens,
                             tools: toolsForAgentMode(agentMode),
+                            signal: params.signal,
                         }),
                 })
                 if (step.kind === 'done') return step.result
@@ -661,6 +731,19 @@ export async function runToolLoop(params: {
                     }
                 }
                 lastError = step.error
+                if (isClientAbortDetail(step.error)) {
+                    return {
+                        ok: false,
+                        usedTools: step.usedTools,
+                        usedWebSearch: step.usedWebSearch,
+                        text: step.text,
+                        artifacts: step.artifacts,
+                        citations: step.citations,
+                        actions: step.actions,
+                        provider: 'none',
+                        error: 'client request aborted',
+                    }
+                }
             }
         }
 
@@ -696,10 +779,24 @@ export async function runToolLoop(params: {
                                 omitTools,
                                 maxTokens,
                                 tools: toolsForAgentMode(agentMode),
+                                signal: params.signal,
                             }),
                     })
                     if (step.kind === 'done') return step.result
                     lastError = step.error
+                    if (isClientAbortDetail(step.error)) {
+                        return {
+                            ok: false,
+                            usedTools: false,
+                            usedWebSearch: false,
+                            text: '',
+                            artifacts: [],
+                            citations: [],
+                            actions: [],
+                            provider: 'none',
+                            error: 'client request aborted',
+                        }
+                    }
                     if (step.kind === 'tools-rejected') continue
                     if (step.kind === 'auth') {
                         markGroqKeyCooling(apiKey)
@@ -756,6 +853,7 @@ export async function runToolLoop(params: {
                                 maxTokens,
                                 timeoutMs: GEMINI_TIMEOUT_MS,
                                 tools: toolsForAgentMode(agentMode),
+                                signal: params.signal,
                             }),
                     })
                     if (step.kind === 'done') return step.result
