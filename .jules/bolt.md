@@ -28,3 +28,7 @@
 ## 2025-05-19 - Avoid Reduce with Array Spread for Dynamic Layout Trees
 **Learning:** Using `reduce` combined with array spread syntax (`[...sourceA, ...sourceB].reduce(...)`) for complex tree structure traversal creates redundant intermediate arrays and memory churn. When this pattern is used in deep or frequently executed layout parsers (like `injectDynamicChildren` for the App Context menu), it significantly increases main thread overhead and execution time.
 **Action:** When aggregating multiple source arrays during layout construction or recursive rendering, use a direct `for...of` loop over each source array or a helper function instead of allocating intermediate flattened arrays to pass into `.reduce`.
+
+## 2025-05-19 - Avoid Reduce with Array Spread for Set and String structures
+**Learning:** Using `reduce` combined with array spread syntax to iterate over Sets (`[...mySet].reduce(...)`) or Strings (`[...myString].reduce(...)`) creates redundant intermediate arrays and memory churn. When this pattern is used in deep or frequently executed parsers (like list indentation parsing or Markdown AST manipulations), it introduces unnecessary main thread overhead and execution time. A `for...of` loop is more performant as it operates on iterables without intermediate array allocations.
+**Action:** When iterating over a String or Set to compute a value or filter elements, always use a direct `for...of` loop instead of spreading the iterable into an array to pass into `.reduce`.
