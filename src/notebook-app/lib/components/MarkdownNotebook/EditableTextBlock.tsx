@@ -19,6 +19,7 @@ import {
     SlashToken,
     getTextBlockShortcutReplacement,
     isTextBlockNode,
+    planDowngradeTextBlockToParagraph,
     planPasteInlineChildren,
     planPasteIntoTextBlock,
     shouldUseMarkdownPaste,
@@ -197,14 +198,8 @@ export function EditableTextBlock({
                 return currentNode
             }
 
-            return {
-                ...currentNode,
-                // A quoted heading downgrades to quote text, staying in the quote
-                type: currentNode.blockquote ? 'blockquote' : 'paragraph',
-                level: undefined,
-                blockquote: undefined,
-                children: currentNode.children,
-            }
+            // Shared with planDeleteTextAtSelection: quoted heading stays quote text.
+            return planDowngradeTextBlockToParagraph(currentNode)
         })
         restoreSelectionRef.current = { nodeId: node.id, start, end }
     }
