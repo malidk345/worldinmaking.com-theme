@@ -660,6 +660,17 @@ export function planMergeTextIntoPreviousNonText(
     return null
 }
 
+
+/** Heading/blockquote Backspace-at-start (and host mirrors): clear block style to paragraph, keeping quote text when quoted. */
+export function planDowngradeTextBlockToParagraph(node: NotebookTextBlockNode): NotebookTextBlockNode {
+    return {
+        ...node,
+        type: node.blockquote ? 'blockquote' : 'paragraph',
+        level: undefined,
+        blockquote: undefined,
+    }
+}
+
 export function planDeleteTextAtSelection(
     nodes: NotebookBlockNode[],
     nodeIndex: number,
@@ -713,12 +724,7 @@ export function planDeleteTextAtSelection(
     ) {
         return {
             kind: 'replace',
-            nodes: replaceNodeAt(nodes, nodeIndex, {
-                ...node,
-                type: node.blockquote ? 'blockquote' : 'paragraph',
-                level: undefined,
-                blockquote: undefined,
-            }),
+            nodes: replaceNodeAt(nodes, nodeIndex, planDowngradeTextBlockToParagraph(node)),
             focus: { nodeId: node.id, start: 0, end: 0 },
         }
     }
