@@ -625,6 +625,204 @@ html[data-reduce-transparency='true'] .notebook-app-scope {
   backdrop-filter: var(--os-frosted-blur, blur(64px));
   -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
+
+/* This-round: quiet editor handles / boundaries / selection / placeholders / code chips */
+.notebook-app-scope .MarkdownNotebook__drag-handle {
+  width: 1rem;
+  height: 1rem;
+  top: 0.2rem;
+  color: var(--color-text-tertiary, var(--color-text-secondary, #9ca3af));
+  border-radius: var(--radius-sm, 0.3125rem);
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
+}
+.notebook-app-scope .MarkdownNotebook__drag-handle svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.notebook-app-scope .MarkdownNotebook__row:hover .MarkdownNotebook__drag-handle {
+  opacity: 0.35;
+}
+.notebook-app-scope .MarkdownNotebook__drag-handle:hover,
+.notebook-app-scope .MarkdownNotebook__drag-handle:focus-visible {
+  opacity: 1;
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+}
+.notebook-app-scope .MarkdownNotebook__drag-handle:active {
+  opacity: 1;
+  background: var(--color-bg-fill-button-tertiary-active, rgba(0, 0, 0, 0.1));
+}
+.notebook-app-scope .MarkdownNotebook__line-insert-menu-button {
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+  --lemon-button-chrome-depth: 0px;
+  --lemon-button-hover-depth: 0px;
+  --lemon-button-press-depth: 0px;
+  --lemon-button-frame-bg-color: transparent;
+}
+.notebook-app-scope .MarkdownNotebook__text-row--inline-menu-visible .MarkdownNotebook__line-insert-menu-button {
+  opacity: 0.28;
+}
+.notebook-app-scope .MarkdownNotebook__line-insert-menu-hit-area:hover .MarkdownNotebook__line-insert-menu-button,
+.notebook-app-scope .MarkdownNotebook__text-row--inline-menu-visible .MarkdownNotebook__line-insert-menu-button:hover,
+.notebook-app-scope .MarkdownNotebook__line-insert-menu-button[aria-expanded='true'],
+.notebook-app-scope .MarkdownNotebook__line-insert-menu-button:focus-visible {
+  opacity: 1;
+  color: var(--color-accent, #1d4ed8);
+  background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+  border-radius: var(--radius-sm, 0.3125rem);
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary {
+  height: 0.2rem;
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary:last-child {
+  height: 1.5rem;
+  margin: 0.15rem 0;
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary:last-child::before {
+  border-top: 1px solid var(--color-border-primary, rgb(var(--border)));
+  opacity: 0;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary:last-child:hover::before {
+  border-top-color: var(--color-accent, #1d4ed8);
+  opacity: 0.45;
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary-button {
+  padding: 0.15rem 0.55rem;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-bg-surface-secondary, var(--color-bg-surface-primary));
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-radius: var(--radius-sm, 0.3125rem);
+  box-shadow: none;
+  transition: opacity 120ms ease, color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.notebook-app-scope .MarkdownNotebook__insert-boundary-button:hover {
+  color: var(--color-accent, #1d4ed8);
+  background: var(--primary-highlight, rgb(29 78 216 / 10%));
+  border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 45%, var(--color-border-primary, rgb(var(--border))));
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+.notebook-app-scope .MarkdownNotebook__drop-indicator {
+  height: 0.125rem;
+  background: var(--color-accent, #1d4ed8);
+  border-radius: 1px;
+  opacity: 0.85;
+}
+.notebook-app-scope .MarkdownNotebook__component-shell:focus::after,
+.notebook-app-scope .MarkdownNotebook__component-shell--selected::after,
+.notebook-app-scope .MarkdownNotebook__divider-block:focus::after,
+.notebook-app-scope .MarkdownNotebook__divider-block--selected::after,
+.notebook-app-scope .MarkdownNotebook__comment-block:focus::after,
+.notebook-app-scope .MarkdownNotebook__comment-block--selected::after {
+  box-shadow: inset 0 0 0 1.5px color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent),
+    0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+}
+.notebook-app-scope .MarkdownNotebook__component-shell:focus-visible {
+  box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+}
+.notebook-app-scope .MarkdownNotebook__table-cell-content:focus {
+  background: var(--primary-highlight, rgb(29 78 216 / 10%));
+  box-shadow: inset 0 0 0 1px color-mix(in sRGB, var(--color-accent, #1d4ed8) 50%, transparent);
+}
+.notebook-app-scope .ProseMirror .selectedCell::after,
+.notebook-app-scope .ProseMirror-selectednode {
+  background: var(--primary-highlight, rgb(29 78 216 / 14%)) !important;
+  outline: 1.5px solid color-mix(in sRGB, var(--color-accent, #1d4ed8) 50%, transparent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.notebook-app-scope .NotebookEditor {
+  border-color: var(--color-border-primary, rgb(var(--border)));
+  border-radius: var(--radius, 0.375rem);
+  box-shadow: none;
+  font-family: var(--font-sans);
+}
+.notebook-app-scope .MarkdownNotebook__text-block:empty::before,
+.notebook-app-scope .MarkdownNotebook__text-block--title:empty::before,
+.notebook-app-scope .MarkdownNotebook__text-block--insert-placeholder:empty::before,
+.notebook-app-scope .MarkdownNotebook__code-block:empty::before,
+.notebook-app-scope .ProseMirror p.is-editor-empty:first-child::before,
+.notebook-app-scope .MarkdownNotebook__component-toolbar-title--input::placeholder,
+.notebook-app-scope .LemonInput input::placeholder,
+.notebook-app-scope .LemonTextArea textarea::placeholder {
+  font-family: var(--font-sans);
+  color: var(--color-text-tertiary, rgb(var(--text-muted, 155 155 155))) !important;
+  font-style: normal;
+  opacity: 1;
+}
+.notebook-app-scope .MarkdownNotebook__code-block-actions > span {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #6b7280) !important;
+  background: var(--color-bg-surface-secondary, #f5f5f5);
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-radius: var(--radius-sm, 0.3125rem);
+  padding: 0.1rem 0.35rem;
+}
+.notebook-app-scope .MarkdownNotebook__code-block-actions .LemonButton,
+.notebook-app-scope .MarkdownNotebook__table-structure-control,
+.notebook-app-scope .MarkdownNotebook__line-insert-menu-button.LemonButton {
+  --lemon-button-chrome-depth: 0px;
+  --lemon-button-hover-depth: 0px;
+  --lemon-button-press-depth: 0px;
+  --lemon-button-frame-bg-color: transparent;
+}
+.notebook-app-scope .MarkdownNotebook__comment-chip {
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--primary-highlight, rgb(29 78 216 / 10%));
+  border: 1px dashed color-mix(in sRGB, var(--color-accent, #1d4ed8) 40%, var(--color-border-primary, rgb(var(--border))));
+  border-radius: var(--radius-sm, 0.3125rem);
+}
+.notebook-app-scope .MarkdownNotebook__comment-chip svg {
+  color: var(--color-accent, #1d4ed8);
+}
+.notebook-app-scope .MarkdownNotebook__comment-chip:hover {
+  background: var(--primary-highlight, rgb(29 78 216 / 16%));
+}
+.notebook-app-scope .ProseMirror code {
+  color: var(--color-accent, #1d4ed8);
+  background: var(--primary-highlight, rgb(29 78 216 / 10%));
+  border-radius: var(--radius-sm, 0.3125rem);
+}
+.notebook-app-scope .ProseMirror pre {
+  background: var(--markdown-notebook-code-background, var(--color-bg-surface-secondary));
+  border: 1px solid var(--markdown-notebook-code-border, var(--color-border-primary));
+  border-radius: var(--radius, 0.375rem);
+  box-shadow: none;
+}
+.notebook-app-scope .MarkdownNotebook__code-block {
+  caret-color: var(--color-accent, #1d4ed8);
+}
+html.dark .notebook-app-scope .MarkdownNotebook__code-block-actions > span,
+.dark .notebook-app-scope .MarkdownNotebook__code-block-actions > span,
+.notebook-app-scope.dark .MarkdownNotebook__code-block-actions > span,
+[data-notebook-host-theme='dark'] .notebook-app-scope .MarkdownNotebook__code-block-actions > span {
+  background: var(--color-bg-surface-tertiary, #2a2b31);
+  color: var(--color-text-secondary, #9ca3af) !important;
+  border-color: var(--color-border-primary, #3e424f);
+}
+html.dark .notebook-app-scope .MarkdownNotebook__insert-boundary:last-child:hover::before,
+.dark .notebook-app-scope .MarkdownNotebook__insert-boundary:last-child:hover::before,
+[data-notebook-host-theme='dark'] .notebook-app-scope .MarkdownNotebook__insert-boundary:last-child:hover::before {
+  border-top-color: var(--color-accent, #3b82f6);
+}
+html.dark .notebook-app-scope .MarkdownNotebook__component-shell:focus::after,
+html.dark .notebook-app-scope .MarkdownNotebook__component-shell--selected::after,
+.dark .notebook-app-scope .MarkdownNotebook__component-shell:focus::after,
+.dark .notebook-app-scope .MarkdownNotebook__component-shell--selected::after,
+[data-notebook-host-theme='dark'] .notebook-app-scope .MarkdownNotebook__component-shell:focus::after,
+[data-notebook-host-theme='dark'] .notebook-app-scope .MarkdownNotebook__component-shell--selected::after {
+  box-shadow: inset 0 0 0 1.5px color-mix(in sRGB, var(--color-accent, #3b82f6) 55%, transparent),
+    0 0 0 3px var(--primary-highlight, rgb(59 130 246 / 14%));
+}
 @media print {
   .notebook-app-scope .notebook-outline,
   .notebook-app-scope .notebook-tools-sidebar,
