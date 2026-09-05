@@ -20,6 +20,7 @@ import {
     NotebookListBlockNode,
     NotebookListItem,
     NotebookPropValue,
+    NotebookTableBlockNode,
     NotebookTextBlockNode,
 } from './types'
 import { cloneNotebookNode, ensureUniqueNodeIds, getInlineText, normalizeInlineNodes } from './utils'
@@ -1020,6 +1021,59 @@ export type TextBlockShortcutReplacement = {
     restoreSelection: RestoreSelectionRequest
 }
 
+
+/** Shared empty code block used by slash insert and markdown shortcuts. */
+export function createInsertedCodeBlock(id: string): NotebookCodeBlockNode {
+    return {
+        id,
+        type: 'code',
+        text: '',
+    }
+}
+
+/** Shared default 2x1 table used by the slash/insert menu. */
+export function createInsertedTableBlock(id: string): NotebookTableBlockNode {
+    return {
+        id,
+        type: 'table',
+        headers: [
+            { children: [{ type: 'text', text: 'Column 1' }] },
+            { children: [{ type: 'text', text: 'Column 2' }] },
+        ],
+        rows: [[{ children: [] }, { children: [] }]],
+    }
+}
+
+export type CreateInsertedListBlockOptions = {
+    id: string
+    ordered: boolean
+    start?: number
+    checked?: boolean
+    blockquote?: boolean
+    itemId?: string
+}
+
+/** Shared empty list used by slash insert and markdown list shortcuts. */
+export function createInsertedListBlock(options: CreateInsertedListBlockOptions): NotebookListBlockNode {
+    const item = {
+        children: [] as NotebookInlineNode[],
+        depth: 0,
+        ordered: options.ordered,
+        start: options.start,
+        checked: options.checked,
+        ...(options.itemId ? { id: options.itemId } : {}),
+    }
+
+    return {
+        id: options.id,
+        type: 'list',
+        ordered: options.ordered,
+        start: options.start,
+        blockquote: options.blockquote,
+        items: [item],
+    }
+}
+
 export function getTextBlockShortcutReplacement(
     node: NotebookTextBlockNode,
     isTitleBlock: boolean,
@@ -1066,13 +1120,7 @@ export function getTextBlockShortcutReplacement(
 
         if (getCodeBlockShortcut(text)) {
             return {
-                nodes: [
-                    {
-                        id: node.id,
-                        type: 'code',
-                        text: '',
-                    },
-                ],
+                nodes: [createInsertedCodeBlock(node.id)],
                 restoreSelection: { nodeId: node.id, start: 0, end: 0 },
             }
         }
@@ -1099,24 +1147,15 @@ export function getTextBlockShortcutReplacement(
         const listItemId = makeListItemId(`shortcut-${node.id}`)
         return {
             nodes: [
-                {
+                createInsertedListBlock({
                     id: node.id,
-                    type: 'list',
                     ordered: listShortcut.ordered,
                     start: listShortcut.start,
                     // A list typed inside a quote stays part of the quote
                     blockquote: node.type === 'blockquote' ? true : undefined,
-                    items: [
-                        {
-                            id: listItemId,
-                            children: [],
-                            depth: 0,
-                            ordered: listShortcut.ordered,
-                            start: listShortcut.start,
-                            checked: listShortcut.checked,
-                        },
-                    ],
-                },
+                    checked: listShortcut.checked,
+                    itemId: listItemId,
+                }),
             ],
             restoreSelection: { nodeId: node.id, listItemIndex: 0, listItemId, start: 0, end: 0 },
         }
