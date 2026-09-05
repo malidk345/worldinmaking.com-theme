@@ -352,3 +352,39 @@ export function planDeleteListItemAtStart(
     }
     return planUnwrapOrOutdentListItem(node, targetItemIndex)
 }
+
+export type ListDepthShiftPlan = {
+    items: NotebookListItem[]
+    focus: RestoreInlineSelectionRequest
+}
+
+/** Tab indent/outdent for the focused list item subtree (items + caret plan). */
+export function planShiftListItemDepth(
+    node: NotebookListBlockNode,
+    itemIndex: number,
+    itemId: string | undefined,
+    direction: 'in' | 'out',
+    caretOffset: number
+): ListDepthShiftPlan | null {
+    const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
+    const item = node.items[targetItemIndex]
+    if (!item) {
+        return null
+    }
+
+    const nextItems = shiftListItemSubtreeDepth(node.items, targetItemIndex, direction, node.ordered)
+    if (!nextItems) {
+        return null
+    }
+
+    return {
+        items: nextItems,
+        focus: {
+            nodeId: node.id,
+            listItemIndex: targetItemIndex,
+            listItemId: item.id,
+            start: caretOffset,
+            end: caretOffset,
+        },
+    }
+}
