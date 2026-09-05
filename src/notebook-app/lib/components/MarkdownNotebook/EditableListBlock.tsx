@@ -11,13 +11,12 @@ import {
 
 import {
     getSinglePastedParagraphChildren,
-    getTaskItemShortcut,
     planPasteInlineChildren,
     shouldPasteInlineMarkdown,
 } from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TextSelectionPointerStartEvent } from './editorTypes'
-import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart } from './listModel'
+import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart, planApplyListItemTaskShortcut } from './listModel'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
@@ -147,25 +146,22 @@ export function EditableListBlock({
         }
 
         const children = htmlElementToInlineNodes(element)
-        const taskShortcut =
-            details.item.checked === undefined && !(details.item.ordered ?? node.ordered)
-                ? getTaskItemShortcut(children)
-                : null
-        if (taskShortcut) {
-            const selection = getSelectionRange(element, node.id)
-            const caretOffset = Math.max(0, (selection?.start ?? taskShortcut.markerLength) - taskShortcut.markerLength)
-            updateListItem(details.itemIndex, details.itemId, (item) => ({
-                ...item,
-                checked: taskShortcut.checked,
-                children: taskShortcut.children,
-            }))
-            restoreSelectionRef.current = {
-                nodeId: node.id,
-                listItemIndex: details.itemIndex,
-                listItemId: details.itemId,
-                start: caretOffset,
-                end: caretOffset,
-            }
+        const selection = getSelectionRange(element, node.id)
+        const taskPlan = planApplyListItemTaskShortcut(
+            node,
+            details.itemIndex,
+            details.itemId,
+            children,
+            selection?.start ?? null
+        )
+        if (taskPlan) {
+            updateNode(node.id, (currentNode) => {
+                if (currentNode.type !== 'list') {
+                    return currentNode
+                }
+                return { ...currentNode, items: taskPlan.items }
+            })
+            restoreSelectionRef.current = taskPlan.focus
             return
         }
 
