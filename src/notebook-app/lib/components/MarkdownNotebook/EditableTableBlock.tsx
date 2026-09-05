@@ -24,7 +24,7 @@ import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TableCellPosition, TextSelectionPointerStartEvent } from './editorTypes'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
-import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow } from './tableModel'
+import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow, planAddTableColumnAfter } from './tableModel'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTableBlockNode, NotebookTableCell } from './types'
 import { getInlineText } from './utils'
 
@@ -299,37 +299,19 @@ export function EditableTableBlock({
     }
 
     const addTableColumnAfter = (columnIndex: number): void => {
-        const insertIndex = Math.max(0, Math.min(columnIndex + 1, columnCount))
+        const plan = planAddTableColumnAfter(node, columnIndex)
         updateNode(node.id, (currentNode) => {
             if (currentNode.type !== 'table') {
                 return currentNode
             }
-
-            const nextHeaders = normalizeTableRow(currentNode.headers, columnCount)
-            nextHeaders.splice(insertIndex, 0, { children: [] })
-            const nextRows = currentNode.rows.map((row) => {
-                const nextRow = normalizeTableRow(row, columnCount)
-                nextRow.splice(insertIndex, 0, { children: [] })
-                return nextRow
-            })
-            const nextAlignments = currentNode.alignments
-                ? Array.from({ length: columnCount }, (_, index) => currentNode.alignments?.[index])
-                : undefined
-            nextAlignments?.splice(insertIndex, 0, undefined)
-
             return {
                 ...currentNode,
-                headers: nextHeaders,
-                rows: nextRows,
-                alignments: nextAlignments,
+                headers: plan.headers,
+                rows: plan.rows,
+                alignments: plan.alignments,
             }
         })
-        restoreSelectionRef.current = {
-            nodeId: node.id,
-            tableCell: { section: 'header', rowIndex: 0, columnIndex: insertIndex },
-            start: 0,
-            end: 0,
-        }
+        restoreSelectionRef.current = plan.focus
     }
 
     const removeTableColumn = (columnIndex: number): void => {
