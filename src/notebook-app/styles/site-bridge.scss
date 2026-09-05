@@ -93,6 +93,8 @@ html.dark &,
     --link: #1d4ed8;
     --link-3000: #1d4ed8;
     --primary-highlight: rgb(29 78 216 / 12%);
+    --highlight: var(--color-accent, #1d4ed8);
+    --mark: var(--primary-highlight);
 
     /*
      * Surfaces — host site tokens (tailwind light/dark), not PostHog product black
@@ -134,6 +136,8 @@ html.dark &,
     --link: #60a5fa;
     --link-3000: #60a5fa;
     --primary-highlight: rgb(59 130 246 / 14%);
+    --highlight: var(--color-accent, #3b82f6);
+    --mark: var(--primary-highlight);
 
     /* Surfaces — tailwind dark / accent-dark (#1e1f23 / #232429) */
     --color-bg-surface-primary: #1e1f23;

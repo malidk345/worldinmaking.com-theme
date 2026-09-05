@@ -372,9 +372,141 @@ html.dark .MarkdownNotebook__wim-block,
   border-color: var(--secondary-3000-button-border) !important;
 }
 .notebook-app-scope .notebook-outline-flash {
-  outline: 2px solid #1d4ed8;
+  outline: 2px solid var(--color-accent, #1d4ed8);
   outline-offset: 4px;
   border-radius: 4px;
+}
+/* This-round OS polish: lists, empty states, InsertMenu density, accent highlights */
+.notebook-app-scope {
+  --highlight: var(--color-accent, #1d4ed8);
+  --mark: var(--primary-highlight, rgb(29 78 216 / 22%));
+  --color-bg-fill-primary-highlight: var(--primary-highlight, rgb(29 78 216 / 12%));
+  --primary-highlight: rgb(29 78 216 / 12%);
+}
+html.dark .notebook-app-scope,
+.dark .notebook-app-scope,
+.notebook-app-scope.dark,
+[data-notebook-host-theme='dark'] .notebook-app-scope {
+  --highlight: var(--color-accent, #3b82f6);
+  --mark: var(--primary-highlight, rgb(59 130 246 / 24%));
+  --primary-highlight: rgb(59 130 246 / 14%);
+  --color-bg-fill-primary-highlight: var(--primary-highlight, rgb(59 130 246 / 14%));
+}
+.notebook-app-scope .MarkdownNotebook__insert-category h5 {
+  padding: 2px 6px 1px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+.notebook-app-scope .MarkdownNotebook__insert-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  height: 28px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm, 5px);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.notebook-app-scope .MarkdownNotebook__insert-item-icon {
+  display: inline-flex;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  opacity: 0.7;
+}
+.notebook-app-scope .MarkdownNotebook__insert-item-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.notebook-app-scope .MarkdownNotebook__list-block li {
+  margin: 0;
+  padding: 0.05rem 0;
+  line-height: 1.45;
+}
+.notebook-app-scope .MarkdownNotebook__list-item-content {
+  min-height: 1.4em;
+  padding: 0.05rem 0.2rem;
+  border-radius: var(--radius-sm, 0.3125rem);
+  transition: background 100ms ease;
+}
+.notebook-app-scope .MarkdownNotebook__list-item-content:hover {
+  background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.04));
+}
+.notebook-app-scope .MarkdownNotebook__list-item-content:focus {
+  background: var(--primary-highlight, rgb(29 78 216 / 10%));
+}
+.notebook-app-scope .MarkdownNotebook__task-checkbox {
+  top: calc(0.1rem + 0.22em);
+  left: -1.25rem;
+}
+.notebook-app-scope .MarkdownNotebook__task-checkbox input {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
+  accent-color: var(--color-accent, var(--primary, #1d4ed8));
+  border-radius: 3px;
+}
+.notebook-app-scope .LemonTable__empty-state,
+.notebook-app-scope .MarkdownNotebook__empty-menu,
+.notebook-app-scope .notebook-tools-sidebar p.text-muted,
+.notebook-app-scope .notebook-outline p.text-muted {
+  font-family: var(--font-sans) !important;
+  color: var(--color-text-secondary, #6b7280);
+}
+.notebook-app-scope .LemonTable__empty-state {
+  padding: 1.25rem 0.75rem !important;
+}
+.notebook-app-scope .LemonTable__empty-state .text-primary,
+.notebook-app-scope .LemonTable__empty-state .font-semibold,
+.notebook-app-scope .LemonTable__empty-state .font-medium {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280) !important;
+}
+.notebook-app-scope .LemonTable__empty-state .text-muted,
+.notebook-app-scope .LemonTable__empty-state .text-xs {
+  font-family: var(--font-sans);
+  color: var(--color-text-tertiary, #9ca3af) !important;
+}
+.notebook-app-scope .LemonTable__empty-state > div {
+  gap: 0.5rem !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+.notebook-app-scope .MarkdownNotebook__empty-menu {
+  padding: 0.4rem 0.35rem;
+  font-size: 12px;
+  text-align: center;
+}
+.notebook-app-scope .MarkdownNotebook ::selection,
+.notebook-app-scope .MarkdownNotebook__text-group ::selection,
+.notebook-app-scope .MarkdownNotebook__list-item-content ::selection {
+  background: var(--primary-highlight, rgb(29 78 216 / 22%));
+  color: inherit;
+}
+.notebook-app-scope .MarkdownNotebook__ref {
+  background: var(--primary-highlight, rgb(29 78 216 / 12%));
+  border-bottom-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent);
+}
+.notebook-app-scope .MarkdownNotebook__ref--active,
+.notebook-app-scope .MarkdownNotebook__ref:hover {
+  background: color-mix(in sRGB, var(--color-accent, #1d4ed8) 18%, transparent);
+}
+.notebook-app-scope .MarkdownNotebook__code-ref-highlight {
+  background: var(--primary-highlight, rgb(29 78 216 / 12%));
+  border-bottom-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent);
+}
+.notebook-app-scope .MarkdownNotebook__insert-item-highlight {
+  background: var(--mark, var(--primary-highlight, rgb(29 78 216 / 22%)));
+}
+.notebook-app-scope .MarkdownNotebook__ref--flash {
+  background: var(--primary-highlight, rgb(29 78 216 / 14%));
 }
 @media print {
   .notebook-app-scope .notebook-outline,
