@@ -133,6 +133,71 @@ const NOTEBOOK_PALETTE_CSS = `
   border-radius: var(--radius-lg, 0.5rem);
   box-shadow: var(--shadow-elevation-3000);
 }
+/* InsertMenu — frosted OS panel + tertiary rows */
+.notebook-app-scope .MarkdownNotebook__insert-menu {
+  font-family: var(--font-sans) !important;
+  background: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 92%, transparent);
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-radius: var(--radius, 0.375rem);
+  box-shadow: var(--shadow-elevation-3000);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 4px;
+}
+.notebook-app-scope .MarkdownNotebook__insert-item:hover,
+.notebook-app-scope .MarkdownNotebook__insert-item:focus-visible,
+.notebook-app-scope .MarkdownNotebook__insert-item--selected {
+  background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+}
+/* NotebookFloatingToolbar bar */
+.notebook-app-scope .NotebookFloatingToolbar__bar {
+  background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: var(--radius, 0.375rem) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.notebook-app-scope .NotebookFloatingToolbar__bar .LemonButton {
+  --lemon-button-chrome-depth: 0px;
+  --lemon-button-hover-depth: 0px;
+  --lemon-button-press-depth: 0px;
+  --lemon-button-frame-bg-color: transparent;
+  font-family: var(--font-sans);
+}
+.notebook-app-scope .NotebookFloatingToolbar__bar .LemonButton__chrome::after {
+  box-shadow: none !important;
+}
+/* Code / table secondary surfaces */
+.notebook-app-scope {
+  --markdown-notebook-block-radius: 0.375rem;
+  --markdown-notebook-code-background: var(--color-bg-surface-secondary, #f5f5f5);
+  --markdown-notebook-code-border: var(--color-border-primary, #e0e0e0);
+  --markdown-notebook-code-shadow: none;
+  --markdown-notebook-code-gutter: var(--color-border-secondary, #cfcfcf);
+}
+.notebook-app-scope .MarkdownNotebook__code-group {
+  background: color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 92%, transparent);
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-left: 3px solid var(--markdown-notebook-code-gutter, var(--color-border-secondary));
+  border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+  box-shadow: none;
+}
+.notebook-app-scope .MarkdownNotebook__table-block {
+  background: var(--color-bg-surface-primary, #fff);
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-left: 3px solid var(--color-border-secondary, #cfcfcf);
+  border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+  box-shadow: none;
+}
+.notebook-app-scope .LemonModal__box,
+.notebook-app-scope .LemonModal .LemonModal__box {
+  font-family: var(--font-sans);
+  background: var(--color-bg-surface-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg, 0.5rem) !important;
+  box-shadow: var(--shadow-elevation-3000) !important;
+}
 .notebook-app-scope .NotebookPublicView {
   /* Same stack as tailwind.config.js fontFamily.sans / blog ReaderView */
   --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;

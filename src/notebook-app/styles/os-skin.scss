@@ -25,6 +25,17 @@
     --lemon-button-hover-depth: 0;
     --lemon-button-press-depth: 0.03125rem;
 
+    /* Code / table → site secondary surfaces (subtle), not PostHog product chrome */
+    --markdown-notebook-block-radius: 0.375rem;
+    --markdown-notebook-code-background: var(--color-bg-surface-secondary, #f5f5f5);
+    --markdown-notebook-code-border: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-code-shadow: none;
+    --markdown-notebook-code-gutter: var(--color-border-secondary, #cfcfcf);
+    --markdown-notebook-table-header-background: var(--color-bg-surface-secondary, #f5f5f5);
+    --markdown-notebook-table-divider: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-text-group-border: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-text-group-shadow: none;
+
     font-family: var(--font-sans);
 }
 
@@ -33,6 +44,11 @@
 html.dark &,
 [data-notebook-host-theme='dark'] & {
     --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
+    --markdown-notebook-code-background: var(--color-bg-surface-secondary, #232429);
+    --markdown-notebook-code-border: var(--color-border-primary, #3e424f);
+    --markdown-notebook-code-gutter: var(--color-border-secondary, #4a4e5c);
+    --markdown-notebook-table-header-background: var(--color-bg-surface-tertiary, #2a2b31);
+    --markdown-notebook-table-divider: var(--color-border-primary, #3e424f);
 }
 
 /*
@@ -143,4 +159,178 @@ h3.MarkdownNotebook__text-block--heading {
     border-radius: var(--radius-lg, 0.5rem);
     box-shadow: var(--shadow-elevation-3000);
     color: var(--color-text-primary, inherit);
+}
+
+/*
+ * InsertMenu — frosted OS panel (site border/radius), flatter tertiary rows.
+ * Soften heavy PostHog-style elevation from MarkdownNotebook.scss defaults.
+ */
+.MarkdownNotebook__insert-menu {
+    font-family: var(--font-sans) !important;
+    color: var(--color-text-primary);
+    background: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 92%, transparent);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: var(--shadow-elevation-3000);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 4px;
+}
+
+.MarkdownNotebook__insert-category h5,
+.MarkdownNotebook__insert-item,
+.MarkdownNotebook__empty-menu {
+    font-family: var(--font-sans) !important;
+}
+
+.MarkdownNotebook__insert-item {
+    min-height: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm, 5px);
+    font-weight: 500;
+    transition: background 100ms ease, color 100ms ease;
+}
+
+.MarkdownNotebook__insert-item:hover,
+.MarkdownNotebook__insert-item:focus-visible,
+.MarkdownNotebook__insert-item--selected {
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+    color: var(--color-text-primary);
+}
+
+/* NotebookFloatingToolbar — match format-toolbar frosted pill, flatter Lemon */
+.NotebookFloatingToolbar {
+    font-family: var(--font-sans);
+}
+
+.NotebookFloatingToolbar__bar {
+    gap: 0.05rem;
+    padding: 0.15rem 0.25rem;
+    color: var(--color-text-primary);
+    background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius, 0.375rem) !important; /* site radius, not product pill */
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    .LemonButton,
+    .LemonButton--tertiary,
+    .LemonButton--secondary {
+        --lemon-button-chrome-depth: 0px;
+        --lemon-button-hover-depth: 0px;
+        --lemon-button-press-depth: 0px;
+        --lemon-button-frame-bg-color: transparent;
+        font-family: var(--font-sans);
+    }
+
+    .LemonButton__chrome::after {
+        box-shadow: none !important;
+    }
+
+    .LemonButton:not([aria-disabled='true']):hover .LemonButton__chrome,
+    .LemonButton:not([aria-disabled='true']):active .LemonButton__chrome {
+        transform: none;
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+        border-radius: var(--radius-sm, 5px);
+    }
+}
+
+&.dark .NotebookFloatingToolbar__bar,
+.dark & .NotebookFloatingToolbar__bar,
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar {
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/*
+ * LemonMenu / 3-dot block menus — softer OS elevation (override MarkdownNotebook heavy shadow).
+ * Selectors live under jar; Popover content may portal with notebook-app-scope.
+ */
+.Popover__content:has(.LemonMenuOverlay),
+.Popover__content:has(.LemonMenuItemList),
+.LemonMenuOverlay {
+    font-family: var(--font-sans) !important;
+    background: var(--color-bg-surface-popover, var(--color-bg-surface-primary)) !important;
+    border: 1px solid var(--color-border-primary) !important;
+    border-radius: var(--radius, 0.375rem) !important;
+    box-shadow: var(--shadow-elevation-3000) !important;
+    backdrop-filter: blur(14px);
+}
+
+.LemonMenuOverlay .LemonButton {
+    font-family: var(--font-sans) !important;
+    --lemon-button-chrome-depth: 0px;
+    --lemon-button-hover-depth: 0px;
+    --lemon-button-press-depth: 0px;
+    --lemon-button-frame-bg-color: transparent;
+
+    &:hover,
+    &:focus-visible {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06)) !important;
+    }
+}
+
+/*
+ * Code blocks / tables — secondary surface language, thinner gutter, site radius.
+ */
+.MarkdownNotebook__code-group {
+    background: color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 92%, transparent);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-left: 3px solid var(--markdown-notebook-code-gutter, var(--color-border-secondary));
+    border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+    box-shadow: none;
+}
+
+.MarkdownNotebook__code-component pre,
+.MarkdownNotebook__component-preview pre {
+    background: var(--markdown-notebook-code-background);
+    border: 1px solid var(--markdown-notebook-code-border);
+    border-radius: var(--radius-sm, 0.3125rem);
+    box-shadow: none;
+}
+
+.MarkdownNotebook__table-block {
+    background: var(--color-bg-surface-primary, #fff);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-left: 3px solid var(--color-border-secondary, #cfcfcf);
+    border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+    box-shadow: none;
+}
+
+.MarkdownNotebook__table-block th {
+    background: var(--markdown-notebook-table-header-background, var(--color-bg-surface-secondary));
+}
+
+/*
+ * Ask AI / command palette islands inside notebook — RoundHog + softer Lemon frames.
+ * LemonModal / portaled panels inherit via jar + notebook-popover-panel tokens.
+ */
+.LemonModal,
+.LemonModal__overlay,
+.keyboard-pad {
+    font-family: var(--font-sans);
+}
+
+.LemonModal .LemonModal__box,
+.LemonModal__box {
+    font-family: var(--font-sans);
+    background: var(--color-bg-surface-primary) !important;
+    border: 1px solid var(--color-border-primary) !important;
+    border-radius: var(--radius-lg, 0.5rem) !important;
+    box-shadow: var(--shadow-elevation-3000) !important;
+}
+
+.LemonModal .LemonButton--primary,
+.LemonModal .LemonButton--secondary,
+.keyboard-pad .LemonButton--primary,
+.keyboard-pad .LemonButton--secondary {
+    --lemon-button-chrome-depth: 0.0625rem;
+    --lemon-button-hover-depth: 0;
+    --lemon-button-press-depth: 0.03125rem;
+}
+
+.keyboard-pad > div {
+    font-family: var(--font-sans);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-elevation-3000);
 }

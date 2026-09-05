@@ -17,8 +17,8 @@ export function NotebookFloatingToolbar({
     if (!isEditable) return null
 
     return (
-        <div className="sticky top-2 z-30 flex items-center justify-center w-full my-2 pointer-events-none">
-            <div className="pointer-events-auto flex items-center gap-0.5 px-2 py-1 bg-[var(--color-bg-surface-primary,#ffffff)]/92 backdrop-blur-md border border-primary rounded-full shadow-md transition-shadow duration-200 hover:shadow-lg">
+        <div className="NotebookFloatingToolbar sticky top-2 z-30 flex items-center justify-center w-full my-2 pointer-events-none">
+            <div className="NotebookFloatingToolbar__bar pointer-events-auto flex items-center gap-0.5 px-2 py-1 bg-[var(--color-bg-surface-primary,#ffffff)]/92 backdrop-blur-md border border-primary rounded-full shadow-md transition-shadow duration-200 hover:shadow-lg">
                 <LemonButton
                     size="small"
                     type="tertiary"

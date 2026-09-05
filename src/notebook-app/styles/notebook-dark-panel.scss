@@ -55,7 +55,7 @@
     --color-text-secondary-3000: rgba(29, 31, 39, 0.7);
     --color-text-tertiary: rgba(29, 31, 39, 0.55);
     --muted-3000: rgba(29, 31, 39, 0.55);
-    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.14);
+    --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
 
     color: #1d1f27;
 }
@@ -103,16 +103,23 @@
     --color-text-secondary-3000: rgba(241, 245, 249, 0.72);
     --color-text-tertiary: rgba(241, 245, 249, 0.55);
     --muted-3000: rgba(241, 245, 249, 0.55);
-    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
 
     color: #e2e8f0;
 }
 
 @mixin panel-controls {
+    font-family: var(--font-sans, 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui',
+        'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif);
+    --lemon-button-chrome-depth: 0.0625rem;
+    --lemon-button-hover-depth: 0;
+    --lemon-button-press-depth: 0.03125rem;
+
     .LemonInput,
     .LemonSelect,
     .LemonButton {
         color: var(--text-3000);
+        font-family: inherit;
     }
 
     .LemonInput {
@@ -159,10 +166,12 @@
     z-index: 10050;
 
     > .Popover__box {
+        font-family: var(--font-sans, inherit);
         background: var(--color-bg-surface-popover) !important;
         border: 1px solid var(--border-3000) !important;
-        border-radius: 0.75rem !important;
+        border-radius: var(--radius-lg, 0.5rem) !important;
         box-shadow: var(--shadow-elevation-3000) !important;
+        color: var(--color-text-primary, inherit);
         overflow: hidden;
         display: flex;
         flex-direction: column;
