@@ -120,23 +120,33 @@ button, input, select, textarea {
   }
 }
 
-/* Custom scrollbar matching PostHog */
+/* Site AppWindow thin rounded scrollbar (inside .notebook-app-scope jar) */
+scrollbar-width: thin;
+scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  box-shadow: none;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.3);
+  background-color: rgb(var(--text-primary, 17 17 17) / 0.28);
+  background-clip: padding-box;
+  border: 2px solid transparent;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.5);
+  background-color: rgb(var(--text-primary, 17 17 17) / 0.4);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* PostHog ProfilePicture & profile-package CSS */

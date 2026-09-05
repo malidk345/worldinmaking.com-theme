@@ -41,6 +41,9 @@ const NOTEBOOK_PALETTE_CSS = `
   --radius-base: var(--radius);
   --radius-lg: 0.5rem;
   --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
+  /* Host WINDOW_BG / PANEL_BG: bg-primary/75 backdrop-blur-3xl */
+  --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent);
+  --os-frosted-blur: blur(64px);
   /* Soften Lemon 3D pressable frame inside the jar */
   --lemon-button-chrome-depth: 0.0625rem;
   --lemon-button-hover-depth: 0;
@@ -62,7 +65,6 @@ const NOTEBOOK_PALETTE_CSS = `
   --border-bold-3000: rgb(var(--border, 182 183 175));
   --color-border-primary: rgb(var(--border, 191 193 183));
   --color-border-secondary: rgb(var(--border, 182 183 175));
-  --shadow-elevation-3000: 0 10px 38px rgba(0, 0, 0, 0.14);
   --color-text-primary: rgb(var(--text-primary, 17 17 17));
   --text-3000: rgb(var(--text-primary, 17 17 17));
 }
@@ -71,9 +73,11 @@ const NOTEBOOK_PALETTE_CSS = `
   border-color: rgb(var(--border));
 }
 .notebook-app-scope .notebook-tools-sidebar {
-  background: rgb(var(--bg));
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, rgb(var(--bg))) 75%, transparent));
   color: rgb(var(--text-primary));
   border-color: rgb(var(--border));
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 .notebook-app-scope .notebook-tools-footer {
   border-top: 1px solid rgb(var(--border));
@@ -109,10 +113,10 @@ const NOTEBOOK_PALETTE_CSS = `
   padding: 0.1rem;
   border-radius: var(--radius-sm, 5px);
   border: 1px solid rgb(var(--border));
-  background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent);
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent));
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 .notebook-app-scope .MarkdownNotebook__format-toolbar .LemonButton {
   --lemon-button-chrome-depth: 0px;
@@ -136,12 +140,12 @@ const NOTEBOOK_PALETTE_CSS = `
 /* InsertMenu — frosted OS panel + tertiary rows */
 .notebook-app-scope .MarkdownNotebook__insert-menu {
   font-family: var(--font-sans) !important;
-  background: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 92%, transparent);
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
   border: 1px solid var(--color-border-primary, rgb(var(--border)));
   border-radius: var(--radius, 0.375rem);
   box-shadow: var(--shadow-elevation-3000);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
   padding: 4px;
 }
 .notebook-app-scope .MarkdownNotebook__insert-item:hover,
@@ -151,12 +155,12 @@ const NOTEBOOK_PALETTE_CSS = `
 }
 /* NotebookFloatingToolbar bar */
 .notebook-app-scope .NotebookFloatingToolbar__bar {
-  background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent) !important;
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
   border: 1px solid rgb(var(--border)) !important;
   border-radius: var(--radius, 0.375rem) !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 .notebook-app-scope .NotebookFloatingToolbar__bar .LemonButton {
   --lemon-button-chrome-depth: 0px;
@@ -175,6 +179,9 @@ const NOTEBOOK_PALETTE_CSS = `
   --markdown-notebook-code-border: var(--color-border-primary, #e0e0e0);
   --markdown-notebook-code-shadow: none;
   --markdown-notebook-code-gutter: var(--color-border-secondary, #cfcfcf);
+  --markdown-notebook-text-group-border: var(--color-border-primary, #e0e0e0);
+  --markdown-notebook-text-group-shadow: none;
+  --markdown-notebook-text-block-gutter: var(--color-border-primary, #e0e0e0);
 }
 .notebook-app-scope .MarkdownNotebook__code-group {
   background: color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 92%, transparent);
@@ -336,6 +343,7 @@ html.dark .notebook-app-scope,
   --color-text-primary: #fafafa;
   --text-3000: #fafafa;
   --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
+  --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #1e1f23) 75%, transparent);
   --bg-light: #232429;
   --bg-3000: #141518;
 }
@@ -348,10 +356,10 @@ html.dark .MarkdownNotebook,
   --markdown-notebook-component-border: var(--color-border-primary, #3e424f);
   --markdown-notebook-text-group-background: var(--color-bg-surface-tertiary, #2a2b31);
   --markdown-notebook-text-group-border: var(--color-border-primary, #3e424f);
-  --markdown-notebook-text-group-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+  --markdown-notebook-text-group-shadow: none;
   --markdown-notebook-code-background: var(--color-bg-surface-tertiary, #2a2b31);
   --markdown-notebook-code-border: var(--color-border-primary, #3e424f);
-  --markdown-notebook-code-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --markdown-notebook-code-shadow: none;
   --bg-light: var(--color-bg-surface-secondary, #232429);
 }
 
@@ -368,8 +376,10 @@ html.dark .MarkdownNotebook__wim-block,
 }
 .notebook-app-scope.Popover > .Popover__box,
 .Popover.notebook-app-scope > .Popover__box {
-  background: var(--color-bg-surface-popover) !important;
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-popover) 75%, transparent)) !important;
   border-color: var(--secondary-3000-button-border) !important;
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 .notebook-app-scope .notebook-outline-flash {
   outline: 2px solid var(--color-accent, #1d4ed8);
@@ -507,6 +517,113 @@ html.dark .notebook-app-scope,
 }
 .notebook-app-scope .MarkdownNotebook__ref--flash {
   background: var(--primary-highlight, rgb(29 78 216 / 14%));
+}
+/* This-round: frosted surfaces, flat inputs, site scrollbars, OS cards/dividers */
+body[data-reduce-transparency='true'] .notebook-app-scope,
+html[data-reduce-transparency='true'] .notebook-app-scope {
+  --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+  --os-frosted-blur: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .notebook-app-scope {
+    --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+    --os-frosted-blur: none;
+  }
+}
+.notebook-app-scope.App,
+.notebook-app-scope .App {
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+.notebook-app-scope .MarkdownNotebook__text-group {
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 75%, transparent));
+  border: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-left: 1px solid var(--color-border-primary, rgb(var(--border)));
+  border-radius: var(--radius, 0.375rem);
+  box-shadow: none;
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+.notebook-app-scope .MarkdownNotebook__text-group:focus-within {
+  border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 34%, var(--color-border-primary, rgb(var(--border))));
+  box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+}
+.notebook-app-scope .LemonInput {
+  background-color: var(--color-bg-fill-input, #fff) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: var(--radius-sm, 0.3125rem) !important;
+  box-shadow: none !important;
+}
+.notebook-app-scope .LemonInput.LemonInput--focused:not([aria-disabled='true']),
+.notebook-app-scope .LemonInput:focus-within:not([aria-disabled='true']) {
+  border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+  box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+}
+.notebook-app-scope .notebook-rail-search input,
+.notebook-app-scope .notebook-tools-sidebar input[type='search'],
+.notebook-app-scope .notebook-tools-sidebar input[type='text'],
+.notebook-app-scope .MarkdownNotebook__format-link-input input,
+.notebook-app-scope .LemonTextArea textarea {
+  background: var(--color-bg-fill-input, rgb(var(--input-bg, var(--bg, 255 255 255)))) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: var(--radius-sm, 0.3125rem) !important;
+  box-shadow: none !important;
+  outline: none;
+}
+.notebook-app-scope .notebook-rail-search input:focus,
+.notebook-app-scope .notebook-tools-sidebar input[type='search']:focus,
+.notebook-app-scope .notebook-tools-sidebar input[type='text']:focus,
+.notebook-app-scope .MarkdownNotebook__format-link-input input:focus,
+.notebook-app-scope .LemonTextArea textarea:focus {
+  border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+  box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+}
+.notebook-app-scope {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+}
+.notebook-app-scope ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.notebook-app-scope ::-webkit-scrollbar-track {
+  background: transparent;
+  box-shadow: none;
+}
+.notebook-app-scope ::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--text-primary, 17 17 17) / 0.28);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+}
+.notebook-app-scope ::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--text-primary, 17 17 17) / 0.4);
+}
+.notebook-app-scope ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.notebook-app-scope .LemonDivider {
+  background: rgb(var(--border)) !important;
+}
+.notebook-app-scope .MarkdownNotebook__format-divider {
+  background: rgb(var(--border)) !important;
+}
+.notebook-app-scope .MarkdownNotebook__divider-block hr {
+  border-top: 1px solid var(--color-border-primary, rgb(var(--border))) !important;
+}
+.notebook-app-scope .LemonCard,
+.notebook-app-scope .LemonBanner,
+.notebook-app-scope .LemonCollapse {
+  border-color: var(--color-border-primary, rgb(var(--border))) !important;
+  border-radius: var(--radius, 0.375rem) !important;
+  box-shadow: none !important;
+}
+.notebook-app-scope .LemonModal__box,
+.notebook-app-scope .LemonModal .LemonModal__box {
+  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
+  backdrop-filter: var(--os-frosted-blur, blur(64px));
+  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 @media print {
   .notebook-app-scope .notebook-outline,

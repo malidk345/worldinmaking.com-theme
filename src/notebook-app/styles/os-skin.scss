@@ -20,6 +20,10 @@
     /* Soft frosted elevation instead of PostHog hard bottom lip */
     --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
 
+    /* Host WINDOW_BG / PANEL_BG: bg-primary/75 backdrop-blur-3xl (= blur(64px)) */
+    --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent);
+    --os-frosted-blur: blur(64px);
+
     /* Flatten Lemon 3D chrome (default depth is 0.1875rem) */
     --lemon-button-chrome-depth: 0.0625rem;
     --lemon-button-hover-depth: 0;
@@ -49,6 +53,7 @@
 html.dark &,
 [data-notebook-host-theme='dark'] & {
     --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
+    --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #1e1f23) 75%, transparent);
     --markdown-notebook-code-background: var(--color-bg-surface-secondary, #232429);
     --markdown-notebook-code-border: var(--color-border-primary, #3e424f);
     --markdown-notebook-code-gutter: var(--color-border-secondary, #4a4e5c);
@@ -89,12 +94,12 @@ html.dark &,
     gap: 0.05rem;
     padding: 0.1rem;
     color: var(--color-text-primary);
-    background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent);
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent));
     border: 1px solid rgb(var(--border));
     border-radius: var(--radius-sm, 5px);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 
     .LemonButton,
     .LemonButton--tertiary,
@@ -176,12 +181,12 @@ h3.MarkdownNotebook__text-block--heading {
 .MarkdownNotebook__insert-menu {
     font-family: var(--font-sans) !important;
     color: var(--color-text-primary);
-    background: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 92%, transparent);
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
     border: 1px solid var(--color-border-primary, rgb(var(--border)));
     border-radius: var(--radius, 0.375rem);
     box-shadow: var(--shadow-elevation-3000);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
     padding: 4px;
 }
 
@@ -250,12 +255,12 @@ h3.MarkdownNotebook__text-block--heading {
     gap: 0.05rem;
     padding: 0.15rem 0.25rem;
     color: var(--color-text-primary);
-    background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent) !important;
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
     border: 1px solid rgb(var(--border)) !important;
     border-radius: var(--radius, 0.375rem) !important; /* site radius, not product pill */
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 
     .LemonButton,
     .LemonButton--tertiary,
@@ -297,7 +302,8 @@ h3.MarkdownNotebook__text-block--heading {
     border: 1px solid var(--color-border-primary) !important;
     border-radius: var(--radius, 0.375rem) !important;
     box-shadow: var(--shadow-elevation-3000) !important;
-    backdrop-filter: blur(14px);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 
 .LemonMenuOverlay .LemonButton {
@@ -512,3 +518,209 @@ h3.MarkdownNotebook__text-block--heading {
     background: color-mix(in sRGB, var(--color-accent, #3b82f6) 22%, transparent);
 }
 
+/*
+ * Reduce transparency — host body/html[data-reduce-transparency="true"]
+ * and prefers-reduced-transparency (mirrors frostedSurfaces.ts).
+ */
+body[data-reduce-transparency='true'] &,
+html[data-reduce-transparency='true'] & {
+    --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+    --os-frosted-blur: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    & {
+        --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+        --os-frosted-blur: none;
+    }
+}
+
+/*
+ * Surfaces — notebook root / tools sidebar / popovers → host frosted 75% + blur-3xl.
+ */
+&.App,
+.App {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.notebook-tools-sidebar {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent)) !important;
+    border-color: rgb(var(--border)) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.notebook-tools-footer {
+    border-top: 1px solid rgb(var(--border)) !important;
+}
+
+&.Popover > .Popover__box,
+.Popover__box {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-popover, #fff) 75%, transparent)) !important;
+    border-color: var(--color-border-primary, rgb(var(--border))) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.LemonModal__box {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+/*
+ * Cards / text groups — OS secondary card language (flat border-primary, site radius).
+ * Kill PostHog document-card 3px left gutter + inset lip shadows.
+ */
+.MarkdownNotebook__text-group {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 75%, transparent));
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-left: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: none;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+
+    &:hover {
+        border-color: var(--color-border-secondary, rgb(var(--border)));
+    }
+
+    &:focus-within {
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 34%, var(--color-border-primary, rgb(var(--border))));
+        box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+    }
+}
+
+/* list/code/table outer cards — same flat OS secondary border weight */
+.MarkdownNotebook__list-block,
+.MarkdownNotebook__blockquote-group {
+    border-color: var(--color-border-primary, rgb(var(--border)));
+    box-shadow: none;
+}
+
+/*
+ * Inputs — LemonInput / search / title: flat border, OS radius, accent soft focus.
+ * No heavy Lemon inset / 3D frame.
+ */
+.LemonInput {
+    background-color: var(--color-bg-fill-input, #fff) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius-sm, 0.3125rem) !important;
+    box-shadow: none !important;
+
+    &:hover:not([aria-disabled='true']) {
+        border-color: var(--color-border-secondary, rgb(var(--border))) !important;
+    }
+
+    &.LemonInput--focused:not([aria-disabled='true']),
+    &:focus-within:not([aria-disabled='true']) {
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+        box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+    }
+}
+
+.notebook-rail-search input,
+.notebook-tools-sidebar input[type='search'],
+.notebook-tools-sidebar input[type='text'],
+.MarkdownNotebook__format-link-input input,
+.LemonTextArea textarea {
+    background: var(--color-bg-fill-input, rgb(var(--input-bg, var(--bg, 255 255 255)))) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius-sm, 0.3125rem) !important;
+    box-shadow: none !important;
+    outline: none;
+
+    &:focus,
+    &:focus-visible {
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+        box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+    }
+}
+
+/*
+ * Scrollbars — site AppWindow thin rounded rails (transparent track).
+ * Overrides index.tokens PostHog 6px product scrollbar inside the jar.
+ */
+& {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+}
+
+& ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+& ::-webkit-scrollbar-track {
+    background: transparent;
+    box-shadow: none;
+}
+
+& ::-webkit-scrollbar-track:vertical {
+    margin-block: 6px;
+}
+
+& ::-webkit-scrollbar-track:horizontal {
+    margin-inline: 6px;
+}
+
+& ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.28);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+}
+
+& ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.4);
+}
+
+& ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.5);
+}
+
+& ::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/*
+ * Dividers / separators — site border-primary weight (1px channel border).
+ */
+.LemonDivider {
+    background: rgb(var(--border)) !important;
+}
+
+.LemonDivider--vertical {
+    width: 1px !important;
+}
+
+.MarkdownNotebook__format-divider {
+    width: 1px;
+    background: rgb(var(--border)) !important;
+}
+
+.MarkdownNotebook__divider-block hr {
+    border-top: 1px solid var(--color-border-primary, rgb(var(--border))) !important;
+}
+
+.MarkdownNotebook__format-style-buttons--separated,
+.MarkdownNotebook__format-link-editor {
+    border-color: rgb(var(--border)) !important;
+}
+
+/*
+ * Leftover PostHog product chrome under jar — flatten remaining card elevation.
+ */
+.LemonCard,
+.LemonBanner,
+.LemonCollapse {
+    border-color: var(--color-border-primary, rgb(var(--border))) !important;
+    border-radius: var(--radius, 0.375rem) !important;
+    box-shadow: none !important;
+}
+
+.LemonTable {
+    border-color: var(--color-border-primary, rgb(var(--border)));
+}
