@@ -13,6 +13,9 @@ export const SLASH_NATIVE_KEYS = [
     'text-heading-1',
     'text-heading-2',
     'text-heading-3',
+    'text-bullet-list',
+    'text-numbered-list',
+    'text-todo-list',
 ] as const
 
 export const SLASH_REGISTRY_TAGS = [

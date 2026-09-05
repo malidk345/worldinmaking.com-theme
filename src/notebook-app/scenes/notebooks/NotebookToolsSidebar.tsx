@@ -426,7 +426,7 @@ function NotebookToolsSidebarInner({
                                       mobileOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                                   }`}
                               >
-                                  <IconSidebarClose className="size-5" />
+                                  <IconSidebarClose className="!size-6 shrink-0" />
                               </button>,
                               fabHost
                           )

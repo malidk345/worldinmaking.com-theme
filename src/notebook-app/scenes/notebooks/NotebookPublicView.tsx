@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import type { StoredNotebook } from './notebookStorage'
@@ -55,6 +55,13 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
     const href = handle ? profileHref(handle) : ''
     const postedAt = notebook.createdAt || notebook.updatedAt
     const bodyMarkdown = documentMarkdown(notebook.content || '', displayTitle)
+    const readingStats = useMemo(() => {
+        if (!bodyMarkdown) return null
+        const words = (bodyMarkdown.trim().match(/\S+/g) || []).length
+        if (words === 0) return null
+        const minutes = Math.max(1, Math.ceil(words / 200))
+        return { words, minutes }
+    }, [bodyMarkdown])
 
     const handleCopyLink = async () => {
         try {
@@ -88,6 +95,14 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         <span suppressHydrationWarning className="text-sm text-muted">
                             {dayjs(postedAt).fromNow()}
                         </span>
+                    ) : null}
+                    {readingStats ? (
+                        <>
+                            <span className="text-muted opacity-40">•</span>
+                            <span className="text-sm text-muted">
+                                {readingStats.minutes} min read ({readingStats.words.toLocaleString()} words)
+                            </span>
+                        </>
                     ) : null}
                     {category ? (
                         <span className="text-xs text-secondary border border-primary rounded px-1.5 py-0.5">

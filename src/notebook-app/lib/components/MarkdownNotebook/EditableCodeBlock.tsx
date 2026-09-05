@@ -319,7 +319,12 @@ export function EditableCodeBlock({
                 spellCheck={false}
                 suppressContentEditableWarning
             />
-            <div className="MarkdownNotebook__code-block-actions" contentEditable={false}>
+            <div className="MarkdownNotebook__code-block-actions flex items-center gap-1 p-1" contentEditable={false}>
+                {node.language ? (
+                    <span className="text-[10px] font-mono text-muted uppercase px-1.5 py-0.5 select-none tracking-wider">
+                        {node.language}
+                    </span>
+                ) : null}
                 <LemonButton
                     size="xsmall"
                     icon={<IconCopy />}

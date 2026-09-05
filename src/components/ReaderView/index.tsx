@@ -1540,7 +1540,7 @@ function ReaderViewContent({
                                 mobileNavOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                         >
-                            <IconSidebarClose className="size-5" />
+                            <IconSidebarClose className="!size-6 shrink-0" />
                         </button>
                     )}
                     <div className="flex flex-1 min-h-0">

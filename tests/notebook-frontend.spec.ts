@@ -192,6 +192,9 @@ test.describe('notebook frontend helpers', () => {
         expect(keys).toEqual(
             expect.arrayContaining([
                 'media-table',
+                'text-bullet-list',
+                'text-numbered-list',
+                'text-todo-list',
                 'component-Image',
                 'component-Embed',
                 'component-Latex',

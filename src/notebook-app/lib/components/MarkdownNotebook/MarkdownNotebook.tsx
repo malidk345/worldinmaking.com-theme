@@ -2051,7 +2051,10 @@ function MarkdownNotebookEditor({
                     },
                     onAskAI ? openAIPrompt : undefined,
                     false,
-                    extraInsertCommands ? extraInsertCommands(insertMenuApi) : []
+                    extraInsertCommands ? extraInsertCommands(insertMenuApi) : [],
+                    (nodeId) => {
+                        restoreSelectionRef.current = { nodeId, listItemIndex: 0, start: 0, end: 0 }
+                    }
                 ),
                 hiddenInsertCommandKeys
             ),

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { ReactNode, type CSSProperties, useEffect, useRef } from 'react'
 
-import { IconCode, IconList, IconPencil, IconSparkles } from '@posthog/icons'
+import { IconCheck, IconCode, IconList, IconPencil, IconSparkles } from '@posthog/icons'
 
 import {
     INSERT_MENU_GAP,
@@ -212,7 +212,8 @@ export function buildInsertCommands(
     focusInsertedCode: (nodeId: string) => void,
     openAIPrompt?: (nodeId: string) => void,
     isAskAIDisabled?: boolean,
-    extraCommands: InsertCommand[] = []
+    extraCommands: InsertCommand[] = [],
+    focusInsertedList?: (nodeId: string) => void
 ): InsertCommand[] {
     const commonCategory = COMMON_INSERT_COMMAND_CATEGORY
 
@@ -265,6 +266,28 @@ export function buildInsertCommands(
             text: '',
         })
         focusInsertedCode(targetNodeId)
+    }
+
+    const insertList = (targetNodeId: string, options: { ordered: boolean; task?: boolean }): void => {
+        const nodeId = makeEmptyParagraph('list').id
+        replaceNode(targetNodeId, {
+            id: nodeId,
+            type: 'list',
+            ordered: options.ordered,
+            items: [
+                {
+                    children: [],
+                    depth: 0,
+                    ordered: options.ordered,
+                    checked: options.task ? false : undefined,
+                },
+            ],
+        })
+        if (focusInsertedList) {
+            focusInsertedList(nodeId)
+        } else {
+            focusInsertedText(nodeId)
+        }
     }
 
     const aiCommands: InsertCommand[] = openAIPrompt
@@ -420,6 +443,33 @@ export function buildInsertCommands(
                     level: 3,
                     children: [],
                 }),
+        },
+        {
+            key: 'text-bullet-list',
+            label: 'Bulleted list',
+            category: 'Text',
+            description: 'Bullet list',
+            aliases: ['bullet', 'bulleted', 'ul', 'list', 'madde'],
+            icon: <IconList />,
+            run: (targetNodeId) => insertList(targetNodeId, { ordered: false }),
+        },
+        {
+            key: 'text-numbered-list',
+            label: 'Numbered list',
+            category: 'Text',
+            description: 'Numbered list',
+            aliases: ['numbered', 'ordered', 'ol', 'numarali'],
+            icon: <IconList />,
+            run: (targetNodeId) => insertList(targetNodeId, { ordered: true }),
+        },
+        {
+            key: 'text-todo-list',
+            label: 'To-do list',
+            category: 'Text',
+            description: 'Task checkbox list',
+            aliases: ['todo', 'task', 'checkbox', 'check', 'gorev'],
+            icon: <IconCheck />,
+            run: (targetNodeId) => insertList(targetNodeId, { ordered: false, task: true }),
         },
     ]
 
