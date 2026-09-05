@@ -1,5 +1,0 @@
-refactor(appwindow): extract hooks for visibility, switcher, and actions
-
-Extract inline logic in AppWindow index into distinct custom hooks
-(useWindowVisibility, useWindowSwitcher, and useWindowActions) to improve
-component modularity and reduce size.

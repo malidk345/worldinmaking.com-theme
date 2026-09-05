@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { ReactNode, type CSSProperties, useEffect, useRef } from 'react'
+import { ReactNode, type CSSProperties, useEffect, useMemo, useRef } from 'react'
 
 import { IconCheck, IconCode, IconList, IconPencil, IconSparkles } from '@posthog/icons'
 
@@ -64,8 +64,8 @@ export function InsertMenu({
     onClose: () => void
 }): JSX.Element {
     const selectedItemRef = useRef<HTMLButtonElement | null>(null)
-    const filteredCommands = getFilteredInsertCommands(commands, query)
-    const commandsByCategory = groupInsertCommandsByCategory(filteredCommands)
+    const filteredCommands = useMemo(() => getFilteredInsertCommands(commands, query), [commands, query])
+    const commandsByCategory = useMemo(() => groupInsertCommandsByCategory(filteredCommands), [filteredCommands])
     const selectedCommandIndex = getClampedInsertMenuSelectedIndex(selectedIndex, filteredCommands.length)
     const selectedCommand = filteredCommands[selectedCommandIndex]
     const selectedCommandKey = selectedCommand?.key
