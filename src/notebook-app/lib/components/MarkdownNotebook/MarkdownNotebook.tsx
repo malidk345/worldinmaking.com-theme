@@ -212,6 +212,7 @@ import {
     getListItemIndex,
     getListItemRefKey,
     planApplyListItemTaskShortcut,
+    planUpdateListItemChildren,
     planDeleteListItemAtStart,
     planSplitListItem,
     shiftListItemSubtreeDepth,
@@ -4384,16 +4385,11 @@ function MarkdownNotebookEditor({
                 if (currentNode.type !== 'list') {
                     return currentNode
                 }
-                const targetItemIndex = getListItemIndex(currentNode.items, itemIndex, itemId)
-                if (!currentNode.items[targetItemIndex]) {
+                const plan = planUpdateListItemChildren(currentNode, itemIndex, itemId, nextChildren)
+                if (!plan) {
                     return currentNode
                 }
-                return {
-                    ...currentNode,
-                    items: currentNode.items.map((item, index) =>
-                        index === targetItemIndex ? { ...item, children: nextChildren } : item
-                    ),
-                }
+                return { ...currentNode, items: plan.items }
             })
             return
         }

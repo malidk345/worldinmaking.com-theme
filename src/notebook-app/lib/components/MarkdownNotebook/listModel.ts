@@ -400,3 +400,29 @@ export function planApplyListItemTaskShortcut(
         },
     }
 }
+
+export type ListItemChildrenUpdatePlan = {
+    items: NotebookListItem[]
+}
+
+/**
+ * Replace one list item's inline children (lookup by index + optional id).
+ * Shared by EditableListBlock input and MarkdownNotebook list edits.
+ */
+export function planUpdateListItemChildren(
+    node: NotebookListBlockNode,
+    itemIndex: number,
+    itemId: string | undefined,
+    children: NotebookInlineNode[]
+): ListItemChildrenUpdatePlan | null {
+    const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
+    if (!node.items[targetItemIndex]) {
+        return null
+    }
+
+    return {
+        items: node.items.map((item, index) =>
+            index === targetItemIndex ? { ...item, children } : item
+        ),
+    }
+}
