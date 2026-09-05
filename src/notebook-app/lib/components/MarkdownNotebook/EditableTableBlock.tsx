@@ -24,7 +24,7 @@ import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TableCellPosition, TextSelectionPointerStartEvent } from './editorTypes'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
-import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow } from './tableModel'
+import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow, planAddTableRowAfter } from './tableModel'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTableBlockNode, NotebookTableCell } from './types'
 import { getInlineText } from './utils'
 
@@ -244,22 +244,14 @@ export function EditableTableBlock({
     }
 
     const addTableRowAfter = (rowIndex: number, columnIndex: number): void => {
-        const insertIndex = Math.max(0, Math.min(rowIndex + 1, rows.length))
+        const plan = planAddTableRowAfter(node, rowIndex, columnIndex)
         updateNode(node.id, (currentNode) => {
             if (currentNode.type !== 'table') {
                 return currentNode
             }
-
-            const nextRows = currentNode.rows.map((row) => normalizeTableRow(row, columnCount))
-            nextRows.splice(insertIndex, 0, makeEmptyTableRow(columnCount))
-            return { ...currentNode, rows: nextRows }
+            return { ...currentNode, rows: plan.rows }
         })
-        restoreSelectionRef.current = {
-            nodeId: node.id,
-            tableCell: { section: 'body', rowIndex: insertIndex, columnIndex },
-            start: 0,
-            end: 0,
-        }
+        restoreSelectionRef.current = plan.focus
     }
 
     const removeTableRow = (rowIndex: number): void => {
