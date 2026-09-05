@@ -30,6 +30,21 @@ const NOTEBOOK_PALETTE_CSS = `
      Do NOT set --bg here — that washes the list/editor to near-white. */
   --border: 192 192 192;
   --input-border: 210 210 210;
+  /* Typography → site ReaderView (RoundHog). Editor + chrome, not Inter. */
+  --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+  --font-title: var(--font-sans);
+  --font-button: var(--font-sans);
+  font-family: var(--font-sans);
+  /* Density → OS frosted / OSButton radius */
+  --radius: 0.375rem;
+  --radius-sm: 0.3125rem;
+  --radius-base: var(--radius);
+  --radius-lg: 0.5rem;
+  --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
+  /* Soften Lemon 3D pressable frame inside the jar */
+  --lemon-button-chrome-depth: 0.0625rem;
+  --lemon-button-hover-depth: 0;
+  --lemon-button-press-depth: 0.03125rem;
   --color-bg-surface-primary: rgb(var(--bg, 255 255 255));
   --color-bg-surface-secondary: rgb(var(--accent, 229 231 224));
   --color-bg-surface-tertiary: rgb(var(--accent, 229 231 224));
@@ -68,9 +83,56 @@ const NOTEBOOK_PALETTE_CSS = `
   border-color: rgb(var(--input-border));
   color: rgb(var(--text-primary));
 }
-.notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; }
-.notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 1rem; }
-.notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.125rem; }
+.notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; } /* 14px */
+.notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 0.9375rem; } /* 15px = ReaderView prose-sm */
+.notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.0625rem; } /* 17px */
+.notebook-app-scope .MarkdownNotebook,
+.notebook-app-scope .MarkdownNotebook__text-group,
+.notebook-app-scope .MarkdownNotebook__text-block {
+  font-family: var(--font-sans);
+}
+.notebook-app-scope .MarkdownNotebook__text-group {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.notebook-app-scope h1.MarkdownNotebook__text-block--heading { font-family: var(--font-title); font-size: 1.5rem; line-height: 1.3; }
+.notebook-app-scope h1.MarkdownNotebook__text-block.MarkdownNotebook__text-block--heading.MarkdownNotebook__text-block--title { font-size: 1.65rem; line-height: 1.25; }
+.notebook-app-scope h2.MarkdownNotebook__text-block--heading { font-family: var(--font-title); font-size: 1.25rem; line-height: 1.35; }
+.notebook-app-scope h3.MarkdownNotebook__text-block--heading { font-family: var(--font-title); font-size: 1.0625rem; line-height: 1.4; }
+/* Soft Lemon primary/secondary + floating format toolbar */
+.notebook-app-scope .LemonButton--primary:not([aria-disabled='true']):active .LemonButton__chrome,
+.notebook-app-scope .LemonButton--secondary:not([aria-disabled='true']):active .LemonButton__chrome {
+  transform: translateY(1px);
+}
+.notebook-app-scope .MarkdownNotebook__format-toolbar {
+  padding: 0.1rem;
+  border-radius: var(--radius-sm, 5px);
+  border: 1px solid rgb(var(--border));
+  background: color-mix(in sRGB, var(--color-bg-surface-primary) 90%, transparent);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.notebook-app-scope .MarkdownNotebook__format-toolbar .LemonButton {
+  --lemon-button-chrome-depth: 0px;
+  --lemon-button-hover-depth: 0px;
+  --lemon-button-press-depth: 0px;
+  --lemon-button-frame-bg-color: transparent;
+}
+.notebook-app-scope .MarkdownNotebook__format-toolbar .LemonButton__chrome::after {
+  box-shadow: none !important;
+}
+.notebook-app-scope .MarkdownNotebook__format-toolbar .LemonButton:not([aria-disabled='true']):hover .LemonButton__chrome,
+.notebook-app-scope .MarkdownNotebook__format-toolbar .LemonButton:not([aria-disabled='true']):active .LemonButton__chrome {
+  transform: none;
+}
+.notebook-app-scope.Popover > .Popover__box,
+.Popover.notebook-app-scope > .Popover__box {
+  font-family: var(--font-sans);
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: var(--shadow-elevation-3000);
+}
 .notebook-app-scope .NotebookPublicView {
   /* Same stack as tailwind.config.js fontFamily.sans / blog ReaderView */
   --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
@@ -208,7 +270,7 @@ html.dark .notebook-app-scope,
   --color-border-secondary: #4a4e5c;
   --color-text-primary: #fafafa;
   --text-3000: #fafafa;
-  --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
   --bg-light: #232429;
   --bg-3000: #141518;
 }
