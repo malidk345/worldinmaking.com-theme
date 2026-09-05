@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { LemonButton, LemonDropdown, LemonInput, LemonDivider, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { LemonDropdown, LemonInput, LemonDivider, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconNotebook, IconPlus } from '@posthog/icons'
 import { getNotebooks } from '../notebookStorage'
 
@@ -36,6 +37,10 @@ export function NotebookSelectButton({
         onCreateNew()
     }
 
+    const osSize = size === 'medium' ? 'md' : 'sm'
+    const osVariant =
+        type === 'primary' ? 'primary' : type === 'secondary' ? 'secondary' : 'default'
+
     const popoverContent = (
         <div className="w-72 p-2 flex flex-col gap-2 max-h-96">
             <LemonInput
@@ -49,28 +54,32 @@ export function NotebookSelectButton({
             />
 
             <div className="flex flex-col gap-1">
-                <LemonButton
-                    size="small"
+                <OSButton
+                    size="sm"
                     icon={<IconPlus />}
                     onClick={handleCreate}
-                    fullWidth
-                    type="tertiary"
+                    width="full"
+                    align="left"
+                    variant="default"
+                    hover="background"
                 >
                     New notebook
-                </LemonButton>
+                </OSButton>
 
-                <LemonButton
-                    size="small"
+                <OSButton
+                    size="sm"
                     icon={<IconNotebook />}
                     onClick={() => {
                         const welcome = notebooks.find((n) => n.id === 'welcome-notebook') || notebooks[0]
                         if (welcome) handleSelect(welcome.id)
                     }}
-                    fullWidth
-                    type="tertiary"
+                    width="full"
+                    align="left"
+                    variant="default"
+                    hover="background"
                 >
                     My scratchpad
-                </LemonButton>
+                </OSButton>
             </div>
 
             <LemonDivider className="my-1" />
@@ -82,28 +91,36 @@ export function NotebookSelectButton({
                     </div>
                 ) : (
                     filteredNotebooks.map((nb) => (
-                        <LemonButton
+                        <OSButton
                             key={nb.id}
-                            fullWidth
-                            size="small"
-                            type="stealth"
+                            width="full"
+                            size="sm"
+                            align="left"
+                            variant="default"
+                            hover="background"
                             onClick={() => handleSelect(nb.id)}
-                            sideIcon={
+                            icon={
                                 <ProfilePicture
-                                    user={nb.isTemplate ? { first_name: 'WIM' } : nb.created_by || { first_name: 'You' }}
+                                    user={
+                                        nb.isTemplate
+                                            ? { first_name: 'WIM' }
+                                            : nb.created_by || { first_name: 'You' }
+                                    }
                                     size="md"
                                 />
                             }
+                            iconPosition="right"
                         >
                             <div className="flex flex-col text-left w-full truncate">
                                 <span className="truncate text-xs font-medium text-primary">
                                     {nb.title || 'Untitled'}
                                 </span>
                                 <span className="text-[10px] text-muted truncate">
-                                    {nb.isTemplate ? 'WIM' : (nb.created_by?.first_name || 'You')} · {new Date(nb.updatedAt).toLocaleDateString()}
+                                    {nb.isTemplate ? 'WIM' : nb.created_by?.first_name || 'You'} ·{' '}
+                                    {new Date(nb.updatedAt).toLocaleDateString()}
                                 </span>
                             </div>
-                        </LemonButton>
+                        </OSButton>
                     ))
                 )}
             </div>
@@ -117,15 +134,15 @@ export function NotebookSelectButton({
             onVisibilityChange={setIsOpen}
             closeOnClickInside={false}
         >
-            <LemonButton
-                size={size}
-                type={type}
+            <OSButton
+                size={osSize}
+                variant={osVariant}
                 icon={<IconNotebook />}
                 active={isOpen}
                 tooltip="Select or search notebook"
             >
                 {buttonText || undefined}
-            </LemonButton>
+            </OSButton>
         </LemonDropdown>
     )
 }

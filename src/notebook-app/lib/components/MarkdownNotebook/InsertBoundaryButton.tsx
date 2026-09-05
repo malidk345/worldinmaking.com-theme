@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 
 import { IconPlus } from '@posthog/icons'
-import { LemonButton } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import { isInlineInsertMenuRow, isTextBlockNode } from './documentModel'
 import { NotebookBlockNode } from './types'
@@ -61,8 +61,8 @@ export function InsertBoundaryButton({
                 onMouseMove={() => setActiveBoundaryIndex(boundaryIndex)}
             />
             {isAvailable ? (
-                <LemonButton
-                    size="xsmall"
+                <OSButton
+                    size="xs"
                     icon={<IconPlus />}
                     className={clsx(
                         'MarkdownNotebook__insert-boundary-button',

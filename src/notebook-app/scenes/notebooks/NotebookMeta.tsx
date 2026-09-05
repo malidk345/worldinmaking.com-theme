@@ -1,5 +1,6 @@
 import React from 'react'
-import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
+import { LemonTag } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconExpand } from '@posthog/icons'
 
 export type NotebookChromeSyncStatus = 'saved' | 'edited' | 'local' | 'error' | 'offline'
@@ -57,20 +58,27 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
 export interface NotebookExpandButtonProps {
     isExpanded: boolean
     onToggleExpand: () => void
+    /** @deprecated prefer variant; kept for callers using Lemon names */
     type?: 'primary' | 'secondary' | 'stealth'
-    size?: 'small' | 'medium'
+    variant?: 'default' | 'primary' | 'secondary'
+    size?: 'small' | 'medium' | 'xs' | 'sm' | 'md'
 }
 
 export function NotebookExpandButton({
     isExpanded,
     onToggleExpand,
     type = 'secondary',
+    variant,
     size = 'small',
 }: NotebookExpandButtonProps): JSX.Element {
+    const sizeMap = { small: 'sm', medium: 'md', xsmall: 'xs', xs: 'xs', sm: 'sm', md: 'md' } as const
+    const variantMap = { primary: 'primary', secondary: 'secondary', stealth: 'default', tertiary: 'default' } as const
+    const osSize = sizeMap[size as keyof typeof sizeMap] ?? 'sm'
+    const osVariant = variant ?? variantMap[type as keyof typeof variantMap] ?? 'secondary'
     return (
-        <LemonButton
-            size={size}
-            type={type}
+        <OSButton
+            size={osSize}
+            variant={osVariant}
             icon={<IconExpand />}
             active={isExpanded}
             onClick={onToggleExpand}

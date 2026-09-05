@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
-    LemonButton,
     LemonInput,
     LemonMenu,
     LemonTag,
     LemonSelect,
     ProfilePicture,
 } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import { notebookMatchesQuery } from './notebookPreview'
@@ -302,7 +302,7 @@ export function NotebooksListScene({
                                   },
                         ]}
                     >
-                        <LemonButton aria-label="more" icon={<IconEllipsis />} size="small" />
+                        <OSButton aria-label="more" icon={<IconEllipsis />} size="sm" />
                     </LemonMenu>
                 )
             },
@@ -349,9 +349,9 @@ export function NotebooksListScene({
                             ]}
                         />
                     </div>
-                    <LemonButton size="small" type="primary" icon={<IconPlus />} onClick={onCreateNew}>
+                    <OSButton size="sm" variant="primary" icon={<IconPlus />} onClick={onCreateNew}>
                         New notebook
-                    </LemonButton>
+                    </OSButton>
                 </div>
             </div>
 
@@ -391,9 +391,9 @@ export function NotebooksListScene({
                                     Start a page. Inside the editor, type <span className="font-semibold">/</span> to
                                     insert a block.
                                 </p>
-                                <LemonButton type="primary" size="small" icon={<IconPlus />} onClick={onCreateNew}>
+                                <OSButton variant="primary" size="sm" icon={<IconPlus />} onClick={onCreateNew}>
                                     New notebook
-                                </LemonButton>
+                                </OSButton>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">

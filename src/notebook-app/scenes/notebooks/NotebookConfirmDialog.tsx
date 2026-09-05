@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
-import { LemonButton, LemonModal } from '~nb-lib/lemon-ui/index'
+import { LemonModal } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 
 export interface NotebookConfirmOptions {
     title: string
@@ -31,12 +32,12 @@ export function NotebookConfirmDialog({
             <div className="space-y-4">
                 {description ? <p className="text-sm text-secondary m-0 leading-relaxed">{description}</p> : null}
                 <div className="flex justify-end gap-2">
-                    <LemonButton type="secondary" size="small" onClick={onCancel}>
+                    <OSButton variant="secondary" size="sm" onClick={onCancel}>
                         {cancelLabel}
-                    </LemonButton>
-                    <LemonButton type="primary" size="small" status={danger ? 'danger' : undefined} onClick={onConfirm}>
+                    </OSButton>
+                    <OSButton variant="primary" size="sm" className={danger ? 'text-danger' : undefined} onClick={onConfirm}>
                         {confirmLabel}
-                    </LemonButton>
+                    </OSButton>
                 </div>
             </div>
         </LemonModal>
