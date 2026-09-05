@@ -24,7 +24,8 @@ import {
     IconPeople,
     IconTrash,
 } from '@posthog/icons'
-import { LemonButton, LemonMenu } from '@posthog/lemon-ui'
+import { LemonMenu } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 import { PostHogErrorBoundary } from '@posthog/react'
 
 import { ComponentPanelContext } from './componentPanelContext'
@@ -342,19 +343,25 @@ export function NotebookComponentShell({
                         )}
                         {showModeActions || showViewModeFilters ? (
                             <div className="MarkdownNotebook__component-mode-actions">
-                                <LemonButton
+                                <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label={filtersLabel}
-                                    size="xsmall"
+                                    size="xs"
                                     icon={<IconPencil />}
                                     active={componentPanels.filters}
-                                    tooltip={filtersLabel}
-                                    disabledReason={toolbarExtras?.filtersDisabledReason ?? undefined}
+                                    tooltip={
+                                        toolbarExtras?.filtersDisabledReason ?? filtersLabel
+                                    }
+                                    disabled={Boolean(toolbarExtras?.filtersDisabledReason)}
                                     onClick={() => toggleComponentPanel('filters')}
                                 />
                                 {showModeActions ? (
-                                    <LemonButton
+                                    <OSButton
+                    hover="background"
+                    zoomHover={false}
                                         aria-label={resultsLabel}
-                                        size="xsmall"
+                                        size="xs"
                                         icon={componentPanels.results ? <IconEye /> : <IconHide />}
                                         active={componentPanels.results}
                                         tooltip={resultsLabel}
@@ -423,9 +430,11 @@ export function NotebookComponentShell({
                     {mode === 'edit' || toolbarMenuItems || showCollapseToggle ? (
                         <div className="MarkdownNotebook__component-actions">
                             {showCollapseToggle ? (
-                                <LemonButton
+                                <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
-                                    size="xsmall"
+                                    size="xs"
                                     icon={hasOpenComponentPanel ? <IconCollapse /> : <IconExpand />}
                                     tooltip={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
                                     onClick={toggleAllComponentPanels}
@@ -433,22 +442,26 @@ export function NotebookComponentShell({
                             ) : null}
                             {toolbarMenuItems ? (
                                 <LemonMenu items={toolbarMenuItems} placement="bottom-end">
-                                    <LemonButton
+                                    <OSButton
+                    hover="background"
+                    zoomHover={false}
                                         aria-label="More actions"
-                                        size="xsmall"
+                                        size="xs"
                                         icon={<IconEllipsis />}
                                         tooltip="More actions"
                                     />
                                 </LemonMenu>
                             ) : null}
                             {mode === 'edit' ? (
-                                <LemonButton
+                                <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label="Delete component"
-                                    size="xsmall"
+                                    size="xs"
                                     icon={<IconTrash />}
                                     tooltip="Delete"
-                                    status="danger"
                                     onClick={deleteNode}
+                                    className="text-danger"
                                 />
                             ) : null}
                         </div>
@@ -498,15 +511,16 @@ export function NotebookComponentShell({
                 {toolbarActions ? (
                     <div className="MarkdownNotebook__component-custom-actions">
                         {toolbarActions.map((action, index) => (
-                            <LemonButton
+                            <OSButton
+                    zoomHover={false}
                                 key={index}
-                                size="xsmall"
-                                type="secondary"
+                                size="xs"
+                                variant="secondary"
                                 icon={action.icon}
                                 onClick={action.onClick}
                             >
                                 {action.text}
-                            </LemonButton>
+                            </OSButton>
                         ))}
                     </div>
                 ) : null}
@@ -583,13 +597,15 @@ export function UnknownComponentView({ node }: { node: NotebookComponentBlockNod
                         The <code>{`<${node.tagName} />`}</code> tag is not registered as a markdown notebook component.
                     </span>
                 </div>
-                <LemonButton
-                    size="xsmall"
+                <OSButton
+                    hover="background"
+                    zoomHover={false}
+                    size="xs"
                     icon={arePropsVisible ? <IconHide /> : <IconEye />}
                     onClick={() => setArePropsVisible(!arePropsVisible)}
                 >
                     {arePropsVisible ? 'Hide props' : 'Show props'}
-                </LemonButton>
+                </OSButton>
             </div>
             {arePropsVisible ? <pre>{JSON.stringify(node.props, null, 2)}</pre> : null}
         </div>

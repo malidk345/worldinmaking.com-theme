@@ -250,8 +250,9 @@ export default function OSButton({
         ...(asLink ? restProps : props),
     }
 
-    // Apply ZoomHover to default variant automatically
-    const shouldApplyZoomHover = zoomHover || (variant === 'default' && !disabled)
+    // Apply ZoomHover to default variant automatically; explicit false disables it
+    const shouldApplyZoomHover =
+        zoomHover === true || (zoomHover !== false && variant === 'default' && !disabled)
     const zoomHoverSize = typeof zoomHover === 'string' ? zoomHover : undefined
 
     // Tooltip offset based on button size

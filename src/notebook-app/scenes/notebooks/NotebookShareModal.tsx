@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import clsx from 'clsx'
-import { LemonButton, LemonInput } from '~nb-lib/lemon-ui/index'
+import { LemonInput } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import {
     IconCheck,
     IconChevronRight,
@@ -335,21 +336,19 @@ export function NotebookShareModal({
                         </select>
                     </div>
                     <div className="flex justify-end gap-1.5 pt-0.5">
-                        <LemonButton
-                            size="small"
-                            type="secondary"
-                            onClick={() => setShowInvite(false)}
-                        >
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => setShowInvite(false)}>
                             Cancel
-                        </LemonButton>
-                        <LemonButton
-                            size="small"
-                            type="primary"
+                        </OSButton>
+                        <OSButton
+                    zoomHover={false}
+                            size="sm"
+                            variant="secondary"
                             disabled={!canInvite || peopleBusy || !handle.trim()}
                             onClick={() => void sendInvite()}
                         >
                             Invite
-                        </LemonButton>
+                        </OSButton>
                     </div>
                     {peopleError ? <p className="text-[11px] text-danger m-0 leading-normal">{peopleError}</p> : null}
                 </div>
@@ -541,20 +540,14 @@ export function NotebookShareModal({
                         </label>
                     </div>
                     <div className="flex justify-end gap-1.5 pt-0.5">
-                        <LemonButton
-                            size="small"
-                            type="secondary"
-                            onClick={() => setShowPublish(false)}
-                        >
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => setShowPublish(false)}>
                             Cancel
-                        </LemonButton>
-                        <LemonButton
-                            size="small"
-                            type="primary"
-                            onClick={() => savePublish(true)}
-                        >
+                        </OSButton>
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => savePublish(true)}>
                             {isPublished ? 'Update listing' : 'Publish'}
-                        </LemonButton>
+                        </OSButton>
                     </div>
                 </div>
             ) : null}

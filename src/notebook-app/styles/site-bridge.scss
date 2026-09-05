@@ -93,6 +93,8 @@ html.dark &,
     --link: #1d4ed8;
     --link-3000: #1d4ed8;
     --primary-highlight: rgb(29 78 216 / 12%);
+    --highlight: var(--color-accent, #1d4ed8);
+    --mark: var(--primary-highlight);
 
     /*
      * Surfaces — host site tokens (tailwind light/dark), not PostHog product black
@@ -115,7 +117,7 @@ html.dark &,
     --border-bold-3000: #cfcfcf;
     --color-border-primary: #e0e0e0;
     --color-border-secondary: #cfcfcf;
-    --shadow-elevation-3000: 0 10px 38px rgba(0, 0, 0, 0.14);
+    --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
 }
 
 &.dark,
@@ -134,6 +136,8 @@ html.dark &,
     --link: #60a5fa;
     --link-3000: #60a5fa;
     --primary-highlight: rgb(59 130 246 / 14%);
+    --highlight: var(--color-accent, #3b82f6);
+    --mark: var(--primary-highlight);
 
     /* Surfaces — tailwind dark / accent-dark (#1e1f23 / #232429) */
     --color-bg-surface-primary: #1e1f23;
@@ -153,7 +157,7 @@ html.dark &,
     --border-bold-3000: #4a4e5c;
     --color-border-primary: #3e424f;
     --color-border-secondary: #4a4e5c;
-    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
+    --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
     --bg-light: #232429;
     --bg-3000: #141518;
     --text-3000: #f1f5f9;
@@ -191,4 +195,26 @@ html.dark &,
     .notebook-app-scope .MarkdownNotebook__invite-picker {
         display: none !important;
     }
+}
+
+/*
+ * Density / radius / elevation → OS frosted values.
+ * Complements os-skin.scss; kept here so color+density live in one bridge.
+ */
+& {
+    --radius: 0.375rem;
+    --radius-sm: 0.3125rem;
+    --radius-base: var(--radius);
+    --radius-lg: 0.5rem;
+    --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
+    --lemon-button-chrome-depth: 0.0625rem;
+    --lemon-button-hover-depth: 0;
+    --lemon-button-press-depth: 0.03125rem;
+}
+
+&.dark,
+.dark &,
+html.dark &,
+[data-notebook-host-theme='dark'] & {
+    --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
 }

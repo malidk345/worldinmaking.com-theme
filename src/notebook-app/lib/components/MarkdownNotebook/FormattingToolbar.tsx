@@ -9,7 +9,8 @@ import {
 } from 'react'
 
 import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import { LemonButton, LemonInput } from '~nb-lib/lemon-ui/index'
+import { LemonInput } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconBold, IconItalic, IconLink } from '../../icons/iconsShim'
 
 import {
@@ -267,9 +268,11 @@ export function FormattingToolbar({
                     const isActive =
                         button.style === 'blockquote' ? selectedBlockQuoted : selectedBlockStyle === button.style
                     return (
-                        <LemonButton
+                        <OSButton
+                        hover="background"
+                        zoomHover={false}
                             key={button.label}
-                            size="xsmall"
+                            size="xs"
                             icon={button.icon}
                             tooltip={button.label}
                             aria-label={button.label}
@@ -277,55 +280,71 @@ export function FormattingToolbar({
                             active={isActive}
                             className="MarkdownNotebook__format-style-button"
                             onClick={() =>
-                                setBlockStyle(button.style === 'blockquote' || !isActive ? button.style : 'paragraph')
+                                setBlockStyle(
+                                    button.style === 'blockquote' || !isActive
+                                        ? button.style
+                                        : 'paragraph'
+                                )
                             }
                         >
                             {button.content}
-                        </LemonButton>
+                        </OSButton>
                     )
                 })}
             </div>
             {showInlineActions ? (
                 <>
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconBold />}
                         tooltip="Bold"
                         aria-label="Bold"
                         onClick={() => applyInlineMark('bold')}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconItalic />}
                         tooltip="Italic"
                         aria-label="Italic"
                         onClick={() => applyInlineMark('italic')}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         tooltip="Underline"
                         aria-label="Underline"
                         onClick={() => applyInlineMark('underline')}
                     >
                         <span className="font-semibold underline">U</span>
-                    </LemonButton>
-                    <LemonButton
-                        size="xsmall"
+                    </OSButton>
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         tooltip="Strikethrough"
                         aria-label="Strikethrough"
                         onClick={() => applyInlineMark('strike')}
                     >
                         <span className="font-semibold line-through">S</span>
-                    </LemonButton>
-                    <LemonButton
-                        size="xsmall"
+                    </OSButton>
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconCode />}
                         tooltip="Inline code"
                         aria-label="Inline code"
                         onClick={() => applyInlineMark('code')}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconLink />}
                         tooltip="Link"
                         aria-label="Link"
@@ -333,8 +352,10 @@ export function FormattingToolbar({
                         active={hasExistingLink || isLinkEditorOpen}
                         onClick={openLinkEditor}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconCopy />}
                         tooltip="Copy"
                         aria-label="Copy"
@@ -343,8 +364,10 @@ export function FormattingToolbar({
                 </>
             ) : null}
             {startInlineCommentAtSelection ? (
-                <LemonButton
-                    size="xsmall"
+                <OSButton
+                        hover="background"
+                        zoomHover={false}
+                    size="xs"
                     icon={<IconComment />}
                     tooltip="Comment"
                     aria-label="Comment on selection"
@@ -356,26 +379,30 @@ export function FormattingToolbar({
                 <>
                     <span className="MarkdownNotebook__format-divider" aria-hidden />
                     {selectionAIActions?.map((action) => (
-                        <LemonButton
+                        <OSButton
+                        hover="background"
+                        zoomHover={false}
                             key={action.id}
-                            size="xsmall"
-                            tooltip={action.tooltip}
+                            size="xs"
+                            tooltip={
+                                isAskAIDisabled ? 'Ask AI is already active' : action.tooltip
+                            }
                             aria-label={action.label}
                             disabled={isAskAIDisabled}
-                            disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
                             className="MarkdownNotebook__format-ai-action"
                             onClick={() => askAIAboutSelection(action.prompt)}
                         >
                             <span className="text-xs font-medium">{action.label}</span>
-                        </LemonButton>
+                        </OSButton>
                     ))}
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        hover="background"
+                        zoomHover={false}
+                        size="xs"
                         icon={<IconSparkles />}
-                        tooltip="Edit with WIM AI"
+                        tooltip={isAskAIDisabled ? 'Ask AI is already active' : 'Edit with WIM AI'}
                         aria-label="Edit with WIM AI"
                         disabled={isAskAIDisabled}
-                        disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
                         onClick={() => askAIAboutSelection()}
                     />
                 </>
@@ -402,8 +429,10 @@ export function FormattingToolbar({
                         className="MarkdownNotebook__format-link-input"
                     />
                     {hasExistingLink && sanitizeNotebookLinkHref(currentLinkHref ?? '') ? (
-                        <LemonButton
-                            size="xsmall"
+                        <OSButton
+                        hover="background"
+                        zoomHover={false}
+                            size="xs"
                             icon={<IconExternal />}
                             tooltip="Open link in new tab"
                             aria-label="Open link in new tab"
@@ -416,18 +445,22 @@ export function FormattingToolbar({
                         />
                     ) : null}
                     {hasExistingLink ? (
-                        <LemonButton size="xsmall" status="danger" onClick={removeLink}>
+                        <OSButton
+                        hover="background"
+                        zoomHover={false} size="xs" onClick={removeLink} className="text-danger">
                             Remove
-                        </LemonButton>
+                        </OSButton>
                     ) : null}
-                    <LemonButton
-                        size="xsmall"
-                        type="primary"
+                    <OSButton
+                        zoomHover={false}
+                        size="xs"
+                        variant="secondary"
                         onClick={setLink}
-                        disabledReason={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}
+                        disabled={!normalizedLinkHref}
+                        tooltip={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}
                     >
                         {hasExistingLink ? 'Update' : 'Set'}
-                    </LemonButton>
+                    </OSButton>
                 </div>
             ) : null}
         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
+import { LemonMenu } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconEllipsis, IconCopy, IconShare, IconTrash, IconCheck } from '@posthog/icons'
 import {
     exportNotebookAsMarkdown,
@@ -140,7 +141,9 @@ export function NotebookMenu({
                 },
             ]}
         >
-            <LemonButton size="small" icon={<IconEllipsis />} />
+            <OSButton
+                    hover="background"
+                    zoomHover={false} size="sm" icon={<IconEllipsis />} />
         </LemonMenu>
     )
 }

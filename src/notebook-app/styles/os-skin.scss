@@ -1,0 +1,1057 @@
+/**
+ * OS skin — pull Lemon chrome toward WorldInMaking shell language.
+ * Imported only inside `.notebook-app-scope` (cam fanus intact).
+ * Softens 3D pressable frames, densifies radius/elevation, RoundHog typography.
+ */
+
+& {
+    /* Match Tailwind fontFamily.sans / blog ReaderView */
+    --font-sans: 'RoundHog', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui',
+        'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+    --font-title: var(--font-sans);
+    --font-button: var(--font-sans);
+
+    /* Site-tighter radius (OSButton uses ~5–6px) */
+    --radius: 0.375rem;
+    --radius-sm: 0.3125rem;
+    --radius-base: var(--radius);
+    --radius-lg: 0.5rem;
+
+    /* Soft frosted elevation instead of PostHog hard bottom lip */
+    --shadow-elevation-3000: 0 4px 18px rgba(0, 0, 0, 0.1);
+
+    /* Host WINDOW_BG / PANEL_BG: bg-primary/75 backdrop-blur-3xl (= blur(64px)) */
+    --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent);
+    --os-frosted-blur: blur(64px);
+
+    /* Flatten Lemon 3D chrome (default depth is 0.1875rem) */
+    --lemon-button-chrome-depth: 0.0625rem;
+    --lemon-button-hover-depth: 0;
+    --lemon-button-press-depth: 0.03125rem;
+
+    /* Code / table → site secondary surfaces (subtle), not PostHog product chrome */
+    --markdown-notebook-block-radius: 0.375rem;
+    --markdown-notebook-code-background: var(--color-bg-surface-secondary, #f5f5f5);
+    --markdown-notebook-code-border: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-code-shadow: none;
+    --markdown-notebook-code-gutter: var(--color-border-secondary, #cfcfcf);
+    --markdown-notebook-table-header-background: var(--color-bg-surface-secondary, #f5f5f5);
+    --markdown-notebook-table-divider: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-text-group-border: var(--color-border-primary, #e0e0e0);
+    --markdown-notebook-text-group-shadow: none;
+
+    /* Selection / comment marks → site accent (not PostHog orange/yellow) */
+    --highlight: var(--color-accent, #1d4ed8);
+    --mark: var(--primary-highlight, rgb(29 78 216 / 22%));
+    --color-bg-fill-primary-highlight: var(--primary-highlight, rgb(29 78 216 / 12%));
+
+    font-family: var(--font-sans);
+}
+
+&.dark,
+.dark &,
+html.dark &,
+[data-notebook-host-theme='dark'] & {
+    --shadow-elevation-3000: 0 6px 22px rgba(0, 0, 0, 0.28);
+    --os-frosted-bg: color-mix(in sRGB, var(--color-bg-surface-primary, #1e1f23) 75%, transparent);
+    --markdown-notebook-code-background: var(--color-bg-surface-secondary, #232429);
+    --markdown-notebook-code-border: var(--color-border-primary, #3e424f);
+    --markdown-notebook-code-gutter: var(--color-border-secondary, #4a4e5c);
+    --markdown-notebook-table-header-background: var(--color-bg-surface-tertiary, #2a2b31);
+    --markdown-notebook-table-divider: var(--color-border-primary, #3e424f);
+    --highlight: var(--color-accent, #3b82f6);
+    --mark: var(--primary-highlight, rgb(59 130 246 / 24%));
+    --color-bg-fill-primary-highlight: var(--primary-highlight, rgb(59 130 246 / 14%));
+}
+
+/*
+ * Primary / secondary LemonButtons: flatter hover, channel border, less product frame.
+ * Keep component structure (InsertMenu / Share dropdowns) — skin only.
+ */
+.LemonButton--primary,
+.LemonButton--secondary {
+    --lemon-button-chrome-depth: 0.0625rem;
+}
+
+.LemonButton--primary .LemonButton__chrome::before,
+.LemonButton--secondary .LemonButton__chrome::before {
+    border-color: rgb(var(--border));
+}
+
+.LemonButton--primary:not([aria-disabled='true']):hover .LemonButton__chrome::after,
+.LemonButton--secondary:not([aria-disabled='true']):hover .LemonButton__chrome::after {
+    /* Soft fill hover — no heavy 3D lip growth */
+    box-shadow: 0 1px 0 -1px var(--lemon-button-frame-bg-color, transparent);
+}
+
+.LemonButton--primary:not([aria-disabled='true']):active .LemonButton__chrome,
+.LemonButton--secondary:not([aria-disabled='true']):active .LemonButton__chrome {
+    transform: translateY(1px);
+}
+
+/* Floating format toolbar — tertiary / OSButton feel */
+.MarkdownNotebook__format-toolbar {
+    gap: 0.05rem;
+    padding: 0.1rem;
+    color: var(--color-text-primary);
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--radius-sm, 5px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+
+    .LemonButton,
+    .LemonButton--tertiary,
+    .LemonButton--secondary {
+        --lemon-button-chrome-depth: 0px;
+        --lemon-button-hover-depth: 0px;
+        --lemon-button-press-depth: 0px;
+        --lemon-button-frame-bg-color: transparent;
+    }
+
+    .LemonButton__chrome::after {
+        box-shadow: none !important;
+    }
+
+    .LemonButton:not([aria-disabled='true']):hover .LemonButton__chrome,
+    .LemonButton:not([aria-disabled='true']):active .LemonButton__chrome {
+        transform: none;
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+        border-radius: var(--radius-sm, 5px);
+    }
+}
+
+&.dark .MarkdownNotebook__format-toolbar,
+.dark & .MarkdownNotebook__format-toolbar,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__format-toolbar {
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+
+
+/*
+ * OSButton in notebook — Lemon-adjacent, quiet (no PostHog orange, no flat ghost).
+ */
+.MarkdownNotebook__format-toolbar,
+.NotebookFloatingToolbar__bar {
+    button.relative {
+        font-weight: 500;
+        border-radius: var(--radius-sm, 5px) !important;
+        border-color: transparent !important;
+        background: transparent;
+        transition: background 120ms ease, border-color 120ms ease;
+
+        &:hover:not(:disabled) {
+            background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06)) !important;
+            border-color: transparent !important;
+        }
+
+        &:active:not(:disabled) {
+            background: rgba(0, 0, 0, 0.09) !important;
+        }
+    }
+}
+
+&.dark .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+.dark & .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+&.dark .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled),
+.dark & .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled),
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+&.dark .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+.dark & .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+&.dark .NotebookFloatingToolbar__bar button.relative:active:not(:disabled),
+.dark & .NotebookFloatingToolbar__bar button.relative:active:not(:disabled),
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar button.relative:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Raised OSButton (primary/secondary group): quiet Lemon secondary chrome, not orange */
+button.group {
+    background-color: var(--secondary-3000-frame-bg, #cfcfcf) !important;
+    border-color: var(--secondary-3000-button-border, #bdbdbd) !important;
+
+    > span {
+        background-color: var(--color-bg-surface-primary, #fff) !important;
+        border-color: var(--secondary-3000-button-border, #bdbdbd) !important;
+        color: var(--color-text-primary, inherit) !important;
+        font-weight: 500 !important;
+    }
+}
+
+&.dark button.group,
+.dark & button.group,
+[data-notebook-host-theme='dark'] & button.group {
+    background-color: var(--color-border-primary, #3e424f) !important;
+    border-color: var(--color-border-primary, #3e424f) !important;
+
+    > span {
+        background-color: var(--color-bg-surface-primary, #1e1f23) !important;
+        border-color: var(--color-border-primary, #3e424f) !important;
+    }
+}
+
+/* Soft filled default OSButtons elsewhere in notebook chrome (menus/modals) */
+.LemonModal button.relative,
+.NotebookShareModal button.relative,
+.CommandPaletteModal button.relative,
+.NotebookConfirmDialog button.relative {
+    font-weight: 500;
+
+    &:hover:not(:disabled) {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+    }
+}
+
+/* Editor body metrics → ReaderView prose-sm (~15px / 1.5) */
+.MarkdownNotebook,
+.MarkdownNotebook__text-group {
+    font-family: var(--font-sans);
+}
+
+.MarkdownNotebook__text-group {
+    font-size: 15px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+}
+
+/* Heading scale closer to published ReaderView */
+h1.MarkdownNotebook__text-block--heading {
+    font-family: var(--font-title);
+    font-size: 1.5rem;
+    line-height: 1.3;
+}
+
+h1.MarkdownNotebook__text-block.MarkdownNotebook__text-block--heading.MarkdownNotebook__text-block--title {
+    font-size: 1.65rem;
+    line-height: 1.25;
+}
+
+h2.MarkdownNotebook__text-block--heading {
+    font-family: var(--font-title);
+    font-size: 1.25rem;
+    line-height: 1.35;
+}
+
+h3.MarkdownNotebook__text-block--heading {
+    font-family: var(--font-title);
+    font-size: 1.0625rem;
+    line-height: 1.4;
+}
+
+/* Kill remaining Inter-only / pure-black islands in popovers */
+&.Popover > .Popover__box {
+    font-family: var(--font-sans);
+    background: var(--color-bg-surface-popover) !important;
+    border-color: var(--secondary-3000-button-border) !important;
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-elevation-3000);
+    color: var(--color-text-primary, inherit);
+}
+
+/*
+ * InsertMenu — frosted OS panel (site border/radius), flatter tertiary rows.
+ * Soften heavy PostHog-style elevation from MarkdownNotebook.scss defaults.
+ */
+.MarkdownNotebook__insert-menu {
+    font-family: var(--font-sans) !important;
+    color: var(--color-text-primary);
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: var(--shadow-elevation-3000);
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+    padding: 4px;
+}
+
+.MarkdownNotebook__insert-category h5,
+.MarkdownNotebook__insert-item,
+.MarkdownNotebook__empty-menu {
+    font-family: var(--font-sans) !important;
+}
+
+/* Rows ~ OSButton md: px-1.5 py-1 gap-1, icon size-4, compact */
+.MarkdownNotebook__insert-category h5 {
+    padding: 2px 6px 1px;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+
+.MarkdownNotebook__insert-item {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* gap-1 */
+    min-height: 28px;
+    height: 28px;
+    padding: 4px 6px; /* py-1 px-1.5 */
+    border-radius: var(--radius-sm, 5px);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: background 100ms ease, color 100ms ease;
+}
+
+.MarkdownNotebook__insert-item-icon {
+    display: inline-flex;
+    flex: 0 0 16px;
+    align-items: center;
+    justify-content: center;
+    width: 16px; /* size-4 */
+    height: 16px;
+    margin: 0;
+    opacity: 0.7;
+}
+
+.MarkdownNotebook__insert-item-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.MarkdownNotebook__insert-item:hover,
+.MarkdownNotebook__insert-item:focus-visible,
+.MarkdownNotebook__insert-item--selected {
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+    color: var(--color-text-primary);
+
+    .MarkdownNotebook__insert-item-icon {
+        opacity: 1;
+        color: var(--color-text-primary);
+    }
+}
+
+/* NotebookFloatingToolbar — match format-toolbar frosted pill, flatter Lemon */
+.NotebookFloatingToolbar {
+    font-family: var(--font-sans);
+}
+
+.NotebookFloatingToolbar__bar {
+    gap: 0.05rem;
+    padding: 0.15rem 0.25rem;
+    color: var(--color-text-primary);
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius, 0.375rem) !important; /* site radius, not product pill */
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+
+    .LemonButton,
+    .LemonButton--tertiary,
+    .LemonButton--secondary {
+        --lemon-button-chrome-depth: 0px;
+        --lemon-button-hover-depth: 0px;
+        --lemon-button-press-depth: 0px;
+        --lemon-button-frame-bg-color: transparent;
+        font-family: var(--font-sans);
+    }
+
+    .LemonButton__chrome::after {
+        box-shadow: none !important;
+    }
+
+    .LemonButton:not([aria-disabled='true']):hover .LemonButton__chrome,
+    .LemonButton:not([aria-disabled='true']):active .LemonButton__chrome {
+        transform: none;
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+        border-radius: var(--radius-sm, 5px);
+    }
+}
+
+&.dark .NotebookFloatingToolbar__bar,
+.dark & .NotebookFloatingToolbar__bar,
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar {
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/*
+ * LemonMenu / 3-dot block menus — softer OS elevation (override MarkdownNotebook heavy shadow).
+ * Selectors live under jar; Popover content may portal with notebook-app-scope.
+ */
+.Popover__content:has(.LemonMenuOverlay),
+.Popover__content:has(.LemonMenuItemList),
+.LemonMenuOverlay {
+    font-family: var(--font-sans) !important;
+    background: var(--color-bg-surface-popover, var(--color-bg-surface-primary)) !important;
+    border: 1px solid var(--color-border-primary) !important;
+    border-radius: var(--radius, 0.375rem) !important;
+    box-shadow: var(--shadow-elevation-3000) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.LemonMenuOverlay .LemonButton {
+    font-family: var(--font-sans) !important;
+    --lemon-button-chrome-depth: 0px;
+    --lemon-button-hover-depth: 0px;
+    --lemon-button-press-depth: 0px;
+    --lemon-button-frame-bg-color: transparent;
+
+    &:hover,
+    &:focus-visible {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06)) !important;
+    }
+}
+
+/*
+ * Code blocks / tables — secondary surface language, thinner gutter, site radius.
+ */
+.MarkdownNotebook__code-group {
+    background: color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 92%, transparent);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-left: 3px solid var(--markdown-notebook-code-gutter, var(--color-border-secondary));
+    border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+    box-shadow: none;
+}
+
+.MarkdownNotebook__code-component pre,
+.MarkdownNotebook__component-preview pre {
+    background: var(--markdown-notebook-code-background);
+    border: 1px solid var(--markdown-notebook-code-border);
+    border-radius: var(--radius-sm, 0.3125rem);
+    box-shadow: none;
+}
+
+.MarkdownNotebook__table-block {
+    background: var(--color-bg-surface-primary, #fff);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-left: 3px solid var(--color-border-secondary, #cfcfcf);
+    border-radius: 0 var(--radius, 0.375rem) var(--radius, 0.375rem) 0;
+    box-shadow: none;
+}
+
+.MarkdownNotebook__table-block th {
+    background: var(--markdown-notebook-table-header-background, var(--color-bg-surface-secondary));
+}
+
+/*
+ * Ask AI / command palette islands inside notebook — RoundHog + softer Lemon frames.
+ * LemonModal / portaled panels inherit via jar + notebook-popover-panel tokens.
+ */
+.LemonModal,
+.LemonModal__overlay,
+.keyboard-pad {
+    font-family: var(--font-sans);
+}
+
+.LemonModal .LemonModal__box,
+.LemonModal__box {
+    font-family: var(--font-sans);
+    background: var(--color-bg-surface-primary) !important;
+    border: 1px solid var(--color-border-primary) !important;
+    border-radius: var(--radius-lg, 0.5rem) !important;
+    box-shadow: var(--shadow-elevation-3000) !important;
+}
+
+.LemonModal .LemonButton--primary,
+.LemonModal .LemonButton--secondary,
+.keyboard-pad .LemonButton--primary,
+.keyboard-pad .LemonButton--secondary {
+    --lemon-button-chrome-depth: 0.0625rem;
+    --lemon-button-hover-depth: 0;
+    --lemon-button-press-depth: 0.03125rem;
+}
+
+.keyboard-pad > div {
+    font-family: var(--font-sans);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-elevation-3000);
+}
+
+/*
+ * List items / task checkboxes — OS list density (not Lemon product checklist).
+ * Compact row rhythm closer to site trees / OSButton md hover.
+ */
+.MarkdownNotebook__list-block li {
+    margin: 0;
+    padding: 0.05rem 0;
+    line-height: 1.45;
+}
+
+.MarkdownNotebook__list-item-content {
+    min-height: 1.4em;
+    padding: 0.05rem 0.2rem;
+    border-radius: var(--radius-sm, 0.3125rem);
+    transition: background 100ms ease;
+}
+
+.MarkdownNotebook__list-item-content:hover {
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.04));
+}
+
+.MarkdownNotebook__list-item-content:focus {
+    background: var(--primary-highlight, rgb(29 78 216 / 10%));
+}
+
+.MarkdownNotebook__task-checkbox {
+    top: calc(0.1rem + 0.22em);
+    left: -1.25rem;
+}
+
+.MarkdownNotebook__task-checkbox input {
+    width: 0.875rem; /* 14px — OS list, not Lemon 1rem checklist */
+    height: 0.875rem;
+    margin: 0;
+    accent-color: var(--color-accent, var(--primary, #1d4ed8));
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+/*
+ * Empty states — muted RoundHog copy, less PostHog empty-illustration chrome.
+ */
+.LemonTable__empty-state,
+.MarkdownNotebook__empty-menu,
+.notebook-tools-sidebar p.text-muted,
+.notebook-outline p.text-muted {
+    font-family: var(--font-sans) !important;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.LemonTable__empty-state {
+    padding: 1.25rem 0.75rem !important;
+
+    .text-primary,
+    .font-semibold,
+    .font-medium {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--color-text-secondary, #6b7280) !important;
+    }
+
+    .text-muted,
+    .text-xs {
+        font-family: var(--font-sans);
+        color: var(--color-text-tertiary, #9ca3af) !important;
+    }
+
+    /* Soften product empty chrome; keep the primary CTA usable */
+    > div {
+        gap: 0.5rem !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+}
+
+.MarkdownNotebook__empty-menu {
+    padding: 0.4rem 0.35rem;
+    font-size: 12px;
+    text-align: center;
+}
+
+/*
+ * Selection + comment / ref highlights → site accent tokens
+ * (overrides MarkdownNotebook.scss orange fallbacks rgb(235 145 0 / …)).
+ */
+.MarkdownNotebook ::selection,
+.MarkdownNotebook__text-group ::selection,
+.MarkdownNotebook__list-item-content ::selection {
+    background: var(--primary-highlight, rgb(29 78 216 / 22%));
+    color: inherit;
+}
+
+.MarkdownNotebook__ref {
+    background: var(--primary-highlight, rgb(29 78 216 / 12%));
+    border-bottom-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent);
+}
+
+.MarkdownNotebook__ref--active,
+.MarkdownNotebook__ref:hover {
+    background: color-mix(in sRGB, var(--color-accent, #1d4ed8) 18%, transparent);
+}
+
+.MarkdownNotebook__code-ref-highlight {
+    background: var(--primary-highlight, rgb(29 78 216 / 12%));
+    border-bottom-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent);
+}
+
+.MarkdownNotebook__insert-item-highlight {
+    background: var(--mark, var(--primary-highlight, rgb(29 78 216 / 22%)));
+}
+
+.MarkdownNotebook__ref--flash {
+    background: var(--primary-highlight, rgb(29 78 216 / 14%));
+}
+
+&.dark .MarkdownNotebook__ref,
+.dark & .MarkdownNotebook__ref,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__ref,
+&.dark .MarkdownNotebook__code-ref-highlight,
+.dark & .MarkdownNotebook__code-ref-highlight,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__code-ref-highlight {
+    background: var(--primary-highlight, rgb(59 130 246 / 14%));
+    border-bottom-color: color-mix(in sRGB, var(--color-accent, #3b82f6) 55%, transparent);
+}
+
+&.dark .MarkdownNotebook__ref--active,
+&.dark .MarkdownNotebook__ref:hover,
+.dark & .MarkdownNotebook__ref--active,
+.dark & .MarkdownNotebook__ref:hover,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__ref--active,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__ref:hover {
+    background: color-mix(in sRGB, var(--color-accent, #3b82f6) 22%, transparent);
+}
+
+/*
+ * Reduce transparency — host body/html[data-reduce-transparency="true"]
+ * and prefers-reduced-transparency (mirrors frostedSurfaces.ts).
+ */
+body[data-reduce-transparency='true'] &,
+html[data-reduce-transparency='true'] & {
+    --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+    --os-frosted-blur: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    & {
+        --os-frosted-bg: var(--color-bg-surface-primary, #fff);
+        --os-frosted-blur: none;
+    }
+}
+
+/*
+ * Surfaces — notebook root / tools sidebar / popovers → host frosted 75% + blur-3xl.
+ */
+&.App,
+.App {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent));
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.notebook-tools-sidebar {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary, #fff) 75%, transparent)) !important;
+    border-color: rgb(var(--border)) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.notebook-tools-footer {
+    border-top: 1px solid rgb(var(--border)) !important;
+}
+
+&.Popover > .Popover__box,
+.Popover__box {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-popover, #fff) 75%, transparent)) !important;
+    border-color: var(--color-border-primary, rgb(var(--border))) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+
+.LemonModal__box {
+    background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-primary) 75%, transparent)) !important;
+    backdrop-filter: var(--os-frosted-blur, blur(64px));
+    -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+}
+/* Text groups — no outer card. Prose flows like site ReaderView;
+ * frosted/border chrome belongs on chrome (sidebar, menus), not around paragraphs.
+ */
+.MarkdownNotebook__text-group {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    &:hover,
+    &:focus-within {
+        border: none;
+        box-shadow: none;
+    }
+}
+
+
+/* list/code/table outer cards — same flat OS secondary border weight */
+.MarkdownNotebook__list-block,
+.MarkdownNotebook__blockquote-group {
+    border-color: var(--color-border-primary, rgb(var(--border)));
+    box-shadow: none;
+}
+
+/*
+ * Inputs — LemonInput / search / title: flat border, OS radius, accent soft focus.
+ * No heavy Lemon inset / 3D frame.
+ */
+.LemonInput {
+    background-color: var(--color-bg-fill-input, #fff) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius-sm, 0.3125rem) !important;
+    box-shadow: none !important;
+
+    &:hover:not([aria-disabled='true']) {
+        border-color: var(--color-border-secondary, rgb(var(--border))) !important;
+    }
+
+    &.LemonInput--focused:not([aria-disabled='true']),
+    &:focus-within:not([aria-disabled='true']) {
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+        box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+    }
+}
+
+.notebook-rail-search input,
+.notebook-tools-sidebar input[type='search'],
+.notebook-tools-sidebar input[type='text'],
+.MarkdownNotebook__format-link-input input,
+.LemonTextArea textarea {
+    background: var(--color-bg-fill-input, rgb(var(--input-bg, var(--bg, 255 255 255)))) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius-sm, 0.3125rem) !important;
+    box-shadow: none !important;
+    outline: none;
+
+    &:focus,
+    &:focus-visible {
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, rgb(var(--border))) !important;
+        box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%)) !important;
+    }
+}
+
+/*
+ * Scrollbars — site AppWindow thin rounded rails (transparent track).
+ * Overrides index.tokens PostHog 6px product scrollbar inside the jar.
+ */
+& {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+}
+
+& ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+& ::-webkit-scrollbar-track {
+    background: transparent;
+    box-shadow: none;
+}
+
+& ::-webkit-scrollbar-track:vertical {
+    margin-block: 6px;
+}
+
+& ::-webkit-scrollbar-track:horizontal {
+    margin-inline: 6px;
+}
+
+& ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.28);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+}
+
+& ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.4);
+}
+
+& ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(var(--text-primary, 17 17 17) / 0.5);
+}
+
+& ::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/*
+ * Dividers / separators — site border-primary weight (1px channel border).
+ */
+.LemonDivider {
+    background: rgb(var(--border)) !important;
+}
+
+.LemonDivider--vertical {
+    width: 1px !important;
+}
+
+.MarkdownNotebook__format-divider {
+    width: 1px;
+    background: rgb(var(--border)) !important;
+}
+
+.MarkdownNotebook__divider-block hr {
+    border-top: 1px solid var(--color-border-primary, rgb(var(--border))) !important;
+}
+
+.MarkdownNotebook__format-style-buttons--separated,
+.MarkdownNotebook__format-link-editor {
+    border-color: rgb(var(--border)) !important;
+}
+
+/*
+ * Leftover PostHog product chrome under jar — flatten remaining card elevation.
+ */
+.LemonCard,
+.LemonBanner,
+.LemonCollapse {
+    border-color: var(--color-border-primary, rgb(var(--border))) !important;
+    border-radius: var(--radius, 0.375rem) !important;
+    box-shadow: none !important;
+}
+
+.LemonTable {
+    border-color: var(--color-border-primary, rgb(var(--border)));
+}
+
+/*
+ * Editor chrome — quiet Lemon/Quill/ProseMirror product handles to WIM OS.
+ * Drag handles, insert boundaries, block selection, placeholders, code chips.
+ */
+
+/* Drag / block handles — smaller, muted; hover like OSButton tertiary */
+.MarkdownNotebook__drag-handle {
+    width: 1rem;
+    height: 1rem;
+    top: 0.2rem;
+    color: var(--color-text-tertiary, var(--color-text-secondary, #9ca3af));
+    border-radius: var(--radius-sm, 0.3125rem);
+    opacity: 0;
+    transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
+}
+
+.MarkdownNotebook__drag-handle svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.MarkdownNotebook__row:hover .MarkdownNotebook__drag-handle {
+    opacity: 0.35;
+}
+
+.MarkdownNotebook__drag-handle:hover,
+.MarkdownNotebook__drag-handle:focus-visible {
+    opacity: 1;
+    color: var(--color-text-secondary, #6b7280);
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+}
+
+.MarkdownNotebook__drag-handle:active {
+    opacity: 1;
+    background: var(--color-bg-fill-button-tertiary-active, rgba(0, 0, 0, 0.1));
+}
+
+/* Inline blank-line + insert — quiet until hover; accent only on hover */
+.MarkdownNotebook__line-insert-menu-button {
+    color: var(--color-text-tertiary, var(--color-text-secondary));
+    --lemon-button-chrome-depth: 0px;
+    --lemon-button-hover-depth: 0px;
+    --lemon-button-press-depth: 0px;
+    --lemon-button-frame-bg-color: transparent;
+}
+
+.MarkdownNotebook__text-row--inline-menu-visible .MarkdownNotebook__line-insert-menu-button {
+    opacity: 0.28;
+}
+
+.MarkdownNotebook__line-insert-menu-hit-area:hover .MarkdownNotebook__line-insert-menu-button,
+.MarkdownNotebook__text-row--inline-menu-visible .MarkdownNotebook__line-insert-menu-button:hover,
+.MarkdownNotebook__line-insert-menu-button[aria-expanded='true'],
+.MarkdownNotebook__line-insert-menu-button:focus-visible {
+    opacity: 1;
+    color: var(--color-accent, #1d4ed8);
+    background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+    border-radius: var(--radius-sm, 0.3125rem);
+}
+
+/*
+ * Insert boundaries / + affordances — thinner lines; site accent only on hover.
+ */
+.MarkdownNotebook__insert-boundary {
+    height: 0.2rem;
+
+    &:last-child {
+        height: 1.5rem;
+        margin: 0.15rem 0;
+
+        &::before {
+            border-top: 1px solid var(--color-border-primary, rgb(var(--border)));
+            opacity: 0;
+            transition: opacity 120ms ease, border-color 120ms ease;
+        }
+
+        &:hover::before {
+            border-top-color: var(--color-accent, #1d4ed8);
+            opacity: 0.45;
+        }
+    }
+}
+
+.MarkdownNotebook__insert-boundary-button {
+    padding: 0.15rem 0.55rem;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem; /* 11px — OS chip density */
+    font-weight: 500;
+    color: var(--color-text-secondary, #6b7280);
+    background: var(--color-bg-surface-secondary, var(--color-bg-surface-primary));
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius-sm, 0.3125rem); /* site chip, not product pill */
+    box-shadow: none;
+    transition: opacity 120ms ease, color 120ms ease, border-color 120ms ease, background 120ms ease;
+
+    &:hover {
+        color: var(--color-accent, #1d4ed8);
+        background: var(--primary-highlight, rgb(29 78 216 / 10%));
+        border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 45%, var(--color-border-primary, rgb(var(--border))));
+        box-shadow: none;
+        transform: translate(-50%, -50%); /* kill product scale(1.05) */
+    }
+}
+
+.MarkdownNotebook__drop-indicator {
+    height: 0.125rem; /* thinner OS line */
+    background: var(--color-accent, #1d4ed8);
+    border-radius: 1px;
+    opacity: 0.85;
+}
+
+/*
+ * Block selection / focus rings — --primary-highlight / accent, not thick PostHog blue.
+ */
+.MarkdownNotebook__component-shell:focus::after,
+.MarkdownNotebook__component-shell--selected::after,
+.MarkdownNotebook__divider-block:focus::after,
+.MarkdownNotebook__divider-block--selected::after,
+.MarkdownNotebook__comment-block:focus::after,
+.MarkdownNotebook__comment-block--selected::after {
+    box-shadow: inset 0 0 0 1.5px color-mix(in sRGB, var(--color-accent, #1d4ed8) 55%, transparent),
+        0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+}
+
+.MarkdownNotebook__component-shell:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
+}
+
+.MarkdownNotebook__table-cell-content:focus {
+    background: var(--primary-highlight, rgb(29 78 216 / 10%));
+    box-shadow: inset 0 0 0 1px color-mix(in sRGB, var(--color-accent, #1d4ed8) 50%, transparent);
+}
+
+/* ProseMirror / TipTap selection chrome (notebook.css leftovers) */
+.ProseMirror .selectedCell::after,
+.ProseMirror-selectednode {
+    background: var(--primary-highlight, rgb(29 78 216 / 14%)) !important;
+    outline: 1.5px solid color-mix(in sRGB, var(--color-accent, #1d4ed8) 50%, transparent);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.NotebookEditor {
+    border-color: var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: none;
+    font-family: var(--font-sans);
+}
+
+/*
+ * Placeholder text — site text-muted tone (not Inter / product grey).
+ */
+.MarkdownNotebook__text-block:empty::before,
+.MarkdownNotebook__text-block--title:empty::before,
+.MarkdownNotebook__text-block--insert-placeholder:empty::before,
+.MarkdownNotebook__code-block:empty::before,
+.ProseMirror p.is-editor-empty:first-child::before,
+.MarkdownNotebook__component-toolbar-title--input::placeholder,
+.LemonInput input::placeholder,
+.LemonTextArea textarea::placeholder {
+    font-family: var(--font-sans);
+    color: var(--color-text-tertiary, rgb(var(--text-muted, 155 155 155))) !important;
+    font-style: normal;
+    opacity: 1;
+}
+
+/*
+ * Code fence language chip — OS secondary chip (border + muted mono).
+ */
+.MarkdownNotebook__code-block-actions > span {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary, #6b7280) !important;
+    background: var(--color-bg-surface-secondary, #f5f5f5);
+    border: 1px solid var(--color-border-primary, rgb(var(--border)));
+    border-radius: var(--radius-sm, 0.3125rem);
+    padding: 0.1rem 0.35rem;
+}
+
+.MarkdownNotebook__code-block-actions .LemonButton {
+    --lemon-button-chrome-depth: 0px;
+    --lemon-button-hover-depth: 0px;
+    --lemon-button-press-depth: 0px;
+    --lemon-button-frame-bg-color: transparent;
+}
+
+/*
+ * Leftover PostHog orange / heavy product chrome under the jar.
+ */
+.MarkdownNotebook__comment-chip {
+    color: var(--color-text-secondary, #6b7280);
+    background: var(--primary-highlight, rgb(29 78 216 / 10%));
+    border: 1px dashed color-mix(in sRGB, var(--color-accent, #1d4ed8) 40%, var(--color-border-primary, rgb(var(--border))));
+    border-radius: var(--radius-sm, 0.3125rem);
+
+    svg {
+        color: var(--color-accent, #1d4ed8);
+    }
+
+    &:hover {
+        background: var(--primary-highlight, rgb(29 78 216 / 16%));
+    }
+}
+
+.ProseMirror code {
+    color: var(--color-accent, #1d4ed8);
+    background: var(--primary-highlight, rgb(29 78 216 / 10%));
+    border-radius: var(--radius-sm, 0.3125rem);
+}
+
+.ProseMirror pre {
+    background: var(--markdown-notebook-code-background, var(--color-bg-surface-secondary));
+    border: 1px solid var(--markdown-notebook-code-border, var(--color-border-primary));
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: none;
+}
+
+.MarkdownNotebook__code-block {
+    caret-color: var(--color-accent, #1d4ed8);
+}
+
+/* Flatten any remaining 3D Lemon depth in editor gutters / xsmall controls */
+.MarkdownNotebook__code-block-actions .LemonButton,
+.MarkdownNotebook__table-structure-control,
+.MarkdownNotebook__line-insert-menu-button.LemonButton {
+    --lemon-button-chrome-depth: 0px;
+    --lemon-button-hover-depth: 0px;
+    --lemon-button-press-depth: 0px;
+}
+
+&.dark .MarkdownNotebook__code-block-actions > span,
+.dark & .MarkdownNotebook__code-block-actions > span,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__code-block-actions > span {
+    background: var(--color-bg-surface-tertiary, #2a2b31);
+    color: var(--color-text-secondary, #9ca3af) !important;
+    border-color: var(--color-border-primary, #3e424f);
+}
+
+&.dark .MarkdownNotebook__insert-boundary:last-child:hover::before,
+.dark & .MarkdownNotebook__insert-boundary:last-child:hover::before,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__insert-boundary:last-child:hover::before {
+    border-top-color: var(--color-accent, #3b82f6);
+}
+
+&.dark .MarkdownNotebook__component-shell:focus::after,
+&.dark .MarkdownNotebook__component-shell--selected::after,
+.dark & .MarkdownNotebook__component-shell:focus::after,
+.dark & .MarkdownNotebook__component-shell--selected::after,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__component-shell:focus::after,
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__component-shell--selected::after {
+    box-shadow: inset 0 0 0 1.5px color-mix(in sRGB, var(--color-accent, #3b82f6) 55%, transparent),
+        0 0 0 3px var(--primary-highlight, rgb(59 130 246 / 14%));
+}

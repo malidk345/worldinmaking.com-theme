@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { LemonModal, LemonInput, LemonButton } from '~nb-lib/lemon-ui/index'
+import { LemonModal, LemonInput } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconSearch, IconSparkles, IconPlus, IconNotebook } from '@posthog/icons'
 import { getNotebooks, StoredNotebook } from './notebookStorage'
 import { notebookMatchesQuery } from './notebookPreview'
@@ -116,9 +117,12 @@ export function CommandPaletteModal({
                         Quick actions
                     </div>
 
-                    <LemonButton
-                        type="stealth"
-                        fullWidth
+                    <OSButton
+                    zoomHover={false}
+                        variant="default"
+                        width="full"
+                        align="left"
+                        hover="background"
                         active={selectedIndex === 0}
                         icon={<IconSparkles className="text-orange-500" />}
                         onMouseEnter={() => setSelectedIndex(0)}
@@ -131,11 +135,14 @@ export function CommandPaletteModal({
                             <span>Ask AI</span>
                             <span className="text-xs text-muted">/ask-ai</span>
                         </div>
-                    </LemonButton>
+                    </OSButton>
 
-                    <LemonButton
-                        type="stealth"
-                        fullWidth
+                    <OSButton
+                    zoomHover={false}
+                        variant="default"
+                        width="full"
+                        align="left"
+                        hover="background"
                         active={selectedIndex === 1}
                         icon={<IconPlus />}
                         onMouseEnter={() => setSelectedIndex(1)}
@@ -145,11 +152,14 @@ export function CommandPaletteModal({
                         }}
                     >
                         Create new notebook
-                    </LemonButton>
+                    </OSButton>
 
-                    <LemonButton
-                        type="stealth"
-                        fullWidth
+                    <OSButton
+                    zoomHover={false}
+                        variant="default"
+                        width="full"
+                        align="left"
+                        hover="background"
                         active={selectedIndex === 2}
                         icon={<IconNotebook />}
                         onMouseEnter={() => setSelectedIndex(2)}
@@ -159,7 +169,7 @@ export function CommandPaletteModal({
                         }}
                     >
                         Browse templates
-                    </LemonButton>
+                    </OSButton>
 
                     {filteredNotebooks.length > 0 ? (
                         <>
@@ -167,10 +177,13 @@ export function CommandPaletteModal({
                                 Notebooks ({filteredNotebooks.length})
                             </div>
                             {filteredNotebooks.map((nb, index) => (
-                                <LemonButton
+                                <OSButton
+                    zoomHover={false}
                                     key={nb.id}
-                                    type="stealth"
-                                    fullWidth
+                                    variant="default"
+                                    width="full"
+                                    align="left"
+                                    hover="background"
                                     active={selectedIndex === actionCount + index}
                                     icon={<IconNotebook />}
                                     onMouseEnter={() => setSelectedIndex(actionCount + index)}
@@ -185,7 +198,7 @@ export function CommandPaletteModal({
                                             {nb.isTemplate ? 'Template' : 'Notebook'}
                                         </span>
                                     </div>
-                                </LemonButton>
+                                </OSButton>
                             ))}
                         </>
                     ) : query.trim() ? (
