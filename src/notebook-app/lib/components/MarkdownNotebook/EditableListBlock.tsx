@@ -16,7 +16,7 @@ import {
 } from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TextSelectionPointerStartEvent } from './editorTypes'
-import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart, planApplyListItemTaskShortcut } from './listModel'
+import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart, planApplyListItemTaskShortcut, planUpdateListItemChildren } from './listModel'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
@@ -80,7 +80,16 @@ export function EditableListBlock({
         itemId: string | undefined,
         children: NotebookInlineNode[]
     ): void => {
-        updateListItem(itemIndex, itemId, (item) => ({ ...item, children }))
+        const plan = planUpdateListItemChildren(node, itemIndex, itemId, children)
+        if (!plan) {
+            return
+        }
+        updateNode(node.id, (currentNode) => {
+            if (currentNode.type !== 'list') {
+                return currentNode
+            }
+            return { ...currentNode, items: plan.items }
+        })
     }
 
     const getListItemContentElement = (target: EventTarget | Node | null): HTMLElement | null => {
