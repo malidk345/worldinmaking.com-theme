@@ -83,7 +83,6 @@ import {
     getMarkdownNotebookVisualGroups,
     getNotebookStringProp,
     getPromptSource,
-    getTaskItemShortcut,
     getTextBlockShortcutReplacement,
     hasNotebookContent,
     getDiscussionCommentRefId,
@@ -212,6 +211,7 @@ import {
     deleteListItemSelectionRange,
     getListItemIndex,
     getListItemRefKey,
+    planApplyListItemTaskShortcut,
     planDeleteListItemAtStart,
     planSplitListItem,
     shiftListItemSubtreeDepth,
@@ -4360,25 +4360,25 @@ function MarkdownNotebookEditor({
                     return
                 }
             }
-            let taskShortcut: ReturnType<typeof getTaskItemShortcut> = null
             if (listNode?.type === 'list') {
-                const item = listNode.items[getListItemIndex(listNode.items, itemIndex, itemId)]
-                if (item && item.checked === undefined && !(item.ordered ?? listNode.ordered)) {
-                    taskShortcut = getTaskItemShortcut(nextChildren)
-                }
-            }
-            if (taskShortcut) {
-                const caretOffset = Math.max(
-                    0,
-                    (getCollapsedSelectionRange(inlineEditableElement, nodeId)?.start ?? taskShortcut.markerLength) -
-                        taskShortcut.markerLength
+                const caretStart =
+                    getCollapsedSelectionRange(inlineEditableElement, nodeId)?.start ?? null
+                const taskPlan = planApplyListItemTaskShortcut(
+                    listNode,
+                    itemIndex,
+                    itemId,
+                    nextChildren,
+                    caretStart
                 )
-                restoreSelectionRef.current = {
-                    nodeId,
-                    listItemIndex: itemIndex,
-                    listItemId: itemId,
-                    start: caretOffset,
-                    end: caretOffset,
+                if (taskPlan) {
+                    restoreSelectionRef.current = taskPlan.focus
+                    updateNode(nodeId, (currentNode) => {
+                        if (currentNode.type !== 'list') {
+                            return currentNode
+                        }
+                        return { ...currentNode, items: taskPlan.items }
+                    })
+                    return
                 }
             }
 
@@ -4393,11 +4393,7 @@ function MarkdownNotebookEditor({
                 return {
                     ...currentNode,
                     items: currentNode.items.map((item, index) =>
-                        index === targetItemIndex
-                            ? taskShortcut
-                                ? { ...item, checked: taskShortcut.checked, children: taskShortcut.children }
-                                : { ...item, children: nextChildren }
-                            : item
+                        index === targetItemIndex ? { ...item, children: nextChildren } : item
                     ),
                 }
             })

@@ -9,6 +9,7 @@ import {
     NotebookTextBlockNode,
 } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
+import { getTaskItemShortcut } from './documentModel'
 
 export type RenderedListItem = NotebookListItem & {
     index: number
@@ -351,4 +352,51 @@ export function planDeleteListItemAtStart(
         return null
     }
     return planUnwrapOrOutdentListItem(node, targetItemIndex)
+}
+
+export type ListItemTaskShortcutPlan = {
+    items: NotebookListItem[]
+    focus: RestoreInlineSelectionRequest
+}
+
+/**
+ * When a bullet item's text starts with a GFM task marker (`[ ] ` / `[x] `),
+ * convert that item into a task and restore the caret after the stripped marker.
+ * Shared by EditableListBlock input and MarkdownNotebook list edits.
+ */
+export function planApplyListItemTaskShortcut(
+    node: NotebookListBlockNode,
+    itemIndex: number,
+    itemId: string | undefined,
+    children: NotebookInlineNode[],
+    caretStart: number | null
+): ListItemTaskShortcutPlan | null {
+    const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
+    const item = node.items[targetItemIndex]
+    if (!item || item.checked !== undefined || (item.ordered ?? node.ordered)) {
+        return null
+    }
+
+    const taskShortcut = getTaskItemShortcut(children)
+    if (!taskShortcut) {
+        return null
+    }
+
+    const caretOffset = Math.max(0, (caretStart ?? taskShortcut.markerLength) - taskShortcut.markerLength)
+    const nextItems = node.items.map((currentItem, index) =>
+        index === targetItemIndex
+            ? { ...currentItem, checked: taskShortcut.checked, children: taskShortcut.children }
+            : currentItem
+    )
+
+    return {
+        items: nextItems,
+        focus: {
+            nodeId: node.id,
+            listItemIndex: targetItemIndex,
+            listItemId: item.id,
+            start: caretOffset,
+            end: caretOffset,
+        },
+    }
 }
