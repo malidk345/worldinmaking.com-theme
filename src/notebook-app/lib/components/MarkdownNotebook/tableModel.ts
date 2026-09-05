@@ -1,5 +1,5 @@
 import { InsertMenuSelectionDirection, RestoreInlineSelectionRequest, TableCellPosition } from './editorTypes'
-import { NotebookTableBlockNode, NotebookTableCell } from './types'
+import { NotebookTableAlignment, NotebookTableBlockNode, NotebookTableCell } from './types'
 
 export function getTableCellRefKey(nodeId: string, position: TableCellPosition): string {
     return `${nodeId}:${position.section}:${String(position.rowIndex)}:${String(position.columnIndex)}`
@@ -58,6 +58,50 @@ export function planInsertTableRow(node: NotebookTableBlockNode, position: Table
     // Header Enter with no body rows inserts at 0 (rowIndex -1); body Enter inserts after the focused row.
     const rowIndex = position.section === 'header' ? -1 : position.rowIndex
     return planAddTableRowAfter(node, rowIndex, position.columnIndex)
+}
+
+export type TableColumnRemovePlan = {
+    headers: NotebookTableCell[]
+    rows: NotebookTableCell[][]
+    alignments: (NotebookTableAlignment | undefined)[] | undefined
+    focus: RestoreInlineSelectionRequest
+}
+
+/** UI column-remove controls. Returns null when the table has only one column. */
+export function planRemoveTableColumn(
+    node: NotebookTableBlockNode,
+    columnIndex: number
+): TableColumnRemovePlan | null {
+    const columnCount = getTableColumnCount(node)
+    if (columnCount <= 1) {
+        return null
+    }
+
+    const removeIndex = Math.max(0, Math.min(columnIndex, columnCount - 1))
+    const nextColumnIndex = Math.max(0, Math.min(removeIndex, columnCount - 2))
+    const nextHeaders = normalizeTableRow(node.headers, columnCount).filter(
+        (_, currentColumnIndex) => currentColumnIndex !== removeIndex
+    )
+    const nextRows = node.rows.map((row) =>
+        normalizeTableRow(row, columnCount).filter((_, currentColumnIndex) => currentColumnIndex !== removeIndex)
+    )
+    const nextAlignments = node.alignments
+        ? Array.from({ length: columnCount }, (_, index) => node.alignments?.[index]).filter(
+              (_, currentColumnIndex) => currentColumnIndex !== removeIndex
+          )
+        : undefined
+
+    return {
+        headers: nextHeaders,
+        rows: nextRows,
+        alignments: nextAlignments,
+        focus: {
+            nodeId: node.id,
+            tableCell: { section: 'header', rowIndex: 0, columnIndex: nextColumnIndex },
+            start: 0,
+            end: 0,
+        },
+    }
 }
 
 export function getTableCellPositions(node: NotebookTableBlockNode): TableCellPosition[] {
