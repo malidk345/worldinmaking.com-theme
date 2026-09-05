@@ -32,3 +32,7 @@
 ## 2025-05-19 - Avoid Reduce with Array Spread for Set and String structures
 **Learning:** Using `reduce` combined with array spread syntax to iterate over Sets (`[...mySet].reduce(...)`) or Strings (`[...myString].reduce(...)`) creates redundant intermediate arrays and memory churn. When this pattern is used in deep or frequently executed parsers (like list indentation parsing or Markdown AST manipulations), it introduces unnecessary main thread overhead and execution time. A `for...of` loop is more performant as it operates on iterables without intermediate array allocations.
 **Action:** When iterating over a String or Set to compute a value or filter elements, always use a direct `for...of` loop instead of spreading the iterable into an array to pass into `.reduce`.
+
+## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
+**Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
+**Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
