@@ -336,12 +336,14 @@ export function NotebookShareModal({
                         </select>
                     </div>
                     <div className="flex justify-end gap-1.5 pt-0.5">
-                        <OSButton size="sm" variant="secondary" onClick={() => setShowInvite(false)}>
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => setShowInvite(false)}>
                             Cancel
                         </OSButton>
                         <OSButton
+                    zoomHover={false}
                             size="sm"
-                            variant="primary"
+                            variant="secondary"
                             disabled={!canInvite || peopleBusy || !handle.trim()}
                             onClick={() => void sendInvite()}
                         >
@@ -538,10 +540,12 @@ export function NotebookShareModal({
                         </label>
                     </div>
                     <div className="flex justify-end gap-1.5 pt-0.5">
-                        <OSButton size="sm" variant="secondary" onClick={() => setShowPublish(false)}>
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => setShowPublish(false)}>
                             Cancel
                         </OSButton>
-                        <OSButton size="sm" variant="primary" onClick={() => savePublish(true)}>
+                        <OSButton
+                    zoomHover={false} size="sm" variant="secondary" onClick={() => savePublish(true)}>
                             {isPublished ? 'Update listing' : 'Publish'}
                         </OSButton>
                     </div>

@@ -269,6 +269,8 @@ export function FormattingToolbar({
                         button.style === 'blockquote' ? selectedBlockQuoted : selectedBlockStyle === button.style
                     return (
                         <OSButton
+                        hover="background"
+                        zoomHover={false}
                             key={button.label}
                             size="xs"
                             icon={button.icon}
@@ -293,6 +295,8 @@ export function FormattingToolbar({
             {showInlineActions ? (
                 <>
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconBold />}
                         tooltip="Bold"
@@ -300,6 +304,8 @@ export function FormattingToolbar({
                         onClick={() => applyInlineMark('bold')}
                     />
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconItalic />}
                         tooltip="Italic"
@@ -307,6 +313,8 @@ export function FormattingToolbar({
                         onClick={() => applyInlineMark('italic')}
                     />
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         tooltip="Underline"
                         aria-label="Underline"
@@ -315,6 +323,8 @@ export function FormattingToolbar({
                         <span className="font-semibold underline">U</span>
                     </OSButton>
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         tooltip="Strikethrough"
                         aria-label="Strikethrough"
@@ -323,6 +333,8 @@ export function FormattingToolbar({
                         <span className="font-semibold line-through">S</span>
                     </OSButton>
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconCode />}
                         tooltip="Inline code"
@@ -330,6 +342,8 @@ export function FormattingToolbar({
                         onClick={() => applyInlineMark('code')}
                     />
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconLink />}
                         tooltip="Link"
@@ -339,6 +353,8 @@ export function FormattingToolbar({
                         onClick={openLinkEditor}
                     />
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconCopy />}
                         tooltip="Copy"
@@ -349,6 +365,8 @@ export function FormattingToolbar({
             ) : null}
             {startInlineCommentAtSelection ? (
                 <OSButton
+                        hover="background"
+                        zoomHover={false}
                     size="xs"
                     icon={<IconComment />}
                     tooltip="Comment"
@@ -362,6 +380,8 @@ export function FormattingToolbar({
                     <span className="MarkdownNotebook__format-divider" aria-hidden />
                     {selectionAIActions?.map((action) => (
                         <OSButton
+                        hover="background"
+                        zoomHover={false}
                             key={action.id}
                             size="xs"
                             tooltip={
@@ -376,6 +396,8 @@ export function FormattingToolbar({
                         </OSButton>
                     ))}
                     <OSButton
+                        hover="background"
+                        zoomHover={false}
                         size="xs"
                         icon={<IconSparkles />}
                         tooltip={isAskAIDisabled ? 'Ask AI is already active' : 'Edit with WIM AI'}
@@ -408,6 +430,8 @@ export function FormattingToolbar({
                     />
                     {hasExistingLink && sanitizeNotebookLinkHref(currentLinkHref ?? '') ? (
                         <OSButton
+                        hover="background"
+                        zoomHover={false}
                             size="xs"
                             icon={<IconExternal />}
                             tooltip="Open link in new tab"
@@ -421,13 +445,16 @@ export function FormattingToolbar({
                         />
                     ) : null}
                     {hasExistingLink ? (
-                        <OSButton size="xs" onClick={removeLink} className="text-danger">
+                        <OSButton
+                        hover="background"
+                        zoomHover={false} size="xs" onClick={removeLink} className="text-danger">
                             Remove
                         </OSButton>
                     ) : null}
                     <OSButton
+                        zoomHover={false}
                         size="xs"
-                        variant="primary"
+                        variant="secondary"
                         onClick={setLink}
                         disabled={!normalizedLinkHref}
                         tooltip={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}

@@ -344,6 +344,8 @@ export function NotebookComponentShell({
                         {showModeActions || showViewModeFilters ? (
                             <div className="MarkdownNotebook__component-mode-actions">
                                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label={filtersLabel}
                                     size="xs"
                                     icon={<IconPencil />}
@@ -356,6 +358,8 @@ export function NotebookComponentShell({
                                 />
                                 {showModeActions ? (
                                     <OSButton
+                    hover="background"
+                    zoomHover={false}
                                         aria-label={resultsLabel}
                                         size="xs"
                                         icon={componentPanels.results ? <IconEye /> : <IconHide />}
@@ -427,6 +431,8 @@ export function NotebookComponentShell({
                         <div className="MarkdownNotebook__component-actions">
                             {showCollapseToggle ? (
                                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label={hasOpenComponentPanel ? 'Collapse' : 'Expand'}
                                     size="xs"
                                     icon={hasOpenComponentPanel ? <IconCollapse /> : <IconExpand />}
@@ -437,6 +443,8 @@ export function NotebookComponentShell({
                             {toolbarMenuItems ? (
                                 <LemonMenu items={toolbarMenuItems} placement="bottom-end">
                                     <OSButton
+                    hover="background"
+                    zoomHover={false}
                                         aria-label="More actions"
                                         size="xs"
                                         icon={<IconEllipsis />}
@@ -446,6 +454,8 @@ export function NotebookComponentShell({
                             ) : null}
                             {mode === 'edit' ? (
                                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                                     aria-label="Delete component"
                                     size="xs"
                                     icon={<IconTrash />}
@@ -502,6 +512,7 @@ export function NotebookComponentShell({
                     <div className="MarkdownNotebook__component-custom-actions">
                         {toolbarActions.map((action, index) => (
                             <OSButton
+                    zoomHover={false}
                                 key={index}
                                 size="xs"
                                 variant="secondary"
@@ -587,6 +598,8 @@ export function UnknownComponentView({ node }: { node: NotebookComponentBlockNod
                     </span>
                 </div>
                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                     size="xs"
                     icon={arePropsVisible ? <IconHide /> : <IconEye />}
                     onClick={() => setArePropsVisible(!arePropsVisible)}

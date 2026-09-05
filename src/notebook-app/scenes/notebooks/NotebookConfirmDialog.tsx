@@ -32,10 +32,12 @@ export function NotebookConfirmDialog({
             <div className="space-y-4">
                 {description ? <p className="text-sm text-secondary m-0 leading-relaxed">{description}</p> : null}
                 <div className="flex justify-end gap-2">
-                    <OSButton variant="secondary" size="sm" onClick={onCancel}>
+                    <OSButton
+                    zoomHover={false} variant="secondary" size="sm" onClick={onCancel}>
                         {cancelLabel}
                     </OSButton>
-                    <OSButton variant="primary" size="sm" className={danger ? 'text-danger' : undefined} onClick={onConfirm}>
+                    <OSButton
+                    zoomHover={false} variant="secondary" size="sm" className={danger ? 'text-danger' : undefined} onClick={onConfirm}>
                         {confirmLabel}
                     </OSButton>
                 </div>

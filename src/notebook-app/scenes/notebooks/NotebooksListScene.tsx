@@ -302,7 +302,9 @@ export function NotebooksListScene({
                                   },
                         ]}
                     >
-                        <OSButton aria-label="more" icon={<IconEllipsis />} size="sm" />
+                        <OSButton
+                    hover="background"
+                    zoomHover={false} aria-label="more" icon={<IconEllipsis />} size="sm" />
                     </LemonMenu>
                 )
             },
@@ -349,7 +351,8 @@ export function NotebooksListScene({
                             ]}
                         />
                     </div>
-                    <OSButton size="sm" variant="primary" icon={<IconPlus />} onClick={onCreateNew}>
+                    <OSButton
+                    zoomHover={false} size="sm" variant="secondary" icon={<IconPlus />} onClick={onCreateNew}>
                         New notebook
                     </OSButton>
                 </div>
@@ -391,7 +394,8 @@ export function NotebooksListScene({
                                     Start a page. Inside the editor, type <span className="font-semibold">/</span> to
                                     insert a block.
                                 </p>
-                                <OSButton variant="primary" size="sm" icon={<IconPlus />} onClick={onCreateNew}>
+                                <OSButton
+                    zoomHover={false} variant="secondary" size="sm" icon={<IconPlus />} onClick={onCreateNew}>
                                     New notebook
                                 </OSButton>
                             </div>

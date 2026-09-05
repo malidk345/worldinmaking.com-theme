@@ -141,7 +141,9 @@ export function NotebookMenu({
                 },
             ]}
         >
-            <OSButton size="sm" icon={<IconEllipsis />} />
+            <OSButton
+                    hover="background"
+                    zoomHover={false} size="sm" icon={<IconEllipsis />} />
         </LemonMenu>
     )
 }

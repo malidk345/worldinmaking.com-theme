@@ -62,6 +62,8 @@ export function InsertBoundaryButton({
             />
             {isAvailable ? (
                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                     size="xs"
                     icon={<IconPlus />}
                     className={clsx(

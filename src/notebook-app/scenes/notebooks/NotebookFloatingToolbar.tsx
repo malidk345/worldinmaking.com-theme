@@ -20,6 +20,8 @@ export function NotebookFloatingToolbar({
         <div className="NotebookFloatingToolbar sticky top-2 z-30 flex items-center justify-center w-full my-2 pointer-events-none">
             <div className="NotebookFloatingToolbar__bar pointer-events-auto flex items-center gap-0.5 px-2 py-1 bg-[var(--color-bg-surface-primary,#ffffff)]/92 backdrop-blur-md border border-primary rounded-full shadow-md transition-shadow duration-200 hover:shadow-lg">
                 <OSButton
+                    zoomHover={false}
+                    hover="background"
                     size="sm"
                     variant="default"
                     icon={<IconPlus className="w-3.5 h-3.5" />}
@@ -30,6 +32,8 @@ export function NotebookFloatingToolbar({
                 </OSButton>
 
                 <OSButton
+                    zoomHover={false}
+                    hover="background"
                     size="sm"
                     variant="secondary"
                     icon={<IconSparkles className="w-3.5 h-3.5" />}
@@ -42,6 +46,8 @@ export function NotebookFloatingToolbar({
                 <div className="h-4 w-px bg-border mx-1" />
 
                 <OSButton
+                    zoomHover={false}
+                    hover="background"
                     size="sm"
                     variant="default"
                     icon={<IconPencil className="w-3.5 h-3.5" />}
@@ -52,6 +58,8 @@ export function NotebookFloatingToolbar({
                 </OSButton>
 
                 <OSButton
+                    zoomHover={false}
+                    hover="background"
                     size="sm"
                     variant="default"
                     icon={<IconList className="w-3.5 h-3.5" />}

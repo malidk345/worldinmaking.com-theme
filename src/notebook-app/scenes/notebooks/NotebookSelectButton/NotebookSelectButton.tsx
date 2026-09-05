@@ -55,6 +55,8 @@ export function NotebookSelectButton({
 
             <div className="flex flex-col gap-1">
                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                     size="sm"
                     icon={<IconPlus />}
                     onClick={handleCreate}
@@ -67,6 +69,8 @@ export function NotebookSelectButton({
                 </OSButton>
 
                 <OSButton
+                    hover="background"
+                    zoomHover={false}
                     size="sm"
                     icon={<IconNotebook />}
                     onClick={() => {
@@ -92,6 +96,7 @@ export function NotebookSelectButton({
                 ) : (
                     filteredNotebooks.map((nb) => (
                         <OSButton
+                    zoomHover={false}
                             key={nb.id}
                             width="full"
                             size="sm"
@@ -135,6 +140,8 @@ export function NotebookSelectButton({
             closeOnClickInside={false}
         >
             <OSButton
+                    hover="background"
+                    zoomHover={false}
                 size={osSize}
                 variant={osVariant}
                 icon={<IconNotebook />}

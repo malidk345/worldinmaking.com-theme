@@ -128,6 +128,85 @@ html.dark &,
     box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
 }
 
+
+/*
+ * OSButton in notebook — Lemon-adjacent, quiet (no PostHog orange, no flat ghost).
+ */
+.MarkdownNotebook__format-toolbar,
+.NotebookFloatingToolbar__bar {
+    button.relative {
+        font-weight: 500;
+        border-radius: var(--radius-sm, 5px) !important;
+        border-color: transparent !important;
+        background: transparent;
+        transition: background 120ms ease, border-color 120ms ease;
+
+        &:hover:not(:disabled) {
+            background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06)) !important;
+            border-color: transparent !important;
+        }
+
+        &:active:not(:disabled) {
+            background: rgba(0, 0, 0, 0.09) !important;
+        }
+    }
+}
+
+&.dark .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+.dark & .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__format-toolbar button.relative:hover:not(:disabled),
+&.dark .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled),
+.dark & .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled),
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar button.relative:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+&.dark .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+.dark & .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+[data-notebook-host-theme='dark'] & .MarkdownNotebook__format-toolbar button.relative:active:not(:disabled),
+&.dark .NotebookFloatingToolbar__bar button.relative:active:not(:disabled),
+.dark & .NotebookFloatingToolbar__bar button.relative:active:not(:disabled),
+[data-notebook-host-theme='dark'] & .NotebookFloatingToolbar__bar button.relative:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Raised OSButton (primary/secondary group): quiet Lemon secondary chrome, not orange */
+button.group {
+    background-color: var(--secondary-3000-frame-bg, #cfcfcf) !important;
+    border-color: var(--secondary-3000-button-border, #bdbdbd) !important;
+
+    > span {
+        background-color: var(--color-bg-surface-primary, #fff) !important;
+        border-color: var(--secondary-3000-button-border, #bdbdbd) !important;
+        color: var(--color-text-primary, inherit) !important;
+        font-weight: 500 !important;
+    }
+}
+
+&.dark button.group,
+.dark & button.group,
+[data-notebook-host-theme='dark'] & button.group {
+    background-color: var(--color-border-primary, #3e424f) !important;
+    border-color: var(--color-border-primary, #3e424f) !important;
+
+    > span {
+        background-color: var(--color-bg-surface-primary, #1e1f23) !important;
+        border-color: var(--color-border-primary, #3e424f) !important;
+    }
+}
+
+/* Soft filled default OSButtons elsewhere in notebook chrome (menus/modals) */
+.LemonModal button.relative,
+.NotebookShareModal button.relative,
+.CommandPaletteModal button.relative,
+.NotebookConfirmDialog button.relative {
+    font-weight: 500;
+
+    &:hover:not(:disabled) {
+        background: var(--color-bg-fill-button-tertiary-hover, rgba(0, 0, 0, 0.06));
+    }
+}
+
 /* Editor body metrics → ReaderView prose-sm (~15px / 1.5) */
 .MarkdownNotebook,
 .MarkdownNotebook__text-group {

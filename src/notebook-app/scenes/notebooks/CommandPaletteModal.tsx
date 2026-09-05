@@ -118,6 +118,7 @@ export function CommandPaletteModal({
                     </div>
 
                     <OSButton
+                    zoomHover={false}
                         variant="default"
                         width="full"
                         align="left"
@@ -137,6 +138,7 @@ export function CommandPaletteModal({
                     </OSButton>
 
                     <OSButton
+                    zoomHover={false}
                         variant="default"
                         width="full"
                         align="left"
@@ -153,6 +155,7 @@ export function CommandPaletteModal({
                     </OSButton>
 
                     <OSButton
+                    zoomHover={false}
                         variant="default"
                         width="full"
                         align="left"
@@ -175,6 +178,7 @@ export function CommandPaletteModal({
                             </div>
                             {filteredNotebooks.map((nb, index) => (
                                 <OSButton
+                    zoomHover={false}
                                     key={nb.id}
                                     variant="default"
                                     width="full"

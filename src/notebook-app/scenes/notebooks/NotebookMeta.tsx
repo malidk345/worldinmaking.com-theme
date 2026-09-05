@@ -77,6 +77,8 @@ export function NotebookExpandButton({
     const osVariant = variant ?? variantMap[type as keyof typeof variantMap] ?? 'secondary'
     return (
         <OSButton
+                    hover="background"
+                    zoomHover={false}
             size={osSize}
             variant={osVariant}
             icon={<IconExpand />}
