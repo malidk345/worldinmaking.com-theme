@@ -60,6 +60,49 @@ export function planInsertTableRow(node: NotebookTableBlockNode, position: Table
     return planAddTableRowAfter(node, rowIndex, position.columnIndex)
 }
 
+export type TableRowRemovePlan = {
+    rows: NotebookTableCell[][]
+    focus: RestoreInlineSelectionRequest
+}
+
+/** UI row-remove controls. Returns null when there are no body rows. */
+export function planRemoveTableRow(
+    node: NotebookTableBlockNode,
+    rowIndex: number
+): TableRowRemovePlan | null {
+    if (!node.rows.length) {
+        return null
+    }
+
+    const columnCount = getTableColumnCount(node)
+    const removeIndex = Math.max(0, Math.min(rowIndex, node.rows.length - 1))
+    const nextRows = node.rows
+        .map((row) => normalizeTableRow(row, columnCount))
+        .filter((_, currentRowIndex) => currentRowIndex !== removeIndex)
+    const nextRowCount = nextRows.length
+
+    return {
+        rows: nextRows,
+        focus: nextRowCount
+            ? {
+                  nodeId: node.id,
+                  tableCell: {
+                      section: 'body',
+                      rowIndex: Math.max(0, Math.min(removeIndex, nextRowCount - 1)),
+                      columnIndex: 0,
+                  },
+                  start: 0,
+                  end: 0,
+              }
+            : {
+                  nodeId: node.id,
+                  tableCell: { section: 'header', rowIndex: 0, columnIndex: 0 },
+                  start: 0,
+                  end: 0,
+              },
+    }
+}
+
 export function getTableCellPositions(node: NotebookTableBlockNode): TableCellPosition[] {
     const columnCount = getTableColumnCount(node)
     return [
