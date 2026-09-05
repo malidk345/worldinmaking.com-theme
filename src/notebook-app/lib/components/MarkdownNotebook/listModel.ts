@@ -400,3 +400,28 @@ export function planApplyListItemTaskShortcut(
         },
     }
 }
+
+export type ListItemCheckedTogglePlan = {
+    items: NotebookListItem[]
+}
+
+/**
+ * Toggle a list item's GFM task checkbox (lookup by index + optional id).
+ * Shared by EditableListBlock checkbox onChange.
+ */
+export function planToggleListItemChecked(
+    node: NotebookListBlockNode,
+    itemIndex: number,
+    itemId: string | undefined
+): ListItemCheckedTogglePlan | null {
+    const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
+    if (!node.items[targetItemIndex]) {
+        return null
+    }
+
+    return {
+        items: node.items.map((item, index) =>
+            index === targetItemIndex ? { ...item, checked: !item.checked } : item
+        ),
+    }
+}

@@ -16,7 +16,7 @@ import {
 } from './documentModel'
 import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TextSelectionPointerStartEvent } from './editorTypes'
-import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart, planApplyListItemTaskShortcut } from './listModel'
+import { RenderedListItem, buildRenderedListItems, getListItemIndex, getOrderedListStart, planApplyListItemTaskShortcut, planToggleListItemChecked } from './listModel'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
@@ -239,7 +239,16 @@ export function EditableListBlock({
     }
 
     const toggleListItemChecked = (itemIndex: number, itemId: string | undefined): void => {
-        updateListItem(itemIndex, itemId, (item) => ({ ...item, checked: !item.checked }))
+        const plan = planToggleListItemChecked(node, itemIndex, itemId)
+        if (!plan) {
+            return
+        }
+        updateNode(node.id, (currentNode) => {
+            if (currentNode.type !== 'list') {
+                return currentNode
+            }
+            return { ...currentNode, items: plan.items }
+        })
     }
 
     const renderListItems = (items: RenderedListItem[], ordered: boolean): ReactNode =>
