@@ -537,18 +537,14 @@ html[data-reduce-transparency='true'] .notebook-app-scope {
   -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
 }
 .notebook-app-scope .MarkdownNotebook__text-group {
-  background: var(--os-frosted-bg, color-mix(in sRGB, var(--color-bg-surface-secondary, #f5f5f5) 75%, transparent));
-  border: 1px solid var(--color-border-primary, rgb(var(--border)));
-  border-left: 1px solid var(--color-border-primary, rgb(var(--border)));
-  border-radius: var(--radius, 0.375rem);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   box-shadow: none;
-  backdrop-filter: var(--os-frosted-blur, blur(64px));
-  -webkit-backdrop-filter: var(--os-frosted-blur, blur(64px));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
-.notebook-app-scope .MarkdownNotebook__text-group:focus-within {
-  border-color: color-mix(in sRGB, var(--color-accent, #1d4ed8) 34%, var(--color-border-primary, rgb(var(--border))));
-  box-shadow: 0 0 0 3px var(--primary-highlight, rgb(29 78 216 / 12%));
-}
+
 .notebook-app-scope .LemonInput {
   background-color: var(--color-bg-fill-input, #fff) !important;
   border: 1px solid rgb(var(--border)) !important;
