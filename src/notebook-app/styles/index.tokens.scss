@@ -121,8 +121,10 @@ button, input, select, textarea {
 }
 
 /* Site AppWindow thin rounded scrollbar (inside .notebook-app-scope jar) */
-scrollbar-width: thin;
-scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+& {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--text-primary, 17 17 17) / 0.28) transparent;
+}
 
 ::-webkit-scrollbar {
   width: 10px;
