@@ -13,6 +13,11 @@ import {
     InsertMenuPosition,
     InsertMenuSelectionDirection,
 } from './editorTypes'
+import {
+    createInsertedCodeBlock,
+    createInsertedListBlock,
+    createInsertedTableBlock,
+} from './documentModel'
 import { makeEmptyParagraph } from './markdown'
 import { isSlashRegistryTag } from './insertCatalog'
 import { getMarkdownNotebookComponentDefaultProps } from './registry'
@@ -247,42 +252,25 @@ export function buildInsertCommands(
 
     const insertTable = (targetNodeId: string): void => {
         const nodeId = makeEmptyParagraph('table').id
-        replaceNode(targetNodeId, {
-            id: nodeId,
-            type: 'table',
-            headers: [
-                { children: [{ type: 'text', text: 'Column 1' }] },
-                { children: [{ type: 'text', text: 'Column 2' }] },
-            ],
-            rows: [[{ children: [] }, { children: [] }]],
-        })
+        replaceNode(targetNodeId, createInsertedTableBlock(nodeId))
         focusInsertedTable(nodeId)
     }
 
     const insertCode = (targetNodeId: string): void => {
-        replaceNode(targetNodeId, {
-            id: targetNodeId,
-            type: 'code',
-            text: '',
-        })
+        replaceNode(targetNodeId, createInsertedCodeBlock(targetNodeId))
         focusInsertedCode(targetNodeId)
     }
 
     const insertList = (targetNodeId: string, options: { ordered: boolean; task?: boolean }): void => {
         const nodeId = makeEmptyParagraph('list').id
-        replaceNode(targetNodeId, {
-            id: nodeId,
-            type: 'list',
-            ordered: options.ordered,
-            items: [
-                {
-                    children: [],
-                    depth: 0,
-                    ordered: options.ordered,
-                    checked: options.task ? false : undefined,
-                },
-            ],
-        })
+        replaceNode(
+            targetNodeId,
+            createInsertedListBlock({
+                id: nodeId,
+                ordered: options.ordered,
+                checked: options.task ? false : undefined,
+            })
+        )
         if (focusInsertedList) {
             focusInsertedList(nodeId)
         } else {
