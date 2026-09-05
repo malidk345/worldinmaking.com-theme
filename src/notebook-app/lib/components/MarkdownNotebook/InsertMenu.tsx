@@ -14,8 +14,11 @@ import {
     InsertMenuSelectionDirection,
 } from './editorTypes'
 import {
+    createInsertedBlockquote,
     createInsertedCodeBlock,
+    createInsertedHeading,
     createInsertedListBlock,
+    createInsertedParagraph,
     createInsertedTableBlock,
 } from './documentModel'
 import { makeEmptyParagraph } from './markdown'
@@ -358,11 +361,7 @@ export function buildInsertCommands(
             aliases: ['paragraph', 'plain text'],
             icon: <IconPencil />,
             run: (targetNodeId) => {
-                replaceNode(targetNodeId, {
-                    id: targetNodeId,
-                    type: 'paragraph',
-                    children: [],
-                })
+                replaceNode(targetNodeId, createInsertedParagraph(targetNodeId))
                 focusInsertedText(targetNodeId)
             },
         },
@@ -375,12 +374,7 @@ export function buildInsertCommands(
             category: 'Text',
             aliases: ['quote'],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
-                replaceNode(targetNodeId, {
-                    id: targetNodeId,
-                    type: 'blockquote',
-                    children: [],
-                }),
+            run: (targetNodeId) => replaceNode(targetNodeId, createInsertedBlockquote(targetNodeId)),
         },
         {
             key: 'text-code',
@@ -396,13 +390,7 @@ export function buildInsertCommands(
             category: 'Text',
             aliases: ['h1'],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
-                replaceNode(targetNodeId, {
-                    id: targetNodeId,
-                    type: 'heading',
-                    level: 1,
-                    children: [],
-                }),
+            run: (targetNodeId) => replaceNode(targetNodeId, createInsertedHeading(targetNodeId, 1)),
         },
         {
             key: 'text-heading-2',
@@ -410,13 +398,7 @@ export function buildInsertCommands(
             category: 'Text',
             aliases: ['h2'],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
-                replaceNode(targetNodeId, {
-                    id: targetNodeId,
-                    type: 'heading',
-                    level: 2,
-                    children: [],
-                }),
+            run: (targetNodeId) => replaceNode(targetNodeId, createInsertedHeading(targetNodeId, 2)),
         },
         {
             key: 'text-heading-3',
@@ -424,13 +406,7 @@ export function buildInsertCommands(
             category: 'Text',
             aliases: ['h3'],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
-                replaceNode(targetNodeId, {
-                    id: targetNodeId,
-                    type: 'heading',
-                    level: 3,
-                    children: [],
-                }),
+            run: (targetNodeId) => replaceNode(targetNodeId, createInsertedHeading(targetNodeId, 3)),
         },
         {
             key: 'text-bullet-list',

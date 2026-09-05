@@ -1074,6 +1074,41 @@ export function createInsertedListBlock(options: CreateInsertedListBlockOptions)
     }
 }
 
+
+/** Shared empty paragraph used by the slash/insert menu. */
+export function createInsertedParagraph(id: string): NotebookTextBlockNode {
+    return {
+        id,
+        type: 'paragraph',
+        children: [],
+    }
+}
+
+/** Shared empty heading used by slash insert and markdown heading shortcuts. */
+export function createInsertedHeading(
+    id: string,
+    level: 1 | 2 | 3,
+    options?: { blockquote?: boolean }
+): NotebookTextBlockNode {
+    return {
+        id,
+        type: 'heading',
+        level,
+        // A heading typed inside a quote stays part of the quote
+        blockquote: options?.blockquote ? true : undefined,
+        children: [],
+    }
+}
+
+/** Shared empty blockquote used by slash insert and markdown quote shortcuts. */
+export function createInsertedBlockquote(id: string): NotebookTextBlockNode {
+    return {
+        id,
+        type: 'blockquote',
+        children: [],
+    }
+}
+
 export function getTextBlockShortcutReplacement(
     node: NotebookTextBlockNode,
     isTitleBlock: boolean,
@@ -1085,14 +1120,9 @@ export function getTextBlockShortcutReplacement(
     if (headingShortcut !== null) {
         return {
             nodes: [
-                {
-                    id: node.id,
-                    type: 'heading',
-                    level: headingShortcut,
-                    // A heading typed inside a quote stays part of the quote
+                createInsertedHeading(node.id, headingShortcut, {
                     blockquote: node.type === 'blockquote' || node.blockquote ? true : undefined,
-                    children: [],
-                },
+                }),
             ],
             restoreSelection: { nodeId: node.id, start: 0, end: 0 },
         }
@@ -1107,13 +1137,7 @@ export function getTextBlockShortcutReplacement(
     if (node.type === 'paragraph') {
         if (getBlockquoteShortcut(text)) {
             return {
-                nodes: [
-                    {
-                        id: node.id,
-                        type: 'blockquote',
-                        children: [],
-                    },
-                ],
+                nodes: [createInsertedBlockquote(node.id)],
                 restoreSelection: { nodeId: node.id, start: 0, end: 0 },
             }
         }
