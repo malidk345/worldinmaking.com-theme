@@ -212,8 +212,8 @@ import {
     getListItemIndex,
     getListItemRefKey,
     planDeleteListItemAtStart,
+    planShiftListItemDepth,
     planSplitListItem,
-    shiftListItemSubtreeDepth,
     type ListEditPlan,
 } from './listModel'
 import {
@@ -1311,30 +1311,18 @@ function MarkdownNotebookEditor({
             }
 
             const itemId = element.dataset.markdownNotebookListItemId
-            const targetItemIndex = getListItemIndex(node.items, itemIndex, itemId)
-            const item = node.items[targetItemIndex]
-            if (!item) {
-                return false
-            }
-
-            const nextItems = shiftListItemSubtreeDepth(node.items, targetItemIndex, direction, node.ordered)
-            if (!nextItems) {
-                return false
-            }
-
             const offset = getCollapsedSelectionRange(element, node.id)?.start ?? 0
-            restoreSelectionRef.current = {
-                nodeId: node.id,
-                listItemIndex: targetItemIndex,
-                listItemId: item.id,
-                start: offset,
-                end: offset,
+            const plan = planShiftListItemDepth(node, itemIndex, itemId, direction, offset)
+            if (!plan) {
+                return false
             }
+
+            restoreSelectionRef.current = plan.focus
             commitDocument(
                 {
                     ...currentDocument,
                     nodes: nodes.map((currentNode) =>
-                        currentNode.id === node.id ? { ...node, items: nextItems } : currentNode
+                        currentNode.id === node.id ? { ...node, items: plan.items } : currentNode
                     ),
                 },
                 // A Tab indent must be its own undo step, not folded into the typing run that
