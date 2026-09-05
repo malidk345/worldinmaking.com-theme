@@ -103,6 +103,7 @@ import {
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
     planInsertNodesAtBoundary,
+    planApplyBlockStyle,
     planMergeAdjacentTextBlocks,
     planMergeTextIntoPreviousNonText,
     planReplaceCodeBlockRange,
@@ -2712,61 +2713,11 @@ function MarkdownNotebookEditor({
         commitDocument({
             ...currentDocument,
             nodes: nodes.map((node) => {
-                if (selectedCodeNodeIds.has(node.id) && node.type === 'code') {
-                    if (style === 'code') {
-                        return node
-                    }
-                    const children = plainTextToInlineNodes(node.text)
-                    if (typeof style === 'number') {
-                        return { id: node.id, type: 'heading', level: style, children }
-                    }
-                    return { id: node.id, type: style, children }
-                }
-                if (selectedListNodeIds.has(node.id) && node.type === 'list') {
-                    // Lists only toggle blockquote membership; heading and code styles do not apply to them.
-                    if (style === 'blockquote') {
-                        return { ...node, blockquote: shouldUnquote ? undefined : true }
-                    }
-                    if (style === 'paragraph' && node.blockquote) {
-                        return { ...node, blockquote: undefined }
-                    }
-                    return node
-                }
-                if (!selectedTextNodeIds.has(node.id) || !isTextBlockNode(node)) {
-                    return node
-                }
-
-                if (style === 'code') {
-                    return {
-                        id: node.id,
-                        type: 'code',
-                        text: getInlineText(node.children),
-                    }
-                }
-                if (typeof style === 'number') {
-                    // A heading applied inside a quote keeps its quote membership
-                    return {
-                        ...node,
-                        type: 'heading',
-                        level: style,
-                        blockquote: node.type === 'blockquote' || node.blockquote ? true : undefined,
-                    }
-                }
-                if (style === 'blockquote') {
-                    if (node.type === 'heading') {
-                        // Quote membership toggles without touching the heading level
-                        return { ...node, blockquote: shouldUnquote ? undefined : true }
-                    }
-                    if (shouldUnquote) {
-                        return { ...node, type: 'paragraph', level: undefined, blockquote: undefined }
-                    }
-                    return { ...node, type: 'blockquote', level: undefined, blockquote: undefined }
-                }
-                if (style === 'paragraph' && node.type === 'heading' && node.blockquote) {
-                    // Removing the heading style inside a quote downgrades to quote text, not plain text
-                    return { ...node, type: 'blockquote', level: undefined, blockquote: undefined }
-                }
-                return { ...node, type: style, level: undefined, blockquote: undefined }
+                const isSelected =
+                    (selectedCodeNodeIds.has(node.id) && node.type === 'code') ||
+                    (selectedListNodeIds.has(node.id) && node.type === 'list') ||
+                    (selectedTextNodeIds.has(node.id) && isTextBlockNode(node))
+                return isSelected ? planApplyBlockStyle(node, style, shouldUnquote) : node
             }),
         })
     }

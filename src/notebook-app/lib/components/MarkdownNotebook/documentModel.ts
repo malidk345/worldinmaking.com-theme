@@ -1,5 +1,5 @@
-import { RestoreInlineSelectionRequest, RestoreSelectionRequest, TableCellPosition } from './editorTypes'
-import { removeInlineRefMark, splitInlineNodesAt } from './inlineContent'
+import { RestoreInlineSelectionRequest, RestoreSelectionRequest, TableCellPosition, TextBlockStyle } from './editorTypes'
+import { plainTextToInlineNodes, removeInlineRefMark, splitInlineNodesAt } from './inlineContent'
 import {
     COMMENT_COMPONENT_TAG,
     DIVIDER_COMPONENT_TAG,
@@ -438,6 +438,71 @@ export function textBlocksShareContinuationStyle(left: NotebookTextBlockNode, ri
     }
 
     return left.type !== 'heading' || (left.level ?? 1) === (right.level ?? 1)
+}
+
+/** Floating-toolbar block style for one selected node (text / list / code). `shouldUnquote` is selection-wide. */
+export function planApplyBlockStyle(
+    node: NotebookBlockNode,
+    style: TextBlockStyle,
+    shouldUnquote: boolean
+): NotebookBlockNode {
+    if (node.type === 'code') {
+        if (style === 'code') {
+            return node
+        }
+        const children = plainTextToInlineNodes(node.text)
+        if (typeof style === 'number') {
+            return { id: node.id, type: 'heading', level: style, children }
+        }
+        return { id: node.id, type: style, children }
+    }
+
+    if (node.type === 'list') {
+        // Lists only toggle blockquote membership; heading and code styles do not apply to them.
+        if (style === 'blockquote') {
+            return { ...node, blockquote: shouldUnquote ? undefined : true }
+        }
+        if (style === 'paragraph' && node.blockquote) {
+            return { ...node, blockquote: undefined }
+        }
+        return node
+    }
+
+    if (!isTextBlockNode(node)) {
+        return node
+    }
+
+    if (style === 'code') {
+        return {
+            id: node.id,
+            type: 'code',
+            text: getInlineText(node.children),
+        }
+    }
+    if (typeof style === 'number') {
+        // A heading applied inside a quote keeps its quote membership
+        return {
+            ...node,
+            type: 'heading',
+            level: style,
+            blockquote: node.type === 'blockquote' || node.blockquote ? true : undefined,
+        }
+    }
+    if (style === 'blockquote') {
+        if (node.type === 'heading') {
+            // Quote membership toggles without touching the heading level
+            return { ...node, blockquote: shouldUnquote ? undefined : true }
+        }
+        if (shouldUnquote) {
+            return { ...node, type: 'paragraph', level: undefined, blockquote: undefined }
+        }
+        return { ...node, type: 'blockquote', level: undefined, blockquote: undefined }
+    }
+    if (style === 'paragraph' && node.type === 'heading' && node.blockquote) {
+        // Removing the heading style inside a quote downgrades to quote text, not plain text
+        return { ...node, type: 'blockquote', level: undefined, blockquote: undefined }
+    }
+    return { ...node, type: style, level: undefined, blockquote: undefined }
 }
 
 export type TextBackspacePlan =
