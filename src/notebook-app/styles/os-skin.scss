@@ -136,8 +136,7 @@ h3.MarkdownNotebook__text-block--heading {
 }
 
 /* Kill remaining Inter-only / pure-black islands in popovers */
-&.Popover > .Popover__box,
-.Popover& > .Popover__box {
+&.Popover > .Popover__box {
     font-family: var(--font-sans);
     background: var(--color-bg-surface-popover) !important;
     border-color: var(--secondary-3000-button-border) !important;
