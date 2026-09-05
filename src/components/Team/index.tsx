@@ -501,12 +501,15 @@ export default function Team({
     }, {}), [allTeams?.nodes])
 
     // Filter jobs that are assigned to this team
-    const teamJobs = (allAshbyJobPosting?.nodes || []).filter((job: any) => {
-        const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
-        if (!teamsField) return false
-        const teams = JSON.parse(teamsField.value || '[]')
-        return teams.includes(name)
-    })
+    // Bolt: Memoized the jobs array filtering and JSON.parse to prevent expensive O(N) re-evaluations on every render
+    const teamJobs = useMemo(() => {
+        return (allAshbyJobPosting?.nodes || []).filter((job: any) => {
+            const teamsField = job.parent.customFields.find((field: any) => field.title === 'Teams')
+            if (!teamsField) return false
+            const teams = JSON.parse(teamsField.value || '[]')
+            return teams.includes(name)
+        })
+    }, [allAshbyJobPosting?.nodes, name])
 
     const posthog = usePostHog()
 
