@@ -247,11 +247,9 @@ import {
     getTableCellPositionFromElement,
     getTableCellPositions,
     getTableCellRefKey,
-    getTableColumnCount,
     getTableEdgeCellPosition,
-    makeEmptyTableRow,
-    normalizeTableRow,
     planInsertTableRow,
+    planUpdateTableCell,
     tableCellPositionsEqual,
 } from './tableModel'
 import {
@@ -4470,18 +4468,11 @@ function MarkdownNotebookEditor({
                     return currentNode
                 }
 
-                const columnCount = getTableColumnCount(currentNode)
-                if (section === 'header') {
-                    const nextHeaders = normalizeTableRow(currentNode.headers, columnCount)
-                    nextHeaders[columnIndex] = { children: nextChildren }
-                    return { ...currentNode, headers: nextHeaders }
+                const plan = planUpdateTableCell(currentNode, { section, rowIndex, columnIndex }, nextChildren)
+                if (plan.section === 'header') {
+                    return { ...currentNode, headers: plan.headers }
                 }
-
-                const nextRows = currentNode.rows.map((row) => normalizeTableRow(row, columnCount))
-                const nextRow = nextRows[rowIndex] ?? makeEmptyTableRow(columnCount)
-                nextRow[columnIndex] = { children: nextChildren }
-                nextRows[rowIndex] = nextRow
-                return { ...currentNode, rows: nextRows }
+                return { ...currentNode, rows: plan.rows }
             })
         }
     }
