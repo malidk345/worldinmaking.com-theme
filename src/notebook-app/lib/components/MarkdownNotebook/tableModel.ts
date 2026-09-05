@@ -1,5 +1,5 @@
 import { InsertMenuSelectionDirection, RestoreInlineSelectionRequest, TableCellPosition } from './editorTypes'
-import { NotebookTableBlockNode, NotebookTableCell } from './types'
+import { NotebookInlineNode, NotebookTableBlockNode, NotebookTableCell } from './types'
 
 export function getTableCellRefKey(nodeId: string, position: TableCellPosition): string {
     return `${nodeId}:${position.section}:${String(position.rowIndex)}:${String(position.columnIndex)}`
@@ -58,6 +58,31 @@ export function planInsertTableRow(node: NotebookTableBlockNode, position: Table
     // Header Enter with no body rows inserts at 0 (rowIndex -1); body Enter inserts after the focused row.
     const rowIndex = position.section === 'header' ? -1 : position.rowIndex
     return planAddTableRowAfter(node, rowIndex, position.columnIndex)
+}
+
+export type TableCellUpdatePlan =
+    | { section: 'header'; headers: NotebookTableCell[] }
+    | { section: 'body'; rows: NotebookTableCell[][] }
+
+/** Shared table cell content write used by EditableTableBlock editing. */
+export function planUpdateTableCell(
+    node: NotebookTableBlockNode,
+    position: TableCellPosition,
+    children: NotebookInlineNode[]
+): TableCellUpdatePlan {
+    const columnCount = getTableColumnCount(node)
+
+    if (position.section === 'header') {
+        const nextHeaders = normalizeTableRow(node.headers, columnCount)
+        nextHeaders[position.columnIndex] = { children }
+        return { section: 'header', headers: nextHeaders }
+    }
+
+    const nextRows = node.rows.map((row) => normalizeTableRow(row, columnCount))
+    const nextRow = nextRows[position.rowIndex] ?? makeEmptyTableRow(columnCount)
+    nextRow[position.columnIndex] = { children }
+    nextRows[position.rowIndex] = nextRow
+    return { section: 'body', rows: nextRows }
 }
 
 export function getTableCellPositions(node: NotebookTableBlockNode): TableCellPosition[] {
