@@ -24,7 +24,7 @@ import { getInlineLinkPasteResult, getSelectionRange } from './domSelection'
 import { RestoreSelectionRequest, TableCellPosition, TextSelectionPointerStartEvent } from './editorTypes'
 import { editableHtmlMatches, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
 import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
-import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow, planAddTableRowAfter } from './tableModel'
+import { getTableColumnCount, makeEmptyTableRow, normalizeTableRow, planAddTableRowAfter, planUpdateTableCell } from './tableModel'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTableBlockNode, NotebookTableCell } from './types'
 import { getInlineText } from './utils'
 
@@ -224,22 +224,17 @@ export function EditableTableBlock({
     }, [mode, updateTableControlLayout])
 
     const updateTableCell = (position: TableCellPosition, children: NotebookInlineNode[]): void => {
+        const plan = planUpdateTableCell(node, position, children)
         updateNode(node.id, (currentNode) => {
             if (currentNode.type !== 'table') {
                 return currentNode
             }
 
-            if (position.section === 'header') {
-                const nextHeaders = normalizeTableRow(currentNode.headers, columnCount)
-                nextHeaders[position.columnIndex] = { children }
-                return { ...currentNode, headers: nextHeaders }
+            if (plan.section === 'header') {
+                return { ...currentNode, headers: plan.headers }
             }
 
-            const nextRows = currentNode.rows.map((row) => normalizeTableRow(row, columnCount))
-            const nextRow = nextRows[position.rowIndex] ?? makeEmptyTableRow(columnCount)
-            nextRow[position.columnIndex] = { children }
-            nextRows[position.rowIndex] = nextRow
-            return { ...currentNode, rows: nextRows }
+            return { ...currentNode, rows: plan.rows }
         })
     }
 
