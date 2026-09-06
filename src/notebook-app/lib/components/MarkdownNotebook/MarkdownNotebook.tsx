@@ -97,6 +97,7 @@ import {
     mapRestoreSelectionThroughDocumentChange,
     setsEqual,
     textBlocksShareContinuationStyle,
+    createInsertedDivider,
     planDeleteEmptyCodeBlock,
     planDeleteTextAtSelection,
     planInsertEmptyParagraphAfter,
@@ -218,6 +219,7 @@ import {
     type ListEditPlan,
 } from './listModel'
 import {
+    DIVIDER_COMPONENT_TAG,
     htmlElementToInlineNodes,
     inlineNodesToHtml,
     makeEmptyParagraph,
@@ -1863,13 +1865,20 @@ function MarkdownNotebookEditor({
 
     const insertMenuApi = useMemo<MarkdownNotebookInsertMenuApi>(
         () => ({
-            insertComponent: (targetNodeId, tagName, props) =>
-                replaceNodeWithInsertedComponent(targetNodeId, {
-                    id: makeEmptyParagraph(`component-${tagName}`).id,
-                    type: 'component',
-                    tagName,
-                    props,
-                }),
+            insertComponent: (targetNodeId, tagName, props) => {
+                const nodeId = makeEmptyParagraph(`component-${tagName}`).id
+                replaceNodeWithInsertedComponent(
+                    targetNodeId,
+                    tagName === DIVIDER_COMPONENT_TAG
+                        ? { ...createInsertedDivider(nodeId), props }
+                        : {
+                              id: nodeId,
+                              type: 'component',
+                              tagName,
+                              props,
+                          }
+                )
+            },
             openPhilosopherInvite: (targetNodeId) => {
                 const anchorElement = blockRefs.current[targetNodeId]
                 setInsertMenu(null)

@@ -1074,6 +1074,17 @@ export function createInsertedListBlock(options: CreateInsertedListBlockOptions)
     }
 }
 
+
+/** Shared `<Divider />` used by the `---` markdown shortcut (and slash insert). */
+export function createInsertedDivider(id: string): NotebookComponentBlockNode {
+    return {
+        id,
+        type: 'component',
+        tagName: DIVIDER_COMPONENT_TAG,
+        props: {},
+    }
+}
+
 export function getTextBlockShortcutReplacement(
     node: NotebookTextBlockNode,
     isTitleBlock: boolean,
@@ -1128,15 +1139,7 @@ export function getTextBlockShortcutReplacement(
         if (getDividerShortcut(text)) {
             const trailingParagraph = makeEmptyParagraph(`divider-${node.id}`)
             return {
-                nodes: [
-                    {
-                        id: node.id,
-                        type: 'component',
-                        tagName: DIVIDER_COMPONENT_TAG,
-                        props: {},
-                    },
-                    trailingParagraph,
-                ],
+                nodes: [createInsertedDivider(node.id), trailingParagraph],
                 restoreSelection: { nodeId: trailingParagraph.id, start: 0, end: 0 },
             }
         }
