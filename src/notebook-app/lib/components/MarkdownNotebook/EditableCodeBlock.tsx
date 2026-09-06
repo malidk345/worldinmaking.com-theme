@@ -1,7 +1,7 @@
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { IconCopy } from '@posthog/icons'
-import { LemonButton } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import { copyToClipboard } from 'lib/utils/copyToClipboard'
 
@@ -325,8 +325,8 @@ export function EditableCodeBlock({
                         {node.language}
                     </span>
                 ) : null}
-                <LemonButton
-                    size="xsmall"
+                <OSButton
+                    size="xs"
                     icon={<IconCopy />}
                     tooltip="Copy code"
                     aria-label="Copy code"

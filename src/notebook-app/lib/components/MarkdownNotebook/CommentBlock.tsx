@@ -2,9 +2,7 @@ import clsx from 'clsx'
 import { KeyboardEvent, useState } from 'react'
 
 import { IconComment } from '@posthog/icons'
-import { LemonTextArea } from '@posthog/lemon-ui'
-
-import { LemonDropdown } from 'lib/lemon-ui/LemonDropdown'
+import { Popover } from 'components/RadixUI/Popover'
 
 import { InsertMenuSelectionDirection } from './editorTypes'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
@@ -96,29 +94,30 @@ export function CommentBlock({
             onKeyDown={handleKeyDown}
             data-attr="notebook-comment-block"
         >
-            <LemonDropdown
-                visible={isEditorOpen}
-                onVisibilityChange={(visible) => setIsEditorOpen(visible && mode === 'edit')}
-                closeOnClickInside={false}
-                placement="bottom-start"
-                overlay={
-                    <div className="MarkdownNotebook__comment-editor">
-                        <LemonTextArea
-                            value={text}
-                            onChange={setText}
-                            placeholder="Write a comment…"
-                            minRows={2}
-                            autoFocus
-                            data-attr="notebook-comment-editor"
-                        />
-                    </div>
+            <Popover
+                dataScheme="primary"
+                open={isEditorOpen}
+                onOpenChange={(visible) => setIsEditorOpen(visible && mode === 'edit')}
+                side="bottom"
+                align="start"
+                scrollable={false}
+                trigger={
+                    <button type="button" className="MarkdownNotebook__comment-chip" title={text || 'Comment'}>
+                        <IconComment />
+                        <span className="MarkdownNotebook__comment-chip-text">{text || 'Comment'}</span>
+                    </button>
                 }
             >
-                <button type="button" className="MarkdownNotebook__comment-chip" title={text || 'Comment'}>
-                    <IconComment />
-                    <span className="MarkdownNotebook__comment-chip-text">{text || 'Comment'}</span>
-                </button>
-            </LemonDropdown>
+                <textarea
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    placeholder="Write a comment…"
+                    rows={3}
+                    autoFocus
+                    data-attr="notebook-comment-editor"
+                    className="notebook-native-field w-[min(20rem,80vw)] rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+                />
+            </Popover>
         </div>
     )
 }

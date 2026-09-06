@@ -13,7 +13,7 @@ import {
 } from 'react'
 
 import { IconMinus, IconPlus } from '@posthog/icons'
-import { LemonButton } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import {
     getSinglePastedParagraphChildren,
@@ -561,14 +561,13 @@ export function TableStructureControlButton({
     onClick: () => void
 }): JSX.Element {
     return (
-        <LemonButton
+        <OSButton
             aria-label={label}
             className="MarkdownNotebook__table-structure-control"
-            disabledReason={disabledReason}
+            disabled={Boolean(disabledReason)}
             icon={icon}
-            noPadding
-            size="xsmall"
-            tooltip={tooltip}
+            size="xs"
+            tooltip={disabledReason || tooltip}
             onClick={onClick}
             onMouseDown={(event) => {
                 event.preventDefault()

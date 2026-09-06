@@ -554,7 +554,7 @@ export function NotebooksListScene({
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 data-attr="notebooks-search"
-                                className="w-full rounded border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+                                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                             />
                         </div>
                         <div className="@2xl:hidden">
@@ -756,7 +756,7 @@ export function NotebooksListScene({
                                                 ? 'Projects/Launch'
                                                 : 'research'
                                         }
-                                        className="w-full rounded-sm border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+                                        className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                                     />
                                     <div className="flex items-center gap-1 pt-1">
                                         <OSButton variant="primary" size="sm" onClick={submitOrganizeDraft}>

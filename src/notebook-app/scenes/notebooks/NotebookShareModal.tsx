@@ -39,7 +39,7 @@ const CATEGORY_OPTIONS = [
 ]
 
 const fieldClass =
-    'w-full rounded border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted'
+    'notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted'
 
 function personLabel(person?: NotebookCollaborator['person'], fallback = 'Member'): string {
     if (!person) return fallback

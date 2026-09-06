@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 
+import OSButton from 'components/OSButton'
 import { MAX_INVITE_BOTS, NOTEBOOK_INVITE_BOT_IDS, resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 
 import { InsertMenuPosition } from './editorTypes'
@@ -111,19 +112,19 @@ export function InvitePhilosopherPicker({
                 })}
             </div>
             <div className="MarkdownNotebook__invite-picker-actions">
-                <button type="button" className="MarkdownNotebook__invite-picker-action" onClick={onClose}>
+                <OSButton size="xs" onClick={onClose}>
                     Cancel
-                </button>
-                <button
-                    type="button"
-                    className="MarkdownNotebook__invite-picker-action MarkdownNotebook__invite-picker-action--primary"
+                </OSButton>
+                <OSButton
+                    size="xs"
+                    variant="primary"
                     disabled={selected.length < 1 || selected.length > MAX_INVITE_BOTS}
                     onClick={() => {
                         if (selected.length >= 1 && selected.length <= MAX_INVITE_BOTS) onConfirm(selected)
                     }}
                 >
                     Invite
-                </button>
+                </OSButton>
             </div>
         </div>
     )

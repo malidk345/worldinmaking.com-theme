@@ -1,5 +1,5 @@
 import { IconCheck, IconTrash, IconX } from '@posthog/icons'
-import { LemonTextArea } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import { formatNoteTime } from './inlineNotes'
 
@@ -66,31 +66,24 @@ export function InlineNotePopover({
             </div>
             {draft ? (
                 <>
-                    <LemonTextArea
+                    <textarea
                         value={text}
-                        minRows={2}
+                        rows={3}
                         autoFocus
                         placeholder="Write a compact note…"
-                        onChange={onChangeDraft}
+                        onChange={(event) => onChangeDraft(event.target.value)}
+                        className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                     />
                     <div className="MarkdownNotebook__inline-note-popover-actions">
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
-                            aria-label="Cancel"
-                            onClick={onClose}
-                        >
-                            <IconX />
-                        </button>
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon MarkdownNotebook__inline-note-popover-action--primary"
+                        <OSButton size="xs" icon={<IconX />} tooltip="Cancel" onClick={onClose} />
+                        <OSButton
+                            size="xs"
+                            variant="primary"
+                            icon={<IconCheck />}
+                            tooltip="Save"
                             disabled={!text.trim()}
-                            aria-label="Save"
                             onClick={onSave}
-                        >
-                            <IconCheck />
-                        </button>
+                        />
                     </div>
                 </>
             ) : (
@@ -100,42 +93,16 @@ export function InlineNotePopover({
                         <p className="MarkdownNotebook__inline-note-popover-suggestion">{suggestion}</p>
                     ) : null}
                     <div className="MarkdownNotebook__inline-note-popover-actions">
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
-                            aria-label="Close"
-                            onClick={onClose}
-                        >
-                            <IconX />
-                        </button>
+                        <OSButton size="xs" icon={<IconX />} tooltip="Close" onClick={onClose} />
                         {onApply && showSuggestion ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
-                                aria-label="Apply"
-                                onClick={onApply}
-                            >
-                                <IconCheck />
-                            </button>
+                            <OSButton size="xs" icon={<IconCheck />} tooltip="Apply" onClick={onApply} />
                         ) : null}
                         {onToggleResolved ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__inline-note-popover-action"
-                                aria-label={resolved ? 'Reopen' : 'Resolve'}
-                                onClick={onToggleResolved}
-                            >
+                            <OSButton size="xs" onClick={onToggleResolved}>
                                 {resolved ? 'Reopen' : 'Resolve'}
-                            </button>
+                            </OSButton>
                         ) : null}
-                        <button
-                            type="button"
-                            className="MarkdownNotebook__inline-note-popover-action MarkdownNotebook__inline-note-popover-action--icon"
-                            aria-label="Delete"
-                            onClick={onDelete}
-                        >
-                            <IconTrash />
-                        </button>
+                        <OSButton size="xs" icon={<IconTrash />} tooltip="Delete" onClick={onDelete} />
                     </div>
                 </>
             )}

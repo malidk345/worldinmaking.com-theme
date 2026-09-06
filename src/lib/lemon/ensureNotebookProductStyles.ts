@@ -29,6 +29,10 @@ const NOTEBOOK_TAG_CSS = `
   background: rgba(220, 38, 38, 0.1) !important;
   border-color: #dc2626 !important;
 }
+.notebook-native-field {
+  background-color: rgb(var(--bg, 255 255 255)) !important;
+  color: rgb(var(--text-primary, 17 17 17));
+}
 `
 
 let injectCount = 0
@@ -36,11 +40,16 @@ let injectCount = 0
 export function ensureNotebookProductStyles(): void {
     if (typeof document === 'undefined') return
     injectCount += 1
-    if (document.getElementById(STYLE_ID)) return
+    const css = `${NOTEBOOK_PRODUCT_CSS}\n${NOTEBOOK_TAG_CSS}`
+    const existing = document.getElementById(STYLE_ID)
+    if (existing instanceof HTMLStyleElement) {
+        if (existing.innerHTML !== css) existing.innerHTML = css
+        return
+    }
     const style = document.createElement('style')
     style.id = STYLE_ID
     style.setAttribute('data-notebook-product', 'true')
-    style.innerHTML = `${NOTEBOOK_PRODUCT_CSS}\n${NOTEBOOK_TAG_CSS}`
+    style.innerHTML = css
     document.head.appendChild(style)
 }
 

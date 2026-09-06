@@ -48,3 +48,26 @@
   @import '../lib/icons/icons.scss';
   @import '../lib/components/MarkdownNotebook/MarkdownNotebook.scss';
 }
+
+/*
+ * Native writing fields. Product Tailwind maps .bg-primary to PostHog --primary
+ * (oklch orange-red) because :root was rebound onto .notebook-app-scope / .Popover.
+ * Site bg-primary is the page surface (rgb(--bg)), not the brand fill.
+ */
+.notebook-native-field {
+  background-color: rgb(var(--bg, 255 255 255)) !important;
+  color: rgb(var(--text-primary, 17 17 17));
+}
+
+.notebook-app-scope textarea.bg-primary,
+.notebook-app-scope input.bg-primary,
+.notebook-app-scope select.bg-primary,
+.Popover textarea.bg-primary,
+.Popover input.bg-primary,
+.Popover select.bg-primary,
+[data-radix-popper-content-wrapper] textarea.bg-primary,
+[data-radix-popper-content-wrapper] input.bg-primary,
+[data-radix-popper-content-wrapper] select.bg-primary {
+  background-color: rgb(var(--bg, 255 255 255)) !important;
+  color: rgb(var(--text-primary, 17 17 17));
+}

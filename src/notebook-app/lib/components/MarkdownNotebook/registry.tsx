@@ -11,7 +11,7 @@ import {
     IconPencil,
     IconUpload,
 } from '@posthog/icons'
-import { LemonButton, LemonInput, LemonTextArea } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { isSlashRegistryTag } from './insertCatalog'
@@ -241,16 +241,18 @@ function EmbedEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Ele
 
     return (
         <div className="MarkdownNotebook__component-form">
-            <LemonInput
+            <input
                 value={title}
-                onChange={(value) => updateProps({ title: value })}
+                onChange={(event) => updateProps({ title: event.target.value })}
                 placeholder="Title"
                 autoFocus={wasNotebookNodeJustInserted(node.id)}
+                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
             />
-            <LemonInput
+            <input
                 value={src}
-                onChange={(value) => updateProps({ src: value })}
+                onChange={(event) => updateProps({ src: event.target.value })}
                 placeholder="https://example.com/embed"
+                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
             />
         </div>
     )
@@ -266,12 +268,13 @@ function LatexEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Ele
 
     return (
         <div className="MarkdownNotebook__component-form">
-            <LemonTextArea
+            <textarea
                 value={content}
-                onChange={(value) => updateProps({ content: value })}
+                onChange={(event) => updateProps({ content: event.target.value })}
                 placeholder="E = mc^2"
-                minRows={3}
+                rows={3}
                 autoFocus={wasNotebookNodeJustInserted(node.id)}
+                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
             />
         </div>
     )
@@ -353,9 +356,9 @@ function GenericComponentEdit({ node, updateProps }: NotebookComponentRenderProp
                 ) : (
                     <span className="text-muted">Component props</span>
                 )}
-                <LemonButton size="small" icon={<IconPencil />} onClick={apply}>
+                <OSButton size="sm" icon={<IconPencil />} onClick={apply}>
                     Apply
-                </LemonButton>
+                </OSButton>
             </div>
         </div>
     )

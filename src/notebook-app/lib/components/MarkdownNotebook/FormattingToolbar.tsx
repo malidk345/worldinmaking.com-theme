@@ -9,7 +9,7 @@ import {
 } from 'react'
 
 import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import { LemonButton, LemonInput } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { IconBold, IconItalic, IconLink } from '../../icons/iconsShim'
 
 import {
@@ -267,9 +267,9 @@ export function FormattingToolbar({
                     const isActive =
                         button.style === 'blockquote' ? selectedBlockQuoted : selectedBlockStyle === button.style
                     return (
-                        <LemonButton
+                        <OSButton
                             key={button.label}
-                            size="xsmall"
+                            size="xs"
                             icon={button.icon}
                             tooltip={button.label}
                             aria-label={button.label}
@@ -281,51 +281,46 @@ export function FormattingToolbar({
                             }
                         >
                             {button.content}
-                        </LemonButton>
+                        </OSButton>
                     )
                 })}
             </div>
             {showInlineActions ? (
                 <>
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        size="xs"
                         icon={<IconBold />}
                         tooltip="Bold"
                         aria-label="Bold"
                         onClick={() => applyInlineMark('bold')}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        size="xs"
                         icon={<IconItalic />}
                         tooltip="Italic"
                         aria-label="Italic"
                         onClick={() => applyInlineMark('italic')}
                     />
-                    <LemonButton
-                        size="xsmall"
-                        tooltip="Underline"
-                        aria-label="Underline"
-                        onClick={() => applyInlineMark('underline')}
-                    >
+                    <OSButton size="xs" tooltip="Underline" aria-label="Underline" onClick={() => applyInlineMark('underline')}>
                         <span className="font-semibold underline">U</span>
-                    </LemonButton>
-                    <LemonButton
-                        size="xsmall"
+                    </OSButton>
+                    <OSButton
+                        size="xs"
                         tooltip="Strikethrough"
                         aria-label="Strikethrough"
                         onClick={() => applyInlineMark('strike')}
                     >
                         <span className="font-semibold line-through">S</span>
-                    </LemonButton>
-                    <LemonButton
-                        size="xsmall"
+                    </OSButton>
+                    <OSButton
+                        size="xs"
                         icon={<IconCode />}
                         tooltip="Inline code"
                         aria-label="Inline code"
                         onClick={() => applyInlineMark('code')}
                     />
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        size="xs"
                         icon={<IconLink />}
                         tooltip="Link"
                         aria-label="Link"
@@ -333,18 +328,12 @@ export function FormattingToolbar({
                         active={hasExistingLink || isLinkEditorOpen}
                         onClick={openLinkEditor}
                     />
-                    <LemonButton
-                        size="xsmall"
-                        icon={<IconCopy />}
-                        tooltip="Copy"
-                        aria-label="Copy"
-                        onClick={copySelection}
-                    />
+                    <OSButton size="xs" icon={<IconCopy />} tooltip="Copy" aria-label="Copy" onClick={copySelection} />
                 </>
             ) : null}
             {startInlineCommentAtSelection ? (
-                <LemonButton
-                    size="xsmall"
+                <OSButton
+                    size="xs"
                     icon={<IconComment />}
                     tooltip="Comment"
                     aria-label="Comment on selection"
@@ -356,54 +345,49 @@ export function FormattingToolbar({
                 <>
                     <span className="MarkdownNotebook__format-divider" aria-hidden />
                     {selectionAIActions?.map((action) => (
-                        <LemonButton
+                        <OSButton
                             key={action.id}
-                            size="xsmall"
+                            size="xs"
                             tooltip={action.tooltip}
                             aria-label={action.label}
                             disabled={isAskAIDisabled}
-                            disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
                             className="MarkdownNotebook__format-ai-action"
                             onClick={() => askAIAboutSelection(action.prompt)}
                         >
                             <span className="text-xs font-medium">{action.label}</span>
-                        </LemonButton>
+                        </OSButton>
                     ))}
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        size="xs"
                         icon={<IconSparkles />}
                         tooltip="Edit with WIM AI"
                         aria-label="Edit with WIM AI"
                         disabled={isAskAIDisabled}
-                        disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
                         onClick={() => askAIAboutSelection()}
                     />
                 </>
             ) : null}
             {showInlineActions && isLinkEditorOpen ? (
                 <div className="MarkdownNotebook__format-link-editor">
-                    <LemonInput
-                        size="small"
+                    <input
+                        ref={linkInputRef}
                         type="url"
                         placeholder="https://..."
                         aria-label="Link URL"
                         value={linkHref}
-                        onChange={setLinkHref}
-                        onPressEnter={(event) => {
-                            // Cancel the keystroke fully: applying the link unmounts the toolbar
-                            // and returns focus/selection to the editor, where an uncancelled
-                            // Enter would still insert a paragraph and wipe the selected text
+                        autoFocus={shouldFocusLinkInput}
+                        onChange={(event) => setLinkHref(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return
                             event.preventDefault()
                             event.stopPropagation()
                             setLink()
                         }}
-                        inputRef={linkInputRef}
-                        autoFocus={shouldFocusLinkInput}
-                        className="MarkdownNotebook__format-link-input"
+                        className="notebook-native-field MarkdownNotebook__format-link-input rounded-sm border border-primary px-2 py-1 text-sm text-primary"
                     />
                     {hasExistingLink && sanitizeNotebookLinkHref(currentLinkHref ?? '') ? (
-                        <LemonButton
-                            size="xsmall"
+                        <OSButton
+                            size="xs"
                             icon={<IconExternal />}
                             tooltip="Open link in new tab"
                             aria-label="Open link in new tab"
@@ -416,18 +400,19 @@ export function FormattingToolbar({
                         />
                     ) : null}
                     {hasExistingLink ? (
-                        <LemonButton size="xsmall" status="danger" onClick={removeLink}>
+                        <OSButton size="xs" onClick={removeLink}>
                             Remove
-                        </LemonButton>
+                        </OSButton>
                     ) : null}
-                    <LemonButton
-                        size="xsmall"
-                        type="primary"
+                    <OSButton
+                        size="xs"
+                        variant="primary"
                         onClick={setLink}
-                        disabledReason={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}
+                        disabled={!normalizedLinkHref}
+                        tooltip={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}
                     >
                         {hasExistingLink ? 'Update' : 'Set'}
-                    </LemonButton>
+                    </OSButton>
                 </div>
             ) : null}
         </div>

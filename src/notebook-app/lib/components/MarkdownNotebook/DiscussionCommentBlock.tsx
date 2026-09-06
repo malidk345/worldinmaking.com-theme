@@ -185,7 +185,7 @@ export function DiscussionCommentBlock({
                     <div className="MarkdownNotebook__discussion-comment-composer relative">
                         {mentionToken ? (
                             <div
-                                className="absolute left-0 right-0 bottom-full mb-1 z-20 border border-primary rounded bg-primary shadow-lg max-h-40 overflow-y-auto"
+                                className="notebook-native-field absolute left-0 right-0 bottom-full mb-1 z-20 border border-primary rounded-sm shadow-lg max-h-40 overflow-y-auto"
                                 role="listbox"
                                 aria-label="Mention"
                             >
@@ -240,7 +240,7 @@ export function DiscussionCommentBlock({
                             rows={2}
                             autoFocus={autoFocus}
                             data-attr="notebook-discussion-comment-input"
-                            className="w-full rounded border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted resize-y min-h-[3.5rem]"
+                            className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted resize-y min-h-[3.5rem]"
                         />
                         <div className="MarkdownNotebook__discussion-comment-actions flex items-center justify-end gap-1 mt-1">
                             <OSButton

@@ -30,7 +30,7 @@ import {
     IconTrash,
     IconX,
 } from '@posthog/icons'
-import { LemonMenu } from '@posthog/lemon-ui'
+import MenuBar from 'components/RadixUI/MenuBar'
 
 import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
@@ -5129,41 +5129,48 @@ function MarkdownNotebookEditor({
                             </button>
                         ) : null}
                         {canShowMoreMenu ? (
-                            <LemonMenu
-                                placement="bottom-end"
-                                onVisibilityChange={(visible) =>
-                                    setBlockMenuNodeId((current) => {
-                                        if (visible) return node.id
-                                        return current === node.id ? null : current
-                                    })
-                                }
-                                items={blockMoreMenuItems.map((item) => ({
-                                    label: item.label,
-                                    status: item.status,
-                                    icon:
-                                        item.key === 'comment' ? (
-                                            <IconComment className="size-4 opacity-50 group-hover/item:opacity-75" />
-                                        ) : item.key === 'invite' ? (
-                                            <IconPeople className="size-4 opacity-50 group-hover/item:opacity-75" />
-                                        ) : item.key === 'wim-ai' ? (
-                                            <IconSparkles className="size-4 text-blue-400 opacity-80 group-hover/item:opacity-100" />
-                                        ) : item.key === 'delete' ? (
-                                            <IconTrash className="size-4 text-red-400 opacity-70 group-hover/item:opacity-100" />
-                                        ) : undefined,
-                                    onClick: () => runBlockMoreMenuAction(node.id, item.key),
-                                }))}
-                            >
-                                <button
-                                    type="button"
-                                    className="MarkdownNotebook__block-more-btn"
-                                    aria-label="Block actions"
-                                    title="Block actions"
-                                    data-attr="markdown-notebook-block-menu"
-                                    onMouseDown={(event) => event.preventDefault()}
-                                >
-                                    <IconEllipsis />
-                                </button>
-                            </LemonMenu>
+                            <MenuBar
+                                triggerAsChild
+                                className="inline-flex h-auto"
+                                menus={[
+                                    {
+                                        hideChevron: true,
+                                        trigger: (
+                                            <button
+                                                type="button"
+                                                className="MarkdownNotebook__block-more-btn"
+                                                aria-label="Block actions"
+                                                title="Block actions"
+                                                data-attr="markdown-notebook-block-menu"
+                                                onMouseDown={(event) => event.preventDefault()}
+                                                onClick={() => setBlockMenuNodeId(node.id)}
+                                            >
+                                                <IconEllipsis />
+                                            </button>
+                                        ),
+                                        items: [
+                                            ...blockMoreMenuItems.map((item) => ({
+                                                type: 'item' as const,
+                                                label: item.label,
+                                                icon:
+                                                    item.key === 'comment' ? (
+                                                        <IconComment className="size-4" />
+                                                    ) : item.key === 'invite' ? (
+                                                        <IconPeople className="size-4" />
+                                                    ) : item.key === 'wim-ai' ? (
+                                                        <IconSparkles className="size-4" />
+                                                    ) : item.key === 'delete' ? (
+                                                        <IconTrash className="size-4" />
+                                                    ) : undefined,
+                                                onClick: () => {
+                                                    runBlockMoreMenuAction(node.id, item.key)
+                                                    setBlockMenuNodeId(null)
+                                                },
+                                            })),
+                                        ],
+                                    },
+                                ]}
+                            />
                         ) : null}
                     </div>
                 ) : null}

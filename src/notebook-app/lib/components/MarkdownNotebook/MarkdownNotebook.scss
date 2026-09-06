@@ -1771,13 +1771,7 @@ h4.MarkdownNotebook__text-block {
     border-radius: 4px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 
-    .LemonButton {
-        min-height: 1.625rem;
-        min-width: 1.625rem;
-    }
-
-    .LemonButton__chrome {
-        padding: 0 0.28rem;
+    button {
         min-height: 1.625rem;
     }
 }
@@ -2605,22 +2599,25 @@ h4.MarkdownNotebook__text-block {
     gap: 0.375rem;
     align-items: center;
     max-width: 100%;
-    padding: 0.125rem 0.5rem;
+    padding: 2px 6px;
     font-size: 0.75rem;
-    color: var(--color-text-secondary);
+    font-weight: 400;
+    line-height: 1;
+    color: #1d4ed8;
     cursor: pointer;
-    background: color-mix(in oklab, var(--color-orange-500) 8%, var(--color-bg-surface-primary));
-    border: 1px dashed color-mix(in oklab, var(--color-orange-500) 45%, var(--color-bg-surface-primary));
-    border-radius: 999px;
+    background: rgba(29, 78, 216, 0.1);
+    border: 1px solid #1d4ed8;
+    border-radius: 4px;
 
     svg {
         flex-shrink: 0;
-        font-size: 0.875rem;
-        color: color-mix(in oklab, var(--color-orange-500) 80%, var(--color-text-secondary));
+        width: 0.875rem;
+        height: 0.875rem;
+        color: #1d4ed8;
     }
 
     &:hover {
-        background: color-mix(in oklab, var(--color-orange-500) 14%, var(--color-bg-surface-primary));
+        background: rgba(29, 78, 216, 0.16);
     }
 }
 
@@ -2648,8 +2645,8 @@ h4.MarkdownNotebook__text-block {
     overflow: hidden;
     background: var(--markdown-notebook-component-background);
     border: 1px solid var(--markdown-notebook-component-border);
-    border-left: 3px solid var(--markdown-notebook-component-gutter);
-    border-radius: 0.5rem;
+    border-left: 1px solid var(--markdown-notebook-component-gutter);
+    border-radius: 4px;
     box-shadow: none;
     outline: none;
     transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, backdrop-filter 180ms ease;
@@ -3147,12 +3144,13 @@ button.MarkdownNotebook__component-title:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.5rem 0.625rem;
     font-size: 0.8125rem;
-    background: var(--color-bg-surface-primary);
-    border: 1px solid var(--color-border-primary);
-    border-radius: 0.375rem;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+    color: rgb(var(--text-primary));
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
+    box-shadow: none;
 }
 
 .MarkdownNotebook__discussion-comment-replies {
@@ -3335,13 +3333,13 @@ button.MarkdownNotebook__component-title:focus-visible {
     cursor: pointer;
     background: transparent;
     border: 0;
-    border-radius: 0.375rem;
+    border-radius: 4px;
 }
 
 .MarkdownNotebook__invite-picker-item:hover,
 .MarkdownNotebook__invite-picker-item:focus-visible,
 .MarkdownNotebook__invite-picker-item--active {
-    background: var(--color-bg-fill-button-tertiary-hover);
+    background: rgb(var(--accent, 229 231 224));
     outline: none;
 }
 
@@ -3512,21 +3510,21 @@ button.MarkdownNotebook__component-title:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
-    color: var(--color-text-secondary);
+    color: rgb(var(--text-secondary, 75 75 75));
     pointer-events: auto;
     cursor: pointer;
-    background: color-mix(in sRGB, var(--color-bg-surface-primary) 70%, transparent);
-    border: 1px solid color-mix(in sRGB, var(--color-border-primary) 70%, transparent);
-    border-radius: 0.35rem;
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
     opacity: 0;
     transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
 
     svg {
-        width: 0.85rem;
-        height: 0.85rem;
+        width: 0.9rem;
+        height: 0.9rem;
     }
 }
 
@@ -3544,9 +3542,9 @@ button.MarkdownNotebook__component-title:focus-visible {
 
     .MarkdownNotebook__block-comment-btn:hover,
     .MarkdownNotebook__block-more-btn:hover {
-        color: var(--color-text-primary);
-        background: transparent;
-        border-color: var(--color-border-primary);
+        color: rgb(var(--text-primary, 35 35 35));
+        background: rgb(var(--accent, 229 231 224));
+        border-color: rgb(var(--border, 192 192 192));
         opacity: 1;
     }
 }
@@ -3820,10 +3818,10 @@ button.MarkdownNotebook__component-title:focus-visible {
     z-index: calc(var(--z-popover) + 2);
     width: min(18rem, calc(100vw - 16px));
     padding: 0.7rem 0.8rem;
-    background: var(--color-bg-surface-primary);
-    border: 1px solid var(--color-border-primary);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
     border-radius: 4px;
-    box-shadow: var(--shadow-elevation-3000);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .MarkdownNotebook__inline-note-popover-head {
@@ -4421,7 +4419,13 @@ blockquote.MarkdownNotebook__text-block {
 
 .MarkdownNotebook__callout .LemonTextArea textarea,
 .MarkdownNotebook__toggle .LemonTextArea textarea,
-.MarkdownNotebook__inline-note-popover .LemonTextArea textarea {
+.MarkdownNotebook__inline-note-popover .LemonTextArea textarea,
+.MarkdownNotebook__callout textarea,
+.MarkdownNotebook__toggle textarea,
+.MarkdownNotebook__inline-note-popover textarea,
+.MarkdownNotebook textarea.notebook-native-field,
+.MarkdownNotebook input.notebook-native-field,
+.MarkdownNotebook select.notebook-native-field {
     background: rgb(var(--bg, 255 255 255)) !important;
     border-color: rgb(var(--border, 192 192 192)) !important;
     color: rgb(var(--text-primary)) !important;
@@ -4430,10 +4434,8 @@ blockquote.MarkdownNotebook__text-block {
     line-height: 1.5 !important;
 }
 
-.MarkdownNotebook__format-toolbar .LemonButton--active,
-.MarkdownNotebook__format-toolbar .LemonButton[aria-pressed='true'] {
-    background: rgb(29 78 216 / 0.1) !important;
-    color: #1d4ed8 !important;
+.MarkdownNotebook__format-toolbar [aria-pressed='true'] {
+    color: #1d4ed8;
 }
 
 .dark .MarkdownNotebook__insert-menu,

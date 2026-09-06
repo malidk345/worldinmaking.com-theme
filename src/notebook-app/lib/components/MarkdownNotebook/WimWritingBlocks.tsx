@@ -11,7 +11,8 @@ import {
     IconUpload,
     IconX,
 } from '@posthog/icons'
-import { LemonButton, LemonCheckbox, LemonInput, LemonSelect, LemonTextArea } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
+import { Checkbox } from 'components/RadixUI/Checkbox'
 
 import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
@@ -49,27 +50,29 @@ export function CalloutBlock({ node, updateProps, mode }: NotebookComponentRende
             <div className="MarkdownNotebook__callout-label">
                 <IconInfo />
                 {editable ? (
-                    <LemonSelect
-                        size="small"
+                    <select
                         value={tone}
-                        onChange={(value) => updateProps({ tone: value || 'note' })}
-                        options={CALLOUT_TONES.map((option) => ({
-                            value: option,
-                            label: CALLOUT_LABELS[option],
-                        }))}
-                    />
+                        onChange={(event) => updateProps({ tone: event.target.value || 'note' })}
+                        className="notebook-native-field rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
+                    >
+                        {CALLOUT_TONES.map((option) => (
+                            <option key={option} value={option}>
+                                {CALLOUT_LABELS[option]}
+                            </option>
+                        ))}
+                    </select>
                 ) : (
                     <span className="font-semibold text-sm">{CALLOUT_LABELS[tone]}</span>
                 )}
             </div>
             <div className="MarkdownNotebook__callout-content">
                 {editable ? (
-                    <LemonTextArea
+                    <textarea
                         value={text}
-                        onChange={(value) => updateProps({ text: value })}
+                        onChange={(event) => updateProps({ text: event.target.value })}
                         placeholder="Write callout text…"
-                        minRows={2}
-                        className="MarkdownNotebook__callout-textarea"
+                        rows={2}
+                        className="notebook-native-field MarkdownNotebook__callout-textarea w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                         autoFocus={wasNotebookNodeJustInserted(node.id)}
                     />
                 ) : (
@@ -96,11 +99,12 @@ export function ToggleBlock({ node, updateProps, mode }: NotebookComponentRender
             >
                 {open ? <IconCollapse /> : <IconExpand />}
                 {editable ? (
-                    <LemonInput
+                    <input
                         value={title}
-                        onChange={(value) => updateProps({ title: value })}
+                        onChange={(event) => updateProps({ title: event.target.value })}
                         placeholder="Toggle title"
                         onClick={(event) => event.stopPropagation()}
+                        className="notebook-native-field min-w-0 flex-1 rounded-sm border border-primary px-2 py-1 text-sm text-primary"
                     />
                 ) : (
                     <span className="MarkdownNotebook__toggle-title">{title}</span>
@@ -108,12 +112,13 @@ export function ToggleBlock({ node, updateProps, mode }: NotebookComponentRender
             </button>
             {open ? (
                 editable ? (
-                    <LemonTextArea
+                    <textarea
                         value={body}
-                        onChange={(value) => updateProps({ body: value })}
+                        onChange={(event) => updateProps({ body: event.target.value })}
                         placeholder="Hidden until someone opens this toggle…"
-                        minRows={2}
+                        rows={2}
                         autoFocus={wasNotebookNodeJustInserted(node.id)}
+                        className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                     />
                 ) : (
                     <p className="MarkdownNotebook__toggle-body">{body}</p>
@@ -279,20 +284,19 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
                 </div>
                 {editable ? (
                     <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-xs">
-                        <LemonButton
-                            size="small"
-                            type="primary"
+                        <OSButton
+                            size="sm"
+                            variant="primary"
                             icon={<IconUpload />}
-                            loading={busy}
+                            disabled={busy}
                             onClick={() => inputRef.current?.click()}
                         >
-                            Upload image
-                        </LemonButton>
+                            {busy ? 'Uploading…' : 'Upload image'}
+                        </OSButton>
                         <div className="w-full">
-                            <LemonInput
-                                size="small"
+                            <input
                                 value={urlDraft}
-                                onChange={(value) => setUrlDraft(value)}
+                                onChange={(event) => setUrlDraft(event.target.value)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && urlDraft.trim()) {
                                         e.preventDefault()
@@ -306,6 +310,7 @@ export function ImageUploadBlock({ node, updateProps, mode }: NotebookComponentR
                                 }}
                                 placeholder="or paste image URL & Enter"
                                 autoFocus={wasNotebookNodeJustInserted(node.id)}
+                                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
@@ -366,14 +371,15 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
         <div className="MarkdownNotebook__database" data-attr="notebook-database">
             <div className="MarkdownNotebook__database-toolbar">
                 {content.views.map((entry) => (
-                    <LemonButton
+                    <OSButton
                         key={entry.id}
-                        size="xsmall"
-                        type={entry.id === content.activeViewId ? 'primary' : 'secondary'}
+                        size="xs"
+                        variant={entry.id === content.activeViewId ? 'primary' : 'default'}
+                        active={entry.id === content.activeViewId}
                         onClick={() => persist({ ...content, activeViewId: entry.id })}
                     >
                         {entry.name}
-                    </LemonButton>
+                    </OSButton>
                 ))}
             </div>
 
@@ -403,9 +409,10 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
                                 {content.columns.map((column) => (
                                     <th key={column.id}>
                                         {editable ? (
-                                            <LemonInput
+                                            <input
                                                 value={column.name}
-                                                onChange={(value) => renameColumn(column.id, value)}
+                                                onChange={(event) => renameColumn(column.id, event.target.value)}
+                                                className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
                                             />
                                         ) : (
                                             column.name
@@ -430,8 +437,8 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
                                     ))}
                                     {editable ? (
                                         <td>
-                                            <LemonButton
-                                                size="xsmall"
+                                            <OSButton
+                                                size="xs"
                                                 icon={<IconTrash />}
                                                 aria-label="Delete row"
                                                 onClick={() => removeRow(row.id)}
@@ -447,12 +454,12 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
 
             {editable ? (
                 <div className="MarkdownNotebook__database-actions">
-                    <LemonButton size="xsmall" icon={<IconPlus />} onClick={addRow}>
+                    <OSButton size="xs" icon={<IconPlus />} onClick={addRow}>
                         Add row
-                    </LemonButton>
-                    <LemonButton size="xsmall" icon={<IconPlus />} onClick={addColumn}>
+                    </OSButton>
+                    <OSButton size="xs" icon={<IconPlus />} onClick={addColumn}>
                         Add column
-                    </LemonButton>
+                    </OSButton>
                 </div>
             ) : null}
         </div>
@@ -474,10 +481,10 @@ function DatabaseCell({
 }): JSX.Element {
     if (column.type === 'checkbox') {
         return (
-            <LemonCheckbox
+            <Checkbox
                 checked={Boolean(value)}
                 disabled={!editable}
-                onChange={(checked) => onChange(Boolean(checked))}
+                onCheckedChange={(checked) => onChange(Boolean(checked))}
             />
         )
     }
@@ -485,20 +492,27 @@ function DatabaseCell({
         const options = (column.options || []).map((option) => ({ value: option.name, label: option.name }))
         if (!editable) return <span>{String(value || '')}</span>
         return (
-            <LemonSelect
-                size="small"
+            <select
                 value={typeof value === 'string' ? value : ''}
-                options={options}
-                onChange={(next) => onChange(next || '')}
-            />
+                onChange={(event) => onChange(event.target.value || '')}
+                className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
+            >
+                <option value="" />
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
         )
     }
     if (!editable) return <span>{String(value || '')}</span>
     return (
-        <LemonInput
+        <input
             value={value == null ? '' : String(value)}
-            onChange={(next) => onChange(next)}
+            onChange={(event) => onChange(event.target.value)}
             placeholder={column.name}
+            className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary placeholder:text-muted"
         />
     )
 }

@@ -11,7 +11,7 @@ import {
 } from 'react'
 
 import { IconX } from '@posthog/icons'
-import { LemonButton } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import {
     getInsertMenuFilterQuery,
@@ -596,8 +596,8 @@ export function EditableTextBlock({
                     onMouseEnter={activateInlineInsertMenuButton}
                     onMouseMove={activateInlineInsertMenuButton}
                 >
-                    <LemonButton
-                        size="xsmall"
+                    <OSButton
+                        size="xs"
                         icon={
                             <span className="MarkdownNotebook__line-insert-menu-icon">
                                 {isToolInsertMenuOpen ? <IconX /> : '+'}
