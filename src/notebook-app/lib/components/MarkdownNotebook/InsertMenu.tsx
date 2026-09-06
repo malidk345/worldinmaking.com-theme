@@ -15,10 +15,11 @@ import {
 } from './editorTypes'
 import {
     createInsertedCodeBlock,
+    createInsertedDivider,
     createInsertedListBlock,
     createInsertedTableBlock,
 } from './documentModel'
-import { makeEmptyParagraph } from './markdown'
+import { DIVIDER_COMPONENT_TAG, makeEmptyParagraph } from './markdown'
 import { isSlashRegistryTag } from './insertCatalog'
 import { getMarkdownNotebookComponentDefaultProps } from './registry'
 import {
@@ -223,12 +224,16 @@ export function buildInsertCommands(
     const commonCategory = COMMON_INSERT_COMMAND_CATEGORY
 
     const insertComponent = (targetNodeId: string, tagName: string, props: NotebookComponentProps): void => {
-        const node: NotebookComponentBlockNode = {
-            id: makeEmptyParagraph(`component-${tagName}`).id,
-            type: 'component',
-            tagName,
-            props,
-        }
+        const nodeId = makeEmptyParagraph(`component-${tagName}`).id
+        const node: NotebookComponentBlockNode =
+            tagName === DIVIDER_COMPONENT_TAG
+                ? { ...createInsertedDivider(nodeId), props }
+                : {
+                      id: nodeId,
+                      type: 'component',
+                      tagName,
+                      props,
+                  }
 
         replaceNodeWithInsertedComponent(targetNodeId, node)
     }
