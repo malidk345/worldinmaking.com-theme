@@ -98,6 +98,7 @@ import {
     setsEqual,
     textBlocksShareContinuationStyle,
     planDeleteEmptyCodeBlock,
+    planDuplicateBlock,
     planDeleteTextAtSelection,
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
@@ -3183,16 +3184,11 @@ function MarkdownNotebookEditor({
     const duplicateBlock = (nodeId: string): void => {
         const currentDocument = documentRef.current
         const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const fromIndex = nodes.findIndex((node) => node.id === nodeId)
-        if (fromIndex < 0) return
-        const originalNode = nodes[fromIndex]
-        const duplicatedNode = {
-            ...originalNode,
-            id: makeEmptyParagraph(`duplicate-${originalNode.id}`).id,
+        const plan = planDuplicateBlock(nodes, nodeId)
+        if (!plan) {
+            return
         }
-        const nextNodes = [...nodes]
-        nextNodes.splice(fromIndex + 1, 0, duplicatedNode)
-        commitDocument({ ...currentDocument, nodes: nextNodes })
+        commitDocument({ ...currentDocument, nodes: plan.nodes })
     }
 
     const copyFloatingToolbarSelection = (): void => {
