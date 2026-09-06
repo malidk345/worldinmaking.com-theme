@@ -224,7 +224,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
             <>
               <div className="size-6 shrink-0 rounded-full overflow-hidden border border-primary bg-accent">
                 {model.avatarUrl ? (
-                  <img src={model.avatarUrl} alt={surname} className="size-full object-cover object-top" />
+                  <img src={model.avatarUrl} alt={surname} className={`size-full ${model.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover object-top'}`} />
                 ) : (
                   <span className={`flex size-full items-center justify-center text-[10px] font-bold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
                     {model.initials || surname.slice(0, 2)}

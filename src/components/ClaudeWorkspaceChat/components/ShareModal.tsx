@@ -37,7 +37,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     let mdContent = `# ${chat.title}\n*Created: ${new Date(chat.createdAt).toLocaleString('en-US')}*\n\n---\n\n`;
 
     chat.messages.forEach((m) => {
-      mdContent += `### ${m.role === 'user' ? 'you' : "wim's ai bots"}\n${m.content}\n\n`;
+      mdContent += `### ${m.role === 'user' ? 'you' : 'WIMBot'}\n${m.content}\n\n`;
     });
 
     const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });

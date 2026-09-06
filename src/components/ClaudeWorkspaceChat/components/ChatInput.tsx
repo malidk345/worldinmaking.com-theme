@@ -489,14 +489,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   <span className="inline-flex items-center gap-1.5 text-[13px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap min-w-0">
                     <div className="size-4 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                       {activeModel?.avatarUrl ? (
-                        <img src={activeModel.avatarUrl} alt={activeModel.name} className="size-full object-cover" />
+                        <img src={activeModel.avatarUrl} alt={activeModel.name} className={`size-full ${activeModel.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                       ) : (
                         <span className={`size-full flex items-center justify-center ${activeModel?.avatarBg || 'bg-[#1E3A8A]'}`}>
                           {activeModel?.initials || activeModel?.name.slice(0, 2)}
                         </span>
                       )}
                     </div>
-                    <span className="font-semibold text-primary tracking-tight truncate max-w-[100px] xs:max-w-[160px] sm:max-w-none">{activeModel?.name}</span>
+                    <span className="font-semibold text-primary tracking-tight truncate max-w-[100px] xs:max-w-[160px] sm:max-w-none">{activeModel?.name.trim().split(/\s+/).filter(Boolean).pop() || activeModel?.name}</span>
                     <IconChevronDown className={`${CHIP_ICON} text-muted ml-0.5`} />
                   </span>
                 );
@@ -511,16 +511,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       <span className="flex items-center gap-2 font-medium text-xs min-w-0">
                         <div className="size-4 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                           {opt.avatarUrl ? (
-                            <img src={opt.avatarUrl} alt={opt.name} className="size-full object-cover" />
+                            <img src={opt.avatarUrl} alt={opt.name} className={`size-full ${opt.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                           ) : (
                             <span className={`size-full flex items-center justify-center ${opt.avatarBg || 'bg-[#1E3A8A]'}`}>
                               {opt.initials || opt.name.slice(0, 2)}
                             </span>
                           )}
                         </div>
-                        <span className="flex min-w-0 flex-col">
-                          <span className="truncate">{opt.name}</span>
-                          {opt.badge ? <span className="truncate text-[10px] font-normal text-muted">{opt.badge}</span> : null}
+                        <span className="truncate">
+                          {opt.name.trim().split(/\s+/).filter(Boolean).pop() || opt.name}
                         </span>
                       </span>
                     ),
@@ -579,7 +578,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       </div>
 
       <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
-        wim's ai bots can make mistakes. please double-check responses.
+        WIMBot can make mistakes. please double-check responses.
       </p>
     </div>
   );

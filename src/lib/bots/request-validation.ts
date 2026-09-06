@@ -45,10 +45,11 @@ export function normalizeBotName(value: unknown, fallback?: string): string | nu
         'claude37sonnet',
         'wimsai',
         'wimsaibots',
+        'wimbot',
         'generalai',
     ])
     if (generalAiAliases.has(lookup)) {
-        return "wim's ai bots"
+        return 'wimbot'
     }
 
     const bot = PHILOSOPHER_BOTS.find(

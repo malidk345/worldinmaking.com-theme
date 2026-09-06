@@ -1,12 +1,22 @@
 import { ModelOption, ProjectSpace, StylePreset, Chat } from '../types';
 import { philosopherPixelAvatar } from '../../../lib/philosopher-pixels'
+import pixelWimbotIcon from '../../../images/icons/pixel-wimbot.png'
+
+const importedSrc = (mod: unknown): string => {
+  if (typeof mod === 'string') return mod
+  if (mod && typeof mod === 'object' && 'src' in mod) {
+    const src = (mod as { src?: unknown }).src
+    if (typeof src === 'string') return src
+  }
+  return ''
+}
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'nietzsche',
     name: 'Friedrich Nietzsche',
-    badge: 'Perspectivism',
-    description: 'Vitalist perspectivism — will to power and the genealogy of morals.',
+    badge: '',
+    description: '',
     initials: 'FN',
     avatarBg: 'bg-amber-800',
     avatarUrl: philosopherPixelAvatar('nietzsche'),
@@ -16,8 +26,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'marx',
     name: 'Karl Marx',
-    badge: 'Materialism',
-    description: 'Historical materialism — commodity fetishism and dialectical analysis.',
+    badge: '',
+    description: '',
     initials: 'KM',
     avatarBg: 'bg-red-800',
     avatarUrl: philosopherPixelAvatar('marx'),
@@ -27,8 +37,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'hegel',
     name: 'G. W. F. Hegel',
-    badge: 'Idealism',
-    description: 'Absolute idealism — phenomenology of spirit and dialectical necessity.',
+    badge: '',
+    description: '',
     initials: 'GH',
     avatarBg: 'bg-indigo-800',
     avatarUrl: philosopherPixelAvatar('hegel'),
@@ -38,8 +48,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'sartre',
     name: 'Jean-Paul Sartre',
-    badge: 'Existentialism',
-    description: 'Existential phenomenology — bad faith and radical freedom.',
+    badge: '',
+    description: '',
     initials: 'JS',
     avatarBg: 'bg-stone-800',
     avatarUrl: philosopherPixelAvatar('sartre'),
@@ -49,8 +59,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'heidegger',
     name: 'Martin Heidegger',
-    badge: 'Ontology',
-    description: 'Being and Dasein — the analytics of Being and time.',
+    badge: '',
+    description: '',
     initials: 'MH',
     avatarBg: 'bg-zinc-800',
     avatarUrl: philosopherPixelAvatar('heidegger'),
@@ -60,8 +70,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'deleuze',
     name: 'Gilles Deleuze',
-    badge: 'Becoming',
-    description: 'Difference & becoming — rhizomatic thought and nomadic philosophy.',
+    badge: '',
+    description: '',
     initials: 'GD',
     avatarBg: 'bg-emerald-800',
     avatarUrl: philosopherPixelAvatar('deleuze'),
@@ -71,8 +81,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'spinoza',
     name: 'Baruch Spinoza',
-    badge: 'Monism',
-    description: 'Substance monism — Ethics and the geometry of the affects.',
+    badge: '',
+    description: '',
     initials: 'BS',
     avatarBg: 'bg-blue-800',
     avatarUrl: philosopherPixelAvatar('spinoza'),
@@ -82,8 +92,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'baudrillard',
     name: 'Jean Baudrillard',
-    badge: 'Simulation',
-    description: 'Simulacra & hyperreality — a semiotic critique of consumer society.',
+    badge: '',
+    description: '',
     initials: 'JB',
     avatarBg: 'bg-rose-800',
     avatarUrl: philosopherPixelAvatar('baudrillard'),
@@ -93,8 +103,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'althusser',
     name: 'Louis Althusser',
-    badge: 'Structuralism',
-    description: 'Structural Marxism — ideological state apparatuses and overdetermination.',
+    badge: '',
+    description: '',
     initials: 'LA',
     avatarBg: 'bg-red-900',
     avatarUrl: philosopherPixelAvatar('althusser'),
@@ -104,8 +114,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'derrida',
     name: 'Jacques Derrida',
-    badge: 'Deconstruction',
-    description: 'Deconstruction — différance and the critique of logocentrism.',
+    badge: '',
+    description: '',
     initials: 'JD',
     avatarBg: 'bg-teal-800',
     avatarUrl: philosopherPixelAvatar('derrida'),
@@ -115,8 +125,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'weber',
     name: 'Max Weber',
-    badge: 'Sociology',
-    description: 'Social action — the Protestant ethic and the critique of rationalization.',
+    badge: '',
+    description: '',
     initials: 'MW',
     avatarBg: 'bg-slate-800',
     avatarUrl: philosopherPixelAvatar('weber'),
@@ -126,8 +136,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'adorno',
     name: 'Theodor W. Adorno',
-    badge: 'Critical theory',
-    description: 'Critical theory — the dialectic of enlightenment and the culture industry.',
+    badge: '',
+    description: '',
     initials: 'TA',
     avatarBg: 'bg-slate-900',
     avatarUrl: philosopherPixelAvatar('adorno'),
@@ -137,8 +147,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'zizek',
     name: 'Slavoj Žižek',
-    badge: 'Ideology',
-    description: 'Ideology critique — Lacanian-Hegelian dialectics and fetishistic disavowal.',
+    badge: '',
+    description: '',
     initials: 'SŽ',
     avatarBg: 'bg-purple-800',
     avatarUrl: philosopherPixelAvatar('zizek'),
@@ -148,8 +158,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'lenin',
     name: 'V. I. Lenin',
-    badge: 'Revolutionary praxis',
-    description: 'Revolutionary praxis — imperialism and vanguard party theory.',
+    badge: '',
+    description: '',
     initials: 'VL',
     avatarBg: 'bg-red-700',
     avatarUrl: philosopherPixelAvatar('lenin'),
@@ -159,8 +169,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'arendt',
     name: 'Hannah Arendt',
-    badge: 'Political action',
-    description: 'Political action & plurality — public action and plurality.',
+    badge: '',
+    description: '',
     initials: 'HA',
     avatarBg: 'bg-cyan-900',
     avatarUrl: philosopherPixelAvatar('arendt'),
@@ -170,8 +180,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'rand',
     name: 'Ayn Rand',
-    badge: 'Objectivism',
-    description: 'Objectivist rationalism — individualism and rational egoism.',
+    badge: '',
+    description: '',
     initials: 'AR',
     avatarBg: 'bg-amber-950',
     avatarUrl: philosopherPixelAvatar('rand'),
@@ -180,11 +190,12 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   },
   {
     id: 'claude-3-7-sonnet',
-    name: "wim's ai bots",
-    badge: 'General AI',
-    description: 'Broad reasoning, coding, and general-knowledge assistant.',
-    initials: 'AI',
+    name: 'WIMBot',
+    badge: '',
+    description: '',
+    initials: 'WB',
     avatarBg: 'bg-[#1E3A8A]',
+    avatarUrl: importedSrc(pixelWimbotIcon),
     supportsThinking: true,
     speed: 'Deep Reasoning',
   },
