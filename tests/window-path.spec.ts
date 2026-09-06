@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { parseNotebookRoute, notebookPathForRoute } from '../src/lib/notebook-route'
+import {
+    parseNotebookRoute,
+    notebookPathForRoute,
+    seedNotebookHistory,
+    planNotebookHistoryPush,
+    notebookHistoryFlags,
+} from '../src/lib/notebook-route'
 import {
     canonicalWindowPath,
     extractNotebookId,
@@ -86,5 +92,30 @@ test.describe('window path', () => {
         expect(parseNotebookRoute('/notebooks#/n/abc')).toEqual({ page: 'public', notebookId: 'abc' })
         expect(notebookPathForRoute({ page: 'public', notebookId: 'abc' })).toBe('/notebooks/n/abc')
         expect(repairWindowPath('/notebooks', '/notebooks/n/abc')).toBe('/notebooks')
+    })
+
+    test('notebook chrome history seeds the list behind an editor', () => {
+        expect(seedNotebookHistory('/notebooks')).toEqual({ stack: ['/notebooks'], index: 0 })
+        expect(seedNotebookHistory('/notebooks/nb-1')).toEqual({
+            stack: ['/notebooks', '/notebooks/nb-1'],
+            index: 1,
+        })
+        expect(notebookHistoryFlags(seedNotebookHistory('/notebooks/nb-1'))).toEqual({
+            canGoBack: true,
+            canGoForward: false,
+        })
+        const opened = planNotebookHistoryPush(seedNotebookHistory('/notebooks'), '/notebooks/nb-1')
+        expect(opened).toEqual({ stack: ['/notebooks', '/notebooks/nb-1'], index: 1 })
+        const back = { ...opened, index: 0 }
+        expect(notebookHistoryFlags(back)).toEqual({ canGoBack: false, canGoForward: true })
+        expect(planNotebookHistoryPush(back, '/notebooks/nb-1')).toEqual({
+            stack: ['/notebooks', '/notebooks/nb-1'],
+            index: 1,
+        })
+        expect(planNotebookHistoryPush(opened, '/notebooks/nb-2').stack).toEqual([
+            '/notebooks',
+            '/notebooks/nb-1',
+            '/notebooks/nb-2',
+        ])
     })
 })

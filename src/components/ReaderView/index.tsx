@@ -241,6 +241,8 @@ interface ReaderViewProps {
     productSelect?: React.ReactNode
     hideMenu?: boolean
     className?: string
+    /** Pinned above the article scroller (notebook chrome, etc). */
+    stickyHeader?: React.ReactNode
 }
 
 const contentWidthOptions: ToggleOption[] = [
@@ -496,6 +498,7 @@ export default function ReaderView({
     productSelect,
     hideMenu = false,
     className = '',
+    stickyHeader,
 }: ReaderViewProps) {
     return (
         <ReaderViewProvider defaultNavVisible={defaultNavVisible}>
@@ -536,6 +539,7 @@ export default function ReaderView({
                 productSelect={productSelect}
                 hideMenu={hideMenu}
                 className={className}
+                stickyHeader={stickyHeader}
             >
                 {children}
             </ReaderViewContent>
@@ -1604,6 +1608,7 @@ function ReaderViewContent({
     productSelect,
     hideMenu = false,
     className = '',
+    stickyHeader,
 }: ReaderViewProps) {
     const { compact } = useApp()
     const { appWindow, activeInternalMenu } = useWindow()
@@ -1772,13 +1777,24 @@ function ReaderViewContent({
                     <div className="flex flex-1 min-h-0">
                         <ScrollArea
                             dataScheme="primary"
-                            className="flex-1 min-w-0 min-h-0 relative [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_2rem),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_1rem,black_calc(100%_-_1rem),transparent_100%)]"
+                            className={`flex-1 min-w-0 min-h-0 relative ${
+                                stickyHeader
+                                    ? ''
+                                    : '[mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_2rem),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_1rem,black_calc(100%_-_1rem),transparent_100%)]'
+                            }`}
                         >
                             <article
                                 className={`reader-view-content-container @container/reader-content-container ${
                                     typeof getProseClasses === 'function' ? getProseClasses(proseSize) : 'prose dark:prose-invert'
                                 } max-w-none relative flex-1 min-w-0`}
                             >
+                                {stickyHeader ? (
+                                    <div className="not-prose sticky top-2 z-30 mx-3 mt-2 mb-1">
+                                        <div className="rounded-sm border border-primary bg-primary/90 backdrop-blur-md shadow-[0_8px_28px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.45)]">
+                                            {stickyHeader}
+                                        </div>
+                                    </div>
+                                ) : null}
                                 {header && (
                                     <header className="relative">
                                         <CloudinaryImage
@@ -1797,7 +1813,7 @@ function ReaderViewContent({
                                 <div
                                     ref={contentRef}
                                     className={`@container/reader-content relative ${
-                                        chrome ? '' : 'font-normal pt-12'
+                                        chrome ? '' : stickyHeader ? 'font-normal' : 'font-normal pt-12'
                                     } ${
                                         padding
                                             ? 'p-4 @md/reader-content-container:px-6 @lg/reader-content-container:px-8 @xl/reader-content-container:px-12 @2xl/reader-content-container:px-16 @3xl/reader-content-container:px-20'

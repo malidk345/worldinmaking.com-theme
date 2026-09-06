@@ -21,10 +21,12 @@ export function useNotebookUndo({
     documentRef,
     notebookElementRef,
     restoreSelectionRef,
+    onUndoStateChange,
 }: {
     documentRef: MutableRefObject<NotebookDocument>
     notebookElementRef: MutableRefObject<HTMLElement | null>
     restoreSelectionRef: MutableRefObject<RestoreSelectionRequest | null>
+    onUndoStateChange?: (state: { canUndo: boolean; canRedo: boolean }) => void
 }): {
     historyRef: MutableRefObject<NotebookHistoryState>
     rebaseHistoryThroughDocumentChange: (previousDocument: NotebookDocument, nextDocument: NotebookDocument) => void
@@ -40,6 +42,15 @@ export function useNotebookUndo({
 } {
     const historyRef = useRef<NotebookHistoryState>({ undo: [], redo: [] })
     const commitDocumentRef = useRef<(next: NotebookDocument, options?: CommitDocumentOptions) => void>(() => {})
+    const onUndoStateChangeRef = useRef(onUndoStateChange)
+    onUndoStateChangeRef.current = onUndoStateChange
+
+    const publishUndoState = useCallback(() => {
+        onUndoStateChangeRef.current?.({
+            canUndo: historyRef.current.undo.length > 0,
+            canRedo: historyRef.current.redo.length > 0,
+        })
+    }, [])
 
     const bindCommitDocument = (
         commit: (next: NotebookDocument, options?: CommitDocumentOptions) => void
@@ -63,8 +74,9 @@ export function useNotebookUndo({
                 undo: rebaseNotebookOperationStack(historyRef.current.undo, incomingOps),
                 redo: rebaseNotebookOperationStack(historyRef.current.redo, incomingOps),
             }
+            publishUndoState()
         },
-        []
+        [publishUndoState]
     )
 
     const pushHistoryEntry = useCallback(
@@ -109,8 +121,9 @@ export function useNotebookUndo({
                 ],
                 redo: [],
             }
+            publishUndoState()
         },
-        [captureHistorySelection]
+        [captureHistorySelection, publishUndoState]
     )
 
     const applyHistoryEntrySelection = useCallback(
@@ -136,6 +149,7 @@ export function useNotebookUndo({
             // The entry no longer fits the document (a conflicting remote edit slipped past
             // the rebase): drop the stale stack rather than apply garbage.
             historyRef.current = { ...historyRef.current, undo: [] }
+            publishUndoState()
             return false
         }
 
@@ -148,8 +162,9 @@ export function useNotebookUndo({
         }
         applyHistoryEntrySelection(entry, result.document)
         commitDocumentRef.current(result.document, { addToHistory: false })
+        publishUndoState()
         return true
-    }, [applyHistoryEntrySelection, captureHistorySelection, documentRef])
+    }, [applyHistoryEntrySelection, captureHistorySelection, documentRef, publishUndoState])
 
     const redoHistory = useCallback((): boolean => {
         const entry = historyRef.current.redo[historyRef.current.redo.length - 1]
@@ -160,6 +175,7 @@ export function useNotebookUndo({
         const result = applyNotebookOperations(documentRef.current, entry.ops)
         if (!result) {
             historyRef.current = { ...historyRef.current, redo: [] }
+            publishUndoState()
             return false
         }
 
@@ -172,8 +188,9 @@ export function useNotebookUndo({
         }
         applyHistoryEntrySelection(entry, result.document)
         commitDocumentRef.current(result.document, { addToHistory: false })
+        publishUndoState()
         return true
-    }, [applyHistoryEntrySelection, captureHistorySelection, documentRef])
+    }, [applyHistoryEntrySelection, captureHistorySelection, documentRef, publishUndoState])
 
     return {
         historyRef,

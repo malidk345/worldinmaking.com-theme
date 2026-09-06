@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { IconSparkles } from '@posthog/icons'
+import { IconChevronLeft, IconChevronRight, IconSparkles } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import Avatar from 'components/Squeak/components/Avatar'
@@ -18,6 +18,10 @@ interface CollaboratorsBannerProps {
     notebookId?: string
     livePeople?: NotebookPresencePerson[]
     onOpenAskAi?: () => void
+    canGoBack?: boolean
+    canGoForward?: boolean
+    onBack?: () => void
+    onForward?: () => void
 }
 
 export function CollaboratorsBanner({
@@ -29,6 +33,10 @@ export function CollaboratorsBanner({
     notebookId,
     livePeople = [],
     onOpenAskAi,
+    canGoBack = false,
+    canGoForward = false,
+    onBack,
+    onForward,
 }: CollaboratorsBannerProps) {
     const actor = person || getNotebookActor()
     const displayName = [actor.first_name, actor.last_name].filter(Boolean).join(' ') || actor.username || 'You'
@@ -75,18 +83,38 @@ export function CollaboratorsBanner({
     )
 
     return (
-        <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-2 mb-3 border-b border-primary">
+        <div
+            data-scheme="primary"
+            className="flex w-full items-center gap-px px-1.5 py-1 min-h-9"
+        >
+            <OSButton
+                size="md"
+                disabled={!canGoBack}
+                onClick={onBack}
+                icon={<IconChevronLeft />}
+                tooltip="Undo"
+            />
+            <OSButton
+                size="md"
+                disabled={!canGoForward}
+                onClick={onForward}
+                icon={<IconChevronRight />}
+                tooltip="Redo"
+            />
             <Popover
                 trigger={
                     <button
                         type="button"
-                        className="flex items-center min-w-0 relative !no-underline hover:!underline"
+                        className="flex items-center gap-1.5 min-w-0 px-1 relative !no-underline hover:!underline"
                         title={updatedAt ? `Last edited ${new Date(updatedAt).toLocaleString()}` : 'Edit history'}
                     >
-                        <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden">
-                            <Avatar className="size-10" image={actor.avatar_url || null} />
+                        <div className="size-6 shrink-0 rounded-full overflow-hidden">
+                            <Avatar className="size-6" image={actor.avatar_url || null} />
                         </div>
-                        <strong>{displayName}</strong>
+                        <strong className="text-sm truncate">{displayName}</strong>
+                        <span suppressHydrationWarning className="text-xs text-muted shrink-0">
+                            {when}
+                        </span>
                     </button>
                 }
                 title="Edit history"
@@ -98,26 +126,20 @@ export function CollaboratorsBanner({
             >
                 {overlay}
             </Popover>
-            <span suppressHydrationWarning className="text-sm text-muted">
-                {when}
-            </span>
             {livePeople.length ? (
-                <>
-                    <span className="text-muted opacity-40">•</span>
-                    <span className="flex items-center -space-x-1.5" aria-label="People editing now">
-                        {livePeople.slice(0, 4).map((peer) => (
-                            <span
-                                key={peer.clientId}
-                                title={peer.name}
-                                className="size-6 rounded-full overflow-hidden border border-primary bg-primary inline-flex"
-                            >
-                                <Avatar className="size-6" image={peer.avatarUrl || null} />
-                            </span>
-                        ))}
-                    </span>
-                </>
+                <span className="flex items-center -space-x-1.5 px-1" aria-label="People editing now">
+                    {livePeople.slice(0, 4).map((peer) => (
+                        <span
+                            key={peer.clientId}
+                            title={peer.name}
+                            className="size-5 rounded-full overflow-hidden border border-primary bg-primary inline-flex"
+                        >
+                            <Avatar className="size-5" image={peer.avatarUrl || null} />
+                        </span>
+                    ))}
+                </span>
             ) : null}
-            <div className="!ml-auto flex items-center space-x-px shrink-0">
+            <div className="ml-auto flex items-center gap-px shrink-0">
                 <NotebookSyncInfo syncStatus={syncStatus} message={cloudMessage} onRetry={onRetrySync} />
                 {onOpenAskAi ? (
                     <OSButton
@@ -126,9 +148,7 @@ export function CollaboratorsBanner({
                         iconClassName="text-navy"
                         tooltip="Ask AI"
                         onClick={onOpenAskAi}
-                    >
-                        Ask AI
-                    </OSButton>
+                    />
                 ) : null}
             </div>
         </div>

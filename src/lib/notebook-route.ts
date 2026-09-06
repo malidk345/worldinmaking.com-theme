@@ -41,3 +41,32 @@ export function notebookPathForRoute(route: NotebookRoute): string {
     if (route.page === 'templates') return '/notebooks/templates'
     return '/notebooks'
 }
+
+export type NotebookHistoryState = { stack: string[]; index: number }
+
+/** Editor/templates/etc. start with the list behind them so Back always has a destination. */
+export function seedNotebookHistory(path: string): NotebookHistoryState {
+    const current = stripPathNoise(path) || '/notebooks'
+    if (current !== '/notebooks' && current.startsWith('/notebooks/')) {
+        return { stack: ['/notebooks', current], index: 1 }
+    }
+    return { stack: [current], index: 0 }
+}
+
+export function planNotebookHistoryPush(state: NotebookHistoryState, nextPath: string): NotebookHistoryState {
+    const current = stripPathNoise(nextPath) || '/notebooks'
+    if (state.stack[state.index] === current) return state
+    if (state.stack[state.index + 1] === current) {
+        return { stack: state.stack, index: state.index + 1 }
+    }
+    const stack = state.stack.slice(0, state.index + 1)
+    stack.push(current)
+    return { stack, index: stack.length - 1 }
+}
+
+export function notebookHistoryFlags(state: NotebookHistoryState): { canGoBack: boolean; canGoForward: boolean } {
+    return {
+        canGoBack: state.index > 0,
+        canGoForward: state.index < state.stack.length - 1,
+    }
+}

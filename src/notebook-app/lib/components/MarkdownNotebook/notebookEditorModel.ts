@@ -47,6 +47,13 @@ export type MarkdownNotebookProps = {
     autoFocus?: boolean
     spellCheck?: boolean
     'data-attr'?: string
+    undoApiRef?: { current: MarkdownNotebookUndoApi | null }
+    onUndoStateChange?: (state: { canUndo: boolean; canRedo: boolean }) => void
+}
+
+export type MarkdownNotebookUndoApi = {
+    undo: () => boolean
+    redo: () => boolean
 }
 
 export type MarkdownNotebookAskAIRequest = {

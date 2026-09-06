@@ -324,6 +324,8 @@ function MarkdownNotebookEditor({
     autoFocus = false,
     spellCheck = true,
     'data-attr': dataAttr = 'markdown-notebook',
+    undoApiRef,
+    onUndoStateChange,
 }: MarkdownNotebookProps): JSX.Element {
     const mergedRegistry = useMemo(
         () => mergeMarkdownNotebookRegistries(getMarkdownNotebookDefaultRegistry(), registry),
@@ -593,7 +595,16 @@ function MarkdownNotebookEditor({
         documentRef,
         notebookElementRef: notebookRef,
         restoreSelectionRef,
+        onUndoStateChange,
     })
+
+    useEffect(() => {
+        if (!undoApiRef) return
+        undoApiRef.current = { undo: undoHistory, redo: redoHistory }
+        return () => {
+            undoApiRef.current = null
+        }
+    }, [redoHistory, undoApiRef, undoHistory])
 
     useEffect(() => {
         if (value === lastSerializedValueRef.current) {

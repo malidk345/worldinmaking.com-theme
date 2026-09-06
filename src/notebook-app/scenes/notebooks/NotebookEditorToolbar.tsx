@@ -13,6 +13,10 @@ export function NotebookEditorToolbar({
     notebookId,
     livePeople,
     onOpenAskAi,
+    canGoBack,
+    canGoForward,
+    onBack,
+    onForward,
 }: {
     syncStatus: NotebookChromeSyncStatus
     cloudMessage?: string
@@ -22,19 +26,25 @@ export function NotebookEditorToolbar({
     notebookId?: string
     livePeople?: NotebookPresencePerson[]
     onOpenAskAi?: () => void
+    canGoBack?: boolean
+    canGoForward?: boolean
+    onBack?: () => void
+    onForward?: () => void
 }): JSX.Element {
     return (
-        <div className="not-prose">
-            <CollaboratorsBanner
-                person={person}
-                updatedAt={updatedAt}
-                syncStatus={syncStatus}
-                cloudMessage={cloudMessage}
-                onRetrySync={onRetrySync}
-                notebookId={notebookId}
-                livePeople={livePeople}
-                onOpenAskAi={onOpenAskAi}
-            />
-        </div>
+        <CollaboratorsBanner
+            person={person}
+            updatedAt={updatedAt}
+            syncStatus={syncStatus}
+            cloudMessage={cloudMessage}
+            onRetrySync={onRetrySync}
+            notebookId={notebookId}
+            livePeople={livePeople}
+            onOpenAskAi={onOpenAskAi}
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onBack={onBack}
+            onForward={onForward}
+        />
     )
 }

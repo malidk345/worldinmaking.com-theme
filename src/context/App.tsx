@@ -1493,7 +1493,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     const setWindowTitle = useCallback((itemOrKey: string | AppWindow, title: string) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
-        setWindows((windows) => windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, meta: { title } } : w)))
+        setWindows((windows) => {
+            let changed = false
+            const next = windows.map((w) => {
+                if (w.key !== key && w.path !== key && w !== itemOrKey) return w
+                if (w.meta?.title === title && w.title === title) return w
+                changed = true
+                return { ...w, title, meta: { title } }
+            })
+            return changed ? next : windows
+        })
     }, [])
 
     const minimizeWindow = useCallback((itemOrKey: string | AppWindow) => {

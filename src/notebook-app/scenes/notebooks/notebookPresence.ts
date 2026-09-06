@@ -123,8 +123,8 @@ export function useNotebookPresence({
 
     useEffect(() => {
         if (!notebookId || !isSupabaseConfigured || !getAuthUserId()) {
-            setCarets([])
-            setPeople([])
+            setCarets((prev) => (prev.length === 0 ? prev : []))
+            setPeople((prev) => (prev.length === 0 ? prev : []))
             return
         }
 

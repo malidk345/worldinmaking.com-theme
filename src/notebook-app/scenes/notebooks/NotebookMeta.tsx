@@ -1,6 +1,5 @@
 import React from 'react'
 import { IconExpand } from '@posthog/icons'
-import Label from 'components/Label'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
@@ -15,7 +14,7 @@ export interface NotebookSyncInfoProps {
 export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncInfoProps): JSX.Element {
     const statusText: Record<NotebookChromeSyncStatus, string> = {
         saved: 'Saved',
-        edited: 'Saving…',
+        edited: 'Syncing',
         local: 'Local',
         error: 'Sync failed',
         offline: 'Offline',
@@ -26,7 +25,7 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
         (syncStatus === 'saved'
             ? 'Saved on this device. Cloud sync is up to date.'
             : syncStatus === 'edited'
-              ? 'Saving on this device…'
+              ? 'Syncing…'
               : syncStatus === 'error'
                 ? 'Cloud sync failed. Notebook is still saved on this device.'
                 : syncStatus === 'offline'
@@ -43,16 +42,15 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
                     onClick={canRetry ? onRetry : undefined}
                     className={`inline-flex items-center ${canRetry ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                    <Label
-                        text={statusText[syncStatus]}
-                        size="small"
-                        style="blue"
-                        className={
-                            syncStatus === 'error'
-                                ? '!bg-red/10 !text-red dark:!bg-red/20 dark:!text-red'
-                                : undefined
-                        }
-                    />
+                    <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-sm border text-sm font-normal leading-none ${
+                            syncStatus === 'error' || syncStatus === 'offline'
+                                ? 'border-red text-red bg-red/10'
+                                : 'border-navy text-navy bg-navy/10'
+                        }`}
+                    >
+                        {statusText[syncStatus]}
+                    </span>
                 </button>
             }
             side="bottom"

@@ -39,6 +39,7 @@ interface NotebookEditorReaderProps {
     onDuplicate?: () => void
     onDelete?: () => void
     onPublish?: (meta: NotebookPublishPayload) => void
+    stickyHeader?: React.ReactNode
 }
 
 function closeMobileReaderNav() {
@@ -67,6 +68,7 @@ export function NotebookEditorReader({
     onDuplicate,
     onDelete,
     onPublish,
+    stickyHeader,
 }: NotebookEditorReaderProps): JSX.Element {
     const comments = useMemo(
         () => extractNotebookComments(currentContent || markdown),
@@ -188,6 +190,7 @@ export function NotebookEditorReader({
             hideBookmark
             hideRightSidebar
             className="h-full min-h-0"
+            stickyHeader={stickyHeader}
             menuTabs={menuTabs}
             menuTabsLayout="list"
             rightActionButtons={

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, Component, useCallback, useRef, useMemo } from 'react'
-import type { MarkdownNotebookAskAIRequest } from './lib/components/MarkdownNotebook/MarkdownNotebook'
+import type {
+    MarkdownNotebookAskAIRequest,
+    MarkdownNotebookUndoApi,
+} from './lib/components/MarkdownNotebook/notebookEditorModel'
 import { planOpenNotebookRemoteApply, pullNotebookById } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
@@ -58,7 +61,7 @@ import {
 import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
 import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
-import { notebookWindowPath } from '../lib/window-path'
+import { isNotebookWindowPath, notebookWindowPath } from '../lib/window-path'
 import { canWriteNotebook } from '../lib/notebook-sharing'
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
@@ -182,6 +185,8 @@ export function App() {
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
   const editorContainerRef = useRef<HTMLDivElement | null>(null)
+  const editorUndoRef = useRef<MarkdownNotebookUndoApi | null>(null)
+  const [textHistory, setTextHistory] = useState({ canUndo: false, canRedo: false })
   const [outlineMarkdown, setOutlineMarkdown] = useState('')
   const routeRef = useRef(route)
   const notebookRef = useRef(currentNotebook)
@@ -262,6 +267,10 @@ export function App() {
   const { appWindow } = useWindow()
   const { windows } = useAppWindows()
   const { isMobile } = useAppSettings()
+  const appWindowRef = useRef(appWindow)
+  const appActionsRef = useRef(appActions)
+  appWindowRef.current = appWindow
+  appActionsRef.current = appActions
 
   const openAskAi = useCallback(() => {
     if (currentNotebook) {
@@ -278,10 +287,14 @@ export function App() {
     })
   }, [appActions, currentNotebook, isMobile, windows])
   const { user } = useUser()
+  const presenceActor = useMemo(
+    () => userToNotebookActor(user) || getNotebookActor(),
+    [user]
+  )
   const presence = useNotebookPresence({
     notebookId: route.page === 'editor' ? currentNotebook?.id : undefined,
     version: currentNotebook?.version,
-    actor: userToNotebookActor(user) || getNotebookActor(),
+    actor: presenceActor,
   })
 
 
@@ -433,9 +446,11 @@ export function App() {
     }
   }, [])
 
-  // Load notebook when route changes to editor. Never fall back to another notebook.
+  // Load notebook when the editor id changes. Do not depend on appWindow —
+  // setWindowTitle updates the window object and would retrigger this forever.
+  const editorNotebookId = route.page === 'editor' ? route.notebookId : null
   useEffect(() => {
-    if (route.page !== 'editor') return
+    if (!editorNotebookId) return
 
     const apply = (nb: StoredNotebook) => {
       setCurrentNotebook(nb)
@@ -443,12 +458,13 @@ export function App() {
       setRemoteMarkdown(nb.content)
       setTitle(nb.title)
       setSyncStatus('saved')
-      if (appWindow && nb.title) {
-        appActions.setWindowTitle(appWindow, nb.title)
+      const win = appWindowRef.current
+      if (win && nb.title && win.meta?.title !== nb.title && win.title !== nb.title) {
+        appActionsRef.current.setWindowTitle(win, nb.title)
       }
     }
 
-    const nb = getNotebook(route.notebookId)
+    const nb = getNotebook(editorNotebookId)
     if (nb) {
       apply(nb)
       return
@@ -456,14 +472,14 @@ export function App() {
     setCurrentNotebook(null)
 
     let cancelled = false
-    void pullNotebookById(route.notebookId).then((remote) => {
+    void pullNotebookById(editorNotebookId).then((remote) => {
       if (cancelled || !remote) return
       rememberRemoteNotebook(remote)
       apply(remote)
     })
 
     const onHydrated = () => {
-      const remote = getNotebook(route.notebookId)
+      const remote = getNotebook(editorNotebookId)
       if (remote) apply(remote)
     }
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
@@ -471,7 +487,7 @@ export function App() {
       cancelled = true
       window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
     }
-  }, [route, appWindow, appActions])
+  }, [editorNotebookId])
 
   useEffect(() => {
     if (route.page !== 'editor' || !currentNotebook) return
@@ -574,13 +590,19 @@ export function App() {
     (id: string, notebookTitle?: string) => {
       const path = notebookWindowPath(id)
       const stored = getNotebook(id)
+      const nextTitle = notebookTitle || stored?.title || 'Notebook'
+      if (appWindow && isNotebookWindowPath(appWindow.path)) {
+        navigate({ page: 'editor', notebookId: id })
+        appActions.setWindowTitle(appWindow, nextTitle)
+        return
+      }
       appActions.addWindow({
         key: path,
         path,
-        title: notebookTitle || stored?.title || 'Notebook',
+        title: nextTitle,
       })
     },
-    [appActions]
+    [appActions, appWindow, navigate]
   )
 
   const openNotebooksListWindow = useCallback(() => {
@@ -799,6 +821,10 @@ export function App() {
     return () => window.clearTimeout(timer)
   }, [markdown, route.page])
 
+  useEffect(() => {
+    setTextHistory({ canUndo: false, canRedo: false })
+  }, [currentNotebook?.id, markdownVersion])
+
   const convertExternalDataTransferToNodes = useCallback(async (dataTransfer: DataTransfer) => {
     const files = Array.from(dataTransfer.files || []).filter(isNotebookImageFile)
     if (!files.length) return null
@@ -903,18 +929,24 @@ export function App() {
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}
                 onPublish={handlePublish}
+                stickyHeader={
+                  <NotebookEditorToolbar
+                    syncStatus={syncStatus}
+                    cloudMessage={cloudMessage}
+                    onRetrySync={retryNotebookRemoteSync}
+                    person={currentNotebook.last_modified_by || currentNotebook.created_by}
+                    updatedAt={currentNotebook.updatedAt}
+                    notebookId={currentNotebook.id}
+                    livePeople={presence.people}
+                    onOpenAskAi={openAskAi}
+                    canGoBack={textHistory.canUndo}
+                    canGoForward={textHistory.canRedo}
+                    onBack={() => editorUndoRef.current?.undo()}
+                    onForward={() => editorUndoRef.current?.redo()}
+                  />
+                }
               >
                 <div className={`min-w-0 ${chrome.wide ? '' : 'max-w-3xl mx-auto'}`}>
-                <NotebookEditorToolbar
-                  syncStatus={syncStatus}
-                  cloudMessage={cloudMessage}
-                  onRetrySync={retryNotebookRemoteSync}
-                  person={currentNotebook.last_modified_by || currentNotebook.created_by}
-                  updatedAt={currentNotebook.updatedAt}
-                  notebookId={currentNotebook.id}
-                  livePeople={presence.people}
-                  onOpenAskAi={openAskAi}
-                />
                 <div
                   className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} min-w-0 font-sans prose prose-sm dark:prose-invert max-w-none font-normal`}
                   ref={editorContainerRef}
@@ -946,6 +978,8 @@ export function App() {
                       remoteCarets={presence.carets}
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}
+                      undoApiRef={editorUndoRef}
+                      onUndoStateChange={setTextHistory}
                       mode={canWriteNotebook(currentNotebook.access_role) ? 'edit' : 'view'}
                       focusAIPromptRequest={aiPromptRequest}
                       onChange={(val) => {

@@ -10,13 +10,14 @@ export type NotebookPerson = {
 }
 
 let actor: NotebookPerson | null = null
+const FALLBACK_ACTOR: NotebookPerson = { first_name: 'You' }
 
 export function setNotebookActor(next: NotebookPerson | null): void {
     actor = next
 }
 
 export function getNotebookActor(): NotebookPerson {
-    return actor || { first_name: 'You' }
+    return actor || FALLBACK_ACTOR
 }
 
 export function userToNotebookActor(user: User | null | undefined): NotebookPerson | null {
