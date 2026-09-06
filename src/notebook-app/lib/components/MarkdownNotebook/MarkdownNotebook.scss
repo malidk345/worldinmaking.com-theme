@@ -391,11 +391,21 @@ html.dark .MarkdownNotebook,
 }
 
 .MarkdownNotebook__line-insert-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     justify-self: start;
-    color: var(--color-text-secondary);
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    color: rgb(var(--text-secondary, 75 75 75));
     pointer-events: none;
+    cursor: pointer;
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
     opacity: 0;
-    transition: opacity 120ms ease;
+    transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
 }
 
 .MarkdownNotebook__line-insert-menu-hit-area {
@@ -433,6 +443,8 @@ html.dark .MarkdownNotebook,
 .MarkdownNotebook__line-insert-menu-button[aria-expanded='true'],
 .MarkdownNotebook__line-insert-menu-button:focus-visible {
     pointer-events: auto;
+    color: rgb(var(--text-primary, 35 35 35));
+    background: rgb(var(--accent, 229 231 224));
     opacity: 1;
 }
 
@@ -603,28 +615,31 @@ html.dark .MarkdownNotebook,
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    color: rgb(var(--text-secondary, 75 75 75));
     cursor: pointer;
-    background: var(--color-bg-surface-primary);
-    border: 1px solid var(--color-border-primary);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
     border-radius: 4px;
     box-shadow: none;
     // Hide all + buttons by default — including on row hover
     pointer-events: none;
     opacity: 0;
-    transition: all 180ms ease;
+    transition: opacity 180ms ease, background 180ms ease, color 180ms ease, border-color 180ms ease;
     transform: translate(-50%, -50%);
 
+    svg {
+        width: 0.9rem;
+        height: 0.9rem;
+    }
+
     &:hover {
-        color: var(--color-text-3000);
-        background: var(--color-bg-surface-primary);
-        border-color: var(--color-border-bold);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        color: rgb(var(--text-primary, 35 35 35));
+        background: rgb(var(--accent, 229 231 224));
+        border-color: rgb(var(--border, 192 192 192));
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1.05);
     }
 }
 
@@ -817,7 +832,8 @@ html.dark .MarkdownNotebook,
 }
 
 .MarkdownNotebook__text-group .MarkdownNotebook__insert-boundary-button {
-    left: calc(var(--markdown-notebook-content-offset) * -1 - 1rem);
+    left: calc(var(--markdown-notebook-content-offset) * -1);
+    transform: translateY(-50%);
 }
 
 .MarkdownNotebook__blockquote-group .MarkdownNotebook__text-block--blockquote {
@@ -4227,8 +4243,12 @@ button.MarkdownNotebook__component-title:focus-visible {
 @media (max-width: 640px) {
     .MarkdownNotebook {
         --markdown-notebook-content-offset: 0px;
+        --markdown-notebook-inline-control-width: 1.75rem;
         overflow-x: clip;
         max-width: 100%;
+        box-sizing: border-box;
+        padding-left: 0.125rem;
+        padding-right: 0.125rem;
     }
 
     .MarkdownNotebook__canvas,
@@ -4242,6 +4262,43 @@ button.MarkdownNotebook__component-title:focus-visible {
         padding: 0 !important;
         margin: 0 !important;
         font-size: inherit !important;
+    }
+
+    .MarkdownNotebook__text-group .MarkdownNotebook__text-row:has(.MarkdownNotebook__line-insert-menu-hit-area) {
+        grid-template-columns: var(--markdown-notebook-inline-control-width) minmax(0, 1fr);
+        gap: 0.125rem;
+    }
+
+    .MarkdownNotebook__text-group
+        .MarkdownNotebook__text-row:has(.MarkdownNotebook__line-insert-menu-hit-area)
+        .MarkdownNotebook__text-block,
+    .MarkdownNotebook__text-group
+        .MarkdownNotebook__text-row:has(.MarkdownNotebook__line-insert-menu-hit-area)
+        .MarkdownNotebook__ai-prompt-card {
+        grid-column: 2;
+    }
+
+    .MarkdownNotebook__text-group .MarkdownNotebook__line-insert-menu-hit-area {
+        position: relative;
+        left: auto;
+        width: auto;
+        inset: auto;
+        grid-column: 1;
+    }
+
+    .MarkdownNotebook__text-group .MarkdownNotebook__insert-boundary-hover-zone {
+        left: 0;
+        width: var(--markdown-notebook-inline-control-width);
+    }
+
+    .MarkdownNotebook__text-group .MarkdownNotebook__insert-boundary-button {
+        left: 0.125rem;
+        transform: translateY(-50%);
+    }
+
+    .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     .MarkdownNotebook__component-shell {

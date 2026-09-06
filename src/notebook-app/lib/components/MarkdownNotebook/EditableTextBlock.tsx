@@ -10,8 +10,7 @@ import {
     useRef,
 } from 'react'
 
-import { IconX } from '@posthog/icons'
-import OSButton from 'components/OSButton'
+import { IconPlus, IconX } from '@posthog/icons'
 
 import {
     getInsertMenuFilterQuery,
@@ -596,21 +595,20 @@ export function EditableTextBlock({
                     onMouseEnter={activateInlineInsertMenuButton}
                     onMouseMove={activateInlineInsertMenuButton}
                 >
-                    <OSButton
-                        size="xs"
-                        icon={
-                            <span className="MarkdownNotebook__line-insert-menu-icon">
-                                {isToolInsertMenuOpen ? <IconX /> : '+'}
-                            </span>
-                        }
+                    <button
+                        type="button"
                         className="MarkdownNotebook__line-insert-menu-button"
-                        active={isToolInsertMenuOpen}
-                        tooltip={isToolInsertMenuOpen ? 'Close menu' : 'Add block'}
+                        aria-pressed={isToolInsertMenuOpen}
+                        title={isToolInsertMenuOpen ? 'Close menu' : 'Add block'}
                         onClick={handleInsertMenuButtonClick}
                         aria-label={isInsertMenuOpen ? 'Close add block menu' : 'Open add block menu'}
                         aria-expanded={isInsertMenuOpen}
                         tabIndex={isInlineInsertMenuButtonVisible ? 0 : -1}
-                    />
+                    >
+                        <span className="MarkdownNotebook__line-insert-menu-icon">
+                            {isToolInsertMenuOpen ? <IconX /> : <IconPlus />}
+                        </span>
+                    </button>
                 </span>
             ) : null}
             <TextTag

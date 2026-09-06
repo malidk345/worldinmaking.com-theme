@@ -33,6 +33,16 @@ const NOTEBOOK_TAG_CSS = `
   background-color: rgb(var(--bg, 255 255 255)) !important;
   color: rgb(var(--text-primary, 17 17 17));
 }
+.notebook-app-scope,
+.Popover,
+.LemonModal,
+.LemonPopover,
+.ReactModal__Content,
+[data-lemon-popover] {
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 29, 78, 216;
+}
 `
 
 let injectCount = 0

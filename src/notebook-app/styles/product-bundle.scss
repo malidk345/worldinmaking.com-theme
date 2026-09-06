@@ -4,6 +4,15 @@
 
 .notebook-app-scope {
   --border: 192 192 192;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 29, 78, 216;
+  --color-accent: #1d4ed8;
+  --link: #1d4ed8;
+  --primary-highlight: rgb(29 78 216 / 12%);
+  --primary-3000: #2563eb;
+  --primary-3000-hover: #3b82f6;
+  --primary-3000-active: #1d4ed8;
   --color-bg-surface-primary: rgb(var(--bg, 255 255 255));
   --color-bg-surface-secondary: rgb(var(--accent, 229 231 224));
   --color-bg-surface-tertiary: rgb(var(--accent, 229 231 224));
@@ -69,5 +78,47 @@
 [data-radix-popper-content-wrapper] input.bg-primary,
 [data-radix-popper-content-wrapper] select.bg-primary {
   background-color: rgb(var(--bg, 255 255 255)) !important;
+  color: rgb(var(--text-primary, 17 17 17));
+}
+
+/*
+ * Quill shim rebinds :root onto these scopes, so --primary was PostHog orange-red.
+ * Brand/caret/focus use --primary (navy). Site utilities stay surface + body text.
+ */
+.notebook-app-scope,
+.Popover,
+.LemonModal,
+.LemonPopover,
+.ReactModal__Content,
+[data-lemon-popover] {
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 29, 78, 216;
+  --color-accent: #1d4ed8;
+  --link: #1d4ed8;
+  --primary-highlight: rgb(29 78 216 / 12%);
+  --primary-3000: #2563eb;
+  --primary-3000-hover: #3b82f6;
+  --primary-3000-active: #1d4ed8;
+  --color-posthog-brand-orange-hue: 221;
+  --color-posthog-brand-orange-saturation: 83%;
+  --color-posthog-brand-orange-lightness: 48%;
+}
+
+.notebook-app-scope .bg-primary,
+.Popover .bg-primary,
+.LemonModal .bg-primary,
+.LemonPopover .bg-primary,
+.ReactModal__Content .bg-primary,
+[data-lemon-popover] .bg-primary {
+  background-color: rgb(var(--bg, 255 255 255));
+}
+
+.notebook-app-scope .text-primary,
+.Popover .text-primary,
+.LemonModal .text-primary,
+.LemonPopover .text-primary,
+.ReactModal__Content .text-primary,
+[data-lemon-popover] .text-primary {
   color: rgb(var(--text-primary, 17 17 17));
 }

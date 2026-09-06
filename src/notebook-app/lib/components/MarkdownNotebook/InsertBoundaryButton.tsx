@@ -1,7 +1,6 @@
 import clsx from 'clsx'
 
 import { IconPlus } from '@posthog/icons'
-import OSButton from 'components/OSButton'
 
 import { isInlineInsertMenuRow, isTextBlockNode } from './documentModel'
 import { NotebookBlockNode } from './types'
@@ -61,19 +60,20 @@ export function InsertBoundaryButton({
                 onMouseMove={() => setActiveBoundaryIndex(boundaryIndex)}
             />
             {isAvailable ? (
-                <OSButton
-                    size="xs"
-                    icon={<IconPlus />}
+                <button
+                    type="button"
                     className={clsx(
                         'MarkdownNotebook__insert-boundary-button',
                         isVisible && 'MarkdownNotebook__insert-boundary-button--visible'
                     )}
-                    tooltip="Add block"
+                    title="Add block"
                     onClick={() => openInsertMenuAtBoundary(boundaryIndex)}
                     aria-label="Add block"
                     data-boundary-index={boundaryIndex}
                     tabIndex={0}
-                />
+                >
+                    <IconPlus />
+                </button>
             ) : null}
         </div>
     )
