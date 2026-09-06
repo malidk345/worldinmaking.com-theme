@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IconSearch, IconSparkles, IconPlus, IconNotebook, IconX, IconArrowRight } from '@posthog/icons'
-import { getNotebooks, StoredNotebook } from './notebookStorage'
+import { IconSearch, IconSparkles, IconPlus, IconNotebook, IconCalendar, IconX, IconArrowRight } from '@posthog/icons'
+import { getNotebooks, getOrCreateDailyNotebook, StoredNotebook } from './notebookStorage'
 import { notebookMatchesQuery } from './notebookPreview'
 
 interface CommandPaletteModalProps {
@@ -79,6 +79,16 @@ export function CommandPaletteModal({
                 action: () => {
                     onClose()
                     onOpenTemplates()
+                },
+            },
+            {
+                id: 'today',
+                label: "Today's daily note",
+                category: 'action',
+                icon: <IconCalendar className="size-4" />,
+                action: () => {
+                    onClose()
+                    onSelectNotebook(getOrCreateDailyNotebook().id)
                 },
             },
         ]

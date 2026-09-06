@@ -3,8 +3,10 @@ import { LemonTag, ProfilePicture } from '~nb-lib/lemon-ui/index'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import { notebookMatchesQuery } from './notebookPreview'
-import { IconEllipsis, IconPlus, IconTrash, IconCopy } from '@posthog/icons'
+import { IconCalendar, IconCheckCircle, IconCopy, IconEllipsis, IconFolder, IconNotebook, IconPlus, IconTrash } from '@posthog/icons'
 import OSButton from 'components/OSButton'
+import { Fieldset } from 'components/OSFieldset'
+import { Checkbox } from 'components/RadixUI/Checkbox'
 import MenuBar from 'components/RadixUI/MenuBar'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Select } from 'components/RadixUI/Select'
@@ -12,14 +14,31 @@ import { useToast } from '../../../context/Toast'
 import {
     StoredNotebook,
     getNotebooks,
+    getNotebook,
+    saveNotebook,
     deleteNotebook,
     duplicateNotebook,
     leaveSharedNotebook,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
+    getOrCreateDailyNotebook,
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
+import {
+    collectNotebookTasks,
+    dateFromKey,
+    folderDepth,
+    folderLeaf,
+    groupNotebookTasks,
+    listNotebookFolders,
+    listNotebookTags,
+    normalizeFolder,
+    normalizeTag,
+    todayKey,
+    uniqueTags,
+    toggleTaskLine,
+} from './notebookOrganize'
 import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
 
 interface NotebooksListSceneProps {
@@ -37,6 +56,24 @@ function timeAgo(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString()
 }
 
+function TagChip({
+    tag,
+    onClick,
+}: {
+    tag: string
+    onClick?: (event: React.MouseEvent) => void
+}): JSX.Element {
+    return (
+        <span
+            role={onClick ? 'button' : undefined}
+            onClick={onClick}
+            className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none"
+        >
+            #{tag}
+        </span>
+    )
+}
+
 export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
@@ -44,6 +81,15 @@ export function NotebooksListScene({
     const [searchInput, setSearchInput] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [createdByFilter, setCreatedByFilter] = useState('all')
+    const [folderFilter, setFolderFilter] = useState('')
+    const [tagFilter, setTagFilter] = useState('')
+    const [listView, setListView] = useState<'notebooks' | 'tasks'>('notebooks')
+    const [dailyJump, setDailyJump] = useState(() => todayKey())
+    const [organizeDraft, setOrganizeDraft] = useState<{
+        id: string
+        mode: 'folder' | 'tag'
+        value: string
+    } | null>(null)
     const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
     const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
     const leavingIdsRef = useRef<Set<string>>(new Set())
@@ -125,8 +171,73 @@ export function NotebooksListScene({
         if (createdByFilter === 'shared' && (!nb.access_role || nb.access_role === 'owner')) {
             return false
         }
+        if (createdByFilter === 'daily' && nb.kind !== 'daily') {
+            return false
+        }
+        if (folderFilter && normalizeFolder(nb.folder) !== folderFilter) {
+            return false
+        }
+        if (tagFilter && !uniqueTags(nb.tags).some((tag) => tag.toLowerCase() === tagFilter.toLowerCase())) {
+            return false
+        }
         return true
     })
+
+    const folders = listNotebookFolders(notebooks)
+    const tags = listNotebookTags(notebooks)
+    const allTasks = collectNotebookTasks(notebooks)
+    const tasks = collectNotebookTasks(filteredNotebooks)
+    const taskGroups = groupNotebookTasks(tasks)
+    const openTaskCount = allTasks.filter((task) => !task.done).length
+
+    const handleOpenDaily = (key?: string) => {
+        const date = key ? dateFromKey(key) : new Date()
+        if (!date) return
+        setDailyJump(todayKey(date))
+        const notebook = getOrCreateDailyNotebook(date)
+        reloadNotebooks()
+        onSelectNotebook(notebook.id)
+    }
+
+    const handleSetFolder = (id: string, folder: string) => {
+        const notebook = getNotebook(id)
+        if (!notebook) return
+        saveNotebook({ ...notebook, folder: normalizeFolder(folder) || undefined })
+        reloadNotebooks()
+    }
+
+    const handleAddTag = (id: string, raw: string) => {
+        const notebook = getNotebook(id)
+        if (!notebook) return
+        const tag = normalizeTag(raw)
+        if (!tag) return
+        saveNotebook({ ...notebook, tags: uniqueTags([...(notebook.tags || []), tag]) })
+        reloadNotebooks()
+    }
+
+    const handleClearTags = (id: string) => {
+        const notebook = getNotebook(id)
+        if (!notebook) return
+        saveNotebook({ ...notebook, tags: [] })
+        reloadNotebooks()
+    }
+
+    const submitOrganizeDraft = () => {
+        if (!organizeDraft) return
+        if (organizeDraft.mode === 'folder') {
+            handleSetFolder(organizeDraft.id, organizeDraft.value)
+        } else {
+            handleAddTag(organizeDraft.id, organizeDraft.value)
+        }
+        setOrganizeDraft(null)
+    }
+
+    const handleToggleTask = (notebookId: string, line: number) => {
+        const notebook = getNotebook(notebookId)
+        if (!notebook) return
+        saveNotebook({ ...notebook, content: toggleTaskLine(notebook.content, line) })
+        reloadNotebooks()
+    }
 
     const handlePinToDesktop = (notebook: StoredNotebook) => {
         try {
@@ -177,6 +288,37 @@ export function NotebooksListScene({
                         href={`/notebooks/${notebook.id}`}
                     >
                         <span className="whitespace-normal break-words">{notebook.title || 'Untitled'}</span>
+                        {notebook.folder ? (
+                            <span
+                                role="button"
+                                className="text-xs text-muted font-normal"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    setListView('notebooks')
+                                    setCreatedByFilter('all')
+                                    setTagFilter('')
+                                    setFolderFilter(normalizeFolder(notebook.folder))
+                                }}
+                            >
+                                {notebook.folder}
+                            </span>
+                        ) : null}
+                        {uniqueTags(notebook.tags).map((tag) => (
+                            <TagChip
+                                key={tag}
+                                tag={tag}
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    setListView('notebooks')
+                                    setCreatedByFilter('all')
+                                    setFolderFilter('')
+                                    setTagFilter(tag)
+                                }}
+                            />
+                        ))}
+                        {notebook.kind === 'daily' && <LemonTag type="highlight">DAILY</LemonTag>}
                         {notebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
                         {notebook.isPublished && !notebook.isTemplate && (
                             <LemonTag type="completion" size="small">
@@ -280,6 +422,42 @@ export function NotebooksListScene({
                                     items: [
                                         {
                                             type: 'item',
+                                            label: 'Move to folder…',
+                                            onClick: () =>
+                                                setOrganizeDraft({
+                                                    id: notebook.id,
+                                                    mode: 'folder',
+                                                    value: notebook.folder || '',
+                                                }),
+                                        },
+                                        ...folders.map((folder) => ({
+                                            type: 'item' as const,
+                                            label: `Folder: ${folder}`,
+                                            onClick: () => handleSetFolder(notebook.id, folder),
+                                        })),
+                                        notebook.folder
+                                            ? {
+                                                  type: 'item' as const,
+                                                  label: 'Remove from folder',
+                                                  onClick: () => handleSetFolder(notebook.id, ''),
+                                              }
+                                            : null,
+                                        {
+                                            type: 'item',
+                                            label: 'Add tag…',
+                                            onClick: () =>
+                                                setOrganizeDraft({ id: notebook.id, mode: 'tag', value: '' }),
+                                        },
+                                        notebook.tags?.length
+                                            ? {
+                                                  type: 'item' as const,
+                                                  label: 'Clear tags',
+                                                  onClick: () => handleClearTags(notebook.id),
+                                              }
+                                            : null,
+                                        { type: 'separator' },
+                                        {
+                                            type: 'item',
                                             label: 'Add to Desktop',
                                             onClick: () => handlePinToDesktop(notebook),
                                         },
@@ -318,7 +496,7 @@ export function NotebooksListScene({
                                                   icon: <IconTrash className="size-4" />,
                                                   onClick: () => handleDelete(notebook.id, notebook.title),
                                               },
-                                    ],
+                                    ].filter((item): item is NonNullable<typeof item> => item != null),
                                 },
                             ]}
                         />
@@ -334,12 +512,14 @@ export function NotebooksListScene({
         { id: 'all', label: 'All notebooks' },
         { id: 'user', label: 'Yours' },
         { id: 'shared', label: 'Shared with you' },
+        { id: 'daily', label: 'Daily notes' },
         { id: 'templates', label: 'Templates' },
     ] as const
     const filterCounts: Record<string, number> = {
         all: notebooks.length,
         user: notebooks.filter((nb) => !nb.isTemplate && (!nb.access_role || nb.access_role === 'owner')).length,
         shared: notebooks.filter((nb) => Boolean(nb.access_role && nb.access_role !== 'owner')).length,
+        daily: notebooks.filter((nb) => nb.kind === 'daily').length,
         templates: notebooks.filter((nb) => Boolean(nb.isTemplate)).length,
     }
 
@@ -351,9 +531,45 @@ export function NotebooksListScene({
                     className="w-full @2xl:w-64 bg-primary flex-shrink-0 @2xl:border-r border-primary @2xl:h-full @2xl:min-h-0"
                 >
                     <div className="flex flex-col h-full min-h-0">
-                        <div className="border-b border-primary px-2 pt-2 pb-2">
+                        <div className="border-b border-primary px-2 pt-2 pb-2 space-y-1">
                             <OSButton variant="primary" size="md" width="full" onClick={onCreateNew}>
                                 New notebook
+                            </OSButton>
+                            <OSButton
+                                size="sm"
+                                width="full"
+                                hover="background"
+                                icon={<IconNotebook />}
+                                onClick={() => handleOpenDaily()}
+                            >
+                                Today
+                            </OSButton>
+                            <label className="flex items-center gap-2 px-1 py-0.5 text-xs text-muted">
+                                <IconCalendar className="size-3.5 shrink-0" />
+                                <input
+                                    type="date"
+                                    value={dailyJump}
+                                    onChange={(event) => {
+                                        const next = event.target.value
+                                        if (!next) return
+                                        handleOpenDaily(next)
+                                    }}
+                                    className="min-w-0 flex-1 rounded-sm border border-primary bg-primary px-1.5 py-1 text-xs text-primary"
+                                    aria-label="Open daily note for date"
+                                />
+                            </label>
+                            <OSButton
+                                size="sm"
+                                width="full"
+                                hover="background"
+                                icon={<IconCheckCircle />}
+                                className={listView === 'tasks' ? 'font-semibold bg-accent' : ''}
+                                onClick={() => setListView((current) => (current === 'tasks' ? 'notebooks' : 'tasks'))}
+                            >
+                                <span className="flex-1 truncate text-left">Tasks</span>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none tabular-nums">
+                                    {openTaskCount}
+                                </span>
                             </OSButton>
                         </div>
                         <div className="px-2 pt-2 pb-1">
@@ -370,16 +586,76 @@ export function NotebooksListScene({
                             <Select
                                 className="w-full border-none rounded-none"
                                 placeholder="Filter"
-                                value={createdByFilter}
-                                onValueChange={(value) => setCreatedByFilter(value || 'all')}
+                                value={
+                                    listView === 'tasks'
+                                        ? 'view:tasks'
+                                        : folderFilter
+                                          ? `folder:${folderFilter}`
+                                          : tagFilter
+                                            ? `tag:${tagFilter}`
+                                            : `filter:${createdByFilter}`
+                                }
+                                onValueChange={(value) => {
+                                    if (!value) return
+                                    if (value === 'view:tasks') {
+                                        setListView('tasks')
+                                        return
+                                    }
+                                    if (value.startsWith('folder:')) {
+                                        setListView('notebooks')
+                                        setCreatedByFilter('all')
+                                        setTagFilter('')
+                                        setFolderFilter(value.slice('folder:'.length))
+                                        return
+                                    }
+                                    if (value.startsWith('tag:')) {
+                                        setListView('notebooks')
+                                        setCreatedByFilter('all')
+                                        setFolderFilter('')
+                                        setTagFilter(value.slice('tag:'.length))
+                                        return
+                                    }
+                                    setListView('notebooks')
+                                    setFolderFilter('')
+                                    setTagFilter('')
+                                    setCreatedByFilter(value.replace(/^filter:/, '') || 'all')
+                                }}
                                 groups={[
                                     {
                                         label: 'Notebooks',
-                                        items: filters.map((filter) => ({
-                                            label: `${filter.label} (${filterCounts[filter.id]})`,
-                                            value: filter.id,
-                                        })),
+                                        items: [
+                                            {
+                                                label: `Tasks (${openTaskCount})`,
+                                                value: 'view:tasks',
+                                            },
+                                            ...filters.map((filter) => ({
+                                                label: `${filter.label} (${filterCounts[filter.id]})`,
+                                                value: `filter:${filter.id}`,
+                                            })),
+                                        ],
                                     },
+                                    ...(folders.length
+                                        ? [
+                                              {
+                                                  label: 'Folders',
+                                                  items: folders.map((folder) => ({
+                                                      label: folder,
+                                                      value: `folder:${folder}`,
+                                                  })),
+                                              },
+                                          ]
+                                        : []),
+                                    ...(tags.length
+                                        ? [
+                                              {
+                                                  label: 'Tags',
+                                                  items: tags.map((tag) => ({
+                                                      label: `#${tag}`,
+                                                      value: `tag:${tag}`,
+                                                  })),
+                                              },
+                                          ]
+                                        : []),
                                 ]}
                             />
                         </div>
@@ -392,8 +668,20 @@ export function NotebooksListScene({
                                         width="full"
                                         hover="background"
                                         size="sm"
-                                        className={createdByFilter === filter.id ? 'font-semibold bg-accent' : ''}
-                                        onClick={() => setCreatedByFilter(filter.id)}
+                                        className={
+                                            listView === 'notebooks' &&
+                                            createdByFilter === filter.id &&
+                                            !folderFilter &&
+                                            !tagFilter
+                                                ? 'font-semibold bg-accent'
+                                                : ''
+                                        }
+                                        onClick={() => {
+                                            setListView('notebooks')
+                                            setCreatedByFilter(filter.id)
+                                            setFolderFilter('')
+                                            setTagFilter('')
+                                        }}
                                     >
                                         <span className="flex-1 truncate">{filter.label}</span>
                                         <span className="text-muted text-xs tabular-nums">
@@ -401,6 +689,66 @@ export function NotebooksListScene({
                                         </span>
                                     </OSButton>
                                 ))}
+                                {folders.length ? (
+                                    <div className="pt-3">
+                                        <p className="m-0 px-2 pb-1 text-[11px] uppercase tracking-wide text-muted">
+                                            Folders
+                                        </p>
+                                        {folders.map((folder) => (
+                                            <OSButton
+                                                key={folder}
+                                                align="left"
+                                                width="full"
+                                                hover="background"
+                                                size="sm"
+                                                icon={<IconFolder />}
+                                                className={folderFilter === folder ? 'font-semibold bg-accent' : ''}
+                                                onClick={() => {
+                                                    setListView('notebooks')
+                                                    setCreatedByFilter('all')
+                                                    setTagFilter('')
+                                                    setFolderFilter(folder)
+                                                }}
+                                            >
+                                                <span
+                                                    className="flex-1 truncate"
+                                                    style={{ paddingLeft: folderDepth(folder) * 10 }}
+                                                >
+                                                    {folderLeaf(folder)}
+                                                </span>
+                                            </OSButton>
+                                        ))}
+                                    </div>
+                                ) : null}
+                                {tags.length ? (
+                                    <div className="pt-3">
+                                        <p className="m-0 px-2 pb-1 text-[11px] uppercase tracking-wide text-muted">
+                                            Tags
+                                        </p>
+                                        {tags.map((tag) => (
+                                            <OSButton
+                                                key={tag}
+                                                align="left"
+                                                width="full"
+                                                hover="background"
+                                                size="sm"
+                                                className={
+                                                    tagFilter.toLowerCase() === tag.toLowerCase()
+                                                        ? 'font-semibold bg-accent'
+                                                        : ''
+                                                }
+                                                onClick={() => {
+                                                    setListView('notebooks')
+                                                    setCreatedByFilter('all')
+                                                    setFolderFilter('')
+                                                    setTagFilter(tag)
+                                                }}
+                                            >
+                                                <span className="flex-1 truncate">#{tag}</span>
+                                            </OSButton>
+                                        ))}
+                                    </div>
+                                ) : null}
                             </div>
                         </ScrollArea>
                     </div>
@@ -411,47 +759,156 @@ export function NotebooksListScene({
                     className="flex-1 min-h-0 bg-primary overflow-hidden @2xl:border-none border-t border-primary flex flex-col"
                 >
                     <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} flex-1 min-h-0 overflow-auto p-3 sm:p-4`}>
-                        <LemonTable
-                            data-attr="notebooks-table"
-                            dataSource={filteredNotebooks}
-                            columns={columns}
-                            rowKey="id"
-                            rowClassName={(notebook) =>
-                                leavingIds.has(notebook.id)
-                                    ? 'opacity-0 -translate-y-1 transition duration-200 ease-out pointer-events-none'
-                                    : 'transition duration-200 ease-out'
-                            }
-                            loading={false}
-                            defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
-                            pagination={{ pageSize: 25, hideOnSinglePage: true }}
-                            emptyState={
-                                emptyLibrary ? (
-                                    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-                                        <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
-                                        <p className="m-0 text-xs text-muted max-w-sm">
-                                            Start a page. Inside the editor, type{' '}
-                                            <span className="font-semibold">/</span> to insert a block.
-                                        </p>
-                                        <OSButton variant="primary" size="sm" icon={<IconPlus />} onClick={onCreateNew}>
-                                            New notebook
+                        {organizeDraft ? (
+                            <div className="mb-3">
+                                <Fieldset legend={organizeDraft.mode === 'folder' ? 'Move to folder' : 'Add tag'}>
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={organizeDraft.value}
+                                        onChange={(event) =>
+                                            setOrganizeDraft({ ...organizeDraft, value: event.target.value })
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') {
+                                                event.preventDefault()
+                                                submitOrganizeDraft()
+                                            }
+                                            if (event.key === 'Escape') setOrganizeDraft(null)
+                                        }}
+                                        placeholder={
+                                            organizeDraft.mode === 'folder'
+                                                ? 'Projects/Launch'
+                                                : 'research'
+                                        }
+                                        className="w-full rounded-sm border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+                                    />
+                                    <div className="flex items-center gap-1 pt-1">
+                                        <OSButton variant="primary" size="sm" onClick={submitOrganizeDraft}>
+                                            Save
+                                        </OSButton>
+                                        <OSButton size="sm" hover="background" onClick={() => setOrganizeDraft(null)}>
+                                            Cancel
                                         </OSButton>
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
-                                        <p className="m-0 text-sm font-medium text-primary">
-                                            {searchActive
-                                                ? `No notebooks match “${searchQuery.trim()}”`
-                                                : 'No notebooks matching your filters'}
-                                        </p>
-                                        <p className="m-0 text-xs text-muted">
-                                            Try another title, a word from the page, or clear the filter.
+                                </Fieldset>
+                            </div>
+                        ) : null}
+                        {listView === 'tasks' ? (
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between gap-2 px-1">
+                                    <p className="m-0 text-sm font-semibold text-primary">Tasks</p>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none tabular-nums">
+                                        {tasks.filter((task) => !task.done).length} open
+                                    </span>
+                                </div>
+                                {tasks.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
+                                        <p className="m-0 text-sm font-semibold text-primary">No tasks yet</p>
+                                        <p className="m-0 text-xs text-muted max-w-sm">
+                                            Add a to-do list in a notebook with{' '}
+                                            <span className="font-semibold">/ To-do list</span>. Write{' '}
+                                            <span className="font-semibold">due:2026-09-10</span> on a line to sort it
+                                            here.
                                         </p>
                                     </div>
-                                )
-                            }
-                            nouns={['notebook', 'notebooks']}
-                            useURLForSorting={false}
-                        />
+                                ) : (
+                                    taskGroups.map((group) => (
+                                        <div key={group.notebookId} className="flex flex-col gap-px">
+                                            <button
+                                                type="button"
+                                                className="px-2 pb-1 text-left text-[11px] uppercase tracking-wide text-muted hover:text-primary"
+                                                onClick={() => onSelectNotebook(group.notebookId)}
+                                            >
+                                                {group.notebookTitle}
+                                            </button>
+                                            {group.tasks.map((task) => (
+                                                <div
+                                                    key={`${task.notebookId}-${task.line}`}
+                                                    className="flex items-start gap-2 px-2 py-1.5 rounded-sm hover:bg-accent"
+                                                >
+                                                    <Checkbox
+                                                        checked={task.done}
+                                                        onCheckedChange={() =>
+                                                            handleToggleTask(task.notebookId, task.line)
+                                                        }
+                                                        ariaLabel={task.text}
+                                                        className="mt-0.5 size-4"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="min-w-0 flex-1 text-left"
+                                                        onClick={() => onSelectNotebook(task.notebookId)}
+                                                    >
+                                                        <span
+                                                            className={`block text-sm ${
+                                                                task.done
+                                                                    ? 'line-through text-muted'
+                                                                    : 'text-primary'
+                                                            }`}
+                                                        >
+                                                            {task.text}
+                                                        </span>
+                                                        {task.due ? (
+                                                            <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none">
+                                                                due {task.due}
+                                                            </span>
+                                                        ) : null}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        ) : (
+                            <LemonTable
+                                data-attr="notebooks-table"
+                                dataSource={filteredNotebooks}
+                                columns={columns}
+                                rowKey="id"
+                                rowClassName={(notebook) =>
+                                    leavingIds.has(notebook.id)
+                                        ? 'opacity-0 -translate-y-1 transition duration-200 ease-out pointer-events-none'
+                                        : 'transition duration-200 ease-out'
+                                }
+                                loading={false}
+                                defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
+                                pagination={{ pageSize: 25, hideOnSinglePage: true }}
+                                emptyState={
+                                    emptyLibrary ? (
+                                        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                                            <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
+                                            <p className="m-0 text-xs text-muted max-w-sm">
+                                                Start a page. Inside the editor, type{' '}
+                                                <span className="font-semibold">/</span> to insert a block.
+                                            </p>
+                                            <OSButton
+                                                variant="primary"
+                                                size="sm"
+                                                icon={<IconPlus />}
+                                                onClick={onCreateNew}
+                                            >
+                                                New notebook
+                                            </OSButton>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
+                                            <p className="m-0 text-sm font-medium text-primary">
+                                                {searchActive
+                                                    ? `No notebooks match “${searchQuery.trim()}”`
+                                                    : 'No notebooks matching your filters'}
+                                            </p>
+                                            <p className="m-0 text-xs text-muted">
+                                                Try another title, a word from the page, or clear the filter.
+                                            </p>
+                                        </div>
+                                    )
+                                }
+                                nouns={['notebook', 'notebooks']}
+                                useURLForSorting={false}
+                            />
+                        )}
                     </div>
                 </main>
             </div>

@@ -68,8 +68,12 @@ const NOTEBOOK_PALETTE_CSS = `
   border-color: rgb(var(--input-border));
   color: rgb(var(--text-primary));
 }
+/* Font attr lives on the App shell; scope class is on an inner editor node. */
+[data-notebook-font='sm'] .MarkdownNotebook,
 .notebook-app-scope[data-notebook-font='sm'] .MarkdownNotebook { font-size: 0.875rem; }
+[data-notebook-font='md'] .MarkdownNotebook,
 .notebook-app-scope[data-notebook-font='md'] .MarkdownNotebook { font-size: 1rem; }
+[data-notebook-font='lg'] .MarkdownNotebook,
 .notebook-app-scope[data-notebook-font='lg'] .MarkdownNotebook { font-size: 1.125rem; }
 .notebook-app-scope .NotebookPublicView {
   /* Same stack as tailwind.config.js fontFamily.sans / blog ReaderView */

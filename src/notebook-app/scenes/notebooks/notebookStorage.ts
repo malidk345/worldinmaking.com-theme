@@ -3,6 +3,7 @@ import {
     deleteNotebookRemote,
     isNotebookRemoteKnownAvailable,
     mergeNotebookLists,
+    notebookChromeSyncFromRemoteResult,
     pickNewerNotebook,
     pullNotebooksFromRemote,
     pushAllNotebooksToRemote,
@@ -26,6 +27,7 @@ import { adoptDeviceCacheToAccount, adoptStringIdLists } from '../../../lib/adop
 import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
 import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
+import { formatDailyTitle, normalizeFolder, todayKey, uniqueTags, type NotebookKind } from './notebookOrganize'
 
 export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
 export const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
@@ -65,6 +67,10 @@ export interface StoredNotebook {
     access_role?: NotebookAccessRole
     created_by?: NotebookPerson
     last_modified_by?: NotebookPerson
+    folder?: string
+    tags?: string[]
+    kind?: NotebookKind
+    dailyDate?: string
 }
 
 export interface NotebookVersion {
@@ -131,7 +137,8 @@ function evictStaleNotebookHistory(keepKey?: string): void {
 }
 
 /** Fire-and-forget remote sync — never throws into UI paths. Emits sync status for the chrome. */
-function queueRemote(promise: Promise<unknown>): void {
+function queueRemote(promise: Promise<unknown>, options: { report?: boolean } = {}): void {
+    const report = options.report !== false
     promise
         .then((result: any) => {
             if (result && typeof result === 'object' && result.conflict) {
@@ -145,30 +152,9 @@ function queueRemote(promise: Promise<unknown>): void {
                     }
                     writeAll(localList)
                 }
-                emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
-                    status: 'error',
-                    message: 'Updated from another device.',
-                } satisfies NotebookSyncEventDetail)
-                return
-            }
-
-            if (result && typeof result === 'object' && result.forbidden) {
-                return
-            }
-
-            if (result === false || (result && typeof result === 'object' && result.ok === false)) {
-                const offline = isNotebookRemoteKnownAvailable() === false
-                emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
-                    status: offline ? 'offline' : 'error',
-                    message: offline
-                        ? 'Offline. Notebook is saved on this device.'
-                        : 'Cloud sync failed. Notebook is still saved on this device.',
-                } satisfies NotebookSyncEventDetail)
-                return
             }
 
             if (result && typeof result === 'object' && result.ok && result.notebook?.id) {
-                // Sync version back to local storage if returned by remote API
                 const localList = readLocalNotebooks()
                 const idx = localList.findIndex((nb) => nb.id === result.notebook.id)
                 if (idx >= 0 && localList[idx].version !== result.notebook.version) {
@@ -177,13 +163,18 @@ function queueRemote(promise: Promise<unknown>): void {
                 }
             }
 
-            emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, { status: 'ok' } satisfies NotebookSyncEventDetail)
+            const chrome = notebookChromeSyncFromRemoteResult(result, {
+                report,
+                remoteAvailable: isNotebookRemoteKnownAvailable(),
+            })
+            if (chrome) emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, chrome satisfies NotebookSyncEventDetail)
         })
         .catch(() => {
-            emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
-                status: 'error',
-                message: 'Cloud sync failed. Notebook is still saved on this device.',
-            } satisfies NotebookSyncEventDetail)
+            const chrome = notebookChromeSyncFromRemoteResult(false, {
+                report,
+                remoteAvailable: isNotebookRemoteKnownAvailable(),
+            })
+            if (chrome) emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, chrome satisfies NotebookSyncEventDetail)
         })
 }
 
@@ -210,7 +201,7 @@ function schedulePushAll(): void {
     for (const nb of notebooks) {
         history[nb.id] = getNotebookHistory(nb.id)
     }
-    queueRemote(pushAllNotebooksToRemote(notebooks, history))
+    queueRemote(pushAllNotebooksToRemote(notebooks, history), { report: false })
 }
 
 /** Background pull + merge into localStorage (no React state — next read/remount sees data) */
@@ -243,7 +234,7 @@ function mergeRemoteIntoLocal(
     if (outgoing.length) {
         const history: Record<string, NotebookVersion[]> = {}
         for (const nb of outgoing) history[nb.id] = getNotebookHistory(nb.id)
-        queueRemote(pushAllNotebooksToRemote(outgoing, history))
+        queueRemote(pushAllNotebooksToRemote(outgoing, history), { report: false })
     }
 }
 
@@ -252,11 +243,11 @@ function refreshNotebooksFromRemote(claim = false): void {
         (async () => {
             if (claim) await claimDeviceAccountOnLogin()
             const remote = await pullNotebooksFromRemote({ force: true })
-            if (!remote) return false
+            if (!remote) return
             mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
-            return true
-        })()
+        })(),
+        { report: false }
     )
 }
 
@@ -288,14 +279,15 @@ function ensureRemoteHydrate(): void {
                 if (fresh.length) {
                     const history: Record<string, NotebookVersion[]> = {}
                     for (const nb of fresh) history[nb.id] = getNotebookHistory(nb.id)
-                    queueRemote(pushAllNotebooksToRemote(fresh, history))
+                    queueRemote(pushAllNotebooksToRemote(fresh, history), { report: false })
                 }
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
                 return
             }
             mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
-        })()
+        })(),
+        { report: false }
     )
 }
 
@@ -780,13 +772,17 @@ export function deleteNotebook(id: string): void {
         localStorage.removeItem(`${HISTORY_KEY_PREFIX}${target.id}`)
         unpinNotebookFromDesktop(target.id)
         if (target.short_id) unpinNotebookFromDesktop(target.short_id)
-        queueRemote(deleteNotebookRemote(target.id))
+        queueRemote(deleteNotebookRemote(target.id), { report: false })
     } else {
-        queueRemote(deleteNotebookRemote(id))
+        queueRemote(deleteNotebookRemote(id), { report: false })
     }
 }
 
-export function createNotebook(title?: string, content?: string): StoredNotebook {
+export function createNotebook(
+    title?: string,
+    content?: string,
+    organize?: { folder?: string; tags?: string[]; kind?: NotebookKind; dailyDate?: string }
+): StoredNotebook {
     const id = uuid()
     const now = new Date().toISOString()
 
@@ -803,6 +799,10 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
         isPublished: false,
         created_by: actor,
         last_modified_by: actor,
+        folder: organize?.folder ? normalizeFolder(organize.folder) || undefined : undefined,
+        tags: organize?.tags ? uniqueTags(organize.tags) : undefined,
+        kind: organize?.kind,
+        dailyDate: organize?.dailyDate,
     }
 
     const notebooks = getNotebooks()
@@ -816,11 +816,22 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
 export function duplicateNotebook(id: string): StoredNotebook | undefined {
     const source = getNotebook(id)
     if (!source) return undefined
-    const copy = createNotebook(`${source.title} (Copy)`, source.content)
+    const copy = createNotebook(`${source.title} (Copy)`, source.content, {
+        folder: source.folder,
+        tags: source.tags,
+    })
     if (source.publish) {
         return saveNotebook({ ...copy, publish: { ...source.publish }, isPublished: false })
     }
     return copy
+}
+
+export function getOrCreateDailyNotebook(date = new Date()): StoredNotebook {
+    const dailyDate = todayKey(date)
+    const existing = getNotebooks().find((notebook) => notebook.kind === 'daily' && notebook.dailyDate === dailyDate)
+    if (existing) return existing
+    const title = formatDailyTitle(date)
+    return createNotebook(title, `# ${title}\n\n`, { kind: 'daily', dailyDate })
 }
 
 export function getNotebookHistory(id: string): NotebookVersion[] {
@@ -860,9 +871,15 @@ export function restoreNotebookVersion(id: string, version: number): StoredNoteb
 
 export function importNotebookFromJSON(jsonStr: string): StoredNotebook {
     const parsed = JSON.parse(jsonStr)
-    const notebook = createNotebook(parsed.title, parsed.content)
-    if (parsed.pinned !== undefined) notebook.pinned = parsed.pinned
-    if (parsed.publish) notebook.publish = parsed.publish
+    const source = parsed?.notebook && typeof parsed.notebook === 'object' ? parsed.notebook : parsed
+    const notebook = createNotebook(source.title, source.content, {
+        folder: source.folder,
+        tags: source.tags,
+        kind: source.kind === 'daily' ? 'daily' : undefined,
+        dailyDate: source.dailyDate,
+    })
+    if (source.pinned !== undefined) notebook.pinned = source.pinned
+    if (source.publish) notebook.publish = source.publish
     return saveNotebook(notebook)
 }
 
@@ -882,6 +899,10 @@ export function exportNotebookAsJSON(id: string): string {
             publish: notebook.publish ?? null,
             createdAt: notebook.createdAt,
             updatedAt: notebook.updatedAt,
+            folder: notebook.folder,
+            tags: notebook.tags,
+            kind: notebook.kind,
+            dailyDate: notebook.dailyDate,
         },
     }
     return JSON.stringify(payload, null, 2)

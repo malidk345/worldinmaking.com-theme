@@ -38,7 +38,7 @@ const projectRef =
     (projectUrl.match(/https:\/\/([a-z0-9]+)\.supabase\.co/i) || [])[1] ||
     ''
 
-const sqlPath = path.join(root, 'supabase', 'migrations', '20260806_wim_notebooks.sql')
+const sqlPath = path.resolve(root, process.argv[2] || path.join('supabase', 'migrations', '20260806_wim_notebooks.sql'))
 
 if (!fs.existsSync(sqlPath)) {
     console.error('Migration file missing:', sqlPath)

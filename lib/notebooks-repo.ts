@@ -32,6 +32,12 @@ export type StoredNotebookRow = {
     created_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
     last_modified_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
     deleted_at?: string | null
+    organize?: {
+        folder?: string | null
+        tags?: string[] | null
+        kind?: 'note' | 'daily' | null
+        dailyDate?: string | null
+    } | null
 }
 
 export type NotebookHistoryRow = {
@@ -61,6 +67,10 @@ export type StoredNotebookDTO = {
     access_role?: NotebookAccessRole
     created_by?: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string }
     last_modified_by?: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string }
+    folder?: string
+    tags?: string[]
+    kind?: 'note' | 'daily'
+    dailyDate?: string
 }
 
 export type NotebookVersionDTO = {
@@ -88,6 +98,10 @@ export function rowToDTO(row: StoredNotebookRow, accessRole: NotebookAccessRole 
         access_role: accessRole,
         created_by: row.created_by ?? undefined,
         last_modified_by: row.last_modified_by ?? undefined,
+        folder: row.organize?.folder || undefined,
+        tags: Array.isArray(row.organize?.tags) ? row.organize?.tags.filter(Boolean) : undefined,
+        kind: row.organize?.kind === 'daily' ? 'daily' : undefined,
+        dailyDate: row.organize?.dailyDate || undefined,
     }
 }
 
@@ -129,6 +143,12 @@ export function dtoToRow(nb: StoredNotebookDTO, ownerKey: string): Omit<StoredNo
         auth_user_id: nb.auth_user_id ?? null,
         created_by: nb.created_by ?? null,
         last_modified_by: nb.last_modified_by ?? null,
+        organize: {
+            folder: nb.folder || null,
+            tags: nb.tags || [],
+            kind: nb.kind || 'note',
+            dailyDate: nb.dailyDate || null,
+        },
     }
 }
 
@@ -473,6 +493,15 @@ export async function upsertNotebooks(
         onConflict: 'id',
         count: 'exact',
     })
+    if (error && /organize/i.test(error.message || '')) {
+        const stripped = updatedRows.map(({ organize: _organize, ...row }) => row)
+        const retry = await supabaseAdmin.from('wim_notebooks').upsert(stripped, {
+            onConflict: 'id',
+            count: 'exact',
+        })
+        if (retry.error) throw retry.error
+        return retry.count ?? stripped.length
+    }
     if (error) throw error
     return count ?? updatedRows.length
 }

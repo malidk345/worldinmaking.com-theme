@@ -11,10 +11,10 @@
     );
     --markdown-notebook-code-background: color-mix(in sRGB, var(--color-bg-surface-primary) 92%, white);
     --markdown-notebook-code-border: color-mix(in sRGB, var(--color-border-primary) 82%, var(--color-text-primary));
-    --markdown-notebook-code-gutter: var(--data-color-10);
-    --markdown-notebook-code-shadow: inset 0 1px 0 rgb(255 255 255 / 75%), 0 0.125rem 0.375rem rgb(0 0 0 / 4%);
-    --markdown-notebook-quote-gutter: var(--warning);
-    --markdown-notebook-table-gutter: var(--markdown-notebook-text-block-gutter);
+    --markdown-notebook-code-gutter: rgb(var(--border, 192 192 192));
+    --markdown-notebook-code-shadow: none;
+    --markdown-notebook-quote-gutter: #1d4ed8;
+    --markdown-notebook-table-gutter: rgb(var(--border, 192 192 192));
     --markdown-notebook-table-header-background: var(--color-bg-surface-secondary);
     --markdown-notebook-table-divider: color-mix(in sRGB, var(--color-border-primary) 80%, transparent);
     --markdown-notebook-inline-control-gap: 0.125rem;
@@ -24,7 +24,7 @@
     );
     --markdown-notebook-canvas-max-width: 56rem;
     --markdown-notebook-comment-gutter: 19rem;
-    --markdown-notebook-block-radius: 0.7rem;
+    --markdown-notebook-block-radius: 4px;
     --markdown-notebook-block-glass: color-mix(in sRGB, var(--color-bg-surface-primary) 42%, rgb(255 255 255 / 32%));
     --markdown-notebook-block-glass-strong: color-mix(
         in sRGB,
@@ -52,9 +52,9 @@ html.dark .MarkdownNotebook,
     --markdown-notebook-text-block-gutter: color-mix(in sRGB, var(--color-border-primary) 84%, white);
     --markdown-notebook-code-background: var(--markdown-notebook-component-background);
     --markdown-notebook-code-border: var(--color-border-primary);
-    --markdown-notebook-code-gutter: var(--data-color-10);
-    --markdown-notebook-code-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
-    --markdown-notebook-quote-gutter: var(--warning);
+    --markdown-notebook-code-gutter: var(--color-border-primary);
+    --markdown-notebook-code-shadow: none;
+    --markdown-notebook-quote-gutter: #3b82f6;
     --bg-light: var(--color-bg-surface-secondary);
     --markdown-notebook-block-glass: color-mix(in sRGB, var(--color-bg-surface-tertiary) 48%, rgb(255 255 255 / 7%));
     --markdown-notebook-block-glass-strong: color-mix(
@@ -610,8 +610,8 @@ html.dark .MarkdownNotebook,
     cursor: pointer;
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 9999px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    box-shadow: none;
     // Hide all + buttons by default — including on row hover
     pointer-events: none;
     opacity: 0;
@@ -697,57 +697,52 @@ html.dark .MarkdownNotebook,
 }
 
 .MarkdownNotebook__blockquote-group {
-    --markdown-notebook-quote-indent: calc(1.75rem + 3px);
+    --markdown-notebook-quote-indent: 1.25rem;
 
     box-sizing: border-box;
-    padding: 1rem 0.75rem 1rem calc(1.25rem - 3px);
-    margin: 0.5rem -0.6rem 0.5rem calc(-0.6rem - 3px);
+    padding: 0.15rem 0 0.15rem 0.85rem;
+    margin: 0.35rem 0;
     color: inherit;
-    background: color-mix(in sRGB, var(--markdown-notebook-quote-gutter) 10%, transparent);
-    border: 1px solid transparent;
-    border-left: 6px solid var(--markdown-notebook-quote-gutter);
-    border-radius: 0 var(--markdown-notebook-block-radius) var(--markdown-notebook-block-radius) 0;
-    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, backdrop-filter 160ms ease;
+    background: transparent;
+    border: 0;
+    border-left: 2px solid color-mix(in sRGB, var(--markdown-notebook-quote-gutter) 40%, transparent);
+    border-radius: 0;
+    transition: border-color 120ms ease;
 }
 
 .MarkdownNotebook__code-group {
     box-sizing: border-box;
-    padding: 1rem 1rem 1rem calc(1.25rem - 3px);
-    margin: 0.5rem -0.6rem 0.5rem calc(-0.6rem - 3px);
+    padding: 0.75rem 0.85rem;
+    margin: 0.5rem 0;
     font-family: var(--font-mono);
     color: var(--color-text-primary);
-    background: color-mix(in sRGB, var(--markdown-notebook-code-gutter) 8%, transparent);
-    border: 1px solid transparent;
-    border-left: 6px solid var(--markdown-notebook-code-gutter);
-    border-radius: 0 var(--markdown-notebook-block-radius) var(--markdown-notebook-block-radius) 0;
-    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, backdrop-filter 160ms ease;
+    background: rgb(var(--accent, 229 231 224) / 0.55);
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
+    transition: border-color 120ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .MarkdownNotebook__blockquote-group:hover {
-        border-color: var(--color-border-primary);
         border-left-color: var(--markdown-notebook-quote-gutter);
         box-shadow: none;
     }
 
     .MarkdownNotebook__code-group:hover {
-        border-color: var(--color-border-primary);
-        border-left-color: var(--markdown-notebook-code-gutter);
+        border-color: rgb(var(--border, 192 192 192));
         box-shadow: none;
     }
 }
 
 .MarkdownNotebook__blockquote-group:focus-within,
 .MarkdownNotebook__blockquote-group:active {
-    border-color: var(--color-border-primary);
     border-left-color: var(--markdown-notebook-quote-gutter);
     box-shadow: none;
 }
 
 .MarkdownNotebook__code-group:focus-within,
 .MarkdownNotebook__code-group:active {
-    border-color: var(--color-border-primary);
-    border-left-color: var(--markdown-notebook-code-gutter);
+    border-color: rgb(var(--border, 192 192 192));
     box-shadow: none;
 }
 
@@ -1773,8 +1768,8 @@ h4.MarkdownNotebook__text-block {
     color: var(--color-text-primary);
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
-    box-shadow: var(--shadow-elevation-3000);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 
     .LemonButton {
         min-height: 1.625rem;
@@ -1895,14 +1890,13 @@ h4.MarkdownNotebook__text-block {
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    color: var(--color-text-primary);
-    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    color: rgb(var(--text-primary));
+    font-family: RoundHog, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     visibility: hidden;
-    background: var(--color-bg-surface-primary, #232630);
-    border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.12));
-    border-radius: var(--radius, 6px);
-    box-shadow: 0px 10px 38px -10px rgba(0, 0, 0, 0.45), 0px 10px 20px -15px rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(16px);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
+    box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.28), 0 8px 16px -12px rgba(0, 0, 0, 0.16);
     animation: wimPresetsFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -1945,11 +1939,11 @@ h4.MarkdownNotebook__text-block {
     min-height: 26px;
     height: 26px;
     padding: 0 8px;
-    font-family: 'RoundHog', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-family: RoundHog, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     font-size: 13px;
     font-weight: 500;
     line-height: 1;
-    color: var(--color-text-primary, #f4f4f5);
+    color: rgb(var(--text-primary));
     text-align: left;
     cursor: pointer;
     background: transparent;
@@ -1992,13 +1986,13 @@ h4.MarkdownNotebook__text-block {
 .MarkdownNotebook__insert-item:hover,
 .MarkdownNotebook__insert-item:focus-visible,
 .MarkdownNotebook__insert-item--selected {
-    background: var(--color-bg-fill-button-tertiary-hover, rgba(255, 255, 255, 0.08));
-    color: var(--color-text-primary, #ffffff);
+    background: rgb(var(--accent, 229 231 224));
+    color: rgb(var(--text-primary));
     outline: none;
 
     .MarkdownNotebook__insert-item-icon {
         opacity: 1;
-        color: var(--color-text-primary, #ffffff);
+        color: rgb(var(--text-primary));
     }
 }
 
@@ -2150,18 +2144,14 @@ h4.MarkdownNotebook__text-block {
 .MarkdownNotebook__table-block {
     max-width: 100%;
     margin-left: var(--markdown-notebook-content-offset);
-    background: var(--markdown-notebook-text-group-background);
-    border: 1px solid var(--markdown-notebook-text-group-border);
-    border-left: 3px solid var(--markdown-notebook-table-gutter);
-    border-radius: 0.25rem;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    box-shadow: var(--markdown-notebook-text-group-shadow);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
+    box-shadow: none;
 }
 
 .MarkdownNotebook__table-block:focus-within {
-    border-color: color-mix(in sRGB, var(--primary) 34%, var(--markdown-notebook-text-group-border));
-    border-left-color: var(--markdown-notebook-table-gutter);
+    border-color: rgb(var(--border, 192 192 192));
 }
 
 .MarkdownNotebook__list-block {
@@ -2278,7 +2268,7 @@ h4.MarkdownNotebook__text-block {
     width: 1em;
     height: 1em;
     margin: 0;
-    accent-color: var(--primary);
+    accent-color: #1d4ed8;
     cursor: pointer;
 }
 
@@ -2908,39 +2898,16 @@ button.MarkdownNotebook__component-title:focus-visible {
     height: 1rem;
 }
 
-.MarkdownNotebook__component-title--insight {
-    color: var(--data-color-1);
-    background: color-mix(in oklab, var(--data-color-1) 16%, var(--color-bg-surface-primary));
-}
-
-.MarkdownNotebook__component-title--sql {
-    color: var(--purple);
-    background: color-mix(in oklab, var(--purple) 18%, var(--color-bg-surface-primary));
-}
-
-.MarkdownNotebook__component-title--data {
-    color: var(--data-color-3);
-    background: color-mix(in oklab, var(--data-color-3) 18%, var(--color-bg-surface-primary));
-}
-
-.MarkdownNotebook__component-title--media {
-    color: var(--data-color-12);
-    background: color-mix(in oklab, var(--data-color-12) 18%, var(--color-bg-surface-primary));
-}
-
-.MarkdownNotebook__component-title--experiment {
-    color: var(--color-text-warning);
-    background: var(--color-bg-fill-warning-highlight);
-}
-
-.MarkdownNotebook__component-title--code {
-    color: var(--data-color-10);
-    background: color-mix(in oklab, var(--data-color-10) 18%, var(--color-bg-surface-primary));
-}
-
+.MarkdownNotebook__component-title--insight,
+.MarkdownNotebook__component-title--sql,
+.MarkdownNotebook__component-title--data,
+.MarkdownNotebook__component-title--media,
+.MarkdownNotebook__component-title--experiment,
+.MarkdownNotebook__component-title--code,
 .MarkdownNotebook__component-title--posthog {
-    color: var(--data-color-4);
-    background: color-mix(in oklab, var(--data-color-4) 18%, var(--color-bg-surface-primary));
+    color: #1d4ed8;
+    background: rgb(29 78 216 / 0.1);
+    border-radius: 4px;
 }
 
 .MarkdownNotebook__component-preview,
@@ -3091,14 +3058,14 @@ button.MarkdownNotebook__component-title:focus-visible {
 
 /* Inline ref highlights: selected text an AI prompt is anchored to. */
 .MarkdownNotebook__ref {
-    background: var(--color-bg-fill-highlight-100, rgb(235 145 0 / 15%));
-    border-bottom: 2px solid var(--color-border-warning, rgb(235 145 0 / 60%));
+    background: rgb(29 78 216 / 0.12);
+    border-bottom: 2px solid #1d4ed8;
     border-radius: 2px;
 }
 
 .MarkdownNotebook__ref--active,
 .MarkdownNotebook__ref:hover {
-    background: var(--color-bg-fill-highlight-200, rgb(235 145 0 / 30%));
+    background: rgb(29 78 216 / 0.2);
 }
 
 /* Code comment anchors: code carries no inline marks, so highlights are measured from each
@@ -3111,23 +3078,25 @@ button.MarkdownNotebook__component-title:focus-visible {
 
 .MarkdownNotebook__code-ref-highlight {
     position: absolute;
-    background: var(--color-bg-fill-highlight-100, rgb(235 145 0 / 15%));
-    border-bottom: 2px solid var(--color-border-warning, rgb(235 145 0 / 60%));
+    background: rgb(29 78 216 / 0.12);
+    border-bottom: 2px solid #1d4ed8;
     border-radius: 2px;
 }
 
 /* Inline mentions keep their person id in the markdown; the text is the display label. */
 .MarkdownNotebook__mention {
-    padding: 0 0.125rem;
-    font-weight: 500;
-    background: var(--color-bg-fill-highlight-100);
-    border-radius: 0.25rem;
+    padding: 0 0.35rem;
+    font-weight: 400;
+    color: #1d4ed8;
+    background: rgb(29 78 216 / 0.1);
+    border: 1px solid #1d4ed8;
+    border-radius: 4px;
 }
 
 /* Clicking the <ref> highlight flashes the thread it anchors. */
 .MarkdownNotebook__component-shell--comment-flash .MarkdownNotebook__discussion-comment {
-    border-color: var(--color-border-warning, rgb(235 145 0 / 80%));
-    box-shadow: 0 0 0 3px rgb(235 145 0 / 20%);
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 3px rgb(29 78 216 / 0.18);
     transition:
         box-shadow 0.2s ease,
         border-color 0.2s ease;
@@ -3274,7 +3243,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     visibility: hidden;
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
+    border-radius: 4px;
     box-shadow: var(--shadow-elevation-3000);
 }
 
@@ -3308,7 +3277,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     visibility: hidden;
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
+    border-radius: 4px;
     box-shadow: var(--shadow-elevation-3000);
 }
 
@@ -3609,7 +3578,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     color: var(--color-text-primary);
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
+    border-radius: 4px;
     box-shadow: var(--shadow-elevation-3000);
     pointer-events: auto;
     white-space: nowrap;
@@ -3851,7 +3820,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     padding: 0.7rem 0.8rem;
     background: var(--color-bg-surface-primary);
     border: 1px solid var(--color-border-primary);
-    border-radius: 0.625rem;
+    border-radius: 4px;
     box-shadow: var(--shadow-elevation-3000);
 }
 
@@ -3881,26 +3850,30 @@ button.MarkdownNotebook__component-title:focus-visible {
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem 0.875rem;
-    background: var(--color-bg-surface-secondary, var(--markdown-notebook-component-background));
-    border: 1px solid var(--markdown-notebook-component-border);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
     border-left-width: 3px;
-    border-radius: 0.375rem;
+    border-radius: 4px;
 }
 
 .MarkdownNotebook__callout--note {
-    border-left-color: var(--color-text-secondary, #5c5c5c);
+    border-left-color: rgb(var(--border, 192 192 192));
+    background: rgb(var(--accent, 229 231 224) / 0.45);
 }
 
 .MarkdownNotebook__callout--info {
-    border-left-color: var(--color-text-primary, #1d4d4f);
+    border-left-color: #1d4ed8;
+    background: rgb(29 78 216 / 0.08);
 }
 
 .MarkdownNotebook__callout--warning {
-    border-left-color: var(--warning, #c17f3a);
+    border-left-color: rgb(var(--text-primary, 35 35 35));
+    background: rgb(var(--accent, 229 231 224) / 0.7);
 }
 
 .MarkdownNotebook__callout--tip {
-    border-left-color: var(--success, #38817a);
+    border-left-color: #1d4ed8;
+    background: rgb(29 78 216 / 0.08);
 }
 
 .MarkdownNotebook__callout-label {
@@ -3923,9 +3896,9 @@ button.MarkdownNotebook__component-title:focus-visible {
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--markdown-notebook-component-border);
-    border-radius: 0.375rem;
-    background: var(--markdown-notebook-component-background);
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
+    background: rgb(var(--bg, 255 255 255));
 }
 
 .MarkdownNotebook__toggle-header {
@@ -3952,9 +3925,9 @@ button.MarkdownNotebook__component-title:focus-visible {
     padding: 0.875rem;
     text-align: left;
     cursor: pointer;
-    background: var(--markdown-notebook-component-background);
-    border: 1px solid var(--markdown-notebook-component-border);
-    border-radius: 0.5rem;
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
 }
 
 .MarkdownNotebook__subpage:hover {
@@ -4008,7 +3981,7 @@ button.MarkdownNotebook__component-title:focus-visible {
     max-width: 100%;
     display: inline-flex;
     justify-content: center;
-    border-radius: var(--radius, 8px);
+    border-radius: 4px;
     overflow: hidden;
 
     &:hover .MarkdownNotebook__image-overlay-actions {
@@ -4021,9 +3994,10 @@ button.MarkdownNotebook__component-title:focus-visible {
     display: block;
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius, 8px);
+    border-radius: 4px;
     object-fit: contain;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
+    border: 1px solid rgb(var(--border, 192 192 192));
     background: var(--color-bg-surface-secondary, rgba(255, 255, 255, 0.04));
 }
 
@@ -4229,9 +4203,9 @@ button.MarkdownNotebook__component-title:focus-visible {
     flex: none;
     width: 14rem;
     padding: 0.5rem;
-    background: var(--color-bg-surface-secondary, var(--markdown-notebook-table-header-background));
-    border: 1px solid var(--markdown-notebook-component-border);
-    border-radius: 0.375rem;
+    background: rgb(var(--accent, 229 231 224) / 0.55);
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
 }
 
 .MarkdownNotebook__database-lane h4 {
@@ -4244,9 +4218,9 @@ button.MarkdownNotebook__component-title:focus-visible {
 .MarkdownNotebook__database-card {
     padding: 0.5rem;
     margin-bottom: 0.375rem;
-    background: var(--markdown-notebook-component-background);
-    border: 1px solid var(--markdown-notebook-component-border);
-    border-radius: 0.25rem;
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
+    border-radius: 4px;
 }
 
 /* Mobile Responsiveness Improvements (<640px) */
@@ -4425,6 +4399,54 @@ blockquote.MarkdownNotebook__text-block {
     font-weight: 400;
     line-height: 1.5;
     color: rgb(var(--text-primary));
+}
+
+/* Lemon controls inside writing blocks — same radius/border as OS Fieldset inputs */
+.MarkdownNotebook__callout .LemonInput,
+.MarkdownNotebook__callout .LemonTextArea,
+.MarkdownNotebook__callout .LemonSelect,
+.MarkdownNotebook__toggle .LemonInput,
+.MarkdownNotebook__toggle .LemonTextArea,
+.MarkdownNotebook__database .LemonInput,
+.MarkdownNotebook__database .LemonSelect,
+.MarkdownNotebook__database .LemonButton,
+.MarkdownNotebook__image-container .LemonInput,
+.MarkdownNotebook__inline-note-popover .LemonTextArea,
+.MarkdownNotebook__format-toolbar .LemonInput,
+.MarkdownNotebook__format-link-input {
+    border-radius: 4px !important;
+}
+
+.MarkdownNotebook__callout .LemonTextArea textarea,
+.MarkdownNotebook__toggle .LemonTextArea textarea,
+.MarkdownNotebook__inline-note-popover .LemonTextArea textarea {
+    background: rgb(var(--bg, 255 255 255)) !important;
+    border-color: rgb(var(--border, 192 192 192)) !important;
+    color: rgb(var(--text-primary)) !important;
+    font-family: inherit !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+}
+
+.MarkdownNotebook__format-toolbar .LemonButton--active,
+.MarkdownNotebook__format-toolbar .LemonButton[aria-pressed='true'] {
+    background: rgb(29 78 216 / 0.1) !important;
+    color: #1d4ed8 !important;
+}
+
+.dark .MarkdownNotebook__insert-menu,
+html.dark .MarkdownNotebook__insert-menu,
+[data-notebook-host-theme='dark'] .MarkdownNotebook__insert-menu {
+    background: #1e1f23;
+    border-color: #3e424f;
+    color: #fafafa;
+}
+
+.dark .MarkdownNotebook__insert-item:hover,
+.dark .MarkdownNotebook__insert-item--selected,
+html.dark .MarkdownNotebook__insert-item:hover,
+html.dark .MarkdownNotebook__insert-item--selected {
+    background: #232429;
 }
 
 .MarkdownNotebook a {

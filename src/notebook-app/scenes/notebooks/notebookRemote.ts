@@ -180,10 +180,45 @@ export async function pullNotebookById(id: string): Promise<StoredNotebook | nul
     }
 }
 
+export type NotebookRemoteWriteResult = {
+    ok?: boolean
+    conflict?: boolean
+    forbidden?: boolean
+    gone?: boolean
+}
+
+/** Chrome chip for a remote call. Background pulls/bulk sync pass `report: false` so idle GET blips stay quiet. */
+export function notebookChromeSyncFromRemoteResult(
+    result: unknown,
+    options: { report: boolean; remoteAvailable: boolean | null }
+): { status: 'ok' | 'error' | 'offline'; message?: string } | null {
+    if (!options.report) return null
+    if (result && typeof result === 'object') {
+        const value = result as NotebookRemoteWriteResult
+        if (value.forbidden || value.gone) return null
+        if (value.conflict) return { status: 'ok' }
+        if (value.ok === false) {
+            return chromeFailure(options.remoteAvailable)
+        }
+    }
+    if (result === false) return chromeFailure(options.remoteAvailable)
+    return { status: 'ok' }
+}
+
+function chromeFailure(remoteAvailable: boolean | null): {
+    status: 'error' | 'offline'
+    message: string
+} {
+    if (remoteAvailable === false) {
+        return { status: 'offline', message: 'Offline. Notebook is saved on this device.' }
+    }
+    return { status: 'error', message: 'Cloud sync failed. Notebook is still saved on this device.' }
+}
+
 export async function pushNotebookToRemote(
     notebook: StoredNotebook,
     historyEntries?: NotebookVersion[]
-): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean }> {
+): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean; gone?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
     const ownerKey = getOrCreateOwnerKey()
     try {
@@ -206,7 +241,7 @@ export async function pushNotebookToRemote(
         }
         if (res.status === 410) {
             rememberDeletedNotebookId(notebook.id)
-            return { ok: false }
+            return { ok: false, gone: true }
         }
         if (res.status === 403) return { ok: false, forbidden: true }
         if (!res.ok) return { ok: false }

@@ -17,9 +17,14 @@ export function notebookPreviewExcerpt(content: string, max = 92): string {
     return plain.length > max ? `${plain.slice(0, max - 1)}…` : plain
 }
 
-export function notebookMatchesQuery(notebook: { title?: string; content?: string }, query: string): boolean {
+export function notebookMatchesQuery(
+    notebook: { title?: string; content?: string; folder?: string; tags?: string[] },
+    query: string
+): boolean {
     const q = query.trim().toLowerCase()
     if (!q) return true
     if ((notebook.title || '').toLowerCase().includes(q)) return true
+    if ((notebook.folder || '').toLowerCase().includes(q)) return true
+    if ((notebook.tags || []).some((tag) => tag.toLowerCase().includes(q.replace(/^#/, '')))) return true
     return notebookPreviewExcerpt(notebook.content || '', 2000).toLowerCase().includes(q)
 }

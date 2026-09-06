@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
     mergeNotebookLists,
+    notebookChromeSyncFromRemoteResult,
     planOpenNotebookRemoteApply,
     shouldAdoptRemoteNotebook,
 } from '../src/notebook-app/scenes/notebooks/notebookRemote'
@@ -56,6 +57,7 @@ import {
     createNotebook,
     deleteNotebook,
     getNotebookHistory,
+    getOrCreateDailyNotebook,
     restoreNotebookVersion,
     unpinNotebookFromDesktop,
     writeNotebookHistory,
@@ -69,6 +71,20 @@ import {
     notebookMatchesQuery,
     notebookPreviewExcerpt,
 } from '../src/notebook-app/scenes/notebooks/notebookPreview'
+import {
+    collectNotebookTasks,
+    dateFromKey,
+    extractNotebookTasks,
+    folderDepth,
+    folderLeaf,
+    groupNotebookTasks,
+    normalizeFolder,
+    parseTaskDue,
+    sortNotebookTasks,
+    todayKey,
+    toggleTaskLine,
+    uniqueTags,
+} from '../src/notebook-app/scenes/notebooks/notebookOrganize'
 import {
     collectSlashSplitNodes,
     getInsertMenuFilterQuery,
@@ -674,6 +690,56 @@ test.describe('notebook frontend helpers', () => {
         expect(notebookMatchesQuery(notebook, 'arr')).toBe(true)
         expect(notebookMatchesQuery(notebook, 'missing')).toBe(false)
         expect(notebookMatchesQuery({ title: 'Doc', content: '```js\nhidden\n```\nVisible ARR' }, 'arr')).toBe(true)
+        expect(notebookMatchesQuery({ title: 'Doc', content: '', folder: 'Projects/Launch' }, 'launch')).toBe(true)
+        expect(notebookMatchesQuery({ title: 'Doc', content: '', tags: ['research'] }, '#research')).toBe(true)
+    })
+
+    test('organize helpers parse folders, tags, daily keys, and GFM tasks', () => {
+        expect(todayKey(new Date('2026-09-06T15:00:00'))).toBe('2026-09-06')
+        expect(todayKey(dateFromKey('2026-09-06')!)).toBe('2026-09-06')
+        expect(normalizeFolder(' /Projects//Launch/ ')).toBe('Projects/Launch')
+        expect(folderLeaf('Projects/Launch')).toBe('Launch')
+        expect(folderDepth('Projects/Launch')).toBe(1)
+        expect(uniqueTags(['#Research', 'research', ' Launch '])).toEqual(['Research', 'Launch'])
+        expect(parseTaskDue('Write brief due:2026-09-10')).toBe('2026-09-10')
+        expect(parseTaskDue('Ship by 2026-09-11')).toBe('2026-09-11')
+
+        const tasks = extractNotebookTasks({
+            id: 'n1',
+            title: 'Plan',
+            content: '- [ ] Write brief due:2026-09-10\n- [x] Done item\n* [ ] Other\nNot a task',
+        })
+        expect(tasks).toHaveLength(3)
+        expect(tasks[0]).toMatchObject({ text: 'Write brief due:2026-09-10', done: false, due: '2026-09-10' })
+        expect(tasks[1].done).toBe(true)
+        expect(toggleTaskLine('- [ ] Write', 0)).toBe('- [x] Write')
+        expect(toggleTaskLine('- [x] Write', 0)).toBe('- [ ] Write')
+        expect(sortNotebookTasks(tasks)[0].due).toBe('2026-09-10')
+        expect(groupNotebookTasks(tasks)).toHaveLength(1)
+        expect(collectNotebookTasks([{ id: 't', title: 'Template', content: '- [ ] Hidden', isTemplate: true }])).toEqual(
+            []
+        )
+    })
+
+    test('idle background pulls do not show Sync failed', () => {
+        const silent = { report: false as const, remoteAvailable: true as boolean | null }
+        expect(notebookChromeSyncFromRemoteResult(false, silent)).toBeNull()
+        expect(notebookChromeSyncFromRemoteResult({ ok: false }, silent)).toBeNull()
+        expect(notebookChromeSyncFromRemoteResult(undefined, silent)).toBeNull()
+
+        const write = { report: true as const, remoteAvailable: true as boolean | null }
+        expect(notebookChromeSyncFromRemoteResult({ ok: true }, write)).toEqual({ status: 'ok' })
+        expect(notebookChromeSyncFromRemoteResult({ ok: false, forbidden: true }, write)).toBeNull()
+        expect(notebookChromeSyncFromRemoteResult({ ok: false, gone: true }, write)).toBeNull()
+        expect(notebookChromeSyncFromRemoteResult({ ok: false, conflict: true }, write)).toEqual({ status: 'ok' })
+        expect(notebookChromeSyncFromRemoteResult({ ok: false }, write)).toEqual({
+            status: 'error',
+            message: 'Cloud sync failed. Notebook is still saved on this device.',
+        })
+        expect(notebookChromeSyncFromRemoteResult(false, { report: true, remoteAvailable: false })).toEqual({
+            status: 'offline',
+            message: 'Offline. Notebook is saved on this device.',
+        })
     })
 
     test('remote notebooks win only when they are newer', () => {
@@ -1206,6 +1272,23 @@ test.describe('notebook frontend helpers', () => {
         expect(restoreNotebookVersion(notebook.id, 1)).toBeUndefined()
         expect(restoreNotebookVersion(notebook.id, 2)?.content).toBe('kept body')
         deleteNotebook(notebook.id)
+    })
+
+    test('createNotebook stores folder tags and daily notes stay unique per day', () => {
+        if (typeof localStorage === 'undefined') return
+        const notebook = createNotebook('Launch notes', '- [ ] Ship due:2026-09-10', {
+            folder: ' /Projects//Launch/ ',
+            tags: ['#Research', 'research'],
+        })
+        expect(notebook.folder).toBe('Projects/Launch')
+        expect(notebook.tags).toEqual(['Research'])
+        const firstDaily = getOrCreateDailyNotebook(dateFromKey('2026-09-06')!)
+        const secondDaily = getOrCreateDailyNotebook(dateFromKey('2026-09-06')!)
+        expect(firstDaily.id).toBe(secondDaily.id)
+        expect(firstDaily.kind).toBe('daily')
+        expect(firstDaily.dailyDate).toBe('2026-09-06')
+        deleteNotebook(notebook.id)
+        deleteNotebook(firstDaily.id)
     })
 
     test('deleting a notebook automatically unpins it from desktop pinned items', () => {
