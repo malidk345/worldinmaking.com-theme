@@ -5457,7 +5457,7 @@ function MarkdownNotebookEditor({
                                                                 {rows}
                                                             </div>
                                                         ) : chunk.surface === 'code' ? (
-                                                            <div className="MarkdownNotebook__code-group">{rows}</div>
+                                                            <div className="MarkdownNotebook__code-group not-prose">{rows}</div>
                                                         ) : (
                                                             rows
                                                         )}

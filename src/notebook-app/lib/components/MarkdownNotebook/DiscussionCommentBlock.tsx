@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { KeyboardEvent, useMemo, useState } from 'react'
 
 import { IconTrash } from '@posthog/icons'
-import { LemonButton, LemonTextArea } from '@posthog/lemon-ui'
+import OSButton from 'components/OSButton'
 
 import { formatEditedAgo, getNotebookActor } from '../../../../lib/notebook-actor'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
@@ -14,7 +14,31 @@ import {
     repliesToPropValue,
 } from './discussionComments'
 import { InsertMenuSelectionDirection } from './editorTypes'
+import {
+    filterMentionPeople,
+    getMentionTokenAt,
+    listMentionPeople,
+    type MentionPerson,
+    type MentionToken,
+} from './mentionPeople'
 import { NotebookBlockNode, NotebookComponentBlockNode, NotebookMode } from './types'
+
+function renderCommentText(text: string): JSX.Element {
+    const parts = text.split(/(@[^\s@]+)/g)
+    return (
+        <>
+            {parts.map((part, index) =>
+                part.startsWith('@') && part.length > 1 ? (
+                    <span key={`${part}-${index}`} className="font-semibold text-primary">
+                        {part}
+                    </span>
+                ) : (
+                    <span key={`${part}-${index}`}>{part}</span>
+                )
+            )}
+        </>
+    )
+}
 
 export function DiscussionCommentBlock({
     node,
@@ -40,7 +64,12 @@ export function DiscussionCommentBlock({
     void _insertParagraphAfterNode
     const replies = useMemo(() => parseDiscussionReplies(node.props.replies), [node.props.replies])
     const [draft, setDraft] = useState('')
+    const [mentionToken, setMentionToken] = useState<MentionToken | null>(null)
     const autoFocus = mode === 'edit' && wasNotebookNodeJustInserted(node.id)
+    const mentionPeople = useMemo(
+        () => (mentionToken ? filterMentionPeople(listMentionPeople(), mentionToken.query) : []),
+        [mentionToken]
+    )
 
     const persistReplies = (next: ReturnType<typeof parseDiscussionReplies>): void => {
         updateNode(node.id, (currentNode) =>
@@ -65,6 +94,20 @@ export function DiscussionCommentBlock({
             })
         )
         setDraft('')
+        setMentionToken(null)
+    }
+
+    const insertMention = (person: MentionPerson): void => {
+        if (!mentionToken) return
+        const tokenEnd = mentionToken.start + 1 + mentionToken.query.length
+        const next = `${draft.slice(0, mentionToken.start)}@${person.label} ${draft.slice(tokenEnd)}`
+        setDraft(next)
+        setMentionToken(null)
+    }
+
+    const handleDraftChange = (value: string, caret = value.length): void => {
+        setDraft(value)
+        setMentionToken(getMentionTokenAt(value, caret))
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -86,7 +129,7 @@ export function DiscussionCommentBlock({
     return (
         <div
             className={clsx(
-                'MarkdownNotebook__component-shell',
+                'MarkdownNotebook__component-shell not-prose',
                 isSelected && 'MarkdownNotebook__component-shell--selected'
             )}
             ref={setBlockRef}
@@ -119,12 +162,12 @@ export function DiscussionCommentBlock({
                                             reply.pending && 'MarkdownNotebook__discussion-comment-reply-text--pending'
                                         )}
                                     >
-                                        {reply.text}
+                                        {renderCommentText(reply.text)}
                                     </div>
                                 </div>
                                 {mode === 'edit' ? (
-                                    <LemonButton
-                                        size="xsmall"
+                                    <OSButton
+                                        size="xs"
                                         icon={<IconTrash />}
                                         tooltip="Delete reply"
                                         aria-label="Delete reply"
@@ -139,35 +182,83 @@ export function DiscussionCommentBlock({
                 )}
 
                 {mode === 'edit' ? (
-                    <div className="MarkdownNotebook__discussion-comment-composer">
-                        <LemonTextArea
+                    <div className="MarkdownNotebook__discussion-comment-composer relative">
+                        {mentionToken ? (
+                            <div
+                                className="absolute left-0 right-0 bottom-full mb-1 z-20 border border-primary rounded bg-primary shadow-lg max-h-40 overflow-y-auto"
+                                role="listbox"
+                                aria-label="Mention"
+                            >
+                                {mentionPeople.length ? (
+                                    mentionPeople.map((person) => (
+                                        <button
+                                            key={person.id}
+                                            type="button"
+                                            role="option"
+                                            className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent"
+                                            onClick={() => insertMention(person)}
+                                        >
+                                            <span className="size-5 rounded-full overflow-hidden bg-accent flex items-center justify-center text-[10px] shrink-0">
+                                                {person.avatar ? (
+                                                    <img src={person.avatar} alt="" className="size-5 object-cover" />
+                                                ) : (
+                                                    person.label.charAt(0)
+                                                )}
+                                            </span>
+                                            <span className="truncate">@{person.label}</span>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <p className="m-0 px-2 py-2 text-xs text-muted">No match</p>
+                                )}
+                            </div>
+                        ) : null}
+                        <textarea
                             value={draft}
-                            onChange={setDraft}
-                            placeholder="Write a comment…"
-                            minRows={2}
+                            onChange={(event) =>
+                                handleDraftChange(event.target.value, event.target.selectionStart ?? event.target.value.length)
+                            }
+                            onKeyUp={(event) =>
+                                setMentionToken(
+                                    getMentionTokenAt(
+                                        event.currentTarget.value,
+                                        event.currentTarget.selectionStart ?? event.currentTarget.value.length
+                                    )
+                                )
+                            }
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                                    event.preventDefault()
+                                    submitReply()
+                                }
+                                if (event.key === 'Escape' && mentionToken) {
+                                    event.preventDefault()
+                                    setMentionToken(null)
+                                }
+                            }}
+                            placeholder="Write a comment… @ to mention"
+                            rows={2}
                             autoFocus={autoFocus}
                             data-attr="notebook-discussion-comment-input"
-                            className="MarkdownNotebook__discussion-comment-input"
-                            onPressCmdEnter={submitReply}
+                            className="w-full rounded border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted resize-y min-h-[3.5rem]"
                         />
-                        <div className="MarkdownNotebook__discussion-comment-actions">
-                            <LemonButton
-                                size="xsmall"
-                                status="danger"
+                        <div className="MarkdownNotebook__discussion-comment-actions flex items-center justify-end gap-1 mt-1">
+                            <OSButton
+                                size="xs"
                                 onClick={() => {
                                     if (!deleteSelectedNotebookBlocks()) deleteNode()
                                 }}
                             >
-                                Delete thread
-                            </LemonButton>
-                            <LemonButton
-                                size="xsmall"
-                                type="primary"
+                                <span className="text-red">Delete thread</span>
+                            </OSButton>
+                            <OSButton
+                                variant="primary"
+                                size="xs"
                                 disabled={!draft.trim()}
                                 onClick={submitReply}
                             >
                                 Comment
-                            </LemonButton>
+                            </OSButton>
                         </div>
                     </div>
                 ) : null}

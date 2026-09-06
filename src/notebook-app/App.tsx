@@ -9,8 +9,6 @@ import {
 } from './lib/components/MarkdownNotebook/notebookAI'
 import { parseMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
 import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebook/freshlyInserted'
-import { LemonButton, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
-import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import {
     readNotebookChromeSettings,
@@ -43,24 +41,24 @@ import { NotebookPublicRoute } from './scenes/notebooks/NotebookPublicView'
 import { NotebooksListScene } from './scenes/notebooks/NotebooksListScene'
 import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
-import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
-import type { NotebookShareTab } from './scenes/notebooks/NotebookShareModal'
 import { NotebookInviteScene } from './scenes/notebooks/NotebookInviteScene'
-import { NotebookSyncInfo } from './scenes/notebooks/NotebookMeta'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
-import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
-import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
-import { AskAIDropdown } from './scenes/notebooks/AskAI'
-import { NotebookToolsSidebar } from './scenes/notebooks/NotebookToolsSidebar'
+import { NotebookEditorToolbar } from './scenes/notebooks/NotebookEditorToolbar'
+import { NotebookEditorReader, openNotebookSidebarTab } from './scenes/notebooks/NotebookEditorReader'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
 import { isNotebookImageFile, uploadNotebookImage } from '../lib/notebook-upload'
 import { uuid } from './lib/utils/dom'
-import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
+import {
+  ensureNotebookProductStyles,
+  releaseNotebookProductStyles,
+  NOTEBOOK_PRODUCT_SCOPE_CLASS,
+} from '../lib/lemon/ensureNotebookProductStyles'
 import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
 import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
+import { notebookWindowPath } from '../lib/window-path'
 import { canWriteNotebook } from '../lib/notebook-sharing'
 import { bindNotebookChat } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
@@ -154,11 +152,10 @@ export function App() {
   // Host Display options light/dark → notebook shell (Lemon components untouched)
   const hostTheme = useSiteThemeSync()
 
-  // Shared site-wide Lemon CSS inject (same as <LemonScope> on other pages)
   useEffect(() => {
-    ensureLemonStyles()
+    ensureNotebookProductStyles()
     return () => {
-      releaseLemonStyles()
+      releaseNotebookProductStyles()
     }
   }, [])
 
@@ -180,15 +177,11 @@ export function App() {
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
-  const isExpanded = chrome.wide
-  const [showShareModal, setShowShareModal] = useState(false)
-  const [shareTab, setShareTab] = useState<NotebookShareTab>('private')
+
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
   const editorContainerRef = useRef<HTMLDivElement | null>(null)
-  const articleColumnRef = useRef<HTMLDivElement | null>(null)
-  const [notebookLibrary, setNotebookLibrary] = useState<StoredNotebook[]>(() => getNotebooks())
   const [outlineMarkdown, setOutlineMarkdown] = useState('')
   const routeRef = useRef(route)
   const notebookRef = useRef(currentNotebook)
@@ -577,30 +570,51 @@ export function App() {
     [currentNotebook, title]
   )
 
+  const openNotebookWindow = useCallback(
+    (id: string, notebookTitle?: string) => {
+      const path = notebookWindowPath(id)
+      const stored = getNotebook(id)
+      appActions.addWindow({
+        key: path,
+        path,
+        title: notebookTitle || stored?.title || 'Notebook',
+      })
+    },
+    [appActions]
+  )
+
+  const openNotebooksListWindow = useCallback(() => {
+    appActions.addWindow({
+      key: '/notebooks',
+      path: '/notebooks',
+      title: 'Notebooks',
+    })
+  }, [appActions])
+
   const handleCreateNew = () => {
     const nb = createNotebook()
-    navigate({ page: 'editor', notebookId: nb.id })
+    openNotebookWindow(nb.id, nb.title)
   }
 
   const handleSelectNotebook = (id: string) => {
-    navigate({ page: 'editor', notebookId: id })
+    openNotebookWindow(id)
   }
 
   const handleSelectTemplate = (template: StoredNotebook) => {
     const nb = createNotebook(template.title, template.content)
-    navigate({ page: 'editor', notebookId: nb.id })
+    openNotebookWindow(nb.id, nb.title)
   }
 
   const handleDuplicate = () => {
     if (!currentNotebook) return
     const dup = duplicateNotebook(currentNotebook.id)
-    if (dup) navigate({ page: 'editor', notebookId: dup.id })
+    if (dup) openNotebookWindow(dup.id, dup.title)
   }
 
   const handleDelete = () => {
     if (!currentNotebook) return
     deleteNotebook(currentNotebook.id)
-    navigate({ page: 'list' })
+    if (appWindow) appActions.closeWindow(appWindow)
   }
 
   const handleInsertAIResponse = useCallback((aiContent?: string, mode: 'append' | 'replace' | 'prepend' = 'append') => {
@@ -638,7 +652,7 @@ export function App() {
       if (routeRef.current.page !== 'editor' || !target) {
         const recent = getNotebooks().sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0]
         target = recent || target
-        if (target) navigate({ page: 'editor', notebookId: target.id })
+        if (target) openNotebookWindow(target.id, target.title)
       }
       if (!target) return
 
@@ -741,7 +755,11 @@ export function App() {
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
       window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
     }
-  }, [navigate, appWindow])
+  }, [appWindow, appActions, openNotebookWindow])
+
+  const handleCanvasSave = (id: string) => {
+    openNotebookWindow(id)
+  }
 
   const handleHistoryRestored = useCallback(
     (payload: { content: string; title: string }) => {
@@ -765,26 +783,11 @@ export function App() {
     setSyncStatus('saved')
   }, [currentNotebook, title, markdown])
 
-  const handleCanvasSave = (id: string) => {
-    navigate({ page: 'editor', notebookId: id })
-  }
-
   const extraCommands = useCallback(
     (api?: any) =>
       buildExtraInsertCommands(api),
     []
   )
-
-  useEffect(() => {
-    const reloadLibrary = () => setNotebookLibrary(getNotebooks())
-    reloadLibrary()
-    window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadLibrary)
-    window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadLibrary)
-    return () => {
-      window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, reloadLibrary)
-      window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadLibrary)
-    }
-  }, [])
 
   useEffect(() => {
     setOutlineMarkdown(markdown)
@@ -817,19 +820,16 @@ export function App() {
   }, [])
 
   const shellClassName = [
-    'App notebook-app-scope w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden',
-    route.page === 'public' ? 'bg-transparent' : 'bg-[var(--bg-3000,#f3f4f5)]',
+    'App w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden bg-primary text-primary',
+    route.page === 'public' ? 'bg-transparent' : '',
     hostTheme === 'dark' ? 'dark' : '',
   ]
     .filter(Boolean)
     .join(' ')
 
-  // Shell matches standalone posthog-notebook-app.
-  // notebook-app-scope stays on this root only so site OS chrome is not affected.
   return (
     <div
       className={shellClassName}
-      data-lemon-scope="true"
       data-host-theme={hostTheme}
       data-notebook-lock="true"
       data-notebook-font={chrome.fontSize}
@@ -842,7 +842,9 @@ export function App() {
             ? 'flex-1 w-full min-h-0 overflow-y-auto overscroll-contain p-0 bg-primary text-primary'
             : route.page === 'editor' && currentNotebook
               ? 'flex-1 w-full min-h-0 h-full flex flex-col p-0 overflow-hidden'
-              : 'flex-1 w-full min-h-0 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6'
+              : route.page === 'list'
+                ? 'flex-1 w-full min-h-0 h-full flex flex-col p-0 overflow-hidden bg-primary text-primary'
+                : 'flex-1 w-full min-h-0 overflow-y-auto p-4 sm:p-6 bg-primary text-primary'
         }
       >
         <ErrorBoundary>
@@ -850,8 +852,8 @@ export function App() {
           {route.page === 'public' && (
             <NotebookPublicRoute
               notebookId={route.notebookId}
-              onBack={() => navigate({ page: 'list' })}
-              onOpenEditor={(id) => navigate({ page: 'editor', notebookId: id })}
+              onBack={openNotebooksListWindow}
+              onOpenEditor={(id) => openNotebookWindow(id)}
             />
           )}
 
@@ -859,8 +861,8 @@ export function App() {
           {route.page === 'invite' && (
             <NotebookInviteScene
               token={route.token}
-              onJoined={(id) => navigate({ page: 'editor', notebookId: id })}
-              onBack={() => navigate({ page: 'list' })}
+              onJoined={(id) => openNotebookWindow(id)}
+              onBack={openNotebooksListWindow}
             />
           )}
 
@@ -881,129 +883,61 @@ export function App() {
             <NotebookCanvasScene onSaveAsNotebook={handleCanvasSave} />
           )}
 
-          {/* ---------- Notebook Editor Scene (100% matched to PostHog NotebookScene.tsx) ---------- */}
           {route.page === 'editor' && (
             currentNotebook ? (
-              <div className={'Notebook flex-1 h-full min-h-0 flex items-stretch relative overflow-hidden ' + (isExpanded ? 'Notebook--expanded' : 'Notebook--compact')}>
-                <NotebookToolsSidebar
-                  markdown={outlineMarkdown}
-                  containerRef={editorContainerRef}
-                  articleRef={articleColumnRef}
-                  notebooks={notebookLibrary
-                    .slice()
-                    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
-                    .map((nb) => ({ id: nb.id, title: nb.title }))}
-                  activeNotebookId={currentNotebook.id}
-                  notebookTitle={currentNotebook.title || title}
-                  currentContent={markdown}
-                  onSelectNotebook={handleSelectNotebook}
-                  onCreateNotebook={handleCreateNew}
-                  onSnapshotNow={handleHistorySnapshotNow}
-                  onHistoryRestored={handleHistoryRestored}
-                  chrome={chrome}
-                  onChromeChange={(next) => {
-                    const merged = { ...chrome, ...next }
-                    writeNotebookChromeSettings(merged)
-                    setChrome(merged)
-                  }}
-                  people={presence.people}
+              <NotebookEditorReader
+                markdown={outlineMarkdown}
+                containerRef={editorContainerRef}
+                notebookId={currentNotebook.id}
+                notebookTitle={currentNotebook.title || title}
+                currentContent={markdown}
+                onSnapshotNow={handleHistorySnapshotNow}
+                onHistoryRestored={handleHistoryRestored}
+                people={presence.people}
+                chrome={chrome}
+                onChromeChange={(next) => {
+                  const merged = { ...chrome, ...next }
+                  writeNotebookChromeSettings(merged)
+                  setChrome(merged)
+                }}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDelete}
+                onPublish={handlePublish}
+              >
+                <div className={`min-w-0 ${chrome.wide ? '' : 'max-w-3xl mx-auto'}`}>
+                <NotebookEditorToolbar
+                  syncStatus={syncStatus}
+                  cloudMessage={cloudMessage}
+                  onRetrySync={retryNotebookRemoteSync}
+                  person={currentNotebook.last_modified_by || currentNotebook.created_by}
+                  updatedAt={currentNotebook.updatedAt}
+                  notebookId={currentNotebook.id}
+                  livePeople={presence.people}
+                  onOpenAskAi={openAskAi}
                 />
                 <div
-                  ref={articleColumnRef}
-                  className="relative flex-1 min-w-0 min-h-0 flex flex-col"
+                  className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} min-w-0 font-sans prose prose-sm dark:prose-invert max-w-none font-normal`}
+                  ref={editorContainerRef}
                 >
-                <div className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 py-2 sm:p-6 lg:p-8 pb-16 sm:pb-20">
-                {/* Template Banner if template */}
                 {currentNotebook.isTemplate && (
-                  <LemonBanner
-                    type="info"
-                    action={{
-                      onClick: handleDuplicate,
-                      children: 'Create copy',
-                    }}
-                    className="mb-6"
-                  >
-                    <b>This is a template.</b> You can create a copy of it to edit and use as your own.
-                  </LemonBanner>
+                  <div className="mb-4 rounded border border-primary bg-accent px-3 py-2 text-sm text-primary">
+                    This is a template.{' '}
+                    <button type="button" className="font-semibold underline" onClick={handleDuplicate}>
+                      Create a copy
+                    </button>{' '}
+                    to edit it.
+                  </div>
                 )}
                 {currentNotebook.access_role === 'viewer' && (
-                  <LemonBanner type="info" className="mb-6">
-                    You can read this notebook. Ask the owner to give you edit access if you need to write.
-                  </LemonBanner>
+                  <div className="mb-4 rounded border border-primary bg-accent px-3 py-2 text-sm text-primary">
+                    You can read this notebook. Ask the owner for edit access if you need to write.
+                  </div>
                 )}
-
-                {/* Top Action Bar matching PostHog's NotebookScene.tsx */}
-                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-5">
-                  <div className="flex gap-2 sm:gap-3 items-center min-w-0">
-                    <LemonButton
-                      type="stealth"
-                      size="small"
-                      icon={<ArrowLeft className="w-4 h-4" />}
-                      onClick={() => navigate({ page: 'list' })}
-                      tooltip="Back to notebooks"
-                      aria-label="Back to notebooks"
-                    />
-                    {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
-                    <CollaboratorsBanner
-                      person={
-                        currentNotebook.last_modified_by ||
-                        currentNotebook.created_by ||
-                        userToNotebookActor(user)
-                      }
-                      updatedAt={currentNotebook.updatedAt}
-                      syncStatus={syncStatus}
-                      notebookId={currentNotebook.id}
-                      livePeople={presence.people}
-                    />
-                    <span className="text-muted opacity-30 hidden sm:inline">•</span>
-                    <div className="hidden sm:block">
-                      <NotebookSyncInfo
-                        syncStatus={syncStatus}
-                        message={cloudMessage}
-                        onRetry={retryNotebookRemoteSync}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 items-center">
-                    <AskAIDropdown
-                      onInsertPromptBlock={handleInsertAIResponse}
-                      currentNotebookContent={currentNotebook.content}
-                      notebookId={currentNotebook.id}
-                      notebookTitle={currentNotebook.title}
-                    />
-                    <NotebookMenu
-                      notebookId={currentNotebook.id}
-                      onDuplicate={handleDuplicate}
-                      onDelete={handleDelete}
-                      onShare={(tab) => {
-                        setShareTab(tab || 'private')
-                        setShowShareModal(true)
-                      }}
-                    />
-                    <SidebarContextPanelMenu
-                      notebookId={currentNotebook.id}
-                      notebookTitle={currentNotebook.title}
-                      onPublish={handlePublish}
-                      initialTab={shareTab}
-                      isOpen={showShareModal}
-                      onOpenChange={(open) => {
-                        setShowShareModal(open)
-                        if (!open) setShareTab('private')
-                      }}
-                      onButtonOpen={(tab) => setShareTab(tab)}
-                    />
-                  </div>
-                </div>
-
-                {/* Main editor */}
-                <div className="w-full min-h-[600px] pt-2 sm:pt-3 mt-1 sm:mt-2">
-                  <div className="min-w-0" ref={editorContainerRef}>
-                    <React.Suspense
-                      fallback={
-                        <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
-                      }
-                    >
+                  <React.Suspense
+                    fallback={
+                      <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
+                    }
+                  >
                     <MarkdownNotebook
                       key={`${currentNotebook.id}-${markdownVersion}`}
                       value={markdown}
@@ -1023,32 +957,30 @@ export function App() {
                       onAskAI={canWriteNotebook(currentNotebook.access_role) ? handleNotebookAskAI : undefined}
                       isAskAIDisabled={isAskAIBusy || !canWriteNotebook(currentNotebook.access_role)}
                       extraInsertCommands={extraCommands}
-                      onInvitePeople={() => {
-                        setShareTab('private')
-                        setShowShareModal(true)
-                      }}
+                      onInvitePeople={() => openNotebookSidebarTab('share')}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}
                       spellCheck={chrome.spellcheck}
                     />
-                    </React.Suspense>
-                  </div>
+                  </React.Suspense>
                 </div>
                 </div>
-
-                </div>
-              </div>
+              </NotebookEditorReader>
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                 <p className="m-0 text-lg font-semibold text-primary">This notebook isn’t here</p>
                 <p className="m-0 text-sm text-muted max-w-sm">
                   It may have been deleted on this device, or the link is stale.
                 </p>
-                <LemonButton type="primary" size="small" onClick={() => navigate({ page: 'list' })}>
+                <button
+                  type="button"
+                  className="text-sm font-semibold underline text-primary"
+                  onClick={openNotebooksListWindow}
+                >
                   Back to notebooks
-                </LemonButton>
+                </button>
               </div>
             )
           )}

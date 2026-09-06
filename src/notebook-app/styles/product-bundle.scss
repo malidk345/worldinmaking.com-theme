@@ -1,0 +1,50 @@
+// Slim notebook product CSS: LemonTable + editor internals only.
+// No nested @tailwind base — that leaked site-wide from the old full bundle.
+@import 'quill-shim.css';
+
+.notebook-app-scope {
+  --border: 192 192 192;
+  --color-bg-surface-primary: rgb(var(--bg, 255 255 255));
+  --color-bg-surface-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-surface-tertiary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-primary: rgb(var(--bg, 255 255 255));
+  --color-bg-fill-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-input: rgb(var(--input-bg, var(--accent, 238 239 233)));
+  --color-bg-fill-button-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-button-secondary-hover: rgb(var(--accent, 229 231 224));
+  --color-border-primary: rgb(var(--border, 191 193 183));
+  --color-border-secondary: rgb(var(--border, 182 183 175));
+  --color-text-primary: rgb(var(--text-primary, 17 17 17));
+  --text-3000: rgb(var(--text-primary, 17 17 17));
+  --border-3000: rgb(var(--border, 191 193 183));
+  --secondary-3000-button-border: rgb(var(--border, 191 193 183));
+  --secondary-3000-button-border-hover: rgb(var(--border, 182 183 175));
+  --secondary-3000-frame-bg: rgb(var(--accent, 229 231 224));
+  --radius: 0.375rem;
+  --font-sans: inherit;
+  --font-title: inherit;
+  --font-button: inherit;
+  --font-mono: 'Source Code Pro', Menlo, Consolas, monaco, monospace;
+  --lemon-button-transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  --color-accent-highlight-secondary: rgb(var(--accent, 229 231 224));
+  --z-popover: 1060;
+  --z-tooltip: 1080;
+  --z-modal: 1070;
+
+  @import 'vars.scss';
+  @import 'mixins.scss';
+  @import '../lib/lemon-ui/LemonButton/LemonButton.scss';
+  @import '../lib/lemon-ui/LemonTable/LemonTable.scss';
+  @import '../lib/lemon-ui/PaginationControl/PaginationControl.scss';
+  @import '../lib/lemon-ui/LemonSkeleton/LemonSkeleton.scss';
+  @import '../lib/lemon-ui/LemonInput/LemonInput.scss';
+  @import '../lib/lemon-ui/LemonTextArea/LemonTextArea.scss';
+  @import '../lib/lemon-ui/LemonTag/LemonTag.scss';
+  @import '../lib/lemon-ui/ProfilePicture/ProfilePicture.scss';
+  @import '../lib/lemon-ui/LemonModal/LemonModal.scss';
+  @import '../lib/lemon-ui/Tooltip/Tooltip.scss';
+  @import '../lib/lemon-ui/Popover/Popover.scss';
+  @import '../lib/components/ScrollableShadows/ScrollableShadows.scss';
+  @import '../lib/icons/icons.scss';
+  @import '../lib/components/MarkdownNotebook/MarkdownNotebook.scss';
+}

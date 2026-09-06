@@ -152,6 +152,10 @@ function queueRemote(promise: Promise<unknown>): void {
                 return
             }
 
+            if (result && typeof result === 'object' && result.forbidden) {
+                return
+            }
+
             if (result === false || (result && typeof result === 'object' && result.ok === false)) {
                 const offline = isNotebookRemoteKnownAvailable() === false
                 emitWindowEvent(WIM_NOTEBOOK_SYNC_EVENT, {
@@ -184,7 +188,10 @@ function queueRemote(promise: Promise<unknown>): void {
 }
 
 function canPushNotebook(notebook: StoredNotebook): boolean {
-    return notebook.access_role !== 'viewer'
+    if (notebook.access_role === 'viewer') return false
+    if (notebook.isTemplate) return false
+    if (notebook.id === 'welcome-notebook' && notebook.content === WELCOME_CONTENT) return false
+    return true
 }
 
 function schedulePushNotebook(notebook: StoredNotebook): void {
@@ -225,7 +232,7 @@ function mergeRemoteIntoLocal(
     const outgoing = merged.filter((nb) => {
         if (deletedIds.includes(nb.id) || deletedIds.includes(nb.short_id)) return false
         const remoteNb = remoteById.get(nb.id)
-        if (!remoteNb) return Boolean(options.pushMissing)
+        if (!remoteNb) return Boolean(options.pushMissing) && canPushNotebook(nb)
         return (
             canPushNotebook(nb) &&
             pickNewerNotebook(nb, remoteNb) === nb &&
@@ -272,7 +279,12 @@ function ensureRemoteHydrate(): void {
             if (!remote.notebooks.length) {
                 const kept = mergeNotebookLists(local, [], deletedIds)
                 if (kept.length !== local.length) writeAll(kept)
-                const fresh = kept.filter((nb) => !deletedIds.includes(nb.id) && !deletedIds.includes(nb.short_id))
+                const fresh = kept.filter(
+                    (nb) =>
+                        canPushNotebook(nb) &&
+                        !deletedIds.includes(nb.id) &&
+                        !deletedIds.includes(nb.short_id)
+                )
                 if (fresh.length) {
                     const history: Record<string, NotebookVersion[]> = {}
                     for (const nb of fresh) history[nb.id] = getNotebookHistory(nb.id)
@@ -323,10 +335,14 @@ This is your scratchpad on WIM: a place to think in public form, without needing
 Start a new notebook anytime, or keep writing below.
 `
 
-export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
-    {
-        id: 'welcome-notebook',
-        short_id: 'welcome',
+function newWelcomeNotebook(): StoredNotebook {
+    const id =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? `welcome-${crypto.randomUUID()}`
+            : `welcome-${Date.now().toString(36)}`
+    return {
+        id,
+        short_id: id.replace(/-/g, '').slice(0, 12),
         title: 'Welcome to WIM',
         content: WELCOME_CONTENT,
         createdAt: new Date().toISOString(),
@@ -335,8 +351,10 @@ export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
         version: 1,
         isPublished: false,
         created_by: { first_name: 'WIM', email: 'hello@worldinmaking.com' },
-    },
-]
+    }
+}
+
+export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [newWelcomeNotebook()]
 
 function seedDefaults(): StoredNotebook[] {
     const deleted = readLocalDeletedNotebookIds()
@@ -344,11 +362,7 @@ function seedDefaults(): StoredNotebook[] {
         setLocalStorageItem(storageKey(), '[]')
         return []
     }
-    const seed = DEFAULT_NOTEBOOKS.map((n) => ({
-        ...n,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    }))
+    const seed = [newWelcomeNotebook()]
     setLocalStorageItem(storageKey(), JSON.stringify(seed))
     for (const key of LEGACY_STORAGE_KEYS) {
         try {

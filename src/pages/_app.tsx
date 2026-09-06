@@ -9,11 +9,9 @@ import '../components/Spacer/style.css'
 import '../components/Corpus/styles.css'
 import 'react-medium-image-zoom/dist/styles.css'
 import 'rc-slider/assets/index.css'
-// Do NOT import components/LemonUI/lemon-ui.css globally.
-// That thin stylesheet restyles .LemonButton with padding/border and fights the full
-// PostHog LemonButton chrome (.LemonButton + .LemonButton__chrome frame). Full styles
-// load via ensureLemonStyles() / <LemonScope> / notebook App (NOTEBOOK_APP_CSS).
-import '../components/MarkdownNotebook/MarkdownNotebook.scss'
+// Do NOT import components/LemonUI/lemon-ui.css or MarkdownNotebook.scss globally.
+// LemonScope/chat still load the full kit via ensureLemonStyles().
+// Notebook windows load the slim table+editor kit via ensureNotebookProductStyles().
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import { UserProvider } from 'hooks/useUser'

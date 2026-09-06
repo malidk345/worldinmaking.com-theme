@@ -625,6 +625,7 @@ export function EditableTextBlock({
                     isAIShimmering && 'MarkdownNotebook__text-block--ai-shimmer',
                     hasInvalidInsertMenuQuery && 'MarkdownNotebook__text-block--invalid-insert-filter'
                 )}
+                id={node.type === 'heading' ? node.id : undefined}
                 data-markdown-notebook-node-id={node.id}
                 data-ai-thinking-label={aiThinkingLabel}
                 contentEditable={mode === 'edit' && !isAIWriting}

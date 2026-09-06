@@ -407,7 +407,7 @@ export function EditableTableBlock({
     return (
         <div
             className={clsx(
-                'MarkdownNotebook__table-block',
+                'MarkdownNotebook__table-block not-prose',
                 mode === 'edit' && 'MarkdownNotebook__table-block--editable'
             )}
             ref={setBlockRef}

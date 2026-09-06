@@ -1,59 +1,96 @@
-import { LemonButton, LemonDropdown } from '~nb-lib/lemon-ui/index'
-import { IconShare } from '@posthog/icons'
-import { NotebookShareModal, type NotebookPublishPayload, type NotebookShareTab } from './NotebookShareModal'
+import React from 'react'
+import { IconGlobe, IconPeople } from '@posthog/icons'
+import OSButton from 'components/OSButton'
+import { Popover } from 'components/RadixUI/Popover'
+import {
+    NotebookInvitePanel,
+    NotebookPublishPanel,
+    type NotebookPublishPayload,
+    type NotebookShareTab,
+} from './NotebookShareModal'
+
+export type NotebookSharePanel = NotebookShareTab
 
 interface SidebarContextPanelMenuProps {
     notebookId: string
     notebookTitle: string
     onPublish: (meta: NotebookPublishPayload) => void
-    initialTab?: NotebookShareTab
-    isOpen?: boolean
-    onOpenChange?: (open: boolean) => void
-    /** Called when the Share button itself is clicked to open (not menu-driven). */
-    onButtonOpen?: (tab: NotebookShareTab) => void
+    panel?: NotebookSharePanel | null
+    onPanelChange?: (panel: NotebookSharePanel | null) => void
 }
 
-/** Share / publish control in the notebook top bar — LemonDropdown, same pattern as Notebooks. */
+const PANEL_CLASS =
+    'w-[min(18rem,calc(100vw-1.5rem))] max-h-[min(28rem,70dvh)] overflow-y-auto z-[80]'
+
 export function SidebarContextPanelMenu({
     notebookId,
     notebookTitle,
     onPublish,
-    initialTab = 'publish',
-    isOpen,
-    onOpenChange,
-    onButtonOpen,
+    panel = null,
+    onPanelChange,
 }: SidebarContextPanelMenuProps) {
+    const inviteOpen = panel === 'private'
+    const publishOpen = panel === 'publish'
+
     return (
-        <LemonDropdown
-            overlay={
-                <NotebookShareModal
-                    isOpen={isOpen !== false}
-                    onClose={() => onOpenChange?.(false)}
+        <>
+            <Popover
+                header
+                title="Invite members"
+                dataScheme="secondary"
+                side="bottom"
+                align="end"
+                sideOffset={8}
+                open={inviteOpen}
+                onOpenChange={(open) => {
+                    if (open) onPanelChange?.('private')
+                    else if (inviteOpen) onPanelChange?.(null)
+                }}
+                contentClassName={PANEL_CLASS}
+                trigger={
+                    <span>
+                        <OSButton
+                            icon={<IconPeople />}
+                            size="md"
+                            tooltip="Invite members"
+                            active={inviteOpen}
+                        />
+                    </span>
+                }
+            >
+                <NotebookInvitePanel notebookId={notebookId} isOpen={inviteOpen} />
+            </Popover>
+            <Popover
+                header
+                title="Publish on WIM"
+                dataScheme="secondary"
+                side="bottom"
+                align="end"
+                sideOffset={8}
+                open={publishOpen}
+                onOpenChange={(open) => {
+                    if (open) onPanelChange?.('publish')
+                    else if (publishOpen) onPanelChange?.(null)
+                }}
+                contentClassName={PANEL_CLASS}
+                trigger={
+                    <span>
+                        <OSButton
+                            icon={<IconGlobe />}
+                            size="md"
+                            tooltip="Publish on WIM"
+                            active={publishOpen}
+                        />
+                    </span>
+                }
+            >
+                <NotebookPublishPanel
                     notebookId={notebookId}
                     notebookTitle={notebookTitle}
-                    initialTab={initialTab}
+                    isOpen={publishOpen}
                     onPublish={onPublish}
                 />
-            }
-            visible={isOpen}
-            onVisibilityChange={onOpenChange}
-            closeOnClickInside={false}
-            // Top-bar trigger on the right: open below, align to the button's end edge.
-            placement="bottom-end"
-            fallbackPlacements={['bottom-start', 'top-end', 'top-start']}
-        >
-            <LemonButton
-                size="small"
-                type="secondary"
-                icon={<IconShare />}
-                active={Boolean(isOpen)}
-                tooltip="Publish on your profile, or send the text privately"
-                onClick={() => {
-                    if (!isOpen) onButtonOpen?.('publish')
-                }}
-            >
-                <span className="hidden sm:inline">Share</span>
-            </LemonButton>
-        </LemonDropdown>
+            </Popover>
+        </>
     )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LemonButton } from '~nb-lib/lemon-ui/index'
+import OSButton from 'components/OSButton'
 import { useApp } from '../../../context/App'
 import { useUser } from '../../../hooks/useUser'
 import { rememberAuthNextPath } from '../../../lib/auth-callback'
@@ -74,49 +74,61 @@ export function NotebookInviteScene({ token, onJoined, onBack }: NotebookInviteS
     const roleLabel = preview?.role === 'viewer' ? 'view' : 'write'
 
     return (
-        <div className="max-w-lg mx-auto py-12 px-4 space-y-4 text-center">
-            <p className="m-0 text-xs uppercase tracking-wide text-muted">Notebook invite</p>
-            {loading ? (
-                <p className="m-0 text-sm text-muted animate-pulse">Loading invite…</p>
-            ) : preview ? (
-                <>
-                    <h1 className="m-0 text-2xl font-semibold text-primary">{preview.notebook_title}</h1>
-                    <p className="m-0 text-sm text-secondary leading-relaxed">
-                        {personName(preview.inviter)} invited you to {roleLabel} on this notebook with them.
-                    </p>
-                    {error ? <p className="m-0 text-sm text-danger">{error}</p> : null}
-                    <div className="flex flex-wrap justify-center gap-2 pt-2">
-                        {user ? (
-                            <LemonButton type="primary" onClick={() => void join()} loading={busy}>
-                                {preview.role === 'viewer' ? 'Open notebook' : 'Join and write'}
-                            </LemonButton>
-                        ) : (
-                            <LemonButton
-                                type="primary"
-                                onClick={() => {
-                                    rememberAuthNextPath()
-                                    openSignIn(() => {
-                                        void join()
-                                    })
-                                }}
-                            >
-                                Sign in to join
-                            </LemonButton>
-                        )}
-                        <LemonButton type="secondary" onClick={onBack}>
+        <div className="max-w-lg mx-auto py-12 px-4">
+            <div className="border border-primary rounded bg-primary p-6 text-center space-y-4">
+                <p className="m-0 text-xs uppercase tracking-wide text-muted">Notebook invite</p>
+                {loading ? (
+                    <p className="m-0 text-sm text-muted animate-pulse">Loading invite…</p>
+                ) : preview ? (
+                    <>
+                        <h1 className="m-0 text-2xl font-semibold text-primary">{preview.notebook_title}</h1>
+                        <p className="m-0 text-sm text-secondary leading-relaxed">
+                            {personName(preview.inviter)} invited you to {roleLabel} on this notebook with them.
+                        </p>
+                        {error ? <p className="m-0 text-sm text-red">{error}</p> : null}
+                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                            {user ? (
+                                <OSButton
+                                    variant="primary"
+                                    size="md"
+                                    disabled={busy}
+                                    onClick={() => void join()}
+                                >
+                                    {busy
+                                        ? 'Joining…'
+                                        : preview.role === 'viewer'
+                                          ? 'Open notebook'
+                                          : 'Join and write'}
+                                </OSButton>
+                            ) : (
+                                <OSButton
+                                    variant="primary"
+                                    size="md"
+                                    onClick={() => {
+                                        rememberAuthNextPath()
+                                        openSignIn(() => {
+                                            void join()
+                                        })
+                                    }}
+                                >
+                                    Sign in to join
+                                </OSButton>
+                            )}
+                            <OSButton size="md" onClick={onBack}>
+                                Back to notebooks
+                            </OSButton>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <h1 className="m-0 text-xl font-semibold">Invite unavailable</h1>
+                        <p className="m-0 text-sm text-secondary">{error || 'This invite is no longer valid.'}</p>
+                        <OSButton variant="primary" size="md" onClick={onBack}>
                             Back to notebooks
-                        </LemonButton>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <h1 className="m-0 text-xl font-semibold">Invite unavailable</h1>
-                    <p className="m-0 text-sm text-secondary">{error || 'This invite is no longer valid.'}</p>
-                    <LemonButton type="primary" onClick={onBack}>
-                        Back to notebooks
-                    </LemonButton>
-                </>
-            )}
+                        </OSButton>
+                    </>
+                )}
+            </div>
         </div>
     )
 }

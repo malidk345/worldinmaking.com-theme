@@ -1,22 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import {
-    LemonButton,
-    LemonInput,
-    LemonMenu,
-    LemonTag,
-    LemonSelect,
-    ProfilePicture,
-} from '~nb-lib/lemon-ui/index'
+import { LemonTag, ProfilePicture } from '~nb-lib/lemon-ui/index'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import { notebookMatchesQuery } from './notebookPreview'
-import { Download } from 'lucide-react'
-import {
-    IconEllipsis,
-    IconPlus,
-    IconTrash,
-    IconCopy,
-} from '@posthog/icons'
+import { IconEllipsis, IconPlus, IconTrash, IconCopy } from '@posthog/icons'
+import OSButton from 'components/OSButton'
+import MenuBar from 'components/RadixUI/MenuBar'
+import ScrollArea from 'components/RadixUI/ScrollArea'
+import { Select } from 'components/RadixUI/Select'
 import { useToast } from '../../../context/Toast'
 import {
     StoredNotebook,
@@ -29,7 +20,7 @@ import {
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
-import { NotebookSelectButton } from './NotebookSelectButton/NotebookSelectButton'
+import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
 
 interface NotebooksListSceneProps {
     onSelectNotebook: (id: string) => void
@@ -167,7 +158,6 @@ export function NotebooksListScene({
         }
     }
 
-    // PostHog's exact columns: Title, Created by, Created, Last modified, Actions
     const columns: LemonTableColumns<StoredNotebook> = [
         {
             title: 'Title',
@@ -201,7 +191,8 @@ export function NotebooksListScene({
                     </a>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) => (a.title ?? 'Untitled').localeCompare(b.title ?? 'Untitled'),
+            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+                (a.title ?? 'Untitled').localeCompare(b.title ?? 'Untitled'),
         },
         {
             title: 'Created by',
@@ -234,7 +225,8 @@ export function NotebooksListScene({
                     </div>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         },
         {
             title: 'Last modified',
@@ -252,7 +244,8 @@ export function NotebooksListScene({
                     </div>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(),
+            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+                new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(),
         },
         {
             title: '',
@@ -261,49 +254,75 @@ export function NotebooksListScene({
                 if (notebook.isTemplate) {
                     return null
                 }
+                const shared = Boolean(notebook.access_role && notebook.access_role !== 'owner')
                 return (
-                    <LemonMenu
-                        items={[
-                            {
-                                label: 'Add to Desktop',
-                                icon: <Download className="size-4" />,
-                                onClick: () => handlePinToDesktop(notebook),
-                            },
-                            {
-                                label: 'Duplicate',
-                                icon: <IconCopy />,
-                                onClick: () => handleDuplicate(notebook.id),
-                            },
-                            {
-                                label: 'Download .md',
-                                onClick: () => handleExportMd(notebook),
-                            },
-                            {
-                                label: 'Export JSON',
-                                onClick: () => handleExportJSON(notebook),
-                            },
-                            notebook.access_role && notebook.access_role !== 'owner'
-                                ? {
-                                      label: 'Leave',
-                                      icon: <IconTrash />,
-                                      status: 'danger' as const,
-                                      onClick: () => {
-                                          void leaveSharedNotebook(notebook.id).then(() => {
-                                              reloadNotebooks()
-                                              addToast({ description: `Left “${notebook.title}”` })
-                                          })
-                                      },
-                                  }
-                                : {
-                                      label: 'Delete',
-                                      icon: <IconTrash />,
-                                      status: 'danger' as const,
-                                      onClick: () => handleDelete(notebook.id, notebook.title),
-                                  },
-                        ]}
+                    <div
+                        className="flex justify-end"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                        }}
                     >
-                        <LemonButton aria-label="more" icon={<IconEllipsis />} size="small" />
-                    </LemonMenu>
+                        <MenuBar
+                            triggerAsChild
+                            menus={[
+                                {
+                                    hideChevron: true,
+                                    trigger: (
+                                        <button
+                                            type="button"
+                                            aria-label="more"
+                                            className="flex items-center justify-center size-6 rotate-90 text-muted hover:text-primary"
+                                        >
+                                            <IconEllipsis className="size-4" />
+                                        </button>
+                                    ),
+                                    items: [
+                                        {
+                                            type: 'item',
+                                            label: 'Add to Desktop',
+                                            onClick: () => handlePinToDesktop(notebook),
+                                        },
+                                        {
+                                            type: 'item',
+                                            label: 'Duplicate',
+                                            icon: <IconCopy className="size-4" />,
+                                            onClick: () => handleDuplicate(notebook.id),
+                                        },
+                                        {
+                                            type: 'item',
+                                            label: 'Download .md',
+                                            onClick: () => handleExportMd(notebook),
+                                        },
+                                        {
+                                            type: 'item',
+                                            label: 'Export JSON',
+                                            onClick: () => handleExportJSON(notebook),
+                                        },
+                                        { type: 'separator' },
+                                        shared
+                                            ? {
+                                                  type: 'item' as const,
+                                                  label: 'Leave',
+                                                  icon: <IconTrash className="size-4" />,
+                                                  onClick: () => {
+                                                      void leaveSharedNotebook(notebook.id).then(() => {
+                                                          reloadNotebooks()
+                                                          addToast({ description: `Left “${notebook.title}”` })
+                                                      })
+                                                  },
+                                              }
+                                            : {
+                                                  type: 'item' as const,
+                                                  label: 'Delete',
+                                                  icon: <IconTrash className="size-4" />,
+                                                  onClick: () => handleDelete(notebook.id, notebook.title),
+                                              },
+                                    ],
+                                },
+                            ]}
+                        />
+                    </div>
                 )
             },
         },
@@ -311,106 +330,130 @@ export function NotebooksListScene({
 
     const emptyLibrary = notebooks.length === 0
     const searchActive = Boolean(searchQuery.trim())
+    const filters = [
+        { id: 'all', label: 'All notebooks' },
+        { id: 'user', label: 'Yours' },
+        { id: 'shared', label: 'Shared with you' },
+        { id: 'templates', label: 'Templates' },
+    ] as const
+    const filterCounts: Record<string, number> = {
+        all: notebooks.length,
+        user: notebooks.filter((nb) => !nb.isTemplate && (!nb.access_role || nb.access_role === 'owner')).length,
+        shared: notebooks.filter((nb) => Boolean(nb.access_role && nb.access_role !== 'owner')).length,
+        templates: notebooks.filter((nb) => Boolean(nb.isTemplate)).length,
+    }
 
     return (
-        <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between gap-4 items-stretch sm:items-center mb-2 sm:mb-4">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-                    <NotebookSelectButton
-                        onSelectNotebook={onSelectNotebook}
-                        onCreateNew={onCreateNew}
-                        buttonText="Notebooks"
-                        size="small"
-                        type="secondary"
-                    />
-                    <LemonInput
-                        type="search"
-                        placeholder="Search titles or content"
-                        onChange={setSearchInput}
-                        value={searchInput}
-                        data-attr="notebooks-search"
-                        size="small"
-                        className="w-full sm:w-72"
-                    />
-                </div>
+        <div className="@container w-full h-full min-h-0 flex flex-col bg-primary text-primary overflow-hidden">
+            <div data-scheme="secondary" className="flex @2xl:flex-row flex-col flex-1 min-h-0 overflow-hidden">
+                <aside
+                    data-scheme="secondary"
+                    className="w-full @2xl:w-64 bg-primary flex-shrink-0 @2xl:border-r border-primary @2xl:h-full @2xl:min-h-0"
+                >
+                    <div className="flex flex-col h-full min-h-0">
+                        <div className="border-b border-primary px-2 pt-2 pb-2">
+                            <OSButton variant="primary" size="md" width="full" onClick={onCreateNew}>
+                                New notebook
+                            </OSButton>
+                        </div>
+                        <div className="px-2 pt-2 pb-1">
+                            <input
+                                type="search"
+                                placeholder="Search titles or content"
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                data-attr="notebooks-search"
+                                className="w-full rounded border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+                            />
+                        </div>
+                        <div className="@2xl:hidden">
+                            <Select
+                                className="w-full border-none rounded-none"
+                                placeholder="Filter"
+                                value={createdByFilter}
+                                onValueChange={(value) => setCreatedByFilter(value || 'all')}
+                                groups={[
+                                    {
+                                        label: 'Notebooks',
+                                        items: filters.map((filter) => ({
+                                            label: `${filter.label} (${filterCounts[filter.id]})`,
+                                            value: filter.id,
+                                        })),
+                                    },
+                                ]}
+                            />
+                        </div>
+                        <ScrollArea className="hidden @2xl:block flex-1 min-h-0 p-2">
+                            <div className="flex flex-col gap-px">
+                                {filters.map((filter) => (
+                                    <OSButton
+                                        key={filter.id}
+                                        align="left"
+                                        width="full"
+                                        hover="background"
+                                        size="sm"
+                                        className={createdByFilter === filter.id ? 'font-semibold bg-accent' : ''}
+                                        onClick={() => setCreatedByFilter(filter.id)}
+                                    >
+                                        <span className="flex-1 truncate">{filter.label}</span>
+                                        <span className="text-muted text-xs tabular-nums">
+                                            {filterCounts[filter.id]}
+                                        </span>
+                                    </OSButton>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </div>
+                </aside>
 
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                    <div className="flex items-center gap-2 text-xs text-secondary">
-                        <span className="font-medium">Created by:</span>
-                        <LemonSelect
-                            size="small"
-                            value={createdByFilter}
-                            onChange={(val) => setCreatedByFilter(val || 'all')}
-                            options={[
-                                { value: 'all', label: 'All users' },
-                                { value: 'user', label: 'You' },
-                                { value: 'shared', label: 'Shared with you' },
-                                { value: 'templates', label: 'WIM Templates' },
-                            ]}
+                <main
+                    data-scheme="primary"
+                    className="flex-1 min-h-0 bg-primary overflow-hidden @2xl:border-none border-t border-primary flex flex-col"
+                >
+                    <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} flex-1 min-h-0 overflow-auto p-3 sm:p-4`}>
+                        <LemonTable
+                            data-attr="notebooks-table"
+                            dataSource={filteredNotebooks}
+                            columns={columns}
+                            rowKey="id"
+                            rowClassName={(notebook) =>
+                                leavingIds.has(notebook.id)
+                                    ? 'opacity-0 -translate-y-1 transition duration-200 ease-out pointer-events-none'
+                                    : 'transition duration-200 ease-out'
+                            }
+                            loading={false}
+                            defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
+                            pagination={{ pageSize: 25, hideOnSinglePage: true }}
+                            emptyState={
+                                emptyLibrary ? (
+                                    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                                        <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
+                                        <p className="m-0 text-xs text-muted max-w-sm">
+                                            Start a page. Inside the editor, type{' '}
+                                            <span className="font-semibold">/</span> to insert a block.
+                                        </p>
+                                        <OSButton variant="primary" size="sm" icon={<IconPlus />} onClick={onCreateNew}>
+                                            New notebook
+                                        </OSButton>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
+                                        <p className="m-0 text-sm font-medium text-primary">
+                                            {searchActive
+                                                ? `No notebooks match “${searchQuery.trim()}”`
+                                                : 'No notebooks matching your filters'}
+                                        </p>
+                                        <p className="m-0 text-xs text-muted">
+                                            Try another title, a word from the page, or clear the filter.
+                                        </p>
+                                    </div>
+                                )
+                            }
+                            nouns={['notebook', 'notebooks']}
+                            useURLForSorting={false}
                         />
                     </div>
-                    <LemonButton size="small" type="primary" icon={<IconPlus />} onClick={onCreateNew}>
-                        New notebook
-                    </LemonButton>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 text-[11px] text-muted px-0.5">
-                <span>
-                    {filteredNotebooks.length === notebooks.length
-                        ? `${notebooks.length} ${notebooks.length === 1 ? 'notebook' : 'notebooks'}`
-                        : `${filteredNotebooks.length} of ${notebooks.length}`}
-                </span>
-                <span className="hidden sm:inline select-none">
-                    <kbd className="px-1.5 py-0.5 rounded-md border border-primary bg-surface-secondary font-medium">
-                        ⌘K
-                    </kbd>{' '}
-                    to jump
-                </span>
-            </div>
-
-            <div className="overflow-x-auto max-w-full -mx-3 sm:mx-0 px-3 sm:px-0">
-                <LemonTable
-                    data-attr="notebooks-table"
-                    dataSource={filteredNotebooks}
-                    columns={columns}
-                    rowKey="id"
-                    rowClassName={(notebook) =>
-                        leavingIds.has(notebook.id)
-                            ? 'opacity-0 -translate-y-1 transition duration-200 ease-out pointer-events-none'
-                            : 'transition duration-200 ease-out'
-                    }
-                    loading={false}
-                    defaultSorting={{ columnKey: 'updatedAt', order: -1 }}
-                    pagination={{ pageSize: 25, hideOnSinglePage: true }}
-                    emptyState={
-                        emptyLibrary ? (
-                            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-                                <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
-                                <p className="m-0 text-xs text-muted max-w-sm">
-                                    Start a page. Inside the editor, type <span className="font-semibold">/</span> to
-                                    insert a block.
-                                </p>
-                                <LemonButton type="primary" size="small" icon={<IconPlus />} onClick={onCreateNew}>
-                                    New notebook
-                                </LemonButton>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
-                                <p className="m-0 text-sm font-medium text-primary">
-                                    {searchActive
-                                        ? `No notebooks match “${searchQuery.trim()}”`
-                                        : 'No notebooks matching your filters'}
-                                </p>
-                                <p className="m-0 text-xs text-muted">
-                                    Try another title, a word from the page, or clear the filter.
-                                </p>
-                            </div>
-                        )
-                    }
-                    nouns={['notebook', 'notebooks']}
-                    useURLForSorting={false}
-                />
+                </main>
             </div>
         </div>
     )

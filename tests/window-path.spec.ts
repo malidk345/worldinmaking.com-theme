@@ -25,7 +25,7 @@ test.describe('window path', () => {
         expect(repairWindowPath('/posts/[slug]', '/posts/hello-world')).toBe('/posts/hello-world')
         expect(repairWindowPath('/posts', '/posts/hello-world')).toBe('/posts/hello-world')
         expect(repairWindowPath('/questions', '/questions/42')).toBe('/questions/42')
-        expect(repairWindowPath('/notebooks', '/notebooks/nb-1')).toBe('/notebooks/nb-1')
+        expect(repairWindowPath('/notebooks', '/notebooks/nb-1')).toBe('/notebooks')
         expect(repairWindowPath('/posts/kept', '/posts/other')).toBe('/posts/kept')
     })
 
@@ -85,6 +85,6 @@ test.describe('window path', () => {
         expect(parseNotebookRoute('/notebooks/n/abc')).toEqual({ page: 'public', notebookId: 'abc' })
         expect(parseNotebookRoute('/notebooks#/n/abc')).toEqual({ page: 'public', notebookId: 'abc' })
         expect(notebookPathForRoute({ page: 'public', notebookId: 'abc' })).toBe('/notebooks/n/abc')
-        expect(repairWindowPath('/notebooks', '/notebooks/n/abc')).toBe('/notebooks/n/abc')
+        expect(repairWindowPath('/notebooks', '/notebooks/n/abc')).toBe('/notebooks')
     })
 })

@@ -9,8 +9,9 @@ import { stripThinkingBlocks } from './thinking-tags'
 
 export const MAX_INVITE_SELECTION = 8_000
 export const MAX_INVITE_NOTEBOOK = 2_000
+export const MAX_INVITE_BOTS = 4
 
-export const NOTEBOOK_INVITE_BOT_IDS = ['nietzsche', 'marx', 'arendt', 'rand'] as const
+export const NOTEBOOK_INVITE_BOT_IDS = PHILOSOPHER_BOTS.map((bot) => bot.id)
 export type NotebookInviteBotId = (typeof NOTEBOOK_INVITE_BOT_IDS)[number]
 
 export function isNotebookInviteBotId(value: string): value is NotebookInviteBotId {
@@ -19,11 +20,17 @@ export function isNotebookInviteBotId(value: string): value is NotebookInviteBot
 
 export function resolveInviteBot(
     botId: string
-): { id: string; name: string; displayName: string; avatarUrl?: string } | null {
+): { id: string; name: string; displayName: string; shortStance?: string; avatarUrl?: string } | null {
     const lookup = botId.trim().toLowerCase()
     const bot = PHILOSOPHER_BOTS.find((entry) => entry.id === lookup || entry.name.toLowerCase() === lookup)
     return bot
-        ? { id: bot.id, name: bot.name, displayName: bot.displayName, avatarUrl: `/philosophers/${bot.id}.png` }
+        ? {
+              id: bot.id,
+              name: bot.name,
+              displayName: bot.displayName,
+              shortStance: bot.shortStance,
+              avatarUrl: `/philosophers/${bot.id}.png`,
+          }
         : null
 }
 

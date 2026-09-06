@@ -141,6 +141,13 @@ export async function resolveNotebookOwner(
     return { ok: true, ownerKey: claimed, via: 'device' }
 }
 
+/** Guest notebooks stay keyed by the device id after sign-in. */
+export function extraOwnerKeysFromRequest(req: Request, authOwnerKey: string): string[] {
+    const deviceKey = (req.headers.get('x-wim-device-key') || '').trim()
+    if (!isOwnerKey(deviceKey) || deviceKey === authOwnerKey) return []
+    return [deviceKey]
+}
+
 /**
  * Authenticate forum bot write APIs via bot_profiles.api_token.
  * Uses service role REST; token is URL-encoded and length-checked.

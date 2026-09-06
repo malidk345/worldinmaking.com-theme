@@ -122,7 +122,6 @@ export function canonicalWindowPath(input?: string | null): string {
     if (isPlaceholderPath(stripped)) return live
     if (stripped === '/posts' && live.startsWith('/posts/')) return live
     if (stripped === '/blog' && live.startsWith('/blog/')) return live
-    if (stripped === '/notebooks' && extractNotebookId(live)) return live
     if (
         (stripped === '/questions' || stripped === '/forum') &&
         /^\/(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))/.test(live)
@@ -133,12 +132,6 @@ export function canonicalWindowPath(input?: string | null): string {
 }
 
 export function repairWindowPath(windowPath: string, live: string): string {
-    if (stripPathNoise(windowPath) === '/notebooks') {
-        const livePublic = extractPublicNotebookId(live)
-        if (livePublic) return notebookPublicPath(livePublic)
-        const liveNotebook = extractNotebookId(live)
-        if (liveNotebook) return notebookWindowPath(liveNotebook)
-    }
     const current = stripPathNoise(windowPath)
     const livePath = stripPathNoise(live)
     if (isPlaceholderPath(current) && livePath !== '/') return livePath

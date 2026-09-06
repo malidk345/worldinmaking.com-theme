@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
-import { LemonButton, LemonModal } from '~nb-lib/lemon-ui/index'
+import Modal from 'components/Modal'
+import OSButton from 'components/OSButton'
 
 export interface NotebookConfirmOptions {
     title: string
@@ -15,7 +16,6 @@ interface NotebookConfirmDialogProps extends NotebookConfirmOptions {
     onCancel: () => void
 }
 
-/** Site-chrome confirm (LemonModal). Replaces window.confirm in the notebook app. */
 export function NotebookConfirmDialog({
     isOpen,
     title,
@@ -27,25 +27,32 @@ export function NotebookConfirmDialog({
     onCancel,
 }: NotebookConfirmDialogProps): JSX.Element {
     return (
-        <LemonModal isOpen={isOpen} onClose={onCancel} title={title} width={420}>
-            <div className="space-y-4">
-                {description ? <p className="text-sm text-secondary m-0 leading-relaxed">{description}</p> : null}
-                <div className="flex justify-end gap-2">
-                    <LemonButton type="secondary" size="small" onClick={onCancel}>
+        <Modal open={isOpen} setOpen={(open: boolean) => { if (!open) onCancel() }}>
+            <div className="relative z-10 max-w-md mx-auto mt-32 bg-primary border border-primary rounded p-4 text-primary">
+                <h3 className="m-0 text-base font-semibold">{title}</h3>
+                {description ? (
+                    <p className="text-sm text-secondary m-0 mt-2 leading-relaxed">{description}</p>
+                ) : null}
+                <div className="flex justify-end gap-2 mt-4">
+                    <OSButton size="sm" onClick={onCancel}>
                         {cancelLabel}
-                    </LemonButton>
-                    <LemonButton type="primary" size="small" status={danger ? 'danger' : undefined} onClick={onConfirm}>
+                    </OSButton>
+                    <OSButton
+                        variant="primary"
+                        size="sm"
+                        className={danger ? 'text-red' : undefined}
+                        onClick={onConfirm}
+                    >
                         {confirmLabel}
-                    </LemonButton>
+                    </OSButton>
                 </div>
             </div>
-        </LemonModal>
+        </Modal>
     )
 }
 
 type PendingConfirm = NotebookConfirmOptions & { resolve: (ok: boolean) => void }
 
-/** Promise-based confirm for list / history / editor delete. */
 export function useNotebookConfirm(): {
     confirm: (options: NotebookConfirmOptions) => Promise<boolean>
     dialog: JSX.Element

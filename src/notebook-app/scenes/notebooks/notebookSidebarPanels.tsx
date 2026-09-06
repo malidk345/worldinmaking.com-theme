@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { IconDownload, IconGear } from '@posthog/icons'
+import { IconComment, IconDownload, IconGear } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Link from 'components/Link'
 import { Popover } from 'components/RadixUI/Popover'
@@ -19,31 +19,21 @@ import {
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf } from './exportNotebookPdf'
 
-export function NotebookSettingsPopover({
+export function NotebookSettingsPanel({
     settings,
     onChange,
+    extra,
 }: {
     settings: NotebookChromeSettings
     onChange: (next: Partial<NotebookChromeSettings>) => void
+    extra?: React.ReactNode
 }): JSX.Element {
     return (
-        <Popover
-            title="Options"
-            header
-            dataScheme="primary"
-            side="top"
-            align="end"
-            trigger={
-                <span>
-                    <OSButton icon={<IconGear />} size="md" aria-label="Settings" />
-                </span>
-            }
-            contentClassName="w-[234px]"
-        >
-            <div className="flex flex-col gap-2 px-1 pb-1">
-                <Fieldset legend="Layout">
+        <div className="w-full h-full bg-primary text-primary space-y-2">
+            <Fieldset legend="Layout">
+                <div className="grid grid-cols-2 gap-2">
                     <ToggleGroup
-                        title="Width"
+                        title="Content width"
                         size="sm"
                         value={settings.wide ? 'full' : 'compact'}
                         onValueChange={(value) => {
@@ -51,8 +41,8 @@ export function NotebookSettingsPopover({
                             onChange({ wide: value === 'full' })
                         }}
                         options={[
-                            { label: 'Compact', value: 'compact' },
-                            { label: 'Wide', value: 'full' },
+                            { label: 'Fixed', value: 'compact' },
+                            { label: 'Full', value: 'full' },
                         ]}
                     />
                     <ToggleGroup
@@ -70,49 +60,76 @@ export function NotebookSettingsPopover({
                             { label: 'L', value: 'lg' },
                         ]}
                     />
-                </Fieldset>
-                <Fieldset legend="Editor">
-                    <ToggleGroup
-                        title="Autosave"
-                        size="sm"
-                        value={String(settings.autosaveMs)}
-                        onValueChange={(value) => {
-                            const ms = Number(value) as NotebookAutosaveMs
-                            if (ms === 800 || ms === 1100 || ms === 2500) onChange({ autosaveMs: ms })
-                        }}
-                        options={[
-                            { label: 'Fast', value: '800' },
-                            { label: 'Normal', value: '1100' },
-                            { label: 'Slow', value: '2500' },
-                        ]}
-                    />
-                    <ToggleGroup
-                        title="Spellcheck"
-                        size="sm"
-                        value={settings.spellcheck ? 'on' : 'off'}
-                        onValueChange={(value) => {
-                            if (!value) return
-                            onChange({ spellcheck: value === 'on' })
-                        }}
-                        options={[
-                            { label: 'On', value: 'on' },
-                            { label: 'Off', value: 'off' },
-                        ]}
-                    />
-                </Fieldset>
-                <p className="text-[13px] m-0 text-secondary">
-                    Light/dark in{' '}
+                </div>
+            </Fieldset>
+            <Fieldset legend="Editor">
+                <ToggleGroup
+                    title="Autosave"
+                    size="sm"
+                    value={String(settings.autosaveMs)}
+                    onValueChange={(value) => {
+                        const ms = Number(value) as NotebookAutosaveMs
+                        if (ms === 800 || ms === 1100 || ms === 2500) onChange({ autosaveMs: ms })
+                    }}
+                    options={[
+                        { label: 'Fast', value: '800' },
+                        { label: 'Normal', value: '1100' },
+                        { label: 'Slow', value: '2500' },
+                    ]}
+                />
+                <ToggleGroup
+                    title="Spellcheck"
+                    size="sm"
+                    value={settings.spellcheck ? 'on' : 'off'}
+                    onValueChange={(value) => {
+                        if (!value) return
+                        onChange({ spellcheck: value === 'on' })
+                    }}
+                    options={[
+                        { label: 'On', value: 'on' },
+                        { label: 'Off', value: 'off' },
+                    ]}
+                />
+            </Fieldset>
+            {extra}
+            <p className="text-[13px]">
+                Toggle light/dark mode in{' '}
+                <span className="inline-flex items-center gap-0.5">
                     <Link href="/display-options" state={{ newWindow: true }} className="font-semibold underline">
                         desktop settings
                     </Link>
-                    .
-                </p>
-            </div>
+                </span>
+            </p>
+        </div>
+    )
+}
+
+export function NotebookSettingsPopover({
+    settings,
+    onChange,
+    extra,
+}: {
+    settings: NotebookChromeSettings
+    onChange: (next: Partial<NotebookChromeSettings>) => void
+    extra?: React.ReactNode
+}): JSX.Element {
+    return (
+        <Popover
+            title="Options"
+            dataScheme="secondary"
+            trigger={
+                <span>
+                    <OSButton icon={<IconGear />} size="md" />
+                </span>
+            }
+            contentClassName="w-80"
+        >
+            <NotebookSettingsPanel settings={settings} onChange={onChange} extra={extra} />
         </Popover>
     )
 }
 
-export function NotebookExportButton({ notebookId }: { notebookId: string }): JSX.Element {
+export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX.Element {
     const [pdfBusy, setPdfBusy] = useState(false)
     const title = () => getNotebook(notebookId)?.title || 'notebook'
 
@@ -127,20 +144,8 @@ export function NotebookExportButton({ notebookId }: { notebookId: string }): JS
     }
 
     return (
-        <Popover
-            title="Export"
-            header
-            dataScheme="primary"
-            side="top"
-            align="end"
-            trigger={
-                <span>
-                    <OSButton size="md" icon={<IconDownload />} aria-label="Export" />
-                </span>
-            }
-            contentClassName="w-[234px]"
-        >
             <div className="flex flex-col gap-1 px-1 pb-1">
+                <h4 className="font-semibold text-muted m-0 px-1 text-sm">Export</h4>
                 <OSButton
                     size="sm"
                     width="full"
@@ -202,6 +207,25 @@ export function NotebookExportButton({ notebookId }: { notebookId: string }): JS
                     Print
                 </OSButton>
             </div>
+    )
+}
+
+export function NotebookExportButton({ notebookId }: { notebookId: string }): JSX.Element {
+    return (
+        <Popover
+            title="Export"
+            header
+            dataScheme="primary"
+            side="bottom"
+            align="end"
+            trigger={
+                <span>
+                    <OSButton size="md" icon={<IconDownload />} tooltip="Export" />
+                </span>
+            }
+            contentClassName="w-[min(18rem,calc(100vw-1.5rem))] z-[80]"
+        >
+            <NotebookExportPanel notebookId={notebookId} />
         </Popover>
     )
 }
@@ -250,55 +274,135 @@ export function SidebarComments({
     containerRef?: React.RefObject<HTMLElement | null>
     onJump?: () => void
 }): JSX.Element {
-    if (comments.length === 0) {
-        return <p className="text-sm text-muted m-0 px-1">No comments or invite notes yet.</p>
-    }
     return (
         <div data-sidebar-label className="not-prose">
-            <h4 className="font-semibold text-muted m-0 mb-1 text-sm">Notes</h4>
-            <ul className="list-none m-0 p-0 flex flex-col">
-                {comments.map((item) => (
-                    <li key={item.id} className="m-0 p-0">
-                        <button
+            <h4 className="font-semibold text-muted m-0 mb-1 px-1 text-sm">Notes</h4>
+            {comments.length === 0 ? (
+                <p className="text-sm text-muted m-0 px-1 leading-snug">No comments or invite notes yet.</p>
+            ) : (
+                <div className="flex flex-col gap-px">
+                    {comments.map((item) => (
+                        <OSButton
+                            key={item.id}
                             type="button"
-                            className="w-full text-left py-1.5 px-1 bg-transparent border-0 cursor-pointer hover:bg-accent rounded"
+                            align="left"
+                            width="full"
+                            size="md"
+                            hover="background"
                             onClick={() => {
                                 jumpToNotebookHit(item.nodeId, containerRef?.current ?? null)
                                 onJump?.()
                             }}
+                            className="!items-start !h-auto"
                         >
-                            <span className="block text-[11px] text-muted truncate">
-                                {item.author}
-                                {item.kind ? ` · ${item.kind}` : ''}
+                            <span className="block min-w-0">
+                                <span className="block text-[11px] text-muted truncate">
+                                    {item.author}
+                                    {item.kind ? ` · ${item.kind}` : ''}
+                                </span>
+                                <span className="block text-sm text-primary leading-snug">{item.text}</span>
                             </span>
-                            <span className="block text-sm text-primary leading-snug">{item.text}</span>
-                        </button>
-                    </li>
-                ))}
-            </ul>
+                        </OSButton>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
 
 export function SidebarPeople({ people }: { people: NotebookPresencePerson[] }): JSX.Element {
-    if (people.length === 0) {
-        return <p className="text-sm text-muted m-0 px-1">You are the only one here.</p>
-    }
     return (
-        <div data-sidebar-label className="not-prose">
-            <h4 className="font-semibold text-muted m-0 mb-1 text-sm">Here now</h4>
-            <ul className="list-none m-0 p-0 flex flex-col">
-                {people.map((person) => (
-                    <li key={person.clientId} className="flex items-center gap-2 py-1.5 px-1">
-                        <span
-                            className="size-2.5 rounded-full shrink-0"
-                            style={{ background: person.color }}
-                            aria-hidden
-                        />
-                        <span className="text-sm text-primary truncate">{person.name}</span>
-                    </li>
-                ))}
-            </ul>
+        <div className="not-prose px-1 pb-1">
+            <h4 className="font-semibold text-muted m-0 mb-2 text-sm">Here now</h4>
+            {people.length === 0 ? (
+                <p className="text-sm text-muted m-0 leading-snug">You are the only one here.</p>
+            ) : (
+                <ul className="list-none m-0 p-0 flex flex-col gap-1">
+                    {people.map((person) => (
+                        <li key={person.clientId} className="flex items-center gap-2 py-1">
+                            <span
+                                className="size-2.5 rounded-full shrink-0"
+                                style={{ background: person.color }}
+                                aria-hidden
+                            />
+                            <span className="text-sm text-primary truncate">{person.name}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
+    )
+}
+
+export function NotebookPeopleButton({ people }: { people: NotebookPresencePerson[] }): JSX.Element {
+    const count = people.length
+    return (
+        <Popover
+            header
+            title="Here now"
+            dataScheme="secondary"
+            side="bottom"
+            align="end"
+            contentClassName="w-[min(16rem,calc(100vw-1.5rem))] z-[80]"
+            trigger={
+                <span>
+                    <OSButton size="md" tooltip={count ? `${count} here now` : 'Who’s here'}>
+                        <span className="flex items-center gap-0.5">
+                            {count === 0 ? (
+                                <span className="size-2 rounded-full bg-muted" />
+                            ) : (
+                                people.slice(0, 3).map((person) => (
+                                    <span
+                                        key={person.clientId}
+                                        className="size-2.5 rounded-full"
+                                        style={{ background: person.color }}
+                                    />
+                                ))
+                            )}
+                        </span>
+                    </OSButton>
+                </span>
+            }
+        >
+            <SidebarPeople people={people} />
+        </Popover>
+    )
+}
+
+export function NotebookNotesButton({
+    comments,
+    containerRef,
+}: {
+    comments: NotebookCommentItem[]
+    containerRef?: React.RefObject<HTMLElement | null>
+}): JSX.Element {
+    const [open, setOpen] = useState(false)
+    return (
+        <Popover
+            header
+            title="Notes"
+            dataScheme="secondary"
+            side="bottom"
+            align="start"
+            open={open}
+            onOpenChange={setOpen}
+            contentClassName="w-[min(18rem,calc(100vw-1.5rem))] max-h-[min(24rem,70dvh)] overflow-y-auto z-[80]"
+            trigger={
+                <span>
+                    <OSButton
+                        size="md"
+                        icon={<IconComment />}
+                        tooltip="Notes"
+                        active={open}
+                    />
+                </span>
+            }
+        >
+            <SidebarComments
+                comments={comments}
+                containerRef={containerRef}
+                onJump={() => setOpen(false)}
+            />
+        </Popover>
     )
 }

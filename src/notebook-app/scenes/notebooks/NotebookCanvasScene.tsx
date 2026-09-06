@@ -1,10 +1,12 @@
 import { useMemo, useState, useRef } from 'react'
-import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
 import { IconEllipsis } from '@posthog/icons'
+import OSButton from 'components/OSButton'
+import MenuBar from 'components/RadixUI/MenuBar'
 import { uuid } from '../../lib/utils/dom'
 import { MarkdownNotebook } from '../../lib/components/MarkdownNotebook/MarkdownNotebook'
 import { buildExtraInsertCommands } from './extraInsertCommands.tsx'
 import { createNotebook } from './notebookStorage'
+import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
 
 interface NotebookCanvasSceneProps {
     onSaveAsNotebook?: (id: string) => void
@@ -58,35 +60,52 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
     }
 
     return (
-        <div className="NotebookCanvasScene flex flex-col" style={{ minHeight: '80vh' }}>
-            <header className="flex items-center justify-between mb-3 pb-2.5 border-b border-primary">
+        <div className="NotebookCanvasScene flex flex-col min-h-[80vh]">
+            <header className="flex items-center justify-between mb-3 pb-2.5 border-b border-primary gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
                     <h2 className="text-xl font-bold m-0">Canvas</h2>
                     <span className="text-xs text-muted">Scratch pad — save when you want to keep it.</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <LemonMenu
-                        items={[
-                            { label: 'Clear canvas', onClick: handleClear },
-                            { label: 'Export as JSON', onClick: handleExportJSON },
-                            { label: 'Load from JSON', onClick: () => fileInputRef.current?.click() },
+                <div className="flex items-center gap-1 shrink-0">
+                    <MenuBar
+                        triggerAsChild
+                        menus={[
+                            {
+                                hideChevron: true,
+                                trigger: (
+                                    <button
+                                        type="button"
+                                        aria-label="Canvas options"
+                                        className="flex items-center justify-center size-7 text-muted hover:text-primary hover:bg-accent rounded"
+                                    >
+                                        <IconEllipsis className="size-4" />
+                                    </button>
+                                ),
+                                items: [
+                                    { type: 'item', label: 'Clear canvas', onClick: handleClear },
+                                    { type: 'item', label: 'Export as JSON', onClick: handleExportJSON },
+                                    {
+                                        type: 'item',
+                                        label: 'Load from JSON',
+                                        onClick: () => fileInputRef.current?.click(),
+                                    },
+                                ],
+                            },
                         ]}
-                    >
-                        <LemonButton size="small" icon={<IconEllipsis />} />
-                    </LemonMenu>
+                    />
                     <input
                         type="file"
                         ref={fileInputRef}
-                        style={{ display: 'none' }}
+                        className="hidden"
                         accept=".json"
                         onChange={handleLoadJSON}
                     />
-                    <LemonButton type="primary" size="small" onClick={handleSaveAsNotebook}>
-                        Save as Notebook
-                    </LemonButton>
+                    <OSButton variant="primary" size="sm" onClick={handleSaveAsNotebook}>
+                        Save as notebook
+                    </OSButton>
                 </div>
             </header>
-            <div className="flex-1">
+            <div className={`flex-1 min-w-0 ${NOTEBOOK_PRODUCT_SCOPE_CLASS}`}>
                 <MarkdownNotebook
                     value={content}
                     onChange={(newContent: string) => setContent(newContent)}

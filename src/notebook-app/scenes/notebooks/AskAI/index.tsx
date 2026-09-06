@@ -1,5 +1,6 @@
-import { LemonButton } from '~nb-lib/lemon-ui/index'
 import { IconSparkles } from '@posthog/icons'
+import OSButton from 'components/OSButton'
+import Tooltip from 'components/RadixUI/Tooltip'
 import type { AskAIDropdownProps } from './types'
 import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
 import { bindNotebookChat } from '../../../../lib/notebook-chat-bind'
@@ -17,27 +18,30 @@ export function AskAIDropdown({
     const { isMobile } = useAppSettings()
 
     return (
-        <LemonButton
-            size="small"
-            type="secondary"
-            icon={<IconSparkles />}
-            onClick={() => {
-                if (notebookId) {
-                    bindNotebookChat({ notebookId, title: notebookTitle })
-                }
-                openAskAiWindow({
-                    notebookId,
-                    notebookTitle,
-                    windows,
-                    isMobile,
-                    addWindow,
-                    updateWindow,
-                    snapWindow: handleSnapToSide,
-                })
-            }}
-            tooltip={notebookId ? 'Edit this notebook with AI' : 'Open AI Assistant'}
+        <Tooltip
+            trigger={
+                <OSButton
+                    icon={<IconSparkles />}
+                    size="md"
+                    onClick={() => {
+                        if (notebookId) {
+                            bindNotebookChat({ notebookId, title: notebookTitle })
+                        }
+                        openAskAiWindow({
+                            notebookId,
+                            notebookTitle,
+                            windows,
+                            isMobile,
+                            addWindow,
+                            updateWindow,
+                            snapWindow: handleSnapToSide,
+                        })
+                    }}
+                />
+            }
+            side="bottom"
         >
-            <span className="hidden sm:inline">Ask AI</span>
-        </LemonButton>
+            {notebookId ? 'Edit this notebook with AI' : 'Open AI Assistant'}
+        </Tooltip>
     )
 }

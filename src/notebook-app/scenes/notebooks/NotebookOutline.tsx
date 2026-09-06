@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
+import OSButton from 'components/OSButton'
 import { extractOutlineHeadings, scrollToNotebookNode, type OutlineHeading } from './outlineModel'
 
 interface NotebookOutlineProps {
     markdown: string
-    /** Optional container that holds the notebook (for scoped query). */
     containerRef?: React.RefObject<HTMLElement | null>
     className?: string
-    /** Called after a heading jump (e.g. close the mobile drawer). */
     onNavigate?: () => void
 }
 
@@ -26,27 +25,35 @@ export function NotebookOutline({
 
     return (
         <div className={`not-prose ${className}`}>
-            <h4 className="font-semibold text-muted m-0 mb-1 text-sm">Jump to:</h4>
+            <h4 className="font-semibold text-muted m-0 mb-1 px-1 text-sm">On this page</h4>
             {headings.length === 0 ? (
-                <p className="text-sm text-muted m-0 leading-snug">
+                <p className="text-sm text-muted m-0 px-1 leading-snug">
                     Add headings (H1–H3) to build an outline for this notebook.
                 </p>
             ) : (
-                <ul className="list-none m-0 p-0 flex flex-col">
+                <div className="flex flex-col gap-px">
                     {headings.map((heading) => (
-                        <li className="relative leading-none m-0" key={heading.id}>
-                            <button
-                                type="button"
-                                onClick={() => handleClick(heading)}
-                                className="hover:underline text-left w-full text-sm text-primary py-1 bg-transparent border-0 cursor-pointer"
-                                style={{ paddingLeft: `${heading.level - 1}rem` }}
+                        <OSButton
+                            key={heading.id}
+                            type="button"
+                            align="left"
+                            width="full"
+                            size="md"
+                            hover="background"
+                            onClick={() => handleClick(heading)}
+                            className="!items-start"
+                        >
+                            <span
+                                data-sidebar-label
+                                className="block min-w-0 truncate"
+                                style={{ paddingLeft: `${Math.max(0, heading.level - 1) * 0.75}rem` }}
                                 title={heading.text}
                             >
                                 {heading.text}
-                            </button>
-                        </li>
+                            </span>
+                        </OSButton>
                     ))}
-                </ul>
+                </div>
             )}
         </div>
     )

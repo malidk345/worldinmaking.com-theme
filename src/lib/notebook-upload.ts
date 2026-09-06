@@ -1,4 +1,4 @@
-import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey } from './wim-identity'
+import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getDeviceOwnerKey } from './wim-identity'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { NOTEBOOK_IMAGE_MAX_BYTES, isNotebookImageFile } from './notebook-upload-shared'
 
@@ -16,6 +16,7 @@ export async function uploadNotebookImage(file: File): Promise<{ url: string; na
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
+        'X-WIM-Device-Key': getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY),
     }
     try {
         if (isSupabaseConfigured) {

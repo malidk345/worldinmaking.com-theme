@@ -3,7 +3,7 @@
  * Never blocks the editor — failures are silent (localStorage remains source of truth).
  */
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
-import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getAuthUserId, namespacedStorageKey } from '../../../lib/wim-identity'
+import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getAuthUserId, getDeviceOwnerKey, namespacedStorageKey } from '../../../lib/wim-identity'
 import type { NotebookVersion, StoredNotebook } from './notebookStorage'
 
 const NOTEBOOK_DELETED_BASE = 'wim_notebook_deleted_ids'
@@ -42,6 +42,7 @@ function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-WIM-Owner-Key': ownerKey,
+        'X-WIM-Device-Key': getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY),
     }
     if (jsonBody) headers['Content-Type'] = 'application/json'
     try {
@@ -182,7 +183,7 @@ export async function pullNotebookById(id: string): Promise<StoredNotebook | nul
 export async function pushNotebookToRemote(
     notebook: StoredNotebook,
     historyEntries?: NotebookVersion[]
-): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean }> {
+): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
     const ownerKey = getOrCreateOwnerKey()
     try {
@@ -207,6 +208,7 @@ export async function pushNotebookToRemote(
             rememberDeletedNotebookId(notebook.id)
             return { ok: false }
         }
+        if (res.status === 403) return { ok: false, forbidden: true }
         if (!res.ok) return { ok: false }
         remoteAvailable = true
         const data = await parseJson<OneResponse>(res)

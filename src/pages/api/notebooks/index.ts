@@ -24,7 +24,7 @@ import {
     type StoredNotebookDTO,
     type NotebookVersionDTO,
 } from '../../../../lib/notebooks-repo'
-import { resolveNotebookOwner } from '../../../../lib/api-authz'
+import { extraOwnerKeysFromRequest, resolveNotebookOwner } from '../../../../lib/api-authz'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -56,10 +56,11 @@ export default async function handler(req: Request) {
 
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
+            const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
 
             const [notebooks, deletedIds] = await Promise.all([
-                listNotebooksByOwner(auth.ownerKey, auth.userId),
-                listDeletedNotebookIds(auth.ownerKey, auth.userId),
+                listNotebooksByOwner(auth.ownerKey, auth.userId, extraOwnerKeys),
+                listDeletedNotebookIds(auth.ownerKey, auth.userId, extraOwnerKeys),
             ])
             return json({ notebooks, deleted_ids: deletedIds, auth: { via: auth.via } })
         }
@@ -69,6 +70,7 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, body.owner_key as string | undefined)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
             const ownerKey = auth.ownerKey
+            const extraOwnerKeys = extraOwnerKeysFromRequest(req, ownerKey)
 
             if (Array.isArray(body.notebooks)) {
                 const notebooks = body.notebooks as StoredNotebookDTO[]
@@ -76,13 +78,13 @@ export default async function handler(req: Request) {
                 const tagged = auth.userId
                     ? notebooks.map((nb) => ({ ...nb, auth_user_id: auth.userId }))
                     : notebooks
-                const count = await upsertNotebooks(tagged, ownerKey, auth.userId)
+                const count = await upsertNotebooks(tagged, ownerKey, auth.userId, extraOwnerKeys)
 
                 if (body.history && typeof body.history === 'object') {
                     const historyMap = body.history as Record<string, NotebookVersionDTO[]>
                     for (const [notebookId, entries] of Object.entries(historyMap)) {
                         if (Array.isArray(entries)) {
-                            await replaceHistoryForOwner(notebookId, ownerKey, entries)
+                            await replaceHistoryForOwner(notebookId, ownerKey, entries, extraOwnerKeys)
                         }
                     }
                 }
@@ -95,13 +97,14 @@ export default async function handler(req: Request) {
                 if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
                 // Tag with auth_user_id when JWT-authenticated
                 const tagged = auth.userId ? { ...notebook, auth_user_id: auth.userId } : notebook
-                const saved = await upsertNotebook(tagged, ownerKey, auth.userId)
+                const saved = await upsertNotebook(tagged, ownerKey, auth.userId, extraOwnerKeys)
 
                 if (Array.isArray(body.history_entries)) {
                     await replaceHistoryForOwner(
                         notebook.id,
                         ownerKey,
-                        body.history_entries as NotebookVersionDTO[]
+                        body.history_entries as NotebookVersionDTO[],
+                        extraOwnerKeys
                     )
                 }
 

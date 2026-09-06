@@ -63,7 +63,9 @@ export function NotebookSelectButton({
                     size="small"
                     icon={<IconNotebook />}
                     onClick={() => {
-                        const welcome = notebooks.find((n) => n.id === 'welcome-notebook') || notebooks[0]
+                        const welcome =
+                            notebooks.find((n) => n.id === 'welcome-notebook' || n.id.startsWith('welcome-')) ||
+                            notebooks[0]
                         if (welcome) handleSelect(welcome.id)
                     }}
                     fullWidth

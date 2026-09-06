@@ -13,6 +13,7 @@ import { ZoomImage } from 'components/ZoomImage'
 import { profileHref } from '../../../lib/profile-path'
 import { useToast } from '../../../context/Toast'
 import { canWriteNotebook } from '../../../lib/notebook-sharing'
+import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
 
 const MarkdownNotebook = React.lazy(() =>
     import('../../lib/components/MarkdownNotebook/MarkdownNotebook').then((mod) => ({
@@ -128,7 +129,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     </div>
                 </div>
                     <article className="NotebookPublicView__article prose prose-sm dark:prose-invert max-w-none font-normal">
-                    <p className="NotebookPublicView__title">{displayTitle}</p>
+                    <h1 className="text-2xl font-bold m-0 mb-2">{displayTitle}</h1>
                     {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
@@ -141,6 +142,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         <React.Suspense
                             fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
                         >
+                            <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} font-sans prose prose-sm dark:prose-invert max-w-none font-normal`}>
                             <MarkdownNotebook
                                 value={bodyMarkdown}
                                 mode="view"
@@ -148,6 +150,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                                 autoFocus={false}
                                 placeholder=""
                             />
+                            </div>
                         </React.Suspense>
                     ) : (
                         <p className="m-0 text-sm text-muted">This notebook has no text yet.</p>

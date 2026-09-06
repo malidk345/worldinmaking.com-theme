@@ -796,7 +796,8 @@ test.describe('notebook frontend helpers', () => {
 
     test('invite resolves known philosophers and rejects unknown names', () => {
         expect(isNotebookInviteBotId('nietzsche')).toBe(true)
-        expect(isNotebookInviteBotId('hegel')).toBe(false)
+        expect(isNotebookInviteBotId('hegel')).toBe(true)
+        expect(isNotebookInviteBotId('nobody')).toBe(false)
         expect(resolveInviteBot('arendt')?.name).toBe('Arendt')
         expect(resolveInviteBot('hegel')?.name).toBe('Hegel')
         expect(resolveInviteBot('nobody')).toBeNull()

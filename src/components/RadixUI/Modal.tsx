@@ -28,6 +28,7 @@ const Modal = ({
     showCloseButton = true,
     title: titleProp,
     maxWidth,
+    autoHeight = false,
 }: ModalProps): JSX.Element => {
     const { appWindow, activeInternalMenu } = useWindow()
     // Prefer an explicit title prop; fall back to the active window/menu name.
@@ -52,8 +53,12 @@ const Modal = ({
                     className={`data-[state=open]:animate-contentShow data-[state=closed]:animate-contentHide fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] rounded bg-primary text-primary z-50 ${contentClassName}`}
                 >
                     <div data-scheme="primary">
-                        <div className="rounded border border-primary overflow-hidden size-full flex flex-col">
-                            <div className="bg-accent flex items-center justify-between p-1 border-b border-primary">
+                        <div
+                            className={`rounded border border-primary flex flex-col ${
+                                autoHeight ? 'max-h-[85vh] overflow-hidden' : 'overflow-hidden size-full'
+                            }`}
+                        >
+                            <div className="bg-accent flex items-center justify-between p-1 border-b border-primary shrink-0">
                                 <p className="text-primary text-left text-sm font-semibold ml-2 my-0">{title}</p>
                                 {showCloseButton && (
                                     <RadixDialog.Close asChild>
@@ -62,7 +67,9 @@ const Modal = ({
                                 )}
                             </div>
 
-                            <div className="overflow-hidden size-full">{children}</div>
+                            <div className={autoHeight ? 'overflow-y-auto min-h-0' : 'overflow-hidden size-full'}>
+                                {children}
+                            </div>
                         </div>
                     </div>
                 </RadixDialog.Content>

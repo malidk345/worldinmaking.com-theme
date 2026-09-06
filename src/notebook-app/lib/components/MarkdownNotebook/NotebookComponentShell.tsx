@@ -310,7 +310,7 @@ export function NotebookComponentShell({
     return (
         <div
             className={clsx(
-                'MarkdownNotebook__component-shell',
+                'MarkdownNotebook__component-shell not-prose',
                 isBare && 'MarkdownNotebook__component-shell--bare',
                 `MarkdownNotebook__component-shell--status-${runStatus}`,
                 isSelected && 'MarkdownNotebook__component-shell--selected',

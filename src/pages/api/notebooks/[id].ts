@@ -18,7 +18,7 @@ import {
     type StoredNotebookDTO,
     type NotebookVersionDTO,
 } from '../../../../lib/notebooks-repo'
-import { resolveNotebookOwner } from '../../../../lib/api-authz'
+import { extraOwnerKeysFromRequest, resolveNotebookOwner } from '../../../../lib/api-authz'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -53,8 +53,13 @@ export default async function handler(req: Request) {
 
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
+            const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
 
-            const nb = await getNotebookByIdOrShort(id, { ownerKey: auth.ownerKey, userId: auth.userId })
+            const nb = await getNotebookByIdOrShort(id, {
+                ownerKey: auth.ownerKey,
+                userId: auth.userId,
+                extraOwnerKeys,
+            })
             if (!nb) return json({ error: 'Not found' }, 404)
 
             const includeHistory =
@@ -70,15 +75,26 @@ export default async function handler(req: Request) {
             const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
             const auth = await resolveNotebookOwner(req, body.owner_key as string | undefined)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
+            const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
 
             const notebook = (body.notebook || { ...body, id }) as StoredNotebookDTO
             notebook.id = notebook.id || id
-            const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId)
+            const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId, extraOwnerKeys)
 
             if (Array.isArray(body.history_entries)) {
-                await replaceHistoryForOwner(saved.id, auth.ownerKey, body.history_entries as NotebookVersionDTO[])
+                await replaceHistoryForOwner(
+                    saved.id,
+                    auth.ownerKey,
+                    body.history_entries as NotebookVersionDTO[],
+                    extraOwnerKeys
+                )
             } else if (Array.isArray(body.history_append)) {
-                await replaceHistoryForOwner(saved.id, auth.ownerKey, body.history_append as NotebookVersionDTO[])
+                await replaceHistoryForOwner(
+                    saved.id,
+                    auth.ownerKey,
+                    body.history_append as NotebookVersionDTO[],
+                    extraOwnerKeys
+                )
             }
 
             return json({ notebook: saved, auth: { via: auth.via } })
@@ -92,8 +108,9 @@ export default async function handler(req: Request) {
             }
             const auth = await resolveNotebookOwner(req, claimed)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
+            const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
 
-            const ok = await deleteNotebook(id, auth.ownerKey, auth.userId)
+            const ok = await deleteNotebook(id, auth.ownerKey, auth.userId, extraOwnerKeys)
             if (!ok) return json({ error: 'Not found' }, 404)
             return json({ ok: true, auth: { via: auth.via } })
         }

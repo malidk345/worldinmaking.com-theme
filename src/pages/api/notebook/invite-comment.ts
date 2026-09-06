@@ -9,6 +9,7 @@ import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limi
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'
 import {
+    MAX_INVITE_BOTS,
     MAX_INVITE_NOTEBOOK,
     MAX_INVITE_SELECTION,
     buildInviteCommentSystemPrompt,
@@ -41,7 +42,11 @@ export default async function handler(req: Request) {
           : parsed.body.duo === true
             ? pickTwoInviteBots()
             : []
-    const bots = requestedIds.map((id) => resolveInviteBot(id.trim().toLowerCase())).filter(Boolean)
+    const bots = requestedIds
+        .map((id) => resolveInviteBot(id.trim().toLowerCase()))
+        .filter((bot): bot is NonNullable<typeof bot> => Boolean(bot))
+        .filter((bot, index, list) => list.findIndex((entry) => entry.id === bot.id) === index)
+        .slice(0, MAX_INVITE_BOTS)
     if (!bots.length) return json({ ok: false, error: 'Unknown philosopher' }, 400)
 
     const selection =

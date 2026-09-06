@@ -1,6 +1,8 @@
 import React from 'react'
-import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
 import { IconExpand } from '@posthog/icons'
+import Label from 'components/Label'
+import OSButton from 'components/OSButton'
+import Tooltip from 'components/RadixUI/Tooltip'
 
 export type NotebookChromeSyncStatus = 'saved' | 'edited' | 'local' | 'error' | 'offline'
 
@@ -11,14 +13,6 @@ export interface NotebookSyncInfoProps {
 }
 
 export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncInfoProps): JSX.Element {
-    const tagTypes: Record<NotebookChromeSyncStatus, 'completion' | 'warning' | 'danger' | 'default'> = {
-        saved: 'completion',
-        edited: 'warning',
-        local: 'default',
-        error: 'danger',
-        offline: 'warning',
-    }
-
     const statusText: Record<NotebookChromeSyncStatus, string> = {
         saved: 'Saved',
         edited: 'Saving…',
@@ -42,15 +36,29 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
     const canRetry = (syncStatus === 'error' || syncStatus === 'offline') && Boolean(onRetry)
 
     return (
-        <LemonTag
-            type={tagTypes[syncStatus]}
-            size="small"
-            className={`font-semibold text-[10px] tracking-wider uppercase select-none ${canRetry ? 'cursor-pointer' : ''}`}
-            title={canRetry ? `${title} Click to retry.` : title}
-            onClick={canRetry ? onRetry : undefined}
+        <Tooltip
+            trigger={
+                <button
+                    type="button"
+                    onClick={canRetry ? onRetry : undefined}
+                    className={`inline-flex items-center ${canRetry ? 'cursor-pointer' : 'cursor-default'}`}
+                >
+                    <Label
+                        text={statusText[syncStatus]}
+                        size="small"
+                        style="blue"
+                        className={
+                            syncStatus === 'error'
+                                ? '!bg-red/10 !text-red dark:!bg-red/20 dark:!text-red'
+                                : undefined
+                        }
+                    />
+                </button>
+            }
+            side="bottom"
         >
-            {statusText[syncStatus]}
-        </LemonTag>
+            {canRetry ? `${title} Click to retry.` : title}
+        </Tooltip>
     )
 }
 
@@ -68,9 +76,8 @@ export function NotebookExpandButton({
     size = 'small',
 }: NotebookExpandButtonProps): JSX.Element {
     return (
-        <LemonButton
-            size={size}
-            type={type}
+        <OSButton
+            size="md"
             icon={<IconExpand />}
             active={isExpanded}
             onClick={onToggleExpand}

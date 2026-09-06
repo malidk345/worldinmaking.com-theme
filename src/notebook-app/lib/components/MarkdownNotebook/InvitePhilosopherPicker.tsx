@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 
-import { PHILOSOPHER_BOTS } from '../../philosophers'
+import { MAX_INVITE_BOTS, NOTEBOOK_INVITE_BOT_IDS, resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 
 import { InsertMenuPosition } from './editorTypes'
 
@@ -20,7 +20,7 @@ export function InvitePhilosopherPicker({
     const toggle = (id: string): void => {
         setSelected((current) => {
             if (current.includes(id)) return current.filter((entry) => entry !== id)
-            if (current.length >= 2) return [current[1], id]
+            if (current.length >= MAX_INVITE_BOTS) return [...current.slice(1), id]
             return [...current, id]
         })
     }
@@ -75,10 +75,12 @@ export function InvitePhilosopherPicker({
         >
             <div className="MarkdownNotebook__invite-picker-head">
                 <h5>Invite</h5>
-                <span>{selected.length ? `${selected.length} selected` : 'Pick 1 or 2'}</span>
+                <span>{selected.length ? `${selected.length} selected` : `Pick 1–${MAX_INVITE_BOTS}`}</span>
             </div>
             <div className="MarkdownNotebook__invite-picker-grid">
-                {PHILOSOPHER_BOTS.map((bot) => {
+                {NOTEBOOK_INVITE_BOT_IDS.map((botId) => {
+                    const bot = resolveInviteBot(botId)
+                    if (!bot) return null
                     const active = selected.includes(bot.id)
                     const order = selected.indexOf(bot.id)
                     return (
@@ -115,9 +117,9 @@ export function InvitePhilosopherPicker({
                 <button
                     type="button"
                     className="MarkdownNotebook__invite-picker-action MarkdownNotebook__invite-picker-action--primary"
-                    disabled={selected.length < 1 || selected.length > 2}
+                    disabled={selected.length < 1 || selected.length > MAX_INVITE_BOTS}
                     onClick={() => {
-                        if (selected.length >= 1 && selected.length <= 2) onConfirm(selected)
+                        if (selected.length >= 1 && selected.length <= MAX_INVITE_BOTS) onConfirm(selected)
                     }}
                 >
                     Invite

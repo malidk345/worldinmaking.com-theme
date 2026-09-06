@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation'
 import SafeImage from 'components/SafeImage'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import OSButton from 'components/OSButton'
 import {
@@ -13,6 +14,8 @@ import {
     IconSidebarClose,
     IconSidebarOpen,
     IconTableOfContents,
+    IconChevronRight,
+    IconX,
 } from '@posthog/icons'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Popover } from 'components/RadixUI/Popover'
@@ -162,6 +165,13 @@ export interface MenuTab {
     icon?: React.ReactNode
     /** If set, clicking this tab navigates to the given path instead of only switching local state. */
     href?: string
+    /**
+     * Open `menu` in a side popover instead of swapping the sidebar body.
+     * The tab stays in the strip; a chevron marks that it opens beside it.
+     */
+    flyout?: 'right'
+    /** Render this tab in the sidebar footer instead of the tab strip. */
+    placement?: 'footer'
 }
 
 interface ReaderViewProps {
@@ -188,12 +198,20 @@ interface ReaderViewProps {
     leftSidebar?: React.ReactNode
     hideLeftSidebar?: boolean
     hideRightSidebar?: boolean
+
+    /** Replaces the default table-of-contents in the right rail (e.g. notebook history). */
+    rightSidebar?: React.ReactNode
+    rightSidebarIcon?: React.ReactNode
+    rightSidebarShowLabel?: string
+    rightSidebarHideLabel?: string
     contentMaxWidthClass?: string
     padding?: boolean
     proseSize?: 'sm' | 'base' | 'lg'
     rightActionButtons?: React.ReactNode
     /** Hide the sidebar's app-options (gear) button. Defaults to false. */
     hideAppOptions?: boolean
+    /** Hide the sidebar footer bookmark/save button. */
+    hideBookmark?: boolean
     isEditing?: boolean
     onSearch?: (query: string) => void
     showSurvey?: boolean
@@ -213,6 +231,8 @@ interface ReaderViewProps {
      * tab marked `default: true` is selected on mount; otherwise the first tab.
      */
     menuTabs?: MenuTab[]
+    /** `list` = vertical icon+label rows like the mobile drawer. Default `strip`. */
+    menuTabsLayout?: 'strip' | 'list'
     /**
      * Optional element rendered at the top of the LeftSidebar (above the
      * inline search and menu). Typical use is a product switcher; see
@@ -452,11 +472,16 @@ export default function ReaderView({
     leftSidebar,
     hideLeftSidebar = false,
     hideRightSidebar = false,
+    rightSidebar,
+    rightSidebarIcon,
+    rightSidebarShowLabel,
+    rightSidebarHideLabel,
     contentMaxWidthClass,
     padding = true,
     proseSize = 'sm',
     rightActionButtons,
     hideAppOptions = false,
+    hideBookmark = false,
     isEditing,
     onSearch,
     showSurvey = false,
@@ -467,6 +492,7 @@ export default function ReaderView({
     defaultNavVisible,
     chrome = false,
     menuTabs,
+    menuTabsLayout = 'strip',
     productSelect,
     hideMenu = false,
     className = '',
@@ -487,11 +513,16 @@ export default function ReaderView({
                 leftSidebar={leftSidebar}
                 hideLeftSidebar={hideLeftSidebar}
                 hideRightSidebar={hideRightSidebar}
+                rightSidebar={rightSidebar}
+                rightSidebarIcon={rightSidebarIcon}
+                rightSidebarShowLabel={rightSidebarShowLabel}
+                rightSidebarHideLabel={rightSidebarHideLabel}
                 contentMaxWidthClass={contentMaxWidthClass}
                 padding={padding}
                 proseSize={proseSize}
                 rightActionButtons={rightActionButtons}
                 hideAppOptions={hideAppOptions}
+                hideBookmark={hideBookmark}
                 isEditing={isEditing}
                 onSearch={onSearch}
                 showSurvey={showSurvey}
@@ -501,6 +532,7 @@ export default function ReaderView({
                 sourceInstanceName={sourceInstanceName}
                 chrome={chrome}
                 menuTabs={menuTabs}
+                menuTabsLayout={menuTabsLayout}
                 productSelect={productSelect}
                 hideMenu={hideMenu}
                 className={className}
@@ -828,9 +860,11 @@ interface LeftSidebarProps {
     saveTitle?: string
     rightActionButtons?: React.ReactNode
     hideAppOptions?: boolean
+    hideBookmark?: boolean
     productSelect?: React.ReactNode
     inlineSearch?: React.ReactNode
     menuTabs?: MenuTab[]
+    menuTabsLayout?: 'strip' | 'list'
     children: React.ReactNode
     contentRef?: React.RefObject<HTMLElement>
     currentPath?: string
@@ -840,6 +874,7 @@ interface LeftSidebarProps {
     mobile?: boolean
     mobileOpen?: boolean
     onMobileClose?: () => void
+    flyoutHostRef?: React.RefObject<HTMLElement | null>
 }
 
 const SIDEBAR_CSS_TRANSITION = 'width 300ms cubic-bezier(0.32, 0.72, 0, 1)'
@@ -863,9 +898,22 @@ interface SidebarTabButtonProps {
     /** Pinned mode renders the tab with icon stacked above label (horizontal row). */
     stacked: boolean
     onClick: () => void
+    flyoutOpen?: boolean
+    onFlyoutOpenChange?: (open: boolean) => void
+    /** Narrow / mobile: flyout is a sheet, not a right popover. */
+    mobile?: boolean
 }
 
-const SidebarTabButton = ({ tab, active, showLabel, stacked, onClick }: SidebarTabButtonProps) => {
+const SidebarTabButton = ({
+    tab,
+    active,
+    showLabel,
+    stacked,
+    onClick,
+    flyoutOpen,
+    onFlyoutOpenChange,
+    mobile = false,
+}: SidebarTabButtonProps) => {
     // Manual FLIP for the icon: capture position on every commit, then on the
     // next commit — IF the structural layout changed (`layoutKey`) — animate
     // the icon from its old position to its new one. Click-only re-renders
@@ -914,7 +962,7 @@ const SidebarTabButton = ({ tab, active, showLabel, stacked, onClick }: SidebarT
                       // width. `justify-center` tied icon x to width and
                       // made the icon jut as the wrapper shrank during a
                       // hover→collapse transition.
-                      `min-h-7 items-center justify-start ${showLabel ? 'gap-2' : ''} px-2 py-1`
+                      `w-full min-h-7 items-center justify-start ${showLabel ? 'gap-2' : ''} px-2 py-1`
             } ${active ? 'text-primary' : `text-secondary hover:text-primary hover:bg-dark/10 dark:hover:bg-light/10`}`}
         >
             <AnimatePresence initial={false}>
@@ -929,7 +977,12 @@ const SidebarTabButton = ({ tab, active, showLabel, stacked, onClick }: SidebarT
                     />
                 )}
             </AnimatePresence>
-            <span ref={iconRef} className="inline-flex items-center justify-center shrink-0">
+            <span
+                ref={iconRef}
+                className={`inline-flex items-center justify-center shrink-0 ${
+                    stacked ? '' : '[&_svg]:size-4'
+                }`}
+            >
                 {tab.icon}
             </span>
             <AnimatePresence initial={false}>
@@ -946,8 +999,33 @@ const SidebarTabButton = ({ tab, active, showLabel, stacked, onClick }: SidebarT
                     </motion.span>
                 )}
             </AnimatePresence>
+            {showLabel && !stacked && tab.flyout === 'right' ? (
+                <IconChevronRight className="size-3.5 ml-auto text-muted shrink-0" aria-hidden />
+            ) : null}
         </button>
     )
+
+    if (tab.flyout === 'right' && !mobile) {
+        return (
+            <Popover
+                trigger={button}
+                title={typeof tab.label === 'string' ? tab.label : undefined}
+                header
+                dataScheme="primary"
+                side="right"
+                align="start"
+                sideOffset={8}
+                open={flyoutOpen}
+                onOpenChange={onFlyoutOpenChange}
+                scrollable={false}
+                contentClassName="w-[min(22rem,calc(100vw-2rem))] z-[80] overflow-hidden"
+            >
+                <div className="overflow-y-auto overscroll-contain min-h-0 max-h-[min(28rem,calc(100vh-8rem))] pr-0.5">
+                    {tab.menu}
+                </div>
+            </Popover>
+        )
+    }
 
     return showLabel ? (
         button
@@ -983,9 +1061,11 @@ const LeftSidebar = ({
     saveTitle,
     rightActionButtons,
     hideAppOptions = false,
+    hideBookmark = false,
     productSelect,
     inlineSearch,
     menuTabs,
+    menuTabsLayout = 'strip',
     children,
     contentRef,
     currentPath,
@@ -993,6 +1073,7 @@ const LeftSidebar = ({
     mobile = false,
     mobileOpen = false,
     onMobileClose,
+    flyoutHostRef,
 }: LeftSidebarProps) => {
     const { searchQuery } = useSearch()
     const { hasMounted } = useReaderView()
@@ -1011,10 +1092,43 @@ const LeftSidebar = ({
         vp.addEventListener('scroll', onScroll, { passive: true })
         return () => vp.removeEventListener('scroll', onScroll)
     }, [sidebarScrollKey])
+    const stripTabs = menuTabs?.filter((t) => t.placement !== 'footer') ?? []
+    const footerTabs = menuTabs?.filter((t) => t.placement === 'footer') ?? []
     const hasTabs = !!menuTabs && menuTabs.length > 0
-    const initialTab = hasTabs ? menuTabs!.find((t) => t.default)?.value || menuTabs![0].value : ''
+    const hasStripTabs = stripTabs.length > 0
+    const initialTab = hasTabs
+        ? menuTabs!.find((t) => t.default && !t.flyout && t.placement !== 'footer')?.value ||
+          menuTabs!.find((t) => !t.flyout && t.placement !== 'footer')?.value ||
+          menuTabs![0].value
+        : ''
     const [activeTab, setActiveTab] = useState(initialTab)
-    const activeMenu = hasTabs ? menuTabs!.find((t) => t.value === activeTab)?.menu : null
+    const [flyoutTab, setFlyoutTab] = useState<string | null>(null)
+    const activeMenu = hasTabs
+        ? menuTabs!.find((t) => t.value === activeTab && !t.flyout)?.menu ||
+          menuTabs!.find((t) => !t.flyout)?.menu ||
+          null
+        : null
+
+    useEffect(() => {
+        if (!hasTabs) return
+        const onTab = (event: Event) => {
+            const value = (event as CustomEvent<{ value?: string }>).detail?.value
+            const tab = menuTabs?.find((entry) => entry.value === value)
+            if (!value || !tab) return
+            if (tab.flyout) {
+                setFlyoutTab(value)
+                return
+            }
+            setActiveTab(value)
+            setFlyoutTab(null)
+        }
+        window.addEventListener('wim-notebook-sidebar-tab', onTab)
+        return () => window.removeEventListener('wim-notebook-sidebar-tab', onTab)
+    }, [hasTabs, menuTabs])
+
+    useEffect(() => {
+        if (mobile && !mobileOpen) setFlyoutTab(null)
+    }, [mobile, mobileOpen])
 
     // `isPinned` is the persisted user preference (toggled via the bottom-row
     // toggle button, written to localStorage in ReaderViewContext). When NOT
@@ -1027,7 +1141,7 @@ const LeftSidebar = ({
     const [hovered, setHovered] = useState(false)
     // On mobile the panel is a drawer: it's fully expanded whenever open and
     // fully hidden otherwise, so pin/hover state is bypassed entirely.
-    const expanded = mobile ? mobileOpen : isPinned || searchFocused || hovered
+    const expanded = mobile ? mobileOpen : isPinned || searchFocused || hovered || Boolean(flyoutTab)
 
     // `displayExpanded` mirrors `expanded` instantly when growing, but only
     // flips to false AFTER the panel's shrink transition finishes (driven by
@@ -1215,7 +1329,7 @@ const LeftSidebar = ({
                         - Otherwise (collapsed OR hover-expanded): vertical
                           icon-only column. We deliberately don't reflow on
                           hover — tabs only rotate axes when the user pins. */}
-                        {hasTabs && !hasActiveSearch && (
+                        {hasStripTabs && !hasActiveSearch && (
                             // Single container across all states (pinned, hover,
                             // collapsed) so SidebarTabButton instances stay
                             // mounted — required for the icon FLIP animation to
@@ -1236,19 +1350,37 @@ const LeftSidebar = ({
                                     }
                                 }}
                                 className={`mx-2 flex gap-px flex-shrink-0 ${
-                                    appliedPinned ? 'flex-row' : 'flex-col items-stretch py-2 border-y border-secondary'
+                                    menuTabsLayout === 'list' || !appliedPinned
+                                        ? 'flex-col items-stretch py-2 border-y border-secondary'
+                                        : 'flex-row'
                                 }`}
                                 role="tablist"
                                 aria-label="Sidebar mode"
                             >
-                                {menuTabs!.map((t) => (
+                                {stripTabs.map((t) => (
                                     <SidebarTabButton
                                         key={t.value}
                                         tab={t}
-                                        active={t.value === activeTab}
+                                        active={t.flyout ? flyoutTab === t.value : t.value === activeTab}
                                         showLabel={expanded}
-                                        stacked={appliedPinned}
+                                        stacked={menuTabsLayout !== 'list' && appliedPinned}
+                                        mobile={mobile}
+                                        flyoutOpen={!mobile && t.flyout ? flyoutTab === t.value : undefined}
+                                        onFlyoutOpenChange={
+                                            !mobile && t.flyout
+                                                ? (open) => setFlyoutTab(open ? t.value : null)
+                                                : undefined
+                                        }
                                         onClick={() => {
+                                            if (t.flyout) {
+                                                if (mobile) {
+                                                    setFlyoutTab((current) =>
+                                                        current === t.value ? null : t.value
+                                                    )
+                                                }
+                                                return
+                                            }
+                                            setFlyoutTab(null)
                                             if (t.href && t.value !== activeTab) {
                                                 router.push(t.href)
                                             } else {
@@ -1307,19 +1439,66 @@ const LeftSidebar = ({
                             <ConditionalMarkdownDropdown pageUrl={pageUrl} />
                             <EditHistoryPopover commits={commits || []} />
                             <EditOnGitHubButton filePath={filePath} sourceInstanceName={sourceInstanceName} />
-                            <BookmarkButton
-                                bookmark={{
-                                    title: saveTitle || 'Untitled',
-                                    description: '',
-                                }}
-                                labels={{ add: 'Save', remove: 'Saved' }}
-                            />
+                            {footerTabs.map((t) => (
+                                <OSButton
+                                    key={t.value}
+                                    size="md"
+                                    icon={t.icon}
+                                    active={activeTab === t.value}
+                                    tooltip={typeof t.label === 'string' ? t.label : undefined}
+                                    onClick={() => {
+                                        setFlyoutTab(null)
+                                        setActiveTab(t.value)
+                                    }}
+                                />
+                            ))}
+                            {!hideBookmark && footerTabs.length === 0 ? (
+                                <BookmarkButton
+                                    bookmark={{
+                                        title: saveTitle || 'Untitled',
+                                        description: '',
+                                    }}
+                                    labels={{ add: 'Save', remove: 'Saved' }}
+                                />
+                            ) : null}
                             {!hideAppOptions && <AppOptionsButton isMdx={isMdx} />}
                             {rightActionButtons}
                         </div>
                     )}
                 </div>
             </div>
+            {mobile && flyoutTab && flyoutHostRef?.current
+                ? createPortal(
+                      <div className="absolute inset-0 z-[60] flex flex-col pointer-events-auto">
+                          <button
+                              type="button"
+                              aria-label="Close"
+                              className="absolute inset-0 bg-black/40"
+                              onClick={() => setFlyoutTab(null)}
+                          />
+                          <div
+                              data-scheme="primary"
+                              className="relative mt-auto mx-3 mb-3 w-[calc(100%-1.5rem)] max-h-[min(85%,calc(100%-1.5rem))] flex flex-col bg-primary text-primary border border-primary rounded shadow-2xl overflow-hidden"
+                          >
+                              <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-primary shrink-0">
+                                  <strong className="text-sm">
+                                      {menuTabs?.find((tab) => tab.value === flyoutTab)?.label}
+                                  </strong>
+                                  <OSButton
+                                      size="sm"
+                                      icon={<IconX className="size-4" />}
+                                      onClick={() => setFlyoutTab(null)}
+                                      aria-label="Close"
+                                  />
+                              </div>
+                              <div className="overflow-y-auto overscroll-contain min-h-0 flex-1 p-1">
+                                  {menuTabs?.find((tab) => tab.value === flyoutTab)?.menu}
+                              </div>
+                          </div>
+                      </div>,
+                      flyoutHostRef.current
+                  )
+                : null}
         </aside>
     )
 }
@@ -1329,6 +1508,10 @@ interface FloatingTOCProps {
     toggleToc: () => void
     tableOfContents: any
     contentRef: React.RefObject<HTMLDivElement>
+    children?: React.ReactNode
+    toggleIcon?: React.ReactNode
+    showLabel?: string
+    hideLabel?: string
 }
 
 /**
@@ -1338,8 +1521,18 @@ interface FloatingTOCProps {
  * scroll viewport so the TOC never extends past the visible area; an inner
  * ScrollArea handles overflow within that height.
  */
-const FloatingTOC = ({ isTocVisible, toggleToc, tableOfContents, contentRef }: FloatingTOCProps) => {
+const FloatingTOC = ({
+    isTocVisible,
+    toggleToc,
+    tableOfContents,
+    contentRef,
+    children,
+    toggleIcon,
+    showLabel,
+    hideLabel,
+}: FloatingTOCProps) => {
     const { hasMounted } = useReaderView()
+    const body = children ?? <TableOfContents tableOfContents={tableOfContents} contentRef={contentRef} />
     return (
         <aside
             data-scheme="secondary"
@@ -1349,19 +1542,24 @@ const FloatingTOC = ({ isTocVisible, toggleToc, tableOfContents, contentRef }: F
         >
             <div className="flex-1 min-h-0 flex flex-col w-[250px]">
                 {isTocVisible && (
-                    <ScrollArea className="px-2 pb-2 pt-8 flex-1 min-h-0">
-                        <TableOfContents tableOfContents={tableOfContents} contentRef={contentRef} />
-                    </ScrollArea>
+                    <ScrollArea className="px-2 pb-2 pt-8 flex-1 min-h-0">{body}</ScrollArea>
                 )}
             </div>
             <div className="flex-shrink-0 border-t border-primary py-1 px-2.5 flex items-center">
                 <Tooltip
                     trigger={
-                        <OSButton size="md" icon={<IconTableOfContents />} active={isTocVisible} onClick={toggleToc} />
+                        <OSButton
+                            size="md"
+                            icon={toggleIcon || <IconTableOfContents />}
+                            active={isTocVisible}
+                            onClick={toggleToc}
+                        />
                     }
                     side="left"
                 >
-                    {isTocVisible ? 'Hide' : 'Show'} table of contents
+                    {isTocVisible
+                        ? hideLabel || 'Hide table of contents'
+                        : showLabel || 'Show table of contents'}
                 </Tooltip>
             </div>
         </aside>
@@ -1383,11 +1581,16 @@ function ReaderViewContent({
     leftSidebar,
     hideLeftSidebar = false,
     hideRightSidebar = false,
+    rightSidebar,
+    rightSidebarIcon,
+    rightSidebarShowLabel,
+    rightSidebarHideLabel,
     contentMaxWidthClass,
     padding = true,
     proseSize,
     rightActionButtons,
     hideAppOptions = false,
+    hideBookmark = false,
     isEditing,
     onSearch,
     showSurvey = false,
@@ -1397,6 +1600,7 @@ function ReaderViewContent({
     sourceInstanceName,
     chrome = false,
     menuTabs,
+    menuTabsLayout = 'strip',
     productSelect,
     hideMenu = false,
     className = '',
@@ -1406,6 +1610,7 @@ function ReaderViewContent({
     const { hash } = useLocation()
     const contentRef = useRef<HTMLDivElement>(null)
     const articleColumnRef = useRef<HTMLDivElement>(null)
+    const flyoutHostRef = useRef<HTMLDivElement>(null)
 
     const { isNavVisible, isTocVisible, isNarrow, fullWidthContent, toggleNav, toggleToc } =
         useReaderView()
@@ -1421,6 +1626,23 @@ function ReaderViewContent({
     useEffect(() => {
         setMobileNavOpen(false)
     }, [appWindow?.path])
+
+    useEffect(() => {
+        if (!showMobileNav) return
+        const close = () => setMobileNavOpen(false)
+        const open = () => setMobileNavOpen(true)
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') close()
+        }
+        window.addEventListener('keydown', onKey)
+        window.addEventListener('wim-reader-mobile-close', close)
+        window.addEventListener('wim-reader-mobile-open', open)
+        return () => {
+            window.removeEventListener('keydown', onKey)
+            window.removeEventListener('wim-reader-mobile-close', close)
+            window.removeEventListener('wim-reader-mobile-open', open)
+        }
+    }, [showMobileNav])
 
     const prevPathRef = useRef(appWindow?.path)
 
@@ -1484,6 +1706,7 @@ function ReaderViewContent({
     return (
         <SearchProvider>
             <div
+                ref={flyoutHostRef}
                 data-scheme="secondary"
                 data-app="ReaderView"
                 className={`@container/app-reader relative w-full h-full flex min-h-0 max-w-full ${className}`}
@@ -1495,6 +1718,7 @@ function ReaderViewContent({
                         mobile={showMobileNav}
                         mobileOpen={mobileNavOpen}
                         onMobileClose={() => setMobileNavOpen(false)}
+                        flyoutHostRef={flyoutHostRef}
                         isEditing={isEditing}
                         filePath={filePath}
                         sourceInstanceName={sourceInstanceName}
@@ -1503,11 +1727,13 @@ function ReaderViewContent({
                         saveTitle={title}
                         rightActionButtons={rightActionButtons}
                         hideAppOptions={hideAppOptions}
+                        hideBookmark={hideBookmark}
                         productSelect={productSelect}
                         inlineSearch={
                             <InlineSearch contentRef={onSearch ? undefined : contentRef} onSearch={onSearch} />
                         }
                         menuTabs={menuTabs}
+                        menuTabsLayout={menuTabsLayout}
                         contentRef={onSearch ? undefined : contentRef}
                         currentPath={appWindow?.path}
                         isMdx={body?.type === 'mdx'}
@@ -1753,7 +1979,12 @@ function ReaderViewContent({
                                 toggleToc={toggleToc}
                                 tableOfContents={tableOfContents}
                                 contentRef={contentRef}
-                            />
+                                toggleIcon={rightSidebarIcon}
+                                showLabel={rightSidebarShowLabel}
+                                hideLabel={rightSidebarHideLabel}
+                            >
+                                {rightSidebar}
+                            </FloatingTOC>
                         )}
                     </div>
                 </div>
