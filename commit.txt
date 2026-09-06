@@ -1,6 +1,4 @@
-⚡ Bolt: Memoize initialValues in profile edit form
+Fix CI test failures in seo and supabase-edge
 
-What: Memoized the computation of `initialValues` for `useFormik` inside the community profile edit form.
-Why: The `reduce` operation previously ran on every render, allocating a new object each time.
-Impact: Reduces redundant O(N) calculations and garbage collection pressure, especially in forms where typing triggers frequent re-renders.
-Measurement: Verify the edit profile form works correctly, and React devtools shows no unnecessary recalculations of `initialValues`.
+What: Fixed `seo.spec.ts` to assert the correct homepage `h1` based on `src/lib/seo.ts` (`a desktop for writing` instead of `a world always making`). Also added dummy Supabase environment variables into the playwright webServer config so the dev server can instantiate `src/lib/supabase-admin.ts` correctly without erroring out.
+Why: The CI checks were failing. `seo.spec.ts` was asserting outdated text, while `admin-dashboard.spec.ts` was hitting a Next.js API route that threw `Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY` due to missing environment variables during the Playwright test server initialization.

@@ -26,5 +26,10 @@ export default defineConfig({
               url: testBaseURL,
               reuseExistingServer: !process.env.CI,
               timeout: 120000,
+              env: {
+                  NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+                  SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-key',
+              },
           },
 })
