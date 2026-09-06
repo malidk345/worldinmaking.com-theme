@@ -24,6 +24,7 @@ import {
     planPasteIntoTextBlock,
     shouldUseMarkdownPaste,
 } from './documentModel'
+import { planSplitTextBlock } from './insertMenuModel'
 import {
     getCollapsedSelectionRange,
     getInlineLinkPasteResult,
@@ -39,7 +40,7 @@ import {
 } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
 import { editableHtmlMatches, noteChipsAreCurrent, syncInlineNoteChips, useNotebookAnnotations } from './annotations'
-import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, makeEmptyParagraph, parseMarkdownNotebook } from './markdown'
+import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, parseMarkdownNotebook } from './markdown'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
@@ -403,63 +404,9 @@ export function EditableTextBlock({
                       Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
                   )
                 : selectionStart
-            const [before, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-            const [, after] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-            if (isTitleBlock) {
-                const nextParagraph = makeEmptyParagraph(`after-title-${node.id}`)
-                nextParagraph.children = after
-                replaceNodeWithNodes(node.id, [{ ...node, type: 'heading', level: 1, children: before }, nextParagraph])
-                restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
-                return
-            }
-
-            if (node.type === 'heading') {
-                if (selectionStart === 0) {
-                    const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                    replaceNodeWithNodes(node.id, [previousParagraph, { ...node, children: after }])
-                    restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
-                    return
-                }
-
-                const nextHeadingId = makeEmptyParagraph(`after-${node.id}`).id
-                replaceNodeWithNodes(node.id, [
-                    { ...node, children: before },
-                    {
-                        ...node,
-                        id: nextHeadingId,
-                        children: after,
-                    },
-                ])
-                restoreSelectionRef.current = { nodeId: nextHeadingId, start: 0, end: 0 }
-                return
-            }
-
-            if (node.type === 'blockquote') {
-                if (selectionStart === 0) {
-                    const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                    replaceNodeWithNodes(node.id, [previousParagraph, { ...node, children: after }])
-                    restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
-                    return
-                }
-
-                const nextBlockquoteId = makeEmptyParagraph(`after-${node.id}`).id
-                replaceNodeWithNodes(node.id, [
-                    { ...node, children: before },
-                    {
-                        ...node,
-                        id: nextBlockquoteId,
-                        children: after,
-                    },
-                ])
-                restoreSelectionRef.current = { nodeId: nextBlockquoteId, start: 0, end: 0 }
-                return
-            }
-
-            const nextParagraph = makeEmptyParagraph(`after-${node.id}`)
-            nextParagraph.children = after
-
-            replaceNodeWithNodes(node.id, [{ ...node, children: before }, nextParagraph])
-            restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
+            const plan = planSplitTextBlock(node, isTitleBlock ? 0 : 1, selectionStart, selectionEnd)
+            replaceNodeWithNodes(node.id, plan.replacementNodes)
+            restoreSelectionRef.current = plan.focus
             return
         }
 
