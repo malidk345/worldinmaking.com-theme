@@ -1,0 +1,6 @@
+⚡ Bolt: Memoize initialValues in profile edit form
+
+What: Memoized the computation of `initialValues` for `useFormik` inside the community profile edit form.
+Why: The `reduce` operation previously ran on every render, allocating a new object each time.
+Impact: Reduces redundant O(N) calculations and garbage collection pressure, especially in forms where typing triggers frequent re-renders.
+Measurement: Verify the edit profile form works correctly, and React devtools shows no unnecessary recalculations of `initialValues`.

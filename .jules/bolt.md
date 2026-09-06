@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2025-05-19 - Memoize form initialValues
+**Learning:** Computing complex objects using `reduce` for `initialValues` directly in the component body (like in `useFormik`) forces the JavaScript engine to allocate a new object on every render.
+**Action:** Always wrap initial values computed from object/array reducing loops inside `useMemo` so they are only recalculated when dependencies change, optimizing render performance.

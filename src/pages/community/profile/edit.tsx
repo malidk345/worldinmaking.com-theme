@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useState, useEffect, useRef, ChangeEventHandler } from 'react'
+import React, { useState, useEffect, useRef, ChangeEventHandler, useMemo } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { useUser } from 'hooks/useUser'
@@ -284,15 +284,20 @@ function EditProfile({ profile, mutate }) {
         }
     }
 
-    const { values, setFieldValue, handleChange, submitForm, handleSubmit, isSubmitting, errors } = useFormik({
-        validationSchema: ValidationSchema,
-        onSubmit,
-        initialValues: formSections.reduce((acc, section) => {
+    // Bolt: Memoized initialValues construction to prevent O(N) overhead on every render
+    const initialValues = useMemo(() => {
+        return formSections.reduce((acc, section) => {
             Object.keys(section.fields).forEach((key) => {
                 acc[key] = profile[key]
             })
             return acc
-        }, {}),
+        }, {})
+    }, [profile])
+
+    const { values, setFieldValue, handleChange, submitForm, handleSubmit, isSubmitting, errors } = useFormik({
+        validationSchema: ValidationSchema,
+        onSubmit,
+        initialValues,
     })
 
     return (
