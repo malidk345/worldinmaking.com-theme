@@ -99,6 +99,11 @@ export function isScratchpadWindowPath(path?: string | null): boolean {
     return p === '/scratchpad' || p.startsWith('/scratchpad/')
 }
 
+export function isTrashWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/trash' || p.startsWith('/trash/')
+}
+
 export function notebookWindowPath(id?: string | null): string {
     const clean = String(id || '').trim()
     return clean ? `/notebooks/${clean}` : '/notebooks'
@@ -165,6 +170,7 @@ export function isPathRoutedWindow(path: string): boolean {
         p === '/account' ||
         /^\/workspace-chat(\/|$)/.test(p) ||
         /^\/scratchpad(\/|$)/.test(p) ||
+        /^\/trash(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||
         /^\/notebooks(\/|$)/.test(p) ||
         /^\/(posts|blog)(\/|$)/.test(p) ||

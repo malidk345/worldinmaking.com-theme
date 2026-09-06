@@ -39,8 +39,9 @@ import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
-import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow, isScratchpadWindowPath } from '../../lib/window-path'
+import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow, isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
 import { ScratchpadWindow } from '../ScratchpadWindow'
+import { TrashWindow } from '../TrashWindow'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
 const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false })
@@ -102,6 +103,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/scratchpad' || path.startsWith('/scratchpad/')) {
         return <ScratchpadWindow />
+    }
+
+    if (path === '/trash' || path.startsWith('/trash/')) {
+        return <TrashWindow />
     }
 
     if (path === '/admin' || path === '/community/admin') {
@@ -236,6 +241,7 @@ const WindowRouter = (props: WindowRouterProps) => {
         isArtifactWindowPath(path) ||
         isNotebookWindowPath(path) ||
         isScratchpadWindowPath(path) ||
+        isTrashWindowPath(path) ||
         isProfilePath(path)
     // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
     // settings, mobile FAB) stays on the pane. Content scrolls inside.
@@ -245,7 +251,7 @@ const WindowRouter = (props: WindowRouterProps) => {
             className={
                 fillHeight
                     ? `text-primary h-full min-h-0 flex flex-col overflow-hidden${
-                          isScratchpadWindowPath(path) ? ' bg-primary' : ''
+                          isScratchpadWindowPath(path) || isTrashWindowPath(path) ? ' bg-primary' : ''
                       }`
                     : 'text-primary min-h-full h-auto flex flex-col'
             }

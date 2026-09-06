@@ -37,6 +37,16 @@ export function rememberDeletedNotebookId(id: string): void {
     }
 }
 
+export function forgetDeletedNotebookId(id: string): void {
+    if (typeof window === 'undefined' || !id) return
+    const next = readLocalDeletedNotebookIds().filter((entry) => entry !== id)
+    try {
+        window.localStorage.setItem(getNotebookDeletedStorageKey(), JSON.stringify(next))
+    } catch {
+        /* ignore */
+    }
+}
+
 /** Headers required by /api/notebooks authz (TSK-19). */
 function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
     const headers: Record<string, string> = {

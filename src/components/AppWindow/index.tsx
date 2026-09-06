@@ -13,7 +13,7 @@ import { useRouter } from 'next/router'
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
-import { isScratchpadWindowPath } from '../../lib/window-path'
+import { isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
 import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
@@ -356,12 +356,14 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-label={item.meta?.title || item.path || 'Window'}
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
-                    data-scheme={isScratchpadWindowPath(item.path) ? 'primary' : 'tertiary'}
+                    data-scheme={isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? 'primary' : 'tertiary'}
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
                         focusedWindow?.key === item.key
                             ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
-                            : `border-primary/40 shadow-sm${isScratchpadWindowPath(item.path) ? '' : ' opacity-[0.985]'}`
-                    } ${isScratchpadWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
+                            : `border-primary/40 shadow-sm${
+                                  isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? '' : ' opacity-[0.985]'
+                              }`
+                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded

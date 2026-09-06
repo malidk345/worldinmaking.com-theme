@@ -9,6 +9,7 @@ import {
     pushAllNotebooksToRemote,
     pushNotebookToRemote,
     rememberDeletedNotebookId,
+    forgetDeletedNotebookId,
     readLocalDeletedNotebookIds,
     resetNotebookPullThrottle,
     startNotebookPolling,
@@ -26,6 +27,7 @@ import {
 import { adoptDeviceCacheToAccount, adoptStringIdLists } from '../../../lib/adopt-device-cache'
 import { getNotebookActor, personDisplayName, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
+import { TrashStore } from '../../../lib/trash-store'
 import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
 import { formatDailyTitle, normalizeFolder, todayKey, uniqueTags, type NotebookKind } from './notebookOrganize'
 
@@ -830,8 +832,12 @@ export function unpinNotebookFromDesktop(id: string): void {
 
 export function deleteNotebook(id: string): void {
     const target = getNotebook(id)
+    if (target) {
+        TrashStore.addNotebook(target, getNotebookHistory(target.id))
+        rememberDeletedNotebookId(target.id)
+        if (target.short_id) rememberDeletedNotebookId(target.short_id)
+    }
     rememberDeletedNotebookId(id)
-    if (target) rememberDeletedNotebookId(target.id)
     const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
     writeAll(notebooks)
     localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`)
@@ -844,6 +850,24 @@ export function deleteNotebook(id: string): void {
     } else {
         queueRemote(deleteNotebookRemote(id), { report: false })
     }
+}
+
+export function restoreNotebookFromTrash(id: string): StoredNotebook | undefined {
+    const item = TrashStore.getItem(id)
+    if (!item?.notebook) return undefined
+    forgetDeletedNotebookId(item.notebook.id)
+    if (item.notebook.short_id) forgetDeletedNotebookId(item.notebook.short_id)
+    const notebooks = getNotebooks().filter((notebook) => notebook.id !== item.notebook.id)
+    notebooks.push(item.notebook)
+    writeAll(notebooks)
+    if (item.history.length) writeNotebookHistory(item.notebook.id, item.history)
+    TrashStore.remove(id)
+    schedulePushNotebook(item.notebook)
+    return item.notebook
+}
+
+export function emptyNotebookTrash(): void {
+    TrashStore.empty()
 }
 
 export function createNotebook(

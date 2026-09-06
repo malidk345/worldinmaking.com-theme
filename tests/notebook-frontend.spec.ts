@@ -56,8 +56,11 @@ import {
     compactHistoryForStorage,
     createNotebook,
     deleteNotebook,
+    emptyNotebookTrash,
+    getNotebook,
     getNotebookHistory,
     getOrCreateDailyNotebook,
+    restoreNotebookFromTrash,
     restoreNotebookVersion,
     unpinNotebookFromDesktop,
     writeNotebookHistory,
@@ -1341,6 +1344,18 @@ test.describe('notebook frontend helpers', () => {
         expect(compacted[0].content).toBeUndefined()
         expect(compacted[0].author?.first_name).toBe('Ali')
         expect(compacted[compacted.length - 1].author?.first_name).toBe('Sara')
+    })
+
+    test('deleted notebooks can be restored from trash', () => {
+        if (typeof localStorage === 'undefined') return
+        const notebook = createNotebook('Bin me', 'trash-body')
+        deleteNotebook(notebook.id)
+        expect(getNotebook(notebook.id)).toBeUndefined()
+        const restored = restoreNotebookFromTrash(notebook.id)
+        expect(restored?.content).toBe('trash-body')
+        expect(getNotebook(notebook.id)?.title).toBe('Bin me')
+        deleteNotebook(notebook.id)
+        emptyNotebookTrash()
     })
 
     test('createNotebook stores folder tags and daily notes stay unique per day', () => {
