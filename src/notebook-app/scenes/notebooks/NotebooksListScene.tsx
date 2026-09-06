@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { collectLocalNotebookFaces } from './notebookFaces'
+import { NotebookFaceStack } from './NotebookFaceStack'
 import { NotebookTag } from './NotebookMeta'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
@@ -326,13 +327,18 @@ export function NotebooksListScene({
             title: 'Created by',
             key: 'created_by',
             render: function RenderCreatedBy(_: any, notebook: StoredNotebook) {
-                const user = notebook.isTemplate
-                    ? { first_name: 'WIM' }
-                    : notebook.created_by || { first_name: 'You' }
-
+                const faces = notebook.isTemplate
+                    ? [{ key: 'wim', name: 'WIM', role: 'author' as const }]
+                    : collectLocalNotebookFaces({
+                          createdBy: notebook.created_by || { first_name: 'You' },
+                          lastModifiedBy: notebook.last_modified_by,
+                          markdown: notebook.content,
+                      })
+                const lead = faces[0]
                 return (
-                    <div className="flex flex-row items-center flex-nowrap">
-                        <ProfilePicture user={user} size="md" showName />
+                    <div className="flex flex-row items-center flex-nowrap gap-1.5 min-w-0">
+                        <NotebookFaceStack faces={faces} size={24} />
+                        <span className="text-sm truncate">{lead?.name || 'You'}</span>
                     </div>
                 )
             },

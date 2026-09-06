@@ -19,6 +19,7 @@ export interface ScratchpadNode {
     content: string
     source?: string // Book chapter, author, PDF page, or URL
     tags?: string[]
+    pinned?: boolean
     timestamp: string
 }
 
@@ -188,8 +189,54 @@ export const ScratchpadStore = {
         emit()
     },
 
+    updateNode(
+        nodeId: string,
+        patch: Partial<Pick<ScratchpadNode, 'title' | 'content' | 'source' | 'type' | 'tags' | 'pinned'>>
+    ): void {
+        state.nodes = state.nodes.map((node) => {
+            if (node.id !== nodeId) return node
+            return {
+                ...node,
+                ...patch,
+                title: patch.title !== undefined ? patch.title.trim() || undefined : node.title,
+                content: patch.content !== undefined ? patch.content.trim() : node.content,
+                source: patch.source !== undefined ? patch.source.trim() || undefined : node.source,
+            }
+        })
+        emit()
+    },
+
+    toggleNodePin(nodeId: string): void {
+        state.nodes = state.nodes.map((node) => (node.id === nodeId ? { ...node, pinned: !node.pinned } : node))
+        emit()
+    },
+
     clearNodes(): void {
         state.nodes = []
+        emit()
+    },
+
+    addTask(title: string): ScratchpadTask | null {
+        const trimmed = title.trim()
+        if (!trimmed) return null
+        const task: ScratchpadTask = {
+            id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            title: trimmed,
+            status: 'pending',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        state.tasks = [...state.tasks, task]
+        emit()
+        return task
+    },
+
+    deleteTask(taskId: string): void {
+        state.tasks = state.tasks.filter((task) => task.id !== taskId)
+        emit()
+    },
+
+    deleteMemory(memoryId: string): void {
+        state.memories = state.memories.filter((memory) => memory.id !== memoryId)
         emit()
     },
 
@@ -274,7 +321,9 @@ export const ScratchpadStore = {
                         ? 'Concept'
                         : n.type === 'source'
                         ? 'Source'
-                        : 'Synthesis'
+                        : n.type === 'note'
+                          ? 'Note'
+                          : 'Synthesis'
                 parts.push(`### [${typeLabel}] ${n.title || `Node ${idx + 1}`}${n.source ? ` — ${n.source}` : ''}`)
                 parts.push(n.content)
                 parts.push('')

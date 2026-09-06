@@ -9,6 +9,8 @@ export function NotebookEditorToolbar({
     cloudMessage,
     onRetrySync,
     person,
+    createdBy,
+    markdown,
     updatedAt,
     notebookId,
     livePeople,
@@ -22,6 +24,8 @@ export function NotebookEditorToolbar({
     cloudMessage?: string
     onRetrySync?: () => void
     person?: NotebookPerson | null
+    createdBy?: NotebookPerson | null
+    markdown?: string
     updatedAt?: string
     notebookId?: string
     livePeople?: NotebookPresencePerson[]
@@ -34,6 +38,8 @@ export function NotebookEditorToolbar({
     return (
         <CollaboratorsBanner
             person={person}
+            createdBy={createdBy}
+            markdown={markdown}
             updatedAt={updatedAt}
             syncStatus={syncStatus}
             cloudMessage={cloudMessage}

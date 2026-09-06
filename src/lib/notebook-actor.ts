@@ -37,6 +37,11 @@ export function userToNotebookActor(user: User | null | undefined): NotebookPers
     }
 }
 
+export function personDisplayName(person?: NotebookPerson | null, fallback = 'You'): string {
+    if (!person) return fallback
+    return [person.first_name, person.last_name].filter(Boolean).join(' ') || person.username || fallback
+}
+
 export function formatEditedAgo(dateStr?: string): string {
     if (!dateStr) return 'just now'
     const ms = Date.now() - new Date(dateStr).getTime()

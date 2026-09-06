@@ -935,6 +935,8 @@ export function App() {
                     cloudMessage={cloudMessage}
                     onRetrySync={retryNotebookRemoteSync}
                     person={currentNotebook.last_modified_by || currentNotebook.created_by}
+                    createdBy={currentNotebook.created_by}
+                    markdown={markdown}
                     updatedAt={currentNotebook.updatedAt}
                     notebookId={currentNotebook.id}
                     livePeople={presence.people}

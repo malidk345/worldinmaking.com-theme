@@ -63,6 +63,8 @@ import {
     writeNotebookHistory,
     type StoredNotebook,
 } from '../src/notebook-app/scenes/notebooks/notebookStorage'
+import { collectLocalNotebookFaces } from '../src/notebook-app/scenes/notebooks/notebookFaces'
+import { serializeAnnotationsSidecar } from '../src/notebook-app/lib/components/MarkdownNotebook/annotations'
 import {
     buildBlockMoreMenuItems,
     canShowBlockMoreMenu,
@@ -1288,6 +1290,57 @@ test.describe('notebook frontend helpers', () => {
         expect(restoreNotebookVersion(notebook.id, 1)).toBeUndefined()
         expect(restoreNotebookVersion(notebook.id, 2)?.content).toBe('kept body')
         deleteNotebook(notebook.id)
+    })
+
+    test('faces collect author plus philosophers and compacted snapshots keep author', () => {
+        const sidecar = serializeAnnotationsSidecar({
+            n1: {
+                id: 'n1',
+                notes: [{ by: 'heraclitus', name: 'Heraclitus', text: 'flux', kind: 'bot' }],
+            },
+        })
+        const faces = collectLocalNotebookFaces({
+            createdBy: { first_name: 'Ali', username: 'ali' },
+            lastModifiedBy: { first_name: 'Ali', username: 'ali' },
+            markdown: `Hello\n\n${sidecar || ''}`,
+        })
+        expect(faces.map((face) => face.role)).toEqual(['author', 'philosopher'])
+        expect(faces[0].name).toBe('Ali')
+        expect(faces[1].name).toBe('Heraclitus')
+
+        const compacted = compactHistoryForStorage([
+            {
+                version: 1,
+                content: 'old',
+                title: 'Doc',
+                timestamp: '2026-01-01T00:00:00.000Z',
+                author: { first_name: 'Ali' },
+            },
+            {
+                version: 2,
+                content: 'mid',
+                title: 'Doc',
+                timestamp: '2026-01-02T00:00:00.000Z',
+                author: { first_name: 'Ali' },
+            },
+            {
+                version: 3,
+                content: 'new',
+                title: 'Doc',
+                timestamp: '2026-01-03T00:00:00.000Z',
+                author: { first_name: 'Sara' },
+            },
+            {
+                version: 4,
+                content: 'newer',
+                title: 'Doc',
+                timestamp: '2026-01-04T00:00:00.000Z',
+                author: { first_name: 'Sara' },
+            },
+        ])
+        expect(compacted[0].content).toBeUndefined()
+        expect(compacted[0].author?.first_name).toBe('Ali')
+        expect(compacted[compacted.length - 1].author?.first_name).toBe('Sara')
     })
 
     test('createNotebook stores folder tags and daily notes stay unique per day', () => {

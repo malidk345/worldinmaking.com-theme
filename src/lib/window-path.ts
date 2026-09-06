@@ -94,6 +94,11 @@ export function isNotebookWindowPath(path?: string | null): boolean {
     return p === '/notebooks' || p.startsWith('/notebooks/')
 }
 
+export function isScratchpadWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/scratchpad' || p.startsWith('/scratchpad/')
+}
+
 export function notebookWindowPath(id?: string | null): string {
     const clean = String(id || '').trim()
     return clean ? `/notebooks/${clean}` : '/notebooks'

@@ -39,7 +39,7 @@ import Bookmarks from '../../pages/bookmarks'
 import NotificationsPage from '../../pages/community/notifications'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
-import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow } from '../../lib/window-path'
+import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow, isScratchpadWindowPath } from '../../lib/window-path'
 import { ScratchpadWindow } from '../ScratchpadWindow'
 
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
@@ -235,6 +235,7 @@ const WindowRouter = (props: WindowRouterProps) => {
         isBlogPath(path) ||
         isArtifactWindowPath(path) ||
         isNotebookWindowPath(path) ||
+        isScratchpadWindowPath(path) ||
         isProfilePath(path)
     // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
     // settings, mobile FAB) stays on the pane. Content scrolls inside.
@@ -243,7 +244,9 @@ const WindowRouter = (props: WindowRouterProps) => {
             data-scheme="primary"
             className={
                 fillHeight
-                    ? 'text-primary h-full min-h-0 flex flex-col overflow-hidden'
+                    ? `text-primary h-full min-h-0 flex flex-col overflow-hidden${
+                          isScratchpadWindowPath(path) ? ' bg-primary' : ''
+                      }`
                     : 'text-primary min-h-full h-auto flex flex-col'
             }
         >

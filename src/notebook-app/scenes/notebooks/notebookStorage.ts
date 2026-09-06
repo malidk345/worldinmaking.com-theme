@@ -24,7 +24,7 @@ import {
     namespacedStorageKey,
 } from '../../../lib/wim-identity'
 import { adoptDeviceCacheToAccount, adoptStringIdLists } from '../../../lib/adopt-device-cache'
-import { getNotebookActor, type NotebookPerson } from '../../../lib/notebook-actor'
+import { getNotebookActor, personDisplayName, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
 import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
 import { formatDailyTitle, normalizeFolder, todayKey, uniqueTags, type NotebookKind } from './notebookOrganize'
@@ -79,6 +79,7 @@ export interface NotebookVersion {
     title?: string
     timestamp: string
     label?: string
+    author?: NotebookPerson
 }
 
 // Bump key when default seed content changes so old fake templates are not kept forever.
@@ -507,6 +508,7 @@ export function compactHistoryForStorage(history: NotebookVersion[]): NotebookVe
             title: entry.title,
             timestamp: entry.timestamp,
             label: entry.label,
+            author: entry.author,
         }
     })
 }
@@ -730,6 +732,7 @@ export function saveNotebook(
                 title: next.title,
                 timestamp: now,
                 label: options.snapshotLabel,
+                author: getNotebookActor(),
             })
             writeHistory(notebook.id, history)
         }
@@ -746,7 +749,13 @@ export function saveNotebook(
     if (typeof window !== 'undefined') {
         persistNotebookLocal(next.id, next.title, next.content).catch(() => { /* ignore */ })
         if (shouldSnapshot && (contentChanged || options.snapshot)) {
-            createDocumentSnapshot(next.id, next.title, next.content, options.snapshotLabel).catch(() => { /* ignore */ })
+            createDocumentSnapshot(
+                next.id,
+                next.title,
+                next.content,
+                options.snapshotLabel,
+                personDisplayName(getNotebookActor())
+            ).catch(() => { /* ignore */ })
         }
     }
     return next

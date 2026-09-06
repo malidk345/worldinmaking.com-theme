@@ -1789,7 +1789,7 @@ function ReaderViewContent({
                                 } max-w-none relative flex-1 min-w-0`}
                             >
                                 {stickyHeader ? (
-                                    <div className="not-prose sticky top-2 z-30 mx-3 mt-2 mb-1">
+                                    <div className="not-prose sticky top-6 z-30 mx-3 mt-3 mb-1">
                                         <div className="rounded-sm border border-primary bg-primary/90 backdrop-blur-md shadow-[0_8px_28px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.45)]">
                                             {stickyHeader}
                                         </div>
