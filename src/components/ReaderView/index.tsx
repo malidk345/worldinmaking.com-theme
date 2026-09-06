@@ -1777,6 +1777,7 @@ function ReaderViewContent({
                     <div className="flex flex-1 min-h-0">
                         <ScrollArea
                             dataScheme="primary"
+                            viewportClasses={stickyHeader ? 'scroll-pt-20 scroll-pb-28' : ''}
                             className={`flex-1 min-w-0 min-h-0 relative ${
                                 stickyHeader
                                     ? ''
@@ -1789,7 +1790,7 @@ function ReaderViewContent({
                                 } max-w-none relative flex-1 min-w-0`}
                             >
                                 {stickyHeader ? (
-                                    <div className="not-prose sticky top-6 z-30 mx-3 mt-3 mb-1">
+                                    <div className="not-prose sticky top-3 z-30 mx-2 mt-2 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
                                         <div className="rounded-sm border border-primary bg-primary/90 backdrop-blur-md shadow-[0_8px_28px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.45)]">
                                             {stickyHeader}
                                         </div>

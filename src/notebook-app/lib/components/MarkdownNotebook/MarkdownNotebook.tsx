@@ -708,7 +708,7 @@ function MarkdownNotebookEditor({
                 : Math.max(viewTop + margin, rect.top)
             setMobileBarAnchor({ top, left, placement: placeBelow ? 'below' : 'above' })
             setMobileActiveNodeId(nodeId)
-        }, 420)
+        }, 340)
 
         touchStartPosRef.current = { x, y, timer, row }
     }

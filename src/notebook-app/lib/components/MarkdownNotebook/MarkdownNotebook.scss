@@ -338,7 +338,19 @@ html.dark .MarkdownNotebook,
     box-shadow: none;
     outline: 1.5px solid transparent;
     outline-offset: -1.5px;
+    scroll-margin-top: 5.5rem;
+    scroll-margin-bottom: 7rem;
     transition: outline-color 120ms ease, background 120ms ease;
+}
+
+.MarkdownNotebook__text-block[contenteditable='true'],
+.MarkdownNotebook__list-item-content[contenteditable='true'],
+.MarkdownNotebook__table-cell-content[contenteditable='true'],
+.MarkdownNotebook__code-block[contenteditable='true'] {
+    -webkit-user-select: text;
+    user-select: text;
+    caret-color: #1d4ed8;
+    touch-action: manipulation;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -346,6 +358,18 @@ html.dark .MarkdownNotebook,
         background: transparent;
         outline-color: var(--color-border-primary);
         box-shadow: none;
+    }
+}
+
+@media (hover: none) {
+    .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
+        pointer-events: auto;
+        opacity: 0.7;
+    }
+
+    .MarkdownNotebook__text-row:focus-within .MarkdownNotebook__line-insert-menu-button {
+        pointer-events: auto;
+        opacity: 0.75;
     }
 }
 
@@ -1845,7 +1869,7 @@ h4.MarkdownNotebook__text-block {
     .MarkdownNotebook__format-toolbar {
         flex-wrap: nowrap;
         max-width: calc(100vw - 12px);
-        padding: 0.1rem;
+        padding: 0.15rem;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
@@ -1855,10 +1879,15 @@ h4.MarkdownNotebook__text-block {
             display: none;
         }
 
+        button {
+            min-height: 2.25rem;
+            min-width: 2.25rem;
+        }
+
         .LemonButton,
         .LemonButton__chrome {
-            min-height: 1.75rem;
-            min-width: 1.75rem;
+            min-height: 2.25rem;
+            min-width: 2.25rem;
         }
     }
 
@@ -3592,8 +3621,8 @@ button.MarkdownNotebook__component-title:focus-visible {
     padding: 0.2rem;
     margin: 0;
     color: var(--color-text-primary);
-    background: var(--color-bg-surface-primary);
-    border: 1px solid var(--color-border-primary);
+    background: rgb(var(--bg, 255 255 255));
+    border: 1px solid rgb(var(--border, 192 192 192));
     border-radius: 4px;
     box-shadow: var(--shadow-elevation-3000);
     pointer-events: auto;
@@ -4299,6 +4328,30 @@ button.MarkdownNotebook__component-title:focus-visible {
     .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
         left: 50%;
         transform: translate(-50%, -50%);
+        pointer-events: auto;
+        opacity: 0.7;
+    }
+
+    .MarkdownNotebook__text-row:focus-within .MarkdownNotebook__line-insert-menu-button,
+    .MarkdownNotebook__row:focus-within .MarkdownNotebook__line-insert-menu-button {
+        pointer-events: auto;
+        opacity: 0.75;
+    }
+
+    .MarkdownNotebook__text-block[contenteditable='true'],
+    .MarkdownNotebook__list-item-content[contenteditable='true'] {
+        font-size: 16px;
+        line-height: 1.55;
+    }
+
+    .MarkdownNotebook__mobile-block-bar-btn {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 4px;
+    }
+
+    .MarkdownNotebook {
+        -webkit-tap-highlight-color: transparent;
     }
 
     .MarkdownNotebook__component-shell {

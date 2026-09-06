@@ -161,7 +161,7 @@ export function CollaboratorsBanner({
     return (
         <div
             data-scheme="primary"
-            className="flex w-full items-center gap-px px-1.5 py-1 min-h-9"
+            className="flex w-full items-center gap-px px-1 py-1 min-h-9 min-w-0 overflow-hidden"
         >
             <OSButton
                 size="md"
@@ -185,8 +185,8 @@ export function CollaboratorsBanner({
                         title={updatedAt ? `Last edited ${new Date(updatedAt).toLocaleString()}` : 'People and history'}
                     >
                         <NotebookFaceStack faces={faces.length ? faces : localFaces} size={24} />
-                        <strong className="text-sm truncate">{displayName}</strong>
-                        <span suppressHydrationWarning className="text-xs text-muted shrink-0">
+                        <strong className="text-sm truncate max-w-[28vw] @sm:max-w-[10rem]">{displayName}</strong>
+                        <span suppressHydrationWarning className="text-xs text-muted shrink-0 hidden @md:inline">
                             {when}
                         </span>
                     </button>
