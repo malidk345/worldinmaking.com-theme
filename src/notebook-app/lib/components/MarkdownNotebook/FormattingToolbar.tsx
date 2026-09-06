@@ -56,6 +56,7 @@ export function FormattingToolbar({
     startInlineCommentAtSelection,
     lockPosition,
     returnFocusToEditor,
+    docked,
 }: {
     selectedBlockStyle: TextBlockStyle | null
     /** Whether every selected block sits inside a blockquote — orthogonal to the text style. */
@@ -79,6 +80,7 @@ export function FormattingToolbar({
     lockPosition: () => void
     /** Moves focus back into the editor (Escape while the toolbar holds focus). */
     returnFocusToEditor?: () => void
+    docked?: boolean
 }): JSX.Element {
     const [isLinkEditorOpen, setIsLinkEditorOpen] = useState(initialLinkEditorOpen || !!currentLinkHref)
     const [shouldFocusLinkInput, setShouldFocusLinkInput] = useState(initialLinkEditorOpen)
@@ -91,6 +93,10 @@ export function FormattingToolbar({
     // (translated -50% horizontally, and -100% when placed above) can still poke past the edges.
     // Measure the real box and shift it back inside.
     useLayoutEffect(() => {
+        if (docked) {
+            if (boundsShift.x || boundsShift.y) setBoundsShift({ x: 0, y: 0 })
+            return
+        }
         const element = toolbarRef.current
         if (!element) {
             return
@@ -129,7 +135,7 @@ export function FormattingToolbar({
         if (x !== boundsShift.x || y !== boundsShift.y) {
             setBoundsShift({ x, y })
         }
-    }, [top, left, placement, isLinkEditorOpen, showInlineActions, boundsShift])
+    }, [top, left, placement, isLinkEditorOpen, showInlineActions, boundsShift, docked])
 
     const toolbarStyle = {
         '--markdown-notebook-format-toolbar-top': `${top}px`,
@@ -229,7 +235,11 @@ export function FormattingToolbar({
 
     return (
         <div
-            className={clsx('MarkdownNotebook__format-toolbar', `MarkdownNotebook__format-toolbar--${placement}`)}
+            className={clsx(
+                'MarkdownNotebook__format-toolbar',
+                `MarkdownNotebook__format-toolbar--${placement}`,
+                docked && 'MarkdownNotebook__format-toolbar--docked'
+            )}
             contentEditable={false}
             ref={toolbarRef}
             style={toolbarStyle}

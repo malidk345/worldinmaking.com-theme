@@ -483,6 +483,17 @@ export function getInsertMenuPosition(
     const anchorRect = anchorElement.getBoundingClientRect()
     const viewport = getVisibleViewport()
     const availableViewportWidth = Math.max(0, viewport.width - INSERT_MENU_VIEWPORT_PADDING * 2)
+    if (viewport.width < 640) {
+        const width = Math.max(0, viewport.width - 24)
+        const maxHeight = Math.min(preferredMaxHeight, Math.max(preferredMinHeight, Math.round(viewport.height * 0.42)))
+        return {
+            placement: 'above',
+            top: viewport.bottom - 10,
+            left: viewport.left + 12,
+            width,
+            maxHeight,
+        }
+    }
     const width = Math.min(preferredWidth, availableViewportWidth)
     const maxLeft = viewport.right - INSERT_MENU_VIEWPORT_PADDING - width
     const left = Math.min(

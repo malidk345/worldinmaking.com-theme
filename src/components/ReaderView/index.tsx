@@ -1626,11 +1626,28 @@ function ReaderViewContent({
     // control cluster that opens the sidebar as an off-canvas drawer.
     const showMobileNav = renderLeftSidebar && isNarrow
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
+    const [keyboardOpen, setKeyboardOpen] = useState(false)
 
     // Close the drawer whenever the reader navigates to a new page.
     useEffect(() => {
         setMobileNavOpen(false)
     }, [appWindow?.path])
+
+    useEffect(() => {
+        const viewport = window.visualViewport
+        if (!viewport) return
+        const syncKeyboard = () => {
+            const occluded = window.innerHeight - viewport.height - viewport.offsetTop
+            setKeyboardOpen(occluded > 80)
+        }
+        syncKeyboard()
+        viewport.addEventListener('resize', syncKeyboard)
+        viewport.addEventListener('scroll', syncKeyboard)
+        return () => {
+            viewport.removeEventListener('resize', syncKeyboard)
+            viewport.removeEventListener('scroll', syncKeyboard)
+        }
+    }, [])
 
     useEffect(() => {
         if (!showMobileNav) return
@@ -1768,7 +1785,7 @@ function ReaderViewContent({
                             aria-label="Open navigation"
                             onClick={() => setMobileNavOpen(true)}
                             className={`absolute bottom-4 right-4 z-30 flex size-11 items-center justify-center rounded-full border border-primary text-primary shadow-lg transition-opacity duration-200 hover:bg-accent ${PANEL_BG} ${
-                                mobileNavOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                                mobileNavOpen || keyboardOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                         >
                             <IconSidebarClose className="!size-6 shrink-0" />
@@ -1790,7 +1807,7 @@ function ReaderViewContent({
                                 } max-w-none relative flex-1 min-w-0`}
                             >
                                 {stickyHeader ? (
-                                    <div className="not-prose sticky top-3 z-30 mx-2 mt-2 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
+                                    <div className="not-prose sticky top-2 z-30 mx-2 mt-1 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
                                         <div className="rounded-sm border border-primary bg-primary/90 backdrop-blur-md shadow-[0_8px_28px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.45)]">
                                             {stickyHeader}
                                         </div>

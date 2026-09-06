@@ -1830,6 +1830,13 @@ h4.MarkdownNotebook__text-block {
     );
 }
 
+.MarkdownNotebook__format-toolbar--docked {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 0.25rem;
+    transform: translateX(-50%) !important;
+}
+
 .MarkdownNotebook__format-style-buttons {
     display: inline-flex;
     gap: 0.125rem;
@@ -2164,9 +2171,9 @@ h4.MarkdownNotebook__text-block {
     }
 
     .MarkdownNotebook__insert-item {
-        min-height: 28px;
-        height: 28px;
-        font-size: 13.5px;
+        min-height: 40px;
+        height: 40px;
+        font-size: 15px;
     }
 
     .MarkdownNotebook__insert-item-icon {
@@ -4327,9 +4334,11 @@ button.MarkdownNotebook__component-title:focus-visible {
 
     .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
         left: 50%;
+        width: 2rem;
+        height: 2rem;
         transform: translate(-50%, -50%);
         pointer-events: auto;
-        opacity: 0.7;
+        opacity: 0.85;
     }
 
     .MarkdownNotebook__text-row:focus-within .MarkdownNotebook__line-insert-menu-button,

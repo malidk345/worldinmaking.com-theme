@@ -185,7 +185,9 @@ export function CollaboratorsBanner({
                         title={updatedAt ? `Last edited ${new Date(updatedAt).toLocaleString()}` : 'People and history'}
                     >
                         <NotebookFaceStack faces={faces.length ? faces : localFaces} size={24} />
-                        <strong className="text-sm truncate max-w-[28vw] @sm:max-w-[10rem]">{displayName}</strong>
+                        <strong className="text-sm truncate max-w-[28vw] @sm:max-w-[10rem] max-[480px]:hidden">
+                            {displayName}
+                        </strong>
                         <span suppressHydrationWarning className="text-xs text-muted shrink-0 hidden @md:inline">
                             {when}
                         </span>

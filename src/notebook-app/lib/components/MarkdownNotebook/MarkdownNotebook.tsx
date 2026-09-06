@@ -2212,6 +2212,27 @@ function MarkdownNotebookEditor({
             const viewBottom = viewTop + viewHeight
             const isNarrow = viewWidth < 640
             const estimatedHeight = isNarrow ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
+            if (isNarrow) {
+                setFloatingToolbar({
+                    textRanges,
+                    codeRanges,
+                    listItemRanges,
+                    selectedMarkdown,
+                    placement: 'below',
+                    top: Math.round(viewBottom - estimatedHeight - 10),
+                    left: Math.round(viewLeft + viewWidth / 2),
+                    docked: true,
+                })
+                const focusNode = selection.focusNode
+                const focusEl =
+                    focusNode instanceof HTMLElement
+                        ? focusNode
+                        : focusNode?.parentElement instanceof HTMLElement
+                          ? focusNode.parentElement
+                          : null
+                focusEl?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                return
+            }
             const shouldPlaceBelow = pointerAnchor
                 ? pointerAnchor.placement === 'below'
                 : selectionRect.top - viewTop < estimatedHeight + lineHeight
@@ -5645,6 +5666,7 @@ function MarkdownNotebookEditor({
                             placement={floatingToolbar.placement}
                             top={floatingToolbar.top}
                             left={floatingToolbar.left}
+                            docked={floatingToolbar.docked}
                             showInlineActions={
                                 (floatingToolbar.textRanges.length > 0 || floatingToolbar.listItemRanges.length > 0) &&
                                 floatingToolbar.codeRanges.length === 0

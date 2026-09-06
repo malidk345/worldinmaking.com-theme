@@ -104,6 +104,7 @@ export type FloatingToolbarState = {
     top: number
     left: number
     isLinkEditorOpen?: boolean
+    docked?: boolean
 }
 
 export type FloatingToolbarPointerAnchor = {
