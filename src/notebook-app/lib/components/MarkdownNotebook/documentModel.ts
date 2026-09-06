@@ -689,15 +689,14 @@ export function planDeleteTextAtSelection(
     const end = Math.max(start, Math.min(Math.max(selectionStart, selectionEnd), textLength))
 
     if (start !== end) {
-        const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, start)
-        const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, end - start)
+        const deletion = planDeleteInlineChildrenRange(node.children, start, end)
         return {
             kind: 'replace',
             nodes: replaceNodeAt(nodes, nodeIndex, {
                 ...node,
-                children: normalizeInlineNodes([...beforeSelection, ...afterSelection]),
+                children: deletion.children,
             }),
-            focus: { nodeId: node.id, start, end: start },
+            focus: { nodeId: node.id, start: deletion.start, end: deletion.end },
         }
     }
 
@@ -1613,6 +1612,30 @@ export function planInsertMarkdownAfter(
     return planInsertNodesAfter(nodes, nodeId, rekeyNotebookNodes(parseMarkdownNotebook(markdown).nodes, seed))
 }
 
+export type InlineChildrenRangePlan = {
+    children: NotebookInlineNode[]
+    start: number
+    end: number
+}
+
+/** Shared within-block selection delete used by EditableTextBlock and planDeleteTextAtSelection. */
+export function planDeleteInlineChildrenRange(
+    currentChildren: NotebookInlineNode[],
+    selectionStart: number,
+    selectionEnd: number
+): InlineChildrenRangePlan {
+    const textLength = getInlineText(currentChildren).length
+    const start = Math.max(0, Math.min(Math.min(selectionStart, selectionEnd), textLength))
+    const end = Math.max(start, Math.min(Math.max(selectionStart, selectionEnd), textLength))
+    const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(currentChildren, start)
+    const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, end - start)
+    return {
+        children: normalizeInlineNodes([...beforeSelection, ...afterSelection]),
+        start,
+        end: start,
+    }
+}
+
 export type InlineChildrenPastePlan = {
     children: NotebookInlineNode[]
     start: number
@@ -1625,8 +1648,8 @@ export function planPasteInlineChildren(
     selectionEnd: number,
     pastedChildren: NotebookInlineNode[]
 ): InlineChildrenPastePlan {
-    const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(currentChildren, selectionStart)
-    const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, Math.max(0, selectionEnd - selectionStart))
+    const deletion = planDeleteInlineChildrenRange(currentChildren, selectionStart, selectionEnd)
+    const [beforeSelection, afterSelection] = splitInlineNodesAt(deletion.children, deletion.start)
     const nextChildren = normalizeInlineNodes([...beforeSelection, ...pastedChildren, ...afterSelection])
     const caret = getInlineText(beforeSelection).length + getInlineText(pastedChildren).length
     return { children: nextChildren, start: caret, end: caret }
