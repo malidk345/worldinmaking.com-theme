@@ -1574,6 +1574,136 @@ export function getFocusAfterInsertedNodes(insertedNodes: NotebookBlockNode[]): 
     return null
 }
 
+
+export type MultiBlockTextBounds = {
+    start: number
+    end: number
+    textLength: number
+}
+
+export type MultiBlockSelectionReplacePlan = {
+    nodes: NotebookBlockNode[]
+    focus: RestoreInlineSelectionRequest | null
+    /** When focus is null, host should park caret on a surviving neighbor near this index. */
+    focusNeighborFromIndex: number
+}
+
+/**
+ * Multi-block selection delete/replace (Backspace/Delete/type-over across ≥2 blocks).
+ * Host resolves DOM selection into indexes + text-edge bounds; this owns the document math
+ * (same dual-host pattern as within-block `planDeleteInlineChildrenRange`).
+ */
+export function planReplaceMultiBlockSelection(
+    nodes: NotebookBlockNode[],
+    firstIndex: number,
+    lastIndex: number,
+    firstTextBounds: MultiBlockTextBounds | null,
+    lastTextBounds: MultiBlockTextBounds | null,
+    replacementText: string = ''
+): MultiBlockSelectionReplacePlan | null {
+    if (firstIndex < 0 || lastIndex <= firstIndex || lastIndex >= nodes.length) {
+        return null
+    }
+
+    const firstNode = nodes[firstIndex]
+    const lastNode = nodes[lastIndex]
+    if (!firstNode || !lastNode) {
+        return null
+    }
+
+    const selectedIndexes = new Set<number>()
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+        selectedIndexes.add(index)
+    }
+
+    const insertedChildren: NotebookInlineNode[] = replacementText
+        ? [{ type: 'text', text: replacementText }]
+        : []
+    const insertedTextLength = getInlineText(insertedChildren).length
+
+    let replacementNode: NotebookTextBlockNode | null = null
+    let restoreOffset = 0
+
+    if (isTextBlockNode(firstNode) && firstTextBounds) {
+        const [beforeSelection] = splitInlineNodesAt(firstNode.children, firstTextBounds.start)
+        const beforeTextLength = getInlineText(beforeSelection).length
+
+        if (isTextBlockNode(lastNode) && lastTextBounds) {
+            const [, afterSelection] = splitInlineNodesAt(lastNode.children, lastTextBounds.end)
+            const hasRemainingText =
+                firstTextBounds.start > 0 ||
+                insertedTextLength > 0 ||
+                lastTextBounds.end < lastTextBounds.textLength
+
+            if (hasRemainingText || firstIndex === 0) {
+                replacementNode = {
+                    ...firstNode,
+                    children: normalizeInlineNodes([
+                        ...beforeSelection,
+                        ...insertedChildren,
+                        ...afterSelection,
+                    ]),
+                }
+                restoreOffset = beforeTextLength + insertedTextLength
+            }
+        } else if (firstTextBounds.start > 0 || insertedTextLength > 0 || firstIndex === 0) {
+            replacementNode = {
+                ...firstNode,
+                children: normalizeInlineNodes([...beforeSelection, ...insertedChildren]),
+            }
+            restoreOffset = beforeTextLength + insertedTextLength
+        }
+    } else if (isTextBlockNode(lastNode) && lastTextBounds) {
+        const [, afterSelection] = splitInlineNodesAt(lastNode.children, lastTextBounds.end)
+        if (insertedTextLength > 0 || lastTextBounds.end < lastTextBounds.textLength) {
+            replacementNode = {
+                ...lastNode,
+                children: normalizeInlineNodes([...insertedChildren, ...afterSelection]),
+            }
+            restoreOffset = insertedTextLength
+        }
+    }
+
+    if (!replacementNode && firstIndex === 0) {
+        replacementNode = makeEmptyNotebookTitle(`delete-selection-${firstNode.id}`)
+        if (insertedChildren.length) {
+            replacementNode = { ...replacementNode, children: insertedChildren }
+            restoreOffset = insertedTextLength
+        }
+    } else if (!replacementNode && insertedChildren.length) {
+        replacementNode = {
+            ...makeEmptyParagraph(`replace-selection-${firstNode.id}`),
+            children: insertedChildren,
+        }
+        restoreOffset = insertedTextLength
+    }
+
+    const replacementNodes = replacementNode ? [replacementNode] : []
+    const nextNodes = nodes.flatMap((node, index) => {
+        if (index === firstIndex) {
+            return replacementNodes
+        }
+        return selectedIndexes.has(index) ? [] : [node]
+    })
+
+    const survivingIds = new Set(nextNodes.map((node) => node.id))
+    const removedRefIds = new Set(
+        [...selectedIndexes]
+            .map((index) => nodes[index])
+            .filter((node): node is NotebookBlockNode => !!node && !survivingIds.has(node.id))
+            .map(getDiscussionCommentRefId)
+            .filter((refId): refId is string => !!refId)
+    )
+
+    return {
+        nodes: stripNotebookRefMarksFromNodes(nextNodes, removedRefIds),
+        focus: replacementNode
+            ? { nodeId: replacementNode.id, start: restoreOffset, end: restoreOffset }
+            : null,
+        focusNeighborFromIndex: firstIndex,
+    }
+}
+
 export function planInsertNodesAfter(
     nodes: NotebookBlockNode[],
     nodeId: string,
