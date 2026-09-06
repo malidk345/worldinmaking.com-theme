@@ -217,7 +217,7 @@ function mergeRemoteIntoLocal(
     for (const id of remote.deletedIds) rememberDeletedNotebookId(id)
     const local = readLocalNotebooks()
     const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
-    const merged = mergeNotebookLists(local, remote.notebooks, deletedIds)
+    const merged = withCanonicalTemplates(mergeNotebookLists(local, remote.notebooks, deletedIds))
     writeAll(merged)
     const remoteById = new Map(remote.notebooks.map((nb) => [nb.id, nb]))
     const outgoing = merged.filter((nb) => {
@@ -268,7 +268,7 @@ function ensureRemoteHydrate(): void {
             const local = readLocalNotebooks()
             const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
             if (!remote.notebooks.length) {
-                const kept = mergeNotebookLists(local, [], deletedIds)
+                const kept = withCanonicalTemplates(mergeNotebookLists(local, [], deletedIds))
                 if (kept.length !== local.length) writeAll(kept)
                 const fresh = kept.filter(
                     (nb) =>
@@ -327,6 +327,59 @@ This is your scratchpad on WIM: a place to think in public form, without needing
 Start a new notebook anytime, or keep writing below.
 `
 
+const INTRODUCTION_TEMPLATE_ID = 'template-introduction'
+
+const RETIRED_TEMPLATE_IDS = new Set([
+    'template-feature-release',
+    'template-root-cause',
+    'template-sql-report',
+    'template-session-replay',
+    'template-ab-test',
+    'template-retention',
+    'template-feature-flag',
+    'template-introducing',
+    'template-release-plan',
+    'template-rca',
+])
+
+function isRetiredTemplate(notebook: StoredNotebook): boolean {
+    if (notebook.id === INTRODUCTION_TEMPLATE_ID) return false
+    if (RETIRED_TEMPLATE_IDS.has(notebook.id)) return true
+    return Boolean(notebook.isTemplate && notebook.id.startsWith('template-'))
+}
+
+function introductionTemplate(): StoredNotebook {
+    const now = new Date().toISOString()
+    return {
+        id: INTRODUCTION_TEMPLATE_ID,
+        short_id: 'tmpl-intro',
+        title: 'How to use a notebook',
+        content: WELCOME_CONTENT,
+        createdAt: now,
+        updatedAt: now,
+        pinned: false,
+        version: 1,
+        isTemplate: true,
+        isPublished: false,
+        created_by: { first_name: 'WIM', email: 'hello@worldinmaking.com' },
+    }
+}
+
+function withCanonicalTemplates(notebooks: StoredNotebook[]): StoredNotebook[] {
+    const kept: StoredNotebook[] = []
+    for (const notebook of notebooks) {
+        if (isRetiredTemplate(notebook)) {
+            rememberDeletedNotebookId(notebook.id)
+            continue
+        }
+        kept.push(notebook)
+    }
+    if (!kept.some((notebook) => notebook.id === INTRODUCTION_TEMPLATE_ID)) {
+        kept.unshift(introductionTemplate())
+    }
+    return kept
+}
+
 function newWelcomeNotebook(): StoredNotebook {
     const id =
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -346,15 +399,16 @@ function newWelcomeNotebook(): StoredNotebook {
     }
 }
 
-export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [newWelcomeNotebook()]
+export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [introductionTemplate(), newWelcomeNotebook()]
 
 function seedDefaults(): StoredNotebook[] {
     const deleted = readLocalDeletedNotebookIds()
     if (deleted.includes('welcome-notebook') || deleted.includes('welcome')) {
-        setLocalStorageItem(storageKey(), '[]')
-        return []
+        const seed = withCanonicalTemplates([])
+        setLocalStorageItem(storageKey(), JSON.stringify(seed))
+        return seed
     }
-    const seed = [newWelcomeNotebook()]
+    const seed = withCanonicalTemplates([newWelcomeNotebook()])
     setLocalStorageItem(storageKey(), JSON.stringify(seed))
     for (const key of LEGACY_STORAGE_KEYS) {
         try {
@@ -488,8 +542,9 @@ function readLocalNotebooks(): StoredNotebook[] {
             try {
                 const parsed = JSON.parse(legacy) as StoredNotebook[]
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    writeAll(parsed)
-                    return parsed
+                    const kept = withCanonicalTemplates(parsed)
+                    writeAll(kept)
+                    return kept
                 }
             } catch {
                 /* fall through */
@@ -506,8 +561,12 @@ function readLocalNotebooks(): StoredNotebook[] {
             inMemoryNotebooksCache = seeded
             return seeded
         }
-        inMemoryNotebooksCache = parsed
-        return parsed
+        const kept = withCanonicalTemplates(parsed)
+        if (kept.length !== parsed.length || !parsed.some((notebook) => notebook.id === INTRODUCTION_TEMPLATE_ID)) {
+            writeAll(kept)
+        }
+        inMemoryNotebooksCache = kept
+        return kept
     } catch {
         const seeded = seedDefaults()
         inMemoryNotebooksCache = seeded

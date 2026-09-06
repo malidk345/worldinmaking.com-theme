@@ -18,6 +18,7 @@ import {
     type NotebookPendingInvite,
 } from '../../../lib/notebook-collaborators-client'
 import { canManageNotebookPeople, type NotebookShareRole } from '../../../lib/notebook-sharing'
+import { NotebookTag } from './NotebookMeta'
 import { getAuthUserId } from '../../../lib/wim-identity'
 
 export type NotebookShareTab = 'private' | 'publish'
@@ -328,11 +329,7 @@ export function NotebookPublishPanel({
                 <p className="m-0 text-[13px] text-secondary leading-snug">
                     {isPublished ? 'Live on your profile and anyone with the link.' : 'Draft. Not listed on your profile.'}
                 </p>
-                {isPublished ? (
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-green">Live</span>
-                ) : (
-                    <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted">Draft</span>
-                )}
+                {isPublished ? <NotebookTag>Live</NotebookTag> : <NotebookTag>Draft</NotebookTag>}
             </div>
             {isPublished ? (
                 <OSButton

@@ -72,6 +72,9 @@ import {
     notebookPreviewExcerpt,
 } from '../src/notebook-app/scenes/notebooks/notebookPreview'
 import {
+    addCalendarMonths,
+    buildMonthWeeks,
+    CALENDAR_DAY_LABELS,
     collectNotebookTasks,
     dateFromKey,
     extractNotebookTasks,
@@ -719,6 +722,19 @@ test.describe('notebook frontend helpers', () => {
         expect(collectNotebookTasks([{ id: 't', title: 'Template', content: '- [ ] Hidden', isTemplate: true }])).toEqual(
             []
         )
+    })
+
+    test('daily calendar grid matches PostHog Sunday-start month padding', () => {
+        expect(CALENDAR_DAY_LABELS).toEqual(['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa'])
+        const weeks = buildMonthWeeks(dateFromKey('2026-09-01')!)
+        expect(weeks).toHaveLength(5)
+        expect(weeks.every((week) => week.length === 7)).toBe(true)
+        expect(todayKey(weeks[0][0])).toBe('2026-08-30')
+        expect(todayKey(weeks[0][2])).toBe('2026-09-01')
+        expect(todayKey(weeks[4][6])).toBe('2026-10-03')
+        const next = addCalendarMonths(dateFromKey('2026-09-15')!, 1)
+        expect(next.getFullYear()).toBe(2026)
+        expect(next.getMonth()).toBe(9)
     })
 
     test('idle background pulls do not show Sync failed', () => {

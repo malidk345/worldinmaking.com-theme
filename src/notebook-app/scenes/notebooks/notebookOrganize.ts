@@ -41,6 +41,37 @@ export function dateFromKey(key: string): Date | null {
     return Number.isNaN(date.getTime()) ? null : date
 }
 
+/** Sunday-first labels, same order as PostHog LemonCalendar. */
+export const CALENDAR_DAY_LABELS = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa'] as const
+
+export function addCalendarMonths(anchor: Date, delta: number): Date {
+    const year = anchor.getFullYear()
+    const month = anchor.getMonth() + delta
+    return new Date(year, month, 1, 12, 0, 0)
+}
+
+/** Month grid used by LemonCalendar: pad to full weeks, Sunday start unless `weekStartDay` is set. */
+export function buildMonthWeeks(anchor: Date, weekStartDay = 0): Date[][] {
+    const year = anchor.getFullYear()
+    const month = anchor.getMonth()
+    const startOfMonth = new Date(year, month, 1, 12, 0, 0)
+    const endOfMonth = new Date(year, month + 1, 0, 12, 0, 0)
+    const leading = (startOfMonth.getDay() - weekStartDay + 7) % 7
+    const trailing = (weekStartDay + 6 - endOfMonth.getDay() + 7) % 7
+    const cursor = new Date(year, month, 1 - leading, 12, 0, 0)
+    const last = new Date(year, month + 1, 0 + trailing, 12, 0, 0)
+    const weeks: Date[][] = []
+    while (cursor.getTime() <= last.getTime()) {
+        const week: Date[] = []
+        for (let day = 0; day < 7; day++) {
+            week.push(new Date(cursor))
+            cursor.setDate(cursor.getDate() + 1)
+        }
+        weeks.push(week)
+    }
+    return weeks
+}
+
 export function parseTaskDue(text: string): string | undefined {
     const match = String(text || '').match(/\b(?:due|by)[:\s]+(\d{4}-\d{2}-\d{2})\b/i)
     return match?.[1]

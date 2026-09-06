@@ -5,6 +5,53 @@ import Tooltip from 'components/RadixUI/Tooltip'
 
 export type NotebookChromeSyncStatus = 'saved' | 'edited' | 'local' | 'error' | 'offline'
 
+const NAVY = '#1D4ED8'
+const NAVY_FILL = 'rgba(29, 78, 216, 0.1)'
+
+const tagBox: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '2px 6px',
+    border: `1px solid ${NAVY}`,
+    borderRadius: 4,
+    background: NAVY_FILL,
+    color: NAVY,
+    fontWeight: 400,
+    lineHeight: 1,
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+}
+
+const syncTagStyle: React.CSSProperties = { ...tagBox, fontSize: 14 }
+const compactTagStyle: React.CSSProperties = { ...tagBox, fontSize: 12 }
+const errorTagStyle: React.CSSProperties = {
+    ...syncTagStyle,
+    border: '1px solid #dc2626',
+    background: 'rgba(220, 38, 38, 0.1)',
+    color: '#dc2626',
+}
+
+export function NotebookTag({
+    children,
+    className = '',
+    onClick,
+}: {
+    children: React.ReactNode
+    className?: string
+    onClick?: (event: React.MouseEvent) => void
+}): JSX.Element {
+    return (
+        <span
+            role={onClick ? 'button' : undefined}
+            onClick={onClick}
+            className={`shrink-0 ${className}`}
+            style={compactTagStyle}
+        >
+            {children}
+        </span>
+    )
+}
+
 export interface NotebookSyncInfoProps {
     syncStatus: NotebookChromeSyncStatus
     message?: string
@@ -43,11 +90,9 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
                     className={`inline-flex items-center ${canRetry ? 'cursor-pointer' : 'cursor-default'}`}
                 >
                     <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded-sm border text-sm font-normal leading-none ${
-                            syncStatus === 'error' || syncStatus === 'offline'
-                                ? 'border-red text-red bg-red/10'
-                                : 'border-navy text-navy bg-navy/10'
-                        }`}
+                        style={
+                            syncStatus === 'error' || syncStatus === 'offline' ? errorTagStyle : syncTagStyle
+                        }
                     >
                         {statusText[syncStatus]}
                     </span>

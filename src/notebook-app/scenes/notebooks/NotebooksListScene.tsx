@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { LemonTag, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { NotebookTag } from './NotebookMeta'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import { notebookMatchesQuery } from './notebookPreview'
-import { IconCalendar, IconCheckCircle, IconCopy, IconEllipsis, IconFolder, IconNotebook, IconPlus, IconTrash } from '@posthog/icons'
+import { IconCheckCircle, IconCopy, IconEllipsis, IconFolder, IconNotebook, IconPlus, IconTrash } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { Fieldset } from 'components/OSFieldset'
 import { Checkbox } from 'components/RadixUI/Checkbox'
@@ -40,6 +41,7 @@ import {
     toggleTaskLine,
 } from './notebookOrganize'
 import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
+import { NotebookDailyCalendar } from './NotebookDailyCalendar'
 
 interface NotebooksListSceneProps {
     onSelectNotebook: (id: string) => void
@@ -54,24 +56,6 @@ function timeAgo(dateStr: string): string {
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
     return new Date(dateStr).toLocaleDateString()
-}
-
-function TagChip({
-    tag,
-    onClick,
-}: {
-    tag: string
-    onClick?: (event: React.MouseEvent) => void
-}): JSX.Element {
-    return (
-        <span
-            role={onClick ? 'button' : undefined}
-            onClick={onClick}
-            className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none"
-        >
-            #{tag}
-        </span>
-    )
 }
 
 export function NotebooksListScene({
@@ -185,6 +169,9 @@ export function NotebooksListScene({
 
     const folders = listNotebookFolders(notebooks)
     const tags = listNotebookTags(notebooks)
+    const dailyDates = notebooks
+        .filter((notebook) => notebook.kind === 'daily' && notebook.dailyDate)
+        .map((notebook) => notebook.dailyDate as string)
     const allTasks = collectNotebookTasks(notebooks)
     const tasks = collectNotebookTasks(filteredNotebooks)
     const taskGroups = groupNotebookTasks(tasks)
@@ -277,9 +264,10 @@ export function NotebooksListScene({
             width: '100%',
             render: function RenderTitle(_: any, notebook: StoredNotebook) {
                 return (
+                    <div className="flex flex-wrap items-center gap-1.5">
                     <a
                         data-attr="notebook-title"
-                        className="Link font-semibold flex flex-wrap items-center gap-2 cursor-pointer no-underline text-primary hover:underline text-sm"
+                        className="Link font-semibold cursor-pointer no-underline text-primary hover:underline text-sm"
                         onClick={(e) => {
                             e.preventDefault()
                             onSelectNotebook(notebook.id)
@@ -288,6 +276,7 @@ export function NotebooksListScene({
                         href={`/notebooks/${notebook.id}`}
                     >
                         <span className="whitespace-normal break-words">{notebook.title || 'Untitled'}</span>
+                    </a>
                         {notebook.folder ? (
                             <span
                                 role="button"
@@ -305,9 +294,8 @@ export function NotebooksListScene({
                             </span>
                         ) : null}
                         {uniqueTags(notebook.tags).map((tag) => (
-                            <TagChip
+                            <NotebookTag
                                 key={tag}
-                                tag={tag}
                                 onClick={(event) => {
                                     event.preventDefault()
                                     event.stopPropagation()
@@ -316,21 +304,19 @@ export function NotebooksListScene({
                                     setFolderFilter('')
                                     setTagFilter(tag)
                                 }}
-                            />
+                            >
+                                #{tag}
+                            </NotebookTag>
                         ))}
-                        {notebook.kind === 'daily' && <LemonTag type="highlight">DAILY</LemonTag>}
-                        {notebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
-                        {notebook.isPublished && !notebook.isTemplate && (
-                            <LemonTag type="completion" size="small">
-                                Live
-                            </LemonTag>
-                        )}
+                        {notebook.kind === 'daily' && <NotebookTag>Daily</NotebookTag>}
+                        {notebook.isTemplate && <NotebookTag>Template</NotebookTag>}
+                        {notebook.isPublished && !notebook.isTemplate && <NotebookTag>Live</NotebookTag>}
                         {notebook.access_role && notebook.access_role !== 'owner' && (
-                            <LemonTag type="highlight" size="small">
+                            <NotebookTag>
                                 {notebook.access_role === 'viewer' ? 'Shared' : 'Shared · edit'}
-                            </LemonTag>
+                            </NotebookTag>
                         )}
-                    </a>
+                    </div>
                 )
             },
             sorter: (a: StoredNotebook, b: StoredNotebook) =>
@@ -544,20 +530,11 @@ export function NotebooksListScene({
                             >
                                 Today
                             </OSButton>
-                            <label className="flex items-center gap-2 px-1 py-0.5 text-xs text-muted">
-                                <IconCalendar className="size-3.5 shrink-0" />
-                                <input
-                                    type="date"
-                                    value={dailyJump}
-                                    onChange={(event) => {
-                                        const next = event.target.value
-                                        if (!next) return
-                                        handleOpenDaily(next)
-                                    }}
-                                    className="min-w-0 flex-1 rounded-sm border border-primary bg-primary px-1.5 py-1 text-xs text-primary"
-                                    aria-label="Open daily note for date"
-                                />
-                            </label>
+                            <NotebookDailyCalendar
+                                selected={dailyJump}
+                                markedDates={dailyDates}
+                                onSelect={handleOpenDaily}
+                            />
                             <OSButton
                                 size="sm"
                                 width="full"
@@ -567,9 +544,7 @@ export function NotebooksListScene({
                                 onClick={() => setListView((current) => (current === 'tasks' ? 'notebooks' : 'tasks'))}
                             >
                                 <span className="flex-1 truncate text-left">Tasks</span>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none tabular-nums">
-                                    {openTaskCount}
-                                </span>
+                                <NotebookTag>{openTaskCount}</NotebookTag>
                             </OSButton>
                         </div>
                         <div className="px-2 pt-2 pb-1">
@@ -798,9 +773,7 @@ export function NotebooksListScene({
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center justify-between gap-2 px-1">
                                     <p className="m-0 text-sm font-semibold text-primary">Tasks</p>
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none tabular-nums">
-                                        {tasks.filter((task) => !task.done).length} open
-                                    </span>
+                                    <NotebookTag>{tasks.filter((task) => !task.done).length} open</NotebookTag>
                                 </div>
                                 {tasks.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
@@ -850,8 +823,8 @@ export function NotebooksListScene({
                                                             {task.text}
                                                         </span>
                                                         {task.due ? (
-                                                            <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded-sm border border-navy text-navy bg-navy/10 text-xs font-normal leading-none">
-                                                                due {task.due}
+                                                            <span className="mt-0.5">
+                                                                <NotebookTag>due {task.due}</NotebookTag>
                                                             </span>
                                                         ) : null}
                                                     </button>

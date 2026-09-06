@@ -51,7 +51,7 @@ const NOTEBOOK_PALETTE_CSS = `
   --color-text-primary: rgb(var(--text-primary, 17 17 17));
   --text-3000: rgb(var(--text-primary, 17 17 17));
 }
-/* PostHog \`border-border\` is not a host utility — it fell through to currentColor (black). */
+/* PostHog border-border is not a host utility; it fell through to currentColor (black). */
 .notebook-app-scope .border-border {
   border-color: rgb(var(--border));
 }
