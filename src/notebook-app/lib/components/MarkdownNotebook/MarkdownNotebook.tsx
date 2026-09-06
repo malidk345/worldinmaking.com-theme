@@ -96,15 +96,12 @@ import {
     stripNotebookRefMarksFromNodes,
     mapRestoreSelectionThroughDocumentChange,
     setsEqual,
-    textBlocksShareContinuationStyle,
     planDeleteEmptyCodeBlock,
     planDeleteTextAtSelection,
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
     planInsertNodesAtBoundary,
     planApplyBlockStyle,
-    planMergeAdjacentTextBlocks,
-    planMergeTextIntoPreviousNonText,
     planReplaceCodeBlockRange,
     shouldInsertParagraphBelowTrailingCode,
     type TextBackspacePlan,
@@ -1675,19 +1672,6 @@ function MarkdownNotebookEditor({
         [commitDocument]
     )
 
-    // Backspace at the start of a text block whose previous sibling is not a text block: the
-    // previous block must never be deleted wholesale — the caret moves into its trailing edge
-    // (merging the text into a trailing list item where possible) so further backspaces delete
-    // characters.
-    const mergeTextBlockIntoPreviousBlock = useCallback(
-        (nodeIndex: number): boolean => {
-            const nodes = documentRef.current.nodes.length ? documentRef.current.nodes : [emptyNodeRef.current]
-            const plan = planMergeTextIntoPreviousNonText(nodes, nodeIndex)
-            return plan ? applyTextBackspacePlan(plan) : false
-        },
-        [applyTextBackspacePlan]
-    )
-
     const deleteTextAtCurrentSelection = useCallback(
         (direction: 'backward' | 'forward'): boolean => {
             const notebookElement = notebookRef.current
@@ -1933,33 +1917,6 @@ function MarkdownNotebookEditor({
         [commitDocument]
     )
 
-    const deleteNodeBefore = useCallback(
-        (nodeId: string, options: { requireSameTextStyle?: boolean } = {}): boolean => {
-            const currentDocument = documentRef.current
-            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            if (nodeIndex <= 0) {
-                return false
-            }
-
-            const previousNode = nodes[nodeIndex - 1]
-            const currentNode = nodes[nodeIndex]
-            if (isTextBlockNode(previousNode) && isTextBlockNode(currentNode)) {
-                if (options.requireSameTextStyle && !textBlocksShareContinuationStyle(previousNode, currentNode)) {
-                    return false
-                }
-                const plan = planMergeAdjacentTextBlocks(nodes, nodeIndex)
-                return plan ? applyTextBackspacePlan(plan) : false
-            }
-
-            if (options.requireSameTextStyle) {
-                return false
-            }
-
-            return mergeTextBlockIntoPreviousBlock(nodeIndex)
-        },
-        [applyTextBackspacePlan, mergeTextBlockIntoPreviousBlock]
-    )
 
     const openAIPrompt = useCallback(
         (
@@ -3739,28 +3696,6 @@ function MarkdownNotebookEditor({
         return true
     }, [insertEmptyParagraphAfterNode])
 
-    const deleteNodeAndFocusPrevious = useCallback(
-        (nodeId: string): boolean => {
-            const currentDocument = documentRef.current
-            const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            if (nodeIndex <= 0) {
-                return false
-            }
-
-            const previousNode = nodes[nodeIndex - 1]
-            if (!previousNode || !requestFocusForNode(previousNode, 'end')) {
-                return false
-            }
-
-            commitDocument({
-                ...currentDocument,
-                nodes: nodes.filter((_, index) => index !== nodeIndex),
-            })
-            return true
-        },
-        [commitDocument, requestFocusForNode]
-    )
 
     const focusPreviousNodeAtBoundaryEnd = useCallback(
         (boundaryIndex: number): void => {
@@ -5248,10 +5183,9 @@ function MarkdownNotebookEditor({
                         requestFocusAfterRemovingNode(node.id)
                         deleteNodeWithRefCleanup(node.id)
                     },
-                    deleteNodeAndFocusPrevious,
                     deleteSelectedNotebookBlocks,
+                    deleteTextAtSelection: deleteTextAtCurrentSelection,
                     insertParagraphAfterNode: () => insertEmptyParagraphAfterNode(node.id),
-                    deleteNodeBefore,
                     moveFocusToAdjacentNode,
                     openInsertMenu: (query = '') => openInsertMenu(node.id, query),
                     openSlashMenuAtToken: (token, children) => {

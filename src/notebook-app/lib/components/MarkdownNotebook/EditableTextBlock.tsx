@@ -19,7 +19,6 @@ import {
     SlashToken,
     getTextBlockShortcutReplacement,
     isTextBlockNode,
-    planDowngradeTextBlockToParagraph,
     planPasteInlineChildren,
     planPasteIntoTextBlock,
     shouldUseMarkdownPaste,
@@ -55,8 +54,7 @@ export function EditableTextBlock({
     updateNode,
     replaceNodeWithNodes,
     deleteSelectedNotebookBlocks,
-    deleteNodeAndFocusPrevious,
-    deleteNodeBefore,
+    deleteTextAtSelection,
     moveFocusToAdjacentNode,
     openInsertMenu,
     openSlashMenuAtToken,
@@ -87,8 +85,7 @@ export function EditableTextBlock({
     updateNode: (nodeId: string, updater: (node: NotebookBlockNode) => NotebookBlockNode | null) => void
     replaceNodeWithNodes: (nodeId: string, replacementNodes: NotebookBlockNode[]) => void
     deleteSelectedNotebookBlocks: () => boolean
-    deleteNodeAndFocusPrevious: (nodeId: string) => boolean
-    deleteNodeBefore: (nodeId: string, options?: { requireSameTextStyle?: boolean }) => boolean
+    deleteTextAtSelection: (direction: 'backward' | 'forward') => boolean
     moveFocusToAdjacentNode: (nodeId: string, direction: InsertMenuSelectionDirection, offset: number) => boolean
     openInsertMenu: (query?: string) => void
     openSlashMenuAtToken?: (token: SlashToken, children: NotebookInlineNode[]) => boolean
@@ -190,19 +187,6 @@ export function EditableTextBlock({
 
     const updateFromElement = (element: HTMLElement): NotebookInlineNode[] =>
         updateChildren(htmlElementToInlineNodes(element))
-
-    const replaceWithParagraph = (start = 0, end = start): void => {
-        closeInsertMenu()
-        updateNode(node.id, (currentNode) => {
-            if (!isTextBlockNode(currentNode)) {
-                return currentNode
-            }
-
-            // Shared with planDeleteTextAtSelection: quoted heading stays quote text.
-            return planDowngradeTextBlockToParagraph(currentNode)
-        })
-        restoreSelectionRef.current = { nodeId: node.id, start, end }
-    }
 
     const pasteMarkdownNodes = (
         element: HTMLElement,
@@ -500,47 +484,17 @@ export function EditableTextBlock({
                 return
             }
 
-            const selection = getCollapsedSelectionRange(event.currentTarget, node.id)
-            if (isTitleBlock && event.key === 'Backspace' && selection?.start === 0 && selection.end === 0) {
+            // Same plan MarkdownNotebook.deleteTextAtCurrentSelection uses (beforeinput / host keyboard).
+            if (
+                deleteTextAtSelection(event.key === 'Backspace' ? 'backward' : 'forward')
+            ) {
                 event.preventDefault()
                 event.stopPropagation()
-                restoreSelectionRef.current = { nodeId: node.id, start: 0, end: 0 }
                 return
             }
 
-            if (isEmpty && !isTitleBlock && node.type === 'paragraph' && event.key === 'Backspace') {
-                event.preventDefault()
-                if (!deleteNodeAndFocusPrevious(node.id)) {
-                    updateNode(node.id, () => null)
-                }
-                return
-            }
-
-            if (
-                !isTitleBlock &&
-                event.key === 'Backspace' &&
-                (node.type === 'heading' || node.type === 'blockquote') &&
-                selection?.start === 0 &&
-                selection.end === 0
-            ) {
-                event.preventDefault()
-                if (deleteNodeBefore(node.id, { requireSameTextStyle: true })) {
-                    return
-                }
-                replaceWithParagraph(0)
-                return
-            }
-
-            if (
-                event.key === 'Backspace' &&
-                selection?.start === 0 &&
-                selection.end === 0 &&
-                deleteNodeBefore(node.id)
-            ) {
-                event.preventDefault()
-                return
-            }
-
+            // planDeleteTextAtSelection only owns Backspace-at-start merges; Delete on an empty
+            // non-title block still needs a local remove (forward direction returns null).
             if (isEmpty && !isTitleBlock) {
                 event.preventDefault()
                 updateNode(node.id, () => null)
