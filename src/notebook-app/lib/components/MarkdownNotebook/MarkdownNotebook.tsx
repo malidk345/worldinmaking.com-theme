@@ -93,12 +93,12 @@ import {
     isTextBlockNode,
     makeEmptyNotebookTitle,
     removeNotebookNodesWithRefCleanup,
-    stripNotebookRefMarksFromNodes,
     mapRestoreSelectionThroughDocumentChange,
     setsEqual,
     textBlocksShareContinuationStyle,
     planDeleteEmptyCodeBlock,
     planDeleteTextAtSelection,
+    planReplaceMultiBlockSelection,
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
     planInsertNodesAtBoundary,
@@ -1064,99 +1064,39 @@ function MarkdownNotebookEditor({
 
             const firstEntry = selectedEntries[0]
             const lastEntry = selectedEntries[selectedEntries.length - 1]
-            const selectedIndexes = new Set(selectedEntries.map((entry) => entry.index))
-            let replacementNode: NotebookTextBlockNode | null = null
-            let restoreOffset = 0
-            const insertedChildren: NotebookInlineNode[] = replacementText
-                ? [{ type: 'text', text: replacementText }]
-                : []
-            const insertedTextLength = getInlineText(insertedChildren).length
-
-            if (isTextBlockNode(firstEntry.node)) {
-                const firstBounds = getNormalizedSelectionBounds(firstEntry.node, firstEntry.element)
-                const [beforeSelection] = splitInlineNodesAt(firstEntry.node.children, firstBounds.start)
-                const beforeTextLength = getInlineText(beforeSelection).length
-
-                if (isTextBlockNode(lastEntry.node)) {
-                    const lastBounds = getNormalizedSelectionBounds(lastEntry.node, lastEntry.element)
-                    const [, afterSelection] = splitInlineNodesAt(lastEntry.node.children, lastBounds.end)
-                    const hasRemainingText =
-                        firstBounds.start > 0 || insertedTextLength > 0 || lastBounds.end < lastBounds.textLength
-
-                    if (hasRemainingText || firstEntry.index === 0) {
-                        replacementNode = {
-                            ...firstEntry.node,
-                            children: normalizeInlineNodes([
-                                ...beforeSelection,
-                                ...insertedChildren,
-                                ...afterSelection,
-                            ]),
-                        }
-                        restoreOffset = beforeTextLength + insertedTextLength
-                    }
-                } else if (firstBounds.start > 0 || insertedTextLength > 0 || firstEntry.index === 0) {
-                    replacementNode = {
-                        ...firstEntry.node,
-                        children: normalizeInlineNodes([...beforeSelection, ...insertedChildren]),
-                    }
-                    restoreOffset = beforeTextLength + insertedTextLength
-                }
-            } else if (isTextBlockNode(lastEntry.node)) {
-                const lastBounds = getNormalizedSelectionBounds(lastEntry.node, lastEntry.element)
-                const [, afterSelection] = splitInlineNodesAt(lastEntry.node.children, lastBounds.end)
-                if (insertedTextLength > 0 || lastBounds.end < lastBounds.textLength) {
-                    replacementNode = {
-                        ...lastEntry.node,
-                        children: normalizeInlineNodes([...insertedChildren, ...afterSelection]),
-                    }
-                    restoreOffset = insertedTextLength
-                }
+            const firstTextBounds =
+                isTextBlockNode(firstEntry.node)
+                    ? getNormalizedSelectionBounds(firstEntry.node, firstEntry.element)
+                    : null
+            const lastTextBounds =
+                isTextBlockNode(lastEntry.node)
+                    ? getNormalizedSelectionBounds(lastEntry.node, lastEntry.element)
+                    : null
+            const plan = planReplaceMultiBlockSelection(
+                nodes,
+                firstEntry.index,
+                lastEntry.index,
+                firstTextBounds,
+                lastTextBounds,
+                replacementText
+            )
+            if (!plan) {
+                return false
             }
 
-            if (!replacementNode && firstEntry.index === 0) {
-                replacementNode = makeEmptyNotebookTitle(`delete-selection-${firstEntry.node.id}`)
-                if (insertedChildren.length) {
-                    replacementNode.children = insertedChildren
-                    restoreOffset = insertedTextLength
-                }
-            } else if (!replacementNode && insertedChildren.length) {
-                replacementNode = makeEmptyParagraph(`replace-selection-${firstEntry.node.id}`)
-                replacementNode.children = insertedChildren
-                restoreOffset = insertedTextLength
-            }
-
-            const replacementNodes = replacementNode ? [replacementNode] : []
-            const nextNodes = nodes.flatMap((node, index) => {
-                if (index === firstEntry.index) {
-                    return replacementNodes
-                }
-                return selectedIndexes.has(index) ? [] : [node]
-            })
-
-            if (replacementNode) {
-                restoreSelectionRef.current = {
-                    nodeId: replacementNode.id,
-                    start: restoreOffset,
-                    end: restoreOffset,
-                }
+            if (plan.focus) {
+                restoreSelectionRef.current = plan.focus
             } else {
-                requestFocusForDeletedSelection(nextNodes, firstEntry.index)
+                requestFocusForDeletedSelection(plan.nodes, plan.focusNeighborFromIndex)
             }
 
             selection.removeAllRanges()
             setSelectedComponentNodeIds(new Set())
             floatingToolbarPositionLockRef.current = null
             setFloatingToolbar(null)
-            const survivingIds = new Set(nextNodes.map((node) => node.id))
-            const removedRefIds = new Set(
-                selectedEntries
-                    .filter((entry) => !survivingIds.has(entry.node.id))
-                    .map((entry) => getDiscussionCommentRefId(entry.node))
-                    .filter((refId): refId is string => !!refId)
-            )
             commitDocument({
                 ...currentDocument,
-                nodes: stripNotebookRefMarksFromNodes(nextNodes, removedRefIds),
+                nodes: plan.nodes,
             })
             return true
         },
