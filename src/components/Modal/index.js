@@ -1,6 +1,5 @@
-import { Dialog, Transition } from '@headlessui/react'
+import { Dialog, DialogBackdrop, DialogPanel, Transition } from '@headlessui/react'
 import React, { Fragment } from 'react'
-import { motion } from 'framer-motion'
 
 export default function Modal({ open, setOpen, children }) {
     return (
@@ -20,8 +19,8 @@ export default function Modal({ open, setOpen, children }) {
                 onClose={() => setOpen(false)}
                 className="fixed z-[99999999999] inset-0 overflow-y-auto box-border"
             >
-                <Dialog.Overlay className="fixed inset-0 bg-accent" />
-                {children}
+                <DialogBackdrop className="fixed inset-0 bg-accent" />
+                <DialogPanel className="relative h-full">{children}</DialogPanel>
             </Dialog>
         </Transition>
     )

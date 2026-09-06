@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { IconChevronLeft, IconChevronRight, IconSparkles } from '@posthog/icons'
+import { IconChat, IconChevronLeft, IconChevronRight } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import Avatar from 'components/Squeak/components/Avatar'
@@ -144,9 +144,8 @@ export function CollaboratorsBanner({
                 {onOpenAskAi ? (
                     <OSButton
                         size="md"
-                        icon={<IconSparkles className="text-navy fill-current" />}
-                        iconClassName="text-navy"
-                        tooltip="Ask AI"
+                        icon={<IconChat />}
+                        tooltip="WIM AI"
                         onClick={onOpenAskAi}
                     />
                 ) : null}
