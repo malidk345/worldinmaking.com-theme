@@ -315,3 +315,65 @@ export function planSplitTextBlock(
         focus: { nodeId: nextParagraph.id, start: 0, end: 0 },
     }
 }
+
+
+export type OpenDetachedInsertMenuPlan =
+    | {
+          kind: 'reuse-empty'
+          focus: RestoreInlineSelectionRequest
+          menu: InsertMenuState
+      }
+    | {
+          kind: 'insert-detached'
+          nodes: NotebookBlockNode[]
+          focus: RestoreInlineSelectionRequest
+          menu: InsertMenuState
+      }
+
+/**
+ * Shared plan for the inline + button inside a text group: empty blocks reopen the menu
+ * on the same node; non-empty blocks insert a temporary detached slash-command paragraph
+ * after the block (removed on dismiss via removeNodeOnClose).
+ */
+export function planOpenDetachedInsertMenuFromNode(
+    nodes: NotebookBlockNode[],
+    nodeId: string,
+    query: string = ''
+): OpenDetachedInsertMenuPlan | null {
+    const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
+    const node = nodes[nodeIndex]
+    if (nodeIndex <= 0 || !node || !isTextBlockNode(node)) {
+        return null
+    }
+
+    if (!getInlineText(node.children).trim()) {
+        return {
+            kind: 'reuse-empty',
+            focus: { nodeId, start: query.length, end: query.length },
+            menu: {
+                nodeId,
+                query,
+                selectedIndex: 0,
+                mode: 'tools',
+            },
+        }
+    }
+
+    const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
+    commandNode.children = query ? [{ type: 'text', text: query }] : []
+    commandNode.startsGroup = true
+
+    return {
+        kind: 'insert-detached',
+        nodes: [...nodes.slice(0, nodeIndex + 1), commandNode, ...nodes.slice(nodeIndex + 1)],
+        focus: { nodeId: commandNode.id, start: query.length, end: query.length },
+        menu: {
+            nodeId: commandNode.id,
+            query,
+            selectedIndex: 0,
+            mode: 'tools',
+            detached: true,
+            removeNodeOnClose: true,
+        },
+    }
+}

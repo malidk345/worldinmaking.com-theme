@@ -200,6 +200,7 @@ import {
     nextOpenInsertMenuState,
     planDismissSlashMenu,
     planInsertAtBoundary,
+    planOpenDetachedInsertMenuFromNode,
     planListItemTypedSlash,
     planRemoveTemporaryInsertNode,
     planSlashInsertAtListCaret,
@@ -3270,36 +3271,17 @@ function MarkdownNotebookEditor({
         (nodeId: string, query: string = ''): boolean => {
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            const node = nodes[nodeIndex]
-            if (nodeIndex <= 0 || !node || !isTextBlockNode(node)) {
+            const plan = planOpenDetachedInsertMenuFromNode(nodes, nodeId, query)
+            if (!plan) {
                 return false
             }
 
-            if (!getInlineText(node.children).trim()) {
-                restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
-                onInteractionStateChange?.(true)
-                setInsertMenu({ nodeId, query, selectedIndex: 0, mode: 'tools' })
-                return true
-            }
-
-            const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
-            commandNode.children = query ? [{ type: 'text', text: query }] : []
-            commandNode.startsGroup = true
-            restoreSelectionRef.current = { nodeId: commandNode.id, start: query.length, end: query.length }
+            restoreSelectionRef.current = plan.focus
             onInteractionStateChange?.(true)
-            setInsertMenu({
-                nodeId: commandNode.id,
-                query,
-                selectedIndex: 0,
-                mode: 'tools',
-                detached: true,
-                removeNodeOnClose: true,
-            })
-            commitDocument({
-                ...currentDocument,
-                nodes: [...nodes.slice(0, nodeIndex + 1), commandNode, ...nodes.slice(nodeIndex + 1)],
-            })
+            setInsertMenu(plan.menu)
+            if (plan.kind === 'insert-detached') {
+                commitDocument({ ...currentDocument, nodes: plan.nodes })
+            }
             return true
         },
         [commitDocument, onInteractionStateChange]
