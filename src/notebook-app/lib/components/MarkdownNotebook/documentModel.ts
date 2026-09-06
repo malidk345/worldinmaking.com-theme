@@ -1555,6 +1555,36 @@ export function rekeyNotebookNodes(nodes: NotebookBlockNode[], seed: string): No
     })
 }
 
+export type MoveBlockToBoundaryPlan = {
+    nodes: NotebookBlockNode[]
+}
+
+/** Shared block reorder used by move up/down and drag-to-boundary. Title (index 0) never moves. */
+export function planMoveBlockToBoundary(
+    nodes: NotebookBlockNode[],
+    nodeId: string,
+    boundaryIndex: number
+): MoveBlockToBoundaryPlan | null {
+    const fromIndex = nodes.findIndex((node) => node.id === nodeId)
+    if (fromIndex <= 0) {
+        return null
+    }
+
+    const clampedBoundaryIndex = Math.max(1, Math.min(boundaryIndex, nodes.length))
+    if (clampedBoundaryIndex === fromIndex || clampedBoundaryIndex === fromIndex + 1) {
+        return null
+    }
+
+    const nextNodes = [...nodes]
+    const [movedNode] = nextNodes.splice(fromIndex, 1)
+    nextNodes.splice(
+        clampedBoundaryIndex > fromIndex ? clampedBoundaryIndex - 1 : clampedBoundaryIndex,
+        0,
+        movedNode
+    )
+    return { nodes: nextNodes }
+}
+
 export type InsertedNodesFocus =
     | { kind: 'component'; nodeId: string }
     | { kind: 'text'; nodeId: string; start: number; end: number }
