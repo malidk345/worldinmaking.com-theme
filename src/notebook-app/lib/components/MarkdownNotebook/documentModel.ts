@@ -311,6 +311,89 @@ export function removeNotebookNodesWithRefCleanup(document: NotebookDocument, no
     return { ...document, nodes: stripNotebookRefMarksFromNodes(remainingNodes, removedRefIds) }
 }
 
+export type DeleteBlockFocus =
+    | { kind: 'selection'; focus: RestoreSelectionRequest }
+    | { kind: 'component'; nodeId: string }
+
+export type DeleteBlockPlan = {
+    document: NotebookDocument
+    focus: DeleteBlockFocus | null
+}
+
+/** Mirror of host requestFocusForNode — used after block removal (more-menu Delete, AI accept/reject). */
+export function planFocusForNode(node: NotebookBlockNode, placement: 'start' | 'end'): DeleteBlockFocus | null {
+    const offsetForChildren = (children: NotebookInlineNode[]): number =>
+        placement === 'start' ? 0 : getInlineText(children).length
+
+    if (isTextBlockNode(node)) {
+        const offset = offsetForChildren(node.children)
+        return { kind: 'selection', focus: { nodeId: node.id, start: offset, end: offset } }
+    }
+
+    if (node.type === 'component') {
+        return { kind: 'component', nodeId: node.id }
+    }
+
+    if (node.type === 'list' && node.items.length) {
+        const listItemIndex = placement === 'start' ? 0 : node.items.length - 1
+        const offset = offsetForChildren(node.items[listItemIndex].children)
+        return {
+            kind: 'selection',
+            focus: {
+                nodeId: node.id,
+                listItemIndex,
+                listItemId: node.items[listItemIndex].id,
+                start: offset,
+                end: offset,
+            },
+        }
+    }
+
+    if (node.type === 'table') {
+        const tableCell = getTableEdgeCellPosition(node, placement === 'start' ? 'next' : 'previous')
+        if (!tableCell) {
+            return null
+        }
+        const offset = offsetForChildren(getTableCellAtPosition(node, tableCell)?.children ?? []).length
+        return {
+            kind: 'selection',
+            focus: { nodeId: node.id, tableCell, start: offset, end: offset },
+        }
+    }
+
+    return null
+}
+
+/** Shared block delete used by more-menu/mobile Delete and deleteNodeAndFocusAdjacent. */
+export function planDeleteBlock(
+    document: NotebookDocument,
+    nodeId: string,
+    options?: { fallbackFocusNodeId?: string }
+): DeleteBlockPlan | null {
+    const nodeIndex = document.nodes.findIndex((node) => node.id === nodeId)
+    if (nodeIndex < 0) {
+        return null
+    }
+
+    const nextNode = document.nodes[nodeIndex + 1]
+    const previousNode = document.nodes[nodeIndex - 1]
+    let focus = nextNode ? planFocusForNode(nextNode, 'start') : null
+    if (!focus && previousNode) {
+        focus = planFocusForNode(previousNode, 'end')
+    }
+    if (!focus && options?.fallbackFocusNodeId) {
+        focus = {
+            kind: 'selection',
+            focus: { nodeId: options.fallbackFocusNodeId, start: 0, end: 0 },
+        }
+    }
+
+    return {
+        document: removeNotebookNodesWithRefCleanup(document, new Set([nodeId])),
+        focus,
+    }
+}
+
 /** Unwraps `<ref>` tags (and code block anchors) with the given ids across every block, keeping the text. */
 export function stripNotebookRefMarksFromNodes(nodes: NotebookBlockNode[], refIds: Set<string>): NotebookBlockNode[] {
     if (!refIds.size) {
