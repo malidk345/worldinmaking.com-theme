@@ -1555,6 +1555,29 @@ export function rekeyNotebookNodes(nodes: NotebookBlockNode[], seed: string): No
     })
 }
 
+export type DuplicateBlockPlan = {
+    nodes: NotebookBlockNode[]
+    duplicatedNodeId: string
+}
+
+/** Shared block duplicate used by the mobile/block more-menu Duplicate action. */
+export function planDuplicateBlock(nodes: NotebookBlockNode[], nodeId: string): DuplicateBlockPlan | null {
+    const fromIndex = nodes.findIndex((node) => node.id === nodeId)
+    if (fromIndex < 0) {
+        return null
+    }
+
+    const [duplicatedNode] = rekeyNotebookNodes([nodes[fromIndex]], `duplicate-${nodeId}`)
+    if (!duplicatedNode) {
+        return null
+    }
+
+    return {
+        nodes: [...nodes.slice(0, fromIndex + 1), duplicatedNode, ...nodes.slice(fromIndex + 1)],
+        duplicatedNodeId: duplicatedNode.id,
+    }
+}
+
 export type InsertedNodesFocus =
     | { kind: 'component'; nodeId: string }
     | { kind: 'text'; nodeId: string; start: number; end: number }
