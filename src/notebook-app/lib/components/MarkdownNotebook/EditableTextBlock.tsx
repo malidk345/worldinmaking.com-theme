@@ -20,6 +20,7 @@ import {
     getTextBlockShortcutReplacement,
     isTextBlockNode,
     planDowngradeTextBlockToParagraph,
+    planDeleteInlineChildrenRange,
     planPasteInlineChildren,
     planPasteIntoTextBlock,
     shouldUseMarkdownPaste,
@@ -472,31 +473,24 @@ export function EditableTextBlock({
 
             const expandedSelection = getSelectionRange(event.currentTarget, node.id)
             if (expandedSelection && expandedSelection.start !== expandedSelection.end) {
-                const textLength = getInlineText(node.children).length
-                const selectionStart = Math.max(
-                    0,
-                    Math.min(Math.min(expandedSelection.start, expandedSelection.end), textLength)
+                const deletion = planDeleteInlineChildrenRange(
+                    node.children,
+                    expandedSelection.start,
+                    expandedSelection.end
                 )
-                const selectionEnd = Math.max(
-                    selectionStart,
-                    Math.min(Math.max(expandedSelection.start, expandedSelection.end), textLength)
-                )
-                const [beforeSelection, selectionAndAfter] = splitInlineNodesAt(node.children, selectionStart)
-                const [, afterSelection] = splitInlineNodesAt(selectionAndAfter, selectionEnd - selectionStart)
-                const nextChildren = normalizeInlineNodes([...beforeSelection, ...afterSelection])
-                const nextHtml = toHtml(nextChildren)
+                const nextHtml = toHtml(deletion.children)
 
                 event.preventDefault()
                 if (event.currentTarget.innerHTML !== nextHtml && !editableHtmlMatches(event.currentTarget, nextHtml)) {
                     event.currentTarget.innerHTML = nextHtml
                 }
                 syncInlineNoteChips(event.currentTarget, annotations)
-                restoreSelection(event.currentTarget, selectionStart, selectionStart)
-                updateChildren(nextChildren)
+                restoreSelection(event.currentTarget, deletion.start, deletion.end)
+                updateChildren(deletion.children)
                 if (isToolInsertMenuOpen) {
-                    openInsertMenu(getInlineText(nextChildren))
+                    openInsertMenu(getInlineText(deletion.children))
                 }
-                restoreSelectionRef.current = { nodeId: node.id, start: selectionStart, end: selectionStart }
+                restoreSelectionRef.current = { nodeId: node.id, start: deletion.start, end: deletion.end }
                 return
             }
 
