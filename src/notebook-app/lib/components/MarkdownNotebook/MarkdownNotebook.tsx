@@ -76,6 +76,7 @@ import {
 import {
     MarkdownNotebookTextSurface,
     areNotebookDocumentsEqual,
+    createInsertedComponent,
     ensureEditableNotebookDocument,
     getInlineInsertMenuQuery,
     getSlashTokenAt,
@@ -1864,12 +1865,10 @@ function MarkdownNotebookEditor({
     const insertMenuApi = useMemo<MarkdownNotebookInsertMenuApi>(
         () => ({
             insertComponent: (targetNodeId, tagName, props) =>
-                replaceNodeWithInsertedComponent(targetNodeId, {
-                    id: makeEmptyParagraph(`component-${tagName}`).id,
-                    type: 'component',
-                    tagName,
-                    props,
-                }),
+                replaceNodeWithInsertedComponent(
+                    targetNodeId,
+                    createInsertedComponent(makeEmptyParagraph(`component-${tagName}`).id, tagName, props)
+                ),
             openPhilosopherInvite: (targetNodeId) => {
                 const anchorElement = blockRefs.current[targetNodeId]
                 setInsertMenu(null)

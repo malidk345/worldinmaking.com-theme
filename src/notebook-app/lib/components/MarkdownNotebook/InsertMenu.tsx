@@ -15,6 +15,7 @@ import {
 } from './editorTypes'
 import {
     createInsertedCodeBlock,
+    createInsertedComponent,
     createInsertedListBlock,
     createInsertedTableBlock,
 } from './documentModel'
@@ -223,14 +224,10 @@ export function buildInsertCommands(
     const commonCategory = COMMON_INSERT_COMMAND_CATEGORY
 
     const insertComponent = (targetNodeId: string, tagName: string, props: NotebookComponentProps): void => {
-        const node: NotebookComponentBlockNode = {
-            id: makeEmptyParagraph(`component-${tagName}`).id,
-            type: 'component',
-            tagName,
-            props,
-        }
-
-        replaceNodeWithInsertedComponent(targetNodeId, node)
+        replaceNodeWithInsertedComponent(
+            targetNodeId,
+            createInsertedComponent(makeEmptyParagraph(`component-${tagName}`).id, tagName, props)
+        )
     }
 
     const insertRegisteredComponent = (targetNodeId: string, tagName: string, props?: NotebookComponentProps): void => {
