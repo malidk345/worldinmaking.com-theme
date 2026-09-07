@@ -12,11 +12,6 @@ const bundleTsPath = path.resolve(__dirname, '../src/notebook-app/styles/product
 try {
     const result = sass.compile(bundleScssPath, { style: 'expanded' })
     let cssContent = result.css.toString()
-    cssContent = cssContent.replace(/@import\s+['"]quill-shim\.css['"]\s*;?/g, '')
-    const quillPath = path.resolve(__dirname, '../src/notebook-app/styles/quill-shim.css')
-    if (fs.existsSync(quillPath)) {
-        cssContent = fs.readFileSync(quillPath, 'utf8') + '\n' + cssContent
-    }
     cssContent = cssContent.replace(/\.notebook-app-scope\s+(?::root|:host)/g, '.notebook-app-scope')
 
     const PORTAL_ROOT =

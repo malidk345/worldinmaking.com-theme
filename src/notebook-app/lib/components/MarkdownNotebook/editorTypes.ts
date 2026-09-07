@@ -145,7 +145,7 @@ export type TableCellPosition = {
 
 export const FLOATING_TOOLBAR_ESTIMATED_HEIGHT = 36
 
-export const FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW = 76
+export const FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW = 40
 
 export const INSERT_MENU_GAP = 6
 

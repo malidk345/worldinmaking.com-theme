@@ -1784,7 +1784,7 @@ function ReaderViewContent({
                             type="button"
                             aria-label="Open navigation"
                             onClick={() => setMobileNavOpen(true)}
-                            className={`absolute bottom-4 right-4 z-30 flex size-11 items-center justify-center rounded-full border border-primary text-primary shadow-lg transition-opacity duration-200 hover:bg-accent ${PANEL_BG} ${
+                            className={`reader-view-mobile-nav-btn absolute bottom-4 right-4 z-30 flex size-11 items-center justify-center rounded-full border border-primary text-primary shadow-lg transition-opacity duration-200 hover:bg-accent ${PANEL_BG} ${
                                 mobileNavOpen || keyboardOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                         >
@@ -1808,7 +1808,7 @@ function ReaderViewContent({
                             >
                                 {stickyHeader ? (
                                     <div className="not-prose sticky top-2 z-30 mx-2 mt-1 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
-                                        <div className="rounded-sm border border-primary bg-primary/90 backdrop-blur-md shadow-[0_8px_28px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.45)]">
+                                        <div className="rounded-xl border border-white/80 dark:border-white/15 bg-white/70 dark:bg-[#18191c]/70 backdrop-blur-2xl shadow-none overflow-hidden">
                                             {stickyHeader}
                                         </div>
                                     </div>

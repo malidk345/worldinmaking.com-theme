@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import {
     KeyboardEvent as ReactKeyboardEvent,
     type CSSProperties,
+    type ReactNode,
     useEffect,
     useLayoutEffect,
     useRef,
@@ -9,8 +10,41 @@ import {
 } from 'react'
 
 import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import OSButton from 'components/OSButton'
-import { IconBold, IconItalic, IconLink } from '../../icons/iconsShim'
+import { IconBold, IconIndent, IconItalic, IconLink, IconOutdent } from '../../icons/iconsShim'
+
+function FormatBtn({
+    active,
+    disabled,
+    label,
+    className,
+    onClick,
+    children,
+}: {
+    active?: boolean
+    disabled?: boolean
+    label: string
+    className?: string
+    onClick: () => void
+    children: ReactNode
+}): JSX.Element {
+    return (
+        <button
+            type="button"
+            className={clsx(
+                'MarkdownNotebook__format-btn',
+                active && 'MarkdownNotebook__format-btn--active',
+                className
+            )}
+            title={label}
+            aria-label={label}
+            aria-pressed={active}
+            disabled={disabled}
+            onClick={onClick}
+        >
+            {children}
+        </button>
+    )
+}
 
 import {
     FloatingToolbarCodeRange,
@@ -57,6 +91,10 @@ export function FormattingToolbar({
     lockPosition,
     returnFocusToEditor,
     docked,
+    onIndent,
+    onOutdent,
+    canIndent,
+    canOutdent,
 }: {
     selectedBlockStyle: TextBlockStyle | null
     /** Whether every selected block sits inside a blockquote — orthogonal to the text style. */
@@ -81,6 +119,10 @@ export function FormattingToolbar({
     /** Moves focus back into the editor (Escape while the toolbar holds focus). */
     returnFocusToEditor?: () => void
     docked?: boolean
+    onIndent?: () => void
+    onOutdent?: () => void
+    canIndent?: boolean
+    canOutdent?: boolean
 }): JSX.Element {
     const [isLinkEditorOpen, setIsLinkEditorOpen] = useState(initialLinkEditorOpen || !!currentLinkHref)
     const [shouldFocusLinkInput, setShouldFocusLinkInput] = useState(initialLinkEditorOpen)
@@ -277,104 +319,85 @@ export function FormattingToolbar({
                     const isActive =
                         button.style === 'blockquote' ? selectedBlockQuoted : selectedBlockStyle === button.style
                     return (
-                        <OSButton
+                        <FormatBtn
                             key={button.label}
-                            size="xs"
-                            icon={button.icon}
-                            tooltip={button.label}
-                            aria-label={button.label}
-                            aria-pressed={isActive}
+                            label={button.label}
                             active={isActive}
-                            className="MarkdownNotebook__format-style-button"
                             onClick={() =>
                                 setBlockStyle(button.style === 'blockquote' || !isActive ? button.style : 'paragraph')
                             }
                         >
-                            {button.content}
-                        </OSButton>
+                            {button.icon || button.content}
+                        </FormatBtn>
                     )
                 })}
             </div>
             {showInlineActions ? (
                 <>
-                    <OSButton
-                        size="xs"
-                        icon={<IconBold />}
-                        tooltip="Bold"
-                        aria-label="Bold"
-                        onClick={() => applyInlineMark('bold')}
-                    />
-                    <OSButton
-                        size="xs"
-                        icon={<IconItalic />}
-                        tooltip="Italic"
-                        aria-label="Italic"
-                        onClick={() => applyInlineMark('italic')}
-                    />
-                    <OSButton size="xs" tooltip="Underline" aria-label="Underline" onClick={() => applyInlineMark('underline')}>
+                    <FormatBtn label="Bold" onClick={() => applyInlineMark('bold')}>
+                        <IconBold />
+                    </FormatBtn>
+                    <FormatBtn label="Italic" onClick={() => applyInlineMark('italic')}>
+                        <IconItalic />
+                    </FormatBtn>
+                    <FormatBtn label="Underline" onClick={() => applyInlineMark('underline')}>
                         <span className="font-semibold underline">U</span>
-                    </OSButton>
-                    <OSButton
-                        size="xs"
-                        tooltip="Strikethrough"
-                        aria-label="Strikethrough"
-                        onClick={() => applyInlineMark('strike')}
-                    >
+                    </FormatBtn>
+                    <FormatBtn label="Strikethrough" onClick={() => applyInlineMark('strike')}>
                         <span className="font-semibold line-through">S</span>
-                    </OSButton>
-                    <OSButton
-                        size="xs"
-                        icon={<IconCode />}
-                        tooltip="Inline code"
-                        aria-label="Inline code"
-                        onClick={() => applyInlineMark('code')}
-                    />
-                    <OSButton
-                        size="xs"
-                        icon={<IconLink />}
-                        tooltip="Link"
-                        aria-label="Link"
-                        aria-pressed={hasExistingLink || isLinkEditorOpen}
+                    </FormatBtn>
+                    <FormatBtn label="Inline code" onClick={() => applyInlineMark('code')}>
+                        <IconCode />
+                    </FormatBtn>
+                    <FormatBtn
+                        label="Link"
                         active={hasExistingLink || isLinkEditorOpen}
                         onClick={openLinkEditor}
-                    />
-                    <OSButton size="xs" icon={<IconCopy />} tooltip="Copy" aria-label="Copy" onClick={copySelection} />
+                    >
+                        <IconLink />
+                    </FormatBtn>
+                    <FormatBtn label="Copy" onClick={copySelection}>
+                        <IconCopy />
+                    </FormatBtn>
+                    {onOutdent ? (
+                        <FormatBtn label="Outdent" onClick={onOutdent} disabled={canOutdent === false}>
+                            <IconOutdent />
+                        </FormatBtn>
+                    ) : null}
+                    {onIndent ? (
+                        <FormatBtn label="Indent" onClick={onIndent} disabled={canIndent === false}>
+                            <IconIndent />
+                        </FormatBtn>
+                    ) : null}
                 </>
             ) : null}
             {startInlineCommentAtSelection ? (
-                <OSButton
-                    size="xs"
-                    icon={<IconComment />}
-                    tooltip="Comment"
-                    aria-label="Comment on selection"
-                    onClick={startInlineCommentAtSelection}
-                />
+                <FormatBtn label="Comment on selection" onClick={startInlineCommentAtSelection}>
+                    <IconComment />
+                </FormatBtn>
             ) : null}
 
             {showInlineActions && askAIAboutSelection ? (
                 <>
                     <span className="MarkdownNotebook__format-divider" aria-hidden />
                     {selectionAIActions?.map((action) => (
-                        <OSButton
+                        <FormatBtn
                             key={action.id}
-                            size="xs"
-                            tooltip={action.tooltip}
-                            aria-label={action.label}
+                            label={action.tooltip}
                             disabled={isAskAIDisabled}
                             className="MarkdownNotebook__format-ai-action"
                             onClick={() => askAIAboutSelection(action.prompt)}
                         >
-                            <span className="text-xs font-medium">{action.label}</span>
-                        </OSButton>
+                            <span className="text-[11px] font-medium">{action.label}</span>
+                        </FormatBtn>
                     ))}
-                    <OSButton
-                        size="xs"
-                        icon={<IconSparkles />}
-                        tooltip="Edit with WIM AI"
-                        aria-label="Edit with WIM AI"
+                    <FormatBtn
+                        label="Edit with WIM AI"
                         disabled={isAskAIDisabled}
                         onClick={() => askAIAboutSelection()}
-                    />
+                    >
+                        <IconSparkles />
+                    </FormatBtn>
                 </>
             ) : null}
             {showInlineActions && isLinkEditorOpen ? (
@@ -396,33 +419,30 @@ export function FormattingToolbar({
                         className="notebook-native-field MarkdownNotebook__format-link-input rounded-sm border border-primary px-2 py-1 text-sm text-primary"
                     />
                     {hasExistingLink && sanitizeNotebookLinkHref(currentLinkHref ?? '') ? (
-                        <OSButton
-                            size="xs"
-                            icon={<IconExternal />}
-                            tooltip="Open link in new tab"
-                            aria-label="Open link in new tab"
+                        <FormatBtn
+                            label="Open link in new tab"
                             onClick={() => {
                                 const href = sanitizeNotebookLinkHref(currentLinkHref ?? '')
                                 if (href) {
                                     window.open(href, '_blank', 'noopener')
                                 }
                             }}
-                        />
+                        >
+                            <IconExternal />
+                        </FormatBtn>
                     ) : null}
                     {hasExistingLink ? (
-                        <OSButton size="xs" onClick={removeLink}>
+                        <FormatBtn label="Remove link" onClick={removeLink}>
                             Remove
-                        </OSButton>
+                        </FormatBtn>
                     ) : null}
-                    <OSButton
-                        size="xs"
-                        variant="primary"
-                        onClick={setLink}
+                    <FormatBtn
+                        label={hasExistingLink ? 'Update' : 'Set'}
                         disabled={!normalizedLinkHref}
-                        tooltip={!normalizedLinkHref ? 'Enter an http or https URL' : undefined}
+                        onClick={setLink}
                     >
                         {hasExistingLink ? 'Update' : 'Set'}
-                    </OSButton>
+                    </FormatBtn>
                 </div>
             ) : null}
         </div>

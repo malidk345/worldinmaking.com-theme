@@ -413,10 +413,25 @@ export function EditableTextBlock({
             }
 
             if (node.type === 'heading') {
+                if (isEmpty) {
+                    replaceWithParagraph(0)
+                    return
+                }
+
                 if (selectionStart === 0) {
                     const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
                     replaceNodeWithNodes(node.id, [previousParagraph, { ...node, children: after }])
                     restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
+                    return
+                }
+
+                if (selectionStart >= textLength) {
+                    const nextParagraph = makeEmptyParagraph(`after-${node.id}`)
+                    replaceNodeWithNodes(node.id, [
+                        { ...node, children: before },
+                        nextParagraph,
+                    ])
+                    restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
                     return
                 }
 
@@ -523,6 +538,10 @@ export function EditableTextBlock({
                 selection.end === 0
             ) {
                 event.preventDefault()
+                if (isEmpty) {
+                    replaceWithParagraph(0)
+                    return
+                }
                 if (deleteNodeBefore(node.id, { requireSameTextStyle: true })) {
                     return
                 }

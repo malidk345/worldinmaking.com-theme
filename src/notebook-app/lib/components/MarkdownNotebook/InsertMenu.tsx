@@ -69,14 +69,15 @@ export function InsertMenu({
     const selectedCommandIndex = getClampedInsertMenuSelectedIndex(selectedIndex, filteredCommands.length)
     const selectedCommand = filteredCommands[selectedCommandIndex]
     const selectedCommandKey = selectedCommand?.key
-    const menuStyle = position
-        ? ({
-              '--markdown-notebook-insert-menu-left': `${position.left}px`,
-              '--markdown-notebook-insert-menu-max-height': `${position.maxHeight}px`,
-              '--markdown-notebook-insert-menu-top': `${position.top}px`,
-              '--markdown-notebook-insert-menu-width': `${position.width}px`,
-          } as CSSProperties)
-        : undefined
+    const menuStyle =
+        position && Number.isFinite(position.left) && Number.isFinite(position.top)
+            ? ({
+                  '--markdown-notebook-insert-menu-left': `${Math.round(position.left)}px`,
+                  '--markdown-notebook-insert-menu-max-height': `${Math.round(position.maxHeight)}px`,
+                  '--markdown-notebook-insert-menu-top': `${Math.round(position.top)}px`,
+                  '--markdown-notebook-insert-menu-width': `${Math.round(position.width)}px`,
+              } as CSSProperties)
+            : undefined
 
     useEffect(() => {
         selectedItemRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
@@ -119,6 +120,9 @@ export function InsertMenu({
                                 aria-selected={command.key === selectedCommandKey}
                                 disabled={command.disabled}
                                 type="button"
+                                onPointerDown={(event) => {
+                                    event.preventDefault()
+                                }}
                                 onClick={() => {
                                     if (command.disabled) {
                                         return
@@ -162,13 +166,33 @@ export function renderHighlightedInsertCommandLabel(label: string, query: string
     )
 }
 
+function normalizeForSearch(str: string): string {
+    return str
+        .toLowerCase()
+        .replace(/[ıİiI]/g, 'i')
+        .replace(/[ğg]/g, 'g')
+        .replace(/[üu]/g, 'u')
+        .replace(/[şs]/g, 's')
+        .replace(/[öo]/g, 'o')
+        .replace(/[çc]/g, 'c')
+        .trim()
+}
+
 export function getFilteredInsertCommands(commands: InsertCommand[], query: string): InsertCommand[] {
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) {
+    const rawQuery = query.trim().toLowerCase()
+    if (!rawQuery) {
         return commands
     }
 
-    return commands.filter((command) => getInsertCommandSearchText(command).includes(normalizedQuery))
+    const cleanQuery = normalizeForSearch(rawQuery)
+
+    return commands.filter((command) => {
+        const text = getInsertCommandSearchText(command)
+        if (text.includes(rawQuery)) {
+            return true
+        }
+        return normalizeForSearch(text).includes(cleanQuery)
+    })
 }
 
 export function getInsertCommandSearchText(command: InsertCommand): string {
@@ -355,7 +379,8 @@ export function buildInsertCommands(
             key: 'text-paragraph',
             label: 'Text',
             category: commonCategory,
-            aliases: ['paragraph', 'plain text'],
+            description: 'Plain text paragraph',
+            aliases: ['paragraph', 'plain text', 'metin', 'paragraf', 'yazı', 'yazi'],
             icon: <IconPencil />,
             run: (targetNodeId) => {
                 replaceNode(targetNodeId, {
@@ -373,20 +398,24 @@ export function buildInsertCommands(
             key: 'text-quote',
             label: 'Blockquote',
             category: 'Text',
-            aliases: ['quote'],
+            description: 'Quote block',
+            aliases: ['quote', 'blockquote', 'alıntı', 'alinti', 'alıntı bloğu', 'alinti blogu'],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
+            run: (targetNodeId) => {
                 replaceNode(targetNodeId, {
                     id: targetNodeId,
                     type: 'blockquote',
                     children: [],
-                }),
+                })
+                focusInsertedText(targetNodeId)
+            },
         },
         {
             key: 'text-code',
             label: 'Code',
             category: 'Text',
-            aliases: ['code block', 'fenced code'],
+            description: 'Code block',
+            aliases: ['code block', 'fenced code', 'kod', 'kod blogu', 'kod bloğu', 'snippet'],
             icon: <IconCode />,
             run: insertCode,
         },
@@ -394,50 +423,98 @@ export function buildInsertCommands(
             key: 'text-heading-1',
             label: 'Heading 1',
             category: 'Text',
-            aliases: ['h1'],
+            description: 'Large section heading',
+            aliases: [
+                'h1',
+                'heading 1',
+                'heading1',
+                'h 1',
+                'header 1',
+                'header1',
+                'header',
+                'title',
+                'başlık 1',
+                'baslik 1',
+                'başlık',
+                'baslik',
+                'ana başlık',
+                'ana baslik',
+            ],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
+            run: (targetNodeId) => {
                 replaceNode(targetNodeId, {
                     id: targetNodeId,
                     type: 'heading',
                     level: 1,
                     children: [],
-                }),
+                })
+                focusInsertedText(targetNodeId)
+            },
         },
         {
             key: 'text-heading-2',
             label: 'Heading 2',
             category: 'Text',
-            aliases: ['h2'],
+            description: 'Medium section heading',
+            aliases: [
+                'h2',
+                'heading 2',
+                'heading2',
+                'h 2',
+                'header 2',
+                'header2',
+                'subtitle',
+                'başlık 2',
+                'baslik 2',
+                'alt başlık',
+                'alt baslik',
+            ],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
+            run: (targetNodeId) => {
                 replaceNode(targetNodeId, {
                     id: targetNodeId,
                     type: 'heading',
                     level: 2,
                     children: [],
-                }),
+                })
+                focusInsertedText(targetNodeId)
+            },
         },
         {
             key: 'text-heading-3',
             label: 'Heading 3',
             category: 'Text',
-            aliases: ['h3'],
+            description: 'Small section heading',
+            aliases: [
+                'h3',
+                'heading 3',
+                'heading3',
+                'h 3',
+                'header 3',
+                'header3',
+                'subheading',
+                'başlık 3',
+                'baslik 3',
+                'küçük başlık',
+                'kucuk baslik',
+            ],
             icon: <IconPencil />,
-            run: (targetNodeId) =>
+            run: (targetNodeId) => {
                 replaceNode(targetNodeId, {
                     id: targetNodeId,
                     type: 'heading',
                     level: 3,
                     children: [],
-                }),
+                })
+                focusInsertedText(targetNodeId)
+            },
         },
         {
             key: 'text-bullet-list',
             label: 'Bulleted list',
             category: 'Text',
             description: 'Bullet list',
-            aliases: ['bullet', 'bulleted', 'ul', 'list', 'madde'],
+            aliases: ['bullet', 'bulleted', 'ul', 'list', 'madde', 'liste', 'noktalı', 'noktali'],
             icon: <IconList />,
             run: (targetNodeId) => insertList(targetNodeId, { ordered: false }),
         },
@@ -446,7 +523,7 @@ export function buildInsertCommands(
             label: 'Numbered list',
             category: 'Text',
             description: 'Numbered list',
-            aliases: ['numbered', 'ordered', 'ol', 'numarali'],
+            aliases: ['numbered', 'ordered', 'ol', 'numarali', 'numaralı', 'sayı', 'sayili'],
             icon: <IconList />,
             run: (targetNodeId) => insertList(targetNodeId, { ordered: true }),
         },
@@ -455,7 +532,7 @@ export function buildInsertCommands(
             label: 'To-do list',
             category: 'Text',
             description: 'Task checkbox list',
-            aliases: ['todo', 'task', 'checkbox', 'check', 'gorev'],
+            aliases: ['todo', 'task', 'checkbox', 'check', 'gorev', 'görev', 'yapılacaklar', 'yapilacaklar'],
             icon: <IconCheck />,
             run: (targetNodeId) => insertList(targetNodeId, { ordered: false, task: true }),
         },
@@ -477,35 +554,35 @@ export function getInsertMenuPosition(
     anchorElement: HTMLElement,
     size?: { width?: number; maxHeight?: number; minHeight?: number }
 ): InsertMenuPosition {
-    const preferredWidth = size?.width ?? INSERT_MENU_WIDTH
+    const viewport = getVisibleViewport()
+    const isMobile = viewport.width < 640
+    const padding = isMobile ? 12 : INSERT_MENU_VIEWPORT_PADDING
+    const availableViewportWidth = Math.max(0, viewport.width - padding * 2)
+
+    const defaultPreferredWidth = isMobile
+        ? Math.min(256, availableViewportWidth)
+        : INSERT_MENU_WIDTH
+    const preferredWidth = size?.width ?? defaultPreferredWidth
     const preferredMaxHeight = size?.maxHeight ?? INSERT_MENU_MAX_HEIGHT
     const preferredMinHeight = size?.minHeight ?? INSERT_MENU_MIN_HEIGHT
+
     const anchorRect = anchorElement.getBoundingClientRect()
-    const viewport = getVisibleViewport()
-    const availableViewportWidth = Math.max(0, viewport.width - INSERT_MENU_VIEWPORT_PADDING * 2)
-    if (viewport.width < 640) {
-        const width = Math.max(0, viewport.width - 24)
-        const maxHeight = Math.min(preferredMaxHeight, Math.max(preferredMinHeight, Math.round(viewport.height * 0.42)))
-        return {
-            placement: 'above',
-            top: viewport.bottom - 10,
-            left: viewport.left + 12,
-            width,
-            maxHeight,
-        }
-    }
     const width = Math.min(preferredWidth, availableViewportWidth)
-    const maxLeft = viewport.right - INSERT_MENU_VIEWPORT_PADDING - width
-    const left = Math.min(
-        Math.max(viewport.left + INSERT_MENU_VIEWPORT_PADDING, anchorRect.left),
-        Math.max(viewport.left + INSERT_MENU_VIEWPORT_PADDING, maxLeft)
-    )
+    const maxLeft = Math.max(viewport.left + padding, viewport.right - padding - width)
+    const minLeft = viewport.left + padding
+    const left = Math.max(minLeft, Math.min(anchorRect.left, maxLeft))
+
     const availableBelow = Math.max(
         0,
-        viewport.bottom - anchorRect.bottom - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING
+        viewport.bottom - anchorRect.bottom - INSERT_MENU_GAP - padding
     )
-    const availableAbove = Math.max(0, anchorRect.top - viewport.top - INSERT_MENU_GAP - INSERT_MENU_VIEWPORT_PADDING)
-    const placement = availableBelow >= preferredMinHeight || availableBelow >= availableAbove ? 'below' : 'above'
+    const availableAbove = Math.max(
+        0,
+        anchorRect.top - viewport.top - INSERT_MENU_GAP - padding
+    )
+    const effectiveMinHeight = isMobile ? 80 : preferredMinHeight
+    const placement =
+        availableBelow >= effectiveMinHeight || availableBelow >= availableAbove ? 'below' : 'above'
     const availableHeight = placement === 'below' ? availableBelow : availableAbove
 
     return {
@@ -513,6 +590,6 @@ export function getInsertMenuPosition(
         top: placement === 'below' ? anchorRect.bottom + INSERT_MENU_GAP : anchorRect.top - INSERT_MENU_GAP,
         left,
         width,
-        maxHeight: Math.min(preferredMaxHeight, Math.max(preferredMinHeight, availableHeight)),
+        maxHeight: Math.min(preferredMaxHeight, Math.max(60, availableHeight)),
     }
 }

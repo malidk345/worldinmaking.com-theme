@@ -34,8 +34,12 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    Indent,
+    Outdent,
 } from 'lucide-react'
 
+export const IconIndent      = (p: any) => <Indent       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconOutdent     = (p: any) => <Outdent      className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconUnlink      = (p: any) => <Unlink       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconLink        = (p: any) => <Link2        className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconBold        = (p: any) => <Bold         className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />

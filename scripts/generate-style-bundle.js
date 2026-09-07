@@ -24,14 +24,46 @@ function getFiles(dir) {
     return results
 }
 
+const EXCLUDED_PATTERNS = [
+    'bundle.scss',
+    'bundle.css',
+    'bundleCss.ts',
+    'productBundleCss.ts',
+    'product-bundle.scss',
+    'quill-shim.css',
+    'quill-bridge.scss',
+    'utilities-legacy.scss',
+    'notebook.css',
+    'index.css',
+    'LemonCalendar',
+    'LemonColor',
+    'LemonDisabledArea',
+    'LemonDrawer',
+    'LemonFileInput',
+    'LemonInputSelect',
+    'LemonLabel',
+    'LemonMarkdown',
+    'LemonProgressCircle',
+    'LemonRichContent',
+    'LemonSegmentedButton',
+    'LemonWidget',
+    'Lettermark',
+    'Link/',
+    'Link\\',
+    'LoadingBar',
+    'Splotch',
+    'LemonActionableTooltip',
+    'ButtonPrimitives',
+    'TabsPrimitive',
+    'TextInputPrimitive',
+    'WrappingLoadingSkeleton',
+]
+
 const allFiles = getFiles(nbDir)
-const files = allFiles.filter(
-    (f) =>
-        !f.endsWith('bundle.scss') &&
-        !f.endsWith('bundle.css') &&
-        !f.endsWith('bundleCss.ts') &&
-        !f.endsWith('quill-shim.css')
-)
+const files = allFiles.filter((f) => {
+    const norm = f.replace(/\\/g, '/')
+    return !EXCLUDED_PATTERNS.some((pattern) => norm.includes(pattern))
+})
 
 const priorityOrder = [
     'styles/vars.scss',
@@ -40,24 +72,14 @@ const priorityOrder = [
     'styles/base.scss',
     'styles/global.scss',
     'styles/lemon-skin.scss',
-    'styles/utilities-legacy.scss',
-    // index.tokens.scss = posthog-notebook-app index.css (must be .scss so Sass inlines tokens)
     'styles/index.tokens.scss',
-    'styles/index.css',
     'styles/notebook-dark-panel.scss',
-    'styles/notebook.css',
-    'styles/quill-bridge.scss',
     // Host OS window bridge — after Lemon tokens, shell-only (does not restyle Lemon components)
     'styles/site-bridge.scss',
 ]
 
 const prioritySet = new Set(priorityOrder)
 const sortedFiles = []
-
-const quillShimPath = path.join(nbDir, 'styles/quill-shim.css')
-if (fs.existsSync(quillShimPath)) {
-    sortedFiles.push(quillShimPath)
-}
 
 for (const prio of priorityOrder) {
     const fullPrio = path.join(nbDir, prio.replace(/\//g, path.sep))

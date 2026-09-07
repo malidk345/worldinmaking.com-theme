@@ -672,6 +672,10 @@ function MarkdownNotebookEditor({
 
     const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || isTitle) return
+        const target = event.target as HTMLElement | null
+        if (target?.closest('[contenteditable="true"], input, textarea, button, select, a')) {
+            return
+        }
         const touch = event.touches[0]
         if (!touch) return
         const x = touch.clientX
@@ -5072,6 +5076,10 @@ function MarkdownNotebookEditor({
                 onTouchCancel={handleRowTouchEnd}
                 onContextMenu={(event) => {
                     if (mode !== 'edit' || isTitleRow) return
+                    const target = event.target as HTMLElement | null
+                    if (target?.closest('[contenteditable="true"], input, textarea')) {
+                        return
+                    }
                     if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
                         event.preventDefault()
                     }
@@ -5214,9 +5222,13 @@ function MarkdownNotebookEditor({
                           ? INSERT_MENU_PLACEHOLDER
                           : isAIPromptOpen
                             ? ''
-                            : node.id === placeholderNodeId
-                              ? placeholder
-                              : undefined,
+                            : node.type === 'heading'
+                              ? `Heading ${node.level ?? 1}`
+                              : node.type === 'blockquote'
+                                ? 'Quote'
+                                : node.id === placeholderNodeId
+                                  ? placeholder
+                                  : undefined,
                     registry: mergedRegistry,
                     componentPanels: nodeComponentPanels,
                     rememberedComponentPanels: componentPanelCacheEntry?.remembered,
@@ -5413,6 +5425,7 @@ function MarkdownNotebookEditor({
                 className
             )}
             data-attr={dataAttr}
+            data-notebook-formatting-active={Boolean(floatingToolbar && mode === 'edit')}
             ref={notebookRef}
             onCopy={handleCopy}
             onCut={handleCut}
@@ -5685,6 +5698,18 @@ function MarkdownNotebookEditor({
                             }
                             lockPosition={lockFloatingToolbarPosition}
                             returnFocusToEditor={returnFocusFromFormattingToolbar}
+                            onIndent={
+                                floatingToolbar.listItemRanges.length > 0
+                                    ? () => shiftListItemDepthAtCurrentSelection('in')
+                                    : floatingToolbar.codeRanges.length > 0
+                                      ? () => indentCodeBlockAtCurrentSelection()
+                                      : undefined
+                            }
+                            onOutdent={
+                                floatingToolbar.listItemRanges.length > 0
+                                    ? () => shiftListItemDepthAtCurrentSelection('out')
+                                    : undefined
+                            }
                         />
                     ) : null}
                     {invitePicker ? (

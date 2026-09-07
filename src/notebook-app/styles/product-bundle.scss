@@ -1,6 +1,5 @@
 // Slim notebook product CSS: LemonTable + editor internals only.
 // No nested @tailwind base — that leaked site-wide from the old full bundle.
-@import 'quill-shim.css';
 
 .notebook-app-scope {
   --border: 192 192 192;

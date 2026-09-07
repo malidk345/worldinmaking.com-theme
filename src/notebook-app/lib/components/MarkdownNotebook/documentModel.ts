@@ -788,7 +788,7 @@ export function getSlashTokenAt(text: string, caret: number = text.length): Slas
     }
 
     const query = head.slice(slashIndex + 1)
-    if (/\s/.test(query)) {
+    if (query.includes('\n') || / {2,}/.test(query) || query.length > 35) {
         return null
     }
 
@@ -1083,6 +1083,10 @@ export function getTextBlockShortcutReplacement(
         ? null
         : getHeadingShortcut(text, node.type === 'heading' ? (node.level ?? 1) : null)
     if (headingShortcut !== null) {
+        const normalizedText = text.replace(/\u00a0/g, ' ')
+        const match = normalizedText.match(/^(#{1,3})\s+(.*)$/)
+        const remainingText = match ? match[2] : ''
+        const children = remainingText ? plainTextToInlineNodes(remainingText) : []
         return {
             nodes: [
                 {
@@ -1091,10 +1095,10 @@ export function getTextBlockShortcutReplacement(
                     level: headingShortcut,
                     // A heading typed inside a quote stays part of the quote
                     blockquote: node.type === 'blockquote' || node.blockquote ? true : undefined,
-                    children: [],
+                    children,
                 },
             ],
-            restoreSelection: { nodeId: node.id, start: 0, end: 0 },
+            restoreSelection: { nodeId: node.id, start: remainingText.length, end: remainingText.length },
         }
     }
 
@@ -1105,16 +1109,20 @@ export function getTextBlockShortcutReplacement(
     // Only the list shortcut applies inside a quote: code blocks and dividers have no quoted
     // form, and a quote marker typed in a quote stays literal text.
     if (node.type === 'paragraph') {
-        if (getBlockquoteShortcut(text)) {
+        const normalizedText = text.replace(/\u00a0/g, ' ')
+        const blockquoteMatch = normalizedText.match(/^>\s+(.*)$/)
+        if (blockquoteMatch) {
+            const remainingText = blockquoteMatch[1]
+            const children = remainingText ? plainTextToInlineNodes(remainingText) : []
             return {
                 nodes: [
                     {
                         id: node.id,
                         type: 'blockquote',
-                        children: [],
+                        children,
                     },
                 ],
-                restoreSelection: { nodeId: node.id, start: 0, end: 0 },
+                restoreSelection: { nodeId: node.id, start: remainingText.length, end: remainingText.length },
             }
         }
 
@@ -1165,18 +1173,18 @@ export function getTextBlockShortcutReplacement(
 }
 
 export function getHeadingShortcut(text: string, currentLevel: number | null): 1 | 2 | 3 | null {
-    if (!/^#{1,3}\s?$/.test(text)) {
+    const normalizedText = text.replace(/\u00a0/g, ' ')
+    const match = normalizedText.match(/^(#{1,3})\s+(.*)$/)
+    if (!match) {
         return null
     }
 
-    const markerLevel = text.trim().length
-    const nextLevel = currentLevel === null ? markerLevel : currentLevel + markerLevel
-
-    return Math.min(3, Math.max(1, nextLevel)) as 1 | 2 | 3
+    const markerLevel = match[1].length
+    return Math.min(3, Math.max(1, markerLevel)) as 1 | 2 | 3
 }
 
 export function getBlockquoteShortcut(text: string): boolean {
-    return /^>\s?$/.test(text)
+    return /^>\s+/.test(text.replace(/\u00a0/g, ' '))
 }
 
 export function getCodeBlockShortcut(text: string): boolean {
