@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2024-05-19 - Avoid Chained Array Methods in Hot Paths
+**Learning:** Using chained array methods like `Object.entries(obj).filter().reduce().map()` for high-frequency string or object manipulation (like URL parameter parsing) creates excessive intermediate arrays and closure allocations, leading to CPU overhead and memory churn.
+**Action:** In critical or frequently executed utility functions (such as URL serializers/deserializers), prefer native `for...in` or `for...of` loops and pre-allocated arrays/objects to minimize memory allocations and improve execution speed.

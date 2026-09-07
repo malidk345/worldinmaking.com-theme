@@ -14,45 +14,50 @@ export function toParams(obj: Record<string, any>, explodeArrays: boolean = fals
         return encodeURIComponent(val)
     }
 
-    return Object.entries(obj)
-        .filter((item) => item[1] != undefined && item[1] != null)
-        .reduce(
-            (acc, [key, val]) => {
-                /**
-                 *  query parameter arrays can be handled in two ways
-                 *  either they are encoded as a single query parameter
-                 *    a=[1, 2] => a=%5B1%2C2%5D
-                 *  or they are "exploded" so each item in the array is sent separately
-                 *    a=[1, 2] => a=1&a=2
-                 **/
-                if (explodeArrays && Array.isArray(val)) {
-                    val.forEach((v) => acc.push([key, v]))
-                } else {
-                    acc.push([key, val])
-                }
+    const result: string[] = []
+    for (const key in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+            continue
+        }
+        const val = obj[key]
+        if (val == null) {
+            continue
+        }
 
-                return acc
-            },
-            [] as [string, any][]
-        )
-        .map(([key, val]) => `${key}=${handleVal(val)}`)
-        .join('&')
+        /**
+         *  query parameter arrays can be handled in two ways
+         *  either they are encoded as a single query parameter
+         *    a=[1, 2] => a=%5B1%2C2%5D
+         *  or they are "exploded" so each item in the array is sent separately
+         *    a=[1, 2] => a=1&a=2
+         **/
+        if (explodeArrays && Array.isArray(val)) {
+            for (let i = 0; i < val.length; i++) {
+                result.push(`${key}=${handleVal(val[i])}`)
+            }
+        } else {
+            result.push(`${key}=${handleVal(val)}`)
+        }
+    }
+    return result.join('&')
 }
 
 export function fromParamsGivenUrl(url: string): Record<string, any> {
-    return !url
-        ? {}
-        : url
-              .replace(/^\?/, '')
-              .split('&')
-              .reduce(
-                  (paramsObject, paramString) => {
-                      const [key, value] = paramString.split('=')
-                      paramsObject[key] = decodeURIComponent(value)
-                      return paramsObject
-                  },
-                  {} as Record<string, any>
-              )
+    if (!url) {
+        return {}
+    }
+    const result: Record<string, any> = {}
+    const params = url.startsWith('?') ? url.slice(1).split('&') : url.split('&')
+    for (let i = 0; i < params.length; i++) {
+        const paramString = params[i]
+        const eqIdx = paramString.indexOf('=')
+        if (eqIdx !== -1) {
+            result[paramString.slice(0, eqIdx)] = decodeURIComponent(paramString.slice(eqIdx + 1))
+        } else {
+            result[paramString] = ''
+        }
+    }
+    return result
 }
 
 export function fromParams(): Record<string, any> {
