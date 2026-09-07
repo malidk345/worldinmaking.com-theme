@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2025-05-19 - Avoid un-memoized nested map/filter for deep text searches
+**Learning:** The `SearchModal` component previously computed its search results on every keystroke by mapping over all chats and filtering all messages within them. This unmemoized O(N*M) text search caused high main thread utilization, especially with many long chats. Additionally, chaining `.flatMap` and `.filter` created intermediate arrays.
+**Action:** Always wrap deep object/array search operations in `useMemo` so they only run when the query or data changes. Pre-compute `.toLowerCase()` outside the loop, use `.find` instead of `.filter` for early short-circuiting, and use a `reduce` (or `for...of`) to avoid intermediate allocations.

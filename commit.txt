@@ -1,0 +1,6 @@
+⚡ Bolt: Memoize and optimize deep chat search in SearchModal
+
+💡 What: Wrapped the chat search logic in `useMemo`, extracted `toLowerCase()` outside the loop, and replaced `.flatMap().filter()` with a single-pass `reduce` using `.find()`. Added early return for empty queries.
+🎯 Why: The previous implementation computed search results on every render (keystrokes) and created intermediate arrays. This caused noticeable lag when typing in the search bar if there were many chats or large messages.
+📊 Impact: Eliminates redundant text searching on non-query state changes, avoids intermediate array allocations, and short-circuits early when a matching message is found. Reduces main thread blocking during active typing.
+🔬 Measurement: Profile the rendering of `SearchModal` while typing. Re-renders will execute in O(1) if `query` is unchanged, and O(N*M) searches are more CPU efficient.
