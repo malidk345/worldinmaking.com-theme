@@ -29,6 +29,10 @@
     min-height: 100%;
 }
 
+.MarkdownNotebook--wide {
+    --markdown-notebook-canvas-max-width: 72rem;
+}
+
 [theme='dark'] .MarkdownNotebook,
 .dark .MarkdownNotebook,
 html.dark .MarkdownNotebook,

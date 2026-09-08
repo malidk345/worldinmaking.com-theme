@@ -33,6 +33,31 @@
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Align Notebook Edge Margins and Content Width 1:1 with Blog Posts (`BlogPost.tsx` / `ReaderView`).
+- **User Intent:** Fix excessive inner indentation ("metin çok içeride yani kenarlardan boşluk çok blog postları gibi değil") so that notebook text begins at the exact same comfortable 48px side margin as blog posts rather than sitting squished in the center with 114px+ void gutters.
+- **Root Cause Diagnosis & Resolutions:**
+  1. **Container Query Escalation & Padding Bloat (`NotebookEditorReader.tsx`):**
+     - In `BlogPost.tsx`, the presence of the 250px `FloatingTOC` right sidebar keeps the center article container at ~650px (`@xl`), applying `px-12` (48px) side padding.
+     - In `NotebookEditorReader.tsx`, `hideRightSidebar={true}` caused the container to span 900px+ (`@3xl`), which triggered Tailwind's `@3xl/reader-content-container:px-20` (80px padding).
+     - Passed `padding={false}` to `ReaderView` in `NotebookEditorReader.tsx` and wrapped children in `<div className="min-w-0 flex-1 px-4 @md:px-6 @lg:px-8 @xl:px-12 py-2">` to cap desktop horizontal padding at `48px` (`px-12`), directly matching `BlogPost`.
+  2. **Double-Centering / Narrow Column Clamping (`App.tsx` & `MarkdownNotebook.scss`):**
+     - Commit `5afec2ab` reduced the wrapper in `App.tsx` from `max-w-3xl mx-auto` to `max-w-2xl mx-auto` (672px) and `--markdown-notebook-canvas-max-width` to `42rem` (672px).
+     - In a 900px column with 80px padding, centering a 672px box added an extra 34px auto margin, pushing the canvas to `x = 437px` (114px inside the card, 102px indented from the topbar).
+     - Restored `--markdown-notebook-canvas-max-width: 56rem` (896px) in `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss` and `src/components/MarkdownNotebook/MarkdownNotebook.scss`, with `72rem` for `.MarkdownNotebook--wide`.
+     - In `App.tsx`, updated editor wrapper to `max-w-4xl mx-auto` (896px) so that in normal window sizes (900px space) the text naturally fills the column with exactly 48px margin on the left (`x = 371px`) and 48px on the right (`x = 1175px`), verified 1:1 against `blog_desktop.png` (`x = 371px`).
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/NotebookEditorReader.tsx`
+  - `src/notebook-app/App.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:**
+  - `pnpm run build:notebook-styles` compiled without errors.
+  - `pnpm run typecheck:shell` PASSED (0 errors in allowlist).
+  - Playwright visual metrics verification: `canvasRect.x = 371px` (matches `blogMetrics.pRect.x = 371px` to the exact pixel). Mobile tested cleanly at 375x667.
+
 - **Scope:** 1:1 Complete Typography Alignment of Notebook (`MarkdownNotebook`) with Blog Posts (`BlogPost.tsx` / `ReaderView`).
 - **User Intent:** Ensure all font settings, typography, font family, font size, line-height, font weight, and element styles in the notebook are 100% identical ("birebir aynı") to blog posts.
 - **Root Cause Diagnosis & Resolutions:**

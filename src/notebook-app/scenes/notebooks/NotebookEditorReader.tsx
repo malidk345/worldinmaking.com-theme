@@ -189,6 +189,7 @@ export function NotebookEditorReader({
             hideAppOptions
             hideBookmark
             hideRightSidebar
+            padding={false}
             className="h-full min-h-0"
             stickyHeader={stickyHeader}
             menuTabs={menuTabs}
@@ -203,7 +204,7 @@ export function NotebookEditorReader({
                 ) : undefined
             }
         >
-            <div className="min-w-0 flex-1">{children}</div>
+            <div className="min-w-0 flex-1 px-4 @md:px-6 @lg:px-8 @xl:px-12 py-2">{children}</div>
         </ReaderView>
     )
 }

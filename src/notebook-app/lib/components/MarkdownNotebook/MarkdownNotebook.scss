@@ -22,7 +22,7 @@
     --markdown-notebook-content-offset: calc(
         var(--markdown-notebook-inline-control-width) + var(--markdown-notebook-inline-control-gap)
     );
-    --markdown-notebook-canvas-max-width: 42rem;
+    --markdown-notebook-canvas-max-width: 56rem;
     --markdown-notebook-comment-gutter: 19rem;
     --markdown-notebook-block-radius: 4px;
     --markdown-notebook-block-glass: color-mix(in sRGB, var(--color-bg-surface-primary) 42%, rgb(255 255 255 / 32%));
@@ -41,7 +41,7 @@
 }
 
 .MarkdownNotebook--wide {
-    --markdown-notebook-canvas-max-width: 56rem;
+    --markdown-notebook-canvas-max-width: 72rem;
 }
 
 [theme='dark'] .MarkdownNotebook,
