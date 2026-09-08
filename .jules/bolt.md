@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2025-05-20 - Memoizing Deep Text Searches
+**Learning:** In the `SearchModal` component, computing search results using chained `.flatMap()` and `.filter()` with repeated `query.toLowerCase()` conversions on every render creates an O(N*M) bottleneck that blocks the main thread.
+**Action:** Always wrap deep text searches in `useMemo`, extract string transformations outside loops, use `.find` instead of `.filter` for early short-circuiting, and replace `.flatMap()` with `.reduce()` or map directly to avoid allocating intermediate arrays.

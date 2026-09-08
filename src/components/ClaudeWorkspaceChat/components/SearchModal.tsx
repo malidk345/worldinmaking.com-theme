@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Chat } from '../types';
 import { Search, X, MessageSquare, ArrowRight, Calendar } from 'lucide-react';
 
@@ -32,25 +32,27 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   // Search results
-  const results = chats.flatMap((chat) => {
-    const titleMatch = chat.title.toLowerCase().includes(query.toLowerCase());
-    const matchingMessages = chat.messages.filter((m) =>
-      m.content.toLowerCase().includes(query.toLowerCase())
-    );
+  // Bolt: Wrapped search calculation in useMemo, hoisted toLowerCase(), used find for short-circuiting, and replaced flatMap with reduce
+  const results = useMemo(() => {
+    const lowerQuery = query.toLowerCase();
+    return chats.reduce((acc, chat) => {
+      const titleMatch = chat.title.toLowerCase().includes(lowerQuery);
+      const matchingMessage = chat.messages.find((m) =>
+        m.content.toLowerCase().includes(lowerQuery)
+      );
 
-    if (titleMatch || matchingMessages.length > 0) {
-      return [
-        {
+      if (titleMatch || matchingMessage) {
+        acc.push({
           chat,
-          matchingMessage: matchingMessages[0] || chat.messages[0],
-        },
-      ];
-    }
-    return [];
-  });
+          matchingMessage: matchingMessage || chat.messages[0],
+        });
+      }
+      return acc;
+    }, [] as Array<{ chat: Chat; matchingMessage?: Chat['messages'][0] }>);
+  }, [chats, query]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-stone-950/30 backdrop-blur-xs font-sans">
