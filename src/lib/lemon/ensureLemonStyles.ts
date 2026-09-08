@@ -89,14 +89,14 @@ const NOTEBOOK_PALETTE_CSS = `
   --tw-prose-headings: rgb(var(--text-primary));
   --tw-prose-bold: rgb(var(--text-primary));
   --tw-prose-quotes: rgb(var(--text-primary));
-  font-family: var(--font-sans);
+  font-family: 'RoundHog', sans-serif;
   color: rgb(var(--text-primary));
 }
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook,
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-group,
 .notebook-app-scope .NotebookPublicView .MarkdownNotebook__text-block,
 .notebook-app-scope .NotebookPublicView .prose {
-  font-family: var(--font-sans);
+  font-family: 'RoundHog', sans-serif;
   color: rgb(var(--text-primary));
   letter-spacing: normal !important;
 }

@@ -26,11 +26,155 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Active Task:** None. Heading creation, slash command navigation, shortcuts, and editorial behaviors repaired and verified.
+- **Active Task:** None
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** 1:1 Complete Typography Alignment of Notebook (`MarkdownNotebook`) with Blog Posts (`BlogPost.tsx` / `ReaderView`).
+- **User Intent:** Ensure all font settings, typography, font family, font size, line-height, font weight, and element styles in the notebook are 100% identical ("birebir aynı") to blog posts.
+- **Root Cause Diagnosis & Resolutions:**
+  1. **Stripped Prose Cascade via `not-prose` Wrapper (`NotebookEditorReader.tsx`):**
+     - `NotebookEditorReader.tsx` previously wrapped `{children}` in `<div className="not-prose">{children}</div>`. In `@tailwindcss/typography`, `:not(:where([class~="not-prose"] *))` neutralized all `.prose` and `.prose-sm` cascade rules on all descendant elements.
+     - Removed `not-prose` wrapper; replaced with `<div className="min-w-0 flex-1">{children}</div>` so typography tokens flow through.
+  2. **Font Family Harmonization (`RoundHog, sans-serif`):**
+     - Blog posts inherit `body` font: `@apply font-rounded m-0;` where `font-rounded` is `['RoundHog', 'sans-serif']`.
+     - Replaced generic `font-sans` with `font-rounded` in `src/notebook-app/App.tsx` and `src/notebook-app/scenes/notebooks/NotebookPublicView.tsx`.
+     - Replaced undefined `font-family: var(--font-sans);` in `src/lib/lemon/ensureLemonStyles.ts` with `'RoundHog', sans-serif`.
+     - Explicitly bound `font-family: 'RoundHog', sans-serif !important;` in `MarkdownNotebook.scss` across both editor and public scopes.
+  3. **Document Title 1:1 Match with `Title.tsx` (`MarkdownNotebook.scss`):**
+     - The document title (first row with `isTitleBlock`) was previously treated as a generic `h1` without prominent title hierarchy.
+     - Applied exact blog post title styling: `font-size: 1.875rem !important;` (mobile) / `2.25rem !important;` (md+), `font-weight: 700 !important;`, `line-height: 1.25 !important;`, `letter-spacing: -0.02em !important;`, and `margin-bottom: 1.25rem !important;`.
+  4. **Headings, Paragraphs, Lists & Spacing Alignment:**
+     - Aligned all non-title headings to `prose-sm` metrics: `h1` (`2.1428571em`), `h2` (`1.4285714em`), `h3` (`1.2857143em`), `h4-h6` (`1em`), all with `font-weight: 700 !important;`.
+     - Paragraphs and lists set to `15px !important; line-height: 1.5 !important; margin: 0;` (with `1.1em` inter-block spacing matching `global.css .prose p`).
+     - Cleared mobile-only overrides that forcefully clamped headings to 1.5rem / 1.25rem / 1.1rem and forced 16px on body content.
+  5. **Inline Code & Links:**
+     - Styled inline code 1:1 with `components/InlineCode/index.js`: `Source Code Pro` font, `0.875em`, light padding, red text + tint in light mode (`#F54E00`), yellow/blue tint in dark mode (`#3B82F6`).
+     - Styled links with `font-weight: 600 !important; text-decoration: underline !important; text-underline-offset: 2px !important;`.
+  6. **Blockquotes:**
+     - Styled `.MarkdownNotebook__blockquote-group` with secondary background card treatment (`0.5rem 1rem` padding, `4px` radius, subtle border) and italic text matching blog `Blockquote`.
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/NotebookEditorReader.tsx`
+  - `src/notebook-app/App.tsx`
+  - `src/notebook-app/scenes/notebooks/NotebookPublicView.tsx`
+  - `src/lib/lemon/ensureLemonStyles.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Match Notebook Top Bar (Collaborators/Presence Header) Glassmorphism with Craft Floating Toolbar.
+- **User Intent:** Apply the exact same glassmorphism design tokens (frosted glass background, backdrop blur, border, subtle drop shadow, and border radius) from the Craft formatting toolbar to the top bar with people/collaborators, without altering any layout or internal contents of the bar.
+- **Implemented Changes:**
+  - `src/styles/global.css`:
+    - Defined `.notebook-topbar-glass` using the exact Craft glass token values:
+      - Light mode: `background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.09), 0 2px 6px -1px rgba(0, 0, 0, 0.04); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); color: #1c1c1e;`.
+      - Dark mode: `background: rgba(30, 31, 35, 0.88); border-color: rgba(255, 255, 255, 0.12); box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45); color: #f4f4f5;`.
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`:
+    - Added `.notebook-topbar-glass` rule matching the toolbar's glassmorphism so scoped and product-bundle stylesheets share the exact definition.
+  - `src/components/ReaderView/index.tsx`:
+    - Replaced the previous modal-style container classes on the `stickyHeader` wrapper with `notebook-topbar-glass overflow-hidden`.
+  - Recompiled notebook stylesheets into `bundleCss.ts` and `productBundleCss.ts`.
+- **Files Modified:**
+  - `src/styles/global.css`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/components/ReaderView/index.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Unify MarkdownNotebook FormattingToolbar Placement (Mobile Matches Desktop Above-Selection Anchoring).
+- **User Intent:** Ensure mobile does not dock the toolbar to the bottom of the screen. Mobile and desktop behavior must be 100% identical, opening directly centered above the selected text without altering desktop.
+- **Implemented Changes:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`:
+    - Removed `if (isNarrow)` branch in `updateFloatingToolbarFromSelection` that previously docked the toolbar to the bottom of the screen above the keyboard.
+    - Mobile now uses the exact same calculation as desktop: anchors directly centered horizontally on `selectionRect` (`selectionRect.left + selectionRect.width / 2`) and 8px vertically above `selectionRect.top` (flipping to 8px below `selectionRect.bottom` only when near the viewport top edge).
+    - `useLayoutEffect` in `FormattingToolbar.tsx` automatically applies `boundsShift.x` and `boundsShift.y` within `visualViewport` so the toolbar is clamped inside screen boundaries on narrow mobile screens.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Migrate FormattingToolbar to Official Site Icon Families (`@posthog/icons` & `iconsShim`).
+- **User Intent:** Ensure all toolbar icons strictly adhere to the site's official icon design system and icon libraries rather than custom inline SVGs.
+- **Implemented Changes:**
+  - `src/notebook-app/lib/icons/iconsShim.tsx`: Exported `IconStrikethrough` and `IconUnderline` from `lucide-react` with standard `w-4 h-4 inline-block` shim styling.
+  - `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`:
+    - Removed all ad-hoc inline SVG components (`IconCraftPencil`, `IconChevronDown`, `IconCraftLink`, `IconCraftComment`, `IconCheck`).
+    - Directly imported `IconPencil`, `IconChevronDown`, `IconCode`, `IconComment`, `IconCopy`, `IconExternal`, `IconQuote`, `IconSparkles`, `IconCheck` from `@posthog/icons`.
+    - Directly imported `IconBold`, `IconItalic`, `IconStrikethrough`, `IconLink`, `IconIndent`, `IconOutdent` from `iconsShim`.
+    - Styled icons uniformly using `.MarkdownNotebook__format-btn svg` (`width: 14px; height: 14px;`) with clean opacity adjustments for sub-elements like the dropdown chevron.
+- **Files Modified:**
+  - `src/notebook-app/lib/icons/iconsShim.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** MarkdownNotebook Inline Formatting Toolbar — Craft-Style Floating Glassmorphism & Centered Selection Anchoring.
+- **User Intent:** Transform the notebook's inline formatting toolbar to match the Craft editor reference design: translucent white frosted glassmorphic pill, compact single-button style dropdown `[ ✏️ ▾ ]`, inline action buttons (`B`, `I`, `S`, `</>`, `🔗`, `✨`, `|`, `💬+`), attached popovers for style menu & link editor, and anchored directly above selection without erratic mouse drag displacement.
+- **Diagnosis & Implemented Changes:**
+  1. **Centered Selection Anchoring (`MarkdownNotebook.tsx`):**
+     - Removed `pointerAnchor` override from `updateFloatingToolbarFromSelection`. The toolbar now strictly anchors horizontally centered on the selection (`selectionRect.left + selectionRect.width / 2`) and 8px directly above `selectionRect.top` (flipping to 8px below `selectionRect.bottom` only when near the viewport top edge).
+     - Passed `activeMarks` (bold, italic, strike, underline, code) to `<FormattingToolbar />` by checking selections via `areInlineSelectionsFullyMarked` across text and list item nodes.
+  2. **Craft Toolbar Layout & Style Popover (`FormattingToolbar.tsx`):**
+     - Replaced the 6 separate horizontal style buttons with a single compact `[ ✏️ ▾ ]` style button that opens a vertical popover menu (`.MarkdownNotebook__format-style-dropdown`).
+     - Rendered inline formatting buttons matching Craft order: `[ ✏️ ▾ ]`, `Bold (B)`, `Italic (I)`, `Strikethrough (S)`, `Code (</>)`, `Link (🔗)`, `AI (✨)`, `|` divider, `Comment (💬+)`, `Copy`, indent/outdent.
+     - Detached the link editor from horizontal toolbar flow: rendered `.MarkdownNotebook__format-link-editor` as an attached child popover card below the toolbar, keeping the toolbar compact (~260px width) on all viewports.
+     - Added click-outside listener and Escape key handling to close the style dropdown without closing the selection.
+  3. **Craft Frosted Glassmorphism Styles (`MarkdownNotebook.scss`):**
+     - `.MarkdownNotebook__format-toolbar`: 10px rounded pill, height 36px, `background: rgba(255, 255, 255, 0.88)`, border `1px solid rgba(0, 0, 0, 0.08)`, `backdrop-filter: blur(20px) saturate(180%)`, soft shadow `0 4px 18px -2px rgba(0, 0, 0, 0.09)`. Dark mode: `rgba(30, 31, 35, 0.88)`.
+     - `.MarkdownNotebook__format-btn`: 28x28px compact buttons with active mark tint `rgba(29, 78, 216, 0.12)` and `#1d4ed8` accent.
+     - `.MarkdownNotebook__format-style-dropdown` & `.MarkdownNotebook__format-link-editor`: Frosted glass child cards with `backdrop-filter: blur(20px) saturate(180%)`, 8px rounded corners, and vertical drop shadows.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Align MarkdownNotebook Typography & Horizontal Window Width with Blog Posts (`ReaderView` / `BlogPost.tsx`).
+- **User Intent:** Match text styles (headings h1-h6, body text, lists, inline code, links) and horizontal body width / window occupancy in notebooks with blog posts.
+- **Root Cause Diagnosis & Resolutions:**
+  1. **Horizontal Container & Body Width Alignment:**
+     - Blog posts in `BlogPost.tsx` / `ReaderView` use container width `mx-auto max-w-2xl` (`42rem` / `672px`) centered within responsive container padding (`p-4 @md:px-6 @lg:px-8 @xl:px-12 @2xl:px-16 @3xl:px-20`).
+     - Notebook previously used `--markdown-notebook-canvas-max-width: 56rem;` and `App.tsx` had `max-w-3xl mx-auto` (`48rem`), making the notebook 6rem-14rem wider than blog posts.
+     - Updated `--markdown-notebook-canvas-max-width` in `MarkdownNotebook.scss` to `42rem;` (with `.MarkdownNotebook--wide` allowing `56rem` when wide mode is toggled).
+     - Updated `App.tsx` wrapper from `max-w-3xl mx-auto` to `max-w-2xl mx-auto` (and passed `.MarkdownNotebook--wide` when `chrome.wide` is enabled).
+     - Updated `NotebookPublicView.tsx` container to `w-full max-w-2xl mx-auto p-4` to match blog post width in public view as well.
+  2. **Typography & Styling Alignment:**
+     - Aligned base text to 15px font size, line-height 1.5, matching `.prose-sm` + `global.css`.
+     - Harmonized all headings: `h1` (2.1428571em, font-weight 700, line-height 1.2), `h2` (1.4285714em, font-weight 700, line-height 1.4), `h3` (1.2857143em, font-weight 700, line-height 1.5555556), `h4`/`h5`/`h6` (1em, font-weight 700, line-height 1.4285714).
+     - Aligned vertical spacing: inter-paragraph spacing `1.1em`, pre-heading spacing (`h1`: 1.8em, `h2`: 1.6em, `h3`: 1.55em, `h4-h6`: 1.4em), and post-heading spacing (`h1`: 0.8em, `h2`: 0.6em, `h3-h4`: 0.45em).
+     - Styled inline `code` within `.MarkdownNotebook__text-block` to match `InlineCode` in blog posts: red text with red tinted border & background in light mode, yellow tinted in dark mode.
+     - Ensured links inside `.MarkdownNotebook` have underline and 500 font-weight matching blog prose links.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/App.tsx`
+  - `src/notebook-app/scenes/notebooks/NotebookPublicView.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
 
 ### 2026-09-07 — Antigravity (Advanced Agentic Coding)
 - **Scope:** MarkdownNotebook Heading Creation, Slash Commands & Editorial Glitch Fixes.

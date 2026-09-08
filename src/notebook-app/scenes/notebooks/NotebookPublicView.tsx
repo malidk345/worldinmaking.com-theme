@@ -75,7 +75,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
 
     return (
         <div data-scheme="primary" className="NotebookPublicView bg-primary text-primary min-h-full pb-16">
-            <div className="flex flex-col w-full p-4">
+            <div className="flex flex-col w-full max-w-2xl mx-auto p-4">
                 <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pb-2">
                     {href ? (
                         <Link className="flex items-center relative !no-underline hover:!underline" to={href}>
@@ -142,7 +142,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         <React.Suspense
                             fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
                         >
-                            <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} font-sans prose prose-sm dark:prose-invert max-w-none font-normal`}>
+                            <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} font-rounded prose prose-sm dark:prose-invert max-w-none font-normal`}>
                             <MarkdownNotebook
                                 value={bodyMarkdown}
                                 mode="view"

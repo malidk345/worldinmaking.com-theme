@@ -3068,6 +3068,26 @@ article.reader-view-content-container:has(.quest-sidebar) {
     overflow: visible;
 }
 
+/* Notebook sticky top bar glassmorphism (matches Craft floating format toolbar) */
+.notebook-topbar-glass {
+    color: #1c1c1e;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.09), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+:root.dark .notebook-topbar-glass,
+.dark .notebook-topbar-glass,
+[data-scheme='dark'] .notebook-topbar-glass {
+    color: #f4f4f5;
+    background: rgba(30, 31, 35, 0.88);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+}
+
 /* Default styles (mobile-first) */
 .quest-main-content {
     width: 100%;

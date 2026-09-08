@@ -948,9 +948,9 @@ export function App() {
                   />
                 }
               >
-                <div className={`min-w-0 ${chrome.wide ? '' : 'max-w-3xl mx-auto'}`}>
+                <div className={`min-w-0 ${chrome.wide ? '' : 'max-w-2xl mx-auto'}`}>
                 <div
-                  className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} min-w-0 font-sans prose prose-sm dark:prose-invert max-w-none font-normal`}
+                  className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} min-w-0 font-rounded prose prose-sm dark:prose-invert max-w-none font-normal`}
                   ref={editorContainerRef}
                 >
                 {currentNotebook.isTemplate && (
@@ -973,6 +973,7 @@ export function App() {
                     }
                   >
                     <MarkdownNotebook
+                      className={chrome.wide ? 'MarkdownNotebook--wide' : undefined}
                       key={`${currentNotebook.id}-${markdownVersion}`}
                       value={markdown}
                       remoteValue={remoteMarkdown}

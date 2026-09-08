@@ -1808,7 +1808,7 @@ function ReaderViewContent({
                             >
                                 {stickyHeader ? (
                                     <div className="not-prose sticky top-2 z-30 mx-2 mt-1 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
-                                        <div className="rounded-xl border border-white/80 dark:border-white/15 bg-white/70 dark:bg-[#18191c]/70 backdrop-blur-2xl shadow-none overflow-hidden">
+                                        <div className="notebook-topbar-glass overflow-hidden">
                                             {stickyHeader}
                                         </div>
                                     </div>

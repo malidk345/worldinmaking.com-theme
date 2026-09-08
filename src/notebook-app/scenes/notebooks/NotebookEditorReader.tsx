@@ -203,7 +203,7 @@ export function NotebookEditorReader({
                 ) : undefined
             }
         >
-            <div className="not-prose">{children}</div>
+            <div className="min-w-0 flex-1">{children}</div>
         </ReaderView>
     )
 }

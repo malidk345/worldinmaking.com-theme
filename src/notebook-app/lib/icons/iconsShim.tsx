@@ -36,14 +36,18 @@ import {
     ArrowUpDown,
     Indent,
     Outdent,
+    Underline,
+    Strikethrough,
 } from 'lucide-react'
 
-export const IconIndent      = (p: any) => <Indent       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
-export const IconOutdent     = (p: any) => <Outdent      className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
-export const IconUnlink      = (p: any) => <Unlink       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
-export const IconLink        = (p: any) => <Link2        className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
-export const IconBold        = (p: any) => <Bold         className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
-export const IconItalic      = (p: any) => <Italic       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconIndent         = (p: any) => <Indent        className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconOutdent        = (p: any) => <Outdent       className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconUnlink         = (p: any) => <Unlink        className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconLink           = (p: any) => <Link2         className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconBold           = (p: any) => <Bold          className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconItalic         = (p: any) => <Italic        className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconUnderline      = (p: any) => <Underline     className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
+export const IconStrikethrough  = (p: any) => <Strikethrough className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconFile        = (p: any) => <FileText     className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconFileText    = (p: any) => <FileText     className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />
 export const IconSettings    = (p: any) => <Settings     className="w-4 h-4 inline-block" strokeWidth={1.5} {...p} />

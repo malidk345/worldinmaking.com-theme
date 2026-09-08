@@ -2214,52 +2214,16 @@ function MarkdownNotebookEditor({
             const viewHeight = vv?.height ?? window.innerHeight
             const viewRight = viewLeft + viewWidth
             const viewBottom = viewTop + viewHeight
-            const isNarrow = viewWidth < 640
-            const estimatedHeight = isNarrow ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
-            if (isNarrow) {
-                setFloatingToolbar({
-                    textRanges,
-                    codeRanges,
-                    listItemRanges,
-                    selectedMarkdown,
-                    placement: 'below',
-                    top: Math.round(viewBottom - estimatedHeight - 10),
-                    left: Math.round(viewLeft + viewWidth / 2),
-                    docked: true,
-                })
-                const focusNode = selection.focusNode
-                const focusEl =
-                    focusNode instanceof HTMLElement
-                        ? focusNode
-                        : focusNode?.parentElement instanceof HTMLElement
-                          ? focusNode.parentElement
-                          : null
-                focusEl?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                return
-            }
-            const shouldPlaceBelow = pointerAnchor
-                ? pointerAnchor.placement === 'below'
-                : selectionRect.top - viewTop < estimatedHeight + lineHeight
-            const pointerOverlapsSelection =
-                pointerAnchor && pointerAnchor.y >= selectionRect.top && pointerAnchor.y <= selectionRect.bottom
-            const rawTop = pointerAnchor
-                ? Math.round(
-                      shouldPlaceBelow
-                          ? pointerOverlapsSelection
-                              ? selectionRect.bottom + FLOATING_TOOLBAR_GAP
-                              : pointerAnchor.y + FLOATING_TOOLBAR_GAP
-                          : pointerOverlapsSelection
-                            ? selectionRect.top
-                            : pointerAnchor.y
-                  )
-                : Math.round(shouldPlaceBelow ? selectionRect.bottom + lineHeight : selectionRect.top)
+            const estimatedHeight = FLOATING_TOOLBAR_ESTIMATED_HEIGHT
+            // Anchor directly above the selection, horizontally centered on the selection.
+            // Flip below only if there is not enough room at the top of the viewport.
+            const shouldPlaceBelow = selectionRect.top - viewTop < estimatedHeight + 12
+            const rawTop = Math.round(shouldPlaceBelow ? selectionRect.bottom : selectionRect.top)
             const toolbarTop = Math.min(
                 viewBottom - estimatedHeight - 8,
                 Math.max(viewTop + 8, rawTop)
             )
-            const toolbarLeft = pointerAnchor
-                ? Math.round(pointerAnchor.x)
-                : Math.round(selectionRect.left + selectionRect.width / 2)
+            const toolbarLeft = Math.round(selectionRect.left + selectionRect.width / 2)
             const lockedPosition = floatingToolbarPositionLockRef.current
 
             setFloatingToolbar({
@@ -5684,6 +5648,25 @@ function MarkdownNotebookEditor({
                                 (floatingToolbar.textRanges.length > 0 || floatingToolbar.listItemRanges.length > 0) &&
                                 floatingToolbar.codeRanges.length === 0
                             }
+                            activeMarks={(() => {
+                                const selections = [
+                                    ...floatingToolbar.textRanges.map(({ node, range }) => ({
+                                        children: node.children,
+                                        range,
+                                    })),
+                                    ...floatingToolbar.listItemRanges.map(({ node, itemIndex, range }) => ({
+                                        children: node.items[itemIndex]?.children ?? [],
+                                        range,
+                                    })),
+                                ]
+                                return {
+                                    bold: areInlineSelectionsFullyMarked(selections, 'bold'),
+                                    italic: areInlineSelectionsFullyMarked(selections, 'italic'),
+                                    underline: areInlineSelectionsFullyMarked(selections, 'underline'),
+                                    strike: areInlineSelectionsFullyMarked(selections, 'strike'),
+                                    code: areInlineSelectionsFullyMarked(selections, 'code'),
+                                }
+                            })()}
                             applyInlineMark={applyInlineMark}
                             applyInlineLink={applyInlineLink}
                             currentLinkHref={getFloatingToolbarLinkHref(floatingToolbar)}

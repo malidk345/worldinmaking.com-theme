@@ -9,8 +9,25 @@ import {
     useState,
 } from 'react'
 
-import { IconCode, IconComment, IconCopy, IconExternal, IconQuote, IconSparkles } from '@posthog/icons'
-import { IconBold, IconIndent, IconItalic, IconLink, IconOutdent } from '../../icons/iconsShim'
+import {
+    IconCheck,
+    IconChevronDown,
+    IconCode,
+    IconComment,
+    IconCopy,
+    IconExternal,
+    IconPencil,
+    IconQuote,
+    IconSparkles,
+} from '@posthog/icons'
+import {
+    IconBold,
+    IconIndent,
+    IconItalic,
+    IconLink,
+    IconOutdent,
+    IconStrikethrough,
+} from '../../icons/iconsShim'
 
 function FormatBtn({
     active,
@@ -67,7 +84,7 @@ export const TEXT_BLOCK_STYLE_BUTTONS: {
     { style: 1, label: 'Heading 1', content: 'H1' },
     { style: 2, label: 'Heading 2', content: 'H2' },
     { style: 3, label: 'Heading 3', content: 'H3' },
-    { style: 'blockquote', label: 'Blockquote', icon: <IconQuote /> },
+    { style: 'blockquote', label: 'Quote', icon: <IconQuote /> },
     { style: 'code', label: 'Code', icon: <IconCode /> },
 ]
 
@@ -78,6 +95,7 @@ export function FormattingToolbar({
     top,
     left,
     showInlineActions,
+    activeMarks,
     applyInlineMark,
     applyInlineLink,
     currentLinkHref,
@@ -103,6 +121,13 @@ export function FormattingToolbar({
     top: number
     left: number
     showInlineActions: boolean
+    activeMarks?: {
+        bold?: boolean
+        italic?: boolean
+        underline?: boolean
+        strike?: boolean
+        code?: boolean
+    }
     applyInlineMark: (markType: NotebookInlineMark['type']) => void
     applyInlineLink: (href: string | null) => void
     currentLinkHref: string | null
@@ -124,10 +149,12 @@ export function FormattingToolbar({
     canIndent?: boolean
     canOutdent?: boolean
 }): JSX.Element {
+    const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
     const [isLinkEditorOpen, setIsLinkEditorOpen] = useState(initialLinkEditorOpen || !!currentLinkHref)
     const [shouldFocusLinkInput, setShouldFocusLinkInput] = useState(initialLinkEditorOpen)
     const [linkHref, setLinkHref] = useState(currentLinkHref ?? '')
     const toolbarRef = useRef<HTMLDivElement | null>(null)
+    const styleMenuRef = useRef<HTMLDivElement | null>(null)
     const linkInputRef = useRef<HTMLInputElement | null>(null)
     const [boundsShift, setBoundsShift] = useState({ x: 0, y: 0 })
 
@@ -226,6 +253,21 @@ export function FormattingToolbar({
         setIsLinkEditorOpen(false)
     }
 
+    useEffect(() => {
+        if (!isStyleMenuOpen) return
+        const handleClickOutside = (e: MouseEvent | TouchEvent): void => {
+            if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
+                setIsStyleMenuOpen(false)
+            }
+        }
+        window.addEventListener('mousedown', handleClickOutside, true)
+        window.addEventListener('touchstart', handleClickOutside, true)
+        return () => {
+            window.removeEventListener('mousedown', handleClickOutside, true)
+            window.removeEventListener('touchstart', handleClickOutside, true)
+        }
+    }, [isStyleMenuOpen])
+
     // Roving arrow-key navigation between the toolbar's buttons; Escape hands focus back to
     // the editor. The buttons stay in the tab order, so this only augments focus movement.
     const handleToolbarKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
@@ -239,6 +281,12 @@ export function FormattingToolbar({
         }
 
         if (event.key === 'Escape') {
+            if (isStyleMenuOpen) {
+                event.preventDefault()
+                event.stopPropagation()
+                setIsStyleMenuOpen(false)
+                return
+            }
             event.preventDefault()
             event.stopPropagation()
             returnFocusToEditor?.()
@@ -297,111 +345,166 @@ export function FormattingToolbar({
                 lockPosition()
                 if (
                     event.target instanceof HTMLElement &&
-                    event.target.closest('.MarkdownNotebook__format-link-editor')
+                    (event.target.closest('.MarkdownNotebook__format-link-editor') ||
+                        event.target.closest('.MarkdownNotebook__format-style-dropdown'))
                 ) {
                     return
                 }
                 event.preventDefault()
             }}
         >
-            <div
-                className={clsx(
-                    'MarkdownNotebook__format-style-buttons',
-                    showInlineActions && 'MarkdownNotebook__format-style-buttons--separated'
+            {/* 1. Style Dropdown (Craft: [ ✏️ ▾ ]) */}
+            <div className="relative inline-flex items-center">
+                <FormatBtn
+                    label="Change text style"
+                    active={isStyleMenuOpen || selectedBlockQuoted || (selectedBlockStyle !== null && selectedBlockStyle !== 'paragraph')}
+                    className="MarkdownNotebook__format-btn--style"
+                    onClick={() => setIsStyleMenuOpen((prev) => !prev)}
+                >
+                    <IconPencil className="size-3.5" />
+                    <IconChevronDown className="size-2.5 opacity-70 ml-0.5" />
+                </FormatBtn>
+
+                {isStyleMenuOpen && (
+                    <div
+                        className={clsx(
+                            'MarkdownNotebook__format-style-dropdown',
+                            placement === 'below'
+                                ? 'MarkdownNotebook__format-style-dropdown--below'
+                                : 'MarkdownNotebook__format-style-dropdown--above'
+                        )}
+                        ref={styleMenuRef}
+                        role="menu"
+                    >
+                        {TEXT_BLOCK_STYLE_BUTTONS.map((button) => {
+                            const isActive =
+                                button.style === 'blockquote'
+                                    ? selectedBlockQuoted
+                                    : selectedBlockStyle === button.style
+                            return (
+                                <button
+                                    key={button.label}
+                                    type="button"
+                                    role="menuitem"
+                                    className={clsx(
+                                        'MarkdownNotebook__format-style-menu-item',
+                                        isActive && 'MarkdownNotebook__format-style-menu-item--active'
+                                    )}
+                                    onClick={() => {
+                                        setBlockStyle(
+                                            button.style === 'blockquote' || !isActive
+                                                ? button.style
+                                                : 'paragraph'
+                                        )
+                                        setIsStyleMenuOpen(false)
+                                    }}
+                                >
+                                    <span className="MarkdownNotebook__format-style-menu-icon">
+                                        {button.icon || (
+                                            <span className="font-semibold text-[11px]">
+                                                {button.content}
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="MarkdownNotebook__format-style-menu-label">
+                                        {button.label}
+                                    </span>
+                                    {isActive && (
+                                        <IconCheck className="ml-auto size-3.5 text-blue-600 dark:text-blue-400" />
+                                    )}
+                                </button>
+                            )
+                        })}
+                    </div>
                 )}
-                role="group"
-                aria-label="Text style"
-            >
-                {TEXT_BLOCK_STYLE_BUTTONS.map((button) => {
-                    // Quote membership is orthogonal to the text style, so a quoted heading lights up
-                    // both its heading button and the quote button. The quote button always dispatches
-                    // 'blockquote' — the editor toggles membership based on the selection's current state.
-                    const isActive =
-                        button.style === 'blockquote' ? selectedBlockQuoted : selectedBlockStyle === button.style
-                    return (
-                        <FormatBtn
-                            key={button.label}
-                            label={button.label}
-                            active={isActive}
-                            onClick={() =>
-                                setBlockStyle(button.style === 'blockquote' || !isActive ? button.style : 'paragraph')
-                            }
-                        >
-                            {button.icon || button.content}
-                        </FormatBtn>
-                    )
-                })}
             </div>
+
+            {/* 2. Inline Formatting: Bold, Italic, Strikethrough, Code, Link, AI */}
             {showInlineActions ? (
                 <>
-                    <FormatBtn label="Bold" onClick={() => applyInlineMark('bold')}>
-                        <IconBold />
-                    </FormatBtn>
-                    <FormatBtn label="Italic" onClick={() => applyInlineMark('italic')}>
-                        <IconItalic />
-                    </FormatBtn>
-                    <FormatBtn label="Underline" onClick={() => applyInlineMark('underline')}>
-                        <span className="font-semibold underline">U</span>
-                    </FormatBtn>
-                    <FormatBtn label="Strikethrough" onClick={() => applyInlineMark('strike')}>
-                        <span className="font-semibold line-through">S</span>
-                    </FormatBtn>
-                    <FormatBtn label="Inline code" onClick={() => applyInlineMark('code')}>
-                        <IconCode />
+                    <FormatBtn
+                        label="Bold (Cmd+B)"
+                        active={activeMarks?.bold}
+                        onClick={() => applyInlineMark('bold')}
+                    >
+                        <IconBold className="size-3.5" />
                     </FormatBtn>
                     <FormatBtn
-                        label="Link"
+                        label="Italic (Cmd+I)"
+                        active={activeMarks?.italic}
+                        onClick={() => applyInlineMark('italic')}
+                    >
+                        <IconItalic className="size-3.5" />
+                    </FormatBtn>
+                    <FormatBtn
+                        label="Strikethrough"
+                        active={activeMarks?.strike}
+                        onClick={() => applyInlineMark('strike')}
+                    >
+                        <IconStrikethrough className="size-3.5" />
+                    </FormatBtn>
+                    <FormatBtn
+                        label="Inline code (Cmd+E)"
+                        active={activeMarks?.code}
+                        onClick={() => applyInlineMark('code')}
+                    >
+                        <IconCode className="size-3.5" />
+                    </FormatBtn>
+                    <FormatBtn
+                        label="Link (Cmd+K)"
                         active={hasExistingLink || isLinkEditorOpen}
                         onClick={openLinkEditor}
                     >
-                        <IconLink />
+                        <IconLink className="size-3.5" />
                     </FormatBtn>
-                    <FormatBtn label="Copy" onClick={copySelection}>
-                        <IconCopy />
+                    {askAIAboutSelection ? (
+                        <FormatBtn
+                            label="Ask WIM AI"
+                            disabled={isAskAIDisabled}
+                            onClick={() => askAIAboutSelection()}
+                        >
+                            <IconSparkles className="size-3.5" />
+                        </FormatBtn>
+                    ) : null}
+
+                    {/* Divider before secondary actions */}
+                    <span className="MarkdownNotebook__format-divider" aria-hidden />
+
+                    {startInlineCommentAtSelection ? (
+                        <FormatBtn
+                            label="Comment on selection"
+                            onClick={startInlineCommentAtSelection}
+                        >
+                            <IconComment className="size-3.5" />
+                        </FormatBtn>
+                    ) : null}
+                    <FormatBtn label="Copy selection" onClick={copySelection}>
+                        <IconCopy className="size-3.5" />
                     </FormatBtn>
                     {onOutdent ? (
                         <FormatBtn label="Outdent" onClick={onOutdent} disabled={canOutdent === false}>
-                            <IconOutdent />
+                            <IconOutdent className="size-3.5" />
                         </FormatBtn>
                     ) : null}
                     {onIndent ? (
                         <FormatBtn label="Indent" onClick={onIndent} disabled={canIndent === false}>
-                            <IconIndent />
+                            <IconIndent className="size-3.5" />
                         </FormatBtn>
                     ) : null}
                 </>
             ) : null}
-            {startInlineCommentAtSelection ? (
-                <FormatBtn label="Comment on selection" onClick={startInlineCommentAtSelection}>
-                    <IconComment />
-                </FormatBtn>
-            ) : null}
 
-            {showInlineActions && askAIAboutSelection ? (
-                <>
-                    <span className="MarkdownNotebook__format-divider" aria-hidden />
-                    {selectionAIActions?.map((action) => (
-                        <FormatBtn
-                            key={action.id}
-                            label={action.tooltip}
-                            disabled={isAskAIDisabled}
-                            className="MarkdownNotebook__format-ai-action"
-                            onClick={() => askAIAboutSelection(action.prompt)}
-                        >
-                            <span className="text-[11px] font-medium">{action.label}</span>
-                        </FormatBtn>
-                    ))}
-                    <FormatBtn
-                        label="Edit with WIM AI"
-                        disabled={isAskAIDisabled}
-                        onClick={() => askAIAboutSelection()}
-                    >
-                        <IconSparkles />
-                    </FormatBtn>
-                </>
-            ) : null}
+            {/* Attached popover link editor */}
             {showInlineActions && isLinkEditorOpen ? (
-                <div className="MarkdownNotebook__format-link-editor">
+                <div
+                    className={clsx(
+                        'MarkdownNotebook__format-link-editor',
+                        placement === 'below'
+                            ? 'MarkdownNotebook__format-link-editor--below'
+                            : 'MarkdownNotebook__format-link-editor--above'
+                    )}
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
                     <input
                         ref={linkInputRef}
                         type="url"
@@ -411,12 +514,17 @@ export function FormattingToolbar({
                         autoFocus={shouldFocusLinkInput}
                         onChange={(event) => setLinkHref(event.target.value)}
                         onKeyDown={(event) => {
-                            if (event.key !== 'Enter') return
-                            event.preventDefault()
-                            event.stopPropagation()
-                            setLink()
+                            if (event.key === 'Enter') {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setLink()
+                            } else if (event.key === 'Escape') {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setIsLinkEditorOpen(false)
+                            }
                         }}
-                        className="notebook-native-field MarkdownNotebook__format-link-input rounded-sm border border-primary px-2 py-1 text-sm text-primary"
+                        className="MarkdownNotebook__format-link-input rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 px-2 py-1 text-xs text-primary outline-none focus:border-blue-500"
                     />
                     {hasExistingLink && sanitizeNotebookLinkHref(currentLinkHref ?? '') ? (
                         <FormatBtn
@@ -433,7 +541,7 @@ export function FormattingToolbar({
                     ) : null}
                     {hasExistingLink ? (
                         <FormatBtn label="Remove link" onClick={removeLink}>
-                            Remove
+                            <span className="text-[11px] font-medium text-red-500">Remove</span>
                         </FormatBtn>
                     ) : null}
                     <FormatBtn
@@ -441,7 +549,9 @@ export function FormattingToolbar({
                         disabled={!normalizedLinkHref}
                         onClick={setLink}
                     >
-                        {hasExistingLink ? 'Update' : 'Set'}
+                        <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                            {hasExistingLink ? 'Update' : 'Set'}
+                        </span>
                     </FormatBtn>
                 </div>
             ) : null}
