@@ -97,7 +97,6 @@ const validFormats = new Set([`jpg`, `jpeg`, `png`, `webp`, `auto`])
 
 export function urlBuilder({ width, height, baseUrl, format }: IUrlBuilderArgs<unknown>): string {
     if (!validFormats.has(format)) {
-        console.warn(`${format} is not a valid format. Valid formats are: ${Array.from(validFormats).join(`, `)}`)
         format = `auto`
     }
 

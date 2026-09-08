@@ -28,11 +28,7 @@ export type AiTurnTelemetry = {
 
 export function recordAiTurn(event: AiTurnTelemetry): void {
     const payload = buildPayload(event)
-    if (event.ok) {
-        console.info('[ai-turn]', JSON.stringify(payload))
-    } else {
-        console.warn('[ai-turn]', JSON.stringify(payload))
-    }
+
     captureAiTurnPosthog(payload)
 }
 

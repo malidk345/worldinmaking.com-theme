@@ -2,12 +2,11 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import Link from 'components/Link'
 
-const DontClickButton = ({ alertMessage, children, ...props }) => (
+const DontClickButton = ({ children, ...props }) => (
     <button
         className="dont-click flex items-center space-x-1 text-muted text-sm @xl:text-[15px]"
         onClick={(e) => {
             e.preventDefault()
-            console.warn(alertMessage)
         }}
         {...props}
     >

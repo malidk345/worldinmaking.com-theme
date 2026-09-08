@@ -131,7 +131,6 @@ const Stickers: React.FC<StickersProps> = ({ country, location, name, label, cla
         }
 
         // Fallback if sticker name not found
-        console.warn(`Sticker with name "${name}" not found`)
         return null
     }
 
@@ -150,7 +149,6 @@ const Stickers: React.FC<StickersProps> = ({ country, location, name, label, cla
     }
 
     // No valid props provided
-    console.warn('Stickers component requires either "country" or "name" prop')
     return null
 }
 

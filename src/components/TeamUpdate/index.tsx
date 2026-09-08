@@ -48,7 +48,6 @@ export default function TeamUpdate({
                 try {
                     const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
                     if (!host) {
-                        console.warn('[wim] team updates disabled (Squeak)')
                         return
                     }
                     const jwt = await getJwt()

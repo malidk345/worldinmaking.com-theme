@@ -29,14 +29,14 @@ export const PathType: any = {}
 
 export const router = {
   values: { location: { pathname: '/', search: '', hash: '' }, currentLocation: { pathname: '/' } },
-  actions: { push: () => {}, replace: () => {} },
+  actions: { push: () => { /* ignore */ }, replace: () => { /* ignore */ } },
 }
 
 const posthogMock = {
   capture: (_event: string, _properties?: any) => {},
   on: (_event: string, _callback: any) => {},
-  opt_in_capturing: () => {},
-  opt_out_capturing: () => {},
+  opt_in_capturing: () => { /* ignore */ },
+  opt_out_capturing: () => { /* ignore */ },
 }
 
 export default posthogMock
@@ -93,8 +93,8 @@ export const Spinner: React.FC<any> = () => (
 )
 
 export const lemonToast = {
-  info: (msg: string, _opts?: any) => console.log('[Toast Info]', msg),
-  error: (msg: string, _opts?: any) => console.error('[Toast Error]', msg),
-  warning: (msg: string, _opts?: any) => console.warn('[Toast Warning]', msg),
-  success: (msg: string, _opts?: any) => console.log('[Toast Success]', msg),
+  info: (msg: string, _opts?: any) => { /* ignore */ },
+  error: (msg: string, _opts?: any) => { /* ignore */ },
+  warning: (msg: string, _opts?: any) => { /* ignore */ },
+  success: (msg: string, _opts?: any) => { /* ignore */ },
 }

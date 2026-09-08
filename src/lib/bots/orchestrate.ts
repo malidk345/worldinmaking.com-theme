@@ -805,7 +805,6 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             }
         }
 
-        console.warn('[orchestrate] tool loop produced no answer, recovering via gateway fallback')
     }
 
 

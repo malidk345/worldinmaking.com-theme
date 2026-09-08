@@ -1,0 +1,3 @@
+chore: remove garbage console logs
+
+Removed unused/debugging console.log and console.warn statements across various files, while preserving legitimate logging inside error-handling blocks. Also addressed linting warnings on empty functions by adding /* ignore */.

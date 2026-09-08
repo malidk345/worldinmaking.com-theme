@@ -192,7 +192,6 @@ export async function postSupabaseCommunityQuestion(
     try {
         const auth = await getAuthedRestHeaders()
         if (!auth) {
-            console.warn('[community] post requires signed-in Supabase session')
             return { ok: false, error: 'Not signed in' }
         }
         const trimmedSlug = slug?.trim()
@@ -238,7 +237,6 @@ export async function postSupabaseCommunityReply(
     try {
         const auth = await getAuthedRestHeaders()
         if (!auth) {
-            console.warn('[community] reply requires signed-in Supabase session')
             return { ok: false, error: 'Not signed in' }
         }
         const headers = { ...auth.headers, Prefer: 'return=representation' }
