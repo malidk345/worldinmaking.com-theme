@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Chat } from '../types';
 import { Search, X, MessageSquare, ArrowRight, Calendar } from 'lucide-react';
 
@@ -35,22 +35,26 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   if (!isOpen) return null;
 
   // Search results
-  const results = chats.flatMap((chat) => {
-    const titleMatch = chat.title.toLowerCase().includes(query.toLowerCase());
-    const matchingMessages = chat.messages.filter((m) =>
-      m.content.toLowerCase().includes(query.toLowerCase())
-    );
+  // Bolt: Optimized deep text search with useMemo, early short-circuiting (.find) and no intermediate array allocations (.reduce)
+  const results = useMemo(() => {
+    if (!query) return [];
+    const queryLower = query.toLowerCase();
 
-    if (titleMatch || matchingMessages.length > 0) {
-      return [
-        {
+    return chats.reduce((acc, chat) => {
+      const titleMatch = chat.title.toLowerCase().includes(queryLower);
+      const matchingMessage = chat.messages.find((m) =>
+        m.content.toLowerCase().includes(queryLower)
+      );
+
+      if (titleMatch || matchingMessage) {
+        acc.push({
           chat,
-          matchingMessage: matchingMessages[0] || chat.messages[0],
-        },
-      ];
-    }
-    return [];
-  });
+          matchingMessage: matchingMessage || chat.messages[0],
+        });
+      }
+      return acc;
+    }, [] as Array<{ chat: Chat; matchingMessage: Chat['messages'][0] }>);
+  }, [chats, query]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-stone-950/30 backdrop-blur-xs font-sans">
