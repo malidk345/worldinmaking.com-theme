@@ -26,13 +26,29 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Active Task:** None
+
 
 ---
 
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Fix Notebook Mobile Horizontal Margins — Align 1:1 with Blog Posts.
+- **User Intent:** Text was too far inside from the edges on mobile (\"kenarlardan çok içeride metin mobilde\"). Notebook mobile margin was 39px while blog posts had 25px — 14px too much on each side.
+- **Root Cause:**
+  - `MarkdownNotebook.scss` `@media (max-width: 640px)` block added `padding-left: 0.875rem; padding-right: 0.875rem` (14px) directly to `.MarkdownNotebook` div. Blog posts have no such self-padding; padding is handled entirely by the outer `ReaderView` container.
+  - `NotebookEditorReader.tsx` used `padding={false}` + manual `px-4 @md:px-6 @lg:px-8 @xl:px-12` on wrapper div — this created container-query-based escalation inconsistent with blog's viewport-query based escalation.
+- **Fixes Applied:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`: Changed mobile `padding-left`/`padding-right` from `0.875rem` to `0`.
+  - `src/notebook-app/scenes/notebooks/NotebookEditorReader.tsx`: Changed `padding={false}` to `padding={true}` and removed manual `px-4 @md:px-6 @lg:px-8 @xl:px-12` from children wrapper div. The `ReaderView` component now manages its own `p-4` padding (same as blog posts).
+- **Verification:** Playwright computed margin test confirmed 1:1 match — Blog: `pLeft=25px`, `pWidth=340px`; Notebook: `pLeft=25px`, `pWidth=340px` — identical on 390px viewport.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/scenes/notebooks/NotebookEditorReader.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+
+
 - **Scope:** Align Notebook Edge Margins and Content Width 1:1 with Blog Posts (`BlogPost.tsx` / `ReaderView`).
 - **User Intent:** Fix excessive inner indentation ("metin çok içeride yani kenarlardan boşluk çok blog postları gibi değil") so that notebook text begins at the exact same comfortable 48px side margin as blog posts rather than sitting squished in the center with 114px+ void gutters.
 - **Root Cause Diagnosis & Resolutions:**

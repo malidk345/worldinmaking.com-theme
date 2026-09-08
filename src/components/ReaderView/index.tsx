@@ -1621,10 +1621,10 @@ function ReaderViewContent({
         useReaderView()
 
     const showSidebar = !hideRightSidebar
-    const renderLeftSidebar = !compact && !hideLeftSidebar
+    const renderLeftSidebar = !hideLeftSidebar
     // On narrow windows the left rail is hidden and replaced by a floating
     // control cluster that opens the sidebar as an off-canvas drawer.
-    const showMobileNav = renderLeftSidebar && isNarrow
+    const showMobileNav = renderLeftSidebar && (isNarrow || compact)
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [keyboardOpen, setKeyboardOpen] = useState(false)
 
@@ -1807,7 +1807,7 @@ function ReaderViewContent({
                                 } max-w-none relative flex-1 min-w-0`}
                             >
                                 {stickyHeader ? (
-                                    <div className="not-prose sticky top-2 z-30 mx-2 mt-1 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
+                                    <div className="not-prose sticky top-2 z-30 mx-2 mt-6 mb-1 @md:top-6 @md:mx-3 @md:mt-3">
                                         <div className="notebook-topbar-glass overflow-hidden">
                                             {stickyHeader}
                                         </div>

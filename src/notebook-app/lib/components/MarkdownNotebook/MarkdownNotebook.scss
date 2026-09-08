@@ -4620,8 +4620,8 @@ button.MarkdownNotebook__component-title:focus-visible {
         overflow-x: clip;
         max-width: 100%;
         box-sizing: border-box;
-        padding-left: 0.875rem;
-        padding-right: 0.875rem;
+        padding-left: 0;
+        padding-right: 0;
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -4769,7 +4769,7 @@ h1.MarkdownNotebook__text-block.MarkdownNotebook__text-block--title,
     font-size: 1.875rem !important;
     font-weight: 700 !important;
     line-height: 1.25 !important;
-    letter-spacing: -0.02em !important;
+    letter-spacing: normal !important;
     color: rgb(var(--text-primary)) !important;
     margin-top: 0 !important;
     margin-bottom: 1.25rem !important;
@@ -4796,7 +4796,7 @@ h1.MarkdownNotebook__text-block--heading:not(.MarkdownNotebook__text-block--titl
     font-weight: 700 !important;
     line-height: 1.2 !important;
     color: rgb(var(--text-primary)) !important;
-    letter-spacing: -0.02em !important;
+    letter-spacing: normal !important;
     margin: 0;
 }
 
@@ -4807,7 +4807,7 @@ h2.MarkdownNotebook__text-block--heading {
     font-weight: 700 !important;
     line-height: 1.4 !important;
     color: rgb(var(--text-primary)) !important;
-    letter-spacing: -0.015em !important;
+    letter-spacing: normal !important;
     margin: 0;
 }
 
