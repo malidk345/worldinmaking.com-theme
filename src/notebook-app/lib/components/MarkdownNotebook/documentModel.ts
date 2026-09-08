@@ -788,7 +788,7 @@ export function getSlashTokenAt(text: string, caret: number = text.length): Slas
     }
 
     const query = head.slice(slashIndex + 1)
-    if (query.includes('\n') || /\s/.test(query) || query.length > 35) {
+    if (query.includes('\n') || / {2,}/.test(query) || query.length > 35) {
         return null
     }
 
