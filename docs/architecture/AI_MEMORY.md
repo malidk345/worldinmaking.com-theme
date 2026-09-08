@@ -33,6 +33,23 @@
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Fix Notebook Header & Popover Avatar Shifting and Misalignments.
+- **User Intent:** Resolve visual shifting/clipping in profile photos both in the notebook header bar and inside the People & history popover modal ("nıtebook header da profil fotolarında bazı kaymalar oluyor hem headerda hem açılan modalda").
+- **Root Cause:**
+  - `Avatar.tsx` added its own internal wrapper with `p-px`, aspect ratio constraints, and `border border-primary`.
+  - In `NotebookFaceStack.tsx`, avatars were wrapped in a `span` that had its own `border border-primary`, creating a nested double-border, subtle subpixel misalignment, and awkward clipping.
+  - In `CollaboratorsBanner.tsx`, the overlay modal also wrapped `Avatar` inside an outer `size-6 shrink-0 rounded-full overflow-hidden border border-primary` container, causing the same double-border, padding squeeze, and shifted icon graphics.
+- **Fixes Applied:**
+  - `src/notebook-app/scenes/notebooks/NotebookFaceStack.tsx`: Replaced nested `Avatar` wrapper with direct rounded `img` and fallback `svg` with clean outer `ring-2 ring-white dark:ring-[#1e1f23]`, removing double borders and layout shifting.
+  - `src/notebook-app/scenes/notebooks/CollaboratorsBanner.tsx`: Replaced nested `Avatar` wrappers in both "People" and "Snapshots" lists with clean `size-7 shrink-0 rounded-full ring-1 ring-black/10 dark:ring-white/10` containers and direct image/SVG elements.
+- **Verification:**
+  - `pnpm run typecheck:shell`: PASS (0 errors in core shell allowlist).
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/NotebookFaceStack.tsx`
+  - `src/notebook-app/scenes/notebooks/CollaboratorsBanner.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
 - **Scope:** Fix Notebook Mobile Horizontal Margins — Align 1:1 with Blog Posts.
 - **User Intent:** Text was too far inside from the edges on mobile (\"kenarlardan çok içeride metin mobilde\"). Notebook mobile margin was 39px while blog posts had 25px — 14px too much on each side.
 - **Root Cause:**
