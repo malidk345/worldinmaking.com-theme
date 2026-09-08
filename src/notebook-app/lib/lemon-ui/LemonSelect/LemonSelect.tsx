@@ -146,9 +146,23 @@ export function LemonSelect<T extends string | number | boolean | null>({
             placement={dropdownPlacement}
             className={menu?.className}
             maxContentWidth={dropdownMaxContentWidth}
-            activeItemIndex={items
-                .flatMap((i) => (isLemonMenuSection(i) ? i.items.filter(Boolean) : i))
-                .findIndex((i) => (i as LemonMenuItem).active)}
+            activeItemIndex={React.useMemo(() => {
+                let index = 0;
+                for (const item of items) {
+                    if (isLemonMenuSection(item)) {
+                        for (const subItem of item.items) {
+                            if (subItem) {
+                                if ((subItem as LemonMenuItem).active) return index;
+                                index++;
+                            }
+                        }
+                    } else if (item) {
+                        if ((item as LemonMenuItem).active) return index;
+                        index++;
+                    }
+                }
+                return -1;
+            }, [items])}
             closeParentPopoverOnClickInside={menu?.closeParentPopoverOnClickInside}
             onVisibilityChange={menu?.onVisibilityChange}
             visible={visible}

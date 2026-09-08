@@ -202,14 +202,14 @@ export function getInsertCommandSearchText(command: InsertCommand): string {
 }
 
 export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
-    return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
-        // Optimize: mutate array in-place with push to avoid O(N^2) spread allocations
-        if (!accumulator[command.category]) {
-            accumulator[command.category] = []
+    const result: Record<string, InsertCommand[]> = {}
+    for (const command of commands) {
+        if (!result[command.category]) {
+            result[command.category] = []
         }
-        accumulator[command.category].push(command)
-        return accumulator
-    }, {})
+        result[command.category].push(command)
+    }
+    return result
 }
 
 export function getClampedInsertMenuSelectedIndex(selectedIndex: number, commandCount: number): number {

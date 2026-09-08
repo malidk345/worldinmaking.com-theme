@@ -137,20 +137,20 @@ export function sortedKeys<T extends Record<string, any> = Record<string, any>>(
 }
 
 export function flattenObject<T extends Record<string, any>>(obj: T): Record<string, any> {
-    return Object.entries(obj).reduce<Record<string, any>>((acc, [key, value]) => {
+    const acc: Record<string, any> = {}
+    for (const [key, value] of Object.entries(obj)) {
         if (value !== null && typeof value === 'object') {
             const flatChild = flattenObject(value)
             const normalizedKey = /^\d+$/.test(key) ? key.padStart(3, '0') : key
 
-            Object.entries(flatChild).forEach(([subKey, subVal]) => {
+            for (const [subKey, subVal] of Object.entries(flatChild)) {
                 acc[`${normalizedKey}.${subKey}`] = subVal
-            })
-            return acc
+            }
+        } else {
+            acc[key] = value
         }
-
-        acc[key] = value
-        return acc
-    }, {})
+    }
+    return acc
 }
 
 export function hasFormErrors(object: any): boolean {

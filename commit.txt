@@ -1,0 +1,13 @@
+⚡ Bolt: [performance improvement] Optimize reduce loops and array flattening
+
+What:
+Refactored several usages of `.reduce({}, ...)` and `.reduce([], ...)` to use standard `for...of` loops, and replaced inefficient `.flatMap().filter()` chaining with a single-pass loop inside `useMemo`.
+
+Why:
+Using `.reduce()` to allocate objects often triggers V8 "dictionary mode" deoptimization when keys are appended dynamically, and using `.reduce` with spread syntax causes O(N^2) memory churn. Chaining `.flatMap` and `.filter` causes redundant temporary array allocations on every render cycle.
+
+Impact:
+Reduces memory churn, avoids deoptimizations, and optimizes render performance in LemonSelect and Notebook internals.
+
+Measurement:
+Decreases temporary array allocations and reduces garbage collection pressure on active renders.

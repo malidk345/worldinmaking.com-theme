@@ -1473,12 +1473,12 @@ function serializeComponentProps(props: NotebookComponentProps): string {
 }
 
 function getSerializableComponentProps(props: NotebookComponentProps): NotebookComponentProps {
-    const nextProps = Object.entries(props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
+    const nextProps: NotebookComponentProps = {}
+    for (const [key, value] of Object.entries(props)) {
         if (key !== 'view' && key !== 'edit' && key !== 'hideFilters' && key !== 'hideResults') {
-            accumulator[key] = value
+            nextProps[key] = value
         }
-        return accumulator
-    }, {})
+    }
     const legacyViewPanelVisible = typeof props.view === 'boolean' ? props.view : undefined
     const legacyEditPanelVisible = typeof props.edit === 'boolean' ? props.edit : undefined
     const hideFilters = typeof props.hideFilters === 'boolean' ? props.hideFilters : legacyEditPanelVisible === false

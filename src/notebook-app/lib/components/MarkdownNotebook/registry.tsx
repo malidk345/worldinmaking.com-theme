@@ -35,10 +35,7 @@ import { isNotebookComponentProps } from './utils'
 
 export function createMarkdownNotebookRegistry(definitions: NotebookComponentDefinition[]): NotebookComponentRegistry {
     return {
-        components: definitions.reduce<Record<string, NotebookComponentDefinition>>((accumulator, definition) => {
-            accumulator[definition.tagName] = definition
-            return accumulator
-        }, {}),
+        components: Object.fromEntries(definitions.map(definition => [definition.tagName, definition])),
     }
 }
 

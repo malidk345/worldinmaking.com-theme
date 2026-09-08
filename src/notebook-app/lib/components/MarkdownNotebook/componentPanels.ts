@@ -83,12 +83,12 @@ export function getComponentPropsWithPanelVisibility(
     props: NotebookComponentProps,
     panels: ComponentPanelVisibility
 ): NotebookComponentProps {
-    const nextProps = Object.entries(props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
+    const nextProps: NotebookComponentProps = {}
+    for (const [key, value] of Object.entries(props)) {
         if (key !== 'view' && key !== 'edit' && key !== 'hideFilters' && key !== 'hideResults') {
-            accumulator[key] = value
+            nextProps[key] = value
         }
-        return accumulator
-    }, {})
+    }
 
     if (!panels.filters) {
         nextProps.hideFilters = true

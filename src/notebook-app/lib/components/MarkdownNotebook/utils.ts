@@ -353,12 +353,11 @@ export function toSerializablePropValue(value: unknown): NotebookPropValue | und
 }
 
 function sortProps(props: NotebookComponentProps): NotebookComponentProps {
-    return Object.keys(props)
-        .sort()
-        .reduce<NotebookComponentProps>((accumulator, key) => {
-            accumulator[key] = sortPropValue(props[key])
-            return accumulator
-        }, {})
+    return Object.fromEntries(
+        Object.keys(props)
+            .sort()
+            .map(key => [key, sortPropValue(props[key])])
+    )
 }
 
 function sortPropValue(value: NotebookComponentProps[string]): NotebookComponentProps[string] {

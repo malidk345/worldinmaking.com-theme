@@ -207,17 +207,25 @@ export function NotebookComponentShell({
                 .filter(([, value]) => value === undefined)
                 .map(([key]) => key)
         )
-        const nextProps = Object.entries(props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
+        const nextProps: NotebookComponentProps = {}
+        for (const [key, value] of Object.entries(props)) {
             if (value !== undefined) {
-                accumulator[key] = value
+                nextProps[key] = value
             }
-            return accumulator
-        }, {})
+        }
 
         updateNode(node.id, (currentNode) => {
             if (currentNode.type !== 'component') {
                 return currentNode
             }
+
+            const newProps: NotebookComponentProps = {}
+            for (const [key, value] of Object.entries(currentNode.props)) {
+                if (!propKeysToRemove.has(key)) {
+                    newProps[key] = value
+                }
+            }
+
             return {
                 ...currentNode,
                 // An intentional edit supersedes any malformed source captured at parse time —
@@ -225,12 +233,7 @@ export function NotebookComponentShell({
                 raw: undefined,
                 errors: undefined,
                 props: {
-                    ...Object.entries(currentNode.props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
-                        if (!propKeysToRemove.has(key)) {
-                            accumulator[key] = value
-                        }
-                        return accumulator
-                    }, {}),
+                    ...newProps,
                     ...nextProps,
                 },
             }
