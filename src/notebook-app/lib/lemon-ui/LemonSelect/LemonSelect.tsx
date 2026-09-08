@@ -138,6 +138,24 @@ export function LemonSelect<T extends string | number | boolean | null>({
     const activeLeaf = allLeafOptions.find((o) => o.value === value)
     const isClearButtonShown = allowClear && !!value
 
+    const activeItemIndex = React.useMemo(() => {
+        let index = 0;
+        for (const item of items) {
+            if (isLemonMenuSection(item)) {
+                for (const subItem of item.items) {
+                    if (subItem) {
+                        if ((subItem as LemonMenuItem).active) return index;
+                        index++;
+                    }
+                }
+            } else if (item) {
+                if ((item as LemonMenuItem).active) return index;
+                index++;
+            }
+        }
+        return -1;
+    }, [items])
+
     return (
         <LemonMenu
             items={items}
@@ -146,23 +164,7 @@ export function LemonSelect<T extends string | number | boolean | null>({
             placement={dropdownPlacement}
             className={menu?.className}
             maxContentWidth={dropdownMaxContentWidth}
-            activeItemIndex={React.useMemo(() => {
-                let index = 0;
-                for (const item of items) {
-                    if (isLemonMenuSection(item)) {
-                        for (const subItem of item.items) {
-                            if (subItem) {
-                                if ((subItem as LemonMenuItem).active) return index;
-                                index++;
-                            }
-                        }
-                    } else if (item) {
-                        if ((item as LemonMenuItem).active) return index;
-                        index++;
-                    }
-                }
-                return -1;
-            }, [items])}
+            activeItemIndex={activeItemIndex}
             closeParentPopoverOnClickInside={menu?.closeParentPopoverOnClickInside}
             onVisibilityChange={menu?.onVisibilityChange}
             visible={visible}
