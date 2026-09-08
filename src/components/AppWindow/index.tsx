@@ -5,14 +5,14 @@ import {
     useDragControls,
 
 } from 'framer-motion'
-import { MenuItem, useApp } from '../../context/App'
+import { useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
 import { useRouter } from 'next/router'
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
-import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
+
 import { isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
 import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
@@ -22,32 +22,13 @@ import { useWindowShortcuts } from 'hooks/useWindowShortcuts'
 import { useWindowVisibility } from 'hooks/useWindowVisibility'
 import { useWindowSwitcher } from 'hooks/useWindowSwitcher'
 import { useWindowActions } from 'hooks/useWindowActions'
+import { useWindowStyles } from 'hooks/useWindowStyles'
+import { useWindowMenu } from 'hooks/useWindowMenu'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
-
-const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
-    if (!array) return false
-
-    for (let i = 0; i < array.length; i++) {
-        const element = array[i]
-
-        if (element.url?.split('?')[0] === value) {
-            return true
-        }
-
-        if (element.children) {
-            const found = recursiveSearch(element.children, value)
-            if (found) {
-                return true
-            }
-        }
-    }
-
-    return false
-}
 
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
     const { closeWindow } = useApp()
@@ -172,29 +153,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const isCompositorActive = animating || dragging || isResizing || closing
     const inView = useWindowVisibility({ item, windows, position, size })
 
-    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
-    const parent =
-        safeAppMenu.find(({ children, url }: any) => {
-            const currentURL = item?.path
-            return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
-        }) ||
-        safeAppMenu.find(({ url }: any) => url === `/${item?.path?.split('/')[1]}`) ||
-        safeAppMenu.find(({ name }: any) => name === 'Docs')
-
-    const internalMenu = parent?.children || []
-
-    const getActiveInternalMenu = useCallback(() => {
-        return internalMenu?.find((menuItem: MenuItem) => {
-            const currentURL = item?.path
-            return currentURL === menuItem.url?.split('?')[0] || recursiveSearch(menuItem.children, currentURL)
-        })
-    }, [internalMenu, item])
-
-    const [activeInternalMenu, setActiveInternalMenu] = useState<MenuItem | undefined>(getActiveInternalMenu())
-
-    useEffect(() => {
-        setMenu?.(internalMenu)
-    }, [activeInternalMenu])
+    const { activeInternalMenu, setActiveInternalMenu, menu: internalMenu, parent } = useWindowMenu(item, appMenu, setMenu)
+    const { className } = useWindowStyles({ item, focusedWindow, isCompositorActive })
 
     useEffect(() => {
         if (windowRef.current) {
@@ -220,9 +180,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         router,
     })
 
-    useEffect(() => {
-        setActiveInternalMenu(getActiveInternalMenu())
-    }, [item?.path, getActiveInternalMenu])
+
 
     useWindowShortcuts({
         item,
@@ -357,25 +315,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme={isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? 'primary' : 'tertiary'}
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
-                        focusedWindow?.key === item.key
-                            ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
-                            : `border-primary/40 shadow-sm${
-                                  isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? '' : ' opacity-[0.985]'
-                              }`
-                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
-                        isCompositorActive ? MOTION_LAYER : ''
-                    } ${
-                        item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg !shadow-none'
-                            : item.snapped
-                            ? `border-t-0 !shadow-none ${
-                                  item.snapped === 'left'
-                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
-                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
-                              }`
-                            : 'rounded-lg'
-                    }`}
+                    className={className}
                     style={{
                         pointerEvents: 'auto',
                         // Position with left/top — NOT transform x/y.
@@ -431,24 +371,25 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.95,
+                        scale: 0.96, // iOS 26 compression logic
                         opacity: 0,
                         transition: {
-                            duration: compact ? 0.05 : 0.12,
-                            ease: [0.32, 0, 0.67, 0],
+                            duration: compact ? 0.05 : 0.25,
+                            ease: [0.25, 1, 0.5, 1], // iOS 26 custom transition curve
                         },
                     }}
                     transition={
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  scale: { type: 'spring', stiffness: 440, damping: 25, mass: 0.6 },
-                                  left: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  top: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  width: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  height: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  opacity: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
-                                  default: { type: 'spring', stiffness: 380, damping: 26 },
+                                  // iOS 26 kinetic spring and fluid transitions
+                                  scale: { type: 'spring', stiffness: 500, damping: 30, mass: 0.5 },
+                                  left: { type: 'spring', stiffness: 420, damping: 35, mass: 0.8 },
+                                  top: { type: 'spring', stiffness: 420, damping: 35, mass: 0.8 },
+                                  width: { type: 'spring', stiffness: 400, damping: 32, mass: 0.8 },
+                                  height: { type: 'spring', stiffness: 400, damping: 32, mass: 0.8 },
+                                  opacity: { duration: 0.2, ease: [0.25, 1, 0.5, 1] },
+                                  default: { type: 'spring', stiffness: 420, damping: 35 },
                               }
                     }
                     drag={inSwitcher ? false : !item.fixedSize}

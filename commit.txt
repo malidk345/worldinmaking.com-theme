@@ -1,0 +1,8 @@
+Refactor AppWindow to use iOS 26 aesthetics and extracted hooks
+
+This commit introduces architectural improvements to the AppWindow component:
+- Extracted inline classname computation and UI style rules into a dedicated `useWindowStyles` hook.
+- Extracted inline recursive menu searching into a dedicated `useWindowMenu` hook.
+- Upgraded the default window appearance to the iOS 26 aesthetic (`rounded-[32px]`, layered glass shadows).
+- Replaced the linear `framer-motion` transition scale settings with iOS 26 kinetic spring and fluid transitions.
+- The `AppWindow/index.tsx` file is significantly cleaned up.
