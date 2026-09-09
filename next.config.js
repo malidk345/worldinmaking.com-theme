@@ -14,6 +14,22 @@ const nextConfig = {
         'mermaid',
         '@mermaid-js/parser',
     ],
+    compress: true,
+    experimental: {
+        optimizePackageImports: [
+            'lucide-react',
+            '@heroicons/react',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            'framer-motion',
+            'lodash',
+            'date-fns',
+            'recharts',
+        ],
+    },
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
     images: {
@@ -31,7 +47,7 @@ const nextConfig = {
     trailingSlash: false,
     reactStrictMode: false,
 
-    webpack: (config) => {
+    webpack: (config, { isServer }) => {
         // ── Standard posthog.com aliases ──────────────────────────────────────────
         config.resolve.alias = {
             ...config.resolve.alias,
@@ -66,11 +82,6 @@ const nextConfig = {
         }
 
         // ── NormalModuleReplacementPlugin ─────────────────────────────────────────
-        // Intercepts imports FROM notebook-app files only and redirects:
-        //   lib/*        → src/notebook-app/lib/*  (via ~nb-lib alias)
-        //   scenes/*     → src/notebook-app/lib/lemon-ui.tsx
-        //   posthog-js   → src/notebook-app/lib/lemon-ui.tsx
-        //   ~/...        → src/notebook-app/lib/lemon-ui.tsx
         const nbShim    = path.resolve(__dirname, 'src/notebook-app/lib/lemon-ui.tsx')
         const nbLibPath = path.resolve(__dirname, 'src/notebook-app/lib')
 
@@ -94,15 +105,11 @@ const nextConfig = {
                         return
                     }
 
-                    // leftover PostHog notebook imports: posthog-js, scenes/*, ~/* → shim
                     if (req === 'posthog-js' || req.startsWith('scenes/') || req.startsWith('~/')) {
                         resource.request = nbShim
                         return
                     }
 
-                    // @posthog/icons → iconsShim
-                    // Exception: if the import is FROM iconsShim itself, let it resolve
-                    // to the real package (so iconsShim can re-export real icons).
                     if (req === '@posthog/icons' || req.startsWith('@posthog/icons/')) {
                         const issuerNorm = issuer.replace(/\\/g, '/')
                         if (!issuerNorm.includes('iconsShim')) {
@@ -111,14 +118,11 @@ const nextConfig = {
                         return
                     }
 
-                    // @posthog/lemon-ui → notebook-app lemon-ui index
                     if (req === '@posthog/lemon-ui' || req.startsWith('@posthog/lemon-ui/')) {
                         resource.request = path.resolve(__dirname, 'src/notebook-app/lib/lemon-ui/index.ts')
                         return
                     }
 
-                    // @posthog/react, use-resize-observer → shim
-                    // mermaid must resolve to the real package (see src/lib/mermaid-loader.ts)
                     if (req === '@posthog/react' || req === 'use-resize-observer') {
                         resource.request = nbShim
                         return
@@ -138,6 +142,37 @@ const nextConfig = {
             fs: false,
             path: false,
             os: false,
+        }
+
+        if (!isServer) {
+            config.optimization = config.optimization || {}
+            config.optimization.splitChunks = {
+                ...(config.optimization.splitChunks || {}),
+                cacheGroups: {
+                    ...((config.optimization.splitChunks && config.optimization.splitChunks.cacheGroups) || {}),
+                    notebookApp: {
+                        test: /[\\/]src[\\/]notebook-app[\\/]/,
+                        name: 'notebook-app',
+                        chunks: 'async',
+                        priority: 30,
+                        reuseExistingChunk: true,
+                    },
+                    mermaid: {
+                        test: /[\\/]node_modules[\\/](mermaid|@mermaid-js)[\\/]/,
+                        name: 'mermaid',
+                        chunks: 'async',
+                        priority: 40,
+                        reuseExistingChunk: true,
+                    },
+                    sandpack: {
+                        test: /[\\/]node_modules[\\/]@codesandbox[\\/]/,
+                        name: 'sandpack',
+                        chunks: 'async',
+                        priority: 40,
+                        reuseExistingChunk: true,
+                    },
+                },
+            }
         }
 
         return config
