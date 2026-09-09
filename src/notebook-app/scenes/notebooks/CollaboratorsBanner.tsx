@@ -105,18 +105,18 @@ export function CollaboratorsBanner({
     }, [notebookId, updatedAt, displayName, actor.avatar_url])
 
     const overlay = (
-        <div className="w-80 p-1 text-xs">
-            <div className="space-y-2 max-h-72 overflow-y-auto">
+        <div className="w-72 p-1 text-xs">
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
                 <div>
-                    <p className="m-0 px-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    <p className="m-0 px-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
                         People
                     </p>
                     {faces.length === 0 ? (
                         <p className="text-muted m-0 px-1">Just you on this page.</p>
                     ) : (
                         faces.map((face) => (
-                            <div key={face.key} className="flex items-center gap-2 p-1.5 rounded-sm">
-                                <span className="size-7 shrink-0 rounded-full overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
+                            <div key={face.key} className="flex items-center gap-2 p-1 rounded-sm">
+                                <span className="size-6 shrink-0 rounded-full overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
                                     {face.avatar ? (
                                         <img src={face.avatar} alt={face.name} className="block w-full h-full object-cover" />
                                     ) : (
@@ -126,7 +126,7 @@ export function CollaboratorsBanner({
                                     )}
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 font-semibold text-primary truncate">{face.name}</p>
+                                    <p className="m-0 font-semibold text-primary truncate leading-tight">{face.name}</p>
                                     <p className="m-0 text-[10px] text-muted">{notebookFaceRoleLabel(face.role)}</p>
                                 </div>
                             </div>
@@ -134,7 +134,7 @@ export function CollaboratorsBanner({
                     )}
                 </div>
                 <div>
-                    <p className="m-0 px-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    <p className="m-0 px-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
                         Snapshots
                     </p>
                     {activities.length === 0 ? (
@@ -143,9 +143,9 @@ export function CollaboratorsBanner({
                         activities.map((act) => (
                             <div
                                 key={act.id}
-                                className="flex gap-2.5 items-start p-1.5 rounded-sm hover:bg-accent transition-colors"
+                                className="flex gap-2 items-start p-1 rounded-sm hover:bg-accent transition-colors"
                             >
-                                <span className="size-7 shrink-0 rounded-full overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
+                                <span className="size-6 shrink-0 rounded-full overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
                                     {act.avatar ? (
                                         <img src={act.avatar} alt={act.name} className="block w-full h-full object-cover" />
                                     ) : (
@@ -156,10 +156,10 @@ export function CollaboratorsBanner({
                                 </span>
                                 <div className="flex-1 min-w-0 space-y-0.5">
                                     <div className="flex justify-between items-center gap-2">
-                                        <span className="font-semibold text-primary truncate">{act.name}</span>
+                                        <span className="font-semibold text-primary truncate leading-tight">{act.name}</span>
                                         <span className="text-[10px] text-muted shrink-0">{act.time}</span>
                                     </div>
-                                    <p className="text-secondary leading-tight m-0">{act.label}</p>
+                                    <p className="text-secondary leading-tight m-0 text-[11px]">{act.label}</p>
                                 </div>
                             </div>
                         ))

@@ -33,6 +33,29 @@
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Compact & Sleek Optimization of Ask AI Inline Editor Modal & Header Popover.
+- **User Intent:** Make the modal significantly more compact ("modalı daha kompakt yap").
+- **Fixes Applied:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`:
+    - Reduced `.WimInlinePill` height from `36px` to `28px` (`32px` on mobile), tightened padding to `2px 4px 2px 8px`, reduced max-width to `320px`, min-width to `180px`, and set radius to `8px`.
+    - Reduced `.WimInlinePill--review` height from `34px` to `26px` (`30px` on mobile), action button dimensions to `18px x 18px` (`22px` on mobile), and gap to `0.25rem`.
+    - Reduced `.WimInlinePill__input` height from `24px` to `22px` with `0.74rem` crisp font size.
+    - Reduced `.WimInlinePill__submitBtn` to `18px x 18px` with radius `5px`.
+    - Reduced `.WimInlinePill__presets` max-width to `360px`, padding to `0.25rem 0.35rem`, gap to `0.25rem`, and preset item padding to `0.15rem 0.38rem` with `0.68rem` font size.
+  - `src/notebook-app/scenes/notebooks/CollaboratorsBanner.tsx`:
+    - Reduced People & history popover width from `w-80` (320px) to `w-72` (288px), max height to `max-h-64`, avatar size from `size-7` to `size-6`, and tightened padding throughout.
+  - Recompiled notebook stylesheets with `pnpm run build:notebook-styles`.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/scenes/notebooks/CollaboratorsBanner.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
 - **Scope:** Align Notebook Ask AI Inline Editor Styling with Notebook Topbar Glassmorphism and Remove Plus Icon.
 - **User Intent:** Match the Ask AI inline editor modal (`EditablePromptComponent` / `WimInlinePill`) styling with the notebook header (`notebook-topbar-glass`), and remove the plus (+) icon from the inline editor as explicitly requested ("ask ai modalı var ya inline editör olan onu da notebook headerla aynı yap ama artı ikonunu istemiyorum orada bunu da bil").
 - **Fixes Applied:**
