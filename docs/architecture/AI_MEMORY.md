@@ -33,6 +33,28 @@
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Align Notebook Ask AI Inline Editor Styling with Notebook Topbar Glassmorphism and Remove Plus Icon.
+- **User Intent:** Match the Ask AI inline editor modal (`EditablePromptComponent` / `WimInlinePill`) styling with the notebook header (`notebook-topbar-glass`), and remove the plus (+) icon from the inline editor as explicitly requested ("ask ai modalı var ya inline editör olan onu da notebook headerla aynı yap ama artı ikonunu istemiyorum orada bunu da bil").
+- **Fixes Applied:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`:
+    - Removed `IconPlus` from `@posthog/icons` imports and deleted the left `<button className="WimInlinePill__plusBtn">` plus icon element. Presets remain accessible via `Tab` keyboard shortcut when input is empty.
+    - Added `notebook-topbar-glass` class to `WimInlinePill` (main prompt pill), `WimInlinePill--review` (accept/retry/reject review pill), and `WimInlinePill__presets` (popup actions menu).
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`:
+    - Updated `.WimInlinePill`, `.WimInlinePill--review`, and `.WimInlinePill__presets` base definitions to match the exact Craft frosted glass tokens used by `.notebook-topbar-glass`:
+      - Light: `background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.09), 0 2px 6px -1px rgba(0, 0, 0, 0.04); backdrop-filter: blur(20px) saturate(180%); color: #1c1c1e;`.
+      - Dark: `background: rgba(30, 31, 35, 0.88); border-color: rgba(255, 255, 255, 0.12); box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45); color: #f4f4f5;`.
+  - Recompiled notebook stylesheets with `pnpm run build:notebook-styles` (`bundleCss.ts`, `productBundleCss.ts`).
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
 - **Scope:** Fix Notebook Header & Popover Avatar Shifting and Misalignments.
 - **User Intent:** Resolve visual shifting/clipping in profile photos both in the notebook header bar and inside the People & history popover modal ("nıtebook header da profil fotolarında bazı kaymalar oluyor hem headerda hem açılan modalda").
 - **Root Cause:**

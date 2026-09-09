@@ -3,7 +3,6 @@ import { KeyboardEvent, MutableRefObject, useCallback, useEffect, useRef, useSta
 
 import { ArrowUp } from 'lucide-react'
 import {
-    IconPlus,
     IconCheck,
     IconX,
     IconSparkles,
@@ -322,7 +321,7 @@ export function EditablePromptComponent({
         return (
             <div ref={wrapperRef} className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt">
                 <div
-                    className={clsx('WimInlinePill', 'WimInlinePill--review', isFlipped && 'WimInlinePill--flipped')}
+                    className={clsx('WimInlinePill', 'WimInlinePill--review', 'notebook-topbar-glass', isFlipped && 'WimInlinePill--flipped')}
                     contentEditable={false}
                     data-markdown-notebook-node-id={node.id}
                 >
@@ -368,6 +367,7 @@ export function EditablePromptComponent({
             <div
                 className={clsx(
                     'WimInlinePill',
+                    'notebook-topbar-glass',
                     isFlipped && 'WimInlinePill--flipped',
                     isAIPromptSubmitDisabled && 'WimInlinePill--busy',
                     error && 'WimInlinePill--error'
@@ -375,19 +375,6 @@ export function EditablePromptComponent({
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
             >
-                {/* Left (+) Plus Button */}
-                <button
-                    type="button"
-                    className="WimInlinePill__plusBtn"
-                    onClick={() => {
-                        setShowPresets(!showPresets)
-                        setSelectedPresetIndex(0)
-                    }}
-                    title="Actions (Tab)"
-                >
-                    <IconPlus className="size-3 text-[#999999]" />
-                </button>
-
                 {/* Selection Context Badge */}
                 {selectedMarkdown && (
                     <span className="WimInlinePill__selectedTag" title={selectedMarkdown}>
@@ -426,9 +413,9 @@ export function EditablePromptComponent({
             </div>
             {error ? <p className="WimInlinePill__error">{error}</p> : null}
 
-            {/* Presets Popup Menu when (+) or Tab is triggered */}
+            {/* Presets Popup Menu when Tab is triggered */}
             {showPresets && !question.trim() && (
-                <div className={clsx('WimInlinePill__presets', isFlipped ? 'WimInlinePill__presets--top' : 'WimInlinePill__presets--bottom')}>
+                <div className={clsx('WimInlinePill__presets', 'notebook-topbar-glass', isFlipped ? 'WimInlinePill__presets--top' : 'WimInlinePill__presets--bottom')}>
                     {PRESET_ACTIONS.map((preset, index) => {
                         const IconComponent = preset.Icon
                         const isSelected = selectedPresetIndex === index
