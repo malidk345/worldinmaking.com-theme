@@ -56,6 +56,9 @@ function FormatBtn({
             aria-label={label}
             aria-pressed={active}
             disabled={disabled}
+            onPointerDown={(event) => {
+                event.preventDefault()
+            }}
             onClick={onClick}
         >
             {children}
@@ -339,7 +342,16 @@ export function FormattingToolbar({
             aria-keyshortcuts="Alt+F10"
             onKeyDown={handleToolbarKeyDown}
             onFocusCapture={lockPosition}
-            onPointerDownCapture={lockPosition}
+            onPointerDownCapture={(event) => {
+                lockPosition()
+                if (
+                    event.target instanceof HTMLElement &&
+                    event.target.closest('input, textarea')
+                ) {
+                    return
+                }
+                event.preventDefault()
+            }}
             onTouchStartCapture={lockPosition}
             onMouseDown={(event) => {
                 lockPosition()
@@ -390,6 +402,9 @@ export function FormattingToolbar({
                                         'MarkdownNotebook__format-style-menu-item',
                                         isActive && 'MarkdownNotebook__format-style-menu-item--active'
                                     )}
+                                    onPointerDown={(event) => {
+                                        event.preventDefault()
+                                    }}
                                     onClick={() => {
                                         setBlockStyle(
                                             button.style === 'blockquote' || !isActive

@@ -33,6 +33,34 @@
 ## 5. AI Change History & Log
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Fix Mobile Pencil Icon Style Dropdown (H1/H2/H3/Quote) Not Opening in FormattingToolbar.
+- **User Intent:** Resolve issue where tapping the pencil style button to change headings on mobile does not open the dropdown menu ("bu kalem ikonu var ya heading falan açan o mobilde açılmıyor").
+- **Root Cause:**
+  1. **CSS Overflow Clipping on Mobile (`MarkdownNotebook.scss`):** `@media (max-width: 640px)` had `overflow-x: auto; overflow-y: visible;`. By CSS specification, any axis set to `auto`/`scroll` forces `overflow-y` to `auto`/hidden, clipping all absolutely positioned children (such as `.MarkdownNotebook__format-style-dropdown` placed at `top: calc(100% + 6px)`) inside the 36px toolbar height, making it completely invisible.
+  2. **Touch Pointerdown Selection Collapse (`FormattingToolbar.tsx`):** On mobile devices, tapping `<button>` fired `pointerdown`/`touchstart` without `preventDefault()`, causing mobile WebKit/Blink to collapse the editor text selection before `click` fired. Once selection collapsed, `updateFloatingToolbarFromSelection` immediately unmounted the toolbar.
+  3. **Toolbar Focus Check False Negative (`domSelection.ts`):** `isFormattingToolbarFocused()` only checked `document.activeElement`, but mobile Safari does not focus buttons on tap.
+- **Fixes Applied:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`:
+    - Replaced `overflow-x: auto; overflow-y: visible;` with `overflow: visible !important;` on mobile `.MarkdownNotebook__format-toolbar`.
+    - Added dedicated mobile touch targets for `.MarkdownNotebook__format-btn--style` (`min-width: 34px`) and comfortable padding for `.MarkdownNotebook__format-style-menu-item` (`padding: 7px 10px; font-size: 13.5px`).
+  - `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`:
+    - Added `onPointerDown={(e) => e.preventDefault()}` to `FormatBtn` and each style dropdown menu item to prevent mobile selection collapse on touch.
+    - Updated container `onPointerDownCapture` to prevent default on non-input targets.
+  - `src/notebook-app/lib/components/MarkdownNotebook/domSelection.ts`:
+    - Enhanced `isFormattingToolbarFocused()` to detect open `.MarkdownNotebook__format-style-dropdown` or `.MarkdownNotebook__format-link-editor` elements in the DOM so the toolbar is preserved during menu interactions.
+  - Recompiled notebook stylesheets with `pnpm run build:notebook-styles`.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: Passed with exit code 0.
+  - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/lib/components/MarkdownNotebook/FormattingToolbar.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/domSelection.ts`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-09 — Antigravity (Advanced Agentic Coding)
 - **Scope:** Compact & Sleek Optimization of Ask AI Inline Editor Modal & Header Popover.
 - **User Intent:** Make the modal significantly more compact ("modalı daha kompakt yap").
 - **Fixes Applied:**

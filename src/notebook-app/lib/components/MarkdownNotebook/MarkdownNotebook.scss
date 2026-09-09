@@ -2223,19 +2223,31 @@ h6.MarkdownNotebook__text-block {
         height: 36px;
         max-width: calc(100vw - 16px);
         padding: 2px 4px;
-        overflow-x: auto;
-        overflow-y: visible;
-        scrollbar-width: none;
-
-        &::-webkit-scrollbar {
-            display: none;
-        }
+        overflow: visible !important;
     }
 
     .MarkdownNotebook__format-btn {
         min-width: 26px;
         height: 26px;
         padding: 0 3px;
+        touch-action: manipulation;
+
+        &--style {
+            min-width: 34px;
+            padding: 0 4px;
+        }
+    }
+
+    .MarkdownNotebook__format-style-dropdown {
+        min-width: 148px;
+        z-index: 100;
+        box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.22), 0 2px 8px -1px rgba(0, 0, 0, 0.08);
+    }
+
+    .MarkdownNotebook__format-style-menu-item {
+        padding: 7px 10px;
+        font-size: 13.5px;
+        touch-action: manipulation;
     }
 
     .MarkdownNotebook__format-link-input {

@@ -674,10 +674,24 @@ export function isNativeEditableElement(element: HTMLElement): boolean {
 }
 
 export function isFormattingToolbarFocused(): boolean {
-    return (
+    if (
+        typeof document !== 'undefined' &&
         document.activeElement instanceof HTMLElement &&
         Boolean(document.activeElement.closest('.MarkdownNotebook__format-toolbar'))
-    )
+    ) {
+        return true
+    }
+    if (typeof document !== 'undefined') {
+        const toolbar = document.querySelector('.MarkdownNotebook__format-toolbar')
+        if (
+            toolbar &&
+            (toolbar.querySelector('.MarkdownNotebook__format-style-dropdown') ||
+                toolbar.querySelector('.MarkdownNotebook__format-link-editor'))
+        ) {
+            return true
+        }
+    }
+    return false
 }
 
 export function findTextPosition(root: HTMLElement, offset: number): { node: Node; offset: number } {
