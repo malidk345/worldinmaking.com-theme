@@ -34,6 +34,7 @@ const ALLOWLIST_PREFIXES = [
     'src/components/AssistantWindow/',
     'src/lib/personal-assistant.ts',
     'src/lib/assistant-notices.ts',
+    'src/lib/assistant-live.ts',
     'src/components/Auth/',
     'src/components/Admin/',
     'src/components/AppContainer/',

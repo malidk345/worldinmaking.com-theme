@@ -435,16 +435,25 @@ export function buildNotice(args: {
 }): AssistantNotice {
     const kind = args.kind || 'nag'
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === args.philosopherId)
+    const id = newId()
+    const fallbackBody =
+        kind === 'question'
+            ? 'Answer this. A dodge still counts — they will read it.'
+            : kind === 'nag'
+              ? 'Do the work, or say why you will not.'
+              : kind === 'reading'
+                ? 'What did they miss? Write it back.'
+                : 'Reply. They are waiting on the desk.'
     return {
-        id: newId(),
+        id,
         philosopherId: args.philosopherId,
         kind,
         title: args.title.slice(0, 180),
-        body: args.body?.slice(0, 400),
+        body: (args.body || fallbackBody).slice(0, 400),
         excerpt: bot?.name || 'Assistant',
         count: KIND_COUNT[kind],
         date: new Date().toISOString(),
-        url: '/assistant',
+        url: `/assistant/${id}`,
         notebookId: args.notebookId,
         unread: true,
     }
@@ -472,6 +481,17 @@ export function markAssistantNoticeRead(id: string): void {
 
 export function isAssistantNoticeId(id: number | string): boolean {
     return String(id).startsWith(ASSISTANT_NOTICE_ID_PREFIX)
+}
+
+export function getAssistantNotice(id: number | string): AssistantNotice | undefined {
+    const key = String(id)
+    return readAssistantNotices().find((item) => item.id === key)
+}
+
+export function extractAssistantNoticeId(path?: string | null): string | null {
+    const raw = String(path || '')
+    const match = raw.match(/\/assistant\/(assistant_[^/?#]+)/)
+    return match ? match[1] : null
 }
 
 export function seedAssistantNotices(philosopherId: PersonalAssistantId): AssistantNotice[] {

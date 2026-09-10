@@ -7,6 +7,7 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import { PHILOSOPHER_BOTS } from 'lib/persona-engine'
 import { philosopherPixelAvatar } from 'lib/philosopher-pixels'
+import { useOptionalWindow } from 'context/Window'
 import {
     PERSONAL_ASSISTANT_EVENT,
     readPersonalAssistantId,
@@ -17,13 +18,14 @@ import {
     ASSISTANT_NOTICES_EVENT,
     collectUserNotebooks,
     dismissAssistantNotice,
-    pushAssistantNotice,
-    buildNotice,
+    extractAssistantNoticeId,
+    getAssistantNotice,
     readAssistantNotices,
     seedAssistantNotices,
     type AssistantNotice,
 } from 'lib/assistant-notices'
-import { requestAssistantLiveNotice } from './Watch'
+import { answerAssistantNotice } from 'lib/assistant-live'
+import { AssistantReply } from './Reply'
 
 dayjs.extend(relativeTime)
 
@@ -110,23 +112,7 @@ function PickerScreen({
     )
 }
 
-function NoticeRow({
-    notice,
-    open,
-    onOpen,
-    onDismiss,
-    onAnswer,
-    answering,
-}: {
-    notice: AssistantNotice
-    open: boolean
-    onOpen: () => void
-    onDismiss: () => void
-    onAnswer: (text: string) => void
-    answering: boolean
-}) {
-    const [draft, setDraft] = useState('')
-
+function NoticeRow({ notice, onOpen }: { notice: AssistantNotice; onOpen: () => void }) {
     return (
         <li>
             <button
@@ -145,53 +131,98 @@ function NoticeRow({
                     </div>
                 </div>
             </button>
-            {open ? (
-                <div className="px-2 pb-3 space-y-2">
-                    {notice.body ? <p className="m-0 text-sm text-secondary">{notice.body}</p> : null}
-                    <textarea
-                        data-writing-surface
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        rows={2}
-                        placeholder="Answer this. They will not let it drop."
-                        className="w-full resize-none rounded-md border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-input"
-                    />
-                    <div className="flex items-center gap-2">
-                        <OSButton
-                            size="sm"
-                            variant="primary"
-                            disabled={answering || !draft.trim()}
-                            onClick={() => {
-                                const text = draft.trim()
-                                if (!text) return
-                                onAnswer(text)
-                                setDraft('')
-                            }}
-                        >
-                            {answering ? '…' : 'Answer'}
-                        </OSButton>
-                        <OSButton size="sm" hover="background" onClick={onDismiss}>
-                            Dismiss
-                        </OSButton>
-                    </div>
-                </div>
-            ) : null}
         </li>
+    )
+}
+
+function DetailScreen({
+    notice,
+    philosopherId,
+    onBack,
+    onDone,
+}: {
+    notice: AssistantNotice
+    philosopherId: PersonalAssistantId
+    onBack: () => void
+    onDone: () => void
+}) {
+    const bot = PHILOSOPHER_BOTS.find((item) => item.id === philosopherId)
+    const portrait = philosopherPixelAvatar(philosopherId)
+    const [answering, setAnswering] = useState(false)
+    const notebooks = useMemo(() => collectUserNotebooks(), [])
+    const notebook = notebooks.find((nb) => nb.id === notice.notebookId)
+
+    const submit = async (text: string) => {
+        setAnswering(true)
+        try {
+            await answerAssistantNotice({
+                philosopherId,
+                title: notice.title,
+                body: notice.body,
+                text,
+            })
+            dismissAssistantNotice(notice.id)
+            onDone()
+        } finally {
+            setAnswering(false)
+        }
+    }
+
+    return (
+        <div className="h-full min-h-0 flex flex-col">
+            <div className="flex items-center gap-3 px-3 py-2 border-b border-primary bg-primary shrink-0">
+                <OSButton size="sm" hover="background" onClick={onBack}>
+                    Back
+                </OSButton>
+                <span className="size-9 shrink-0 rounded-md border border-primary bg-accent/30 overflow-hidden flex items-center justify-center">
+                    {portrait ? (
+                        <img src={portrait} alt="" width={36} height={36} className="size-9 object-contain" />
+                    ) : null}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="m-0 text-sm font-semibold truncate">{bot?.displayName || 'Assistant'}</p>
+                    <p className="m-0 text-xs text-muted truncate">
+                        {notice.count} · {dayjs(notice.date).fromNow()}
+                    </p>
+                </div>
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
+                <div className="p-4 max-w-xl mx-auto space-y-4">
+                    <div>
+                        <div className="text-xs text-muted">{notice.excerpt}</div>
+                        <h2 className="text-lg font-semibold m-0 mt-1">{notice.title}</h2>
+                        {notice.body ? <p className="text-sm text-secondary mt-2 mb-0">{notice.body}</p> : null}
+                        {notebook ? (
+                            <p className="text-xs text-muted mt-2 mb-0">From notebook “{notebook.title}”</p>
+                        ) : null}
+                    </div>
+                    <AssistantReply
+                        answering={answering}
+                        onAnswer={(text) => void submit(text)}
+                        onDismiss={() => {
+                            dismissAssistantNotice(notice.id)
+                            onDone()
+                        }}
+                    />
+                </div>
+            </ScrollArea>
+        </div>
     )
 }
 
 function BriefingScreen({
     philosopherId,
     onChange,
+    initialNoticeId,
 }: {
     philosopherId: PersonalAssistantId
     onChange: () => void
+    initialNoticeId?: string | null
 }) {
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === philosopherId)
     const portrait = philosopherPixelAvatar(philosopherId)
     const [notices, setNotices] = useState<AssistantNotice[]>(() => readAssistantNotices())
-    const [openId, setOpenId] = useState<string | null>(null)
-    const [answering, setAnswering] = useState(false)
+    const [openId, setOpenId] = useState<string | null>(initialNoticeId || null)
     const notebooks = useMemo(() => collectUserNotebooks(), [notices.length])
 
     useEffect(() => {
@@ -201,34 +232,26 @@ function BriefingScreen({
         return () => window.removeEventListener(ASSISTANT_NOTICES_EVENT, refresh)
     }, [philosopherId])
 
+    useEffect(() => {
+        if (initialNoticeId) setOpenId(initialNoticeId)
+    }, [initialNoticeId])
+
     const mine = notices.filter((n) => n.philosopherId === philosopherId)
     const watching = notebooks.length
+    const openNotice = openId ? mine.find((n) => n.id === openId) || getAssistantNotice(openId) : null
 
-    const answer = async (notice: AssistantNotice, text: string) => {
-        setAnswering(true)
-        dismissAssistantNotice(notice.id)
-        try {
-            const ok = await requestAssistantLiveNotice('answer', {
-                title: notice.title,
-                body: notice.body,
-                text,
-                philosopherId,
-            })
-            if (!ok) {
-                pushAssistantNotice(
-                    buildNotice({
-                        philosopherId,
-                        kind: 'counsel',
-                        title: 'Noted. That does not close the question.',
-                        body: text.slice(0, 220),
-                    }),
-                    { force: true }
-                )
-            }
-        } finally {
-            setAnswering(false)
-            setNotices(readAssistantNotices())
-        }
+    if (openNotice) {
+        return (
+            <DetailScreen
+                notice={openNotice}
+                philosopherId={philosopherId}
+                onBack={() => setOpenId(null)}
+                onDone={() => {
+                    setOpenId(null)
+                    setNotices(readAssistantNotices())
+                }}
+            />
+        )
     }
 
     return (
@@ -260,22 +283,14 @@ function BriefingScreen({
                                 <NoticeRow
                                     key={notice.id}
                                     notice={notice}
-                                    open={openId === notice.id}
-                                    answering={answering}
-                                    onOpen={() => setOpenId((id) => (id === notice.id ? null : notice.id))}
-                                    onDismiss={() => {
-                                        dismissAssistantNotice(notice.id)
-                                        setNotices(readAssistantNotices())
-                                        if (openId === notice.id) setOpenId(null)
-                                    }}
-                                    onAnswer={(text) => void answer(notice, text)}
+                                    onOpen={() => setOpenId(notice.id)}
                                 />
                             ))}
                         </ul>
                     ) : (
                         <h5 className="m-0 px-2">
                             {bot?.name || 'Your assistant'} is reading. Notices will land here and in the notification
-                            panel.
+                            panel. Click one to open the detail and write back.
                         </h5>
                     )}
                 </ScrollArea>
@@ -285,6 +300,8 @@ function BriefingScreen({
 }
 
 export function AssistantWindow() {
+    const win = useOptionalWindow()
+    const pathNoticeId = extractAssistantNoticeId(win?.appWindow?.path)
     const [assistantId, setAssistantId] = useState<PersonalAssistantId | null>(null)
     const [picking, setPicking] = useState(false)
     const [ready, setReady] = useState(false)
@@ -319,7 +336,11 @@ export function AssistantWindow() {
                 <PickerScreen currentId={assistantId} onChoose={choose} />
             ) : null}
             {ready && assistantId && !picking ? (
-                <BriefingScreen philosopherId={assistantId} onChange={() => setPicking(true)} />
+                <BriefingScreen
+                    philosopherId={assistantId}
+                    onChange={() => setPicking(true)}
+                    initialNoticeId={pathNoticeId}
+                />
             ) : null}
         </div>
     )
