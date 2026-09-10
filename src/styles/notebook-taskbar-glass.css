@@ -1,15 +1,18 @@
-/* Match site taskbar: bg-primary/50, backdrop-blur-3xl, Tailwind `rounded` (4px). */
+/* Match site taskbar: bg-primary/50, backdrop-blur-3xl, Tailwind `rounded` (4px). No drop shadow. */
 .notebook-topbar-glass,
 .MarkdownNotebook__format-toolbar,
 .WimInlineEditor,
 .WimInlineEditor--floating,
 .WimInlinePill,
 .WimInlinePill--review,
+.WimInlinePill__presets,
 .MarkdownNotebook__insert-menu {
     background: rgb(var(--bg) / 0.5) !important;
     backdrop-filter: blur(64px) !important;
     -webkit-backdrop-filter: blur(64px) !important;
     border-radius: 0.25rem !important;
+    box-shadow: none !important;
+    filter: none !important;
 }
 
 :root.dark .notebook-topbar-glass,
@@ -31,6 +34,7 @@
 .dark .MarkdownNotebook__insert-menu,
 [data-scheme='dark'] .MarkdownNotebook__insert-menu {
     background: rgb(var(--bg) / 0.5) !important;
+    box-shadow: none !important;
 }
 
 /* Compact slash (/) insert menu */
@@ -39,7 +43,6 @@
     max-width: min(13.5rem, calc(100vw - 16px)) !important;
     max-height: min(196px, var(--markdown-notebook-insert-menu-max-height, 196px)) !important;
     padding: 3px !important;
-    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.28), 0 2px 8px -2px rgba(0, 0, 0, 0.12) !important;
 }
 
 .MarkdownNotebook__insert-category h5 {
