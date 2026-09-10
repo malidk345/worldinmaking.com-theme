@@ -1,0 +1,92 @@
+/* Match site taskbar: bg-primary/50, backdrop-blur-3xl, Tailwind `rounded` (4px). No drop shadow. */
+.notebook-topbar-glass,
+.MarkdownNotebook__format-toolbar,
+.WimInlineEditor,
+.WimInlineEditor--floating,
+.WimInlinePill,
+.WimInlinePill--review,
+.WimInlinePill__presets,
+.MarkdownNotebook__insert-menu {
+    background: rgb(var(--bg) / 0.5) !important;
+    backdrop-filter: blur(64px) !important;
+    -webkit-backdrop-filter: blur(64px) !important;
+    border-radius: 0.25rem !important;
+    box-shadow: none !important;
+    filter: none !important;
+}
+
+:root.dark .notebook-topbar-glass,
+.dark .notebook-topbar-glass,
+[data-scheme='dark'] .notebook-topbar-glass,
+:root.dark .MarkdownNotebook__format-toolbar,
+.dark .MarkdownNotebook__format-toolbar,
+[data-scheme='dark'] .MarkdownNotebook__format-toolbar,
+:root.dark .WimInlineEditor,
+.dark .WimInlineEditor,
+[data-scheme='dark'] .WimInlineEditor,
+:root.dark .WimInlineEditor--floating,
+.dark .WimInlineEditor--floating,
+[data-scheme='dark'] .WimInlineEditor--floating,
+:root.dark .WimInlinePill,
+.dark .WimInlinePill,
+[data-scheme='dark'] .WimInlinePill,
+:root.dark .MarkdownNotebook__insert-menu,
+.dark .MarkdownNotebook__insert-menu,
+[data-scheme='dark'] .MarkdownNotebook__insert-menu {
+    background: rgb(var(--bg) / 0.5) !important;
+    box-shadow: none !important;
+}
+
+/* Compact slash (/) insert menu */
+.MarkdownNotebook__insert-menu {
+    min-width: 11.5rem !important;
+    max-width: min(13.5rem, calc(100vw - 16px)) !important;
+    max-height: min(196px, var(--markdown-notebook-insert-menu-max-height, 196px)) !important;
+    padding: 3px !important;
+}
+
+.MarkdownNotebook__insert-category h5 {
+    padding: 2px 6px 1px !important;
+    font-size: 10px !important;
+}
+
+.MarkdownNotebook__insert-item {
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 0 6px !important;
+    font-size: 12px !important;
+    gap: 6px !important;
+}
+
+.MarkdownNotebook__insert-item-icon {
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.MarkdownNotebook__insert-item-icon svg {
+    width: 13px !important;
+    height: 13px !important;
+}
+
+.MarkdownNotebook__insert-category + .MarkdownNotebook__insert-category {
+    margin-top: 2px !important;
+    padding-top: 2px !important;
+}
+
+/* One Writing label while the inline AI editor streams */
+.MarkdownNotebook__text-block--ai-thinking {
+    color: transparent !important;
+}
+
+.MarkdownNotebook__text-block--ai-thinking * {
+    color: transparent !important;
+}
+
+.MarkdownNotebook__text-block--ai-thinking::after {
+    content: attr(data-ai-thinking-label);
+    color: rgb(var(--text-secondary)) !important;
+}
+
+.MarkdownNotebook__text-block--ai-thinking::before {
+    content: none !important;
+}

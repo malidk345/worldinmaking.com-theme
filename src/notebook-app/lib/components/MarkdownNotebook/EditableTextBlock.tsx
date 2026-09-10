@@ -42,8 +42,7 @@ import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, m
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockNode } from './types'
 import { getInlineText, normalizeInlineNodes } from './utils'
-
-const AI_THINKING_LABEL = 'Writing…'
+import { NOTEBOOK_AI_WRITING_PLACEHOLDER } from './notebookAI'
 
 export function EditableTextBlock({
     node,
@@ -120,7 +119,7 @@ export function EditableTextBlock({
     const renderedHtml = useMemo(() => toHtml(node.children), [node.children, toHtml])
     const text = getInlineText(node.children)
     const isEmpty = text.length === 0
-    const aiThinkingLabel = isAIWritingPlaceholder ? AI_THINKING_LABEL : undefined
+    const aiThinkingLabel = isAIWritingPlaceholder ? NOTEBOOK_AI_WRITING_PLACEHOLDER : undefined
     const isToolInsertMenuOpen = isInsertMenuOpen && (!insertMenuMode || insertMenuMode === 'tools')
     const TextTag =
         node.type === 'heading' ? (`h${node.level ?? 1}` as const) : node.type === 'blockquote' ? 'blockquote' : 'p'
@@ -148,17 +147,20 @@ export function EditableTextBlock({
             (skipDomSyncForHtmlRef.current === renderedHtml || rootEditableInputHtml === renderedHtml)
         skipDomSyncForHtmlRef.current = null
 
+        const htmlForDom = isAIWritingPlaceholder ? '' : renderedHtml
         if (
             !shouldSkipOwnInputSync &&
-            element.innerHTML !== renderedHtml &&
-            !editableHtmlMatches(element, renderedHtml)
+            element.innerHTML !== htmlForDom &&
+            !editableHtmlMatches(element, htmlForDom)
         ) {
-            element.innerHTML = renderedHtml
-            syncInlineNoteChips(element, annotations)
-        } else if (!noteChipsAreCurrent(element, annotations)) {
+            element.innerHTML = htmlForDom
+            if (!isAIWritingPlaceholder) {
+                syncInlineNoteChips(element, annotations)
+            }
+        } else if (!isAIWritingPlaceholder && !noteChipsAreCurrent(element, annotations)) {
             syncInlineNoteChips(element, annotations)
         }
-    }, [annotations, renderedHtml, TextTag, node.id, rootEditableInputHtmlByNodeIdRef])
+    }, [annotations, renderedHtml, TextTag, node.id, rootEditableInputHtmlByNodeIdRef, isAIWritingPlaceholder])
 
     const updateChildren = (nextChildren: NotebookInlineNode[]): NotebookInlineNode[] => {
         skipDomSyncForHtmlRef.current = toHtml(nextChildren)
@@ -236,8 +238,10 @@ export function EditableTextBlock({
 
     const handleInput = (event: FormEvent<HTMLElement>): void => {
         if (isAIWriting) {
-            event.currentTarget.innerHTML = renderedHtml
-            syncInlineNoteChips(event.currentTarget, annotations)
+            event.currentTarget.innerHTML = isAIWritingPlaceholder ? '' : renderedHtml
+            if (!isAIWritingPlaceholder) {
+                syncInlineNoteChips(event.currentTarget, annotations)
+            }
             return
         }
 
@@ -648,7 +652,7 @@ export function EditableTextBlock({
                 contentEditable={mode === 'edit' && !isAIWriting}
                 suppressContentEditableWarning
                 aria-busy={isAIWriting || undefined}
-                data-placeholder={isEmpty ? placeholder : undefined}
+                data-placeholder={isEmpty && !isAIWritingPlaceholder ? placeholder : undefined}
                 onInput={handleInput}
                 onPaste={handlePaste}
                 onBlur={handleBlur}
