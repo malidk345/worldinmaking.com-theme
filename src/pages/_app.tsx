@@ -1,9 +1,12 @@
 import { AppProps } from 'next/app'
 import '../styles/global.css'
 import '../styles/notebook-taskbar-glass.css'
+import '../components/HiddenSection/style.css'
 import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
+import '../components/MdxAnchorHeaders/style.css'
 import '../components/RadixUI/css/toast.css'
+// Zoom CSS is imported from ZoomImage (node_modules CSS is allowed outside _app).
 // Do NOT import components/LemonUI/lemon-ui.css or MarkdownNotebook.scss globally.
 // LemonScope/chat still load the full kit via ensureLemonStyles().
 // Notebook windows load the slim table+editor kit via ensureNotebookProductStyles().
