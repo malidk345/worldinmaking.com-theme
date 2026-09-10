@@ -220,6 +220,7 @@ function LetterThread({
     const portrait = philosopherPixelAvatar(philosopherId)
     const { user } = useUser()
     const [answering, setAnswering] = useState(false)
+    const [composing, setComposing] = useState(false)
     const notebooks = useMemo(() => collectUserNotebooks(), [])
     const notebook = notebooks.find((nb) => nb.id === notice.notebookId)
     const replies = readAssistantAnswers().filter((row) => row.noticeId === notice.id)
@@ -244,8 +245,9 @@ function LetterThread({
         }
     }
 
-    const focusReply = () => {
-        document.getElementById('assistant-reply-box')?.focus()
+    const openComposer = () => {
+        setComposing(true)
+        window.setTimeout(() => document.getElementById('assistant-reply-box')?.focus(), 0)
     }
 
     return (
@@ -254,14 +256,13 @@ function LetterThread({
                 <div className="text-primary min-w-0">
                     <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-5 pl-5 pr-8">
                         <div className="flex items-center">
-                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden border border-primary bg-accent">
+                            <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden bg-accent">
                                 {portrait ? (
                                     <img src={portrait} alt="" width={40} height={40} className="size-10 object-contain" />
                                 ) : null}
                             </div>
                             <strong>{bot?.displayName || notice.excerpt || 'Assistant'}</strong>
                         </div>
-                        <span className="border border-primary text-xs py-0.5 px-1 rounded-sm">{notice.count}</span>
                         <span className="text-sm text-muted" suppressHydrationWarning>
                             {dayjs(notice.date).fromNow()}
                         </span>
@@ -279,16 +280,13 @@ function LetterThread({
                                 Originally from notebook “{notebook.title}”
                             </p>
                         ) : null}
-                        {notice.actionLabel ? (
-                            <p className="text-xs text-secondary mb-0 mt-2">{notice.actionLabel}</p>
-                        ) : null}
                     </div>
 
                     {replies.map((reply) => (
-                        <div key={reply.id} className="border-t border-primary">
+                        <div key={reply.id}>
                             <div className="flex items-center gap-2 w-full min-w-0 flex-wrap pt-4 pl-5 pr-8">
                                 <div className="flex items-center">
-                                    <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden border border-primary bg-accent">
+                                    <div className="size-10 shrink-0 rounded-full mr-2.5 overflow-hidden bg-accent">
                                         {userAvatar ? (
                                             <img src={userAvatar} alt="" className="size-10 object-cover" />
                                         ) : (
@@ -308,32 +306,20 @@ function LetterThread({
                             </div>
                         </div>
                     ))}
-
-                    <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 px-4 pb-4">
-                        <AssistantReply
-                            answering={answering}
-                            submitLabel="Reply"
-                            placeholder="Reply to this letter…"
-                            onAnswer={(text) => void submit(text)}
-                            extra={
-                                <OSButton
-                                    size="sm"
-                                    hover="background"
-                                    onClick={() => {
-                                        muteAssistantTopic(notice.title)
-                                        dismissAssistantNotice(notice.id)
-                                        onDone()
-                                    }}
-                                >
-                                    Drop this
-                                </OSButton>
-                            }
-                        />
-                    </div>
                 </div>
             </ScrollArea>
+            {composing ? (
+                <div data-scheme="primary" className="bg-primary border-t border-primary pt-3 px-4 pb-3">
+                    <AssistantReply
+                        answering={answering}
+                        submitLabel="Reply"
+                        placeholder="Reply…"
+                        onAnswer={(text) => void submit(text)}
+                    />
+                </div>
+            ) : null}
             <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center shrink-0">
-                <OSButton variant="secondary" size="xs" onClick={focusReply}>
+                <OSButton variant="secondary" size="xs" onClick={openComposer}>
                     Reply
                 </OSButton>
                 <OSButton
@@ -345,6 +331,17 @@ function LetterThread({
                     }}
                 >
                     Dismiss
+                </OSButton>
+                <OSButton
+                    size="xs"
+                    hover="background"
+                    onClick={() => {
+                        muteAssistantTopic(notice.title)
+                        dismissAssistantNotice(notice.id)
+                        onDone()
+                    }}
+                >
+                    Drop this
                 </OSButton>
                 <div className="ml-auto">
                     <OSButton size="xs" hover="background" onClick={onClose}>
@@ -366,7 +363,6 @@ function MailDesk({
     initialNoticeId?: string | null
 }) {
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === philosopherId)
-    const portrait = philosopherPixelAvatar(philosopherId)
     const [notices, setNotices] = useState<AssistantNotice[]>(() => readAssistantNotices())
     const [openId, setOpenId] = useState<string | null>(initialNoticeId || null)
 
@@ -386,21 +382,17 @@ function MailDesk({
 
     return (
         <div className="@container h-full min-h-0 flex flex-col bg-primary text-primary">
-            <div className="flex items-center gap-3 px-3 py-2 border-b border-primary bg-primary shrink-0">
-                <span className="size-9 shrink-0 rounded-full border border-primary bg-accent overflow-hidden flex items-center justify-center">
-                    {portrait ? (
-                        <img src={portrait} alt="" width={36} height={36} className="size-9 object-contain" />
-                    ) : null}
-                </span>
-                <div className="min-w-0 flex-1">
-                    <p className="m-0 text-sm font-semibold truncate">{bot?.displayName || 'Assistant'}</p>
-                    <p className="m-0 text-xs text-muted truncate">Inbox</p>
+            {!openNotice ? (
+                <div className="flex items-center gap-3 px-3 py-2 border-b border-primary bg-primary shrink-0">
+                    <div className="min-w-0 flex-1">
+                        <p className="m-0 text-sm font-semibold truncate">{bot?.displayName || 'Assistant'}</p>
+                    </div>
+                    <CadenceBar />
+                    <OSButton size="sm" hover="background" onClick={onChange}>
+                        Change
+                    </OSButton>
                 </div>
-                <CadenceBar />
-                <OSButton size="sm" hover="background" onClick={onChange}>
-                    Change
-                </OSButton>
-            </div>
+            ) : null}
 
             <div className="flex flex-1 min-h-0 min-w-0 @2xl:flex-row flex-col">
                 <div
