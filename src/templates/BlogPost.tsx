@@ -10,9 +10,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { MdxCodeBlock } from 'components/CodeBlock'
 import { shortcodes } from '../../src/mdxGlobalComponents'
 import { Heading } from 'components/Heading'
-import TutorialsSlider from 'components/TutorialsSlider'
-import TutorialsList from 'components/TutorialsList'
-const MobileSidebar = () => null
+import ReaderView from 'components/ReaderView'
+import dynamic from 'next/dynamic'
 import { useLayoutData } from 'components/Layout/hooks'
 import Title from 'components/Edition/Title'
 import Upvote from 'components/Edition/Upvote'
@@ -24,11 +23,6 @@ import qs from 'qs'
 import Breadcrumbs from 'components/Edition/Breadcrumbs'
 import OSButton from 'components/OSButton'
 import { IconFilter, IconSort, IconSpinner } from '@posthog/icons'
-import { NewsletterForm } from 'components/NewsletterForm'
-import BuiltBy from 'components/BuiltBy'
-import TeamMember from 'components/TeamMember'
-import ImageSlider from 'components/ImageSlider'
-import ReaderView from 'components/ReaderView'
 import { usePosts } from 'components/Edition/hooks/usePosts'
 import { TreeMenu } from 'components/TreeMenu'
 import { postsMenu as menu } from 'navs/posts'
@@ -41,6 +35,16 @@ import {
     type SupabasePost,
 } from 'lib/supabaseBlog'
 import { handleFromDisplayName } from 'lib/profile-path'
+
+const MobileSidebar = () => null
+
+const TutorialsSlider = dynamic(() => import('components/TutorialsSlider'), { loading: () => null })
+const TutorialsList = dynamic(() => import('components/TutorialsList'), { loading: () => null })
+const NewsletterForm = dynamic(
+    () => import('components/NewsletterForm').then((m) => ({ default: m.NewsletterForm })),
+    { loading: () => null }
+)
+const BuiltBy = dynamic(() => import('components/BuiltBy'), { loading: () => null })
 
 const A = (props) => <Link {...props} state={{ newWindow: true }} />
 
@@ -505,8 +509,6 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
         TutorialsList,
         NewsletterForm,
         BuiltBy,
-        TeamMember,
-        ImageSlider,
 
         ...shortcodes,
     }

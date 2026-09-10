@@ -25,11 +25,22 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
+- **Status:** `[COMPLETED by Grok]` — pass 5 (MDX lazy + unused leftovers) ready for PR.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 5)
+- **Scope:** Lazy MDX shortcodes + drop more unused PostHog leftovers. No visual/product change.
+- **User Intent:** After merging PR 531, continue unused-code deletion and speed work in a new PR. Keep the live site as-is.
+- **Implementation:**
+  - Heavy MDX shortcodes (amcharts, wistia, sliders, calculators, team, hedgehog, etc.) load via `next/dynamic` in `mdxGlobalComponents.ts` / `.js`.
+  - BlogPost / Tutorial defer TutorialsSlider, TutorialsList, NewsletterForm, BuiltBy. Restored ReaderView import.
+  - Moved zoom / HiddenSection / MdxAnchorHeaders CSS out of `_app` onto the components that need them. Removed unused `rc-slider` CSS.
+  - Deleted unused leftover folders: About (v2), Hub, PostCard, Cards, Blog chrome (+684KB default.jpg), Contact/index.js.
+  - Removed leftover unused npm packages (Gatsby webpack loaders, rc-slider, patch-package, hast/unist leftovers, etc.).
+- **Files Modified:** mdxGlobalComponents.ts/js, BlogPost.tsx, Tutorial.tsx, ZoomImage, HiddenSection, MdxAnchorHeaders, `_app.tsx`, package.json, pnpm-lock.yaml, unused component folders.
 
 ### 2026-09-11 — Grok (pass 4)
 - **Scope:** Drop unreferenced `src/images` (~23MB PostHog marketing art) and slim leftover Vercel/Gatsby `vercel.json`. No visual/product change.

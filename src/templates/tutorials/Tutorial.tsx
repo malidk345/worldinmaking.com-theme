@@ -22,7 +22,7 @@ import slugify from 'slugify'
 import { MdxCodeBlock } from 'components/CodeBlock'
 import MobileSidebar from 'components/Docs/MobileSidebar'
 import { Intro } from '../../templates/BlogPost'
-import TutorialsSlider from 'components/TutorialsSlider'
+import dynamic from 'next/dynamic'
 import { communityMenu, docsMenu } from '../../navs'
 import { useLayoutData } from 'components/Layout/hooks'
 import { getVideoClasses } from '../../constants'
@@ -43,6 +43,8 @@ export const ViewButton = ({ title, view, setView }) => {
 }
 
 const A = (props) => <Link {...props} />
+
+const TutorialsSlider = dynamic(() => import('components/TutorialsSlider'), { loading: () => null })
 
 export default function Tutorial({ data, pageContext: { tableOfContents, menu }, location }) {
     const { pageData } = data
