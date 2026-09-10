@@ -1,0 +1,6 @@
+⚡ Bolt: Optimize heightToHedgehogs reduction calculation
+
+💡 What: Wrapped `heightToHedgehogs` array reduce computation inside a `useMemo` hook.
+🎯 Why: Prevent O(N) array calculations on every render loop in the `Team` component.
+📊 Impact: Eliminates redundant array traversals, reducing main thread blocking time.
+🔬 Measurement: React Profiler will show reduced render duration.

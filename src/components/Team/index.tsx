@@ -484,12 +484,17 @@ export default function Team({
     const hasUnderConsideration = !hideRoadmap && underConsideration?.length > 0
     const hasInProgress = !hideRoadmap && inProgress?.length > 0
     const hasBody = !!body
-    const heightToHedgehogs =
-        profiles?.data?.reduce((acc, curr) => acc + (curr?.attributes?.height || 0), 0) / hedgehogLengthInches || 0
-    const hedgehogPercentage =
-        (heightToHedgehogs % 1 !== 0 &&
-            Math.round(hedgehogImageWidth * (heightToHedgehogs - Math.floor(heightToHedgehogs)))) ||
-        0
+    // Bolt: Memoized scalar array aggregation to prevent repeated O(N) evaluations on every render
+    const { heightToHedgehogs, hedgehogPercentage } = useMemo(() => {
+        const heightToHedgehogs =
+            profiles?.data?.reduce((acc: number, curr: any) => acc + (curr?.attributes?.height || 0), 0) /
+                hedgehogLengthInches || 0
+        const hedgehogPercentage =
+            (heightToHedgehogs % 1 !== 0 &&
+                Math.round(hedgehogImageWidth * (heightToHedgehogs - Math.floor(heightToHedgehogs)))) ||
+            0
+        return { heightToHedgehogs, hedgehogPercentage }
+    }, [profiles?.data])
 
     const teamEmojis = emojis?.filter((emoji) => !!emoji?.name && !!emoji?.localFile?.publicURL)
 
