@@ -77,6 +77,8 @@ export default function Wrapper() {
     const [searchMounted, setSearchMounted] = React.useState(false)
     const [authMounted, setAuthMounted] = React.useState(false)
     const [windowsPanelMounted, setWindowsPanelMounted] = React.useState(false)
+    const [paletteOpen, setPaletteOpen] = React.useState(false)
+    const [paletteMounted, setPaletteMounted] = React.useState(false)
 
     React.useEffect(() => {
         if (searchOpen) setSearchMounted(true)
@@ -87,6 +89,18 @@ export default function Wrapper() {
     React.useEffect(() => {
         if (isActiveWindowsPanelOpen) setWindowsPanelMounted(true)
     }, [isActiveWindowsPanelOpen])
+
+    React.useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault()
+                setPaletteMounted(true)
+                setPaletteOpen((open) => !open)
+            }
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [])
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -104,7 +118,9 @@ export default function Wrapper() {
                 {(searchOpen || searchMounted) && <SearchOverlay />}
                 <CookieBannerToast />
                 {(isActiveWindowsPanelOpen || windowsPanelMounted) && <ActiveWindowsPanel />}
-                <CommandPalette />
+                {(paletteOpen || paletteMounted) && (
+                    <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+                )}
                 {(isAuthModalOpen || authMounted) && (
                     <AuthModal
                         isOpen={!!isAuthModalOpen}

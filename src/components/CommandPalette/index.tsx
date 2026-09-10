@@ -12,40 +12,34 @@ import {
 import { useApp, useAppActions, useAppWindows } from '../../context/App'
 import { searchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 
-export default function CommandPalette() {
+export default function CommandPalette({
+    open,
+    onOpenChange,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+}) {
     const { windows } = useAppWindows()
     const { addWindow, updateWindow, updateSiteSettings } = useAppActions()
     const { siteSettings } = useApp()
 
-    const [isOpen, setIsOpen] = useState(false)
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [posts, setPosts] = useState<SupabasePost[]>([])
     const inputRef = useRef<HTMLInputElement | null>(null)
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault()
-                setIsOpen((prev) => !prev)
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
-
-    useEffect(() => {
-        if (isOpen) {
+        if (open) {
             setTimeout(() => inputRef.current?.focus(), 50)
         } else {
             setQuery('')
             setPosts([])
             setSelectedIndex(0)
         }
-    }, [isOpen])
+    }, [open])
 
     useEffect(() => {
-        if (!isOpen) return
+        if (!open) return
         const q = query.trim()
         if (q.length < 2) {
             setPosts([])
@@ -61,7 +55,7 @@ export default function CommandPalette() {
             cancelled = true
             window.clearTimeout(timer)
         }
-    }, [isOpen, query])
+    }, [open, query])
 
     const matchedPosts = posts
 
@@ -149,16 +143,16 @@ export default function CommandPalette() {
             const selected = allItems[selectedIndex]
             if (selected) {
                 selected.action()
-                setIsOpen(false)
+                onOpenChange(false)
             }
         } else if (e.key === 'Escape') {
-            setIsOpen(false)
+            onOpenChange(false)
         }
     }
 
     return (
         <AnimatePresence>
-            {isOpen && (
+            {open && (
                 <div className="keyboard-pad fixed inset-0 z-[100000] flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/40 backdrop-blur-sm">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.94, y: -16 }}
@@ -179,7 +173,7 @@ export default function CommandPalette() {
                                 onChange={(e) => setQuery(e.target.value)}
                             />
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => onOpenChange(false)}
                                 className="p-1 rounded hover:bg-primary/10 transition-colors"
                             >
                                 <IconX className="size-4 text-secondary" />
@@ -199,7 +193,7 @@ export default function CommandPalette() {
                                             key={item.id}
                                             onClick={() => {
                                                 item.action()
-                                                setIsOpen(false)
+                                                onOpenChange(false)
                                             }}
                                             onMouseEnter={() => setSelectedIndex(idx)}
                                             className={`relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors lowercase cursor-pointer ${

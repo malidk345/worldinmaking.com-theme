@@ -31,6 +31,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Grok (pass 3)
+- **Scope:** Defer command palette; drop more unused Gatsby leftovers and unused npm packages. No visual/product change.
+- **User Intent:** Keep iterating inside PR 531 — unused code out, site faster, live UI unchanged.
+- **Implementation:**
+  - Cmd+K listener lives in Wrapper; CommandPalette chunk loads on first shortcut.
+  - Deleted unused Gatsby leftovers: `html.tsx`, presentations, pages-content, unused blog/hub/OG/tutorial listing templates, `components/Tutorials`.
+  - Removed unused packages (swiper, canvas-confetti, react-window, masonry, langchain google/groq, fontsource, etc.) and refreshed `pnpm-lock.yaml`.
+  - `optimizePackageImports` now includes `@posthog/icons`.
+- **Files Modified:** Wrapper, CommandPalette, next.config.js, package.json, pnpm-lock.yaml, unused templates/content.
+
 ### 2026-09-11 — Grok (pass 2)
 - **Scope:** More unused leftover deletion + defer overlay chunks until first open. No visual/product change.
 - **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.

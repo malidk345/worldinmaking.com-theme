@@ -19,6 +19,7 @@ const nextConfig = {
         optimizePackageImports: [
             'lucide-react',
             '@heroicons/react',
+            '@posthog/icons',
             '@radix-ui/react-accordion',
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-popover',
