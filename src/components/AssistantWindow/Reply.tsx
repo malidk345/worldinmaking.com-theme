@@ -5,12 +5,18 @@ export function AssistantReply({
     answering,
     onAnswer,
     onDismiss,
-    placeholder = 'Write back. They will not let this drop.',
+    extra,
+    placeholder = 'Write a reply…',
+    submitLabel = 'Reply',
+    rows = 5,
 }: {
     answering: boolean
     onAnswer: (text: string) => void
     onDismiss?: () => void
+    extra?: React.ReactNode
     placeholder?: string
+    submitLabel?: string
+    rows?: number
 }) {
     const [draft, setDraft] = useState('')
     return (
@@ -19,11 +25,11 @@ export function AssistantReply({
                 data-writing-surface
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                rows={4}
+                rows={rows}
                 placeholder={placeholder}
-                className="w-full resize-none rounded-md border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-input"
+                className="w-full resize-none rounded border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-input leading-relaxed"
             />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <OSButton
                     size="sm"
                     variant="primary"
@@ -35,13 +41,14 @@ export function AssistantReply({
                         setDraft('')
                     }}
                 >
-                    {answering ? '…' : 'Answer'}
+                    {answering ? '…' : submitLabel}
                 </OSButton>
                 {onDismiss ? (
                     <OSButton size="sm" hover="background" onClick={onDismiss}>
                         Dismiss
                     </OSButton>
                 ) : null}
+                {extra}
             </div>
         </div>
     )
