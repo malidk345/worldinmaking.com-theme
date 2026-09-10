@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import SEO from 'components/seo'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -11,112 +13,19 @@ import {
     writePersonalAssistantId,
     type PersonalAssistantId,
 } from 'lib/personal-assistant'
-import { chatAuthHeadersFresh } from 'lib/chat-remote'
-import { parseAiSseEvent } from 'lib/ai/contracts'
-import { getActiveOwnerKey, DEVICE_CHAT_OWNER_KEY, namespacedStorageKey } from 'lib/wim-identity'
+import {
+    ASSISTANT_NOTICES_EVENT,
+    collectUserNotebooks,
+    dismissAssistantNotice,
+    pushAssistantNotice,
+    buildNotice,
+    readAssistantNotices,
+    seedAssistantNotices,
+    type AssistantNotice,
+} from 'lib/assistant-notices'
+import { requestAssistantLiveNotice } from './Watch'
 
-type ChatRole = 'user' | 'assistant'
-type ChatTurn = { id: string; role: ChatRole; text: string }
-
-const CHAT_STORAGE_BASE = 'wim_assistant_chats_v1'
-
-function chatStorageKey(philosopherId: PersonalAssistantId): string {
-    return namespacedStorageKey(`${CHAT_STORAGE_BASE}:${philosopherId}`, getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY))
-}
-
-function readChats(philosopherId: PersonalAssistantId): ChatTurn[] {
-    if (typeof window === 'undefined') return []
-    try {
-        const raw = window.localStorage.getItem(chatStorageKey(philosopherId))
-        const parsed = raw ? JSON.parse(raw) : []
-        if (!Array.isArray(parsed)) return []
-        return parsed.filter(
-            (item): item is ChatTurn =>
-                item &&
-                typeof item.id === 'string' &&
-                (item.role === 'user' || item.role === 'assistant') &&
-                typeof item.text === 'string'
-        )
-    } catch {
-        return []
-    }
-}
-
-function writeChats(philosopherId: PersonalAssistantId, turns: ChatTurn[]): void {
-    if (typeof window === 'undefined') return
-    try {
-        window.localStorage.setItem(chatStorageKey(philosopherId), JSON.stringify(turns.slice(-80)))
-    } catch {
-        /* quota */
-    }
-}
-
-function newId(prefix: string): string {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-async function streamAssistantReply(args: {
-    philosopherId: PersonalAssistantId
-    prompt: string
-    history: ChatTurn[]
-    signal: AbortSignal
-    onToken: (text: string) => void
-}): Promise<string> {
-    const headers = await chatAuthHeadersFresh(true)
-    const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers,
-        signal: args.signal,
-        body: JSON.stringify({
-            prompt: args.prompt,
-            modelId: args.philosopherId,
-            conversationId: `assistant-${args.philosopherId}`,
-            messages: args.history.slice(-16).map((turn) => ({
-                role: turn.role,
-                content: turn.text.slice(0, 4000),
-            })),
-        }),
-    })
-
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message =
-            typeof (body as { error?: unknown }).error === 'string'
-                ? (body as { error: string }).error
-                : 'The assistant could not reply. Try again in a moment.'
-        throw new Error(message)
-    }
-
-    if (!res.body) throw new Error('Empty reply from the assistant.')
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let fullText = ''
-
-    while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const frames = buffer.split('\n\n')
-        buffer = frames.pop() || ''
-        for (const frame of frames) {
-            const event = parseAiSseEvent(frame)
-            if (!event) continue
-            if (event.type === 'token' && event.text) {
-                fullText += event.text
-                args.onToken(fullText)
-            } else if (event.type === 'done' && event.fullText) {
-                fullText = event.fullText
-                args.onToken(fullText)
-            } else if (event.type === 'error') {
-                throw new Error(event.message || 'The assistant could not reply.')
-            }
-        }
-    }
-
-    return fullText.trim()
-}
+dayjs.extend(relativeTime)
 
 function PhilosopherCard({
     id,
@@ -178,7 +87,8 @@ function PickerScreen({
                             Choose your assistant
                         </h1>
                         <p className="text-sm text-secondary mt-1 mb-0">
-                            One of the resident philosophers becomes your personal assistant. You can change this later.
+                            A resident philosopher takes the desk. They read your notebooks, counsel you, ask questions,
+                            and drop notices in the notification panel until you answer.
                         </p>
                     </div>
                 </div>
@@ -200,7 +110,77 @@ function PickerScreen({
     )
 }
 
-function ChatScreen({
+function NoticeRow({
+    notice,
+    open,
+    onOpen,
+    onDismiss,
+    onAnswer,
+    answering,
+}: {
+    notice: AssistantNotice
+    open: boolean
+    onOpen: () => void
+    onDismiss: () => void
+    onAnswer: (text: string) => void
+    answering: boolean
+}) {
+    const [draft, setDraft] = useState('')
+
+    return (
+        <li>
+            <button
+                type="button"
+                onClick={onOpen}
+                className="w-full text-left p-2 hover:bg-accent rounded active:scale-[0.98]"
+            >
+                {notice.excerpt ? <div className="text-xs line-clamp-1 text-muted">{notice.excerpt}</div> : null}
+                <div className="text-sm line-clamp-1 font-semibold">{notice.title}</div>
+                <div className="flex-shrink-0 text-sm font-normal text-right flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
+                        <p className="m-0 text-sm font-bold text-red">+{notice.count}</p>
+                        <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2">
+                            {dayjs(notice.date).fromNow()}
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {open ? (
+                <div className="px-2 pb-3 space-y-2">
+                    {notice.body ? <p className="m-0 text-sm text-secondary">{notice.body}</p> : null}
+                    <textarea
+                        data-writing-surface
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        rows={2}
+                        placeholder="Answer this. They will not let it drop."
+                        className="w-full resize-none rounded-md border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-input"
+                    />
+                    <div className="flex items-center gap-2">
+                        <OSButton
+                            size="sm"
+                            variant="primary"
+                            disabled={answering || !draft.trim()}
+                            onClick={() => {
+                                const text = draft.trim()
+                                if (!text) return
+                                onAnswer(text)
+                                setDraft('')
+                            }}
+                        >
+                            {answering ? '…' : 'Answer'}
+                        </OSButton>
+                        <OSButton size="sm" hover="background" onClick={onDismiss}>
+                            Dismiss
+                        </OSButton>
+                    </div>
+                </div>
+            ) : null}
+        </li>
+    )
+}
+
+function BriefingScreen({
     philosopherId,
     onChange,
 }: {
@@ -209,72 +189,47 @@ function ChatScreen({
 }) {
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === philosopherId)
     const portrait = philosopherPixelAvatar(philosopherId)
-    const [turns, setTurns] = useState<ChatTurn[]>(() => readChats(philosopherId))
-    const [draft, setDraft] = useState('')
-    const [streaming, setStreaming] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const abortRef = useRef<AbortController | null>(null)
-    const endRef = useRef<HTMLDivElement>(null)
+    const [notices, setNotices] = useState<AssistantNotice[]>(() => readAssistantNotices())
+    const [openId, setOpenId] = useState<string | null>(null)
+    const [answering, setAnswering] = useState(false)
+    const notebooks = useMemo(() => collectUserNotebooks(), [notices.length])
 
     useEffect(() => {
-        setTurns(readChats(philosopherId))
-        setDraft('')
-        setError(null)
+        const refresh = () => setNotices(readAssistantNotices())
+        refresh()
+        window.addEventListener(ASSISTANT_NOTICES_EVENT, refresh)
+        return () => window.removeEventListener(ASSISTANT_NOTICES_EVENT, refresh)
     }, [philosopherId])
 
-    useEffect(() => {
-        writeChats(philosopherId, turns)
-    }, [philosopherId, turns])
+    const mine = notices.filter((n) => n.philosopherId === philosopherId)
+    const watching = notebooks.length
 
-    useEffect(() => {
-        endRef.current?.scrollIntoView({ block: 'end' })
-    }, [turns, streaming])
-
-    useEffect(() => {
-        return () => abortRef.current?.abort()
-    }, [])
-
-    const send = useCallback(async () => {
-        const prompt = draft.trim()
-        if (!prompt || streaming) return
-        const userTurn: ChatTurn = { id: newId('user'), role: 'user', text: prompt }
-        const history = [...turns, userTurn]
-        setTurns(history)
-        setDraft('')
-        setError(null)
-        setStreaming(true)
-
-        const assistantId = newId('assistant')
-        setTurns((prev) => [...prev, { id: assistantId, role: 'assistant', text: '' }])
-
-        abortRef.current?.abort()
-        const abort = new AbortController()
-        abortRef.current = abort
-
+    const answer = async (notice: AssistantNotice, text: string) => {
+        setAnswering(true)
+        dismissAssistantNotice(notice.id)
         try {
-            const fullText = await streamAssistantReply({
+            const ok = await requestAssistantLiveNotice('answer', {
+                title: notice.title,
+                body: notice.body,
+                text,
                 philosopherId,
-                prompt,
-                history,
-                signal: abort.signal,
-                onToken: (text) => {
-                    setTurns((prev) =>
-                        prev.map((turn) => (turn.id === assistantId ? { ...turn, text } : turn))
-                    )
-                },
             })
-            setTurns((prev) =>
-                prev.map((turn) => (turn.id === assistantId ? { ...turn, text: fullText || turn.text } : turn))
-            )
-        } catch (err) {
-            if ((err as { name?: string })?.name === 'AbortError') return
-            const message = err instanceof Error ? err.message : 'The assistant could not reply.'
-            setError(message)
-            setTurns((prev) => prev.filter((turn) => turn.id !== assistantId || turn.text.trim()))
+            if (!ok) {
+                pushAssistantNotice(
+                    buildNotice({
+                        philosopherId,
+                        kind: 'counsel',
+                        title: 'Noted. That does not close the question.',
+                        body: text.slice(0, 220),
+                    }),
+                    { force: true }
+                )
+            }
         } finally {
-            setStreaming(false)
+            setAnswering(false)
+            setNotices(readAssistantNotices())
         }
-    }, [draft, philosopherId, streaming, turns])
+    }
 
     return (
         <div className="h-full min-h-0 flex flex-col">
@@ -286,65 +241,45 @@ function ChatScreen({
                 </span>
                 <div className="min-w-0 flex-1">
                     <p className="m-0 text-sm font-semibold truncate">{bot?.displayName || 'Assistant'}</p>
-                    <p className="m-0 text-xs text-muted truncate">{bot?.shortStance || 'Personal assistant'}</p>
+                    <p className="m-0 text-xs text-muted truncate">
+                        {watching
+                            ? `Reading ${watching} notebook${watching === 1 ? '' : 's'} · nags land in Notifications`
+                            : 'No notebooks yet · they will keep asking why'}
+                    </p>
                 </div>
                 <OSButton size="sm" hover="background" onClick={onChange}>
                     Change
                 </OSButton>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0">
-                <div className="p-4 space-y-3 max-w-2xl mx-auto">
-                    {!turns.length ? (
-                        <div className="text-center py-10">
-                            <p className="m-0 text-sm text-secondary">
-                                {bot?.displayName || 'Your assistant'} is ready. Write anything — this thread stays on
-                                this device.
-                            </p>
-                        </div>
-                    ) : null}
-                    {turns.map((turn) => (
-                        <div
-                            key={turn.id}
-                            className={`max-w-[92%] rounded-lg border border-primary px-3 py-2 text-sm whitespace-pre-wrap ${
-                                turn.role === 'user' ? 'ml-auto bg-accent/40' : 'mr-auto bg-primary'
-                            }`}
-                        >
-                            {turn.text || (streaming ? '…' : '')}
-                        </div>
-                    ))}
-                    <div ref={endRef} />
-                </div>
-            </ScrollArea>
-
-            <form
-                className="shrink-0 border-t border-primary p-3 bg-primary"
-                onSubmit={(e) => {
-                    e.preventDefault()
-                    void send()
-                }}
-            >
-                {error ? <p className="m-0 mb-2 text-xs text-red">{error}</p> : null}
-                <div className="flex items-end gap-2">
-                    <textarea
-                        data-writing-surface
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                void send()
-                            }
-                        }}
-                        rows={2}
-                        placeholder={`Write to ${bot?.name || 'your assistant'}…`}
-                        className="flex-1 min-w-0 resize-none rounded-md border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-input"
-                    />
-                    <OSButton type="submit" size="md" variant="primary" disabled={streaming || !draft.trim()}>
-                        {streaming ? '…' : 'Send'}
-                    </OSButton>
-                </div>
-            </form>
+            <div className="flex-1 min-h-0">
+                <ScrollArea className="p-2 h-full">
+                    {mine.length > 0 ? (
+                        <ul className="list-none m-0 p-0 space-y-1 max-w-xl mx-auto">
+                            {mine.map((notice) => (
+                                <NoticeRow
+                                    key={notice.id}
+                                    notice={notice}
+                                    open={openId === notice.id}
+                                    answering={answering}
+                                    onOpen={() => setOpenId((id) => (id === notice.id ? null : notice.id))}
+                                    onDismiss={() => {
+                                        dismissAssistantNotice(notice.id)
+                                        setNotices(readAssistantNotices())
+                                        if (openId === notice.id) setOpenId(null)
+                                    }}
+                                    onAnswer={(text) => void answer(notice, text)}
+                                />
+                            ))}
+                        </ul>
+                    ) : (
+                        <h5 className="m-0 px-2">
+                            {bot?.name || 'Your assistant'} is reading. Notices will land here and in the notification
+                            panel.
+                        </h5>
+                    )}
+                </ScrollArea>
+            </div>
         </div>
     )
 }
@@ -368,6 +303,7 @@ export function AssistantWindow() {
 
     const choose = (id: PersonalAssistantId) => {
         writePersonalAssistantId(id)
+        seedAssistantNotices(id)
         setAssistantId(id)
         setPicking(false)
     }
@@ -376,14 +312,14 @@ export function AssistantWindow() {
         <div data-scheme="primary" className="@container bg-primary text-primary h-full flex flex-col min-h-0 font-sans">
             <SEO
                 title="Assistant"
-                description="Choose a resident philosopher as your personal assistant on WorldInMaking."
+                description="A resident philosopher reads your notebooks, counsels you, and nags you from the notification panel."
             />
             {!ready ? <div className="flex-1" /> : null}
             {ready && (picking || !assistantId) ? (
                 <PickerScreen currentId={assistantId} onChoose={choose} />
             ) : null}
             {ready && assistantId && !picking ? (
-                <ChatScreen philosopherId={assistantId} onChange={() => setPicking(true)} />
+                <BriefingScreen philosopherId={assistantId} onChange={() => setPicking(true)} />
             ) : null}
         </div>
     )

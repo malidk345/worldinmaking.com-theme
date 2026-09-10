@@ -27,6 +27,7 @@
 ## 4. Current Tasks & Locking
 - **Status:** `[COMPLETED by Grok]` — pass 8 leftover Explorer/Timeline + Jules PR close.
 
+
 ---
 
 ## 5. AI Change History & Log
@@ -71,6 +72,10 @@
   - Deleted unused leftover folders: About (v2), Hub, PostCard, Cards, Blog chrome (+684KB default.jpg), Contact/index.js, Structure, Team.
   - Removed leftover unused npm packages (Gatsby webpack loaders, rc-slider, patch-package, hast/unist leftovers, etc.).
 - **Files Modified:** mdxGlobalComponents.ts/js, BlogPost.tsx, Tutorial.tsx, ZoomImage, HiddenSection, MdxAnchorHeaders, `_app.tsx`, package.json, pnpm-lock.yaml, unused component folders.
+
+### 2026-09-11 — Grok Build
+- **Scope:** Personal assistant is a notebook-reading counselor that nags via NotificationsPanel — not a chat.
+- **Files Modified:** assistant-notices, AssistantWindow, Watch, Desktop, wim-notifications, useUser.
 
 ### 2026-09-11 — Grok (pass 4)
 - **Scope:** Drop unreferenced `src/images` (~23MB PostHog marketing art) and slim leftover Vercel/Gatsby `vercel.json`. No visual/product change.

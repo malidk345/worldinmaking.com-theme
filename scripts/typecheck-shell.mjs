@@ -33,6 +33,7 @@ const ALLOWLIST_PREFIXES = [
     'src/components/Desktop/',
     'src/components/AssistantWindow/',
     'src/lib/personal-assistant.ts',
+    'src/lib/assistant-notices.ts',
     'src/components/Auth/',
     'src/components/Admin/',
     'src/components/AppContainer/',
