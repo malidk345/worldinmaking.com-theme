@@ -5,8 +5,6 @@ import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
 import '../components/MdxAnchorHeaders/style.css'
 import '../components/RadixUI/css/toast.css'
-import '../components/Spacer/style.css'
-import '../components/Corpus/styles.css'
 import 'react-medium-image-zoom/dist/styles.css'
 import 'rc-slider/assets/index.css'
 // Do NOT import components/LemonUI/lemon-ui.css or MarkdownNotebook.scss globally.

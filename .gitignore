@@ -49,6 +49,8 @@ __pycache__
 worldinmaking.com-theme/
 pages-build-log.txt
 .tsbuildinfo*
+*.tsbuildinfo
+tsconfig.tsbuildinfo
 playwright-report/
 test-results/
 scratch/

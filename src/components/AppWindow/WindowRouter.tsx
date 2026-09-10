@@ -2,20 +2,59 @@
 
 import React from 'react'
 import dynamic from 'next/dynamic'
-import IdeasHub from 'components/Ideas'
-import ProfileWrapper from 'components/Profile'
 import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
-import Inbox from 'components/Inbox'
-import BlogPost from '../../templates/BlogPost'
-import PostListing from '../../templates/PostListing'
-import DisplayOptions from 'components/DisplayOptions'
-import Legal from 'components/Legal'
 import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
-import WimAuthPortal from 'components/Auth/WimAuthPortal'
-import TapePlayer from 'components/TapePlayer'
 import { useApp } from '../../context/App'
 import { useWindow } from '../../context/Window'
+import { isAskAiPath } from '../../lib/open-ask-ai-window'
+import { isProfilePath } from '../../lib/profile-path'
+import {
+    canonicalWindowPath,
+    isArtifactWindowPath,
+    isBlogPath,
+    isForumPath,
+    isNotebookWindowPath,
+    isPathRoutedWindow,
+    isScratchpadWindowPath,
+    isTrashWindowPath,
+} from '../../lib/window-path'
+
+export { isForumPath, isBlogPath }
+
+const routeFallback = () => <div className="h-full min-h-0 flex-1" aria-hidden />
+
+const IdeasHub = dynamic(() => import('components/Ideas'), { loading: routeFallback })
+const ProfileWrapper = dynamic(() => import('components/Profile'), { loading: routeFallback })
+const Inbox = dynamic(() => import('components/Inbox'), { loading: routeFallback })
+const BlogPost = dynamic(() => import('../../templates/BlogPost'), { loading: routeFallback })
+const PostListing = dynamic(() => import('../../templates/PostListing'), { loading: routeFallback })
+const DisplayOptions = dynamic(() => import('components/DisplayOptions'), { ssr: false, loading: routeFallback })
+const Legal = dynamic(() => import('components/Legal'), { loading: routeFallback })
+const WimAuthPortal = dynamic(() => import('components/Auth/WimAuthPortal'), { ssr: false, loading: routeFallback })
+const TapePlayer = dynamic(() => import('components/TapePlayer'), { ssr: false, loading: routeFallback })
+const AdminDashboard = dynamic(() => import('components/Admin/AdminDashboard'), { ssr: false, loading: routeFallback })
+const ArchiveWindow = dynamic(() => import('components/Archive/ArchiveWindow'), { loading: routeFallback })
+const ContactWindow = dynamic(() => import('components/Contact/ContactWindow'), { loading: routeFallback })
+const HomeWindow = dynamic(() => import('components/Home/HomeWindow'), { loading: routeFallback })
+const AccountWindow = dynamic(() => import('components/Account/AccountWindow'), { loading: routeFallback })
+const AboutContent = dynamic(() => import('../../pages/about').then((m) => ({ default: m.AboutContent })), {
+    loading: routeFallback,
+})
+const Bookmarks = dynamic(() => import('../../pages/bookmarks'), { loading: routeFallback })
+const NotificationsPage = dynamic(() => import('../../pages/community/notifications'), { loading: routeFallback })
+const ScratchpadWindow = dynamic(() => import('../ScratchpadWindow').then((m) => ({ default: m.ScratchpadWindow })), {
+    loading: routeFallback,
+})
+const TrashWindow = dynamic(() => import('../TrashWindow').then((m) => ({ default: m.TrashWindow })), {
+    loading: routeFallback,
+})
+const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false, loading: routeFallback })
+const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false, loading: routeFallback })
+
+export interface WindowRouterProps {
+    item: AppWindow & { children?: React.ReactNode }
+}
 
 function AuthWindow() {
     const { appWindow } = useWindow()
@@ -27,27 +66,6 @@ function AuthWindow() {
             }}
         />
     )
-}
-
-import AdminDashboard from 'components/Admin/AdminDashboard'
-import ArchiveWindow from 'components/Archive/ArchiveWindow'
-import ContactWindow from 'components/Contact/ContactWindow'
-import HomeWindow from 'components/Home/HomeWindow'
-import AccountWindow from 'components/Account/AccountWindow'
-import { AboutContent } from '../../pages/about'
-import Bookmarks from '../../pages/bookmarks'
-import NotificationsPage from '../../pages/community/notifications'
-import { isAskAiPath } from '../../lib/open-ask-ai-window'
-import { isProfilePath } from '../../lib/profile-path'
-import { canonicalWindowPath, isArtifactWindowPath, isNotebookWindowPath, isPathRoutedWindow, isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
-import { ScratchpadWindow } from '../ScratchpadWindow'
-import { TrashWindow } from '../TrashWindow'
-
-const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false })
-const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false })
-
-export interface WindowRouterProps {
-    item: AppWindow & { children?: React.ReactNode }
 }
 
 function WindowRouterInner({ item }: WindowRouterProps) {
@@ -218,17 +236,6 @@ const WindowRouterMemo = React.memo(WindowRouterInner, (prev, next) => {
     return true
 })
 WindowRouterMemo.displayName = 'WindowRouterInner'
-
-export const isForumPath = (p: string): boolean =>
-    typeof p === 'string' &&
-    (/^\/questions/.test(p) ||
-        /^\/forum/.test(p) ||
-        (p.startsWith('/community') &&
-            !p.startsWith('/community/profiles') &&
-            !p.startsWith('/community/achievements')))
-
-/** Blog listing or article — ReaderView chrome must stay window-tall, not post-tall. */
-export const isBlogPath = (p: string): boolean => typeof p === 'string' && /^\/(blog|posts)(\/|$)/.test(p)
 
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).

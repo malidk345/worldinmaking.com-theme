@@ -31,6 +31,43 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Grok (pass 4)
+- **Scope:** Drop unreferenced `src/images` (~23MB PostHog marketing art) and slim leftover Vercel/Gatsby `vercel.json`. No visual/product change.
+- **Kept:** OS icons, philosopher pixel avatars, hourglass Lottie, portraits actually imported.
+- **vercel.json:** security headers only. Removed Gatsby `index.html` rewrites (broken on Next) and 378 PostHog marketing redirects. Live routing stays in `next.config.js`.
+- **Files Modified:** `src/images/**` (341 unused files), `vercel.json`.
+
+### 2026-09-11 — Grok (pass 3)
+- **Scope:** Defer command palette; drop more unused Gatsby leftovers and unused npm packages. No visual/product change.
+- **User Intent:** Keep iterating inside PR 531 — unused code out, site faster, live UI unchanged.
+- **Implementation:**
+  - Cmd+K listener lives in Wrapper; CommandPalette chunk loads on first shortcut.
+  - Deleted unused Gatsby leftovers: `html.tsx`, presentations, pages-content, unused blog/hub/OG/tutorial listing templates, `components/Tutorials`.
+  - Removed unused packages (swiper, canvas-confetti, react-window, masonry, langchain google/groq, fontsource, etc.) and refreshed `pnpm-lock.yaml`.
+  - `optimizePackageImports` now includes `@posthog/icons`.
+- **Files Modified:** Wrapper, CommandPalette, next.config.js, package.json, pnpm-lock.yaml, unused templates/content.
+
+### 2026-09-11 — Grok (pass 2)
+- **Scope:** More unused leftover deletion + defer overlay chunks until first open. No visual/product change.
+- **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.
+- **Implementation:**
+  - Wrapper mounts SearchOverlay, AuthModal, and ActiveWindowsPanel only after first open (Cmd+K command palette stays mounted because it owns the shortcut listener).
+  - Deleted zero-import PostHog leftovers: WordArt, Apps, Banner, Accordion, Checkbox, Container, SignUp, Tabs, Templates, TemplatesLibrary, MediaLibrary, HedgehogGenerator, FooterCTA, Breadcrumbs, AnimateIntoView, Card, Header, Footer, Section, Popover, leftover `components/MarkdownNotebook` scss, `useMediaLibrary`.
+- **Verification:** Typecheck shell green on PR 531. Playwright 8 failures match pre-existing main (SEO h1 copy, admin/API tests) — not caused by this work.
+- **Files Modified:** Wrapper, unused component folders, `src/hooks/useMediaLibrary.tsx`, AI_MEMORY.
+
+### 2026-09-11 — Grok
+- **Scope:** Shell first-load split + unused PostHog leftover deletion. No visual/product behavior change.
+- **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.
+- **Implementation:**
+  - Moved `isForumPath` / `isBlogPath` to `src/lib/window-path.ts` so `App.tsx` no longer imports `WindowRouter` (which pulled BlogPost/Inbox/Admin into the shell graph).
+  - `WindowRouter` now `next/dynamic`s route modules (blog, inbox, admin, tape player, about, …) so they load when a window opens.
+  - Desktop defers Claude chat, notifications, hedgehog, and confetti until first use.
+  - Catch-all `[...slug]` code-splits Inbox/Blog/Profile per route.
+  - Removed unused global CSS (Corpus, Spacer). Deleted unused leftover folders (Careers, Subscribe, posthog-ui-gallery, …) and scratch files.
+  - Extra webpack async cacheGroups: hedgehog, amcharts, mapbox, workspace-chat.
+- **Files Modified:** WindowRouter, Desktop, App.tsx, window-path.ts, `[...slug].tsx`, `_app.tsx`, next.config.js, .gitignore, unused component folders, scratch root files.
+
 ### 2026-09-10 — Antigravity (Advanced Agentic Coding)
 - **Scope:** NotificationsPanel Expansion — Philosopher Bot Replies & Notebook Collaboration Invites.
 - **User Intent:** Expand the notifications panel beyond basic forum replies to include meaningful product events (Philosopher Bot replies/mentions and WIM Notebook collaboration invites/additions) without altering existing styling or layouts, without gamification/achievements, and strictly in English ("olur hepsine okeyim yap ama notifacation panele ve bildirimlerin stiline asla dokunma farklı bir tasarım yapma su an olan aşırı iyi", "evet ama türkçe yapayım deme şimdi site ingilizce", "accievment falan istemem").

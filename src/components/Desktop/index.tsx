@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState, useAppWindows } from '../../context/App'
@@ -7,16 +8,20 @@ import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
 import ContextMenu from 'components/RadixUI/ContextMenu'
 import DesktopIcon from './DesktopIcon'
-import NotificationsPanel from 'components/NotificationsPanel'
-import { ClaudeWorkspaceChatPanel } from 'components/ClaudeWorkspaceChat'
 import Wallpapers, { getWallpaperGlow } from './Wallpapers'
-import HedgeHogModeEmbed from 'components/HedgehogMode'
-import ReactConfetti from 'react-confetti'
 import { apps, useProductLinks } from './desktopApps'
 import { extractNotebookId, isHomeWindowPath, notebookWindowPath } from '../../lib/window-path'
 import { useUser } from 'hooks/useUser'
 import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
 import { getNotebooks, WIM_NOTEBOOKS_CHANGED_EVENT, WIM_NOTEBOOKS_HYDRATED_EVENT } from '../../notebook-app/scenes/notebooks/notebookStorage'
+
+const NotificationsPanel = dynamic(() => import('components/NotificationsPanel'), { ssr: false })
+const ClaudeWorkspaceChatPanel = dynamic(
+    () => import('components/ClaudeWorkspaceChat').then((m) => ({ default: m.ClaudeWorkspaceChatPanel })),
+    { ssr: false }
+)
+const HedgeHogModeEmbed = dynamic(() => import('components/HedgehogMode'), { ssr: false })
+const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
 
 export { apps, useProductLinks }
 
@@ -30,9 +35,19 @@ function Desktop() {
     const { setConfetti, addWindow, updateWindow, handleSnapToSide } = useAppActions()
     const { siteSettings, isMobile } = useAppSettings()
     const { windows } = useAppWindows()
-    const { confetti } = useAppUIState()
+    const { confetti, isClaudeChatOpen, isNotificationsPanelOpen } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
+    const [chatMounted, setChatMounted] = useState(false)
+    const [notifMounted, setNotifMounted] = useState(false)
     const router = useRouter()
+
+    useEffect(() => {
+        if (isClaudeChatOpen) setChatMounted(true)
+    }, [isClaudeChatOpen])
+
+    useEffect(() => {
+        if (isNotificationsPanelOpen) setNotifMounted(true)
+    }, [isNotificationsPanelOpen])
 
     useEffect(() => {
         if (router.query.open === 'chat') {
@@ -210,8 +225,8 @@ function Desktop() {
                 </div>
                 <HedgeHogModeEmbed />
             </ContextMenu>
-            <NotificationsPanel />
-            <ClaudeWorkspaceChatPanel />
+            {(isNotificationsPanelOpen || notifMounted) && <NotificationsPanel />}
+            {(isClaudeChatOpen || chatMounted) && <ClaudeWorkspaceChatPanel />}
             {confetti && (
                 <div className="fixed inset-0 pointer-events-none">
                     <ReactConfetti
