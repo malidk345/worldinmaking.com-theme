@@ -31,6 +31,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Grok (pass 4)
+- **Scope:** Drop unreferenced `src/images` (~23MB PostHog marketing art) and slim leftover Vercel/Gatsby `vercel.json`. No visual/product change.
+- **Kept:** OS icons, philosopher pixel avatars, hourglass Lottie, portraits actually imported.
+- **vercel.json:** security headers only. Removed Gatsby `index.html` rewrites (broken on Next) and 378 PostHog marketing redirects. Live routing stays in `next.config.js`.
+- **Files Modified:** `src/images/**` (341 unused files), `vercel.json`.
+
 ### 2026-09-11 — Grok (pass 3)
 - **Scope:** Defer command palette; drop more unused Gatsby leftovers and unused npm packages. No visual/product change.
 - **User Intent:** Keep iterating inside PR 531 — unused code out, site faster, live UI unchanged.
