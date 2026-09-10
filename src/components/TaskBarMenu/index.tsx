@@ -177,6 +177,12 @@ function TaskBarMenu() {
                           link: '/workspace-chat',
                           icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
+                      {
+                          type: 'item' as const,
+                          label: t('chrome.assistant'),
+                          link: '/assistant',
+                          icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                      },
                       ...(isModerator
                           ? [
                                 {

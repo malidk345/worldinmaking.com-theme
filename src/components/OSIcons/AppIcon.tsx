@@ -7,6 +7,7 @@ import { useAppSettings } from '../../context/App'
 import pixelHomeIcon from '../../images/icons/pixel-home.png'
 import pixelPostsIcon from '../../images/icons/pixel-posts.png'
 import pixelWimAiIcon from '../../images/icons/pixel-wimai.png'
+import pixelWimbotIcon from '../../images/icons/pixel-wimbot.png'
 import pixelArchiveIcon from '../../images/icons/pixel-archive.png'
 import pixelNotebookIcon from '../../images/icons/pixel-notebook.png'
 import pixelSignInIcon from '../../images/icons/pixel-signin.png'
@@ -21,6 +22,8 @@ import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
 import wimAiClassicIcon from '../../images/icons/wim-ai-monitor-classic.png'
 import wimAiModernIcon from '../../images/icons/wim-ai-monitor-modern.png'
+import assistantClassicIcon from '../../images/icons/wim-ai-alt-classic.png'
+import assistantModernIcon from '../../images/icons/wim-ai-alt-modern.png'
 import postsClassicIcon from '../../images/icons/posts-classic.png'
 import postsModernIcon from '../../images/icons/posts-modern.png'
 import signInClassicIcon from '../../images/icons/signin-classic.png'
@@ -258,6 +261,11 @@ const PRODUCT_ICON_MAP = {
         classic: importedSrc(wimAiClassicIcon),
         default: importedSrc(wimAiModernIcon),
         pixel: importedSrc(pixelWimAiIcon),
+    },
+    assistant: {
+        classic: importedSrc(assistantClassicIcon),
+        default: importedSrc(assistantModernIcon),
+        pixel: importedSrc(pixelWimbotIcon),
     },
     posts: {
         classic: importedSrc(postsClassicIcon),

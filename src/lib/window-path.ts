@@ -104,6 +104,11 @@ export function isTrashWindowPath(path?: string | null): boolean {
     return p === '/trash' || p.startsWith('/trash/')
 }
 
+export function isAssistantWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/assistant' || p.startsWith('/assistant/')
+}
+
 export function notebookWindowPath(id?: string | null): string {
     const clean = String(id || '').trim()
     return clean ? `/notebooks/${clean}` : '/notebooks'
@@ -169,6 +174,7 @@ export function isPathRoutedWindow(path: string): boolean {
         p === '/home' ||
         p === '/account' ||
         /^\/workspace-chat(\/|$)/.test(p) ||
+        /^\/assistant(\/|$)/.test(p) ||
         /^\/scratchpad(\/|$)/.test(p) ||
         /^\/trash(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||

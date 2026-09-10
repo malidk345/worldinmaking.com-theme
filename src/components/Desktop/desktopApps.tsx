@@ -87,6 +87,12 @@ export const useProductLinks = () => {
                 source: 'desktop',
             },
             {
+                label: t('chrome.assistant'),
+                Icon: <AppIcon name="assistant" />,
+                url: '/assistant',
+                source: 'desktop',
+            },
+            {
                 label: 'Posts',
                 Icon: <AppIcon name="posts" />,
                 url: '/posts',

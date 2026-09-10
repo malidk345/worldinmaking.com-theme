@@ -173,6 +173,7 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Community', path: '/community', aliases: ['forum', 'questions', 'community'] },
     { name: 'Notebooks', path: '/notebooks', aliases: ['notes', 'notebook'] },
     { name: 'WIM AI', path: '/workspace-chat', aliases: ['ask ai', 'chat', 'wim ai'] },
+    { name: 'Assistant', path: '/assistant', aliases: ['personal assistant', 'philosopher', 'asistan'] },
     { name: 'Posts', path: '/posts', aliases: ['blog', 'yazılar', 'posts'] },
     { name: 'Archive', path: '/archive', aliases: ['arsiv'] },
     { name: 'Contact', path: '/contact', aliases: ['iletişim', 'contact'] },
