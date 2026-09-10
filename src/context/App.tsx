@@ -13,7 +13,6 @@ import dynamic from 'next/dynamic'
 import { AppWindow } from './Window'
 import { isSafeInternalPath } from 'lib/utils'
 import { User, useUser } from 'hooks/useUser'
-import Start from 'components/Start'
 import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
@@ -21,7 +20,6 @@ import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
 import { installSqueakFetchGuard } from 'lib/squeak'
-import { isForumPath } from 'components/AppWindow/WindowRouter'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
 import {
@@ -37,6 +35,7 @@ import {
     canonicalWindowPath,
     extractNotebookId,
     isArtifactWindowPath,
+    isForumPath,
     isHomeWindowPath,
     repairWindowPath,
 } from '../lib/window-path'
@@ -51,6 +50,7 @@ import {
     type WorldSnapshot,
 } from '../lib/world-snapshot'
 
+const Start = dynamic(() => import('components/Start'), { ssr: false })
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
 declare global {

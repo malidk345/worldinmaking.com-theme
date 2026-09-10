@@ -31,6 +31,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Grok
+- **Scope:** Shell first-load split + unused PostHog leftover deletion. No visual/product behavior change.
+- **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.
+- **Implementation:**
+  - Moved `isForumPath` / `isBlogPath` to `src/lib/window-path.ts` so `App.tsx` no longer imports `WindowRouter` (which pulled BlogPost/Inbox/Admin into the shell graph).
+  - `WindowRouter` now `next/dynamic`s route modules (blog, inbox, admin, tape player, about, …) so they load when a window opens.
+  - Desktop defers Claude chat, notifications, hedgehog, and confetti until first use.
+  - Catch-all `[...slug]` code-splits Inbox/Blog/Profile per route.
+  - Removed unused global CSS (Corpus, Spacer). Deleted unused leftover folders (Careers, Subscribe, posthog-ui-gallery, …) and scratch files.
+  - Extra webpack async cacheGroups: hedgehog, amcharts, mapbox, workspace-chat.
+- **Files Modified:** WindowRouter, Desktop, App.tsx, window-path.ts, `[...slug].tsx`, `_app.tsx`, next.config.js, .gitignore, unused component folders, scratch root files.
+
 ### 2026-09-10 — Antigravity (Advanced Agentic Coding)
 - **Scope:** NotificationsPanel Expansion — Philosopher Bot Replies & Notebook Collaboration Invites.
 - **User Intent:** Expand the notifications panel beyond basic forum replies to include meaningful product events (Philosopher Bot replies/mentions and WIM Notebook collaboration invites/additions) without altering existing styling or layouts, without gamification/achievements, and strictly in English ("olur hepsine okeyim yap ama notifacation panele ve bildirimlerin stiline asla dokunma farklı bir tasarım yapma su an olan aşırı iyi", "evet ama türkçe yapayım deme şimdi site ingilizce", "accievment falan istemem").

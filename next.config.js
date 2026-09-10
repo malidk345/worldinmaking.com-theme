@@ -171,6 +171,34 @@ const nextConfig = {
                         priority: 40,
                         reuseExistingChunk: true,
                     },
+                    hedgehog: {
+                        test: /[\\/]node_modules[\\/]@posthog[\\/]hedgehog-mode[\\/]/,
+                        name: 'hedgehog-mode',
+                        chunks: 'async',
+                        priority: 40,
+                        reuseExistingChunk: true,
+                    },
+                    amcharts: {
+                        test: /[\\/]node_modules[\\/]@amcharts[\\/]/,
+                        name: 'amcharts',
+                        chunks: 'async',
+                        priority: 40,
+                        reuseExistingChunk: true,
+                    },
+                    mapbox: {
+                        test: /[\\/]node_modules[\\/]mapbox-gl[\\/]/,
+                        name: 'mapbox',
+                        chunks: 'async',
+                        priority: 40,
+                        reuseExistingChunk: true,
+                    },
+                    workspaceChat: {
+                        test: /[\\/]src[\\/]components[\\/]ClaudeWorkspaceChat[\\/]/,
+                        name: 'workspace-chat',
+                        chunks: 'async',
+                        priority: 35,
+                        reuseExistingChunk: true,
+                    },
                 },
             }
         }

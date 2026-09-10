@@ -1,12 +1,15 @@
 import React from 'react'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
-import Inbox from '../components/Inbox'
-import ProfileWrapper from '../components/Profile'
-import DisplayOptions from '../components/DisplayOptions'
-import Bookmarks from './bookmarks'
-import BlogPost from '../templates/BlogPost'
-import { SharedChatView } from '../components/Share/SharedChatView'
+
+const Inbox = dynamic(() => import('../components/Inbox'))
+const ProfileWrapper = dynamic(() => import('../components/Profile'))
+const DisplayOptions = dynamic(() => import('../components/DisplayOptions'), { ssr: false })
+const Bookmarks = dynamic(() => import('./bookmarks'))
+const BlogPost = dynamic(() => import('../templates/BlogPost'))
+const SharedChatView = dynamic(() =>
+    import('../components/Share/SharedChatView').then((m) => ({ default: m.SharedChatView }))
+)
 
 const NotebooksListSkeleton = dynamic(
     () => import('../notebook-app/App').then((mod) => mod.App),

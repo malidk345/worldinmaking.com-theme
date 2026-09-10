@@ -180,3 +180,20 @@ export function isPathRoutedWindow(path: string): boolean {
             !p.startsWith('/community/achievements'))
     )
 }
+
+/** Forum / questions / community (not profile or achievements). Keep in this module so App.tsx does not import WindowRouter. */
+export function isForumPath(p: string): boolean {
+    return (
+        typeof p === 'string' &&
+        (/^\/questions/.test(p) ||
+            /^\/forum/.test(p) ||
+            (p.startsWith('/community') &&
+                !p.startsWith('/community/profiles') &&
+                !p.startsWith('/community/achievements')))
+    )
+}
+
+/** Blog listing or article — ReaderView chrome must stay window-tall, not post-tall. */
+export function isBlogPath(p: string): boolean {
+    return typeof p === 'string' && /^\/(blog|posts)(\/|$)/.test(p)
+}
