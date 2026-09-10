@@ -66,7 +66,27 @@ function VisitingRoomBanner() {
 export default function Wrapper() {
     const { constraintsRef } = useAppActions()
     const { compact } = useAppSettings()
-    const { isAuthModalOpen, setIsAuthModalOpen, authModalView, authModalOnSuccess } = useApp() as any
+    const {
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        authModalView,
+        authModalOnSuccess,
+        searchOpen,
+        isActiveWindowsPanelOpen,
+    } = useApp() as any
+    const [searchMounted, setSearchMounted] = React.useState(false)
+    const [authMounted, setAuthMounted] = React.useState(false)
+    const [windowsPanelMounted, setWindowsPanelMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        if (searchOpen) setSearchMounted(true)
+    }, [searchOpen])
+    React.useEffect(() => {
+        if (isAuthModalOpen) setAuthMounted(true)
+    }, [isAuthModalOpen])
+    React.useEffect(() => {
+        if (isActiveWindowsPanelOpen) setWindowsPanelMounted(true)
+    }, [isActiveWindowsPanelOpen])
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -81,18 +101,20 @@ export default function Wrapper() {
                 {/*             
                 {!compact && <Dock />}
                 */}
-                <SearchOverlay />
+                {(searchOpen || searchMounted) && <SearchOverlay />}
                 <CookieBannerToast />
-                <ActiveWindowsPanel />
+                {(isActiveWindowsPanelOpen || windowsPanelMounted) && <ActiveWindowsPanel />}
                 <CommandPalette />
-                <AuthModal
-                    isOpen={!!isAuthModalOpen}
-                    onClose={() => setIsAuthModalOpen?.(false)}
-                    initialView={authModalView || 'sign-in'}
-                    onSuccess={(user) => {
-                        authModalOnSuccess?.(user)
-                    }}
-                />
+                {(isAuthModalOpen || authMounted) && (
+                    <AuthModal
+                        isOpen={!!isAuthModalOpen}
+                        onClose={() => setIsAuthModalOpen?.(false)}
+                        initialView={authModalView || 'sign-in'}
+                        onSuccess={(user) => {
+                            authModalOnSuccess?.(user)
+                        }}
+                    />
+                )}
             </AppContainer>
         </TooltipProvider>
     )

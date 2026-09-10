@@ -31,6 +31,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Grok (pass 2)
+- **Scope:** More unused leftover deletion + defer overlay chunks until first open. No visual/product change.
+- **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.
+- **Implementation:**
+  - Wrapper mounts SearchOverlay, AuthModal, and ActiveWindowsPanel only after first open (Cmd+K command palette stays mounted because it owns the shortcut listener).
+  - Deleted zero-import PostHog leftovers: WordArt, Apps, Banner, Accordion, Checkbox, Container, SignUp, Tabs, Templates, TemplatesLibrary, MediaLibrary, HedgehogGenerator, FooterCTA, Breadcrumbs, AnimateIntoView, Card, Header, Footer, Section, Popover, leftover `components/MarkdownNotebook` scss, `useMediaLibrary`.
+- **Verification:** Typecheck shell green on PR 531. Playwright 8 failures match pre-existing main (SEO h1 copy, admin/API tests) — not caused by this work.
+- **Files Modified:** Wrapper, unused component folders, `src/hooks/useMediaLibrary.tsx`, AI_MEMORY.
+
 ### 2026-09-11 — Grok
 - **Scope:** Shell first-load split + unused PostHog leftover deletion. No visual/product behavior change.
 - **User Intent:** Keep the live site as-is; delete unused code; speed it up without breaking working flows.
