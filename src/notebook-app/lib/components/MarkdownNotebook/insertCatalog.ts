@@ -2,6 +2,8 @@
  * Single slash catalog. Native markdown blocks are hardcoded in InsertMenu.
  * Registry tags in SLASH_REGISTRY_TAGS get `/` via insertCommand.
  * Extra keys (Page, discussion Comment, invites) are side-effect commands.
+ * Hidden markdown `Comment` (labeled Note) stays in the registry but off slash —
+ * slash already has discussion Comment via extraInsertCommands.
  */
 
 export const SLASH_NATIVE_KEYS = [
@@ -24,7 +26,6 @@ export const SLASH_REGISTRY_TAGS = [
     'Toggle',
     'DatabaseTable',
     'Divider',
-    'Comment',
     'Embed',
     'Latex',
 ] as const
