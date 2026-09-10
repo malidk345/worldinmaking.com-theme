@@ -35,6 +35,7 @@ import {
     canonicalWindowPath,
     extractNotebookId,
     isArtifactWindowPath,
+    isAssistantWindowPath,
     isForumPath,
     isHomeWindowPath,
     repairWindowPath,
@@ -928,6 +929,17 @@ const appSettings: AppSettings = {
     '/trash': {
         toolbar: true,
     },
+    '/assistant': {
+        toolbar: true,
+        size: {
+            min: { width: 560, height: 480 },
+            max: { width: 920, height: 800 },
+            fixed: false,
+        },
+        position: {
+            center: true,
+        },
+    },
 } as const
 
 export interface SiteSettings {
@@ -1701,6 +1713,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     function getKey(key: string) {
+        if (key === '/assistant' || key.startsWith('/assistant/')) return '/assistant'
         const experiment = appSettings[key]?.experiment
         if (!experiment?.flag) return key
         const assignedVariant = posthog?.getFeatureFlag?.(experiment?.flag)
@@ -1889,6 +1902,24 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }
 
         setWindows((prev) => {
+            if (isAssistantWindowPath(path)) {
+                const existingAssistant = prev.find((w) => isAssistantWindowPath(w.path))
+                if (existingAssistant) {
+                    const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+                    return prev.map((w) =>
+                        w.key === existingAssistant.key
+                            ? {
+                                  ...w,
+                                  path,
+                                  zIndex: maxZ + 1,
+                                  minimized: false,
+                                  props: { ...w.props, path },
+                              }
+                            : w
+                    )
+                }
+            }
+
             if (isForumPath(path)) {
                 const existingForum = prev.find((w) => isForumPath(w.path))
                 if (existingForum) {

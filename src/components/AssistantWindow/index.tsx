@@ -421,7 +421,7 @@ function MailDesk({
                 </div>
 
                 {openNotice ? (
-                    <div className="relative min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden bg-primary @2xl:border-l border-t @2xl:border-t-0 border-primary">
+                    <div className="relative min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden bg-primary @2xl:border-l border-primary">
                         <LetterThread
                             notice={openNotice}
                             philosopherId={philosopherId}
