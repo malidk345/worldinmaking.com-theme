@@ -1713,7 +1713,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     function getKey(key: string) {
-        if (key === '/assistant' || key.startsWith('/assistant/')) return '/assistant'
+        if (typeof key === 'string' && (key === '/assistant' || key.startsWith('/assistant/'))) return '/assistant'
         const experiment = appSettings[key]?.experiment
         if (!experiment?.flag) return key
         const assignedVariant = posthog?.getFeatureFlag?.(experiment?.flag)

@@ -1,5 +1,9 @@
 import React from 'react'
-import AssistantWindow from 'components/AssistantWindow'
+import dynamic from 'next/dynamic'
+
+export const runtime = 'edge'
+
+const AssistantWindow = dynamic(() => import('components/AssistantWindow'), { ssr: false })
 
 export default function AssistantPage() {
     return <AssistantWindow />
