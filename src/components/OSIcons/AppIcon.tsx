@@ -7,7 +7,6 @@ import { useAppSettings } from '../../context/App'
 import pixelHomeIcon from '../../images/icons/pixel-home.png'
 import pixelPostsIcon from '../../images/icons/pixel-posts.png'
 import pixelWimAiIcon from '../../images/icons/pixel-wimai.png'
-import pixelWimbotIcon from '../../images/icons/pixel-wimbot.png'
 import pixelArchiveIcon from '../../images/icons/pixel-archive.png'
 import pixelNotebookIcon from '../../images/icons/pixel-notebook.png'
 import pixelSignInIcon from '../../images/icons/pixel-signin.png'
@@ -22,6 +21,9 @@ import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
 import wimAiClassicIcon from '../../images/icons/wim-ai-monitor-classic.png'
 import wimAiModernIcon from '../../images/icons/wim-ai-monitor-modern.png'
+import assistantClassicIcon from '../../images/icons/assistant-classic.png'
+import assistantModernIcon from '../../images/icons/assistant-modern.png'
+import pixelAssistantIcon from '../../images/icons/pixel-assistant.png'
 import postsClassicIcon from '../../images/icons/posts-classic.png'
 import postsModernIcon from '../../images/icons/posts-modern.png'
 import signInClassicIcon from '../../images/icons/signin-classic.png'
@@ -261,9 +263,9 @@ const PRODUCT_ICON_MAP = {
         pixel: importedSrc(pixelWimAiIcon),
     },
     assistant: {
-        classic: importedSrc(wimAiClassicIcon),
-        default: importedSrc(wimAiModernIcon),
-        pixel: importedSrc(pixelWimbotIcon),
+        classic: importedSrc(assistantClassicIcon),
+        default: importedSrc(assistantModernIcon),
+        pixel: importedSrc(pixelAssistantIcon),
     },
     posts: {
         classic: importedSrc(postsClassicIcon),
