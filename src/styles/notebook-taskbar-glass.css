@@ -1,0 +1,20 @@
+/* Glass only: same recipe as TASKBAR_BG (bg-primary/50 + backdrop-blur-3xl). */
+.notebook-topbar-glass,
+.MarkdownNotebook__format-toolbar,
+.WimInlineEditor {
+    background: rgb(var(--bg) / 0.5) !important;
+    backdrop-filter: blur(64px) !important;
+    -webkit-backdrop-filter: blur(64px) !important;
+}
+
+:root.dark .notebook-topbar-glass,
+.dark .notebook-topbar-glass,
+[data-scheme='dark'] .notebook-topbar-glass,
+:root.dark .MarkdownNotebook__format-toolbar,
+.dark .MarkdownNotebook__format-toolbar,
+[data-scheme='dark'] .MarkdownNotebook__format-toolbar,
+:root.dark .WimInlineEditor,
+.dark .WimInlineEditor,
+[data-scheme='dark'] .WimInlineEditor {
+    background: rgb(var(--bg) / 0.5) !important;
+}

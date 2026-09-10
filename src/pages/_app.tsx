@@ -1,5 +1,6 @@
 import { AppProps } from 'next/app'
 import '../styles/global.css'
+import '../styles/notebook-taskbar-glass.css'
 import '../components/HiddenSection/style.css'
 import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
