@@ -16,9 +16,6 @@
       ],
       "~nb-lib/*": [
         "./notebook-app/lib/*"
-      ],
-      "components/PostHogUI": [
-        "./components/PostHogUI/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

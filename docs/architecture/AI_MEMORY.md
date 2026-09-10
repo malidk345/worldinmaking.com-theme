@@ -25,7 +25,21 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — pass 5 Cloudflare CSS import fix.
+- **Status:** `[COMPLETED by Grok]` — pass 6 unused leftover cleanup.
+
+---
+
+## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 6)
+- **Scope:** More unused PostHog leftover deletion. No visual/product change.
+- **User Intent:** Continue optimization on PR 533 after Cloudflare CSS fix.
+- **Implementation:**
+  - Deleted unused component folders: Chip, CommunityCTA, HubSpotForm, Job, NoHatingAllowed, PostHogUI, ProfileStickers, Signatures, TeamMembers, TeamPatch.
+  - Deleted unused `src/templates/Changelog.tsx`.
+  - Removed unused packages `query-string` and `@dotlottie/react-player`. Dropped dead `components/PostHogUI` tsconfig path.
+- **Files Modified:** unused component folders, Changelog.tsx, package.json, pnpm-lock.yaml, tsconfig.json, LemonUI comment, AI_MEMORY.
+
 
 ---
 
