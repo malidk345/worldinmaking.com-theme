@@ -6,9 +6,9 @@ export function AssistantReply({
     onAnswer,
     onDismiss,
     extra,
-    placeholder = 'Write a reply…',
+    placeholder = 'Reply…',
     submitLabel = 'Reply',
-    rows = 5,
+    rows = 4,
 }: {
     answering: boolean
     onAnswer: (text: string) => void
@@ -22,6 +22,7 @@ export function AssistantReply({
     return (
         <div className="space-y-2">
             <textarea
+                id="assistant-reply-box"
                 data-writing-surface
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}

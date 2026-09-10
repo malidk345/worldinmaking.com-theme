@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { IconX } from '@posthog/icons'
 import { useUser } from 'hooks/useUser'
 import dayjs from 'dayjs'
@@ -10,13 +10,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '../../context/App'
 import * as Portal from '@radix-ui/react-portal'
 import { dismissUserNotification } from 'lib/wim-notifications'
-import {
-    getAssistantNotice,
-    isAssistantNoticeId,
-    type AssistantNotice,
-} from 'lib/assistant-notices'
-import { answerAssistantNotice } from 'lib/assistant-live'
-import { AssistantReply } from 'components/AssistantWindow/Reply'
 
 dayjs.extend(relativeTime)
 dayjs.extend(isSameOrAfter)
@@ -90,77 +83,6 @@ const Notification = ({ url, title, excerpt, date, count, onDismiss, onItemClick
     )
 }
 
-const AssistantNotification = ({
-    id,
-    title,
-    excerpt,
-    date,
-    count,
-    onDismiss,
-}: {
-    id: string
-    title: string
-    excerpt: string
-    date: string
-    count: string
-    onDismiss: () => void
-}) => {
-    const [open, setOpen] = useState(false)
-    const [answering, setAnswering] = useState(false)
-    const notice: AssistantNotice | undefined = getAssistantNotice(id)
-
-    const submit = async (text: string) => {
-        if (!notice) {
-            onDismiss()
-            return
-        }
-        setAnswering(true)
-        try {
-            await answerAssistantNotice({
-                philosopherId: notice.philosopherId,
-                noticeId: notice.id,
-                title: notice.title,
-                body: notice.body,
-                text,
-            })
-            onDismiss()
-        } finally {
-            setAnswering(false)
-        }
-    }
-
-    return (
-        <li>
-            <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="w-full text-left p-2 hover:bg-accent rounded active:scale-[0.98]"
-            >
-                {excerpt && <div className="text-xs line-clamp-1 text-muted">{excerpt}</div>}
-                <div className={`text-sm font-semibold ${open ? '' : 'line-clamp-1'}`}>{title}</div>
-                <div className="flex-shrink-0 text-sm font-normal text-right flex items-center space-x-2">
-                    <div className="flex items-center space-x-2">
-                        <p className="m-0 text-sm font-bold text-red">+{count}</p>
-                        <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2">
-                            {dayjs(date).fromNow()}
-                        </div>
-                    </div>
-                </div>
-            </button>
-            {open ? (
-                <div className="px-2 pb-3 space-y-2">
-                    {notice?.body ? <p className="m-0 text-sm text-secondary">{notice.body}</p> : null}
-                    <AssistantReply
-                        answering={answering}
-                        onAnswer={(text) => void submit(text)}
-                        onDismiss={onDismiss}
-                    />
-                </div>
-            ) : null}
-        </li>
-    )
-}
-
 const Question = ({ subject, activeAt, permalink, replies, date, onItemClick, onDismiss }: QuestionProps) => {
     const numberOfNewReplies = replies.filter((reply) => dayjs(reply.updatedAt).isSameOrAfter(dayjs(date))).length
 
@@ -198,7 +120,6 @@ export default function NotificationsPanel() {
     const { isNotificationsPanelOpen, setIsNotificationsPanelOpen, taskbarHeight, taskbarRef } = useApp()
     const panelRef = useRef<HTMLDivElement>(null)
 
-    // Match the app-container padding (`p-2`) and taskbar offset used by app windows
     const taskbarRect = taskbarRef.current?.getBoundingClientRect()
     const padding = taskbarRect?.left ?? 8
     const panelStyle =
@@ -312,19 +233,6 @@ export default function NotificationsPanel() {
                                                 }
                                                 if (notification.context) {
                                                     const { count, title, excerpt, date, url } = notification.context
-                                                    if (isAssistantNoticeId(notification.id)) {
-                                                        return (
-                                                            <AssistantNotification
-                                                                key={notification.id ?? i}
-                                                                id={String(notification.id)}
-                                                                count={String(count)}
-                                                                title={title}
-                                                                excerpt={excerpt}
-                                                                date={date}
-                                                                onDismiss={() => dismiss(notification.id)}
-                                                            />
-                                                        )
-                                                    }
                                                     return (
                                                         <Notification
                                                             key={notification.id ?? i}
