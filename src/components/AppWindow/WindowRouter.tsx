@@ -12,6 +12,7 @@ import { isProfilePath } from '../../lib/profile-path'
 import {
     canonicalWindowPath,
     isArtifactWindowPath,
+    isAssistantWindowPath,
     isBlogPath,
     isForumPath,
     isNotebookWindowPath,
