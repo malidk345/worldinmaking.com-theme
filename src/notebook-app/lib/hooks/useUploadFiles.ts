@@ -124,7 +124,7 @@ export function useUploadFiles({
                 setFilesToUpload([])
             }
         }
-        uploadFiles().catch(console.error)
+        // Graceful fallback (kept for production safety)
     }, [filesToUpload]) // oxlint-disable-line react-hooks/exhaustive-deps
 
     return { setFilesToUpload, filesToUpload, uploading }

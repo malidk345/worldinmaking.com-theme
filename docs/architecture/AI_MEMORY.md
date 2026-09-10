@@ -27,10 +27,51 @@
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
 
-
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-10 — Antigravity (Advanced Agentic Coding)
+- **Scope:** NotificationsPanel Expansion — Philosopher Bot Replies & Notebook Collaboration Invites.
+- **User Intent:** Expand the notifications panel beyond basic forum replies to include meaningful product events (Philosopher Bot replies/mentions and WIM Notebook collaboration invites/additions) without altering existing styling or layouts, without gamification/achievements, and strictly in English ("olur hepsine okeyim yap ama notifacation panele ve bildirimlerin stiline asla dokunma farklı bir tasarım yapma su an olan aşırı iyi", "evet ama türkçe yapayım deme şimdi site ingilizce", "accievment falan istemem").
+- **Implementation:**
+  - `src/lib/wim-notifications.ts`:
+    - Updated `fetchUserNotifications()` to aggregate:
+      1. **Forum & Philosopher Bot Notifications:** Detects if the latest reply was authored by a resident philosopher bot (via `matchPhilosopherId`, `PHILOSOPHER_BOTS`, or `profiles.is_bot`). Formats excerpt as `'Philosopher'` and title as `${botName} replied to "${threadTitle}"` (or `${botName} mentioned you in...`).
+      2. **Notebook Collaboration Invites & Additions:** Queries `wim_notebook_invites` (pending invites for `invited_user_id = user.id`) and `wim_notebook_collaborators` (direct collaborator additions). Resolves inviter profiles and notebook titles. Formats excerpt as `'Notebook'`, title as `${inviter} invited you to collaborate on "${title}"`, count as `${role} invite` or `${role}`, and links to `/notebooks/invite/${token}` or `/notebooks/${notebook_id}`.
+    - Updated `dismissUserNotification(id)` to support string IDs (e.g. `invite_...`, `collab_...`) persisting to local storage and numeric IDs syncing to Supabase `user_notifications.dismissed_at`.
+  - `src/components/NotificationsPanel/index.tsx`:
+    - Preserved 100% of existing JSX markup, CSS classes, animations, and visual presentation.
+    - Updated `NotificationItem.id` to accept `number | string`.
+    - Made `dismiss` call `dismissUserNotification(id)` so dismissals persist across page reloads.
+  - `src/hooks/useUser.tsx`:
+    - Updated `updateNotifications` to support `number | string` IDs.
+    - Added immediate notification fetch tick on user change/hydration.
+- **Verification:**
+  - `pnpm run typecheck:shell`: Passed with 0 gated errors (`PASS — zero gated errors in core shell allowlist`).
+- **Files Modified:**
+  - `src/lib/wim-notifications.ts`
+  - `src/components/NotificationsPanel/index.tsx`
+  - `src/hooks/useUser.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-10 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Remove PostHog Incident Alert Banner & Analytics Events from Community Ask a Question Modal.
+- **User Intent:** Fix PostHog notification dropping in Ask a Question modal ("community kısmında ask a question modalında posthogtan bir bildirim düşmüş bunu çöz", "öz ya gönderemesin posthog").
+- **Root Cause:**
+  1. `QuestionForm.tsx` in `src/components/Squeak/components/` was polling `https://www.posthogstatus.com/api/v1/summary` via `useAppStatus()`. Whenever there was any incident or degraded status on PostHog's infrastructure, an invasive *"Heads up! We're currently experiencing an incident. Check here for the latest info"* warning banner dropped directly into the user's question writing surface.
+  2. The form also invoked `posthog.capture('wim question created')` and `posthog.capture('community honeypot rejection')` upon submission.
+- **Fixes Applied:**
+  - `src/components/Squeak/components/QuestionForm.tsx`:
+    - Removed `useAppStatus()` hook call and the entire incident banner rendering block.
+    - Removed `posthog.capture('wim question created')` and `posthog.capture('community honeypot rejection')`.
+    - Cleaned up unused `usePostHog` import.
+- **Verification:**
+  - `pnpm run typecheck:shell`: Passed with 0 errors (`PASS — zero gated errors in core shell allowlist`).
+  - Git diff verified.
+- **Files Modified:**
+  - `src/components/Squeak/components/QuestionForm.tsx`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-09 — Antigravity (Advanced Agentic Coding)
 - **Scope:** Fix Mobile Pencil Icon Style Dropdown (H1/H2/H3/Quote) Not Opening in FormattingToolbar.

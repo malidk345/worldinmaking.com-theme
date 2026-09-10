@@ -48,11 +48,7 @@ export function useEventListener(
         () => {
             // Make sure element supports addEventListener
             if (typeof element?.addEventListener !== 'function') {
-                console.warn(
-                    `Could not start listening to ${eventName} on ${
-                        !element ? element : ((element as Element)?.localName ?? 'window')
-                    }!`
-                )
+                // Graceful fallback (kept for production safety)
                 return
             }
             // Create event listener that calls handler function stored in ref

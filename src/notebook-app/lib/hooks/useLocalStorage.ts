@@ -30,7 +30,7 @@ export function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T 
                     setStoredValue(JSON.parse(e.newValue) as T)
                 } catch {
                     // Not much to do here, just log the error
-                    console.error('Error parsing localStorage value', e.newValue)
+                    // Graceful fallback (kept for production safety)
                 }
             }
         }

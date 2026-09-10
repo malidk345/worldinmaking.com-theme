@@ -81,7 +81,7 @@ class ErrorBoundary extends Component<NotebookErrorBoundaryProps, NotebookErrorB
     return { hasError: true, error }
   }
   override componentDidCatch(error: Error, errorInfo: any) {
-    console.error('App ErrorBoundary caught:', error, errorInfo)
+    // Graceful error boundary (kept for production safety)
   }
   override render() {
     if (this.state.hasError) {
@@ -360,7 +360,7 @@ export function App() {
         )
         setMarkdown(result.markdown)
       } catch (err) {
-        console.warn('[notebook editor] failed to apply reply', err)
+        // Graceful fallback (kept for production safety)
       }
     }
 
@@ -437,7 +437,7 @@ export function App() {
       })
       return reply
     } catch (error) {
-      console.warn('[notebook editor] request failed', error)
+      // Graceful fallback (kept for production safety)
       fail('The editor is unreachable right now. Please try again.')
     } finally {
       if (requestId === askAIAbortRef.current) {

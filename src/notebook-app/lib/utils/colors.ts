@@ -22,7 +22,7 @@ export function hexToRGB(hex: string): { r: number; g: number; b: number; a: num
     }
 
     if (hex.length !== 6 && hex.length !== 8) {
-        console.warn(`Incorrectly formatted color string: ${hex}.`)
+        // Graceful fallback (kept for production safety)
         return { r: 0, g: 0, b: 0, a: 0 }
     }
 

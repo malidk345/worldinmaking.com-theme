@@ -290,6 +290,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             const notes = await fetchUserNotifications()
             setNotifications(notes)
         }
+        void tick()
         const timer = window.setInterval(tick, 45_000)
         const onFocus = () => {
             void tick()
@@ -589,11 +590,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const updateNotifications = async (next: any) => {
         const incoming = Array.isArray(next) ? next : []
         const removed = notifications
-            .map((item: { id?: number }) => item?.id)
-            .filter((id: number | undefined) => id != null && !incoming.some((item: { id?: number }) => item?.id === id))
+            .map((item: { id?: number | string }) => item?.id)
+            .filter((id: number | string | undefined) => id != null && !incoming.some((item: { id?: number | string }) => String(item?.id) === String(id)))
         setNotifications(incoming)
         if (removed.length > 0) {
-            await Promise.all(removed.map((id: number) => dismissUserNotification(id)))
+            await Promise.all(removed.map((id: number | string) => dismissUserNotification(id)))
         }
     }
 

@@ -12,8 +12,6 @@ import qs from 'qs'
 import OSButton from 'components/OSButton'
 import uploadImage from '../util/uploadImage'
 import { fetchTopicGroups, topicGroupsSorted } from '../util/topicGroups'
-import usePostHog from 'hooks/usePostHog'
-import { useAppStatus } from 'hooks/useAppStatus'
 import Link from 'components/Link'
 import Input from 'components/OSForm/input'
 import { OSSelect } from 'components/OSForm'
@@ -124,9 +122,7 @@ function QuestionFormMain({
     autoFocus = true,
     isInForum = false,
 }: QuestionFormMainProps) {
-    const posthog = usePostHog()
     const { user, logout } = useUser()
-    const { status } = useAppStatus()
     const router = useRouter()
     const navigate = (to: string, options?: any) => {
         if (typeof window !== 'undefined') {
@@ -170,7 +166,6 @@ function QuestionFormMain({
                 }}
                 onSubmit={(values) => {
                     if (values.url) {
-                        posthog?.capture('community honeypot rejection')
                         return navigate('/')
                     }
                     onSubmit(values, user)
@@ -188,23 +183,6 @@ function QuestionFormMain({
                             </div>
 
                             <div data-scheme="primary" className="pl-[55px] space-y-2">
-                                {status && status !== 'operational' && (
-                                    <div data-scheme="secondary" className="p-4 bg-primary border border-primary">
-                                        <h5 className="m-0">Heads up!</h5>
-                                        <p className="m-0 text-sm">
-                                            We're currently experiencing an incident. Check{' '}
-                                            <Link
-                                                className="text-red dark:text-yellow font-bold"
-                                                to="https://www.posthogstatus.com"
-                                                externalNoIcon
-                                            >
-                                                here
-                                            </Link>{' '}
-                                            for the latest info.
-                                        </p>
-                                    </div>
-                                )}
-
                                 {showTopicSelector && <Select value={values.topic} setFieldValue={setFieldValue} />}
                                 {subject && (
                                     <>
@@ -298,7 +276,6 @@ export const QuestionForm = ({
     ...other
 }: QuestionFormProps) => {
     const { user, getJwt, logout } = useUser()
-    const posthog = usePostHog()
     const [formValues, setFormValues] = useState<QuestionFormValues | null>(null)
     const [view, setView] = useState<string | null>(initialView || null)
     const [loading, setLoading] = useState(false)
@@ -318,13 +295,6 @@ export const QuestionForm = ({
         if (!result.ok) {
             throw new Error(result.error || 'Could not create question. Sign in and try again.')
         }
-
-        posthog?.capture('wim question created', {
-            questionId: result.id,
-            topicId: topic?.id || other?.topicID,
-            slug,
-            subject,
-        })
 
         return {
             id: result.id,

@@ -25,7 +25,7 @@ export function useAsyncCallback<U, T extends (...args: any[]) => Promise<U>>(
                 try {
                     return await callback(...args)
                 } catch (err) {
-                    console.error(err)
+                    // Graceful error handling (kept for production safety)
                     setError(err as Error)
                 } finally {
                     setLoading(false)

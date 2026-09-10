@@ -9,6 +9,7 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '../../context/App'
 import * as Portal from '@radix-ui/react-portal'
+import { dismissUserNotification } from 'lib/wim-notifications'
 
 dayjs.extend(relativeTime)
 dayjs.extend(isSameOrAfter)
@@ -44,7 +45,7 @@ interface AchievementProps {
 }
 
 interface NotificationItem {
-    id: number
+    id: number | string
     date: string
     question?: QuestionProps
     achievement?: AchievementProps
@@ -147,9 +148,10 @@ export default function NotificationsPanel() {
         }
     }
 
-    const dismiss = async (id: number) => {
-        const newNotifications = notifications.filter((notification: NotificationItem) => notification.id !== id)
+    const dismiss = async (id: number | string) => {
+        const newNotifications = notifications.filter((notification: NotificationItem) => String(notification.id) !== String(id))
         setNotifications(newNotifications)
+        void dismissUserNotification(id)
     }
 
     useEffect(() => {
@@ -211,7 +213,7 @@ export default function NotificationsPanel() {
                                                 if (notification.question) {
                                                     return (
                                                         <Question
-                                                            key={i}
+                                                            key={notification.id ?? i}
                                                             {...notification.question}
                                                             date={notification.date}
                                                             onItemClick={handleItemClick}
@@ -222,7 +224,7 @@ export default function NotificationsPanel() {
                                                 if (notification.achievement) {
                                                     return (
                                                         <Achievement
-                                                            key={i}
+                                                            key={notification.id ?? i}
                                                             {...notification.achievement}
                                                             date={notification.date}
                                                             onItemClick={handleItemClick}
@@ -234,7 +236,7 @@ export default function NotificationsPanel() {
                                                     const { count, title, excerpt, date, url } = notification.context
                                                     return (
                                                         <Notification
-                                                            key={i}
+                                                            key={notification.id ?? i}
                                                             count={String(count)}
                                                             title={title}
                                                             excerpt={excerpt}

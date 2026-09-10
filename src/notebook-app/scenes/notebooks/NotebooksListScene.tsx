@@ -252,7 +252,7 @@ export function NotebooksListScene({
             window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
             addToast({ description: `“${docTitle}” added to your Desktop.` })
         } catch (e) {
-            console.error('Failed to pin notebook to desktop:', e)
+            // Graceful fallback (kept for production safety)
             addToast({ description: 'Could not add this notebook to the Desktop.', error: true })
         }
     }

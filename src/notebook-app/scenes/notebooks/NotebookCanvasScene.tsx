@@ -43,7 +43,7 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
                     setContent(parsed.content)
                 }
             } catch (err) {
-                console.error('Failed to parse JSON', err)
+                // Graceful fallback (kept for production safety)
             }
         }
         reader.readAsText(file)

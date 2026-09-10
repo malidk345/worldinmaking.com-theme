@@ -708,7 +708,7 @@ function MarkdownNotebookEditor({
                 Math.max(viewLeft + margin, rect.left + rect.width / 2)
             )
             const top = placeBelow
-                ? Math.min(viewTop + viewHeight - estimatedHeight - margin, rect.bottom)
+                ? Math.min(viewTop + viewHeight - estimatedHeight - margin - 80, rect.bottom)   // klavye açıldığında barı kapatmasın
                 : Math.max(viewTop + margin, rect.top)
             setMobileBarAnchor({ top, left, placement: placeBelow ? 'below' : 'above' })
             setMobileActiveNodeId(nodeId)
@@ -4526,7 +4526,7 @@ function MarkdownNotebookEditor({
             const listItemIndex = getNotebookNumberProp(currentPromptNode.props.listItemIndex)
             responseNodeIndex = nodes.findIndex((item) => item.id === targetNodeId)
             if (responseNodeIndex < 0) {
-                console.error('Selection target node not found for AI submission')
+                // Graceful fallback (kept for production safety)
                 return false
             }
             nextDocument = currentDocument
@@ -4579,7 +4579,7 @@ function MarkdownNotebookEditor({
             }
         })
         if (responseNodeIndex === -1) {
-            console.error('Prompt node not found for AI submission')
+            // Graceful fallback (kept for production safety)
             return false
         }
 

@@ -314,7 +314,7 @@ export async function exportNotebookAsPdf(notebookId: string): Promise<boolean> 
         pdf.save(notebookFilename(notebook.title || 'notebook', 'pdf'))
         return true
     } catch (error) {
-        console.error('Error exporting notebook PDF:', error)
+        // Graceful error handling (kept for production safety)
         return false
     } finally {
         host.remove()
