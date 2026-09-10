@@ -22,8 +22,6 @@ import archiveClassicIcon from '../../images/icons/archive-classic.png'
 import archiveModernIcon from '../../images/icons/archive-modern.png'
 import wimAiClassicIcon from '../../images/icons/wim-ai-monitor-classic.png'
 import wimAiModernIcon from '../../images/icons/wim-ai-monitor-modern.png'
-import assistantClassicIcon from '../../images/icons/wim-ai-alt-classic.png'
-import assistantModernIcon from '../../images/icons/wim-ai-alt-modern.png'
 import postsClassicIcon from '../../images/icons/posts-classic.png'
 import postsModernIcon from '../../images/icons/posts-modern.png'
 import signInClassicIcon from '../../images/icons/signin-classic.png'
@@ -263,8 +261,8 @@ const PRODUCT_ICON_MAP = {
         pixel: importedSrc(pixelWimAiIcon),
     },
     assistant: {
-        classic: importedSrc(assistantClassicIcon),
-        default: importedSrc(assistantModernIcon),
+        classic: importedSrc(wimAiClassicIcon),
+        default: importedSrc(wimAiModernIcon),
         pixel: importedSrc(pixelWimbotIcon),
     },
     posts: {

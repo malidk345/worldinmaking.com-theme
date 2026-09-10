@@ -226,7 +226,9 @@ function LetterThread({
     const replies = readAssistantAnswers().filter((row) => row.noticeId === notice.id)
     const userName =
         [user?.profile?.firstName, user?.profile?.lastName].filter(Boolean).join(' ') || user?.username || 'You'
-    const userAvatar = getAvatarURL(user?.profile)
+    const userAvatar = getAvatarURL(
+        user?.profile ? ({ attributes: user.profile } as any) : undefined
+    )
 
     const submit = async (text: string) => {
         setAnswering(true)

@@ -380,7 +380,7 @@ export function mergeRemoteNotices(remote: unknown): void {
         else byId.set(row.id, { ...row, unread: Boolean(existing.unread || row.unread) })
     }
     writeAll(
-        [...byId.values()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        Array.from(byId.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     )
 }
 

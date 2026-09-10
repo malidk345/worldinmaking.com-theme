@@ -59,7 +59,7 @@ export async function hydrateAssistantFromRemote(): Promise<boolean> {
             for (const item of row.answers as AssistantAnswer[]) {
                 if (item?.id && !byId.has(item.id)) byId.set(item.id, item)
             }
-            writeAssistantAnswers([...byId.values()])
+            writeAssistantAnswers(Array.from(byId.values()))
         }
         if (Array.isArray(row.memory) && readAssistantFacts().length === 0) {
             writeAssistantFacts(row.memory as AssistantFact[])
