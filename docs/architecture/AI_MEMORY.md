@@ -25,11 +25,19 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — pass 6 unused leftover cleanup.
+- **Status:** `[COMPLETED by Grok]` — pass 7 AGENTS.md path + dead art-library.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 7)
+- **Scope:** Agent-doc path fix + drop unused PostHog art-library page. No visual/product change.
+- **Implementation:**
+  - `AGENTS.md`: relative docs links (was a Windows `file:///D:/all works/posthog.com/...` path). Title no longer says posthog.com.
+  - Deleted unused `src/pages/art-library.tsx` (PostHog Vercel iframe, zero importers).
+  - Left `baa`/`dpa`/`subprocessors` — they are live Legal routes, not leftovers.
+- **Files Modified:** AGENTS.md, art-library.tsx, AI_MEMORY.
 
 ### 2026-09-11 — Grok (pass 6)
 - **Scope:** More unused PostHog leftover deletion. No visual/product change.

@@ -1,4 +1,4 @@
-# WorldInMaking / posthog.com — AI Agent Rules & Engineering Standards
+# WorldInMaking — AI Agent Rules & Engineering Standards
 
 **Document Location:** `AGENTS.md`  
 **Applies To:** All AI Models & Assistant Agents (Claude, Gemini, Antigravity, GPT, Cursor, Grok, DeepSeek) working on this codebase.
@@ -7,7 +7,7 @@
 
 ## 1. Multi-Agent Memory & Protocol Rules
 
-1. **Mandatory Context Reading:** Always read [`docs/architecture/AI_MEMORY.md`](file:///D:/all%20works/posthog.com/docs/architecture/AI_MEMORY.md) and [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) before executing tasks.
+1. **Mandatory Context Reading:** Always read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) before executing tasks.
 2. **Task Claiming (Locking):** Update Section 4 of `AI_MEMORY.md` to `[IN PROGRESS by <YourModelName>]` before editing code.
 3. **Change Logging:** Append a new entry under Section 5 ("AI Change History & Log") in `AI_MEMORY.md` upon completion with exact files modified, test status, and handoff notes.
 
