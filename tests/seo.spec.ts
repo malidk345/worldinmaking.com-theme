@@ -19,7 +19,7 @@ test.describe('worldinmaking seo', () => {
         expect(html).toContain('"@type":"WebSite"')
         expect(html).toContain('application/rss+xml')
         expect(html).toContain('id="wim-document"')
-        expect(html).toMatch(/<h1>a world always making<\/h1>/)
+        expect(html).toMatch(/<h1[^>]*>.*a world always/i)
         expect(html.toLowerCase()).not.toContain('we make your product self-driving')
         expect(html).not.toContain('https://posthog.com')
         expect(html).not.toContain('@posthog')

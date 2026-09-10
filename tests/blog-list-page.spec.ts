@@ -1,3 +1,4 @@
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8000'
 import { test, expect } from '@playwright/test'
 import { BLOG_LIST_PAGE_SIZE, fetchSupabasePostsPage } from '../src/lib/supabaseBlog'
 
