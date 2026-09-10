@@ -118,6 +118,7 @@ const AssistantNotification = ({
         try {
             await answerAssistantNotice({
                 philosopherId: notice.philosopherId,
+                noticeId: notice.id,
                 title: notice.title,
                 body: notice.body,
                 text,

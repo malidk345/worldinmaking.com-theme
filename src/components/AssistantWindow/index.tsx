@@ -26,8 +26,69 @@ import {
 } from 'lib/assistant-notices'
 import { answerAssistantNotice } from 'lib/assistant-live'
 import { AssistantReply } from './Reply'
+import {
+    ASSISTANT_CADENCE_EVENT,
+    cadenceIntervals,
+    muteAssistantTopic,
+    readAssistantCadence,
+    silenceAssistantFor,
+    writeAssistantCadence,
+    type CadenceMode,
+} from 'lib/assistant-cadence'
 
 dayjs.extend(relativeTime)
+
+function CadenceBar() {
+    const [mode, setMode] = useState<CadenceMode>(() => readAssistantCadence().mode)
+    const [quiet, setQuiet] = useState(() => readAssistantCadence().silencedUntil > Date.now())
+
+    useEffect(() => {
+        const refresh = () => {
+            const next = readAssistantCadence()
+            setMode(next.mode)
+            setQuiet(next.silencedUntil > Date.now())
+        }
+        window.addEventListener(ASSISTANT_CADENCE_EVENT, refresh)
+        return () => window.removeEventListener(ASSISTANT_CADENCE_EVENT, refresh)
+    }, [])
+
+    const set = (next: CadenceMode) => {
+        writeAssistantCadence({ mode: next })
+        setMode(next)
+    }
+
+    return (
+        <div className="flex items-center gap-1.5 flex-wrap">
+            {(['rare', 'normal', 'nag'] as CadenceMode[]).map((item) => (
+                <OSButton
+                    key={item}
+                    size="sm"
+                    hover="background"
+                    active={mode === item}
+                    onClick={() => set(item)}
+                >
+                    {item === 'rare' ? 'Rare' : item === 'nag' ? 'Nag' : 'Normal'}
+                </OSButton>
+            ))}
+            <OSButton
+                size="sm"
+                hover="background"
+                onClick={() => {
+                    if (quiet) {
+                        writeAssistantCadence({ silencedUntil: 0 })
+                        setQuiet(false)
+                    } else {
+                        silenceAssistantFor(60 * 60 * 1000)
+                        setQuiet(true)
+                    }
+                }}
+            >
+                {quiet ? 'Resume' : 'Quiet 1h'}
+            </OSButton>
+            <span className="text-[11px] text-muted">{cadenceIntervals(mode).maxUnread} unread max</span>
+        </div>
+    )
+}
 
 function PhilosopherCard({
     id,
@@ -89,8 +150,8 @@ function PickerScreen({
                             Choose your assistant
                         </h1>
                         <p className="text-sm text-secondary mt-1 mb-0">
-                            A resident philosopher takes the desk. They read your notebooks, counsel you, ask questions,
-                            and drop notices in the notification panel until you answer.
+                            A resident philosopher takes the desk. They read your notebooks, scratchpad, chats, and
+                            forum posts, then nag you from the notification panel until you answer.
                         </p>
                     </div>
                 </div>
@@ -157,6 +218,7 @@ function DetailScreen({
         try {
             await answerAssistantNotice({
                 philosopherId,
+                noticeId: notice.id,
                 title: notice.title,
                 body: notice.body,
                 text,
@@ -195,6 +257,9 @@ function DetailScreen({
                         {notebook ? (
                             <p className="text-xs text-muted mt-2 mb-0">From notebook “{notebook.title}”</p>
                         ) : null}
+                        {notice.actionLabel ? (
+                            <p className="text-xs text-secondary mt-2 mb-0">{notice.actionLabel}</p>
+                        ) : null}
                     </div>
                     <AssistantReply
                         answering={answering}
@@ -204,6 +269,17 @@ function DetailScreen({
                             onDone()
                         }}
                     />
+                    <OSButton
+                        size="sm"
+                        hover="background"
+                        onClick={() => {
+                            muteAssistantTopic(notice.title)
+                            dismissAssistantNotice(notice.id)
+                            onDone()
+                        }}
+                    >
+                        Drop this topic
+                    </OSButton>
                 </div>
             </ScrollArea>
         </div>
@@ -273,6 +349,9 @@ function BriefingScreen({
                 <OSButton size="sm" hover="background" onClick={onChange}>
                     Change
                 </OSButton>
+            </div>
+            <div className="px-3 py-2 border-b border-primary shrink-0">
+                <CadenceBar />
             </div>
 
             <div className="flex-1 min-h-0">

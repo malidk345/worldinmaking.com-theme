@@ -552,6 +552,24 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `SELECT` user_worlds_select_own
   - `UPDATE` user_worlds_update_own
 
+## user_assistant
+
+- RLS: on
+- Source: `supabase/migrations/20260911_user_assistant.sql`
+- Columns:
+  - `user_id` uuid not null (pk, auth.users)
+  - `philosopher_id` text
+  - `notices` jsonb not null
+  - `answers` jsonb not null
+  - `memory` jsonb not null
+  - `cadence` jsonb not null
+  - `watch_meta` jsonb not null
+  - `updated_at` timestamptz not null
+- Policies:
+  - `SELECT` user_assistant_select_own
+  - `INSERT` user_assistant_insert_own
+  - `UPDATE` user_assistant_update_own
+
 ## wim_applications
 
 - RLS: on

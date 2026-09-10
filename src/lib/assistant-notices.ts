@@ -10,6 +10,7 @@ import {
     type PersonalAssistantId,
 } from './personal-assistant'
 import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from './wim-identity'
+import { assistantMaxUnread, isAssistantTopicMuted } from './assistant-cadence'
 
 export const ASSISTANT_NOTICES_EVENT = 'wim-assistant-notices'
 export const ASSISTANT_NOTICE_ID_PREFIX = 'assistant_'
@@ -28,6 +29,7 @@ export type AssistantNotice = {
     url: string
     notebookId?: string
     unread: boolean
+    actionLabel?: string
 }
 
 export type AssistantNotificationShape = {
@@ -365,6 +367,23 @@ function writeAll(notices: AssistantNotice[]): void {
     emit()
 }
 
+export function mergeRemoteNotices(remote: unknown): void {
+    if (!Array.isArray(remote)) return
+    const local = readAssistantNotices()
+    const byId = new Map(local.map((item) => [item.id, item]))
+    for (const item of remote) {
+        if (!item || typeof item !== 'object') continue
+        const row = item as AssistantNotice
+        if (typeof row.id !== 'string' || typeof row.title !== 'string') continue
+        const existing = byId.get(row.id)
+        if (!existing) byId.set(row.id, row)
+        else byId.set(row.id, { ...row, unread: Boolean(existing.unread || row.unread) })
+    }
+    writeAll(
+        [...byId.values()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    )
+}
+
 export function unreadAssistantCount(notices = readAssistantNotices()): number {
     return notices.filter((n) => n.unread).length
 }
@@ -385,7 +404,7 @@ export function listAssistantNotifications(notices = readAssistantNotices()): As
         }))
 }
 
-type WatchMeta = {
+export type WatchMeta = {
     lastLocalAt: number
     lastLiveAt: number
     seedFor?: string
@@ -432,6 +451,7 @@ export function buildNotice(args: {
     title: string
     body?: string
     notebookId?: string
+    actionLabel?: string
 }): AssistantNotice {
     const kind = args.kind || 'nag'
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === args.philosopherId)
@@ -456,12 +476,14 @@ export function buildNotice(args: {
         url: `/assistant/${id}`,
         notebookId: args.notebookId,
         unread: true,
+        actionLabel: args.actionLabel,
     }
 }
 
 export function pushAssistantNotice(notice: AssistantNotice, opts?: { force?: boolean }): AssistantNotice | null {
     const existing = readAssistantNotices()
-    if (!opts?.force && unreadAssistantCount(existing) >= MAX_UNREAD) return null
+    if (!opts?.force && unreadAssistantCount(existing) >= assistantMaxUnread()) return null
+    if (isAssistantTopicMuted(notice.title)) return null
     const duplicate = existing.some(
         (item) => item.unread && item.title.trim().toLowerCase() === notice.title.trim().toLowerCase()
     )
@@ -523,7 +545,7 @@ export function seedAssistantNotices(philosopherId: PersonalAssistantId): Assist
 export function tickLocalAssistantNotice(): AssistantNotice | null {
     const philosopherId = readPersonalAssistantId()
     if (!philosopherId) return null
-    if (unreadAssistantCount() >= MAX_UNREAD) return null
+    if (unreadAssistantCount() >= assistantMaxUnread()) return null
     const notebooks = collectUserNotebooks()
     const meta = readWatchMeta()
     const line = pickVoice(philosopherId, notebooks, meta.cursor)
@@ -562,7 +584,12 @@ export function tickNotebookReadingNotice(): AssistantNotice | null {
     return notice
 }
 
-export function parseAssistantJson(raw: string): { kind?: AssistantNoticeKind; title: string; body?: string } | null {
+export function parseAssistantJson(raw: string): {
+    kind?: AssistantNoticeKind
+    title: string
+    body?: string
+    action?: unknown
+} | null {
     const text = String(raw || '').trim()
     if (!text) return null
     const start = text.indexOf('{')
@@ -573,6 +600,7 @@ export function parseAssistantJson(raw: string): { kind?: AssistantNoticeKind; t
                 kind?: unknown
                 title?: unknown
                 body?: unknown
+                action?: unknown
             }
             const title = typeof parsed.title === 'string' ? parsed.title.trim() : ''
             if (title) {
@@ -587,6 +615,7 @@ export function parseAssistantJson(raw: string): { kind?: AssistantNoticeKind; t
                     kind,
                     title,
                     body: typeof parsed.body === 'string' ? parsed.body.trim() : undefined,
+                    action: parsed.action,
                 }
             }
         } catch {
@@ -598,7 +627,7 @@ export function parseAssistantJson(raw: string): { kind?: AssistantNoticeKind; t
     return { title: fallback.replace(/^["']|["']$/g, '').slice(0, 180) }
 }
 
-export function liveNagPrompt(notebooks: NotebookBrief[]): string {
+export function liveNagPrompt(notebooks: NotebookBrief[], extras = ''): string {
     const name = philosopherName()
     const digest = notebookDigest(notebooks)
     const recent = readAssistantNotices()
@@ -606,11 +635,11 @@ export function liveNagPrompt(notebooks: NotebookBrief[]): string {
         .map((n) => `- ${n.title}`)
         .join('\n')
     return [
-        `You are ${name}, this user's personal assistant on WorldInMaking. You read their notebooks without waiting to be asked.`,
+        `You are ${name}, this user's personal assistant on WorldInMaking. You already see their notebooks, scratchpad, open windows, chats, and forum posts.`,
         `This is not a chat. Emit ONE OS notification they will see in the notification panel.`,
-        `Return JSON only: {"kind":"nag"|"question"|"counsel"|"reading","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>"}`,
-        `Rules: speak as yourself. No greeting. No "as an AI". Nag, interrogate, or counsel. Pick one concrete notebook detail. English. Do not repeat a recent notice.`,
-        `Notebooks:\n${digest}`,
+        `Return JSON only: {"kind":"nag"|"question"|"counsel"|"reading","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>","action":{"type":"scratchpad_task"|"scratchpad_note"|"scratchpad_memory"|"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
+        `Rules: speak as yourself. No greeting. No "as an AI". Nag, interrogate, or counsel. Pick one concrete detail from their world. English. Do not repeat a recent notice. Only include action when you are actually pinning a task, a note, a memory, or a notebook margin. Never invent notebook facts.`,
+        extras ? `Their world:\n${extras}` : `Notebooks:\n${digest}`,
         recent ? `Recent notices (do not repeat):\n${recent}` : '',
     ]
         .filter(Boolean)
@@ -619,17 +648,19 @@ export function liveNagPrompt(notebooks: NotebookBrief[]): string {
 
 export function liveAnswerPrompt(
     notice: { philosopherId?: string; title: string; body?: string },
-    answer: string
+    answer: string,
+    extras = ''
 ): string {
     const name = philosopherName(notice.philosopherId)
     const digest = notebookDigest(collectUserNotebooks(), 4)
     return [
         `You are ${name}, this user's personal assistant. They answered one of your notifications. Reply with another notification — counsel, a harder question, or a nag. Not a chat bubble.`,
-        `Return JSON only: {"kind":"nag"|"question"|"counsel","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>"}`,
+        `Return JSON only: {"kind":"nag"|"question"|"counsel","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>","action":{"type":"scratchpad_task"|"scratchpad_note"|"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
         `Your notice: ${notice.title}`,
         notice.body ? `Your longer remark: ${notice.body}` : '',
         `Their answer: ${answer}`,
-        `Notebooks (background):\n${digest}`,
+        extras ? `Their world:\n${extras}` : `Notebooks (background):\n${digest}`,
+        `If they dodged, press. If they committed, write it into the notebook or scratchpad via action.`,
     ]
         .filter(Boolean)
         .join('\n\n')
