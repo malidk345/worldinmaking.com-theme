@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2024-05-19 - Avoid Object.entries().reduce for Object transformations
+**Learning:** Using `Object.entries(obj).reduce(...)` inside frequent, hot-path operations like property updates or serialization creates redundant array allocations, as `Object.entries` generates a full array of arrays. This results in $O(N)$ redundant allocations (where N is object size) each time, which can trigger GC pressure and performance hitches in a busy editor session.
+**Action:** Use a `for...in` loop combined with `delete` or direct assignment when filtering or mutating objects to achieve a faster $O(N)$ update without intermediate arrays.

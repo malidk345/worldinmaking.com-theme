@@ -1473,12 +1473,13 @@ function serializeComponentProps(props: NotebookComponentProps): string {
 }
 
 function getSerializableComponentProps(props: NotebookComponentProps): NotebookComponentProps {
-    const nextProps = Object.entries(props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
+    // Bolt: Avoid Object.entries().reduce() to prevent intermediate array allocations during serialization loops
+    const nextProps: NotebookComponentProps = {}
+    for (const key in props) {
         if (key !== 'view' && key !== 'edit' && key !== 'hideFilters' && key !== 'hideResults') {
-            accumulator[key] = value
+            nextProps[key] = props[key]
         }
-        return accumulator
-    }, {})
+    }
     const legacyViewPanelVisible = typeof props.view === 'boolean' ? props.view : undefined
     const legacyEditPanelVisible = typeof props.edit === 'boolean' ? props.edit : undefined
     const hideFilters = typeof props.hideFilters === 'boolean' ? props.hideFilters : legacyEditPanelVisible === false
@@ -1835,7 +1836,7 @@ function decodeHtmlEntities(text: string): string {
         .replace(/&amp;/g, '&')
 }
 
-export function makeEmptyParagraph(idSeed: string = 'empty'): NotebookTextBlockNode {
+export function makeEmptyParagraph(idSeed = 'empty'): NotebookTextBlockNode {
     const node: NotebookTextBlockNode = {
         id: '',
         type: 'paragraph',
@@ -1845,7 +1846,7 @@ export function makeEmptyParagraph(idSeed: string = 'empty'): NotebookTextBlockN
     return node
 }
 
-export function makeListItemId(idSeed: string = 'list-item'): string {
+export function makeListItemId(idSeed = 'list-item'): string {
     return makeGeneratedMarkdownId(idSeed)
 }
 
