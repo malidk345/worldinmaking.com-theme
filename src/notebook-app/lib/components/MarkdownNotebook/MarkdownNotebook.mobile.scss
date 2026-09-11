@@ -1,0 +1,84 @@
+/* Mobile block chrome: undo hover-only + hidden-on-phone controls. */
+
+@media (hover: none), (pointer: coarse) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active,
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within {
+        outline-color: color-mix(in sRGB, var(--color-accent, #3b82f6) 35%, transparent);
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__block-chrome {
+        pointer-events: auto;
+        opacity: 1 !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome,
+    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active .MarkdownNotebook__block-chrome,
+    .MarkdownNotebook--edit .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-chrome {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook--edit .MarkdownNotebook__block-more-btn {
+        display: inline-flex !important;
+        width: 2rem;
+        height: 2rem;
+        opacity: 0.92 !important;
+        pointer-events: auto !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__mobile-insert-chip {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        margin: 0.35rem auto 0.1rem;
+        color: rgb(var(--text-secondary, 75 75 75));
+        background: rgb(var(--bg, 255 255 255));
+        border: 1px solid rgb(var(--border, 192 192 192));
+        border-radius: 999px;
+        opacity: 0.95 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit {
+        -webkit-touch-callout: none;
+    }
+
+    .MarkdownNotebook--edit [contenteditable='true'] {
+        -webkit-touch-callout: default;
+    }
+}
+
+@media (max-width: 640px) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook--edit .MarkdownNotebook__block-more-btn {
+        display: inline-flex !important;
+        opacity: 0.92 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__mobile-insert-chip {
+        display: inline-flex !important;
+        opacity: 0.95 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__insert-boundary:last-child {
+        display: block !important;
+        min-height: 1.75rem;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
+        display: inline-flex !important;
+        opacity: 0.8 !important;
+        pointer-events: auto !important;
+    }
+}
