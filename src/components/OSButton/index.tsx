@@ -126,11 +126,11 @@ export default function OSButton({
 
     // Size classes for non-primary/secondary buttons (without the translate effects and negative margins)
     const simpleSizeClasses = {
-        xs: `${windowButton ? 'p-0.5' : 'px-1 py-0.5'} text-xs gap-0.5 rounded`,
-        sm: `${windowButton ? 'p-0.5' : 'px-1 py-0.5'} text-[13px] gap-1 rounded`,
-        md: `${windowButton ? 'p-1' : 'px-1.5 py-1'} gap-1 rounded text-sm`,
-        lg: `${windowButton ? 'p-1.5' : 'px-2 py-1.5'} text-[15px] gap-1 rounded-[6px]`,
-        xl: `${windowButton ? 'p-2' : 'px-2.5 py-2'} text-base gap-1.5 rounded-[6px]`,
+        xs: `${windowButton ? 'p-0.5 active:scale-95 transition-transform duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : 'px-1 py-0.5'} text-xs gap-0.5 rounded`,
+        sm: `${windowButton ? 'p-0.5 active:scale-95 transition-transform duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : 'px-1 py-0.5'} text-[13px] gap-1 rounded`,
+        md: `${windowButton ? 'p-1 active:scale-95 transition-transform duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : 'px-1.5 py-1'} gap-1 rounded text-sm`,
+        lg: `${windowButton ? 'p-1.5 active:scale-95 transition-transform duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : 'px-2 py-1.5'} text-[15px] gap-1 rounded-[6px]`,
+        xl: `${windowButton ? 'p-2 active:scale-95 transition-transform duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : 'px-2.5 py-2'} text-base gap-1.5 rounded-[6px]`,
     }
 
     const iconSizeClasses = {

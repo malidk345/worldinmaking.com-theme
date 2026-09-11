@@ -4,11 +4,11 @@
 
 /** App windows — frosted by default; solid when reduce transparency is on */
 export const WINDOW_BG =
-    'bg-primary/75 backdrop-blur-3xl transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
+    'bg-white/40 dark:bg-[#0a0a0c]/70 backdrop-blur-[25px] saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
 
 /** Reader sidebar overlays */
 export const PANEL_BG =
-    'bg-primary/75 dark:bg-primary backdrop-blur-3xl transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
+    'bg-white/40 dark:bg-[#0a0a0c]/70 backdrop-blur-[25px] saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
 
 /** Taskbar — always frosted; not tied to reduce transparency */
 export const TASKBAR_BG = 'bg-primary/50 backdrop-blur-3xl transform-gpu'

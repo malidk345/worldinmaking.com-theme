@@ -5,6 +5,7 @@ import {
     useDragControls,
 
 } from 'framer-motion'
+import clsx from 'clsx'
 import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
@@ -357,25 +358,29 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme={isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'primary' : 'tertiary'}
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
-                        focusedWindow?.key === item.key
-                            ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
-                            : `border-primary/40 shadow-sm${
-                                  isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? '' : ' opacity-[0.985]'
-                              }`
-                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
-                        isCompositorActive ? MOTION_LAYER : ''
-                    } ${
+                    className={clsx(
+                        'group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200',
+                        isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path)
+                            ? 'bg-primary'
+                            : WINDOW_BG,
+                        isCompositorActive && MOTION_LAYER,
                         item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg !shadow-none'
+                            ? 'border-t-0 rounded-t-none rounded-b-2xl !shadow-none'
                             : item.snapped
                             ? `border-t-0 !shadow-none ${
                                   item.snapped === 'left'
-                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
-                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
+                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-2xl'
+                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-2xl'
                               }`
-                            : 'rounded-lg'
-                    }`}
+                            : 'rounded-2xl',
+                        focusedWindow?.key === item.key
+                            ? 'border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.04),0_16px_64px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.2),0_16px_64px_rgba(0,0,0,0.3)]'
+                            : `border-white/10 dark:border-white/5 shadow-[0_4px_16px_rgba(0,0,0,0.02),0_8px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.1),0_8px_24px_rgba(0,0,0,0.2)]${
+                                  isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path)
+                                      ? ''
+                                      : ' opacity-[0.985]'
+                              }`
+                    )}
                     style={{
                         pointerEvents: 'auto',
                         // Position with left/top — NOT transform x/y.
@@ -434,21 +439,21 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         scale: 0.95,
                         opacity: 0,
                         transition: {
-                            duration: compact ? 0.05 : 0.12,
-                            ease: [0.32, 0, 0.67, 0],
+                            duration: compact ? 0.05 : 0.25,
+                            ease: [0.25, 1, 0.5, 1],
                         },
                     }}
                     transition={
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  scale: { type: 'spring', stiffness: 440, damping: 25, mass: 0.6 },
-                                  left: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  top: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  width: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  height: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  opacity: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
-                                  default: { type: 'spring', stiffness: 380, damping: 26 },
+                                  scale: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+                                  left: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+                                  top: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+                                  width: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+                                  height: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+                                  opacity: { duration: 0.25, ease: [0.25, 1, 0.5, 1] },
+                                  default: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
                               }
                     }
                     drag={inSwitcher ? false : !item.fixedSize}
