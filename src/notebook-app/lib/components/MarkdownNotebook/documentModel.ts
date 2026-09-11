@@ -788,6 +788,52 @@ export function planDeleteTextAtSelection(
         return { kind: 'noop', focus: { nodeId: node.id, start: 0, end: 0 } }
     }
 
+    // Delete on an empty non-title text block: reuse Backspace-at-start merge/remove so the
+    // host beforeinput path (and EditableTextBlock once wired through this plan) share one
+    // empty-block Delete model. Title row (index 0) stays a no-op.
+    if (direction === 'forward' && textLength === 0) {
+        if (nodeIndex <= 0) {
+            return { kind: 'noop', focus: { nodeId: node.id, start: 0, end: 0 } }
+        }
+
+        const adjacentMerge = planMergeAdjacentTextBlocks(nodes, nodeIndex)
+        if (adjacentMerge) {
+            return adjacentMerge
+        }
+
+        const intoPrevious = planMergeTextIntoPreviousNonText(nodes, nodeIndex)
+        if (intoPrevious?.kind === 'replace') {
+            return intoPrevious
+        }
+
+        // Empty heading/quote after a non-text sibling: merge helper may only focus — still
+        // drop the empty block (matches EditableTextBlock's empty non-title Delete fallthrough).
+        const previousNode = nodes[nodeIndex - 1]
+        if (!previousNode) {
+            return null
+        }
+        if (intoPrevious?.kind === 'focus') {
+            return {
+                kind: 'replace',
+                nodes: removeNodeAt(nodes, nodeIndex),
+                focus: {
+                    nodeId: intoPrevious.nodeId,
+                    start: intoPrevious.offset ?? 0,
+                    end: intoPrevious.offset ?? 0,
+                    tableCell: intoPrevious.tableCell,
+                },
+                ...(intoPrevious.component ? { focusNodeId: intoPrevious.nodeId } : {}),
+            }
+        }
+
+        return {
+            kind: 'replace',
+            nodes: removeNodeAt(nodes, nodeIndex),
+            focus: { nodeId: previousNode.id, start: 0, end: 0 },
+            ...(previousNode.type === 'component' ? { focusNodeId: previousNode.id } : {}),
+        }
+    }
+
     if (direction === 'forward' || start !== 0 || nodeIndex <= 0) {
         return null
     }
