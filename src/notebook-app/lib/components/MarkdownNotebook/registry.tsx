@@ -15,6 +15,8 @@ import OSButton from '../../../../components/OSButton'
 
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { isSlashRegistryTag } from './insertCatalog'
+import { isSafeEmbedSrc, normalizeEmbedSrc } from './embedUrl'
+import { LatexEdit, LatexView } from './LatexBlock'
 import {
     CalloutBlock,
     DatabaseTableBlock,
@@ -137,7 +139,6 @@ export function getMarkdownNotebookDefaultRegistry(): NotebookComponentRegistry 
             exclusiveEditPanel: true,
             ViewComponent: SubpageBlock,
             EditComponent: SubpageBlock,
-            // Slash insert is extraInsertCommands `page-subpage` — it creates a real notebook first.
         }),
         makeDefinition({
             tagName: 'Divider',
@@ -218,20 +219,33 @@ function DividerView(_: NotebookComponentRenderProps): JSX.Element {
     return <hr className="MarkdownNotebook__divider" />
 }
 
-// Comment nodes render through CommentBlock in renderNode; this is the registry fallback.
 function CommentView({ node }: NotebookComponentRenderProps): JSX.Element {
     const text = typeof node.props.text === 'string' ? node.props.text : ''
     return <div className="MarkdownNotebook__comment-chip">{text || 'Comment'}</div>
 }
 
 function EmbedView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const src = typeof node.props.src === 'string' ? node.props.src : ''
-    const title = typeof node.props.title === 'string' ? node.props.title : 'Embedded content'
+    const raw = typeof node.props.src === 'string' ? node.props.src : ''
+    const src = normalizeEmbedSrc(raw)
+    const title = typeof node.props.title === 'string' && node.props.title.trim() ? node.props.title : 'Embedded content'
 
-    return src ? (
-        <iframe className="MarkdownNotebook__embed" src={src} title={title} sandbox="allow-scripts allow-same-origin" />
-    ) : (
-        <SummaryView node={node} mode="view" updateProps={() => {}} deleteNode={() => {}} />
+    if (!src || !isSafeEmbedSrc(src)) {
+        return (
+            <div className="MarkdownNotebook__embed-empty text-sm text-muted px-2 py-3">
+                Paste a YouTube, Vimeo, Loom, or https link.
+            </div>
+        )
+    }
+
+    return (
+        <iframe
+            className="MarkdownNotebook__embed"
+            src={src}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            sandbox="allow-scripts allow-same-origin allow-presentation"
+        />
     )
 }
 
@@ -251,30 +265,18 @@ function EmbedEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Ele
             <input
                 value={src}
                 onChange={(event) => updateProps({ src: event.target.value })}
-                placeholder="https://example.com/embed"
+                onBlur={(event) => {
+                    const next = normalizeEmbedSrc(event.target.value)
+                    if (next !== src) updateProps({ src: next })
+                }}
+                placeholder="Paste YouTube / Vimeo / Loom / https URL"
                 className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
             />
-        </div>
-    )
-}
-
-function LatexView({ node }: NotebookComponentRenderProps): JSX.Element {
-    const content = typeof node.props.content === 'string' ? node.props.content : ''
-    return <div className="MarkdownNotebook__latex">{content}</div>
-}
-
-function LatexEdit({ node, updateProps }: NotebookComponentRenderProps): JSX.Element {
-    const content = typeof node.props.content === 'string' ? node.props.content : ''
-
-    return (
-        <div className="MarkdownNotebook__component-form">
-            <textarea
-                value={content}
-                onChange={(event) => updateProps({ content: event.target.value })}
-                placeholder="E = mc^2"
-                rows={3}
-                autoFocus={wasNotebookNodeJustInserted(node.id)}
-                className="notebook-native-field w-full rounded-sm border border-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted"
+            <EmbedView
+                node={{ ...node, props: { ...node.props, src: normalizeEmbedSrc(src) } }}
+                mode="view"
+                updateProps={() => {}}
+                deleteNode={() => {}}
             />
         </div>
     )
