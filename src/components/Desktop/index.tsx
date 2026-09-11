@@ -14,12 +14,14 @@ import { extractNotebookId, isHomeWindowPath, notebookWindowPath } from '../../l
 import { useUser } from 'hooks/useUser'
 import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
 import { getNotebooks, WIM_NOTEBOOKS_CHANGED_EVENT, WIM_NOTEBOOKS_HYDRATED_EVENT } from '../../notebook-app/scenes/notebooks/notebookStorage'
+import { ASSISTANT_OPEN_PATH_EVENT } from '../../lib/assistant-actions'
 
 const NotificationsPanel = dynamic(() => import('components/NotificationsPanel'), { ssr: false })
 const ClaudeWorkspaceChatPanel = dynamic(
     () => import('components/ClaudeWorkspaceChat').then((m) => ({ default: m.ClaudeWorkspaceChatPanel })),
     { ssr: false }
 )
+const AssistantWatch = dynamic(() => import('components/AssistantWindow/Watch'), { ssr: false })
 const HedgeHogModeEmbed = dynamic(() => import('components/HedgehogMode'), { ssr: false })
 const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
 
@@ -61,6 +63,15 @@ function Desktop() {
             router.replace('/desktop', undefined, { shallow: true })
         }
     }, [router.query.open])
+
+    useEffect(() => {
+        const onOpen = (event: Event) => {
+            const path = (event as CustomEvent<{ path?: string }>).detail?.path
+            if (path) addWindow({ path })
+        }
+        window.addEventListener(ASSISTANT_OPEN_PATH_EVENT, onOpen)
+        return () => window.removeEventListener(ASSISTANT_OPEN_PATH_EVENT, onOpen)
+    }, [addWindow])
 
     const loadPinnedApps = useCallback(() => {
         if (typeof window === 'undefined') return
@@ -226,6 +237,7 @@ function Desktop() {
                 <HedgeHogModeEmbed />
             </ContextMenu>
             {(isNotificationsPanelOpen || notifMounted) && <NotificationsPanel />}
+            <AssistantWatch />
             {(isClaudeChatOpen || chatMounted) && <ClaudeWorkspaceChatPanel />}
             {confetti && (
                 <div className="fixed inset-0 pointer-events-none">

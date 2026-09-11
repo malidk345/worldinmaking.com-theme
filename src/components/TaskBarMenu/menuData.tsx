@@ -29,6 +29,12 @@ export function useMenuData(): MenuType[] {
                 },
                 {
                     type: 'item' as const,
+                    label: 'Assistant',
+                    link: '/assistant',
+                    icon: <Icons.IconSparkles className="size-4 text-orange" />,
+                },
+                {
+                    type: 'item' as const,
                     label: 'Forums',
                     link: '/questions',
                     icon: <Icons.IconMessage className="size-4 text-green" />,

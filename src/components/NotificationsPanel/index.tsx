@@ -120,7 +120,6 @@ export default function NotificationsPanel() {
     const { isNotificationsPanelOpen, setIsNotificationsPanelOpen, taskbarHeight, taskbarRef } = useApp()
     const panelRef = useRef<HTMLDivElement>(null)
 
-    // Match the app-container padding (`p-2`) and taskbar offset used by app windows
     const taskbarRect = taskbarRef.current?.getBoundingClientRect()
     const padding = taskbarRect?.left ?? 8
     const panelStyle =

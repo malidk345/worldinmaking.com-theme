@@ -28,6 +28,7 @@ import {
     isThreadSubscribed,
     setThreadSubscription,
 } from 'lib/wim-notifications'
+import { ASSISTANT_NOTICES_EVENT, listAssistantNotifications } from 'lib/assistant-notices'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
 import { AUTH_USER_ID_KEY, emitIdentityChanged } from 'lib/wim-identity'
 
@@ -285,10 +286,49 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }, [])
 
     useEffect(() => {
+        const mergeAssistant = () => {
+            if (!user) {
+                setNotifications((prev: Array<{ id?: number | string }>) =>
+                    (Array.isArray(prev) ? prev : []).filter(
+                        (item) => !String(item?.id || '').startsWith('assistant_')
+                    )
+                )
+                return
+            }
+            const local = listAssistantNotifications()
+            setNotifications((prev: Array<{ id?: number | string; date?: string }>) => {
+                const incoming = Array.isArray(prev) ? prev : []
+                const localIds = new Set(local.map((item) => String(item.id)))
+                const rest = incoming.filter(
+                    (item) => !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
+                )
+                return [...local, ...rest].sort(
+                    (a, b) => new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+                )
+            })
+        }
+        mergeAssistant()
+        window.addEventListener(ASSISTANT_NOTICES_EVENT, mergeAssistant)
+        return () => window.removeEventListener(ASSISTANT_NOTICES_EVENT, mergeAssistant)
+    }, [user?.id])
+
+    useEffect(() => {
         if (!user) return
         const tick = async () => {
             const notes = await fetchUserNotifications()
-            setNotifications(notes)
+            const local = listAssistantNotifications()
+            const incoming = Array.isArray(notes) ? notes : []
+            const localIds = new Set(local.map((item) => String(item.id)))
+            const rest = incoming.filter(
+                (item: { id?: number | string }) =>
+                    !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
+            )
+            setNotifications(
+                [...local, ...rest].sort(
+                    (a, b) =>
+                        new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+                )
+            )
         }
         void tick()
         const timer = window.setInterval(tick, 45_000)

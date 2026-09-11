@@ -4,9 +4,11 @@
  * - Forum question replies (human)
  * - Philosopher bot replies & mentions
  * - WIM Notebook collaboration invites & collaborator additions
+ * - Personal assistant nags / questions / counsel (local, same panel shape)
  */
 import { supabase } from 'lib/supabase'
 import { matchPhilosopherId } from './philosopher-avatar'
+import { dismissAssistantNotice, isAssistantNoticeId, listAssistantNotifications } from './assistant-notices'
 import { PHILOSOPHER_BOTS } from '../notebook-app/lib/philosophers'
 
 export type WimNotification = {
@@ -316,13 +318,18 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
         console.warn('[wim-notifications] error processing notebook notifications', err)
     }
 
-    const all = [...forumNotifications, ...notebookNotifications]
+    const assistantNotifications = listAssistantNotifications()
+    const all = [...assistantNotifications, ...forumNotifications, ...notebookNotifications]
     all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return all
 }
 
 export async function dismissUserNotification(id: number | string): Promise<{ ok: boolean; error?: string }> {
     const strId = String(id)
+    if (isAssistantNoticeId(strId)) {
+        dismissAssistantNotice(strId)
+        return { ok: true }
+    }
     if (strId.startsWith('invite_') || strId.startsWith('collab_') || strId.startsWith('notebook_')) {
         markDismissedNotebookNotificationId(strId)
         return { ok: true }

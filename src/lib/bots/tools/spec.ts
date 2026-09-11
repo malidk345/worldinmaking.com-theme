@@ -296,7 +296,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'open_path',
             description:
-                'Open an OS window for an allowed app path (home, community, notebooks, posts, archive, contact, admin, profile, workspace-chat).',
+                'Open an OS window for an allowed app path (home, community, notebooks, posts, archive, contact, admin, profile, workspace-chat, assistant).',
             parameters: {
                 type: 'object',
                 additionalProperties: false,

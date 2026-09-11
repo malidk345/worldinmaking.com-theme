@@ -12,6 +12,7 @@ import { isProfilePath } from '../../lib/profile-path'
 import {
     canonicalWindowPath,
     isArtifactWindowPath,
+    isAssistantWindowPath,
     isBlogPath,
     isForumPath,
     isNotebookWindowPath,
@@ -51,6 +52,7 @@ const TrashWindow = dynamic(() => import('../TrashWindow').then((m) => ({ defaul
 })
 const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false, loading: routeFallback })
 const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false, loading: routeFallback })
+const AssistantWindow = dynamic(() => import('../AssistantWindow'), { ssr: false, loading: routeFallback })
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
@@ -125,6 +127,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/trash' || path.startsWith('/trash/')) {
         return <TrashWindow />
+    }
+
+    if (path === '/assistant' || path.startsWith('/assistant/')) {
+        return <AssistantWindow />
     }
 
     if (path === '/admin' || path === '/community/admin') {
@@ -249,6 +255,7 @@ const WindowRouter = (props: WindowRouterProps) => {
         isNotebookWindowPath(path) ||
         isScratchpadWindowPath(path) ||
         isTrashWindowPath(path) ||
+        isAssistantWindowPath(path) ||
         isProfilePath(path)
     // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
     // settings, mobile FAB) stays on the pane. Content scrolls inside.
@@ -258,7 +265,7 @@ const WindowRouter = (props: WindowRouterProps) => {
             className={
                 fillHeight
                     ? `text-primary h-full min-h-0 flex flex-col overflow-hidden${
-                          isScratchpadWindowPath(path) || isTrashWindowPath(path) ? ' bg-primary' : ''
+                          isScratchpadWindowPath(path) || isTrashWindowPath(path) || isAssistantWindowPath(path) ? ' bg-primary' : ''
                       }`
                     : 'text-primary min-h-full h-auto flex flex-col'
             }
