@@ -375,3 +375,6 @@ function sortPropValue(value: NotebookComponentProps[string]): NotebookComponent
     }
     return value
 }
+
+export { scrollNotebookElementIntoView } from './domSelection'
+

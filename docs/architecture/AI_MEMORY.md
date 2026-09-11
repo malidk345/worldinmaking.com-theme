@@ -31,6 +31,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Fix scrollNotebookElementIntoView Import in useNotebookSelection)
+- **Scope:**
+  1. Resolved runtime `TypeError: scrollNotebookElementIntoView is not a function` at `useNotebookSelection.ts:73`.
+  2. Fixed source import: `scrollNotebookElementIntoView` is defined in `./domSelection`, but was inadvertently imported from `./utils` where it was undefined.
+  3. Re-exported `scrollNotebookElementIntoView` in `utils.ts` from `./domSelection` to ensure robust backwards compatibility.
+  4. Verified via `pnpm exec playwright test tests/notebook-frontend.spec.ts` (44 passed) and `pnpm run typecheck:shell` (0 errors).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookSelection.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/utils.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+
 ### 2026-09-11 — Antigravity (Notebook Mobile Block Frame Outline on Focus and Touch)
 - **Scope:**
   1. Fixed missing block frame ("blok çerçevesi") on mobile and touch devices. On desktop, block frames were only rendered via `@media (hover: hover) and (pointer: fine) .MarkdownNotebook__row:hover` while `:focus-within` explicitly reset `outline-color: transparent`. Because mobile lacks hover, blocks never displayed boundaries or active frames.
