@@ -37,10 +37,10 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf + paste/mentions + slash menu + slim list + text PDF
-- **Last Model Action:** Grok 4.6 — notebook Share/Options PDF was a JPEG screenshot (`html-to-image` → jsPDF). Replaced with selectable-text PDF from markdown (DejaVu) and a paper print preview. Export also hydrates slim list bodies. PDF lives on the Share tab as well as Options.
+- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf + paste/mentions + slash menu + slim list + text PDF + mobile UX
+- **Last Model Action:** Grok 4.6 — notebook mobile writing: dock format toolbar on coarse pointers, Add chip + long-press Insert (slash still works), restore history from remote when local body was compacted.
 - **Instruction for Next AI Agent:**
-  > Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs. Playwright smoke is already red on `main` (placeholder.supabase.co). Slash `/` is for body blocks, not the title row. Rotate the Supabase PAT that was pasted in chat if it is still active.
+  > Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs. Playwright smoke is already red on `main` (placeholder.supabase.co). Slash `/` is for body blocks, not the title row. Rotate the Supabase PAT that was pasted in chat if it is still active. Mention notification URLs still go to `/notebooks/:id` without scrolling to the mark.
 
 ---
 

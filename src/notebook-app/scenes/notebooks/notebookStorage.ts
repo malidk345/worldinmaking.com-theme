@@ -81,7 +81,7 @@ export interface StoredNotebook {
 
 export interface NotebookVersion {
     version: number
-    content: string
+    content?: string
     title?: string
     timestamp: string
     label?: string
@@ -991,19 +991,55 @@ export function getNotebookHistoryNewestFirst(id: string): NotebookVersion[] {
     return [...getNotebookHistory(id)].reverse()
 }
 
-export function restoreNotebookVersion(id: string, version: number): StoredNotebook | undefined {
+/** Fill discarded local bodies from a remote history list. Newest first. */
+export function mergeNotebookHistoryLists(
+    local: NotebookVersion[],
+    remote: NotebookVersion[]
+): NotebookVersion[] {
+    const byVersion = new Map<number, NotebookVersion>()
+    for (const entry of [...local, ...remote]) {
+        if (!Number.isFinite(entry.version)) continue
+        const prev = byVersion.get(entry.version)
+        if (!prev) {
+            byVersion.set(entry.version, { ...entry })
+            continue
+        }
+        byVersion.set(entry.version, {
+            ...prev,
+            ...entry,
+            content: entry.content || prev.content,
+            title: entry.title || prev.title,
+            label: entry.label || prev.label,
+            author: entry.author || prev.author,
+            timestamp: entry.timestamp || prev.timestamp,
+        })
+    }
+    return [...byVersion.values()].sort((a, b) => {
+        const tb = Date.parse(b.timestamp) || 0
+        const ta = Date.parse(a.timestamp) || 0
+        if (tb !== ta) return tb - ta
+        return b.version - a.version
+    })
+}
+
+export function restoreNotebookVersion(
+    id: string,
+    version: number,
+    contentOverride?: string
+): StoredNotebook | undefined {
     const notebook = getNotebook(id)
     if (!notebook) return undefined
 
     const history = getNotebookHistory(id)
     const targetVersion = history.find((h) => h.version === version)
-    if (!targetVersion?.content) return undefined
+    const content = (contentOverride && contentOverride.length > 0 ? contentOverride : targetVersion?.content) || ''
+    if (!content) return undefined
 
     return saveNotebook(
         {
             ...notebook,
-            content: targetVersion.content,
-            title: targetVersion.title || notebook.title,
+            content,
+            title: targetVersion?.title || notebook.title,
         },
         { snapshot: true, snapshotLabel: `Restored v${version}` }
     )

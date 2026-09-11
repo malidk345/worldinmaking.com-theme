@@ -2045,8 +2045,10 @@ h6.MarkdownNotebook__text-block {
 }
 
 .MarkdownNotebook__format-toolbar--docked {
-    width: auto;
+    width: max-content;
     max-width: calc(100vw - 16px);
+    height: auto;
+    min-height: 36px;
     padding: 3px 4px;
     transform: translateX(-50%) !important;
 }
@@ -4103,6 +4105,10 @@ button.MarkdownNotebook__component-title:focus-visible {
     }
 }
 
+.MarkdownNotebook__mobile-insert-chip {
+    display: none;
+}
+
 @media (max-width: 640px) {
     .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome {
         opacity: 0 !important;
@@ -4717,6 +4723,8 @@ button.MarkdownNotebook__component-title:focus-visible {
         padding: 0 !important;
         margin: 0 !important;
         font-size: inherit !important;
+        content-visibility: visible;
+        contain-intrinsic-size: none;
     }
 
     /* Fixed grid on mobile: NO layout jump when typing */
@@ -4768,6 +4776,45 @@ button.MarkdownNotebook__component-title:focus-visible {
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 4px;
+    }
+
+    .MarkdownNotebook__mobile-insert-chip {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        position: relative;
+        z-index: 2;
+        width: 2rem;
+        height: 2rem;
+        min-height: 32px;
+        min-width: 32px;
+        margin: 0.35rem auto 0.15rem;
+        padding: 0;
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 550;
+        color: rgb(var(--text-secondary, 75 75 75));
+        background: rgb(var(--bg, 255 255 255));
+        border: 1px solid rgb(var(--border, 192 192 192));
+        border-radius: 999px;
+        pointer-events: auto;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+
+        svg {
+            width: 0.9rem;
+            height: 0.9rem;
+        }
+
+        &:active {
+            background: rgb(var(--accent, 229 231 224));
+            color: rgb(var(--text-primary, 35 35 35));
+        }
+    }
+
+    .MarkdownNotebook__format-toolbar--docked {
+        max-width: calc(100vw - 12px);
     }
 
     .MarkdownNotebook__component-shell {

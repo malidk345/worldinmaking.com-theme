@@ -119,6 +119,8 @@ const NOTEBOOK_TAG_CSS = `
   .MarkdownNotebook__insert-menu,
   .MarkdownNotebook__format-toolbar,
   .MarkdownNotebook__invite-picker,
+  .MarkdownNotebook__mobile-block-bar,
+  .MarkdownNotebook__mobile-insert-chip,
   .notebook-outline,
   [data-sidebar-label] {
     display: none !important;

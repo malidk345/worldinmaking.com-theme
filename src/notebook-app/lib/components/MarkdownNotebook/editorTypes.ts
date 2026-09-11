@@ -175,3 +175,39 @@ export const NOTEBOOK_TITLE_PLACEHOLDER = 'Untitled notebook'
 
 export const NOTEBOOK_EDITABLE_BLOCK_SELECTOR =
     '.MarkdownNotebook__text-block, .MarkdownNotebook__list-item-content, .MarkdownNotebook__table-cell-content, .MarkdownNotebook__code-block'
+
+export function isCoarsePointer(win?: Pick<Window, 'matchMedia'> | null): boolean {
+    if (!win?.matchMedia) {
+        return false
+    }
+    try {
+        return win.matchMedia('(pointer: coarse)').matches
+    } catch {
+        return false
+    }
+}
+
+export type VisibleViewportBox = {
+    offsetLeft?: number
+    offsetTop?: number
+    width?: number
+    height?: number
+}
+
+/** Bottom-center of the visual viewport so the format toolbar never sits on the selection. */
+export function getDockedFloatingToolbarPosition(
+    viewport: VisibleViewportBox,
+    estimatedHeight: number = FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW,
+    margin: number = 8
+): { top: number; left: number; placement: 'above'; docked: true } {
+    const viewLeft = viewport.offsetLeft ?? 0
+    const viewTop = viewport.offsetTop ?? 0
+    const viewWidth = viewport.width ?? 0
+    const viewHeight = viewport.height ?? 0
+    return {
+        top: Math.round(viewTop + viewHeight - estimatedHeight - margin),
+        left: Math.round(viewLeft + viewWidth / 2),
+        placement: 'above',
+        docked: true,
+    }
+}
