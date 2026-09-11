@@ -1,5 +1,4 @@
 import React from 'react'
-import DOMPurify from 'dompurify'
 import ReaderView from 'components/ReaderView'
 import { usePathname } from 'next/navigation'
 import { Blockquote } from 'components/BlockQuote'
@@ -28,7 +27,7 @@ import NewsletterForm from 'components/NewsletterForm'
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(children as string) : children as string }} />
+        return <div dangerouslySetInnerHTML={{ __html: children }} />
     }
     return <>{children}</>
 }

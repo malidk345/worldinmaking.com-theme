@@ -1,10 +1,9 @@
 import React from 'react'
-import DOMPurify from 'dompurify'
 import { MDXProvider } from '@mdx-js/react'
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(children as string) : children as string }} />
+        return <div dangerouslySetInnerHTML={{ __html: children }} />
     }
     return <>{children}</>
 }
