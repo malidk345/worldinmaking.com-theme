@@ -4,9 +4,21 @@ export type NotebookRoute =
     | { page: 'list' }
     | { page: 'templates' }
     | { page: 'canvas' }
-    | { page: 'editor'; notebookId: string }
+    | { page: 'editor'; notebookId: string; mark?: 'mention' | 'comment' }
     | { page: 'public'; notebookId: string }
     | { page: 'invite'; token: string }
+
+function markFromSearch(search: string, path = ''): 'mention' | 'comment' | undefined {
+    const raw = `${path} ${search}`
+    const query = search.startsWith('?') ? search.slice(1) : search.includes('?') ? search.slice(search.indexOf('?') + 1) : search
+    const fromPath = path.includes('?') ? path.slice(path.indexOf('?') + 1).split('#')[0] : ''
+    const params = new URLSearchParams(fromPath || query)
+    const mark = params.get('mark')
+    if (mark === 'mention' || mark === 'comment') return mark
+    if (/#comment\b/i.test(raw)) return 'comment'
+    if (/#mention\b/i.test(raw)) return 'mention'
+    return undefined
+}
 
 export function parseNotebookRoute(path: string, hash = '', search = ''): NotebookRoute {
     const hashFromPath = path.includes('#') ? path.slice(path.indexOf('#')) : ''
@@ -23,10 +35,17 @@ export function parseNotebookRoute(path: string, hash = '', search = ''): Notebo
     }
 
     const id = extractNotebookId(path) || extractNotebookId(`${clean}${query}`)
-    if (id) return { page: 'editor', notebookId: id }
+    if (id) {
+        const mark = markFromSearch(query || search, path)
+        return mark ? { page: 'editor', notebookId: id, mark } : { page: 'editor', notebookId: id }
+    }
 
     const h = String(hashToUse || '').replace(/^#\/?/, '')
-    if (h.startsWith('notebook/')) return { page: 'editor', notebookId: h.replace('notebook/', '') }
+    if (h.startsWith('notebook/')) {
+        const notebookId = h.replace('notebook/', '').split('?')[0]
+        const mark = markFromSearch(query || search, path)
+        return mark ? { page: 'editor', notebookId, mark } : { page: 'editor', notebookId }
+    }
     if (h.startsWith('n/')) return { page: 'public', notebookId: h.replace(/^n\//, '') }
     if (h === 'canvas') return { page: 'canvas' }
     if (h === 'templates') return { page: 'templates' }
@@ -34,7 +53,7 @@ export function parseNotebookRoute(path: string, hash = '', search = ''): Notebo
 }
 
 export function notebookPathForRoute(route: NotebookRoute): string {
-    if (route.page === 'editor') return notebookWindowPath(route.notebookId)
+    if (route.page === 'editor') return notebookWindowPath(route.notebookId, route.mark)
     if (route.page === 'public') return `/notebooks/n/${route.notebookId}`
     if (route.page === 'invite') return `/notebooks/invite/${route.token}`
     if (route.page === 'canvas') return '/notebooks/canvas'

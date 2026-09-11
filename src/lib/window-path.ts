@@ -109,9 +109,11 @@ export function isAssistantWindowPath(path?: string | null): boolean {
     return p === '/assistant' || p.startsWith('/assistant/')
 }
 
-export function notebookWindowPath(id?: string | null): string {
+export function notebookWindowPath(id?: string | null, mark?: string | null): string {
     const clean = String(id || '').trim()
-    return clean ? `/notebooks/${clean}` : '/notebooks'
+    if (!clean) return '/notebooks'
+    const parsed = mark === 'mention' || mark === 'comment' ? mark : null
+    return parsed ? `/notebooks/${clean}?mark=${parsed}` : `/notebooks/${clean}`
 }
 
 export function livePathname(): string | null {
@@ -120,7 +122,10 @@ export function livePathname(): string | null {
     const publicId = extractPublicNotebookId(liveRaw)
     if (publicId) return notebookPublicPath(publicId)
     const notebookId = extractNotebookId(`${window.location.pathname}${window.location.search}`)
-    if (notebookId) return notebookWindowPath(notebookId)
+    if (notebookId) {
+        const mark = new URLSearchParams(window.location.search).get('mark')
+        return notebookWindowPath(notebookId, mark === 'mention' || mark === 'comment' ? mark : null)
+    }
     const live = stripPathNoise(window.location.pathname)
     return isPlaceholderPath(live) ? null : live
 }
@@ -130,7 +135,19 @@ export function canonicalWindowPath(input?: string | null): string {
     const publicId = extractPublicNotebookId(input)
     if (publicId) return notebookPublicPath(publicId)
     const notebookId = extractNotebookId(input)
-    if (notebookId) return notebookWindowPath(notebookId)
+    if (notebookId) {
+        const raw = String(input || '')
+        let mark: string | null = null
+        try {
+            const qIndex = raw.indexOf('?')
+            const query = qIndex >= 0 ? raw.slice(qIndex + 1).split('#')[0] : ''
+            const value = new URLSearchParams(query).get('mark')
+            if (value === 'mention' || value === 'comment') mark = value
+        } catch {
+            mark = null
+        }
+        return notebookWindowPath(notebookId, mark)
+    }
     const stripped = stripPathNoise(input)
     const live = livePathname()
     if (!live) return stripped
