@@ -90,3 +90,38 @@ export function NotebookSettingsPanel({
         </div>
     )
 }
+
+export function NotebookSettingsPopover({
+    settings,
+    onChange,
+    extra,
+}: {
+    settings: NotebookChromeSettings
+    onChange: (next: Partial<NotebookChromeSettings>) => void
+    extra?: React.ReactNode
+}): JSX.Element {
+    return (
+        <Popover
+            title="Options"
+            dataScheme="secondary"
+            trigger={
+                <span>
+                    <OSButton icon={<IconGear />} size="md" />
+                </span>
+            }
+            contentClassName="w-80"
+        >
+            <NotebookSettingsPanel settings={settings} onChange={onChange} extra={extra} />
+        </Popover>
+    )
+}
+
+export {
+    NotebookExportPanel,
+    NotebookExportButton,
+    SidebarSearchHits,
+    SidebarComments,
+    SidebarPeople,
+    NotebookPeopleButton,
+    NotebookNotesButton,
+} from './notebookSidebarRest'
