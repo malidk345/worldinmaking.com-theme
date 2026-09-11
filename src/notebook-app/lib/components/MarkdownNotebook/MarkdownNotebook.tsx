@@ -717,17 +717,31 @@ function MarkdownNotebookEditor({
             }
         }
         const dockBar = () => {
+            const row = window.document.querySelector<HTMLElement>(
+                `.MarkdownNotebook__row[data-node-id="${mobileActiveNodeId}"], .MarkdownNotebook__row--mobile-active`
+            )
+            if (!row) {
+                clearMobileBlockBar()
+                return
+            }
             const vv = window.visualViewport
             const viewTop = vv?.offsetTop ?? 0
             const viewLeft = vv?.offsetLeft ?? 0
             const viewWidth = vv?.width ?? window.innerWidth
             const viewHeight = vv?.height ?? window.innerHeight
-            const margin = 10
-            setMobileBarAnchor({
-                top: viewTop + viewHeight - margin,
-                left: Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, viewLeft + viewWidth / 2)),
-                placement: 'above',
-            })
+            const margin = 8
+            const barEstimatedHeight = 36
+            const rowRect = row.getBoundingClientRect()
+            const spaceAbove = rowRect.top - viewTop
+            const spaceBelow = viewTop + viewHeight - rowRect.bottom
+            const shouldPlaceBelow = spaceAbove < barEstimatedHeight + 8 && spaceBelow >= barEstimatedHeight + 8
+            const placement: 'above' | 'below' = shouldPlaceBelow ? 'below' : 'above'
+            const top = Math.round(placement === 'above' ? rowRect.top : rowRect.bottom)
+            const rowCenter = rowRect.left + rowRect.width / 2
+            const left = Math.round(
+                Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, rowCenter))
+            )
+            setMobileBarAnchor({ top, left, placement })
         }
         const handleScrollDismiss = (event: Event) => {
             const target = event.target
@@ -783,13 +797,19 @@ function MarkdownNotebookEditor({
             const viewLeft = vv?.offsetLeft ?? 0
             const viewWidth = vv?.width ?? window.innerWidth
             const viewHeight = vv?.height ?? window.innerHeight
-            const margin = 10
-            const left = Math.min(
-                viewLeft + viewWidth - margin,
-                Math.max(viewLeft + margin, viewLeft + viewWidth / 2)
+            const margin = 8
+            const barEstimatedHeight = 36
+            const rowRect = row.getBoundingClientRect()
+            const spaceAbove = rowRect.top - viewTop
+            const spaceBelow = viewTop + viewHeight - rowRect.bottom
+            const shouldPlaceBelow = spaceAbove < barEstimatedHeight + 8 && spaceBelow >= barEstimatedHeight + 8
+            const placement: 'above' | 'below' = shouldPlaceBelow ? 'below' : 'above'
+            const top = Math.round(placement === 'above' ? rowRect.top : rowRect.bottom)
+            const rowCenter = rowRect.left + rowRect.width / 2
+            const left = Math.round(
+                Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, rowCenter))
             )
-            const top = viewTop + viewHeight - margin
-            setMobileBarAnchor({ top, left, placement: 'above' })
+            setMobileBarAnchor({ top, left, placement })
             setMobileActiveNodeId(nodeId)
             setFloatingToolbar(null)
         }, 340)
@@ -2272,27 +2292,9 @@ function MarkdownNotebookEditor({
             const viewRight = viewLeft + viewWidth
             const viewBottom = viewTop + viewHeight
 
-            if (isCoarsePointer(window)) {
-                const docked = getDockedFloatingToolbarPosition(
-                    {
-                        offsetLeft: viewLeft,
-                        offsetTop: viewTop,
-                        width: viewWidth,
-                        height: viewHeight,
-                    },
-                    FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW
-                )
-                setFloatingToolbar({
-                    textRanges,
-                    codeRanges,
-                    listItemRanges,
-                    selectedMarkdown,
-                    ...docked,
-                })
-                return
-            }
-
-            const estimatedHeight = FLOATING_TOOLBAR_ESTIMATED_HEIGHT
+            const estimatedHeight = isCoarsePointer(window)
+                ? FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW
+                : FLOATING_TOOLBAR_ESTIMATED_HEIGHT
             // Anchor directly above the selection, horizontally centered on the selection.
             // Flip below only if there is not enough room at the top of the viewport.
             const shouldPlaceBelow = selectionRect.top - viewTop < estimatedHeight + 12
@@ -2312,6 +2314,7 @@ function MarkdownNotebookEditor({
                 placement: lockedPosition?.placement ?? (shouldPlaceBelow ? 'below' : 'above'),
                 top: lockedPosition?.top ?? toolbarTop,
                 left: lockedPosition?.left ?? Math.min(viewRight - 16, Math.max(viewLeft + 16, toolbarLeft)),
+                docked: false,
             })
         } catch {
             floatingToolbarPositionLockRef.current = null

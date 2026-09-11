@@ -1,6 +1,7 @@
 /* Match site taskbar: bg-primary/50, backdrop-blur-3xl, Tailwind `rounded` (4px). No drop shadow. */
 .notebook-topbar-glass,
 .MarkdownNotebook__format-toolbar,
+.MarkdownNotebook__mobile-block-bar,
 .WimInlineEditor,
 .WimInlineEditor--floating,
 .WimInlinePill,
@@ -21,6 +22,9 @@
 :root.dark .MarkdownNotebook__format-toolbar,
 .dark .MarkdownNotebook__format-toolbar,
 [data-scheme='dark'] .MarkdownNotebook__format-toolbar,
+:root.dark .MarkdownNotebook__mobile-block-bar,
+.dark .MarkdownNotebook__mobile-block-bar,
+[data-scheme='dark'] .MarkdownNotebook__mobile-block-bar,
 :root.dark .WimInlineEditor,
 .dark .WimInlineEditor,
 [data-scheme='dark'] .WimInlineEditor,
