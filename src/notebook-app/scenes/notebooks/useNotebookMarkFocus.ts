@@ -1,14 +1,11 @@
 import { useEffect } from 'react'
 import { useUser } from '../../../hooks/useUser'
+import { useWindow } from '../../../context/Window'
 
-function markParamFromLocation(): 'mention' | 'comment' | null {
-    if (typeof window === 'undefined') return null
-    const search = `${window.location.search || ''}${window.location.hash || ''}`
-    const params = new URLSearchParams(window.location.search)
-    const fromQuery = (params.get('mark') || params.get('focus') || '').toLowerCase()
-    if (fromQuery === 'mention' || fromQuery === 'comment') return fromQuery
-    if (/[#?&]mark=comment|#comment/i.test(search)) return 'comment'
-    if (/[#?&]mark=mention|#mention/i.test(search)) return 'mention'
+function markFromString(raw?: string | null): 'mention' | 'comment' | null {
+    const value = String(raw || '')
+    if (/[?&#]mark=comment|#comment/i.test(value)) return 'comment'
+    if (/[?&#]mark=mention|#mention/i.test(value)) return 'mention'
     return null
 }
 
@@ -40,12 +37,15 @@ function findCommentTarget(): Element | null {
 
 export function useNotebookMarkFocus(notebookId?: string): void {
     const { user } = useUser()
-    const userId = user?.id || (user as { profile?: { id?: string } } | null)?.profile?.id
-    const username = (user as { username?: string; profile?: { username?: string } } | null)?.username || user?.profile?.username
+    const { appWindow } = useWindow()
+    const userId = user?.id
+    const username = user?.username
 
     useEffect(() => {
         if (!notebookId || typeof window === 'undefined') return
-        const mark = markParamFromLocation()
+        const mark =
+            markFromString(appWindow?.path) ||
+            markFromString(`${window.location.pathname}${window.location.search}${window.location.hash}`)
         if (!mark) return
 
         let tries = 0
@@ -62,5 +62,5 @@ export function useNotebookMarkFocus(notebookId?: string): void {
             if (tick() || tries > 25) window.clearInterval(timer)
         }, 120)
         return () => window.clearInterval(timer)
-    }, [notebookId, userId, username])
+    }, [notebookId, userId, username, appWindow?.path])
 }
