@@ -98,8 +98,9 @@ export function NotebookEditorReader({
         ) : null
 
     const share = notebookId ? (
-        <div data-sidebar-label>
+        <div data-sidebar-label className="flex flex-col gap-3">
             <NotebookInvitePanel notebookId={notebookId} isOpen />
+            <NotebookExportPanel notebookId={notebookId} />
         </div>
     ) : null
 

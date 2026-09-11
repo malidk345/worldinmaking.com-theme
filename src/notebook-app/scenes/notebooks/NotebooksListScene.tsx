@@ -26,6 +26,7 @@ import {
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
     getOrCreateDailyNotebook,
+    getNotebookWithContent,
     rememberRemoteNotebook,
     rememberRemoteNotebooks,
     WIM_NOTEBOOKS_CHANGED_EVENT,
@@ -141,25 +142,37 @@ export function NotebooksListScene({
     }
 
     const handleExportJSON = (notebook: NotebookBrowserItem) => {
-        const jsonStr = exportNotebookAsJSON(notebook.id)
-        const blob = new Blob([jsonStr], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${notebook.title.replace(/\s+/g, '_')}.json`
-        a.click()
-        URL.revokeObjectURL(url)
+        void getNotebookWithContent(notebook.id).then((full) => {
+            if (!full || full.contentOmitted) {
+                addToast({ description: 'Could not load the notebook body for export.', error: true })
+                return
+            }
+            const jsonStr = exportNotebookAsJSON(full.id)
+            const blob = new Blob([jsonStr], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${(full.title || notebook.title).replace(/\s+/g, '_')}.json`
+            a.click()
+            URL.revokeObjectURL(url)
+        })
     }
 
     const handleExportMd = (notebook: NotebookBrowserItem) => {
-        const md = exportNotebookAsMarkdown(notebook.id)
-        const blob = new Blob([md], { type: 'text/markdown' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${notebook.title.replace(/\s+/g, '_')}.md`
-        a.click()
-        URL.revokeObjectURL(url)
+        void getNotebookWithContent(notebook.id).then((full) => {
+            if (!full || full.contentOmitted) {
+                addToast({ description: 'Could not load the notebook body for export.', error: true })
+                return
+            }
+            const md = exportNotebookAsMarkdown(full.id)
+            const blob = new Blob([md], { type: 'text/markdown' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${(full.title || notebook.title).replace(/\s+/g, '_')}.md`
+            a.click()
+            URL.revokeObjectURL(url)
+        })
     }
 
     const filteredNotebooks = notebooks.filter((nb) => {

@@ -25,11 +25,20 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — notebook slim list + mention/comment notifications + Supabase audit.
+- **Status:** `[COMPLETED by Grok]` — notebook selectable-text PDF export.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (notebook text PDF)
+- **Scope:** Share/Options PDF was a screenshot (`html-to-image` JPEG into jsPDF). User asked for a normal PDF. Same generator is used from the Share tab and the Options export menu.
+- **Implementation:**
+  - Walk parsed markdown and write real text with jsPDF + DejaVu (Turkish/latin-ext). Images stay images. No html-to-image on this path.
+  - Print opens a paper article iframe (browser Save as PDF also gets real text).
+  - Slim-list notebooks hydrate by id before PDF/md/json export.
+  - Export panel is on the Share sidebar as well as Options. Print CSS forces `content-visibility: visible`.
+- **Files Modified:** exportNotebookPdf.ts, notebookSidebarPanels.tsx, NotebookEditorReader.tsx, notebookStorage.ts, NotebooksListScene.tsx, ensureNotebookProductStyles.ts, site-bridge.scss, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
 
 ### 2026-09-11 — Grok (notebook list/mentions/notify)
 - **Scope:** Continue notebook optimization after PR #534. Audit live Supabase `iydypisgfaksqkjdraiu` and close gaps. No Yjs. Markdown remains source of truth.

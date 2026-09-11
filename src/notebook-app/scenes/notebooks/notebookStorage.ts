@@ -6,6 +6,7 @@ import {
     notebookChromeSyncFromRemoteResult,
     pickNewerNotebook,
     pullNotebooksFromRemote,
+    pullNotebookById,
     pushAllNotebooksToRemote,
     pushNotebookToRemote,
     rememberDeletedNotebookId,
@@ -659,6 +660,15 @@ if (typeof window !== 'undefined') {
 
 export function getNotebook(id: string): StoredNotebook | undefined {
     return getNotebooks().find((n) => n.id === id || n.short_id === id)
+}
+
+/** List rows omit bodies; export/PDF/print need the markdown. */
+export async function getNotebookWithContent(id: string): Promise<StoredNotebook | undefined> {
+    const local = getNotebook(id)
+    if (local && !local.contentOmitted) return local
+    const remote = await pullNotebookById(id)
+    if (remote && !remote.contentOmitted) return rememberRemoteNotebook(remote)
+    return local
 }
 
 /** Merge a remote/shared notebook into local storage without bumping version. */
