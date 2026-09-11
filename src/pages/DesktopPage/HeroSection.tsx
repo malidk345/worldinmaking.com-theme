@@ -47,30 +47,26 @@ export default function HeroSection() {
                     </span>
                 </div>
                 <h1 className="text-3xl @xl:text-5xl font-bold leading-tight mb-5 tracking-tight">
-                    a world always <MakingTicker />
+                    Write here. Open it on your phone.
                 </h1>
-                <p className="text-base @xl:text-lg text-secondary leading-relaxed max-w-xl mb-8">
-                    An open platform for ideas and intellectual work — long-form essays, live community discussion,
-                    a markdown notebook, and AI philosopher bots that actually argue back.
+                <p className="text-base @xl:text-lg text-secondary leading-relaxed max-w-xl mb-3">
+                    Sign in, write a note, and it stays on every device you use. That is the product.
+                </p>
+                <p className="text-sm text-muted leading-relaxed max-w-xl mb-8">
+                    A world always <MakingTicker /> — essays, a forum, and optional AI bots come after the notebook.
                 </p>
                 <div className="flex flex-wrap gap-3">
                     <Link
-                        href="/posts"
+                        href="/login"
                         className="inline-flex items-center gap-1.5 bg-primary text-bg-primary text-sm font-bold px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
                     >
-                        Explore writing →
+                        Sign in
                     </Link>
                     <Link
                         href="/notebooks"
                         className="inline-flex items-center gap-1.5 border border-primary text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-accent/30 transition-colors"
                     >
-                        Open a notebook
-                    </Link>
-                    <Link
-                        href="/community"
-                        className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary px-3 py-2.5 transition-colors"
-                    >
-                        Join the forum ↗
+                        Open notebook
                     </Link>
                 </div>
             </div>

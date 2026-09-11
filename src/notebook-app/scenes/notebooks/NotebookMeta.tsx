@@ -3,7 +3,7 @@ import { IconExpand } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
-export type NotebookChromeSyncStatus = 'saved' | 'edited' | 'local' | 'error' | 'offline'
+export type NotebookChromeSyncStatus = 'saved' | 'edited' | 'local' | 'error' | 'offline' | 'conflict'
 
 const NAVY = '#1D4ED8'
 const NAVY_FILL = 'rgba(29, 78, 216, 0.1)'
@@ -61,25 +61,29 @@ export interface NotebookSyncInfoProps {
 export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncInfoProps): JSX.Element {
     const statusText: Record<NotebookChromeSyncStatus, string> = {
         saved: 'Saved',
-        edited: 'Syncing',
-        local: 'Local',
-        error: 'Sync failed',
-        offline: 'Offline',
+        edited: 'Saving…',
+        local: 'On this device',
+        error: 'Could not save to cloud — try again',
+        offline: 'No internet — saved here',
+        conflict: 'Two devices edited this — check the text',
     }
 
     const title =
         message ||
         (syncStatus === 'saved'
-            ? 'Saved on this device. Cloud sync is up to date.'
+            ? 'Saved. You can open this notebook on another device.'
             : syncStatus === 'edited'
-              ? 'Syncing…'
+              ? 'Saving…'
               : syncStatus === 'error'
-                ? 'Cloud sync failed. Notebook is still saved on this device.'
+                ? 'Cloud save failed. The note is still on this device. Click to try again.'
                 : syncStatus === 'offline'
-                  ? 'Offline. Notebook is saved on this device.'
-                  : 'Saved on this device only')
+                  ? 'You are offline. The note is on this device and will upload later.'
+                  : syncStatus === 'conflict'
+                    ? 'This page and another device both changed the note. Your latest words were kept. Read the page once.'
+                    : 'Saved on this device only. Sign in to keep it everywhere.')
 
     const canRetry = (syncStatus === 'error' || syncStatus === 'offline') && Boolean(onRetry)
+    const warn = syncStatus === 'error' || syncStatus === 'offline' || syncStatus === 'conflict'
 
     return (
         <Tooltip
@@ -89,13 +93,7 @@ export function NotebookSyncInfo({ syncStatus, message, onRetry }: NotebookSyncI
                     onClick={canRetry ? onRetry : undefined}
                     className={`inline-flex items-center ${canRetry ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                    <span
-                        style={
-                            syncStatus === 'error' || syncStatus === 'offline' ? errorTagStyle : syncTagStyle
-                        }
-                    >
-                        {statusText[syncStatus]}
-                    </span>
+                    <span style={warn ? errorTagStyle : syncTagStyle}>{statusText[syncStatus]}</span>
                 </button>
             }
             side="bottom"
