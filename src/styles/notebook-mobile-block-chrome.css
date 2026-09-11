@@ -61,6 +61,20 @@
         opacity: 0.8 !important;
         pointer-events: auto !important;
     }
+
+    .MarkdownNotebook__insert-menu {
+        max-width: calc(100vw - 16px) !important;
+        max-height: min(240px, 42vh) !important;
+    }
+
+    .MarkdownNotebook__insert-category h5 {
+        display: none;
+    }
+
+    .MarkdownNotebook__insert-item {
+        min-height: 34px;
+        height: 34px;
+    }
 }
 
 @media (max-width: 420px), (pointer: coarse) {
