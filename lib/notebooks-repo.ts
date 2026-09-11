@@ -313,10 +313,37 @@ export async function listDeletedNotebookIds(
     const { data, error } = await query.limit(500)
     if (error) throw error
     const leftover = (data as { id: string; owner_key: string; auth_user_id: string | null }[] | null) || []
-    for (const row of leftover) {
-        await recordSyncTombstone('notebook', row.id, row.owner_key, row.auth_user_id)
-        await supabaseAdmin.from('wim_notebook_history').delete().eq('notebook_id', row.id)
-        await supabaseAdmin.from('wim_notebooks').delete().eq('id', row.id)
+    if (leftover.length) {
+        const ids = leftover.map((row) => row.id)
+        // Batch hard-delete cleanup: previously each stale row caused 3 sequential
+        // round trips (tombstone upsert + history delete + row delete). On a list GET
+        // that could stall sync with ~1500 sequential writes.
+        try {
+            await supabaseAdmin.from('wim_sync_tombstones').upsert(
+                leftover.map((row) => ({
+                    kind: 'notebook',
+                    item_id: row.id,
+                    owner_key: row.owner_key,
+                    auth_user_id: row.auth_user_id,
+                    deleted_at: new Date().toISOString(),
+                })),
+                { onConflict: 'kind,item_id' }
+            )
+        } catch (tombErr: any) {
+            const message = String(tombErr?.message || tombErr)
+            if (!message.includes('wim_sync_tombstones') && !message.includes('schema cache')) {
+                // Tombstone ledger is a soft guarantee; the content rows below still get purged.
+                console.warn('[listDeletedNotebookIds] tombstone batch failed', tombErr)
+            }
+        }
+        // Chunk `in(...)` queries so ~500 UUID list GETs never exceed URL limits.
+        for (let i = 0; i < ids.length; i += 100) {
+            const chunk = ids.slice(i, i + 100)
+            await Promise.all([
+                supabaseAdmin.from('wim_notebook_history').delete().in('notebook_id', chunk),
+                supabaseAdmin.from('wim_notebooks').delete().in('id', chunk),
+            ])
+        }
     }
     return Array.from(new Set([...fromLedger, ...leftover.map((row) => row.id)]))
 }
@@ -462,23 +489,29 @@ export async function upsertNotebook(
     const saved = rowToDTO(data as StoredNotebookRow, accessRole)
     if (userId) {
         const previousContent = existing ? String((existing as StoredNotebookRow).content || '') : ''
-        try {
-            await notifyNotebookMentions({
-                notebookId: saved.id,
-                title: saved.title,
-                content: saved.content,
-                actorId: userId,
-            })
-            await notifyNotebookComments({
-                notebookId: saved.id,
-                title: saved.title,
-                previousContent,
-                content: saved.content,
-                actorId: userId,
-                ownerUserId: saved.auth_user_id || userId,
-            })
-        } catch (err) {
-            console.warn('[notebooks-repo] mention/comment notify failed', err)
+        // No-op saves (idle serialize with an unchanged body) must not re-scan or
+        // re-write mention/comment notification rows on every autosave tick.
+        const contentChanged = previousContent !== saved.content
+        if (contentChanged) {
+            try {
+                await notifyNotebookMentions({
+                    notebookId: saved.id,
+                    title: saved.title,
+                    content: saved.content,
+                    previousContent,
+                    actorId: userId,
+                })
+                await notifyNotebookComments({
+                    notebookId: saved.id,
+                    title: saved.title,
+                    previousContent,
+                    content: saved.content,
+                    actorId: userId,
+                    ownerUserId: saved.auth_user_id || userId,
+                })
+            } catch (err) {
+                console.warn('[notebooks-repo] mention/comment notify failed', err)
+            }
         }
     }
     return saved
@@ -492,6 +525,11 @@ export async function upsertNotebooks(
 ): Promise<number> {
     if (!notebooks.length) return 0
     const updatedRows: Omit<StoredNotebookRow, never>[] = []
+
+    // Load the delete ledger once instead of one `hasSyncTombstone` round trip per
+    // notebook (bulk client sync pushes every writable notebook in one request).
+    const tombstoneIds = new Set(await listSyncTombstoneIds('notebook', ownerKey, userId))
+    const isDeleted = (id: string | undefined): boolean => Boolean(id && tombstoneIds.has(id))
 
     for (const nb of notebooks) {
         const { data: existing } = await supabaseAdmin
@@ -513,7 +551,7 @@ export async function upsertNotebooks(
                 nb.auth_user_id = userId
             }
             if (current.deleted_at) continue
-            if (await hasSyncTombstone('notebook', nb.id)) continue
+            if (isDeleted(nb.id) || isDeleted(nb.short_id)) continue
             if (nb.contentOmitted) continue
             const currentDbVersion = Number(current.version || 1)
             const incomingVersion = Number(nb.version || 0)
@@ -534,7 +572,7 @@ export async function upsertNotebooks(
                 nb.publish = current.publish ?? nb.publish
             }
         } else {
-            if (await hasSyncTombstone('notebook', nb.id)) continue
+            if (isDeleted(nb.id) || isDeleted(nb.short_id)) continue
             nb.version = Math.max(1, Number(nb.version || 1))
         }
         updatedRows.push(dtoToRow(nb, persistOwnerKey))

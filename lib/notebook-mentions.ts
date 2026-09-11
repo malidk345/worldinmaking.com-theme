@@ -168,11 +168,27 @@ export async function notifyNotebookMentions(input: {
     notebookId: string
     title?: string
     content: string
+    previousContent?: string
     actorId?: string | null
 }): Promise<void> {
     const actorId = input.actorId || null
     const tokens = extractNotebookMentionTokens(input.content)
     if (!tokens.ids.length && !tokens.handles.length) return
+
+    // Re-typing around an existing mention must not re-resolve profiles or re-write
+    // the same notification rows on every autosave tick. Only act when the mention
+    // set itself actually changed.
+    if (input.previousContent) {
+        const previous = extractNotebookMentionTokens(input.previousContent)
+        if (
+            previous.ids.length === tokens.ids.length &&
+            previous.handles.length === tokens.handles.length &&
+            previous.ids.every((id, index) => id === tokens.ids[index]) &&
+            previous.handles.every((handle, index) => handle === tokens.handles[index])
+        ) {
+            return
+        }
+    }
 
     const valid = await resolveProfileIds(tokens.ids, tokens.handles)
     const excerpt = (input.title || 'Notebook').trim().slice(0, 180)

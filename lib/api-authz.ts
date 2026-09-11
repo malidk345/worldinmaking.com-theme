@@ -30,11 +30,18 @@ export function getBearerToken(req: Request): string | null {
 /**
  * Validate Supabase user JWT via Auth REST only (signature + expiry checked by GoTrue).
  * Never decode an unverified JWT. Never embed project keys in source.
+ *
+ * `withProfile` (default true) additionally fetches the user's `profiles` row.
+ * Hot notebook routes only read `user.id`, so `resolveNotebookOwner` opts out to
+ * save one Supabase round trip per save.
  */
 export async function getSupabaseUserFromBearer(
-    token: string | null | undefined
+    token: string | null | undefined,
+    options?: { withProfile?: boolean }
 ): Promise<Record<string, any> | null> {
     if (!token || token.length < 20) return null
+
+    const withProfile = options?.withProfile !== false
 
     const env = getRuntimeEnv()
     const base =
@@ -69,7 +76,7 @@ export async function getSupabaseUserFromBearer(
         const user = (await res.json()) as Record<string, any>
         if (!user?.id || typeof user.id !== 'string') return null
 
-        if (serviceKey) {
+        if (withProfile && serviceKey) {
             try {
                 const profileRes = await fetch(
                     `${base.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=*`,
@@ -98,9 +105,10 @@ export async function getSupabaseUserFromBearer(
 }
 
 export async function getSupabaseUserFromRequest(
-    req: Request
+    req: Request,
+    options?: { withProfile?: boolean }
 ): Promise<Record<string, any> | null> {
-    return getSupabaseUserFromBearer(getBearerToken(req))
+    return getSupabaseUserFromBearer(getBearerToken(req), options)
 }
 
 /**
@@ -114,7 +122,7 @@ export async function resolveNotebookOwner(
     req: Request,
     claimedOwnerKey: string | undefined | null
 ): Promise<NotebookAuthOk | AuthzFail> {
-    const user = await getSupabaseUserFromRequest(req)
+    const user = await getSupabaseUserFromRequest(req, { withProfile: false })
     if (user) {
         // Prefer JWT binding; ignore mismatched claimed keys from clients
         return { ok: true, ownerKey: user.id, via: 'jwt', userId: user.id }

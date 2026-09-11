@@ -20,11 +20,15 @@ import {
 } from '../../../../lib/notebooks-repo'
 import { extraOwnerKeysFromRequest, resolveNotebookOwner } from '../../../../lib/api-authz'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
+}
+
+const PUBLIC_CACHE = {
+    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
 }
 
 /** Extract dynamic [id] from /api/notebooks/:id (edge Request has no req.query). */
@@ -48,7 +52,7 @@ export default async function handler(req: Request) {
             if (asPublic) {
                 const nb = await getNotebookByIdOrShort(id, { publishedOnly: true })
                 if (!nb) return json({ error: 'Not found' }, 404)
-                return json({ notebook: nb })
+                return json({ notebook: nb }, 200, PUBLIC_CACHE)
             }
 
             const auth = await resolveNotebookOwner(req, claimedOwner)

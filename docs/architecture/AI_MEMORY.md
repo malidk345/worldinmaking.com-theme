@@ -31,6 +31,24 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — opencode (big-pickle) (Backend Optimization: Notebook API Hot Paths)
+- **Scope:** Optimize WIM notebook backend so sync/save/list work smoothly. Frontend contract preserved — no response-shape or client-code changes.
+- **Implementation:**
+  1. `lib/notebooks-repo.ts` `listDeletedNotebookIds` (runs inside every list GET): replaced per-row sequential cleanup (~up to 1500 round trips: tombstone upsert + history delete + row delete each) with ONE batched tombstone upsert + chunked batched history/row deletes. Stale-DB list syncs no longer stall.
+  2. `lib/notebooks-repo.ts` `upsertNotebook`: skip mention/comment notification work entirely when the saved body is unchanged vs previous save (no-op idle-serialize saves no longer re-scan/re-write notifications).
+  3. `lib/notebooks-repo.ts` `upsertNotebooks` (bulk client push): load the sync-tombstone ledger once and check in-memory instead of one `hasSyncTombstone` round trip per notebook.
+  4. `lib/notebook-mentions.ts` `notifyNotebookMentions`: new `previousContent` param short-circuits when the @mention id/handle set didn't change (no profile re-resolve, no notification row re-writes on each autosave).
+  5. `lib/api-authz.ts`: added `withProfile` option; `resolveNotebookOwner` now skips the `/rest/v1/profiles` enrichment (notebook routes only read `user.id`), removing one Supabase round trip per notebook API call. All direct `getSupabaseUserFromRequest` callers (forum/billing/account/bots) keep profile enrichment (default unchanged).
+  6. `src/pages/api/notebooks/index.ts` + `[id].ts`: public (=published) GET reads now send `Cache-Control: public, s-maxage=60, stale-while-revalidate=120`. Authenticated endpoints remain uncached.
+- **Verification:** `pnpm run typecheck:shell` — PASS, 0 gated errors in core shell allowlist (notebook routes pull `lib/notebooks-repo.ts` / `lib/api-authz.ts` / `lib/notebook-mentions.ts` transitively).
+- **Files Modified:**
+  - `lib/notebooks-repo.ts`
+  - `lib/notebook-mentions.ts`
+  - `lib/api-authz.ts`
+  - `src/pages/api/notebooks/index.ts`
+  - `src/pages/api/notebooks/[id].ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — Antigravity (Remove Standalone Block Comment Button & Compact Three-Dot More Button)
 - **Scope:**
   1. Removed redundant standalone block comment button (`.MarkdownNotebook__block-comment-btn`) from the block chrome (`MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `notebook-mobile-block-chrome.css`). The "Comment" action is already present as the first option inside the three-dot more menu (`buildBlockMoreMenuItems`).
