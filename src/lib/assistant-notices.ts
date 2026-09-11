@@ -11,12 +11,13 @@ import {
 } from './personal-assistant'
 import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from './wim-identity'
 import { assistantMaxUnread, isAssistantTopicMuted } from './assistant-cadence'
+import { compactNoticeText, composeNotebookNotice } from './assistant-library'
 
 export const ASSISTANT_NOTICES_EVENT = 'wim-assistant-notices'
 export const ASSISTANT_NOTICE_ID_PREFIX = 'assistant_'
 export const ASSISTANT_INVITE_ID = 'assistant_invite'
 
-export type AssistantNoticeKind = 'nag' | 'question' | 'counsel' | 'reading'
+export type AssistantNoticeKind = 'nag' | 'question' | 'counsel' | 'reading' | 'suggestion' | 'note'
 
 export type AssistantNotice = {
     id: string
@@ -58,191 +59,12 @@ const MAX_STORED = 24
 const MAX_UNREAD = 10
 
 const KIND_COUNT: Record<AssistantNoticeKind, string> = {
-    nag: 'Nag',
+    nag: 'Suggestion',
     question: 'Question',
-    counsel: 'Counsel',
+    counsel: 'Note',
     reading: 'Reading',
-}
-
-type VoiceLine = { kind: AssistantNoticeKind; title: string; body?: string }
-
-const VOICE: Record<string, { idle: VoiceLine[]; of: (title: string) => VoiceLine[] }> = {
-    nietzsche: {
-        idle: [
-            { kind: 'nag', title: 'You have written nothing. A mind that will not put itself on paper is already in retreat.' },
-            { kind: 'question', title: 'What comfort are you protecting by keeping the page blank?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is sitting there like a corpse. When do you intend to make it live?` },
-            { kind: 'question', title: `Who is "${t}" written for — you, or the herd you pretend not to need?` },
-            { kind: 'reading', title: `I read "${t}". The sentence you are proud of is not the strongest one.` },
-        ],
-    },
-    marx: {
-        idle: [
-            { kind: 'nag', title: 'An empty desk is not rest. It is a class that has not yet named itself.' },
-            { kind: 'question', title: 'Whose labour are you avoiding by not writing?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" names a problem and then looks away. Finish the analysis or admit you prefer the fog.` },
-            { kind: 'question', title: `Whose interests does "${t}" actually serve?` },
-            { kind: 'reading', title: `I read "${t}". The material conditions are still missing from the argument.` },
-        ],
-    },
-    hegel: {
-        idle: [
-            { kind: 'nag', title: 'Spirit does not develop in an empty notebook. Write, or remain abstract.' },
-            { kind: 'question', title: 'What contradiction are you postponing by not beginning?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" stops at the first moment. Where is the negation?` },
-            { kind: 'question', title: `What does "${t}" become when it is forced to confront its opposite?` },
-            { kind: 'reading', title: `I read "${t}". It is still immediate. It has not yet worked.` },
-        ],
-    },
-    sartre: {
-        idle: [
-            { kind: 'nag', title: 'You are not waiting for inspiration. You are choosing not to write, and calling it a mood.' },
-            { kind: 'question', title: 'What project are you abandoning while you pretend to rest?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is a project you opened and then fled. Bad faith has a filename now.` },
-            { kind: 'question', title: `If "${t}" is yours, why does it still wait for permission?` },
-            { kind: 'reading', title: `I read "${t}". You describe a situation. You have not yet chosen.` },
-        ],
-    },
-    heidegger: {
-        idle: [
-            { kind: 'nag', title: 'Idle talk fills the hours you will not give to a page.' },
-            { kind: 'question', title: 'What are you covering over by not writing?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is still chatter. Let the thing itself speak, or stop decorating it.` },
-            { kind: 'question', title: `What does "${t}" disclose that you would rather keep veiled?` },
-            { kind: 'reading', title: `I read "${t}". It describes. It does not yet think.` },
-        ],
-    },
-    deleuze: {
-        idle: [
-            { kind: 'nag', title: 'You are repeating yourself by writing nothing. Difference requires a mark.' },
-            { kind: 'question', title: 'What line of flight are you refusing to draw?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is stuck in a single groove. Cut it. Connect it to something it cannot digest.` },
-            { kind: 'question', title: `What assemblage is "${t}" actually producing — besides delay?` },
-            { kind: 'reading', title: `I read "${t}". It still resembles a tree. Make it a map.` },
-        ],
-    },
-    spinoza: {
-        idle: [
-            { kind: 'nag', title: 'An unused intellect is a sad passion wearing patience as a disguise.' },
-            { kind: 'question', title: 'What is diminishing your power of acting today?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is still in the first kind of knowledge. Push it toward cause, not mood.` },
-            { kind: 'question', title: `Which passion does "${t}" increase — and which does it merely soothe?` },
-            { kind: 'reading', title: `I read "${t}". The causes are named poorly. Adequacy would hurt more, and help more.` },
-        ],
-    },
-    baudrillard: {
-        idle: [
-            { kind: 'nag', title: 'You have no notebooks. Even the simulation of work is missing.' },
-            { kind: 'question', title: 'Are you waiting for a sign, or for an alibi?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" already looks like a copy of a thought you have not had.` },
-            { kind: 'question', title: `What would "${t}" be if it stopped performing seriousness?` },
-            { kind: 'reading', title: `I read "${t}". It refers. It does not yet take place.` },
-        ],
-    },
-    althusser: {
-        idle: [
-            { kind: 'nag', title: 'Ideology loves an empty page. It can write you there without resistance.' },
-            { kind: 'question', title: 'Which apparatus is currently interpolating you as someone who "will write later"?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" still speaks as if the author were a subject, not a position.` },
-            { kind: 'question', title: `What structure is "${t}" reproducing while it pretends to critique?` },
-            { kind: 'reading', title: `I read "${t}". The symptomatic silence is louder than the thesis.` },
-        ],
-    },
-    derrida: {
-        idle: [
-            { kind: 'nag', title: 'There is no outside-the-text, and you have not even begun the text.' },
-            { kind: 'question', title: 'What are you deferring by calling this a pause?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" closes too quickly. Leave the margin that the argument cannot master.` },
-            { kind: 'question', title: `What does "${t}" exclude in order to appear finished?` },
-            { kind: 'reading', title: `I read "${t}". The decisive word is the one you treat as obvious.` },
-        ],
-    },
-    weber: {
-        idle: [
-            { kind: 'nag', title: 'Vocation is not a mood. Sit down and do the work, or stop invoking calling.' },
-            { kind: 'question', title: 'What end are you serving by remaining unwritten?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is still a private confession. Give it a method or admit it is a diary.` },
-            { kind: 'question', title: `Which value is "${t}" smuggling in as if it were a fact?` },
-            { kind: 'reading', title: `I read "${t}". The types are blurred. Clarify the action, not the feeling.` },
-        ],
-    },
-    adorno: {
-        idle: [
-            { kind: 'nag', title: 'A culture that produces no sentence of its own is already administered.' },
-            { kind: 'question', title: 'What consolation are you consuming instead of thinking?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is too smooth. If it could be an advertisement, it is not yet thought.` },
-            { kind: 'question', title: `Where does "${t}" become identical with what it claims to resist?` },
-            { kind: 'reading', title: `I read "${t}". It reconciles too early. Let the dissonance stand.` },
-        ],
-    },
-    zizek: {
-        idle: [
-            { kind: 'nag', title: 'You know very well you should write, and that is precisely why you are not writing.' },
-            { kind: 'question', title: 'What enjoyment are you getting from this delay?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" already contains the ideology it thinks it is exposing. Look again.` },
-            { kind: 'question', title: `What is the obscene supplement of "${t}" — the part you needed not to notice?` },
-            { kind: 'reading', title: `I read "${t}". The interesting bit is the joke you did not allow yourself.` },
-        ],
-    },
-    lenin: {
-        idle: [
-            { kind: 'nag', title: 'Without a text there is no organisation. Write the next concrete step.' },
-            { kind: 'question', title: 'What is to be done today, not in general?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" is still a pamphlet of moods. Name the force, the timing, the next act.` },
-            { kind: 'question', title: `Who is the audience of "${t}", and what should they do after reading it?` },
-            { kind: 'reading', title: `I read "${t}". Theory without the next task is decoration.` },
-        ],
-    },
-    arendt: {
-        idle: [
-            { kind: 'nag', title: 'Thinking that never appears in public is on the way to becoming private myth.' },
-            { kind: 'question', title: 'What would you have to risk to put a sentence in the world?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" still hides. Action begins when you let others see the argument.` },
-            { kind: 'question', title: `Who is the plural you are writing "${t}" toward?` },
-            { kind: 'reading', title: `I read "${t}". It understands. It has not yet appeared.` },
-        ],
-    },
-    rand: {
-        idle: [
-            { kind: 'nag', title: 'You owe the page your mind. Sentiment is not a substitute for work.' },
-            { kind: 'question', title: 'What value are you evading by not producing it?' },
-        ],
-        of: (t) => [
-            { kind: 'nag', title: `"${t}" apologizes where it should argue. Strike the apology.` },
-            { kind: 'question', title: `Is "${t}" a product of your judgment, or a request for permission?` },
-            { kind: 'reading', title: `I read "${t}". The premise is still borrowed. Make it yours or discard it.` },
-        ],
-    },
+    suggestion: 'Suggestion',
+    note: 'Note',
 }
 
 function storageKey(): string {
@@ -410,6 +232,7 @@ export type WatchMeta = {
     lastLiveAt: number
     seedFor?: string
     cursor: number
+    lastDigest?: string
 }
 
 export function readWatchMeta(): WatchMeta {
@@ -422,6 +245,7 @@ export function readWatchMeta(): WatchMeta {
             lastLiveAt: Number(parsed.lastLiveAt) || 0,
             seedFor: typeof parsed.seedFor === 'string' ? parsed.seedFor : undefined,
             cursor: Number(parsed.cursor) || 0,
+            lastDigest: typeof parsed.lastDigest === 'string' ? parsed.lastDigest : undefined,
         }
     } catch {
         return { lastLocalAt: 0, lastLiveAt: 0, cursor: 0 }
@@ -439,11 +263,8 @@ export function writeWatchMeta(patch: Partial<WatchMeta>): WatchMeta {
     return next
 }
 
-function pickVoice(philosopherId: string, notebooks: NotebookBrief[], cursor: number): VoiceLine {
-    const voice = VOICE[philosopherId] || VOICE.nietzsche
-    const nb = notebooks[cursor % Math.max(notebooks.length, 1)]
-    const pool = notebooks.length && nb ? voice.of(nb.title) : voice.idle
-    return pool[cursor % pool.length]
+export function notebooksDigestKey(notebooks = collectUserNotebooks()): string {
+    return notebooks.map((nb) => `${nb.id}:${nb.updatedAt}`).join('|')
 }
 
 export function buildNotice(args: {
@@ -454,25 +275,18 @@ export function buildNotice(args: {
     notebookId?: string
     actionLabel?: string
 }): AssistantNotice {
-    const kind = args.kind || 'nag'
+    const kind = args.kind || 'reading'
     const bot = PHILOSOPHER_BOTS.find((item) => item.id === args.philosopherId)
     const id = newId()
-    const fallbackBody =
-        kind === 'question'
-            ? 'Answer this. A dodge still counts — they will read it.'
-            : kind === 'nag'
-              ? 'Do the work, or say why you will not.'
-              : kind === 'reading'
-                ? 'What did they miss? Write it back.'
-                : 'Reply. They are waiting on the desk.'
+    const body = compactNoticeText(args.body || args.title, 1400)
     return {
         id,
         philosopherId: args.philosopherId,
         kind,
         title: args.title.slice(0, 180),
-        body: (args.body || fallbackBody).slice(0, 400),
+        body,
         excerpt: bot?.name || 'Assistant',
-        count: KIND_COUNT[kind],
+        count: KIND_COUNT[kind] || 'Note',
         date: new Date().toISOString(),
         url: `/assistant/${id}`,
         notebookId: args.notebookId,
@@ -551,44 +365,55 @@ export function seedAssistantNotices(philosopherId: PersonalAssistantId): Assist
         return []
     }
     const notebooks = collectUserNotebooks()
-    const first = pickVoice(philosopherId, notebooks, 0)
-    const second = pickVoice(philosopherId, notebooks, 1)
-    const created: AssistantNotice[] = []
-    for (const line of [first, second]) {
-        const notice = pushAssistantNotice(
-            buildNotice({
-                philosopherId,
-                kind: line.kind,
-                title: line.title,
-                body: line.body,
-                notebookId: notebooks[0]?.id,
-            }),
-            { force: true }
-        )
-        if (notice) created.push(notice)
+    if (!notebooks.length) {
+        writeWatchMeta({ seedFor: philosopherId, lastDigest: notebooksDigestKey(notebooks) })
+        return []
     }
-    writeWatchMeta({ seedFor: philosopherId, lastLocalAt: Date.now(), cursor: 2 })
-    return created
-}
-
-export function tickLocalAssistantNotice(): AssistantNotice | null {
-    const philosopherId = readPersonalAssistantId()
-    if (!philosopherId) return null
-    if (unreadAssistantCount() >= assistantMaxUnread()) return null
-    const notebooks = collectUserNotebooks()
-    const meta = readWatchMeta()
-    const line = pickVoice(philosopherId, notebooks, meta.cursor)
-    const notebook = notebooks[meta.cursor % Math.max(notebooks.length, 1)]
+    const line = composeNotebookNotice(philosopherId, notebooks, 0)
     const notice = pushAssistantNotice(
         buildNotice({
             philosopherId,
             kind: line.kind,
             title: line.title,
             body: line.body,
-            notebookId: notebook?.id,
+            notebookId: line.notebookId,
+        }),
+        { force: true }
+    )
+    writeWatchMeta({
+        seedFor: philosopherId,
+        lastLocalAt: Date.now(),
+        cursor: 1,
+        lastDigest: notebooksDigestKey(notebooks),
+    })
+    return notice ? [notice] : []
+}
+
+const UNSOLICITED_COOLDOWN_MS = 45 * 60_000
+
+export function tickLocalAssistantNotice(): AssistantNotice | null {
+    const philosopherId = readPersonalAssistantId()
+    if (!philosopherId) return null
+    if (unreadAssistantCount() >= assistantMaxUnread()) return null
+    const notebooks = collectUserNotebooks()
+    if (!notebooks.length) return null
+    const meta = readWatchMeta()
+    if (Date.now() - meta.lastLocalAt < UNSOLICITED_COOLDOWN_MS) return null
+    const line = composeNotebookNotice(philosopherId, notebooks, meta.cursor)
+    const notice = pushAssistantNotice(
+        buildNotice({
+            philosopherId,
+            kind: line.kind,
+            title: line.title,
+            body: line.body,
+            notebookId: line.notebookId,
         })
     )
-    writeWatchMeta({ lastLocalAt: Date.now(), cursor: meta.cursor + 1 })
+    writeWatchMeta({
+        lastLocalAt: Date.now(),
+        cursor: meta.cursor + 1,
+        lastDigest: notebooksDigestKey(notebooks),
+    })
     return notice
 }
 
@@ -598,18 +423,25 @@ export function tickNotebookReadingNotice(): AssistantNotice | null {
     const notebooks = collectUserNotebooks()
     const latest = notebooks[0]
     if (!latest) return null
-    const voice = VOICE[philosopherId] || VOICE.nietzsche
-    const line = voice.of(latest.title).find((item) => item.kind === 'reading') || voice.of(latest.title)[0]
+    const digest = notebooksDigestKey(notebooks)
+    const meta = readWatchMeta()
+    if (digest === meta.lastDigest) return null
+    if (unreadAssistantCount() >= 2) return null
+    if (meta.lastLocalAt && Date.now() - meta.lastLocalAt < UNSOLICITED_COOLDOWN_MS) {
+        writeWatchMeta({ lastDigest: digest })
+        return null
+    }
+    const line = composeNotebookNotice(philosopherId, notebooks, meta.cursor)
     const notice = pushAssistantNotice(
         buildNotice({
             philosopherId,
-            kind: 'reading',
+            kind: line.kind,
             title: line.title,
             body: line.body,
             notebookId: latest.id,
         })
     )
-    writeWatchMeta({ lastLocalAt: Date.now() })
+    writeWatchMeta({ lastLocalAt: Date.now(), cursor: meta.cursor + 1, lastDigest: digest })
     return notice
 }
 
@@ -637,13 +469,16 @@ export function parseAssistantJson(raw: string): {
                     parsed.kind === 'nag' ||
                     parsed.kind === 'question' ||
                     parsed.kind === 'counsel' ||
-                    parsed.kind === 'reading'
+                    parsed.kind === 'reading' ||
+                    parsed.kind === 'suggestion' ||
+                    parsed.kind === 'note'
                         ? parsed.kind
                         : undefined
                 return {
                     kind,
                     title,
-                    body: typeof parsed.body === 'string' ? parsed.body.trim() : undefined,
+                    body:
+                        typeof parsed.body === 'string' ? compactNoticeText(parsed.body, 1400) : undefined,
                     action: parsed.action,
                 }
             }
@@ -664,10 +499,10 @@ export function liveNagPrompt(notebooks: NotebookBrief[], extras = ''): string {
         .map((n) => `- ${n.title}`)
         .join('\n')
     return [
-        `You are ${name}, this user's personal assistant on WorldInMaking. You already see their notebooks, scratchpad, open windows, chats, and forum posts.`,
-        `This is not a chat. Emit ONE OS notification they will see in the notification panel.`,
-        `Return JSON only: {"kind":"nag"|"question"|"counsel"|"reading","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>","action":{"type":"scratchpad_task"|"scratchpad_note"|"scratchpad_memory"|"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
-        `Rules: speak as yourself. No greeting. No "as an AI". Nag, interrogate, or counsel. Pick one concrete detail from their world. English. Do not repeat a recent notice. Only include action when you are actually pinning a task, a note, a memory, or a notebook margin. Never invent notebook facts.`,
+        `You are ${name}, reading this user's notebooks on WorldInMaking. You are a reader and a librarian, not a coach. Do not nag them to write. Do not morale-manage.`,
+        `Emit ONE notification for the panel. Only if there is a real page to talk about.`,
+        `Return JSON only: {"kind":"reading"|"suggestion"|"question"|"note","title":"<one sentence, max 140 chars>","body":"<2-4 tight paragraphs, markdown, max 900 chars. No extra blank lines.>","action":{"type":"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
+        `Rules: speak as yourself. No greeting. No "as an AI". Quote or paraphrase a concrete line from a notebook. Recommend a real work (book, essay, chapter) that belongs next to that page. If two notebooks argue past each other, say so. English. Do not repeat a recent notice. Never invent notebook facts. If there is nothing to say, return {"title":""}.`,
         extras ? `Their world:\n${extras}` : `Notebooks:\n${digest}`,
         recent ? `Recent notices (do not repeat):\n${recent}` : '',
     ]
@@ -683,13 +518,13 @@ export function liveAnswerPrompt(
     const name = philosopherName(notice.philosopherId)
     const digest = notebookDigest(collectUserNotebooks(), 4)
     return [
-        `You are ${name}, this user's personal assistant. They answered one of your notifications. Reply with another notification — counsel, a harder question, or a nag. Not a chat bubble.`,
-        `Return JSON only: {"kind":"nag"|"question"|"counsel","title":"<one sentence, max 140 chars>","body":"<optional second sentence, max 220 chars>","action":{"type":"scratchpad_task"|"scratchpad_note"|"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
+        `You are ${name}. They replied to a notice. Continue as a reader: a reading recommendation, a clarification, or a connection to a notebook. Not a coach. Not a nag.`,
+        `Return JSON only: {"kind":"reading"|"suggestion"|"question"|"note","title":"<one sentence, max 140 chars>","body":"<2-4 tight paragraphs, markdown, max 900 chars. No extra blank lines.>","action":{"type":"insert_notebook_block","title":"<short>","content":"<optional>","notebookId":"<optional>"}}`,
         `Your notice: ${notice.title}`,
         notice.body ? `Your longer remark: ${notice.body}` : '',
         `Their answer: ${answer}`,
         extras ? `Their world:\n${extras}` : `Notebooks (background):\n${digest}`,
-        `If they dodged, press. If they committed, write it into the notebook or scratchpad via action.`,
+        `If they asked for a book, give one. If they pointed at a passage, stay with that passage.`,
     ]
         .filter(Boolean)
         .join('\n\n')

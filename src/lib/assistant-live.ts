@@ -10,6 +10,8 @@ import {
     buildNotice,
     unreadAssistantCount,
     writeWatchMeta,
+    readWatchMeta,
+    notebooksDigestKey,
     tickLocalAssistantNotice,
 } from './assistant-notices'
 import { readPersonalAssistantId, type PersonalAssistantId } from './personal-assistant'
@@ -23,6 +25,7 @@ import {
     recordAssistantAnswer,
     rememberAssistantFact,
 } from './assistant-memory'
+import { compactNoticeText } from './assistant-library'
 
 async function streamText(
     prompt: string,
@@ -71,7 +74,7 @@ function extrasBlock(): string {
     const world = worldDigest()
     const answers = answersDigest()
     const facts = factsDigest()
-    const dodge = lastAnswersLookLikeDodges() ? 'They have been dodging with short answers. Press that.' : ''
+    const dodge = lastAnswersLookLikeDodges() ? 'Their last replies were short. Stay with the page, do not scold.' : ''
     return [world, `Previous answers:\n${answers}`, facts ? `Things you already know:\n${facts}` : '', dodge]
         .filter(Boolean)
         .join('\n\n')
@@ -85,6 +88,16 @@ export async function requestAssistantLiveNotice(
     if (!philosopherId) return false
     if (kind === 'nag' && unreadAssistantCount() >= assistantMaxUnread()) return false
     const notebooks = collectUserNotebooks()
+    if (kind === 'nag') {
+        if (!notebooks.length) return false
+        const digest = notebooksDigestKey(notebooks)
+        const meta = readWatchMeta()
+        if (digest === meta.lastDigest) return false
+        if (meta.lastLocalAt && Date.now() - meta.lastLocalAt < 45 * 60_000) {
+            writeWatchMeta({ lastDigest: digest })
+            return false
+        }
+    }
     const extras = extrasBlock()
     const prompt =
         kind === 'answer' && answer
@@ -105,9 +118,9 @@ export async function requestAssistantLiveNotice(
         const created = pushAssistantNotice(
             buildNotice({
                 philosopherId,
-                kind: parsed.kind || (kind === 'answer' ? 'counsel' : 'nag'),
+                kind: parsed.kind || (kind === 'answer' ? 'note' : 'reading'),
                 title: parsed.title,
-                body: [parsed.body, actionLabel].filter(Boolean).join(' '),
+                body: compactNoticeText([parsed.body, actionLabel].filter(Boolean).join('\n\n')),
                 notebookId: notebooks[0]?.id,
                 actionLabel: actionLabel || undefined,
             }),
@@ -117,7 +130,7 @@ export async function requestAssistantLiveNotice(
             if (kind === 'nag') return Boolean(tickLocalAssistantNotice())
             return false
         }
-        if (kind === 'nag') writeWatchMeta({ lastLiveAt: Date.now() })
+        if (kind === 'nag') writeWatchMeta({ lastLiveAt: Date.now(), lastLocalAt: Date.now(), lastDigest: notebooksDigestKey(notebooks) })
         return true
     } catch {
         if (kind === 'nag') return Boolean(tickLocalAssistantNotice())
@@ -152,9 +165,11 @@ export async function answerAssistantNotice(args: {
     pushAssistantNotice(
         buildNotice({
             philosopherId: args.philosopherId,
-            kind: 'counsel',
-            title: 'Noted. That does not close the question.',
-            body: args.text.slice(0, 220),
+            kind: 'note',
+            title: 'Noted — here is where I would keep reading.',
+            body: compactNoticeText(
+                `You wrote: “${args.text.slice(0, 220)}”. I will stay with that rather than start a new interrogation.`
+            ),
         }),
         { force: true }
     )

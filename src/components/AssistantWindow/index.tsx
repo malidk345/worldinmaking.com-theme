@@ -11,6 +11,9 @@ import { useOptionalWindow } from 'context/Window'
 import { useAppActions } from 'context/App'
 import { useUser } from 'hooks/useUser'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
+import Markdown from 'components/Squeak/components/Markdown'
+import { ASSISTANT_OPEN_PATH_EVENT } from 'lib/assistant-actions'
+import { compactNoticeText } from 'lib/assistant-library'
 import {
     PERSONAL_ASSISTANT_EVENT,
     readPersonalAssistantId,
@@ -36,57 +39,35 @@ import {
     readAssistantCadence,
     silenceAssistantFor,
     writeAssistantCadence,
-    type CadenceMode,
 } from 'lib/assistant-cadence'
 
 dayjs.extend(relativeTime)
 
 function CadenceBar() {
-    const [mode, setMode] = useState<CadenceMode>(() => readAssistantCadence().mode)
     const [quiet, setQuiet] = useState(() => readAssistantCadence().silencedUntil > Date.now())
 
     useEffect(() => {
-        const refresh = () => {
-            const next = readAssistantCadence()
-            setMode(next.mode)
-            setQuiet(next.silencedUntil > Date.now())
-        }
+        const refresh = () => setQuiet(readAssistantCadence().silencedUntil > Date.now())
         window.addEventListener(ASSISTANT_CADENCE_EVENT, refresh)
         return () => window.removeEventListener(ASSISTANT_CADENCE_EVENT, refresh)
     }, [])
 
     return (
-        <div className="flex items-center gap-1">
-            {(['rare', 'normal', 'nag'] as CadenceMode[]).map((item) => (
-                <OSButton
-                    key={item}
-                    size="xs"
-                    hover="background"
-                    active={mode === item}
-                    onClick={() => {
-                        writeAssistantCadence({ mode: item })
-                        setMode(item)
-                    }}
-                >
-                    {item === 'rare' ? 'Rare' : item === 'nag' ? 'Nag' : 'Normal'}
-                </OSButton>
-            ))}
-            <OSButton
-                size="xs"
-                hover="background"
-                onClick={() => {
-                    if (quiet) {
-                        writeAssistantCadence({ silencedUntil: 0 })
-                        setQuiet(false)
-                    } else {
-                        silenceAssistantFor(60 * 60 * 1000)
-                        setQuiet(true)
-                    }
-                }}
-            >
-                {quiet ? 'Resume' : 'Quiet 1h'}
-            </OSButton>
-        </div>
+        <OSButton
+            size="xs"
+            hover="background"
+            onClick={() => {
+                if (quiet) {
+                    writeAssistantCadence({ silencedUntil: 0 })
+                    setQuiet(false)
+                } else {
+                    silenceAssistantFor(60 * 60_000)
+                    setQuiet(true)
+                }
+            }}
+        >
+            {quiet ? 'Resume' : 'Quiet 1h'}
+        </OSButton>
     )
 }
 
@@ -150,7 +131,7 @@ function PickerScreen({
                             Choose your assistant
                         </h1>
                         <p className="text-sm text-secondary mt-1 mb-0">
-                            They write into your notifications. Click one to read and reply.
+                            They write into your notifications when a notebook actually gives them something — a reading, a connection, a question. Not a drill.
                         </p>
                     </div>
                 </div>
@@ -274,12 +255,12 @@ function LetterThread({
                         <h3 className="text-base font-semibold !mt-2 !mb-0 pb-1 leading-5 break-words">
                             {notice.title}
                         </h3>
-                        <div className="question-content text-primary">
-                            <p className="mt-2 mb-0 whitespace-pre-wrap leading-7">{notice.body || notice.title}</p>
+                        <div className="question-content text-primary mt-2 [&_p]:my-2 [&_p]:leading-6 [&_p:last-child]:mb-0">
+                            <Markdown>{compactNoticeText(notice.body || notice.title)}</Markdown>
                         </div>
                         {notebook ? (
                             <p className="text-xs text-secondary pb-0 mb-0 mt-3">
-                                Originally from notebook “{notebook.title}”
+                                From notebook “{notebook.title}”
                             </p>
                         ) : null}
                     </div>
@@ -303,8 +284,8 @@ function LetterThread({
                                     {dayjs(reply.at).fromNow()}
                                 </span>
                             </div>
-                            <div className="pb-4 pl-5 pr-8">
-                                <p className="mt-2 mb-0 whitespace-pre-wrap leading-7">{reply.text}</p>
+                            <div className="pb-4 pl-5 pr-8 question-content">
+                                <Markdown>{compactNoticeText(reply.text)}</Markdown>
                             </div>
                         </div>
                     ))}
@@ -324,6 +305,21 @@ function LetterThread({
                 <OSButton variant="secondary" size="xs" onClick={openComposer}>
                     Reply
                 </OSButton>
+                {notebook?.id ? (
+                    <OSButton
+                        size="xs"
+                        hover="background"
+                        onClick={() =>
+                            window.dispatchEvent(
+                                new CustomEvent(ASSISTANT_OPEN_PATH_EVENT, {
+                                    detail: { path: `/notebooks/${notebook.id}` },
+                                })
+                            )
+                        }
+                    >
+                        Open notebook
+                    </OSButton>
+                ) : null}
                 <OSButton
                     size="xs"
                     hover="background"
@@ -415,7 +411,7 @@ function MailDesk({
                                 ))}
                             </ul>
                         ) : (
-                            <h5 className="m-0 px-2">You literally have no mail.</h5>
+                            <h5 className="m-0 px-2">Nothing yet. They write when a notebook gives them something to work with.</h5>
                         )}
                     </ScrollArea>
                 </div>

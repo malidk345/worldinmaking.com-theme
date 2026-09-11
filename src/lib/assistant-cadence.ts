@@ -13,16 +13,16 @@ export type AssistantCadence = {
 }
 
 const DEFAULT_CADENCE: AssistantCadence = {
-    mode: 'normal',
+    mode: 'rare',
     quietHours: false,
     silencedUntil: 0,
     mutedTopics: [],
 }
 
 const INTERVALS: Record<CadenceMode, { localMs: number; liveMs: number; maxUnread: number }> = {
-    rare: { localMs: 8 * 60_000, liveMs: 20 * 60_000, maxUnread: 4 },
-    normal: { localMs: 90_000, liveMs: 5 * 60_000, maxUnread: 10 },
-    nag: { localMs: 45_000, liveMs: 150_000, maxUnread: 16 },
+    rare: { localMs: 12 * 60 * 60_000, liveMs: 24 * 60 * 60_000, maxUnread: 2 },
+    normal: { localMs: 6 * 60 * 60_000, liveMs: 12 * 60 * 60_000, maxUnread: 3 },
+    nag: { localMs: 12 * 60 * 60_000, liveMs: 24 * 60 * 60_000, maxUnread: 2 },
 }
 
 function storageKey(): string {
@@ -35,7 +35,7 @@ export function readAssistantCadence(): AssistantCadence {
         const raw = window.localStorage.getItem(storageKey())
         const parsed = raw ? JSON.parse(raw) : {}
         const mode: CadenceMode =
-            parsed.mode === 'rare' || parsed.mode === 'nag' || parsed.mode === 'normal' ? parsed.mode : 'normal'
+            parsed.mode === 'rare' || parsed.mode === 'normal' ? parsed.mode : 'rare'
         return {
             mode,
             quietHours: Boolean(parsed.quietHours),
