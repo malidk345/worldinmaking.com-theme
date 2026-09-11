@@ -102,8 +102,10 @@ import {
     mapRestoreSelectionThroughDocumentChange,
     setsEqual,
     textBlocksShareContinuationStyle,
+    planDeleteBlock,
     planDeleteEmptyCodeBlock,
     planDeleteTextAtSelection,
+    type DeleteBlockPlan,
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
     planInsertNodesAtBoundary,
@@ -1873,6 +1875,31 @@ function MarkdownNotebookEditor({
         [commitDocument]
     )
 
+    const applyDeleteBlockPlan = useCallback(
+        (plan: DeleteBlockPlan): void => {
+            if (plan.focus?.kind === 'selection') {
+                restoreSelectionRef.current = plan.focus.focus
+            } else if (plan.focus?.kind === 'component') {
+                focusNodeRef.current = plan.focus.nodeId
+            }
+            commitDocument(plan.document)
+        },
+        [commitDocument]
+    )
+
+    const deleteNodeAndFocusAdjacent = useCallback(
+        (nodeId: string): void => {
+            const plan = planDeleteBlock(documentRef.current, nodeId, {
+                fallbackFocusNodeId: emptyNodeRef.current.id,
+            })
+            if (!plan) {
+                return
+            }
+            applyDeleteBlockPlan(plan)
+        },
+        [applyDeleteBlockPlan]
+    )
+
     const replaceNodeWithInsertedComponent = useCallback(
         (nodeId: string, nextNode: NotebookComponentBlockNode): void => {
             const definition = getMarkdownNotebookComponentDefinition(mergedRegistry, nextNode.tagName)
@@ -3243,8 +3270,7 @@ function MarkdownNotebookEditor({
             openAIPrompt(nodeId)
             return
         }
-        requestFocusAfterRemovingNode(nodeId)
-        deleteNodeWithRefCleanup(nodeId)
+        deleteNodeAndFocusAdjacent(nodeId)
     }
 
     const moveBlockUp = (nodeId: string): void => {
@@ -5360,14 +5386,10 @@ function MarkdownNotebookEditor({
                     updateNode,
                     replaceNodeWithNodes,
                     deleteNode: () => deleteNodeWithRefCleanup(node.id),
-                    deleteNodeAndFocusAdjacent: () => {
-                        requestFocusAfterRemovingNode(node.id)
-                        deleteNodeWithRefCleanup(node.id)
-                    },
+                    deleteNodeAndFocusAdjacent: () => deleteNodeAndFocusAdjacent(node.id),
                     acceptAISelection: () => {
                         aiSelectionReviewRef.current = null
-                        requestFocusAfterRemovingNode(node.id)
-                        deleteNodeWithRefCleanup(node.id)
+                        deleteNodeAndFocusAdjacent(node.id)
                     },
                     rejectAISelection: () => {
                         const review = aiSelectionReviewRef.current
@@ -5381,8 +5403,7 @@ function MarkdownNotebookEditor({
                             )
                         }
                         aiSelectionReviewRef.current = null
-                        requestFocusAfterRemovingNode(node.id)
-                        deleteNodeWithRefCleanup(node.id)
+                        deleteNodeAndFocusAdjacent(node.id)
                     },
                     deleteNodeAndFocusPrevious,
                     deleteSelectedNotebookBlocks,
