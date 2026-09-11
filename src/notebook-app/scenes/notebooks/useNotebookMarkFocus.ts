@@ -1,13 +1,7 @@
 import { useEffect } from 'react'
 import { useUser } from '../../../hooks/useUser'
 import { useWindow } from '../../../context/Window'
-
-function markFromString(raw?: string | null): 'mention' | 'comment' | null {
-    const value = String(raw || '')
-    if (/[?&#]mark=comment|#comment/i.test(value)) return 'comment'
-    if (/[?&#]mark=mention|#mention/i.test(value)) return 'mention'
-    return null
-}
+import { parseNotebookNotificationMark } from '../../../lib/notebook-notification-url'
 
 function flash(el: Element): void {
     el.classList.add('notebook-outline-flash')
@@ -35,7 +29,7 @@ function findCommentTarget(): Element | null {
     )
 }
 
-export function useNotebookMarkFocus(notebookId?: string): void {
+export function useNotebookMarkFocus(notebookId?: string, readyHint?: string): void {
     const { user } = useUser()
     const { appWindow } = useWindow()
     const userId = user?.id
@@ -44,8 +38,8 @@ export function useNotebookMarkFocus(notebookId?: string): void {
     useEffect(() => {
         if (!notebookId || typeof window === 'undefined') return
         const mark =
-            markFromString(appWindow?.path) ||
-            markFromString(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+            parseNotebookNotificationMark(appWindow?.path) ||
+            parseNotebookNotificationMark(`${window.location.pathname}${window.location.search}${window.location.hash}`)
         if (!mark) return
 
         let tries = 0
@@ -59,8 +53,8 @@ export function useNotebookMarkFocus(notebookId?: string): void {
         if (tick()) return
         const timer = window.setInterval(() => {
             tries += 1
-            if (tick() || tries > 25) window.clearInterval(timer)
-        }, 120)
+            if (tick() || tries > 50) window.clearInterval(timer)
+        }, 160)
         return () => window.clearInterval(timer)
-    }, [notebookId, userId, username, appWindow?.path])
+    }, [notebookId, readyHint, userId, username, appWindow?.path])
 }
