@@ -1,8 +1,12 @@
-/* Site header = #taskbar (Wim logo). Do not ride the iOS visual-viewport pan. */
-html[data-keyboard='open'][data-keyboard-surface='notebook'] #app-container {
-    transform: none !important;
-}
+/* Mobile: the logo taskbar and #app-container stay put.
+   iOS already overlays the keyboard (interactive-widget=overlays-content).
+   translateY(--vv-offset-top) was lifting the whole site, including #taskbar. */
+@media (max-width: 767px) {
+    html[data-keyboard='open'] #app-container {
+        transform: none !important;
+    }
 
-html[data-keyboard='open'][data-keyboard-surface='notebook'] #taskbar {
-    transform: none !important;
+    html[data-keyboard='open'] #taskbar {
+        transform: none !important;
+    }
 }
