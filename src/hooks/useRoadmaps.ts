@@ -64,7 +64,7 @@ export const useRoadmaps = ({ params = {}, limit }: { params?: any; limit?: numb
         }
     )
     const roadmaps = React.useMemo(() => {
-        return data?.flatMap((cur) => cur.data || []) ?? []
+        return data?.reduce((acc, cur) => [...(acc || []), ...(cur.data || [])], []) ?? []
     }, [size, data])
 
     const total = data && data[0]?.meta?.pagination?.total
