@@ -26,9 +26,12 @@ import {
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
     getOrCreateDailyNotebook,
+    rememberRemoteNotebook,
+    rememberRemoteNotebooks,
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
+import { pullNotebookById, pullNotebooksFromRemote } from './notebookRemote'
 import {
     collectNotebookTasks,
     dateFromKey,
@@ -106,6 +109,19 @@ export function NotebooksListScene({
             window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, reloadNotebooks)
         }
     }, [reloadNotebooks])
+
+    useEffect(() => {
+        if (listView !== 'tasks') return
+        let cancelled = false
+        void pullNotebooksFromRemote({ force: true, includeContent: true }).then((remote) => {
+            if (cancelled || !remote) return
+            rememberRemoteNotebooks(remote.notebooks)
+            reloadNotebooks()
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [listView, reloadNotebooks])
 
     const handleDelete = (id: string, title: string) => {
         leavingIdsRef.current = new Set(leavingIdsRef.current).add(id)
@@ -226,8 +242,19 @@ export function NotebooksListScene({
     const handleToggleTask = (notebookId: string, line: number) => {
         const notebook = getNotebook(notebookId)
         if (!notebook) return
-        saveNotebook({ ...notebook, content: toggleTaskLine(notebook.content, line) })
-        reloadNotebooks()
+        const apply = (content: string) => {
+            saveNotebook({ ...notebook, content: toggleTaskLine(content, line) })
+            reloadNotebooks()
+        }
+        if (notebook.content && !notebook.contentOmitted) {
+            apply(notebook.content)
+            return
+        }
+        void pullNotebookById(notebookId).then((remote) => {
+            if (!remote?.content) return
+            rememberRemoteNotebook(remote)
+            apply(remote.content)
+        })
     }
 
     const handlePinToDesktop = (notebook: NotebookBrowserItem) => {

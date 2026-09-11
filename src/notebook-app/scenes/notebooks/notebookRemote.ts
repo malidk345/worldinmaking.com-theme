@@ -135,6 +135,7 @@ export function resetNotebookPullThrottle(): void {
 
 export async function pullNotebooksFromRemote(options?: {
     force?: boolean
+    includeContent?: boolean
 }): Promise<{ notebooks: StoredNotebook[]; deletedIds: string[] } | null> {
     if (typeof window === 'undefined') return null
     const now = Date.now()
@@ -145,7 +146,9 @@ export async function pullNotebooksFromRemote(options?: {
 
     const ownerKey = getOrCreateOwnerKey()
     try {
-        const res = await fetch(`/api/notebooks?owner_key=${encodeURIComponent(ownerKey)}`, {
+        const params = new URLSearchParams({ owner_key: ownerKey })
+        if (options?.includeContent) params.set('include', 'content')
+        const res = await fetch(`/api/notebooks?${params.toString()}`, {
             method: 'GET',
             headers: await notebookAuthHeadersFresh(ownerKey),
             cache: 'no-store',
@@ -230,6 +233,7 @@ export async function pushNotebookToRemote(
     historyEntries?: NotebookVersion[]
 ): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean; gone?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
+    if (notebook.contentOmitted) return { ok: true }
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch('/api/notebooks', {
@@ -269,7 +273,8 @@ export async function pushAllNotebooksToRemote(
     history?: Record<string, NotebookVersion[]>
 ): Promise<boolean> {
     if (typeof window === 'undefined') return false
-    if (!notebooks.length) return true
+    const writable = notebooks.filter((nb) => !nb.contentOmitted)
+    if (!writable.length) return true
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch('/api/notebooks', {
@@ -277,7 +282,7 @@ export async function pushAllNotebooksToRemote(
             headers: await notebookAuthHeadersFresh(ownerKey, true),
             body: JSON.stringify({
                 owner_key: ownerKey,
-                notebooks,
+                notebooks: writable,
                 history,
             }),
         })
@@ -416,11 +421,24 @@ export function startNotebookPolling(onTick: () => void, intervalMs = 20000): ()
 export function pickNewerNotebook(local: StoredNotebook, remote: StoredNotebook): StoredNotebook {
     const localVersion = Number(local.version || 0)
     const remoteVersion = Number(remote.version || 0)
-    if (remoteVersion > localVersion) return { ...local, ...remote }
-    if (localVersion > remoteVersion) return local
-    const localTs = Date.parse(local.updatedAt || '') || 0
-    const remoteTs = Date.parse(remote.updatedAt || '') || 0
-    return remoteTs > localTs ? { ...local, ...remote } : local
+    const remoteSlim = remote.contentOmitted === true
+    if (remoteVersion < localVersion) return local
+    if (remoteVersion === localVersion) {
+        const localTs = Date.parse(local.updatedAt || '') || 0
+        const remoteTs = Date.parse(remote.updatedAt || '') || 0
+        if (remoteTs <= localTs) return local
+    }
+    if (remoteSlim) {
+        const keep = local.content || ''
+        return {
+            ...local,
+            ...remote,
+            content: keep,
+            contentOmitted: !keep,
+            preview: remote.preview || local.preview,
+        }
+    }
+    return { ...local, ...remote }
 }
 
 export function mergeNotebookLists(

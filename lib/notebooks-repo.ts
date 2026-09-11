@@ -5,7 +5,7 @@
 import { supabaseAdmin } from './supabase-admin'
 import { getCollaboratorRole, listCollaboratorRoles } from './notebook-collaborators'
 import { canWriteNotebook, type NotebookAccessRole } from '../src/lib/notebook-sharing'
-import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
+import { notifyNotebookComments, notifyNotebookMentions } from './notebook-mentions'
 
 export type NotebookPublishMeta = {
     publicTitle?: string
@@ -32,6 +32,7 @@ export type StoredNotebookRow = {
     created_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
     last_modified_by: { first_name: string; last_name?: string; email?: string; username?: string; avatar_url?: string } | null
     deleted_at?: string | null
+    preview?: string | null
     organize?: {
         folder?: string | null
         tags?: string[] | null
@@ -71,6 +72,8 @@ export type StoredNotebookDTO = {
     tags?: string[]
     kind?: 'note' | 'daily'
     dailyDate?: string
+    preview?: string
+    contentOmitted?: boolean
 }
 
 export type NotebookVersionDTO = {
@@ -102,6 +105,19 @@ export function rowToDTO(row: StoredNotebookRow, accessRole: NotebookAccessRole 
         tags: Array.isArray(row.organize?.tags) ? row.organize?.tags.filter(Boolean) : undefined,
         kind: row.organize?.kind === 'daily' ? 'daily' : undefined,
         dailyDate: row.organize?.dailyDate || undefined,
+        preview: row.preview || undefined,
+    }
+}
+
+const NOTEBOOK_LIST_COLUMNS =
+    'id, short_id, title, preview, created_at, updated_at, pinned, is_template, is_published, publish, version, owner_key, auth_user_id, created_by, last_modified_by, organize'
+
+export function rowToListDTO(row: StoredNotebookRow, accessRole: NotebookAccessRole = 'owner'): StoredNotebookDTO {
+    return {
+        ...rowToDTO({ ...row, content: '' }, accessRole),
+        content: '',
+        preview: row.preview || '',
+        contentOmitted: true,
     }
 }
 
@@ -166,6 +182,7 @@ export type PublicNotebookCard = {
 function excerptFromNotebook(row: StoredNotebookRow): string {
     const subtitle = row.publish?.subtitle?.trim()
     if (subtitle) return subtitle.slice(0, 240)
+    if (row.preview) return row.preview.slice(0, 240)
     const stripped = String(row.content || '')
         .replace(/```[\s\S]*?```/g, ' ')
         .replace(/<[^>]+>/g, ' ')
@@ -192,7 +209,7 @@ export async function listPublishedNotebooksByAuthor(username: string): Promise<
 
     let query = supabaseAdmin
         .from('wim_notebooks')
-        .select('id, short_id, title, content, publish, updated_at, created_by, auth_user_id, is_published')
+        .select('id, short_id, title, preview, publish, updated_at, created_by, auth_user_id, is_published')
         .eq('is_published', true)
         .is('deleted_at', null)
         .order('updated_at', { ascending: false })
@@ -237,9 +254,16 @@ function applyOwnerScope<T extends { or: Function; eq: Function }>(
 export async function listNotebooksByOwner(
     ownerKey: string,
     userId?: string,
-    extraOwnerKeys: string[] = []
+    extraOwnerKeys: string[] = [],
+    options?: { includeContent?: boolean }
 ): Promise<StoredNotebookDTO[]> {
-    let query = supabaseAdmin.from('wim_notebooks').select('*').is('deleted_at', null).order('updated_at', { ascending: false })
+    const columns = options?.includeContent ? '*' : NOTEBOOK_LIST_COLUMNS
+    const toDTO = options?.includeContent ? rowToDTO : rowToListDTO
+    let query = supabaseAdmin
+        .from('wim_notebooks')
+        .select(columns)
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
     query = applyOwnerScope(query, ownerKey, userId, extraOwnerKeys)
     const { data, error } = await query
     if (error) throw error
@@ -247,7 +271,7 @@ export async function listNotebooksByOwner(
     const owned = (data as StoredNotebookRow[] | null) ?? []
     const byId = new Map<string, StoredNotebookDTO>()
     for (const row of owned) {
-        byId.set(row.id, rowToDTO(row, 'owner'))
+        byId.set(row.id, toDTO(row, 'owner'))
     }
 
     if (userId) {
@@ -256,13 +280,13 @@ export async function listNotebooksByOwner(
         if (missingIds.length) {
             const { data: sharedRows, error: sharedError } = await supabaseAdmin
                 .from('wim_notebooks')
-                .select('*')
+                .select(columns)
                 .in('id', missingIds)
                 .is('deleted_at', null)
             if (sharedError) throw sharedError
             const roleById = new Map(shared.map((row) => [row.notebook_id, row.role]))
             for (const row of (sharedRows as StoredNotebookRow[] | null) ?? []) {
-                byId.set(row.id, rowToDTO(row, roleById.get(row.id) || 'viewer'))
+                byId.set(row.id, toDTO(row, roleById.get(row.id) || 'viewer'))
             }
         } else {
             for (const row of shared) {
@@ -356,7 +380,7 @@ export async function upsertNotebook(
 ): Promise<StoredNotebookDTO> {
     const { data: existing, error: findErr } = await supabaseAdmin
         .from('wim_notebooks')
-        .select('id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template')
+        .select('id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template, content')
         .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
         .limit(1)
         .maybeSingle()
@@ -408,6 +432,9 @@ export async function upsertNotebook(
         // Auto-increment version for successful updates
         nb.version = currentDbVersion + 1
         nb.auth_user_id = current.auth_user_id || nb.auth_user_id
+        if (nb.contentOmitted) {
+            nb.content = String(current.content || '')
+        }
         if (role !== 'owner') {
             nb.isPublished = current.is_published ?? false
             nb.publish = current.publish ?? nb.publish
@@ -431,7 +458,29 @@ export async function upsertNotebook(
         .single()
 
     if (error) throw error
-    return rowToDTO(data as StoredNotebookRow, accessRole)
+    const saved = rowToDTO(data as StoredNotebookRow, accessRole)
+    if (userId) {
+        const previousContent = existing ? String((existing as StoredNotebookRow).content || '') : ''
+        try {
+            await notifyNotebookMentions({
+                notebookId: saved.id,
+                title: saved.title,
+                content: saved.content,
+                actorId: userId,
+            })
+            await notifyNotebookComments({
+                notebookId: saved.id,
+                title: saved.title,
+                previousContent,
+                content: saved.content,
+                actorId: userId,
+                ownerUserId: saved.auth_user_id || userId,
+            })
+        } catch (err) {
+            console.warn('[notebooks-repo] mention/comment notify failed', err)
+        }
+    }
+    return saved
 }
 
 export async function upsertNotebooks(
@@ -464,6 +513,7 @@ export async function upsertNotebooks(
             }
             if (current.deleted_at) continue
             if (await hasSyncTombstone('notebook', nb.id)) continue
+            if (nb.contentOmitted) continue
             const currentDbVersion = Number(current.version || 1)
             const incomingVersion = Number(nb.version || 0)
 

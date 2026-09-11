@@ -244,7 +244,7 @@ await patchAuthConfig(
         external_email_enabled: true,
         disable_signup: false,
         site_url: 'https://worldinmaking.com',
-        uri_allow_list: 'http://localhost:3000/**,http://localhost:3001/**,https://worldinmaking.com/**,https://www.worldinmaking.com/**,https://*.worldinmaking.com/**',
+        uri_allow_list: 'http://localhost:3000/**,http://localhost:3001/**,http://127.0.0.1:3000/**,http://192.168.1.102:3000/**,https://worldinmaking.com/**,https://www.worldinmaking.com/**,https://*.worldinmaking.com/**,https://*.worldinmaking.pages.dev/**,https://*.pages.dev/**',
     },
     'auth-config'
 )

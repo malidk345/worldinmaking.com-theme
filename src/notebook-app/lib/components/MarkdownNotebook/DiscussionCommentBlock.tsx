@@ -72,6 +72,7 @@ export function DiscussionCommentBlock({
         [allMentionPeople, mentionToken]
     )
     const [mentionIndex, setMentionIndex] = useState(0)
+    const [draftMentionIds, setDraftMentionIds] = useState<string[]>([])
 
     const persistReplies = (next: ReturnType<typeof parseDiscussionReplies>): void => {
         updateNode(node.id, (currentNode) =>
@@ -93,10 +94,12 @@ export function DiscussionCommentBlock({
                 text,
                 author,
                 createdAt: new Date().toISOString(),
+                mentionedIds: draftMentionIds.length ? draftMentionIds : undefined,
             })
         )
         setDraft('')
         setMentionToken(null)
+        setDraftMentionIds([])
     }
 
     const insertMention = (person: MentionPerson): void => {
@@ -105,6 +108,9 @@ export function DiscussionCommentBlock({
         const next = `${draft.slice(0, mentionToken.start)}@${person.label} ${draft.slice(tokenEnd)}`
         setDraft(next)
         setMentionToken(null)
+        if (person.id && !draftMentionIds.includes(person.id)) {
+            setDraftMentionIds([...draftMentionIds, person.id])
+        }
     }
 
     const handleDraftChange = (value: string, caret = value.length): void => {
