@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { IconCopy } from '@posthog/icons'
 import OSButton from 'components/OSButton'
@@ -150,7 +150,7 @@ function syncTrailingLineBreakSentinel(element: HTMLElement, text: string): void
     }
 }
 
-export function EditableCodeBlock({
+function EditableCodeBlockInner({
     node,
     mode,
     setBlockRef,
@@ -337,3 +337,14 @@ export function EditableCodeBlock({
         </div>
     )
 }
+
+
+export const EditableCodeBlock = memo(EditableCodeBlockInner, (previous, next) => {
+    return (
+        previous.node === next.node &&
+        previous.mode === next.mode &&
+        previous.updateNode === next.updateNode &&
+        previous.handleSelectionChange === next.handleSelectionChange &&
+        previous.startTextSelectionPointer === next.startTextSelectionPointer
+    )
+})

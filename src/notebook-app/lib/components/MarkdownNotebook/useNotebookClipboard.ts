@@ -1,5 +1,6 @@
 import { useCallback, useRef, type ClipboardEvent as ReactClipboardEvent, type MutableRefObject } from 'react'
 
+import { collectClipboardImageFiles } from '../../../../lib/notebook-upload-shared'
 import {
     getClipboardMarkdown,
     readSystemClipboardText,
@@ -53,6 +54,7 @@ export function useNotebookClipboard({
     handleCopy: (event: ReactClipboardEvent<HTMLDivElement>) => void
     handleCut: (event: ReactClipboardEvent<HTMLDivElement>) => void
     handleNotebookPaste: (event: ReactClipboardEvent<HTMLDivElement>) => void
+    handleNotebookPasteCapture: (event: ReactClipboardEvent<HTMLDivElement>) => void
 } {
     const notebookClipboardMarkdownRef = useRef<string | null>(null)
 
@@ -192,36 +194,47 @@ export function useNotebookClipboard({
         [blockRefs, documentRef, emptyNodeRef]
     )
 
+    const pasteClipboardImages = useCallback(
+        (event: ReactClipboardEvent<HTMLDivElement>): boolean => {
+            if (mode !== 'edit' || !convertExternalDataTransferToNodes) return false
+            if (!(event.target instanceof HTMLElement) || isNativeEditableElement(event.target)) return false
+            if (!collectClipboardImageFiles(event.clipboardData).length) return false
+
+            const result = convertExternalDataTransferToNodes(event.clipboardData)
+            if (!result) return false
+
+            event.preventDefault()
+            event.stopPropagation()
+            const boundaryIndex = getPasteInsertBoundaryIndex(event.target)
+            if (result instanceof Promise) {
+                void result.then((insertedNodes) => {
+                    if (insertedNodes?.length) {
+                        insertExternalNodesAtBoundary(insertedNodes, boundaryIndex)
+                    }
+                })
+                return true
+            }
+            insertExternalNodesAtBoundary(result, boundaryIndex)
+            return true
+        },
+        [convertExternalDataTransferToNodes, getPasteInsertBoundaryIndex, insertExternalNodesAtBoundary, mode]
+    )
+
+    const handleNotebookPasteCapture = useCallback(
+        (event: ReactClipboardEvent<HTMLDivElement>): void => {
+            pasteClipboardImages(event)
+        },
+        [pasteClipboardImages]
+    )
+
     const handleNotebookPaste = useCallback(
         (event: ReactClipboardEvent<HTMLDivElement>): void => {
             if (mode !== 'edit' || !(event.target instanceof HTMLElement) || isNativeEditableElement(event.target)) {
                 return
             }
 
-            // Pasted files (e.g. a screenshot) have no text representation the editor could insert —
-            // hand them to the external converter, mirroring the file drop path.
-            const clipboardFiles = event.clipboardData?.files
-            if (
-                convertExternalDataTransferToNodes &&
-                clipboardFiles?.length &&
-                !event.clipboardData.getData('text/plain')
-            ) {
-                const result = convertExternalDataTransferToNodes(event.clipboardData)
-                if (result) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    const boundaryIndex = getPasteInsertBoundaryIndex(event.target)
-                    if (result instanceof Promise) {
-                        void result.then((insertedNodes) => {
-                            if (insertedNodes?.length) {
-                                insertExternalNodesAtBoundary(insertedNodes, boundaryIndex)
-                            }
-                        })
-                        return
-                    }
-                    insertExternalNodesAtBoundary(result, boundaryIndex)
-                    return
-                }
+            if (pasteClipboardImages(event)) {
+                return
             }
 
             const targetComponentNode = getFocusedComponentNode(event.target, documentRef.current.nodes, blockRefs.current)
@@ -246,15 +259,7 @@ export function useNotebookClipboard({
             event.preventDefault()
             event.stopPropagation()
         },
-        [
-            blockRefs,
-            convertExternalDataTransferToNodes,
-            documentRef,
-            getPasteInsertBoundaryIndex,
-            insertExternalNodesAtBoundary,
-            insertMarkdownAfterNode,
-            mode,
-        ]
+        [blockRefs, documentRef, insertMarkdownAfterNode, mode, pasteClipboardImages]
     )
 
     return {
@@ -263,5 +268,6 @@ export function useNotebookClipboard({
         handleCopy,
         handleCut,
         handleNotebookPaste,
+        handleNotebookPasteCapture,
     }
 }

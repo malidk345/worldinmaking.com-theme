@@ -51,7 +51,11 @@ import { NotebookEditorReader, openNotebookSidebarTab } from './scenes/notebooks
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
-import { isNotebookImageFile, uploadNotebookImage } from '../lib/notebook-upload'
+import { collectClipboardImageFiles } from '../lib/notebook-upload-shared'
+import { uploadNotebookImage } from '../lib/notebook-upload'
+import { fetchNotebookPeople } from '../lib/notebook-collaborators-client'
+import { collaboratorToMentionPerson, type MentionPerson } from './lib/components/MarkdownNotebook/mentionPeople'
+import { useToast } from '../context/Toast'
 import { uuid } from './lib/utils/dom'
 import {
   ensureNotebookProductStyles,
@@ -219,6 +223,7 @@ export function App() {
     saveInFlightRef.current = true
     let didSave = false
     try {
+      editorUndoRef.current?.flushPending?.()
       do {
         saveQueuedRef.current = false
         const current = notebookRef.current
@@ -291,11 +296,41 @@ export function App() {
     () => userToNotebookActor(user) || getNotebookActor(),
     [user]
   )
+  const { addToast } = useToast()
   const presence = useNotebookPresence({
     notebookId: route.page === 'editor' ? currentNotebook?.id : undefined,
     version: currentNotebook?.version,
     actor: presenceActor,
   })
+  const [mentionPeople, setMentionPeople] = useState<MentionPerson[]>([])
+
+  useEffect(() => {
+    if (!currentNotebook?.id || route.page !== 'editor') {
+      setMentionPeople([])
+      return
+    }
+    let cancelled = false
+    fetchNotebookPeople(currentNotebook.id).then((result) => {
+      if (cancelled || !result) return
+      setMentionPeople(
+        result.collaborators
+          .map(collaboratorToMentionPerson)
+          .filter((person): person is MentionPerson => Boolean(person))
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [currentNotebook?.id, route.page])
+
+  const editorMentionPeople = useMemo(() => {
+    const live = presence.people.map((person) => ({
+      id: person.clientId,
+      label: person.name,
+      avatar: person.avatarUrl,
+    }))
+    return [...mentionPeople, ...live]
+  }, [mentionPeople, presence.people])
 
 
   useEffect(() => {
@@ -811,6 +846,31 @@ export function App() {
     []
   )
 
+  const editorGenerationRef = useRef({ id: '', version: 0 })
+  if (currentNotebook) {
+    editorGenerationRef.current = { id: currentNotebook.id, version: markdownVersion }
+  }
+
+  const handleMarkdownChange = useCallback((notebookId: string, editorVersion: number, val: string) => {
+    const live = editorGenerationRef.current
+    if (live.id === notebookId && live.version === editorVersion) {
+      const current = notebookRef.current
+      if (current && !canWriteNotebook(current.access_role)) return
+      markdownRef.current = val
+      setMarkdown(val)
+      const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
+      if (heading) setTitle(heading)
+      return
+    }
+    if (live.id === notebookId) {
+      return
+    }
+    const previous = getNotebook(notebookId)
+    if (!previous || !canWriteNotebook(previous.access_role) || previous.content === val) return
+    const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
+    saveNotebook({ ...previous, content: val, ...(heading ? { title: heading } : {}) })
+  }, [])
+
   useEffect(() => {
     setOutlineMarkdown(markdown)
   }, [currentNotebook?.id])
@@ -826,7 +886,7 @@ export function App() {
   }, [currentNotebook?.id, markdownVersion])
 
   const convertExternalDataTransferToNodes = useCallback(async (dataTransfer: DataTransfer) => {
-    const files = Array.from(dataTransfer.files || []).filter(isNotebookImageFile)
+    const files = collectClipboardImageFiles(dataTransfer)
     if (!files.length) return null
     const nodes = []
     for (const file of files) {
@@ -836,14 +896,17 @@ export function App() {
           id: uuid(),
           type: 'component' as const,
           tagName: 'Image',
-          props: { src: uploaded.url, alt: file.name.replace(/\.[^.]+$/, '') },
+          props: { src: uploaded.url, alt: file.name.replace(/\.[^.]+$/, '') || 'Pasted image' },
         })
-      } catch {
-        /* skip failed files */
+      } catch (error) {
+        addToast({
+          description: error instanceof Error ? error.message : 'Could not upload image',
+          error: true,
+        })
       }
     }
     return nodes.length ? nodes : null
-  }, [])
+  }, [addToast])
 
   const shellClassName = [
     'App w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden bg-primary text-primary',
@@ -985,17 +1048,13 @@ export function App() {
                       onUndoStateChange={setTextHistory}
                       mode={canWriteNotebook(currentNotebook.access_role) ? 'edit' : 'view'}
                       focusAIPromptRequest={aiPromptRequest}
-                      onChange={(val) => {
-                        if (!canWriteNotebook(currentNotebook.access_role)) return
-                        setMarkdown(val)
-                        const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
-                        if (heading) setTitle(heading)
-                      }}
+                      onChange={(val) => handleMarkdownChange(currentNotebook.id, markdownVersion, val)}
                       onAskAI={canWriteNotebook(currentNotebook.access_role) ? handleNotebookAskAI : undefined}
                       isAskAIDisabled={isAskAIBusy || !canWriteNotebook(currentNotebook.access_role)}
                       extraInsertCommands={extraCommands}
                       onInvitePeople={() => openNotebookSidebarTab('share')}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
+                      mentionPeople={editorMentionPeople}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}

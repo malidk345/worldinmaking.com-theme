@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { type CSSProperties, useEffect, useRef } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
 
 import { InsertMenuPosition } from './editorTypes'
 import type { MentionPerson } from './mentionPeople'
@@ -18,10 +18,11 @@ export function MentionPicker({
     onClose: () => void
 }): JSX.Element {
     const rootRef = useRef<HTMLDivElement | null>(null)
+    const [selectedIndex, setSelectedIndex] = useState(0)
 
     useEffect(() => {
-        rootRef.current?.focus()
-    }, [])
+        setSelectedIndex(0)
+    }, [query, people.length])
 
     useEffect(() => {
         const onPointerDown = (event: MouseEvent): void => {
@@ -34,6 +35,25 @@ export function MentionPicker({
                 event.preventDefault()
                 event.stopPropagation()
                 onClose()
+                return
+            }
+            if (!people.length) return
+            if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                event.stopPropagation()
+                setSelectedIndex((index) => (index + 1) % people.length)
+                return
+            }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault()
+                event.stopPropagation()
+                setSelectedIndex((index) => (index - 1 + people.length) % people.length)
+                return
+            }
+            if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey) {
+                event.preventDefault()
+                event.stopPropagation()
+                onPick(people[selectedIndex] || people[0])
             }
         }
         window.document.addEventListener('mousedown', onPointerDown)
@@ -42,7 +62,7 @@ export function MentionPicker({
             window.document.removeEventListener('mousedown', onPointerDown)
             window.document.removeEventListener('keydown', onKeyDown, true)
         }
-    }, [onClose])
+    }, [onClose, onPick, people, selectedIndex])
 
     const menuStyle = position
         ? ({
@@ -65,6 +85,7 @@ export function MentionPicker({
             contentEditable={false}
             role="listbox"
             aria-label="Mention"
+            aria-activedescendant={people[selectedIndex] ? `notebook-mention-${people[selectedIndex].id}` : undefined}
             tabIndex={-1}
             style={menuStyle}
         >
@@ -74,12 +95,18 @@ export function MentionPicker({
             </div>
             <div className="MarkdownNotebook__invite-picker-grid">
                 {people.length ? (
-                    people.map((person) => (
+                    people.map((person, index) => (
                         <button
                             key={person.id}
+                            id={`notebook-mention-${person.id}`}
                             type="button"
                             role="option"
-                            className="MarkdownNotebook__invite-picker-item"
+                            aria-selected={index === selectedIndex}
+                            className={clsx(
+                                'MarkdownNotebook__invite-picker-item',
+                                index === selectedIndex && 'bg-accent'
+                            )}
+                            onMouseEnter={() => setSelectedIndex(index)}
                             onClick={() => onPick(person)}
                         >
                             <span className="MarkdownNotebook__invite-picker-mark" aria-hidden="true">

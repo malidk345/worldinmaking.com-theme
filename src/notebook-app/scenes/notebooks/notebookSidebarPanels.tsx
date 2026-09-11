@@ -18,6 +18,7 @@ import {
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf } from './exportNotebookPdf'
+import { useToast } from '../../../context/Toast'
 
 export function NotebookSettingsPanel({
     settings,
@@ -131,13 +132,19 @@ export function NotebookSettingsPopover({
 
 export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX.Element {
     const [pdfBusy, setPdfBusy] = useState(false)
+    const { addToast } = useToast()
     const title = () => getNotebook(notebookId)?.title || 'notebook'
 
     const handlePdf = async () => {
         if (pdfBusy) return
         setPdfBusy(true)
         try {
-            await exportNotebookAsPdf(notebookId)
+            const ok = await exportNotebookAsPdf(notebookId)
+            addToast(
+                ok
+                    ? { description: 'PDF downloaded' }
+                    : { description: 'Could not export PDF. Try Print instead.', error: true }
+            )
         } finally {
             setPdfBusy(false)
         }

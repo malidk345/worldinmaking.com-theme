@@ -25,12 +25,41 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — pass 8 leftover Explorer/Timeline + Jules PR close.
+- **Status:** `[COMPLETED by Grok]` — slash insert menu visibility.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (slash insert menu)
+- **Scope:** Slash `/` menu was not appearing after the content-visibility typing sprint.
+- **Cause:** InsertMenu is `position: fixed` + `visibility: hidden` until positioned, and was rendered inside `.MarkdownNotebook__text-group` / rows with `content-visibility: auto`. That applies paint/layout containment, so fixed descendants position against the group and get clipped; a 0×0 anchor rect leaves the menu hidden. Nested canvas `contenteditable` means the group is often not `:focus-within`. Memoized text blocks also ignored slash callbacks.
+- **Implementation:**
+  - Render one InsertMenu at the notebook root (next to the find bar), outside any content-visibility group.
+  - Force `content-visibility: visible` on groups/rows with `--insert-menu-open`; `--z-popover` fallback 1060.
+  - Position fallback via `getNotebookBlockElement` if `blockRefs` missed the node.
+  - Outside-click ignores the portaled menu.
+  - EditableTextBlock keeps slash/insert callbacks on refs so memo does not freeze a stale opener.
+- **Files Modified:** MarkdownNotebook.tsx, MarkdownNotebook.scss, EditableTextBlock.tsx, ensureNotebookProductStyles.ts, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
+
+### 2026-09-11 — Grok (notebook paste / mentions / PDF)
+- **Scope:** Continue the notebook sprint after typing/list/find. Paste screenshots as Image blocks, mention collaborators in comments and body, make PDF export fail visibly.
+- **Implementation:**
+  - `collectClipboardImageFiles` reads `files` and `items`; paste capture inserts Image nodes even from a paragraph caret. Failed uploads toast.
+  - Mention picker lists collaborators + presence; keyboard arrows/Enter. Comment composer uses the same list.
+  - PDF waits on images with timeout, sets CORS, toasts success/failure.
+- **Files Modified:** notebook-upload-shared, mentionPeople, MentionPicker, DiscussionCommentBlock, useNotebookClipboard, MarkdownNotebook, App, exportNotebookPdf, notebookSidebarPanels, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
+
+### 2026-09-11 — Grok (notebook typing/list/find)
+- **Scope:** Make the notebook editor cheaper to type in, slim the notebooks list, add in-notebook Cmd+F. Markdown stays source of truth. No Yjs rewrite. Did not merge stale Jules or `plan*` PRs.
+- **Implementation:**
+  - Idle serialize (`SERIALIZE_IDLE_MS` 320ms) + `flushPending` on remote merge, pagehide, unmount, autosave.
+  - Memoized text/list/code/table blocks; `content-visibility: auto` on unfocused groups.
+  - List/palette hold `preview` instead of full bodies; tasks view keeps content.
+  - Cmd+F find bar with match row highlight.
+  - Unmount/history-restore flushes are scoped by notebook id + `markdownVersion` so they cannot write the previous draft into the next notebook.
+- **Files Modified:** MarkdownNotebook.tsx, notebookEditorModel.ts, NotebookFindBar.tsx, Editable* blocks, MarkdownNotebook.scss, ensureNotebookProductStyles.ts, App.tsx, notebookStorage.ts, notebookPreview.ts, NotebooksListScene.tsx, CommandPaletteModal.tsx, README, NOTEBOOK_SAAS_ROADMAP, AI_MEMORY.
 
 ### 2026-09-11 — Grok (pass 8)
 - **Scope:** Close Jules/Bolt PR noise; drop more unused leftovers; fix repo metadata. No visual/product change.

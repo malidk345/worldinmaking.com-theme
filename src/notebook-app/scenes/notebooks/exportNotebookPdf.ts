@@ -51,6 +51,8 @@ function renderComponent(node: NotebookComponentBlockNode): HTMLElement | null {
         const img = document.createElement('img')
         img.src = src
         img.alt = alt
+        img.crossOrigin = 'anonymous'
+        img.referrerPolicy = 'no-referrer'
         applyStyles(img, { maxWidth: '100%', height: 'auto', display: 'block' })
         wrap.appendChild(img)
         if (alt) wrap.appendChild(textEl('figcaption', alt, { fontSize: '12px', color: '#666', marginTop: '6px' }))
@@ -230,10 +232,13 @@ async function waitForImages(root: HTMLElement): Promise<void> {
             (image) =>
                 image.complete
                     ? Promise.resolve()
-                    : new Promise<void>((resolve) => {
-                          image.onload = () => resolve()
-                          image.onerror = () => resolve()
-                      })
+                    : Promise.race([
+                          new Promise<void>((resolve) => {
+                              image.onload = () => resolve()
+                              image.onerror = () => resolve()
+                          }),
+                          new Promise<void>((resolve) => window.setTimeout(resolve, 8000)),
+                      ])
         )
     )
 }

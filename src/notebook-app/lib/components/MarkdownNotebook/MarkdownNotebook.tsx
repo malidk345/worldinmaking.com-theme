@@ -60,7 +60,7 @@ import {
     getMentionTokenAt,
     insertMentionMark,
     listMentionPeople,
-    type MentionPerson,
+    NotebookMentionPeopleProvider,
 } from './mentionPeople'
 import { mergeNotebookMarkdownChanges } from './collaboration'
 import {
@@ -270,6 +270,7 @@ import {
     CommitDocumentOptions,
     EMPTY_AI_WRITING_NODE_INDEX_SET,
     MAX_TRACKED_LOCAL_SNAPSHOTS,
+    SERIALIZE_IDLE_MS,
     POINTER_INERT_LINK_CONTAINER_SELECTOR,
     buildBlockMoreMenuItems,
     canShowBlockMoreMenu,
@@ -283,6 +284,7 @@ import {
     type MarkdownNotebookProps,
     type RemoteCaretAnchor,
 } from './notebookEditorModel'
+import { NotebookFindBar, notebookNodeSearchText } from './NotebookFindBar'
 import { applyPhilosopherInviteNotes } from './inviteApply'
 import { planOpenAIPromptInsert } from './planAIPromptInsert'
 import { useNotebookClipboard } from './useNotebookClipboard'
@@ -316,6 +318,7 @@ function MarkdownNotebookEditor({
     onCaretChange,
     initialInsertMenu,
     convertExternalDataTransferToNodes,
+    mentionPeople: mentionPeopleProp,
     focusAIPromptRequest,
     aiWritingNodeIndexes,
     allowViewModeFilters = false,
@@ -331,6 +334,7 @@ function MarkdownNotebookEditor({
         () => mergeMarkdownNotebookRegistries(getMarkdownNotebookDefaultRegistry(), registry),
         [registry]
     )
+    const mergedMentionPeople = useMemo(() => listMentionPeople(mentionPeopleProp || []), [mentionPeopleProp])
     const [document, setDocument] = useState<NotebookDocument>(() =>
         mode === 'edit'
             ? ensureEditableNotebookDocument(parseMarkdownNotebook(value))
@@ -456,6 +460,41 @@ function MarkdownNotebookEditor({
         })
     }
     const lastSerializedValueRef = useRef(value)
+    const onChangeRef = useRef(onChange)
+    onChangeRef.current = onChange
+    const serializeTimerRef = useRef<number | null>(null)
+    const [findOpen, setFindOpen] = useState(false)
+    const [findQuery, setFindQuery] = useState('')
+    const [findIndex, setFindIndex] = useState(0)
+    const findMatchNodeIds = useMemo(() => {
+        const needle = findQuery.trim().toLowerCase()
+        if (!findOpen || !needle) {
+            return [] as string[]
+        }
+        const ids: string[] = []
+        for (const node of document.nodes) {
+            if (notebookNodeSearchText(node).toLowerCase().includes(needle)) {
+                ids.push(node.id)
+            }
+        }
+        return ids
+    }, [document.nodes, findOpen, findQuery])
+
+    useEffect(() => {
+        if (!findOpen || !findMatchNodeIds.length) return
+        const safeIndex = ((findIndex % findMatchNodeIds.length) + findMatchNodeIds.length) % findMatchNodeIds.length
+        if (safeIndex !== findIndex) {
+            setFindIndex(safeIndex)
+            return
+        }
+        const nodeId = findMatchNodeIds[safeIndex]
+        const element =
+            (nodeId ? blockRefs.current[nodeId] : null) ||
+            (nodeId ? notebookRef.current?.querySelector(`[data-markdown-notebook-node-id="${nodeId}"]`) : null)
+        if (element instanceof HTMLElement) {
+            element.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }
+    }, [findIndex, findMatchNodeIds, findOpen])
     // Recent local serializations, oldest first. A remote update matching one of these is the
     // echo of our own save — already contained in the local state, so merging it back in would
     // duplicate the overlapping insertions.
@@ -599,16 +638,13 @@ function MarkdownNotebookEditor({
     })
 
     useEffect(() => {
-        if (!undoApiRef) return
-        undoApiRef.current = { undo: undoHistory, redo: redoHistory }
-        return () => {
-            undoApiRef.current = null
-        }
-    }, [redoHistory, undoApiRef, undoHistory])
-
-    useEffect(() => {
         if (value === lastSerializedValueRef.current) {
             return
+        }
+
+        if (serializeTimerRef.current !== null) {
+            window.clearTimeout(serializeTimerRef.current)
+            serializeTimerRef.current = null
         }
 
         const restoreSelectionRequest = notebookRef.current
@@ -814,6 +850,18 @@ function MarkdownNotebookEditor({
         }
     }, [])
 
+    const flushPendingMarkdown = useCallback((): string => {
+        if (serializeTimerRef.current !== null) {
+            window.clearTimeout(serializeTimerRef.current)
+            serializeTimerRef.current = null
+        }
+        const serialized = serializeMarkdownNotebook(documentRef.current)
+        lastSerializedValueRef.current = serialized
+        trackLocalSnapshot(serialized)
+        onChangeRef.current?.(serialized)
+        return serialized
+    }, [trackLocalSnapshot])
+
     const commitDocument = useCallback(
         (nextDocument: NotebookDocument, options: CommitDocumentOptions = {}): void => {
             const editableDocument = ensureEditableNotebookDocument(nextDocument)
@@ -829,19 +877,54 @@ function MarkdownNotebookEditor({
             // Rendered remote carets ride along with the text they sit in.
             mapRemoteCaretAnchors(previousDocument, editableDocument, options.remoteMergeVersion)
 
-            const serialized = serializeMarkdownNotebook(editableDocument)
             documentRef.current = editableDocument
-            lastSerializedValueRef.current = serialized
-            trackLocalSnapshot(serialized)
             setDocument(editableDocument)
-            onChange?.(serialized)
+
+            const shouldFlush = options.flush === true || options.coalesce === false
+            if (shouldFlush) {
+                flushPendingMarkdown()
+                return
+            }
+
+            if (serializeTimerRef.current !== null) {
+                window.clearTimeout(serializeTimerRef.current)
+            }
+            serializeTimerRef.current = window.setTimeout(() => {
+                serializeTimerRef.current = null
+                flushPendingMarkdown()
+            }, SERIALIZE_IDLE_MS)
         },
-        [onChange, pushHistoryEntry, mapRemoteCaretAnchors, trackLocalSnapshot]
+        [flushPendingMarkdown, pushHistoryEntry, mapRemoteCaretAnchors]
     )
     bindCommitDocument(commitDocument)
 
+    useEffect(() => {
+        if (!undoApiRef) return
+        undoApiRef.current = { undo: undoHistory, redo: redoHistory, flushPending: flushPendingMarkdown }
+        return () => {
+            undoApiRef.current = null
+        }
+    }, [flushPendingMarkdown, redoHistory, undoApiRef, undoHistory])
+
+    useEffect(() => {
+        const flush = () => {
+            flushPendingMarkdown()
+        }
+        const onVisibility = () => {
+            if (window.document.visibilityState === 'hidden') flush()
+        }
+        window.addEventListener('pagehide', flush, true)
+        window.document.addEventListener('visibilitychange', onVisibility, true)
+        return () => {
+            flush()
+            window.removeEventListener('pagehide', flush, true)
+            window.document.removeEventListener('visibilitychange', onVisibility, true)
+        }
+    }, [flushPendingMarkdown])
+
     const applyRemoteValue = useCallback(
         (nextRemoteValue: string): void => {
+            flushPendingMarkdown()
             const localMarkdown = lastSerializedValueRef.current
             const snapshotIndex =
                 nextRemoteValue === localMarkdown
@@ -917,13 +1000,14 @@ function MarkdownNotebookEditor({
             commitDocument(reconciledDocument, {
                 addToHistory: false,
                 remoteMergeVersion: remoteVersionRef.current,
+                flush: true,
             })
 
             if (mergeResult.conflicts.length) {
                 onConflict?.(mergeResult.conflicts)
             }
         },
-        [commitDocument, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange]
+        [commitDocument, flushPendingMarkdown, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange]
     )
 
     useEffect(() => {
@@ -3359,7 +3443,10 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const anchorElement = blockRefs.current[insertMenu.nodeId]
+        const anchorElement =
+            blockRefs.current[insertMenu.nodeId] ??
+            getNotebookBlockElement(canvasRef.current, insertMenu.nodeId) ??
+            getNotebookBlockElement(notebookRef.current, insertMenu.nodeId)
         if (!anchorElement) {
             setInsertMenuPosition(null)
             return
@@ -3518,6 +3605,9 @@ function MarkdownNotebookEditor({
             const activeBlockElement = blockRefs.current[insertMenu.nodeId]
             const activeRowElement = activeBlockElement?.closest('.MarkdownNotebook__row')
             if (activeRowElement?.contains(target)) {
+                return
+            }
+            if (target instanceof Element && target.closest('.MarkdownNotebook__insert-menu')) {
                 return
             }
 
@@ -4111,7 +4201,7 @@ function MarkdownNotebookEditor({
             return
         }
         insertedNodes.forEach((node) => markNotebookNodeFreshlyInserted(node.id))
-        commitDocument({ ...currentDocument, nodes: nextNodes })
+        commitDocument({ ...currentDocument, nodes: nextNodes }, { coalesce: false })
     }
 
     const {
@@ -4120,6 +4210,7 @@ function MarkdownNotebookEditor({
         handleCopy,
         handleCut,
         handleNotebookPaste,
+        handleNotebookPasteCapture,
     } = useNotebookClipboard({
         mode,
         documentRef,
@@ -5028,7 +5119,8 @@ function MarkdownNotebookEditor({
                     draggingNodeId === node.id && 'MarkdownNotebook__row--dragging',
                     inlineNotePopover?.nodeId === node.id && 'MarkdownNotebook__row--note-open',
                     isBlockMenuOpen && 'MarkdownNotebook__row--menu-open',
-                    mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active'
+                    mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active',
+                    findOpen && findQuery.trim() && findMatchNodeIds[findIndex] === node.id && 'MarkdownNotebook__row--find-match'
                 )}
                 onMouseEnter={(event) => updateActiveBoundaryFromRow(event, index)}
                 onMouseMove={(event) => updateActiveBoundaryFromRow(event, index)}
@@ -5355,17 +5447,6 @@ function MarkdownNotebookEditor({
                     restoreSelectionRef,
                     rootEditableInputHtmlByNodeIdRef,
                 })}
-                {isToolInsertMenuOpen ? (
-                    <InsertMenu
-                        id={insertMenuDomId}
-                        query={insertMenu.query}
-                        commands={insertCommands}
-                        targetNodeId={node.id}
-                        position={insertMenuPosition}
-                        selectedIndex={insertMenu.selectedIndex}
-                        onClose={clearInsertMenu}
-                    />
-                ) : null}
             </div>
         )
     }
@@ -5380,6 +5461,7 @@ function MarkdownNotebookEditor({
     const mobileBarIsPrompt = Boolean(mobileBarNode && isPromptComponentNode(mobileBarNode))
 
     return (
+        <NotebookMentionPeopleProvider people={mergedMentionPeople}>
         <NotebookAnnotationsContext.Provider value={document.annotations || EMPTY_ANNOTATIONS}>
         <div
             className={clsx(
@@ -5393,9 +5475,54 @@ function MarkdownNotebookEditor({
             ref={notebookRef}
             onCopy={handleCopy}
             onCut={handleCut}
+            onPasteCapture={handleNotebookPasteCapture}
             onPaste={handleNotebookPaste}
-            onKeyDownCapture={handleNotebookKeyDown}
+            onKeyDownCapture={(event) => {
+                if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setFindOpen(true)
+                    return
+                }
+                if (findOpen && event.key === 'Escape') {
+                    event.preventDefault()
+                    setFindOpen(false)
+                    return
+                }
+                handleNotebookKeyDown(event)
+            }}
         >
+            {findOpen ? (
+                <NotebookFindBar
+                    query={findQuery}
+                    current={findMatchNodeIds.length ? findIndex + 1 : 0}
+                    total={findMatchNodeIds.length}
+                    onQueryChange={(next) => {
+                        setFindQuery(next)
+                        setFindIndex(0)
+                    }}
+                    onNext={() => {
+                        if (!findMatchNodeIds.length) return
+                        setFindIndex((index) => (index + 1) % findMatchNodeIds.length)
+                    }}
+                    onPrev={() => {
+                        if (!findMatchNodeIds.length) return
+                        setFindIndex((index) => (index - 1 + findMatchNodeIds.length) % findMatchNodeIds.length)
+                    }}
+                    onClose={() => setFindOpen(false)}
+                />
+            ) : null}
+            {insertMenu && (insertMenu.mode ?? 'tools') === 'tools' ? (
+                <InsertMenu
+                    id={insertMenuDomId}
+                    query={insertMenu.query}
+                    commands={insertCommands}
+                    targetNodeId={insertMenu.nodeId}
+                    position={insertMenuPosition}
+                    selectedIndex={insertMenu.selectedIndex}
+                    onClose={clearInsertMenu}
+                />
+            ) : null}
             <div className="MarkdownNotebook__debug-layout">
                 <div className="MarkdownNotebook__main" ref={mainRef} onMouseDown={handleMainMouseDown} onClick={handleMainClick}>
                     {document.errors.length ? (
@@ -5704,7 +5831,7 @@ function MarkdownNotebookEditor({
                     ) : null}
                     {mentionPicker ? (
                         <MentionPicker
-                            people={filterMentionPeople(listMentionPeople(), mentionPicker.query)}
+                            people={filterMentionPeople(mergedMentionPeople, mentionPicker.query)}
                             query={mentionPicker.query}
                             position={
                                 blockRefs.current[mentionPicker.nodeId]
@@ -5825,5 +5952,6 @@ function MarkdownNotebookEditor({
             </div>
         </div>
         </NotebookAnnotationsContext.Provider>
+        </NotebookMentionPeopleProvider>
     )
 }

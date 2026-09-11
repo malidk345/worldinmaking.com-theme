@@ -4,6 +4,7 @@ import {
     FormEvent,
     KeyboardEvent,
     MutableRefObject,
+    memo,
     useCallback,
     useLayoutEffect,
     useMemo,
@@ -44,7 +45,7 @@ import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockN
 import { getInlineText, normalizeInlineNodes } from './utils'
 import { NOTEBOOK_AI_WRITING_PLACEHOLDER } from './notebookAI'
 
-export function EditableTextBlock({
+function EditableTextBlockInner({
     node,
     isTitleBlock,
     mode,
@@ -111,6 +112,18 @@ export function EditableTextBlock({
 }): JSX.Element {
     const elementRef = useRef<HTMLElement | null>(null)
     const skipDomSyncForHtmlRef = useRef<string | null>(null)
+    const openInsertMenuRef = useRef(openInsertMenu)
+    const openSlashMenuAtTokenRef = useRef(openSlashMenuAtToken)
+    const closeInsertMenuRef = useRef(closeInsertMenu)
+    const replaceNodeWithNodesRef = useRef(replaceNodeWithNodes)
+    const toggleInsertMenuRef = useRef(toggleInsertMenu)
+    const openDetachedInsertMenuRef = useRef(openDetachedInsertMenu)
+    openInsertMenuRef.current = openInsertMenu
+    openSlashMenuAtTokenRef.current = openSlashMenuAtToken
+    closeInsertMenuRef.current = closeInsertMenu
+    replaceNodeWithNodesRef.current = replaceNodeWithNodes
+    toggleInsertMenuRef.current = toggleInsertMenu
+    openDetachedInsertMenuRef.current = openDetachedInsertMenu
     const annotations = useNotebookAnnotations()
     const toHtml = useCallback(
         (nodes: NotebookInlineNode[]) => inlineNodesToHtml(nodes, annotations),
@@ -193,7 +206,7 @@ export function EditableTextBlock({
         updateChildren(htmlElementToInlineNodes(element))
 
     const replaceWithParagraph = (start = 0, end = start): void => {
-        closeInsertMenu()
+        closeInsertMenuRef.current()
         updateNode(node.id, (currentNode) => {
             if (!isTextBlockNode(currentNode)) {
                 return currentNode
@@ -230,7 +243,7 @@ export function EditableTextBlock({
             restoreSelectionRef.current = plan.focus
             return
         }
-        replaceNodeWithNodes(node.id, plan.replacementNodes)
+        replaceNodeWithNodesRef.current(node.id, plan.replacementNodes)
         if (plan.focus) {
             restoreSelectionRef.current = plan.focus
         }
@@ -251,23 +264,23 @@ export function EditableTextBlock({
 
         const shortcutReplacement = getTextBlockShortcutReplacement(node, isTitleBlock, elementText)
         if (shortcutReplacement) {
-            closeInsertMenu()
+            closeInsertMenuRef.current()
             event.currentTarget.innerHTML = ''
-            replaceNodeWithNodes(node.id, shortcutReplacement.nodes)
+            replaceNodeWithNodesRef.current(node.id, shortcutReplacement.nodes)
             restoreSelectionRef.current = shortcutReplacement.restoreSelection
             return
         }
 
         const caret = getCollapsedSelectionRange(element, node.id)?.end ?? elementText.length
         const slashToken = !isTitleBlock && !isToolInsertMenuOpen ? getSlashTokenAt(elementText, caret) : null
-        if (slashToken && openSlashMenuAtToken?.(slashToken, elementChildren)) {
+        if (slashToken && openSlashMenuAtTokenRef.current?.(slashToken, elementChildren)) {
             return
         }
         if (!isTitleBlock && slashToken && slashToken.start === 0) {
             const queryChildren: NotebookInlineNode[] = slashToken.query
                 ? [{ type: 'text', text: slashToken.query }]
                 : []
-            openInsertMenu(slashToken.query)
+            openInsertMenuRef.current(slashToken.query)
             updateElementAndChildren(element, queryChildren)
             return
         }
@@ -275,11 +288,11 @@ export function EditableTextBlock({
         const nextChildren = updateChildren(elementChildren)
         const nextText = getInlineText(nextChildren)
         if (isToolInsertMenuOpen) {
-            openInsertMenu(nextText)
+            openInsertMenuRef.current(nextText)
             return
         }
 
-        closeInsertMenu()
+        closeInsertMenuRef.current()
     }
 
     const handlePaste = (event: ReactClipboardEvent<HTMLElement>): void => {
@@ -355,7 +368,7 @@ export function EditableTextBlock({
         if (isInsertMenuOpen && event.key === 'Escape') {
             event.preventDefault()
             event.stopPropagation()
-            toggleInsertMenu()
+            toggleInsertMenuRef.current()
             return
         }
 
@@ -411,7 +424,7 @@ export function EditableTextBlock({
             if (isTitleBlock) {
                 const nextParagraph = makeEmptyParagraph(`after-title-${node.id}`)
                 nextParagraph.children = after
-                replaceNodeWithNodes(node.id, [{ ...node, type: 'heading', level: 1, children: before }, nextParagraph])
+                replaceNodeWithNodesRef.current(node.id, [{ ...node, type: 'heading', level: 1, children: before }, nextParagraph])
                 restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
                 return
             }
@@ -424,14 +437,14 @@ export function EditableTextBlock({
 
                 if (selectionStart === 0) {
                     const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                    replaceNodeWithNodes(node.id, [previousParagraph, { ...node, children: after }])
+                    replaceNodeWithNodesRef.current(node.id, [previousParagraph, { ...node, children: after }])
                     restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
                     return
                 }
 
                 if (selectionStart >= textLength) {
                     const nextParagraph = makeEmptyParagraph(`after-${node.id}`)
-                    replaceNodeWithNodes(node.id, [
+                    replaceNodeWithNodesRef.current(node.id, [
                         { ...node, children: before },
                         nextParagraph,
                     ])
@@ -440,7 +453,7 @@ export function EditableTextBlock({
                 }
 
                 const nextHeadingId = makeEmptyParagraph(`after-${node.id}`).id
-                replaceNodeWithNodes(node.id, [
+                replaceNodeWithNodesRef.current(node.id, [
                     { ...node, children: before },
                     {
                         ...node,
@@ -455,13 +468,13 @@ export function EditableTextBlock({
             if (node.type === 'blockquote') {
                 if (selectionStart === 0) {
                     const previousParagraph = makeEmptyParagraph(`before-${node.id}`)
-                    replaceNodeWithNodes(node.id, [previousParagraph, { ...node, children: after }])
+                    replaceNodeWithNodesRef.current(node.id, [previousParagraph, { ...node, children: after }])
                     restoreSelectionRef.current = { nodeId: previousParagraph.id, start: 0, end: 0 }
                     return
                 }
 
                 const nextBlockquoteId = makeEmptyParagraph(`after-${node.id}`).id
-                replaceNodeWithNodes(node.id, [
+                replaceNodeWithNodesRef.current(node.id, [
                     { ...node, children: before },
                     {
                         ...node,
@@ -476,7 +489,7 @@ export function EditableTextBlock({
             const nextParagraph = makeEmptyParagraph(`after-${node.id}`)
             nextParagraph.children = after
 
-            replaceNodeWithNodes(node.id, [{ ...node, children: before }, nextParagraph])
+            replaceNodeWithNodesRef.current(node.id, [{ ...node, children: before }, nextParagraph])
             restoreSelectionRef.current = { nodeId: nextParagraph.id, start: 0, end: 0 }
             return
         }
@@ -512,7 +525,7 @@ export function EditableTextBlock({
                 restoreSelection(event.currentTarget, selectionStart, selectionStart)
                 updateChildren(nextChildren)
                 if (isToolInsertMenuOpen) {
-                    openInsertMenu(getInlineText(nextChildren))
+                    openInsertMenuRef.current(getInlineText(nextChildren))
                 }
                 restoreSelectionRef.current = { nodeId: node.id, start: selectionStart, end: selectionStart }
                 return
@@ -588,15 +601,15 @@ export function EditableTextBlock({
         if (isToolInsertMenuOpen) {
             const caretOffset = getInlineText(node.children).length
             restoreSelectionRef.current = { nodeId: node.id, start: caretOffset, end: caretOffset }
-            toggleInsertMenu()
+            toggleInsertMenuRef.current()
             return
         }
 
-        if (shouldDetachInsertMenu && openDetachedInsertMenu()) {
+        if (shouldDetachInsertMenu && openDetachedInsertMenuRef.current()) {
             return
         }
 
-        toggleInsertMenu()
+        toggleInsertMenuRef.current()
         focusEditableBlock()
     }
 
@@ -666,3 +679,24 @@ export function EditableTextBlock({
         </div>
     )
 }
+
+
+export const EditableTextBlock = memo(EditableTextBlockInner, (previous, next) => {
+    return (
+        previous.node === next.node &&
+        previous.isTitleBlock === next.isTitleBlock &&
+        previous.mode === next.mode &&
+        previous.placeholder === next.placeholder &&
+        previous.showInlineInsertMenuButton === next.showInlineInsertMenuButton &&
+        previous.isInlineInsertMenuButtonVisible === next.isInlineInsertMenuButtonVisible &&
+        previous.isInsertMenuOpen === next.isInsertMenuOpen &&
+        previous.insertMenuMode === next.insertMenuMode &&
+        previous.hasInvalidInsertMenuQuery === next.hasInvalidInsertMenuQuery &&
+        previous.isAIWriting === next.isAIWriting &&
+        previous.isAIWritingPlaceholder === next.isAIWritingPlaceholder &&
+        previous.isAIShimmering === next.isAIShimmering &&
+        previous.updateNode === next.updateNode &&
+        previous.handleSelectionChange === next.handleSelectionChange &&
+        previous.startTextSelectionPointer === next.startTextSelectionPointer
+    )
+})

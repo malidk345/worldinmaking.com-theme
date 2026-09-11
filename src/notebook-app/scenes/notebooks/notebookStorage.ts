@@ -30,6 +30,7 @@ import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/index
 import { TrashStore } from '../../../lib/trash-store'
 import type { NotebookAccessRole } from '../../../lib/notebook-sharing'
 import { formatDailyTitle, normalizeFolder, todayKey, uniqueTags, type NotebookKind } from './notebookOrganize'
+import { notebookPreviewExcerpt } from './notebookPreview'
 
 export const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
 export const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
@@ -581,6 +582,24 @@ function readLocalNotebooks(): StoredNotebook[] {
 export function getNotebooks(): StoredNotebook[] {
     ensureLiveNotebookSync()
     return readLocalNotebooks()
+}
+
+export type NotebookBrowserItem = Omit<StoredNotebook, 'content'> & {
+    preview: string
+    content?: string
+}
+
+export function toNotebookBrowserItem(notebook: StoredNotebook, keepContent = false): NotebookBrowserItem {
+    const { content, ...rest } = notebook
+    return {
+        ...rest,
+        preview: notebookPreviewExcerpt(content, 2000),
+        ...(keepContent ? { content } : {}),
+    }
+}
+
+export function listNotebooksForBrowser(): NotebookBrowserItem[] {
+    return getNotebooks().map(toNotebookBrowserItem)
 }
 
 export function adoptGuestNotebooksIntoAccount(): void {

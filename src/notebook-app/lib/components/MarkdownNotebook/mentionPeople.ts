@@ -1,5 +1,8 @@
+import { createContext, createElement, useContext, useMemo, type ReactNode } from 'react'
+
 import { NOTEBOOK_INVITE_BOT_IDS, resolveInviteBot } from '../../../../lib/bots/notebook-invite'
 import { getNotebookActor } from '../../../../lib/notebook-actor'
+import type { NotebookCollaborator } from '../../../../lib/notebook-collaborators-client'
 import { splitInlineNodesAt } from './inlineContent'
 import type { NotebookInlineNode } from './types'
 import { normalizeInlineNodes } from './utils'
@@ -15,7 +18,24 @@ export type MentionToken = {
     query: string
 }
 
-export function listMentionPeople(): MentionPerson[] {
+const MentionPeopleContext = createContext<MentionPerson[] | null>(null)
+
+export function collaboratorToMentionPerson(entry: NotebookCollaborator): MentionPerson | null {
+    const person = entry.person
+    const label =
+        [person?.first_name, person?.last_name].filter(Boolean).join(' ') ||
+        person?.username ||
+        person?.email ||
+        ''
+    if (!label.trim()) return null
+    return {
+        id: person?.username || person?.id || entry.user_id,
+        label: label.trim(),
+        avatar: person?.avatar_url,
+    }
+}
+
+export function listMentionPeople(extra: MentionPerson[] = []): MentionPerson[] {
     const actor = getNotebookActor()
     const label = [actor.first_name, actor.last_name].filter(Boolean).join(' ').trim() || 'You'
     const self: MentionPerson = {
@@ -25,15 +45,34 @@ export function listMentionPeople(): MentionPerson[] {
     }
     const seen = new Set([self.id.toLowerCase(), self.label.toLowerCase()])
     const people: MentionPerson[] = [self]
+    const add = (person: MentionPerson): void => {
+        const keys = [person.id, person.label].map((value) => value.trim().toLowerCase()).filter(Boolean)
+        if (keys.some((key) => seen.has(key))) return
+        keys.forEach((key) => seen.add(key))
+        people.push(person)
+    }
     for (const botId of NOTEBOOK_INVITE_BOT_IDS) {
         const bot = resolveInviteBot(botId)
         if (!bot) continue
-        const key = bot.id.toLowerCase()
-        if (seen.has(key)) continue
-        seen.add(key)
-        people.push({ id: bot.id, label: bot.name, avatar: bot.avatarUrl })
+        add({ id: bot.id, label: bot.name, avatar: bot.avatarUrl })
     }
+    extra.forEach(add)
     return people
+}
+
+export function NotebookMentionPeopleProvider({
+    people,
+    children,
+}: {
+    people: MentionPerson[]
+    children: ReactNode
+}): JSX.Element {
+    return createElement(MentionPeopleContext.Provider, { value: people }, children)
+}
+
+export function useNotebookMentionPeople(): MentionPerson[] {
+    const extra = useContext(MentionPeopleContext)
+    return useMemo(() => (extra ? extra : listMentionPeople()), [extra])
 }
 
 export function filterMentionPeople(people: MentionPerson[], query: string): MentionPerson[] {

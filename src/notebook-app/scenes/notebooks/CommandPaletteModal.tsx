@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IconSearch, IconSparkles, IconPlus, IconNotebook, IconCalendar, IconX, IconArrowRight } from '@posthog/icons'
-import { getNotebooks, getOrCreateDailyNotebook, StoredNotebook } from './notebookStorage'
+import { getOrCreateDailyNotebook, listNotebooksForBrowser, type NotebookBrowserItem } from './notebookStorage'
 import { notebookMatchesQuery } from './notebookPreview'
 
 interface CommandPaletteModalProps {
@@ -30,13 +30,13 @@ export function CommandPaletteModal({
     onOpenAI,
 }: CommandPaletteModalProps) {
     const [query, setQuery] = useState('')
-    const [notebooks, setNotebooks] = useState<StoredNotebook[]>([])
+    const [notebooks, setNotebooks] = useState<NotebookBrowserItem[]>([])
     const [selectedIndex, setSelectedIndex] = useState(0)
     const inputRef = useRef<HTMLInputElement | null>(null)
 
     useEffect(() => {
         if (isOpen) {
-            setNotebooks(getNotebooks())
+            setNotebooks(listNotebooksForBrowser())
             setQuery('')
             setSelectedIndex(0)
             window.setTimeout(() => inputRef.current?.focus(), 50)
