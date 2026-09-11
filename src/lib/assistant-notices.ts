@@ -14,6 +14,7 @@ import { assistantMaxUnread, isAssistantTopicMuted } from './assistant-cadence'
 
 export const ASSISTANT_NOTICES_EVENT = 'wim-assistant-notices'
 export const ASSISTANT_NOTICE_ID_PREFIX = 'assistant_'
+export const ASSISTANT_INVITE_ID = 'assistant_invite'
 
 export type AssistantNoticeKind = 'nag' | 'question' | 'counsel' | 'reading'
 
@@ -516,7 +517,35 @@ export function extractAssistantNoticeId(path?: string | null): string | null {
     return match ? match[1] : null
 }
 
+export function seedAssistantInviteNotice(): AssistantNotice | null {
+    if (readPersonalAssistantId()) return null
+    const existing = readAssistantNotices()
+    if (existing.some((item) => item.id === ASSISTANT_INVITE_ID && item.unread)) return null
+    const first = PHILOSOPHER_BOTS[0]
+    const notice: AssistantNotice = {
+        id: ASSISTANT_INVITE_ID,
+        philosopherId: first.id as PersonalAssistantId,
+        kind: 'question',
+        title: 'A resident philosopher can watch your notebooks. Pick one.',
+        body: 'They write into your notifications. Click one to read and reply.',
+        excerpt: 'Assistant',
+        count: 'Question',
+        date: new Date().toISOString(),
+        url: '/assistant',
+        unread: true,
+    }
+    writeAll([notice, ...existing.filter((item) => item.id !== ASSISTANT_INVITE_ID)])
+    return notice
+}
+
+export function clearAssistantInviteNotice(): void {
+    const existing = readAssistantNotices()
+    const next = existing.filter((item) => item.id !== ASSISTANT_INVITE_ID)
+    if (next.length !== existing.length) writeAll(next)
+}
+
 export function seedAssistantNotices(philosopherId: PersonalAssistantId): AssistantNotice[] {
+    clearAssistantInviteNotice()
     const meta = readWatchMeta()
     if (meta.seedFor === philosopherId && readAssistantNotices().some((n) => n.philosopherId === philosopherId)) {
         return []

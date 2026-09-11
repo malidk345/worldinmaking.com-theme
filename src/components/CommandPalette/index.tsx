@@ -87,19 +87,6 @@ export default function CommandPalette({
                 }),
         },
         {
-            id: 'app-assistant',
-            label: 'open assistant',
-            category: 'navigation',
-            icon: <IconSparkles className="size-4" />,
-            action: () =>
-                addWindow({
-                    key: 'assistant',
-                    path: '/assistant',
-                    title: 'Assistant',
-                    size: { width: 720, height: 720 },
-                }),
-        },
-        {
             id: 'toggle-theme',
             label: siteSettings.colorMode === 'dark' ? 'switch to light theme' : 'switch to dark theme',
             category: 'system',

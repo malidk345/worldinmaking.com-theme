@@ -67,3 +67,21 @@ export function getPersonalAssistantBot(id?: string | null) {
     if (!resolved) return null
     return PHILOSOPHER_BOTS.find((bot) => bot.id === resolved) || null
 }
+
+export function adoptWimAiDefaultIfNeeded(): PersonalAssistantId | null {
+    const current = readPersonalAssistantId()
+    if (current) return current
+    if (typeof window === 'undefined') return null
+    try {
+        const raw = window.localStorage.getItem(SETTINGS_KEY)
+        const parsed = raw ? JSON.parse(raw) : {}
+        const fromWimAi = matchPhilosopherId(String(parsed?.defaultModel || ''))
+        if (fromWimAi && isPersonalAssistantId(fromWimAi)) {
+            writePersonalAssistantId(fromWimAi)
+            return fromWimAi
+        }
+    } catch {
+        /* ignore */
+    }
+    return null
+}

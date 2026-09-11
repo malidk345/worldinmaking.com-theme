@@ -8,6 +8,7 @@ import { AppIcon } from 'components/OSIcons/AppIcon'
 import { PHILOSOPHER_BOTS } from 'lib/persona-engine'
 import { philosopherPixelAvatar } from 'lib/philosopher-pixels'
 import { useOptionalWindow } from 'context/Window'
+import { useAppActions } from 'context/App'
 import { useUser } from 'hooks/useUser'
 import getAvatarURL from 'components/Squeak/util/getAvatar'
 import {
@@ -149,8 +150,7 @@ function PickerScreen({
                             Choose your assistant
                         </h1>
                         <p className="text-sm text-secondary mt-1 mb-0">
-                            They write you mail. Open a notice and reply in the thread, the same way the forum inbox
-                            works.
+                            They write into your notifications. Click one to read and reply.
                         </p>
                     </div>
                 </div>
@@ -441,6 +441,8 @@ function MailDesk({
 export function AssistantWindow() {
     const win = useOptionalWindow()
     const pathNoticeId = extractAssistantNoticeId(win?.appWindow?.path)
+    const { user } = useUser()
+    const { openSignIn } = useAppActions()
     const [assistantId, setAssistantId] = useState<PersonalAssistantId | null>(null)
     const [picking, setPicking] = useState(false)
     const [ready, setReady] = useState(false)
@@ -467,11 +469,22 @@ export function AssistantWindow() {
     return (
         <div data-scheme="primary" className="@container bg-primary text-primary h-full flex flex-col min-h-0 font-sans">
             <SEO title="Assistant" description="Mail from a resident philosopher." />
-            {!ready ? <div className="flex-1" /> : null}
-            {ready && (picking || !assistantId) ? (
+            {!user ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                    <h1 className="text-xl font-bold m-0">Sign in</h1>
+                    <p className="text-sm text-secondary m-0 max-w-sm">
+                        A resident philosopher writes into your notifications after you sign in.
+                    </p>
+                    <OSButton variant="primary" size="md" onClick={() => openSignIn()}>
+                        Sign in
+                    </OSButton>
+                </div>
+            ) : null}
+            {user && !ready ? <div className="flex-1" /> : null}
+            {user && ready && (picking || !assistantId) ? (
                 <PickerScreen currentId={assistantId} onChoose={choose} />
             ) : null}
-            {ready && assistantId && !picking ? (
+            {user && ready && assistantId && !picking ? (
                 <MailDesk
                     philosopherId={assistantId}
                     onChange={() => setPicking(true)}

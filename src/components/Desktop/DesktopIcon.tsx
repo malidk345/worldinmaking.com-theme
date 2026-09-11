@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import ZoomHover from 'components/ZoomHover'
 import { useArchive } from 'context/ArchiveContext'
-import { ASSISTANT_NOTICES_EVENT, unreadAssistantCount } from 'lib/assistant-notices'
 
 interface DesktopIconProps {
     app: AppItem
@@ -28,22 +27,6 @@ function setIconDragImage(e: React.DragEvent, node: HTMLElement | null) {
     // Hotspot sits on the glyph, not the label, so the icon tracks the cursor.
     e.dataTransfer.setDragImage(ghost, Math.round(rect.width / 2), 22)
     window.setTimeout(() => ghost.remove(), 0)
-}
-
-function AssistantUnreadBadge() {
-    const [count, setCount] = useState(0)
-    useEffect(() => {
-        const refresh = () => setCount(unreadAssistantCount())
-        refresh()
-        window.addEventListener(ASSISTANT_NOTICES_EVENT, refresh)
-        return () => window.removeEventListener(ASSISTANT_NOTICES_EVENT, refresh)
-    }, [])
-    if (!count) return null
-    return (
-        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red text-white text-[10px] font-bold leading-4 text-center border border-white">
-            {count > 9 ? '9+' : count}
-        </span>
-    )
 }
 
 export default function DesktopIcon({ app }: DesktopIconProps) {
@@ -126,9 +109,7 @@ export default function DesktopIcon({ app }: DesktopIconProps) {
                         isArchiveIcon && isDragOver ? 'scale-[1.04] ring-2 ring-blue/40 bg-blue/10 p-1' : ''
                     }`}
                 >
-                    <AppLink {...app} hasDragged={blockClick}>
-                        {appUrl === '/assistant' ? <AssistantUnreadBadge /> : null}
-                    </AppLink>
+                    <AppLink {...app} hasDragged={blockClick} />
                 </div>
             </ZoomHover>
         </li>

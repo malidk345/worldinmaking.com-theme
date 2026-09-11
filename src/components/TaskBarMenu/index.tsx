@@ -46,9 +46,6 @@ function TaskBarMenu() {
 
     const { user, notifications, logout, isModerator } = useUser()
     const { t } = useT()
-    const assistantCount = (notifications || []).filter((item: { id?: string | number }) =>
-        String(item?.id || '').startsWith('assistant_')
-    ).length
 
     const isLoggedIn = !!user
 
@@ -178,12 +175,6 @@ function TaskBarMenu() {
                           type: 'item' as const,
                           label: t('chrome.wimAi'),
                           link: '/workspace-chat',
-                          icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      {
-                          type: 'item' as const,
-                          label: `${t('chrome.assistant')}${assistantCount > 0 ? ` (${assistantCount})` : ''}`,
-                          link: '/assistant',
                           icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
                       },
                       ...(isModerator

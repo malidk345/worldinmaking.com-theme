@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { requestAssistantLiveNotice } from 'lib/assistant-live'
 import {
     seedAssistantNotices,
+    seedAssistantInviteNotice,
     tickLocalAssistantNotice,
     tickNotebookReadingNotice,
     readWatchMeta,
@@ -9,6 +10,7 @@ import {
 } from 'lib/assistant-notices'
 import {
     PERSONAL_ASSISTANT_EVENT,
+    adoptWimAiDefaultIfNeeded,
     readPersonalAssistantId,
 } from 'lib/personal-assistant'
 import {
@@ -35,17 +37,23 @@ export default function AssistantWatch() {
     const notebookTimer = useRef<number | null>(null)
     const { windows } = useAppWindows()
     const { user } = useUser()
+    const signedIn = Boolean(user)
 
     useEffect(() => {
+        if (!signedIn) return
         setAssistantWorldWindows(
             windows.slice(0, 12).map((w) => ({
                 path: String(w.path || ''),
                 title: String(w.title || w.meta?.title || w.path || ''),
             }))
         )
-    }, [windows])
+    }, [windows, signedIn])
 
     useEffect(() => {
+        if (!signedIn) {
+            setAssistantWorldProfile(null)
+            return
+        }
         setAssistantWorldProfile(
             user
                 ? {
@@ -56,9 +64,13 @@ export default function AssistantWatch() {
                   }
                 : null
         )
-    }, [user])
+    }, [user, signedIn])
 
     useEffect(() => {
+        if (!signedIn) {
+            setAssistantWorldForum([])
+            return
+        }
         const refreshForum = async () => {
             const uid = getAuthUserId()
             if (!uid) {
@@ -77,13 +89,16 @@ export default function AssistantWatch() {
         void refreshForum()
         const id = window.setInterval(() => void refreshForum(), 10 * 60_000)
         return () => window.clearInterval(id)
-    }, [user?.id])
+    }, [user?.id, signedIn])
 
     useEffect(() => {
+        if (!signedIn) return
         void hydrateAssistantFromRemote()
         const seed = () => {
-            const id = readPersonalAssistantId()
+            const adopted = adoptWimAiDefaultIfNeeded()
+            const id = adopted || readPersonalAssistantId()
             if (id) seedAssistantNotices(id)
+            else seedAssistantInviteNotice()
             scheduleAssistantPush()
         }
         seed()
@@ -97,9 +112,10 @@ export default function AssistantWatch() {
             window.removeEventListener(ASSISTANT_CADENCE_EVENT, scheduleAssistantPush)
             window.removeEventListener(ASSISTANT_MEMORY_EVENT, scheduleAssistantPush)
         }
-    }, [])
+    }, [signedIn])
 
     useEffect(() => {
+        if (!signedIn) return
         const localTick = () => {
             if (document.visibilityState === 'hidden') return
             if (!readPersonalAssistantId()) return
@@ -118,9 +134,10 @@ export default function AssistantWatch() {
             window.removeEventListener('focus', onFocus)
             window.removeEventListener(ASSISTANT_CADENCE_EVENT, localTick)
         }
-    }, [])
+    }, [signedIn])
 
     useEffect(() => {
+        if (!signedIn) return
         const runLive = async () => {
             if (liveLock.current) return
             if (document.visibilityState === 'hidden') return
@@ -147,9 +164,10 @@ export default function AssistantWatch() {
             window.clearTimeout(start)
             window.clearInterval(id)
         }
-    }, [])
+    }, [signedIn])
 
     useEffect(() => {
+        if (!signedIn) return
         const onNotebooks = () => {
             if (!readPersonalAssistantId()) return
             if (isAssistantQuiet()) return
@@ -165,7 +183,7 @@ export default function AssistantWatch() {
             window.removeEventListener(NOTEBOOKS_HYDRATED, onNotebooks)
             if (notebookTimer.current) window.clearTimeout(notebookTimer.current)
         }
-    }, [])
+    }, [signedIn])
 
     return null
 }
