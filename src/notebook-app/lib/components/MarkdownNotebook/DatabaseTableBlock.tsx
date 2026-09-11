@@ -2,7 +2,7 @@ import OSButton from 'components/OSButton'
 import { Checkbox } from 'components/RadixUI/Checkbox'
 import { IconPlus, IconTrash } from '@posthog/icons'
 import { uuid } from '../../utils/dom'
-import type { TableColumn, TableContent } from '../../../types/blocks'
+import type { ColumnType, TableColumn, TableContent } from '../../../types/blocks'
 import {
     databaseContentToProps,
     emptyCellForColumn,
@@ -10,6 +10,19 @@ import {
     parseDatabaseContent,
 } from './writingBlockModel'
 import type { NotebookComponentRenderProps } from './types'
+
+const COLUMN_TYPES: { value: ColumnType; label: string }[] = [
+    { value: 'text', label: 'Text' },
+    { value: 'select', label: 'Select' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'date', label: 'Date' },
+]
+
+const DEFAULT_SELECT_OPTIONS = [
+    { id: 'todo', name: 'Todo', color: 'slate' },
+    { id: 'doing', name: 'Doing', color: 'amber' },
+    { id: 'done', name: 'Done', color: 'green' },
+]
 
 export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponentRenderProps): JSX.Element {
     const content = parseDatabaseContent(node.props)
@@ -34,8 +47,13 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
         persist({ ...content, rows: [...content.rows, { id: uuid(), cells }] })
     }
 
-    const addColumn = (): void => {
-        const column: TableColumn = { id: `col_${uuid().slice(0, 8)}`, name: 'Column', type: 'text' }
+    const addColumn = (type: ColumnType = 'text'): void => {
+        const column: TableColumn = {
+            id: `col_${uuid().slice(0, 8)}`,
+            name: type === 'date' ? 'Date' : type === 'checkbox' ? 'Done' : type === 'select' ? 'Status' : 'Column',
+            type,
+            options: type === 'select' ? DEFAULT_SELECT_OPTIONS : undefined,
+        }
         persist({
             ...content,
             columns: [...content.columns, column],
@@ -50,6 +68,44 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
         persist({
             ...content,
             columns: content.columns.map((column) => (column.id === columnId ? { ...column, name } : column)),
+        })
+    }
+
+    const setColumnType = (columnId: string, type: ColumnType): void => {
+        persist({
+            ...content,
+            columns: content.columns.map((column) =>
+                column.id === columnId
+                    ? {
+                          ...column,
+                          type,
+                          options: type === 'select' ? column.options || DEFAULT_SELECT_OPTIONS : column.options,
+                      }
+                    : column
+            ),
+        })
+    }
+
+    const moveColumn = (columnId: string, direction: -1 | 1): void => {
+        const index = content.columns.findIndex((column) => column.id === columnId)
+        const nextIndex = index + direction
+        if (index < 0 || nextIndex < 0 || nextIndex >= content.columns.length) return
+        const columns = [...content.columns]
+        const [column] = columns.splice(index, 1)
+        columns.splice(nextIndex, 0, column)
+        persist({ ...content, columns })
+    }
+
+    const removeColumn = (columnId: string): void => {
+        if (content.columns.length <= 1) return
+        persist({
+            ...content,
+            columns: content.columns.filter((column) => column.id !== columnId),
+            rows: content.rows.map((row) => {
+                const cells = { ...row.cells }
+                delete cells[columnId]
+                return { ...row, cells }
+            }),
         })
     }
 
@@ -165,14 +221,58 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
                     <table className="MarkdownNotebook__database-table">
                         <thead>
                             <tr>
-                                {content.columns.map((column) => (
+                                {content.columns.map((column, index) => (
                                     <th key={column.id}>
                                         {editable ? (
-                                            <input
-                                                value={column.name}
-                                                onChange={(event) => renameColumn(column.id, event.target.value)}
-                                                className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
-                                            />
+                                            <div className="flex flex-col gap-1 min-w-[8rem]">
+                                                <input
+                                                    value={column.name}
+                                                    onChange={(event) => renameColumn(column.id, event.target.value)}
+                                                    className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
+                                                />
+                                                <div className="flex items-center gap-1">
+                                                    <select
+                                                        value={column.type}
+                                                        onChange={(event) =>
+                                                            setColumnType(column.id, event.target.value as ColumnType)
+                                                        }
+                                                        className="notebook-native-field flex-1 rounded-sm border border-primary px-1 py-0.5 text-xs text-primary"
+                                                    >
+                                                        {COLUMN_TYPES.map((option) => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        className="text-xs text-muted px-1"
+                                                        disabled={index === 0}
+                                                        onClick={() => moveColumn(column.id, -1)}
+                                                        aria-label="Move column left"
+                                                    >
+                                                        ←
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="text-xs text-muted px-1"
+                                                        disabled={index === content.columns.length - 1}
+                                                        onClick={() => moveColumn(column.id, 1)}
+                                                        aria-label="Move column right"
+                                                    >
+                                                        →
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="text-xs text-danger px-1"
+                                                        disabled={content.columns.length <= 1}
+                                                        onClick={() => removeColumn(column.id)}
+                                                        aria-label="Delete column"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            </div>
                                         ) : (
                                             column.name
                                         )}
@@ -212,13 +312,15 @@ export function DatabaseTableBlock({ node, updateProps, mode }: NotebookComponen
             )}
 
             {editable ? (
-                <div className="MarkdownNotebook__database-actions">
+                <div className="MarkdownNotebook__database-actions flex flex-wrap gap-2">
                     <OSButton size="xs" icon={<IconPlus />} onClick={addRow}>
                         Add row
                     </OSButton>
-                    <OSButton size="xs" icon={<IconPlus />} onClick={addColumn}>
-                        Add column
-                    </OSButton>
+                    {COLUMN_TYPES.map((option) => (
+                        <OSButton key={option.value} size="xs" icon={<IconPlus />} onClick={() => addColumn(option.value)}>
+                            Add {option.label.toLowerCase()}
+                        </OSButton>
+                    ))}
                 </div>
             ) : null}
         </div>
@@ -263,6 +365,18 @@ function DatabaseCell({
                     </option>
                 ))}
             </select>
+        )
+    }
+    if (column.type === 'date') {
+        const dateValue = typeof value === 'string' ? value.slice(0, 10) : ''
+        if (!editable) return <span>{dateValue || ''}</span>
+        return (
+            <input
+                type="date"
+                value={dateValue}
+                onChange={(event) => onChange(event.target.value)}
+                className="notebook-native-field w-full rounded-sm border border-primary px-1.5 py-1 text-sm text-primary"
+            />
         )
     }
     if (!editable) return <span>{String(value || '')}</span>
