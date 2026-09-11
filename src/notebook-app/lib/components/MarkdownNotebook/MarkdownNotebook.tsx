@@ -5119,7 +5119,6 @@ function MarkdownNotebookEditor({
             node.blockId && !isAIPromptOpen
                 ? document.annotations?.[node.blockId]?.notes || []
                 : []
-        const canCommentOnBlock = mode === 'edit' && !isAIPromptOpen && !isAIWritingNode && !isDiscussionCommentNode(node)
         const canShowMoreMenu = canShowBlockMoreMenu({
             mode,
             isTitleRow,
@@ -5206,7 +5205,7 @@ function MarkdownNotebookEditor({
                         <IconDrag />
                     </div>
                 ) : null}
-                {canCommentOnBlock || canShowMoreMenu || blockNotes.length ? (
+                {canShowMoreMenu || blockNotes.length ? (
                     <div className="MarkdownNotebook__block-chrome" contentEditable={false}>
                         {blockNotes.length ? (
                             <div className="MarkdownNotebook__block-notes">
@@ -5242,22 +5241,6 @@ function MarkdownNotebookEditor({
                                     </button>
                                 ))}
                             </div>
-                        ) : null}
-                        {canCommentOnBlock ? (
-                            <button
-                                type="button"
-                                className="MarkdownNotebook__block-comment-btn"
-                                aria-label="Comment on this block"
-                                title="Comment on this block"
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={(event) => {
-                                    event.preventDefault()
-                                    event.stopPropagation()
-                                    startBlockCommentForNode(node.id)
-                                }}
-                            >
-                                <IconComment />
-                            </button>
                         ) : null}
                         {canShowMoreMenu ? (
                             <MenuBar

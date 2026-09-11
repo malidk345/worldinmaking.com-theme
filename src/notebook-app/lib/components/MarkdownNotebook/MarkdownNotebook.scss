@@ -4093,42 +4093,36 @@ button.MarkdownNotebook__component-title:focus-visible {
     pointer-events: auto;
 }
 
-.MarkdownNotebook__block-comment-btn,
 .MarkdownNotebook__block-more-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
     padding: 0;
     color: rgb(var(--text-secondary, 75 75 75));
     pointer-events: auto;
     cursor: pointer;
     background: rgb(var(--bg, 255 255 255));
     border: 1px solid rgb(var(--border, 192 192 192));
-    border-radius: 4px;
+    border-radius: 3px;
     opacity: 0;
     transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
 
     svg {
-        width: 0.9rem;
-        height: 0.9rem;
+        width: 0.75rem;
+        height: 0.75rem;
     }
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .MarkdownNotebook__row:hover .MarkdownNotebook__block-comment-btn,
     .MarkdownNotebook__row:hover .MarkdownNotebook__block-more-btn,
-    .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn,
     .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-more-btn,
-    .MarkdownNotebook__row--note-open .MarkdownNotebook__block-comment-btn,
     .MarkdownNotebook__row--note-open .MarkdownNotebook__block-more-btn,
-    .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-comment-btn,
     .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-more-btn {
         opacity: 0.7;
     }
 
-    .MarkdownNotebook__block-comment-btn:hover,
     .MarkdownNotebook__block-more-btn:hover {
         color: rgb(var(--text-primary, 35 35 35));
         background: rgb(var(--accent, 229 231 224));
@@ -4137,13 +4131,9 @@ button.MarkdownNotebook__component-title:focus-visible {
     }
 }
 
-.MarkdownNotebook__row:focus-within .MarkdownNotebook__block-comment-btn,
 .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-more-btn,
-.MarkdownNotebook__row--note-open .MarkdownNotebook__block-comment-btn,
 .MarkdownNotebook__row--note-open .MarkdownNotebook__block-more-btn,
-.MarkdownNotebook__row--menu-open .MarkdownNotebook__block-comment-btn,
 .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-more-btn,
-.MarkdownNotebook__block-comment-btn:focus-visible,
 .MarkdownNotebook__block-more-btn:focus-visible {
     opacity: 0.85;
 }
@@ -4229,7 +4219,6 @@ button.MarkdownNotebook__component-title:focus-visible {
         pointer-events: none !important;
     }
 
-    .MarkdownNotebook__block-comment-btn,
     .MarkdownNotebook__block-more-btn {
         display: none !important;
     }

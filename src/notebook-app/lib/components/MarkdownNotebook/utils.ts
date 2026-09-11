@@ -376,5 +376,7 @@ function sortPropValue(value: NotebookComponentProps[string]): NotebookComponent
     return value
 }
 
-export { scrollNotebookElementIntoView } from './domSelection'
-
+// Re-exports for backwards compatibility
+export { scrollNotebookElementIntoView, getNotebookBlockElement } from './domSelection'
+export { getListItemRefKey } from './listModel'
+export { getTableCellRefKey } from './tableModel'

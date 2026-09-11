@@ -2,15 +2,13 @@ import { useLayoutEffect, useRef, type MutableRefObject, type RefObject } from '
 import type { NotebookDocument } from './types'
 import type { RestoreSelectionRequest } from './editorTypes'
 import {
+    getNotebookBlockElement,
     restoreSelection,
     restoreTextSelectionRanges,
     scrollNotebookElementIntoView,
 } from './domSelection'
-import {
-    getListItemRefKey,
-    getNotebookBlockElement,
-    getTableCellRefKey,
-} from './utils'
+import { getListItemRefKey } from './listModel'
+import { getTableCellRefKey } from './tableModel'
 
 export interface UseNotebookSelectionOptions {
     document: NotebookDocument

@@ -31,6 +31,23 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Remove Standalone Block Comment Button & Compact Three-Dot More Button)
+- **Scope:**
+  1. Removed redundant standalone block comment button (`.MarkdownNotebook__block-comment-btn`) from the block chrome (`MarkdownNotebook.tsx`, `MarkdownNotebook.scss`, `notebook-mobile-block-chrome.css`). The "Comment" action is already present as the first option inside the three-dot more menu (`buildBlockMoreMenuItems`).
+  2. Made the three-dot more menu button (`.MarkdownNotebook__block-more-btn`) significantly more compact:
+     - Desktop: reduced size from `1.5rem` (24px) to `1.25rem` (20px) with `0.75rem` (12px) icon and `border-radius: 3px`.
+     - Mobile: reduced size from oversized `2rem` (32px) to `1.375rem` (22px) with `0.75rem` icon.
+  3. Recompiled notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  4. Verified all 44 Playwright tests passed and `pnpm run typecheck:shell` passed with 0 gated errors.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/styles/notebook-mobile-block-chrome.css`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+
 ### 2026-09-11 — Antigravity (Fix scrollNotebookElementIntoView Import in useNotebookSelection)
 - **Scope:**
   1. Resolved runtime `TypeError: scrollNotebookElementIntoView is not a function` at `useNotebookSelection.ts:73`.
