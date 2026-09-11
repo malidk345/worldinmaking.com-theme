@@ -154,15 +154,12 @@ export function FootnotePopover({
                     </span>
                     <span className="font-semibold tracking-wide">Footnote #{number ?? id}</span>
                 </div>
-                <button
-                    type="button"
+                <OSButton
+                    size="xs"
+                    icon={<IconX className="size-3.5" />}
+                    tooltip="Close (Esc)"
                     onClick={onClose}
-                    className="text-muted hover:text-primary transition-colors p-1.5 rounded-sm inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation"
-                    title="Close (Esc)"
-                    aria-label="Close"
-                >
-                    <IconX className="size-3.5" />
-                </button>
+                />
             </div>
 
             <textarea
@@ -171,25 +168,29 @@ export function FootnotePopover({
                 rows={3}
                 placeholder="Write footnote text…"
                 onChange={(event) => onChangeText(event.target.value)}
-                className="notebook-native-field w-full rounded-md border border-primary/15 bg-primary/5 px-2.5 py-2 text-xs text-primary placeholder:text-muted focus:border-blue-500 focus:outline-none transition-colors resize-none"
+                className="notebook-native-field w-full rounded-md border border-primary/15 bg-primary/5 px-2.5 py-2 text-[16px] sm:text-xs text-primary placeholder:text-muted focus:border-blue-500 focus:outline-none transition-colors resize-none touch-manipulation"
             />
 
             <div className="MarkdownNotebook__footnote-popover-actions flex items-center justify-between gap-2 mt-2.5 pt-1">
                 <OSButton
-                    size="xs"
+                    size="sm"
                     icon={<IconTrash className="size-3.5" />}
                     tooltip="Delete footnote"
                     onClick={onDelete}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10 min-h-[32px] min-w-[32px] touch-manipulation"
+                    className="text-red-500"
                 />
                 <div className="flex items-center gap-1.5">
                     <OSButton
-                        size="xs"
+                        size="sm"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </OSButton>
+                    <OSButton
                         variant="primary"
+                        size="sm"
                         icon={<IconCheck className="size-3.5" />}
-                        tooltip="Save (Cmd+Enter)"
                         onClick={onSave}
-                        className="min-h-[32px] px-3 touch-manipulation font-medium text-xs"
                     >
                         Save
                     </OSButton>

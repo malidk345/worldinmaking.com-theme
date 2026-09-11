@@ -31,6 +31,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Footnote Canonical OSButton & Mobile Zoom Elimination)
+- **Scope:**
+  1. Converted FootnotePopover action buttons to canonical WIM `OSButton`s (`variant="primary" size="sm"` for Save, `size="sm"` for Cancel, `size="sm"` for Delete with icon, and `size="xs"` for header Close). Removed conflicting outer padding/height overrides that distorted the 3D push-button layout.
+  2. Fixed mobile screen auto-zoom: added `maximum-scale=1` in `_document.tsx` viewport meta tag and set `text-[16px] sm:text-xs touch-manipulation` on footnote textarea so iOS Safari never triggers page zoom upon focusing the input.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/FootnotePopover.tsx`
+  - `src/pages/_document.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — Antigravity (Notebook Mobile Footnote Cut-off Fix & Viewport Clamping)
 - **Scope:**
   1. Resolved mobile footnote popover cut-off bug where `left: 50% !important` in SCSS combined with `transform: none` in JavaScript placed the popover at 50% screen width, cutting off the entire right half (close button, textarea, save button) on mobile viewports.
