@@ -28,6 +28,11 @@ import {
     NotebookComponentProps,
     NotebookComponentRegistry,
 } from './types'
+import {
+    getFilteredInsertCommands,
+    groupInsertCommandsByCategory,
+    getClampedInsertMenuSelectedIndex,
+} from './insertMenuModel'
 
 /** DOM id of a command's option element, referenced by the editor's `aria-activedescendant`. */
 export function getInsertMenuOptionDomId(menuId: string, commandKey: string): string {
@@ -171,90 +176,15 @@ export function renderHighlightedInsertCommandLabel(label: string, query: string
     )
 }
 
-function normalizeForSearch(str: string): string {
-    return str
-        .toLowerCase()
-        .replace(/[ıİiI]/g, 'i')
-        .replace(/[ğg]/g, 'g')
-        .replace(/[üu]/g, 'u')
-        .replace(/[şs]/g, 's')
-        .replace(/[öo]/g, 'o')
-        .replace(/[çc]/g, 'c')
-        .trim()
-}
-
-export function getFilteredInsertCommands(
-    commands: InsertCommand[],
-    query: string,
-    context: 'inline' | 'block' = 'block'
-): InsertCommand[] {
-    const rawQuery = query.trim().toLowerCase()
-    const cleanQuery = normalizeForSearch(rawQuery)
-
-    // Context-aware filtering:
-    // In inline context (slash typed inside text/sentence):
-    // If no query yet, show only inline-scoped commands (e.g. Footnote).
-    // If query is present, search all commands but prioritize inline commands first.
-    let baseCommands = commands
-    if (context === 'inline') {
-        if (!rawQuery) {
-            return commands.filter((c) => c.scope === 'inline' || c.scope === 'all')
-        }
-        baseCommands = [
-            ...commands.filter((c) => c.scope === 'inline' || c.scope === 'all'),
-            ...commands.filter((c) => c.scope !== 'inline' && c.scope !== 'all'),
-        ]
-    }
-
-    if (!rawQuery) {
-        return baseCommands
-    }
-
-    return baseCommands.filter((command) => {
-        const text = getInsertCommandSearchText(command)
-        if (text.includes(rawQuery)) {
-            return true
-        }
-        return normalizeForSearch(text).includes(cleanQuery)
-    })
-}
-
-export function getInsertCommandSearchText(command: InsertCommand): string {
-    return `${command.label} ${command.category} ${command.description ?? ''} ${(command.aliases ?? []).join(' ')}`
-        .trim()
-        .toLowerCase()
-}
-
-export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
-    return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
-        // Optimize: mutate array in-place with push to avoid O(N^2) spread allocations
-        if (!accumulator[command.category]) {
-            accumulator[command.category] = []
-        }
-        accumulator[command.category].push(command)
-        return accumulator
-    }, {})
-}
-
-export function getClampedInsertMenuSelectedIndex(selectedIndex: number, commandCount: number): number {
-    if (commandCount <= 0) {
-        return 0
-    }
-    return Math.max(0, Math.min(selectedIndex, commandCount - 1))
-}
-
-export function getNextInsertMenuSelectedIndex(
-    selectedIndex: number,
-    commandCount: number,
-    direction: InsertMenuSelectionDirection
-): number {
-    if (commandCount <= 0) {
-        return 0
-    }
-
-    const clampedIndex = getClampedInsertMenuSelectedIndex(selectedIndex, commandCount)
-    return direction === 'next' ? (clampedIndex + 1) % commandCount : (clampedIndex - 1 + commandCount) % commandCount
-}
+export {
+    getNodeInsertContext,
+    normalizeForSearch,
+    getInsertCommandSearchText,
+    groupInsertCommandsByCategory,
+    getClampedInsertMenuSelectedIndex,
+    getNextInsertMenuSelectedIndex,
+    getFilteredInsertCommands,
+} from './insertMenuModel'
 
 export function buildInsertCommands(
     registry: NotebookComponentRegistry,

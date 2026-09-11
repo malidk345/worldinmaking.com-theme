@@ -399,10 +399,16 @@ function EditableTextBlockInner({
 
         if (event.key === 'Enter' && !event.shiftKey) {
             const inputText = event.currentTarget.textContent ?? ''
-            const insertMenuQuery = isToolInsertMenuOpen ? getInsertMenuFilterQuery(inputText) : undefined
+            const caret = getCollapsedSelectionRange(event.currentTarget, node.id)?.end ?? inputText.length
+            const insertMenuQuery = isToolInsertMenuOpen ? getInsertMenuFilterQuery(inputText, caret) : undefined
 
-            if (submitInsertMenuSelection(insertMenuQuery)) {
+            if (isToolInsertMenuOpen) {
+                if (submitInsertMenuSelection(insertMenuQuery)) {
+                    event.preventDefault()
+                    return
+                }
                 event.preventDefault()
+                closeInsertMenuRef.current()
                 return
             }
 
@@ -595,17 +601,10 @@ function EditableTextBlockInner({
     }
 
     const handleInsertMenuButtonClick = (): void => {
-        const isInsideTextGroup = elementRef.current?.closest('.MarkdownNotebook__text-group') instanceof HTMLElement
-        const shouldDetachInsertMenu = isInsideTextGroup && !isToolInsertMenuOpen
-
         if (isToolInsertMenuOpen) {
             const caretOffset = getInlineText(node.children).length
             restoreSelectionRef.current = { nodeId: node.id, start: caretOffset, end: caretOffset }
             toggleInsertMenuRef.current()
-            return
-        }
-
-        if (shouldDetachInsertMenu && openDetachedInsertMenuRef.current()) {
             return
         }
 

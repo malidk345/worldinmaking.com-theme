@@ -25,11 +25,35 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE / READY FOR NEXT TASK]`
+- **Status:** `[AVAILABLE]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Antigravity (Notebook Architecture Stabilization, Hook Modularization & Inline Integrity)
+- **Scope:**
+  1. Decompose monolithic footnote and slash menu logic from `MarkdownNotebook.tsx` into standalone modular hooks (`useNotebookFootnotes.ts`, `useNotebookSlashMenu.ts`).
+  2. Separate pure filtering and context calculation functions into `insertMenuModel.ts`, eliminating UI module coupling in headless tests.
+  3. Eliminate paragraph splitting and phantom detached block creation when triggering slash commands (`/`) or clicking the insert `+` button in text.
+  4. Fix Enter key fallthrough in `EditableTextBlock.tsx` that previously split paragraphs when Enter was pressed with an active insert menu.
+  5. Fix caret position jumping on slash menu open by threading exact caret offsets through `beginSlashInsertMenu` and `openSlashMenuAtToken`.
+  6. Harden mobile footnote popover styling with responsive viewport constraints.
+  7. Verification: All 41 Playwright frontend tests pass (`pnpm exec playwright test tests/notebook-frontend.spec.ts`), `pnpm run typecheck:shell` passes with 0 errors, and notebook style bundles compiled via `pnpm run build:notebook-styles`.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts` (new)
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookSlashMenu.ts` (new)
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/InsertMenu.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/lib/components/MarkdownNotebook/documentModel.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/insertMenuModel.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/registry.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-11 — Antigravity (Notebook Inline Footnotes & Slash Editor Refinement)
 - **Scope:**

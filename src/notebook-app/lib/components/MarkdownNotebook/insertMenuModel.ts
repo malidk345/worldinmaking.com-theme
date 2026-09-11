@@ -9,7 +9,12 @@ import {
     splitListItemAtSlashToken,
     splitTextBlockAtSlashToken,
 } from './documentModel'
-import type { InsertMenuState, RestoreInlineSelectionRequest } from './editorTypes'
+import type {
+    InsertCommand,
+    InsertMenuSelectionDirection,
+    InsertMenuState,
+    RestoreInlineSelectionRequest,
+} from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
 import { makeEmptyParagraph, makeListItemId } from './markdown'
 import type {
@@ -314,4 +319,93 @@ export function planSplitTextBlock(
         replacementNodes: [{ ...node, children: before }, nextParagraph],
         focus: { nodeId: nextParagraph.id, start: 0, end: 0 },
     }
+}
+
+export function getNodeInsertContext(node?: NotebookBlockNode | null): 'inline' | 'block' {
+    if (!node || !isTextBlockNode(node)) return 'block'
+    const fullText = getInlineText(node.children).trim()
+    if (!fullText || fullText === '/') {
+        return 'block'
+    }
+    return 'inline'
+}
+
+export function normalizeForSearch(str: string): string {
+    return str
+        .toLowerCase()
+        .replace(/[ıİiI]/g, 'i')
+        .replace(/[ğg]/g, 'g')
+        .replace(/[üu]/g, 'u')
+        .replace(/[şs]/g, 's')
+        .replace(/[öo]/g, 'o')
+        .replace(/[çc]/g, 'c')
+        .trim()
+}
+
+export function getInsertCommandSearchText(command: InsertCommand): string {
+    return `${command.label} ${command.category} ${command.description ?? ''} ${(command.aliases ?? []).join(' ')}`
+        .trim()
+        .toLowerCase()
+}
+
+export function groupInsertCommandsByCategory(commands: InsertCommand[]): Record<string, InsertCommand[]> {
+    return commands.reduce<Record<string, InsertCommand[]>>((accumulator, command) => {
+        if (!accumulator[command.category]) {
+            accumulator[command.category] = []
+        }
+        accumulator[command.category].push(command)
+        return accumulator
+    }, {})
+}
+
+export function getClampedInsertMenuSelectedIndex(selectedIndex: number, commandCount: number): number {
+    if (commandCount <= 0) {
+        return 0
+    }
+    return Math.max(0, Math.min(selectedIndex, commandCount - 1))
+}
+
+export function getNextInsertMenuSelectedIndex(
+    selectedIndex: number,
+    commandCount: number,
+    direction: InsertMenuSelectionDirection
+): number {
+    if (commandCount <= 0) {
+        return 0
+    }
+
+    const clampedIndex = getClampedInsertMenuSelectedIndex(selectedIndex, commandCount)
+    return direction === 'next' ? (clampedIndex + 1) % commandCount : (clampedIndex - 1 + commandCount) % commandCount
+}
+
+export function getFilteredInsertCommands(
+    commands: InsertCommand[],
+    query: string,
+    context: 'inline' | 'block' = 'block'
+): InsertCommand[] {
+    const rawQuery = query.trim().toLowerCase()
+    const cleanQuery = normalizeForSearch(rawQuery)
+
+    let baseCommands = commands
+    if (context === 'inline') {
+        if (!rawQuery) {
+            return commands.filter((c) => c.scope === 'inline' || c.scope === 'all')
+        }
+        baseCommands = [
+            ...commands.filter((c) => c.scope === 'inline' || c.scope === 'all'),
+            ...commands.filter((c) => c.scope !== 'inline' && c.scope !== 'all'),
+        ]
+    }
+
+    if (!rawQuery) {
+        return baseCommands
+    }
+
+    return baseCommands.filter((command) => {
+        const text = getInsertCommandSearchText(command)
+        if (text.includes(rawQuery)) {
+            return true
+        }
+        return normalizeForSearch(text).includes(cleanQuery)
+    })
 }

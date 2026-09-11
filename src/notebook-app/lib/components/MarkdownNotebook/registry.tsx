@@ -11,7 +11,7 @@ import {
     IconPencil,
     IconUpload,
 } from '@posthog/icons'
-import OSButton from 'components/OSButton'
+import OSButton from '../../../../components/OSButton'
 
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import { isSlashRegistryTag } from './insertCatalog'

@@ -55,6 +55,7 @@ import {
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
 import { FootnotePopover } from './FootnotePopover'
+import { useNotebookFootnotes } from './useNotebookFootnotes'
 import { InvitePhilosopherPicker } from './InvitePhilosopherPicker'
 import { MentionPicker } from './MentionPicker'
 import {
@@ -62,6 +63,7 @@ import {
     getMentionTokenAt,
     insertMentionMark,
     listMentionPeople,
+    type MentionPerson,
     NotebookMentionPeopleProvider,
 } from './mentionPeople'
 import { mergeNotebookMarkdownChanges } from './collaboration'
@@ -298,34 +300,7 @@ import { useNotebookUndo } from './useNotebookUndo'
 
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
-export function collectFootnoteIdsFromNodes(nodes: NotebookBlockNode[]): string[] {
-    const list: string[] = []
-    const seen = new Set<string>()
-    const visitInline = (children: NotebookInlineNode[]): void => {
-        for (const child of children) {
-            if (child.type === 'hardBreak') continue
-            for (const mark of child.marks || []) {
-                if (mark.type === 'footnote' && mark.id && !seen.has(mark.id)) {
-                    seen.add(mark.id)
-                    list.push(mark.id)
-                }
-            }
-        }
-    }
-    for (const node of nodes) {
-        if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'blockquote') {
-            visitInline(node.children)
-        } else if (node.type === 'list') {
-            for (const item of node.items) visitInline(item.children)
-        } else if (node.type === 'table') {
-            for (const cell of node.headers) visitInline(cell.children)
-            for (const row of node.rows) {
-                for (const cell of row) visitInline(cell.children)
-            }
-        }
-    }
-    return list
-}
+export { collectFootnoteIdsFromNodes } from './useNotebookFootnotes'
 
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
     return <MarkdownNotebookEditor {...props} />
@@ -377,6 +352,10 @@ function MarkdownNotebookEditor({
     const [floatingToolbar, setFloatingToolbar] = useState<FloatingToolbarState | null>(null)
     const [insertMenu, setInsertMenu] = useState<InsertMenuState | null>(null)
     const [insertMenuPosition, setInsertMenuPosition] = useState<InsertMenuPosition | null>(null)
+
+    const clearInsertMenu = useCallback((): void => {
+        setInsertMenu(null)
+    }, [])
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null)
     const [activeBoundaryIndex, setActiveBoundaryIndex] = useState<number | null>(null)
     const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null)
@@ -556,13 +535,6 @@ function MarkdownNotebookEditor({
         suggestion?: string
         scope?: 'span' | 'piece' | 'block'
         resolved?: boolean
-        top: number
-        left: number
-    } | null>(null)
-    const [activeFootnotePopover, setActiveFootnotePopover] = useState<{
-        id: string
-        number?: number | string
-        text: string
         top: number
         left: number
     } | null>(null)
@@ -2976,159 +2948,31 @@ function MarkdownNotebookEditor({
         }, 40)
     }
 
-    const addFootnoteAtTarget = (explicitTargetNodeId?: string): void => {
-        const textRange = floatingToolbar?.textRanges?.[0]
-        const listRange = floatingToolbar?.listItemRanges?.[0]
-        let targetNodeId =
-            explicitTargetNodeId || textRange?.node.id || listRange?.node.id || focusedNodeId || renderedNodes[0]?.id
-        if (!targetNodeId) return
+    const focusedNodeId = focusedRowIndex !== null ? renderedNodes[focusedRowIndex]?.id ?? null : null
 
-        let currentDocument = documentRef.current
-        let nodes = [...currentDocument.nodes]
-        let targetIndex = nodes.findIndex((n) => n.id === targetNodeId)
-        if (targetIndex === -1) return
+    const {
+        activeFootnotePopover,
+        setActiveFootnotePopover,
+        openFootnotePopoverForElement,
+        addFootnoteAtTarget,
+        saveFootnote,
+        deleteFootnote,
+        closeFootnotePopover,
+        renderFootnotePopover,
+        renderDocumentFootnotesSection,
+    } = useNotebookFootnotes({
+        documentRef,
+        commitDocument,
+        floatingToolbar,
+        focusedNodeId,
+        renderedNodes,
+        clampOverlayPosition,
+        clearInsertMenu,
+        setFloatingToolbar,
+        floatingToolbarPositionLockRef,
+        insertMenuQuery: insertMenu?.query,
+    })
 
-        // If targetNodeId was a detached slash command block from a split, merge back into prev!
-        if (targetNodeId.startsWith('slash-command-') && targetIndex > 0) {
-            const prev = nodes[targetIndex - 1]
-            const next = nodes[targetIndex + 1]
-            if (prev && isTextBlockNode(prev)) {
-                const isNextSplit = next && isTextBlockNode(next) && next.id.startsWith('after-slash-command-')
-                const rejoinedChildren = normalizeInlineNodes([
-                    ...prev.children,
-                    ...(isNextSplit ? next.children : []),
-                ])
-                nodes = nodes.filter((_, idx) => idx !== targetIndex && !(isNextSplit && idx === targetIndex + 1))
-                nodes = nodes.map((n) => (n.id === prev.id ? { ...prev, children: rejoinedChildren } : n))
-                targetNodeId = prev.id
-                targetIndex = nodes.findIndex((n) => n.id === prev.id)
-            } else if (prev && prev.type === 'list' && prev.items.length > 0) {
-                const lastItemIdx = prev.items.length - 1
-                const nextList = next && next.type === 'list' && next.id.startsWith('after-slash-list-') ? next : null
-                const updatedItems = prev.items.map((it, idx) =>
-                    idx === lastItemIdx
-                        ? { ...it, children: normalizeInlineNodes([...it.children]) }
-                        : it
-                )
-                if (nextList) {
-                    updatedItems.push(...nextList.items)
-                }
-                nodes = nodes.filter((_, idx) => idx !== targetIndex && !(nextList && idx === targetIndex + 1))
-                nodes = nodes.map((n) => (n.id === prev.id ? { ...prev, items: updatedItems } : n))
-                targetNodeId = prev.id
-                targetIndex = nodes.findIndex((n) => n.id === prev.id)
-            }
-        }
-
-        const node = nodes[targetIndex]
-        if (!node || node.type === 'component' || node.type === 'divider') return
-
-        const orderedIds = collectFootnoteIdsFromNodes(nodes)
-        let nextNum = 1
-        while (
-            orderedIds.includes(String(nextNum)) ||
-            (currentDocument.footnotes && currentDocument.footnotes[String(nextNum)] !== undefined)
-        ) {
-            nextNum++
-        }
-        const nextId = String(nextNum)
-
-        const footnoteNode: NotebookInlineNode = {
-            type: 'text',
-            text: nextId,
-            marks: [{ type: 'footnote', id: nextId }],
-        }
-
-        if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'blockquote') {
-            const fullText = getInlineText(node.children)
-            let insertionOffset = fullText.length
-            let stripLength = 0
-
-            const slashIdx = fullText.lastIndexOf('/')
-            if (slashIdx !== -1) {
-                insertionOffset = slashIdx
-                stripLength = fullText.length - slashIdx
-                if (insertionOffset > 0 && fullText[insertionOffset - 1] === ' ') {
-                    insertionOffset -= 1
-                    stripLength += 1
-                }
-            } else if (insertMenu?.query && fullText.endsWith(insertMenu.query)) {
-                insertionOffset = fullText.length - insertMenu.query.length
-                stripLength = insertMenu.query.length
-                if (insertionOffset > 0 && fullText[insertionOffset - 1] === ' ') {
-                    insertionOffset -= 1
-                    stripLength += 1
-                }
-            } else if (textRange && textRange.node.id === node.id) {
-                insertionOffset = Math.max(textRange.range.start, textRange.range.end)
-                stripLength = 0
-            }
-
-            const [beforeNodes, afterWithSlash] = splitInlineNodesAt(node.children, insertionOffset)
-            const [, afterNodes] = splitInlineNodesAt(afterWithSlash, stripLength)
-            const updatedChildren = normalizeInlineNodes([...beforeNodes, footnoteNode, ...afterNodes])
-            nodes = nodes.map((n) => (n.id === node.id ? { ...n, children: updatedChildren } : n))
-        } else if (node.type === 'list' && node.items.length) {
-            const itemIndex = listRange && listRange.node.id === targetNodeId ? listRange.itemIndex : node.items.length - 1
-            const item = node.items[itemIndex]
-            if (item) {
-                const fullText = getInlineText(item.children)
-                let insertionOffset = fullText.length
-                let stripLength = 0
-
-                const slashIdx = fullText.lastIndexOf('/')
-                if (slashIdx !== -1) {
-                    insertionOffset = slashIdx
-                    stripLength = fullText.length - slashIdx
-                    if (insertionOffset > 0 && fullText[insertionOffset - 1] === ' ') {
-                        insertionOffset -= 1
-                        stripLength += 1
-                    }
-                } else if (insertMenu?.query && fullText.endsWith(insertMenu.query)) {
-                    insertionOffset = fullText.length - insertMenu.query.length
-                    stripLength = insertMenu.query.length
-                    if (insertionOffset > 0 && fullText[insertionOffset - 1] === ' ') {
-                        insertionOffset -= 1
-                        stripLength += 1
-                    }
-                } else if (listRange && listRange.node.id === node.id) {
-                    insertionOffset = Math.max(listRange.range.start, listRange.range.end)
-                    stripLength = 0
-                }
-
-                const [beforeNodes, afterWithSlash] = splitInlineNodesAt(item.children, insertionOffset)
-                const [, afterNodes] = splitInlineNodesAt(afterWithSlash, stripLength)
-                const updatedChildren = normalizeInlineNodes([...beforeNodes, footnoteNode, ...afterNodes])
-                const updatedItems = node.items.map((it, idx) =>
-                    idx === itemIndex ? { ...it, children: updatedChildren } : it
-                )
-                nodes = nodes.map((n) => (n.id === node.id ? { ...n, items: updatedItems } : n))
-            }
-        }
-
-        const nextFootnotes = { ...(currentDocument.footnotes || {}), [nextId]: '' }
-        commitDocument({
-            ...currentDocument,
-            nodes,
-            footnotes: nextFootnotes,
-        })
-        floatingToolbarPositionLockRef.current = null
-        setFloatingToolbar(null)
-        clearInsertMenu()
-
-        setTimeout(() => {
-            const footnoteEl = window.document.querySelector(`[data-notebook-footnote="${nextId}"]`) as HTMLElement | null
-            const rect = footnoteEl?.getBoundingClientRect() || { top: 250, bottom: 250, left: 250 }
-            const overlay = clampOverlayPosition(rect)
-            setActiveFootnotePopover({
-                id: nextId,
-                number: nextNum,
-                text: '',
-                top: overlay.top,
-                left: overlay.left,
-            })
-        }, 60)
-    }
 
     const invitePhilosophersToNode = (_anchorNodeId: string, botIds: string[]): void => {
         const bots = botIds.map((id) => resolveInviteBot(id)).filter((bot): bot is NonNullable<typeof bot> => Boolean(bot))
@@ -3256,18 +3100,7 @@ function MarkdownNotebookEditor({
         if (footnoteEl) {
             event.preventDefault()
             event.stopPropagation()
-            const fnId = footnoteEl.getAttribute('data-notebook-footnote') || ''
-            const rect = footnoteEl.getBoundingClientRect()
-            const overlay = clampOverlayPosition(rect)
-            const orderedIds = collectFootnoteIdsFromNodes(documentRef.current.nodes)
-            const num = orderedIds.indexOf(fnId) !== -1 ? orderedIds.indexOf(fnId) + 1 : fnId
-            setActiveFootnotePopover({
-                id: fnId,
-                number: num,
-                text: documentRef.current.footnotes?.[fnId] || '',
-                top: overlay.top,
-                left: overlay.left,
-            })
+            openFootnotePopoverForElement(footnoteEl)
             return
         }
 
@@ -3546,10 +3379,11 @@ function MarkdownNotebookEditor({
     const beginSlashInsertMenu = (
         nodeId: string,
         query: string,
-        options?: { detached?: boolean }
+        options?: { detached?: boolean; caret?: number }
     ): void => {
         onInteractionStateChange?.(true)
-        restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
+        const caret = options?.caret ?? query.length
+        restoreSelectionRef.current = { nodeId, start: caret, end: caret }
         setInsertMenu((currentMenu) => nextBeginSlashInsertMenuState(currentMenu, nodeId, query, options))
     }
 
@@ -3557,44 +3391,19 @@ function MarkdownNotebookEditor({
         (nodeId: string, query: string = ''): boolean => {
             const currentDocument = documentRef.current
             const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-            const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
-            const node = nodes[nodeIndex]
-            if (nodeIndex <= 0 || !node || !isTextBlockNode(node)) {
+            const node = nodes.find((n) => n.id === nodeId)
+            if (!node) {
                 return false
             }
-
-            if (!getInlineText(node.children).trim()) {
-                restoreSelectionRef.current = { nodeId, start: query.length, end: query.length }
-                onInteractionStateChange?.(true)
-                setInsertMenu({ nodeId, query, selectedIndex: 0, mode: 'tools' })
-                return true
-            }
-
-            const commandNode = makeEmptyParagraph(`slash-command-${node.id}`)
-            commandNode.children = query ? [{ type: 'text', text: query }] : []
-            commandNode.startsGroup = true
-            restoreSelectionRef.current = { nodeId: commandNode.id, start: query.length, end: query.length }
+            const fullText = isTextBlockNode(node) ? getInlineText(node.children) : ''
+            const caret = fullText.length
+            restoreSelectionRef.current = { nodeId, start: caret, end: caret }
             onInteractionStateChange?.(true)
-            setInsertMenu({
-                nodeId: commandNode.id,
-                query,
-                selectedIndex: 0,
-                mode: 'tools',
-                detached: true,
-                removeNodeOnClose: true,
-            })
-            commitDocument({
-                ...currentDocument,
-                nodes: [...nodes.slice(0, nodeIndex + 1), commandNode, ...nodes.slice(nodeIndex + 1)],
-            })
+            setInsertMenu({ nodeId, query, selectedIndex: 0, mode: 'tools' })
             return true
         },
-        [commitDocument, onInteractionStateChange]
+        [onInteractionStateChange]
     )
-
-    const clearInsertMenu = useCallback((): void => {
-        setInsertMenu(null)
-    }, [])
 
     const removeTemporaryInsertMenuNode = useCallback(
         (menu: InsertMenuState | null): void => {
@@ -4553,10 +4362,10 @@ function MarkdownNotebookEditor({
         }
 
         const nextChildren = htmlElementToInlineNodes(inlineEditableElement)
+        const nextText = getInlineText(nextChildren)
         if (inlineEditableElement.classList.contains('MarkdownNotebook__text-block')) {
             const nodeIndex = nodes.findIndex((node) => node.id === nodeId)
             const node = nodes[nodeIndex]
-            const nextText = getInlineText(nextChildren)
             const caret = getCollapsedSelectionRange(inlineEditableElement, nodeId)?.end ?? nextText.length
             if (node && isPromptComponentNode(node)) {
                 rootEditableInputHtmlByNodeIdRef.current[nodeId] = inlineNodesToHtml(nextChildren, documentRef.current.annotations)
@@ -4798,13 +4607,13 @@ function MarkdownNotebookEditor({
             return true
         }
         if (selectedCommand.key.startsWith('text-')) {
-            updateNode(nodeId, (currentNode) => {
+            updateNode(effectiveTargetNodeId, (currentNode) => {
                 if (!isTextBlockNode(currentNode)) {
                     return currentNode
                 }
                 return { ...currentNode, children: [] }
             })
-            restoreSelectionRef.current = { nodeId, start: 0, end: 0 }
+            restoreSelectionRef.current = { nodeId: effectiveTargetNodeId, start: 0, end: 0 }
         }
         clearInsertMenu()
         return true
@@ -5639,11 +5448,22 @@ function MarkdownNotebookEditor({
                                     ? { ...currentNode, children: slashPlan.children }
                                     : currentNode
                             )
-                            beginSlashInsertMenu(node.id, slashPlan.query)
+                            beginSlashInsertMenu(node.id, slashPlan.query, { caret })
                             return true
                         }
                         if (slashPlan?.type === 'split') {
-                            beginSlashInsertMenu(node.id, slashPlan.query)
+                            const element = blockRefs.current[node.id]
+                            const nextHtml = inlineNodesToHtml(children, documentRef.current.annotations)
+                            rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
+                            if (element && element.innerHTML !== nextHtml) {
+                                element.innerHTML = nextHtml
+                            }
+                            updateNode(node.id, (currentNode) =>
+                                isTextBlockNode(currentNode)
+                                    ? { ...currentNode, children }
+                                    : currentNode
+                            )
+                            beginSlashInsertMenu(node.id, slashPlan.query, { caret })
                             return true
                         }
                         return false
@@ -5906,113 +5726,7 @@ function MarkdownNotebookEditor({
                                 </Fragment>
                             )
                         })}
-                        {(() => {
-                            const orderedFootnoteIds = collectFootnoteIdsFromNodes(document.nodes)
-                            const extraFootnoteIds = Object.keys(document.footnotes || {}).filter(
-                                (id) => !orderedFootnoteIds.includes(id)
-                            )
-                            const allFootnoteIds = [...orderedFootnoteIds, ...extraFootnoteIds]
-                            if (!allFootnoteIds.length) return null
-
-                            return (
-                                <section
-                                    className="MarkdownNotebook__footnotes-section mt-12 pt-6 border-t border-primary/10 select-text"
-                                    contentEditable={false}
-                                    aria-label="Footnotes"
-                                >
-                                    <h4 className="text-xs uppercase tracking-wider font-semibold text-muted mb-3 flex items-center gap-2">
-                                        <span>Footnotes</span>
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
-                                            {allFootnoteIds.length}
-                                        </span>
-                                    </h4>
-                                    <ol className="space-y-2 text-sm text-secondary list-none p-0 m-0">
-                                        {allFootnoteIds.map((fnId, idx) => {
-                                            const fnText = document.footnotes?.[fnId] || ''
-                                            return (
-                                                <li
-                                                    key={fnId}
-                                                    id={`footnote-entry-${fnId}`}
-                                                    className="group flex items-start gap-2.5 p-1.5 -mx-1.5 rounded-md hover:bg-primary/5 transition-colors"
-                                                >
-                                                    <span className="inline-flex items-center justify-center min-w-5 h-5 text-[11px] font-bold rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 mt-0.5 select-none">
-                                                        {idx + 1}
-                                                    </span>
-                                                    <div className="flex-1 min-w-0">
-                                                        {fnText ? (
-                                                            <span className="text-primary text-sm whitespace-pre-wrap leading-relaxed">
-                                                                {fnText}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-muted italic text-xs">
-                                                                No description added…
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const badge = window.document.querySelector(
-                                                                    `[data-notebook-footnote="${fnId}"]`
-                                                                ) as HTMLElement | null
-                                                                if (badge) {
-                                                                    badge.scrollIntoView({
-                                                                        behavior: 'smooth',
-                                                                        block: 'center',
-                                                                    })
-                                                                    const rect = badge.getBoundingClientRect()
-                                                                    const overlay = clampOverlayPosition(rect)
-                                                                    setActiveFootnotePopover({
-                                                                        id: fnId,
-                                                                        number: idx + 1,
-                                                                        text: fnText,
-                                                                        top: overlay.top,
-                                                                        left: overlay.left,
-                                                                    })
-                                                                }
-                                                            }}
-                                                            className="text-xs text-muted hover:text-primary p-1 rounded transition-colors"
-                                                            title="Edit footnote"
-                                                        >
-                                                            ✎
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const badge = window.document.querySelector(
-                                                                    `[data-notebook-footnote="${fnId}"]`
-                                                                ) as HTMLElement | null
-                                                                if (badge) {
-                                                                    badge.scrollIntoView({
-                                                                        behavior: 'smooth',
-                                                                        block: 'center',
-                                                                    })
-                                                                    badge.classList.add(
-                                                                        'MarkdownNotebook__footnote--highlight'
-                                                                    )
-                                                                    setTimeout(
-                                                                        () =>
-                                                                            badge.classList.remove(
-                                                                                'MarkdownNotebook__footnote--highlight'
-                                                                            ),
-                                                                        1500
-                                                                    )
-                                                                }
-                                                            }}
-                                                            className="text-xs text-muted hover:text-blue-500 p-1 rounded transition-colors"
-                                                            title="Back to text"
-                                                        >
-                                                            ↩
-                                                        </button>
-                                                    </div>
-                                                </li>
-                                            )
-                                        })}
-                                    </ol>
-                                </section>
-                            )
-                        })()}
+                        {renderDocumentFootnotesSection()}
                     </div>
                     {adjustedRemoteCarets?.length ? (
                         <RemoteCaretOverlay
@@ -6353,78 +6067,7 @@ function MarkdownNotebookEditor({
                             }
                         />
                     ) : null}
-                    {activeFootnotePopover ? (
-                        <FootnotePopover
-                            id={activeFootnotePopover.id}
-                            number={activeFootnotePopover.number}
-                            text={activeFootnotePopover.text}
-                            top={activeFootnotePopover.top}
-                            left={activeFootnotePopover.left}
-                            onChangeText={(val) =>
-                                setActiveFootnotePopover((cur) => (cur ? { ...cur, text: val } : cur))
-                            }
-                            onSave={() => {
-                                const next = activeFootnotePopover
-                                commitDocument({
-                                    ...documentRef.current,
-                                    footnotes: {
-                                        ...(documentRef.current.footnotes || {}),
-                                        [next.id]: next.text.trim(),
-                                    },
-                                })
-                                setActiveFootnotePopover(null)
-                            }}
-                            onClose={() => {
-                                const next = activeFootnotePopover
-                                if (
-                                    next &&
-                                    next.text.trim() !== (documentRef.current.footnotes?.[next.id] || '')
-                                ) {
-                                    commitDocument({
-                                        ...documentRef.current,
-                                        footnotes: {
-                                            ...(documentRef.current.footnotes || {}),
-                                            [next.id]: next.text.trim(),
-                                        },
-                                    })
-                                }
-                                setActiveFootnotePopover(null)
-                            }}
-                            onDelete={() => {
-                                const next = activeFootnotePopover
-                                const nextFootnotes = { ...(documentRef.current.footnotes || {}) }
-                                delete nextFootnotes[next.id]
-                                const nextNodes = documentRef.current.nodes.map((node) => {
-                                    if (
-                                        node.type === 'paragraph' ||
-                                        node.type === 'heading' ||
-                                        node.type === 'blockquote'
-                                    ) {
-                                        return {
-                                            ...node,
-                                            children: removeFootnoteFromInlineNodes(node.children, next.id),
-                                        }
-                                    }
-                                    if (node.type === 'list') {
-                                        return {
-                                            ...node,
-                                            items: node.items.map((item) => ({
-                                                ...item,
-                                                children: removeFootnoteFromInlineNodes(item.children, next.id),
-                                            })),
-                                        }
-                                    }
-                                    return node
-                                })
-                                commitDocument({
-                                    ...documentRef.current,
-                                    nodes: nextNodes,
-                                    footnotes: Object.keys(nextFootnotes).length ? nextFootnotes : undefined,
-                                })
-                                setActiveFootnotePopover(null)
-                            }}
-                        />
-                    ) : null}
+                    {renderFootnotePopover()}
                 </div>
             </div>
         </div>

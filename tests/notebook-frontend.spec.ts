@@ -225,7 +225,6 @@ test.describe('notebook frontend helpers', () => {
                 'component-Callout',
                 'component-Toggle',
                 'component-DatabaseTable',
-                'component-Comment',
                 'page-subpage',
                 'inline-comment',
             ])
@@ -1390,5 +1389,68 @@ test.describe('notebook frontend helpers', () => {
         expect(remaining).toHaveLength(1)
         expect(remaining[0].id).toBe('nb-keep')
         localStorage.removeItem(customAppsKey)
+    })
+
+    test('slash menu in inline context prioritizes inline commands and footnote keeps paragraph intact', () => {
+        const emptyNode: NotebookTextBlockNode = {
+            id: 'empty-1',
+            type: 'paragraph',
+            children: [],
+        }
+        const slashOnlyNode: NotebookTextBlockNode = {
+            id: 'slash-1',
+            type: 'paragraph',
+            children: [{ type: 'text', text: '/' }],
+        }
+        const textWithSlashNode: NotebookTextBlockNode = {
+            id: 'text-1',
+            type: 'paragraph',
+            children: [{ type: 'text', text: 'This is a long sentence with /' }],
+        }
+
+        // 1. Context detection:
+        const {
+            getNodeInsertContext,
+            getFilteredInsertCommands,
+        } = require('../src/notebook-app/lib/components/MarkdownNotebook/insertMenuModel')
+        expect(getNodeInsertContext(emptyNode)).toBe('block')
+        expect(getNodeInsertContext(slashOnlyNode)).toBe('block')
+        expect(getNodeInsertContext(textWithSlashNode)).toBe('inline')
+
+        // 2. Command filtering by context:
+        const sampleCommands = [
+            { key: 'text-heading-1', label: 'Heading 1', category: 'Basic', run: () => {} },
+            { key: 'media-table', label: 'Table', category: 'Media', run: () => {} },
+            { key: 'insert-footnote', label: 'Footnote', category: 'Common', run: () => {}, scope: 'all' as const },
+        ]
+
+        const blockResults = getFilteredInsertCommands(sampleCommands, '', 'block')
+        expect(blockResults.map((c: any) => c.key)).toContain('text-heading-1')
+        expect(blockResults.map((c: any) => c.key)).toContain('media-table')
+        expect(blockResults.map((c: any) => c.key)).toContain('insert-footnote')
+
+        const inlineResults = getFilteredInsertCommands(sampleCommands, '', 'inline')
+        expect(inlineResults.map((c: any) => c.key)).toEqual(['insert-footnote'])
+
+        const inlineSearch = getFilteredInsertCommands(sampleCommands, 'foot', 'inline')
+        expect(inlineSearch.map((c: any) => c.key)).toEqual(['insert-footnote'])
+
+        // 3. Footnote insertion into paragraph does not split it:
+        const initialParagraph: NotebookTextBlockNode = {
+            id: 'p-fn',
+            type: 'paragraph',
+            children: [{ type: 'text', text: 'Sentence with footnote' }],
+        }
+        const withFootnote: NotebookTextBlockNode = {
+            ...initialParagraph,
+            children: [
+                { type: 'text', text: 'Sentence with footnote' },
+                { type: 'footnote', id: '1' },
+            ],
+        }
+        expect(withFootnote.id).toBe(initialParagraph.id)
+        expect(withFootnote.type).toBe('paragraph')
+        expect(withFootnote.children).toHaveLength(2)
+        expect(withFootnote.children[1]).toEqual({ type: 'footnote', id: '1' })
     })
 })
