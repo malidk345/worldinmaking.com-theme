@@ -3632,17 +3632,27 @@ button.MarkdownNotebook__component-title:focus-visible {
 
 .MarkdownNotebook__footnote-popover {
     position: fixed;
-    z-index: 100;
-    width: 290px;
+    z-index: calc(var(--z-popover, 1060) + 20);
+    width: 320px;
     max-width: calc(100vw - 20px);
     padding: 12px;
     border-radius: 12px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.22), 0 4px 12px -2px rgba(0, 0, 0, 0.12);
     transform: translate(-50%, 8px);
     animation: footnote-popover-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 
     @media (max-width: 640px) {
-        left: 50% !important;
-        transform: translate(-50%, 8px);
+        position: fixed !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: calc(100vw - 20px) !important;
+        transform: none !important;
+
+        textarea {
+            font-size: 16px !important; // Prevents iOS Safari viewport auto-zoom
+        }
     }
 }
 

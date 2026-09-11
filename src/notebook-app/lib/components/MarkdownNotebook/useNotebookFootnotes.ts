@@ -436,7 +436,7 @@ export function useNotebookFootnotes({
                         ),
                         React.createElement(
                             'div',
-                            { className: 'flex-1 text-secondary leading-relaxed break-words' },
+                            { className: 'flex-1 min-w-0 text-secondary leading-relaxed break-words' },
                             fnText ||
                                 React.createElement(
                                     'span',
@@ -448,7 +448,7 @@ export function useNotebookFootnotes({
                             'div',
                             {
                                 className:
-                                    'flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity',
+                                    'flex items-center gap-1 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity',
                             },
                             React.createElement(
                                 'button',

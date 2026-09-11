@@ -53,48 +53,72 @@ export function FootnotePopover({
         if (!el) return
 
         const pinToView = (): void => {
-            const pad = 8
+            const pad = 10
             const view = viewBox()
-            const narrow = view.width < 420
-            const maxWidth = Math.max(160, view.width - pad * 2)
-            el.style.boxSizing = 'border-box'
-            el.style.maxWidth = `${maxWidth}px`
-            if (narrow) {
-                el.style.width = `${maxWidth}px`
-                el.style.left = `${view.left + pad}px`
-                el.style.right = 'auto'
-                el.style.transform = 'none'
-            } else {
-                el.style.width = ''
-                el.style.transform = 'translate(-50%, 8px)'
-            }
+            const isNarrow = view.width <= 640 || (typeof window !== 'undefined' && window.innerWidth <= 640)
+
             const rect = el.getBoundingClientRect()
+            const height = rect.height || 180
+
+            if (isNarrow) {
+                // On mobile, horizontal positioning is anchored via CSS (left: 10px, right: 10px).
+                // Ensure vertical visibility within active visual viewport (above keyboard, below header).
+                const minTop = view.top + pad
+                const maxTop = Math.max(minTop, view.top + view.height - height - pad)
+
+                let targetTop = top
+                if (targetTop > maxTop) {
+                    targetTop = maxTop
+                }
+                if (targetTop < minTop) {
+                    targetTop = minTop
+                }
+                el.style.top = `${Math.round(targetTop)}px`
+                el.style.bottom = 'auto'
+                el.style.transform = 'none'
+                return
+            }
+
+            // Desktop / wide screen positioning
+            el.style.width = ''
+            el.style.maxWidth = '320px'
+            el.style.top = `${top}px`
+            el.style.left = `${left}px`
+
             let shiftX = 0
             let shiftY = 0
-            if (rect.left < view.left + pad) shiftX += view.left + pad - rect.left
-            if (rect.right > view.left + view.width - pad) {
-                shiftX += view.left + view.width - pad - rect.right
+            const updatedRect = el.getBoundingClientRect()
+            if (updatedRect.left < view.left + pad) {
+                shiftX += view.left + pad - updatedRect.left
             }
-            if (rect.top < view.top + pad) shiftY += view.top + pad - rect.top
-            if (rect.bottom > view.top + view.height - pad) {
-                shiftY += view.top + view.height - pad - rect.bottom
+            if (updatedRect.right > view.left + view.width - pad) {
+                shiftX += view.left + view.width - pad - updatedRect.right
             }
-            if (narrow) {
-                el.style.transform = shiftY ? `translateY(${shiftY}px)` : 'none'
-            } else if (shiftX || shiftY) {
-                el.style.transform = `translate(calc(-50% + ${shiftX}px), ${8 + shiftY}px)`
+            if (updatedRect.top < view.top + pad) {
+                shiftY += view.top + pad - updatedRect.top
             }
+            if (updatedRect.bottom > view.top + view.height - pad) {
+                shiftY += view.top + view.height - pad - updatedRect.bottom
+            }
+            el.style.transform = `translate(calc(-50% + ${shiftX}px), ${8 + shiftY}px)`
         }
 
         pinToView()
+        const timer1 = setTimeout(pinToView, 60)
+        const timer2 = setTimeout(pinToView, 250)
+
         const viewport = window.visualViewport
         viewport?.addEventListener('resize', pinToView)
         viewport?.addEventListener('scroll', pinToView)
         window.addEventListener('resize', pinToView)
+        window.addEventListener('scroll', pinToView)
         return () => {
+            clearTimeout(timer1)
+            clearTimeout(timer2)
             viewport?.removeEventListener('resize', pinToView)
             viewport?.removeEventListener('scroll', pinToView)
             window.removeEventListener('resize', pinToView)
+            window.removeEventListener('scroll', pinToView)
         }
     }, [top, left, text])
 
@@ -156,7 +180,7 @@ export function FootnotePopover({
                     icon={<IconTrash className="size-3.5" />}
                     tooltip="Delete footnote"
                     onClick={onDelete}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10 min-h-[32px] min-w-[32px] touch-manipulation"
                 />
                 <div className="flex items-center gap-1.5">
                     <OSButton
@@ -165,6 +189,7 @@ export function FootnotePopover({
                         icon={<IconCheck className="size-3.5" />}
                         tooltip="Save (Cmd+Enter)"
                         onClick={onSave}
+                        className="min-h-[32px] px-3 touch-manipulation font-medium text-xs"
                     >
                         Save
                     </OSButton>

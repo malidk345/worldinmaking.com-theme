@@ -31,6 +31,23 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Notebook Mobile Footnote Cut-off Fix & Viewport Clamping)
+- **Scope:**
+  1. Resolved mobile footnote popover cut-off bug where `left: 50% !important` in SCSS combined with `transform: none` in JavaScript placed the popover at 50% screen width, cutting off the entire right half (close button, textarea, save button) on mobile viewports.
+  2. Fixed mobile viewport overflow: on `@media (max-width: 640px)`, anchored popover with `left: 10px !important; right: 10px !important; width: auto !important; max-width: calc(100vw - 20px) !important; transform: none !important;`.
+  3. Clamped vertical `top` positioning in `FootnotePopover.tsx` dynamically to `visualViewport.height` and `visualViewport.offsetTop`, keeping the popover visible above the mobile virtual keyboard.
+  4. Added `font-size: 16px !important` on mobile textarea to prevent iOS Safari auto-zooming and screen disorientation on focus.
+  5. Added `min-w-0` and `flex-shrink-0` to bottom footnotes list item layout to prevent horizontal content overflow on narrow mobile screens.
+  6. Recompiled CSS bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  7. Verification: 43 Playwright tests passed, `pnpm run typecheck:shell` passed with 0 gated errors.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/FootnotePopover.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — Antigravity (Notebook Selection Hook Extraction & API Tombstone Import Fix)
 - **Scope:**
   1. Extracted selection preservation and DOM focus restoration into standalone hook `useNotebookSelection.ts`, decoupling `restoreSelectionRef`, `focusNodeRef`, and the post-render `useLayoutEffect` DOM reconciliation from `MarkdownNotebook.tsx`.
