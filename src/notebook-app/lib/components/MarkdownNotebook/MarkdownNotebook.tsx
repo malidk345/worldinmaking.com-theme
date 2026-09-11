@@ -60,7 +60,7 @@ import {
     getMentionTokenAt,
     insertMentionMark,
     listMentionPeople,
-    type MentionPerson,
+    NotebookMentionPeopleProvider,
 } from './mentionPeople'
 import { mergeNotebookMarkdownChanges } from './collaboration'
 import {
@@ -318,6 +318,7 @@ function MarkdownNotebookEditor({
     onCaretChange,
     initialInsertMenu,
     convertExternalDataTransferToNodes,
+    mentionPeople: mentionPeopleProp,
     focusAIPromptRequest,
     aiWritingNodeIndexes,
     allowViewModeFilters = false,
@@ -333,6 +334,7 @@ function MarkdownNotebookEditor({
         () => mergeMarkdownNotebookRegistries(getMarkdownNotebookDefaultRegistry(), registry),
         [registry]
     )
+    const mergedMentionPeople = useMemo(() => listMentionPeople(mentionPeopleProp || []), [mentionPeopleProp])
     const [document, setDocument] = useState<NotebookDocument>(() =>
         mode === 'edit'
             ? ensureEditableNotebookDocument(parseMarkdownNotebook(value))
@@ -4193,7 +4195,7 @@ function MarkdownNotebookEditor({
             return
         }
         insertedNodes.forEach((node) => markNotebookNodeFreshlyInserted(node.id))
-        commitDocument({ ...currentDocument, nodes: nextNodes })
+        commitDocument({ ...currentDocument, nodes: nextNodes }, { coalesce: false })
     }
 
     const {
@@ -4202,6 +4204,7 @@ function MarkdownNotebookEditor({
         handleCopy,
         handleCut,
         handleNotebookPaste,
+        handleNotebookPasteCapture,
     } = useNotebookClipboard({
         mode,
         documentRef,
@@ -5463,6 +5466,7 @@ function MarkdownNotebookEditor({
     const mobileBarIsPrompt = Boolean(mobileBarNode && isPromptComponentNode(mobileBarNode))
 
     return (
+        <NotebookMentionPeopleProvider people={mergedMentionPeople}>
         <NotebookAnnotationsContext.Provider value={document.annotations || EMPTY_ANNOTATIONS}>
         <div
             className={clsx(
@@ -5476,6 +5480,7 @@ function MarkdownNotebookEditor({
             ref={notebookRef}
             onCopy={handleCopy}
             onCut={handleCut}
+            onPasteCapture={handleNotebookPasteCapture}
             onPaste={handleNotebookPaste}
             onKeyDownCapture={(event) => {
                 if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f') {
@@ -5820,7 +5825,7 @@ function MarkdownNotebookEditor({
                     ) : null}
                     {mentionPicker ? (
                         <MentionPicker
-                            people={filterMentionPeople(listMentionPeople(), mentionPicker.query)}
+                            people={filterMentionPeople(mergedMentionPeople, mentionPicker.query)}
                             query={mentionPicker.query}
                             position={
                                 blockRefs.current[mentionPicker.nodeId]
@@ -5941,5 +5946,6 @@ function MarkdownNotebookEditor({
             </div>
         </div>
         </NotebookAnnotationsContext.Provider>
+        </NotebookMentionPeopleProvider>
     )
 }

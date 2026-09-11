@@ -17,7 +17,7 @@ import { InsertMenuSelectionDirection } from './editorTypes'
 import {
     filterMentionPeople,
     getMentionTokenAt,
-    listMentionPeople,
+    useNotebookMentionPeople,
     type MentionPerson,
     type MentionToken,
 } from './mentionPeople'
@@ -66,10 +66,12 @@ export function DiscussionCommentBlock({
     const [draft, setDraft] = useState('')
     const [mentionToken, setMentionToken] = useState<MentionToken | null>(null)
     const autoFocus = mode === 'edit' && wasNotebookNodeJustInserted(node.id)
+    const allMentionPeople = useNotebookMentionPeople()
     const mentionPeople = useMemo(
-        () => (mentionToken ? filterMentionPeople(listMentionPeople(), mentionToken.query) : []),
-        [mentionToken]
+        () => (mentionToken ? filterMentionPeople(allMentionPeople, mentionToken.query) : []),
+        [allMentionPeople, mentionToken]
     )
+    const [mentionIndex, setMentionIndex] = useState(0)
 
     const persistReplies = (next: ReturnType<typeof parseDiscussionReplies>): void => {
         updateNode(node.id, (currentNode) =>
@@ -107,7 +109,9 @@ export function DiscussionCommentBlock({
 
     const handleDraftChange = (value: string, caret = value.length): void => {
         setDraft(value)
-        setMentionToken(getMentionTokenAt(value, caret))
+        const nextToken = getMentionTokenAt(value, caret)
+        setMentionToken(nextToken)
+        if (!nextToken) setMentionIndex(0)
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -190,12 +194,17 @@ export function DiscussionCommentBlock({
                                 aria-label="Mention"
                             >
                                 {mentionPeople.length ? (
-                                    mentionPeople.map((person) => (
+                                    mentionPeople.map((person, index) => (
                                         <button
                                             key={person.id}
                                             type="button"
                                             role="option"
-                                            className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent"
+                                            aria-selected={index === mentionIndex}
+                                            className={clsx(
+                                                'w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent',
+                                                index === mentionIndex && 'bg-accent'
+                                            )}
+                                            onMouseEnter={() => setMentionIndex(index)}
                                             onClick={() => insertMention(person)}
                                         >
                                             <span className="size-5 rounded-full overflow-hidden bg-accent flex items-center justify-center text-[10px] shrink-0">
@@ -227,6 +236,23 @@ export function DiscussionCommentBlock({
                                 )
                             }
                             onKeyDown={(event) => {
+                                if (mentionToken && mentionPeople.length) {
+                                    if (event.key === 'ArrowDown') {
+                                        event.preventDefault()
+                                        setMentionIndex((index) => (index + 1) % mentionPeople.length)
+                                        return
+                                    }
+                                    if (event.key === 'ArrowUp') {
+                                        event.preventDefault()
+                                        setMentionIndex((index) => (index - 1 + mentionPeople.length) % mentionPeople.length)
+                                        return
+                                    }
+                                    if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey) {
+                                        event.preventDefault()
+                                        insertMention(mentionPeople[mentionIndex] || mentionPeople[0])
+                                        return
+                                    }
+                                }
                                 if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
                                     event.preventDefault()
                                     submitReply()

@@ -51,7 +51,11 @@ import { NotebookEditorReader, openNotebookSidebarTab } from './scenes/notebooks
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { useUser } from '../hooks/useUser'
 import { getNotebookActor, setNotebookActor, userToNotebookActor } from '../lib/notebook-actor'
-import { isNotebookImageFile, uploadNotebookImage } from '../lib/notebook-upload'
+import { collectClipboardImageFiles } from '../lib/notebook-upload-shared'
+import { uploadNotebookImage } from '../lib/notebook-upload'
+import { fetchNotebookPeople } from '../lib/notebook-collaborators-client'
+import { collaboratorToMentionPerson, type MentionPerson } from './lib/components/MarkdownNotebook/mentionPeople'
+import { useToast } from '../context/Toast'
 import { uuid } from './lib/utils/dom'
 import {
   ensureNotebookProductStyles,
@@ -292,11 +296,41 @@ export function App() {
     () => userToNotebookActor(user) || getNotebookActor(),
     [user]
   )
+  const { addToast } = useToast()
   const presence = useNotebookPresence({
     notebookId: route.page === 'editor' ? currentNotebook?.id : undefined,
     version: currentNotebook?.version,
     actor: presenceActor,
   })
+  const [mentionPeople, setMentionPeople] = useState<MentionPerson[]>([])
+
+  useEffect(() => {
+    if (!currentNotebook?.id || route.page !== 'editor') {
+      setMentionPeople([])
+      return
+    }
+    let cancelled = false
+    fetchNotebookPeople(currentNotebook.id).then((result) => {
+      if (cancelled || !result) return
+      setMentionPeople(
+        result.collaborators
+          .map(collaboratorToMentionPerson)
+          .filter((person): person is MentionPerson => Boolean(person))
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [currentNotebook?.id, route.page])
+
+  const editorMentionPeople = useMemo(() => {
+    const live = presence.people.map((person) => ({
+      id: person.clientId,
+      label: person.name,
+      avatar: person.avatarUrl,
+    }))
+    return [...mentionPeople, ...live]
+  }, [mentionPeople, presence.people])
 
 
   useEffect(() => {
@@ -852,7 +886,7 @@ export function App() {
   }, [currentNotebook?.id, markdownVersion])
 
   const convertExternalDataTransferToNodes = useCallback(async (dataTransfer: DataTransfer) => {
-    const files = Array.from(dataTransfer.files || []).filter(isNotebookImageFile)
+    const files = collectClipboardImageFiles(dataTransfer)
     if (!files.length) return null
     const nodes = []
     for (const file of files) {
@@ -862,14 +896,17 @@ export function App() {
           id: uuid(),
           type: 'component' as const,
           tagName: 'Image',
-          props: { src: uploaded.url, alt: file.name.replace(/\.[^.]+$/, '') },
+          props: { src: uploaded.url, alt: file.name.replace(/\.[^.]+$/, '') || 'Pasted image' },
         })
-      } catch {
-        /* skip failed files */
+      } catch (error) {
+        addToast({
+          description: error instanceof Error ? error.message : 'Could not upload image',
+          error: true,
+        })
       }
     }
     return nodes.length ? nodes : null
-  }, [])
+  }, [addToast])
 
   const shellClassName = [
     'App w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden bg-primary text-primary',
@@ -1017,6 +1054,7 @@ export function App() {
                       extraInsertCommands={extraCommands}
                       onInvitePeople={() => openNotebookSidebarTab('share')}
                       convertExternalDataTransferToNodes={convertExternalDataTransferToNodes}
+                      mentionPeople={editorMentionPeople}
                       selectionAIActions={SELECTION_AI_ACTIONS}
                       placeholder="Type / to insert a block, or just start writing…"
                       autoFocus={Boolean(title && title !== 'Untitled Notebook')}

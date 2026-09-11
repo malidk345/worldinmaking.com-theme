@@ -37,10 +37,10 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf pass
-- **Last Model Action:** Grok 4.6 — idle serialize (320ms), memoized blocks, content-visibility, slim list rows, Cmd+F. Did not start a Yjs rewrite. Open `plan*` PRs (#511–#519) still extract more editor plans; merge when rebase-clean.
+- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf + paste/mentions/PDF polish
+- **Last Model Action:** Grok 4.6 — screenshot paste (items+files, capture), collaborator @mentions with keyboard, PDF toast + image wait timeout. Did not start a Yjs rewrite. Open `plan*` PRs (#511–#519) still extract more editor plans; merge when rebase-clean.
 - **Instruction for Next AI Agent:**
-  > Optional follow-ups: comment @mentions, paste-image polish, PDF export. Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs.
+  > Follow-ups left: comment notifications, richer PDF text (not a screenshot of the article). Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs. Playwright smoke is already red on `main` (placeholder.supabase.co) — do not treat that as caused by notebook editor changes.
 
 ---
 

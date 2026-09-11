@@ -39,6 +39,7 @@ export type MarkdownNotebookProps = {
     convertExternalDataTransferToNodes?: (
         dataTransfer: DataTransfer
     ) => NotebookBlockNode[] | Promise<NotebookBlockNode[] | null> | null
+    mentionPeople?: import('./mentionPeople').MentionPerson[]
     focusAIPromptRequest?: number
     aiWritingNodeIndexes?: number[]
     allowViewModeFilters?: boolean

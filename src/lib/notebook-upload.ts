@@ -2,7 +2,7 @@ import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getDeviceOwnerKey } from 
 import { supabase, isSupabaseConfigured } from './supabase'
 import { NOTEBOOK_IMAGE_MAX_BYTES, isNotebookImageFile } from './notebook-upload-shared'
 
-export { NOTEBOOK_IMAGE_MAX_BYTES, NOTEBOOK_IMAGE_TYPES, isNotebookImageFile, notebookImageExtension } from './notebook-upload-shared'
+export { NOTEBOOK_IMAGE_MAX_BYTES, NOTEBOOK_IMAGE_TYPES, isNotebookImageFile, notebookImageExtension, collectClipboardImageFiles } from './notebook-upload-shared'
 
 export async function uploadNotebookImage(file: File): Promise<{ url: string; name: string }> {
     if (!isNotebookImageFile(file)) {

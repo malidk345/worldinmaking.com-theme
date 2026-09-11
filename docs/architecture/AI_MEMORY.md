@@ -25,11 +25,19 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — notebook typing/list/find perf pass.
+- **Status:** `[COMPLETED by Grok]` — notebook paste / mentions / PDF polish.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (notebook paste / mentions / PDF)
+- **Scope:** Continue the notebook sprint after typing/list/find. Paste screenshots as Image blocks, mention collaborators in comments and body, make PDF export fail visibly.
+- **Implementation:**
+  - `collectClipboardImageFiles` reads `files` and `items`; paste capture inserts Image nodes even from a paragraph caret. Failed uploads toast.
+  - Mention picker lists collaborators + presence; keyboard arrows/Enter. Comment composer uses the same list.
+  - PDF waits on images with timeout, sets CORS, toasts success/failure.
+- **Files Modified:** notebook-upload-shared, mentionPeople, MentionPicker, DiscussionCommentBlock, useNotebookClipboard, MarkdownNotebook, App, exportNotebookPdf, notebookSidebarPanels, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
 
 ### 2026-09-11 — Grok (notebook typing/list/find)
 - **Scope:** Make the notebook editor cheaper to type in, slim the notebooks list, add in-notebook Cmd+F. Markdown stays source of truth. No Yjs rewrite. Did not merge stale Jules or `plan*` PRs.
