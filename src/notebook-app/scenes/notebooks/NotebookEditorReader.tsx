@@ -72,7 +72,7 @@ export function NotebookEditorReader({
     onPublish,
     stickyHeader,
 }: NotebookEditorReaderProps): JSX.Element {
-    useNotebookMarkFocus(notebookId)
+    useNotebookMarkFocus(notebookId, markdown)
     const mobileRootRef = useRef<HTMLDivElement | null>(null)
     useMobileBlockChrome(mobileRootRef)
 
