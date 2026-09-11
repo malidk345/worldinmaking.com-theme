@@ -142,6 +142,11 @@ function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     return target.isContentEditable
 }
 
+function isNotebookEditing(): boolean {
+    const active = document.activeElement
+    return Boolean(isEditableTarget(active) && active.closest(NOTEBOOK_EDITOR))
+}
+
 function resetVisualPan(vv: VisualViewport | null | undefined): void {
     try {
         vv?.scrollTo(0, 0)
@@ -160,7 +165,9 @@ export function useKeyboardInset(): void {
 
         const apply = (keepCaret = false) => {
             const vv = window.visualViewport
-            resetVisualPan(vv)
+            const notebook = isNotebookEditing()
+            // Fighting iOS visualViewport.offsetTop pans #app-container (logo taskbar).
+            if (!notebook) resetVisualPan(vv)
             const layoutH = window.innerHeight
             const visibleH = vv?.height ?? layoutH
             const offsetTop = vv?.offsetTop ?? 0
@@ -168,7 +175,7 @@ export function useKeyboardInset(): void {
 
             root.style.setProperty('--keyboard-inset', `${inset}px`)
             root.style.setProperty('--vv-height', `${Math.round(visibleH)}px`)
-            root.style.setProperty('--vv-offset-top', `${pan}px`)
+            root.style.setProperty('--vv-offset-top', `${notebook ? 0 : pan}px`)
             root.style.setProperty('--app-shell-height', `${layoutH}px`)
 
             if (open) root.setAttribute('data-keyboard', 'open')
@@ -176,22 +183,23 @@ export function useKeyboardInset(): void {
 
             const focused = document.activeElement
             const active = isEditableTarget(focused) ? focused : null
-            const inNotebook = Boolean(active?.closest(NOTEBOOK_EDITOR))
             const inDock = Boolean(active?.closest(WRITING_DOCK))
 
-            if (inNotebook) root.setAttribute('data-keyboard-surface', 'notebook')
+            if (notebook) root.setAttribute('data-keyboard-surface', 'notebook')
             else if (active && open) root.setAttribute('data-keyboard-surface', 'write')
             else root.removeAttribute('data-keyboard-surface')
 
-            if (open && active && !inDock) {
+            if (open && active && !inDock && !notebook) {
                 const frame = pickWritingFrame(active, inset)
                 if (frame) padWritingFrame(frame)
                 else clearWritingPad()
-            } else {
+            } else if (notebook) {
+                clearWritingPad()
+            } else if (!open) {
                 clearWritingPad()
             }
 
-            if (keepCaret && open && active) {
+            if (keepCaret && open && active && !notebook) {
                 const field = active
                 requestAnimationFrame(() => revealWritingSurface(field, inset))
             }
@@ -209,6 +217,7 @@ export function useKeyboardInset(): void {
         let selectionRaf = 0
         const onSelectionChange = () => {
             if (!root.hasAttribute('data-keyboard')) return
+            if (root.getAttribute('data-keyboard-surface') === 'notebook') return
             if (selectionRaf) return
             selectionRaf = requestAnimationFrame(() => {
                 selectionRaf = 0
@@ -224,7 +233,7 @@ export function useKeyboardInset(): void {
         apply(false)
         window.visualViewport?.addEventListener('resize', applyAndKeepCaret)
         window.visualViewport?.addEventListener('scroll', applyVars)
-        window.addEventListener('resize', applyAndKeepCaret)
+        window.addEventListener('resize', applyVars)
         document.addEventListener('focusin', onFocusIn)
         document.addEventListener('focusout', onFocusOut)
         document.addEventListener('selectionchange', onSelectionChange)
@@ -234,7 +243,7 @@ export function useKeyboardInset(): void {
             if (selectionRaf) cancelAnimationFrame(selectionRaf)
             window.visualViewport?.removeEventListener('resize', applyAndKeepCaret)
             window.visualViewport?.removeEventListener('scroll', applyVars)
-            window.removeEventListener('resize', applyAndKeepCaret)
+            window.removeEventListener('resize', applyVars)
             document.removeEventListener('focusin', onFocusIn)
             document.removeEventListener('focusout', onFocusOut)
             document.removeEventListener('selectionchange', onSelectionChange)
