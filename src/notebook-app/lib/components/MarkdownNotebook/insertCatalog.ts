@@ -1,9 +1,8 @@
 /**
  * Single slash catalog. Native markdown blocks are hardcoded in InsertMenu.
  * Registry tags in SLASH_REGISTRY_TAGS get `/` via insertCommand.
- * Extra keys (Page, discussion Comment, invites) are side-effect commands.
- * Hidden markdown `Comment` (labeled Note) stays in the registry but off slash —
- * slash already has discussion Comment via extraInsertCommands.
+ * Extra keys are side-effect commands that still insert a block (Page).
+ * Comment / invite / philosopher are not slash items — they live on block and share chrome.
  */
 
 export const SLASH_NATIVE_KEYS = [
@@ -30,12 +29,7 @@ export const SLASH_REGISTRY_TAGS = [
     'Latex',
 ] as const
 
-export const SLASH_EXTRA_KEYS = [
-    'inline-comment',
-    'invite-philosophers',
-    'invite-people',
-    'page-subpage',
-] as const
+export const SLASH_EXTRA_KEYS = ['page-subpage'] as const
 
 /** Old hardcoded media keys — must not return. Image/Embed/LaTeX go through the registry. */
 export const SLASH_REMOVED_KEYS = ['media-image', 'media-iframe', 'media-latex'] as const
