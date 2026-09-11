@@ -1,0 +1,30 @@
+.notebook-mobile-format-dock {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--keyboard-inset, 0px) + 8px);
+    z-index: 80;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgb(var(--bg, 255 255 255) / 0.94);
+    border: 1px solid rgb(var(--border, 192 192 192));
+    pointer-events: auto;
+}
+
+.notebook-mobile-format-dock button {
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgb(var(--text-primary, 17 17 17));
+    font: inherit;
+    font-weight: 700;
+}
+
+.notebook-mobile-format-dock button:active {
+    background: rgb(var(--accent, 229 231 224));
+}

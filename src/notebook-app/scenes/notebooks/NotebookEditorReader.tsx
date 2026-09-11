@@ -25,6 +25,7 @@ import type { NotebookChromeSettings } from './notebookChromeSettings'
 import type { NotebookPublishPayload } from './NotebookShareModal'
 import { useNotebookMarkFocus } from './useNotebookMarkFocus'
 import { useMobileBlockChrome } from './useMobileBlockChrome'
+import { MobileFormatDock } from './MobileFormatDock'
 
 interface NotebookEditorReaderProps {
     markdown: string
@@ -188,32 +189,35 @@ export function NotebookEditorReader({
     ]
 
     return (
-        <ReaderView
-            hideTitle
-            showQuestions={false}
-            showAbout={false}
-            hideMobileTableOfContents
-            hideAppOptions
-            hideBookmark
-            hideRightSidebar
-            padding={true}
-            className="h-full min-h-0"
-            stickyHeader={stickyHeader}
-            menuTabs={menuTabs}
-            menuTabsLayout="list"
-            rightActionButtons={
-                chrome && onChromeChange ? (
-                    <NotebookSettingsPopover
-                        settings={chrome}
-                        onChange={onChromeChange}
-                        extra={optionsExtra}
-                    />
-                ) : undefined
-            }
-        >
-            <div ref={mobileRootRef} className="min-w-0 flex-1 py-2">
-                {children}
-            </div>
-        </ReaderView>
+        <>
+            <ReaderView
+                hideTitle
+                showQuestions={false}
+                showAbout={false}
+                hideMobileTableOfContents
+                hideAppOptions
+                hideBookmark
+                hideRightSidebar
+                padding={true}
+                className="h-full min-h-0"
+                stickyHeader={stickyHeader}
+                menuTabs={menuTabs}
+                menuTabsLayout="list"
+                rightActionButtons={
+                    chrome && onChromeChange ? (
+                        <NotebookSettingsPopover
+                            settings={chrome}
+                            onChange={onChromeChange}
+                            extra={optionsExtra}
+                        />
+                    ) : undefined
+                }
+            >
+                <div ref={mobileRootRef} className="min-w-0 flex-1 py-2">
+                    {children}
+                </div>
+            </ReaderView>
+            <MobileFormatDock />
+        </>
     )
 }

@@ -3,15 +3,12 @@ import '../styles/global.css'
 import '../styles/notebook-taskbar-glass.css'
 import '../styles/taskbar-keyboard-lock.css'
 import '../styles/notebook-mobile-block-chrome.css'
+import '../styles/notebook-mobile-format-dock.css'
 import '../components/HiddenSection/style.css'
 import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
 import '../components/MdxAnchorHeaders/style.css'
 import '../components/RadixUI/css/toast.css'
-// Zoom CSS is imported from ZoomImage (node_modules CSS is allowed outside _app).
-// Do NOT import components/LemonUI/lemon-ui.css or MarkdownNotebook.scss globally.
-// LemonScope/chat still load the full kit via ensureLemonStyles().
-// Notebook windows load the slim table+editor kit via ensureNotebookProductStyles().
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import { UserProvider } from 'hooks/useUser'
@@ -61,11 +58,9 @@ export default function App({ Component, pageProps }: AppProps) {
     React.useEffect(() => {
         initPostHog()
         trackPageView()
-
         const handleRouteChange = (url: string) => {
             trackPageView(url)
         }
-
         router.events.on('routeChangeComplete', handleRouteChange)
         return () => {
             router.events.off('routeChangeComplete', handleRouteChange)
