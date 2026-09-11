@@ -110,7 +110,7 @@ export async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = fals
 }
 
 type ListResponse = { notebooks: StoredNotebook[]; deleted_ids?: string[] }
-type OneResponse = { notebook: StoredNotebook }
+type OneResponse = { notebook: StoredNotebook; history?: NotebookVersion[] }
 type ErrorBody = { error?: string; code?: string }
 
 let remoteAvailable: boolean | null = null
@@ -188,6 +188,22 @@ export async function pullNotebookById(id: string): Promise<StoredNotebook | nul
         if (!res.ok) return null
         const body = await parseJson<OneResponse>(res)
         return body?.notebook ?? null
+    } catch {
+        return null
+    }
+}
+
+export async function pullNotebookHistory(id: string): Promise<NotebookVersion[] | null> {
+    if (typeof window === 'undefined' || !id) return null
+    const ownerKey = getOrCreateOwnerKey()
+    try {
+        const res = await fetch(
+            `/api/notebooks/${encodeURIComponent(id)}?owner_key=${encodeURIComponent(ownerKey)}&history=1`,
+            { method: 'GET', headers: await notebookAuthHeadersFresh(ownerKey) }
+        )
+        if (!res.ok) return null
+        const body = await parseJson<OneResponse>(res)
+        return Array.isArray(body?.history) ? body.history : null
     } catch {
         return null
     }

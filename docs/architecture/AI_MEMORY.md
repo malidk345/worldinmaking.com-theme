@@ -25,11 +25,20 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — notebook selectable-text PDF export.
+- **Status:** `[COMPLETED by Grok]` — notebook mobile UX + history restore from remote.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (notebook mobile UX + history restore)
+- **Scope:** After PDF PR #538. Highest remaining directive is mobile writing: no popovers on the selection, no horizontal shifts, insert still possible without hover `+`. Also local history compact left older snapshots unrestorable.
+- **Implementation:**
+  - Coarse pointer: format toolbar docks to the visual viewport (above the keyboard), not over the selection. Style dropdown still opens upward.
+  - Long-press on a body block (including text) opens a bottom block-action bar with Insert. Focused row shows an in-flow Add chip on small screens (no left-gutter `+`, no layout jump).
+  - `content-visibility: auto` disabled under 640px so scrolling does not jump.
+  - History panel pulls `?history=1` and fills discarded local bodies from remote. Compacted local snapshots no longer wipe remote history on push (server merges, empty local list is a no-op).
+- **Files Modified:** MarkdownNotebook.tsx/scss, editorTypes.ts, notebookRemote.ts, notebookStorage.ts, NotebookHistory.tsx, notebooks-repo.ts, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
 
 ### 2026-09-11 — Grok (notebook text PDF)
 - **Scope:** Share/Options PDF was a screenshot (`html-to-image` JPEG into jsPDF). User asked for a normal PDF. Same generator is used from the Share tab and the Options export menu.
@@ -103,11 +112,6 @@
   - Deleted unused `src/templates/Changelog.tsx`.
   - Removed unused packages `query-string` and `@dotlottie/react-player`. Dropped dead `components/PostHogUI` tsconfig path.
 - **Files Modified:** unused component folders, Changelog.tsx, package.json, pnpm-lock.yaml, tsconfig.json, LemonUI comment, AI_MEMORY.
-
-
----
-
-## 5. AI Change History & Log
 
 ### 2026-09-11 — Grok (pass 5)
 - **Scope:** Lazy MDX shortcodes + drop more unused PostHog leftovers. No visual/product change.

@@ -4,9 +4,11 @@ import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import {
     getNotebookHistoryNewestFirst,
+    mergeNotebookHistoryLists,
     restoreNotebookVersion,
     type NotebookVersion,
 } from './notebookStorage'
+import { pullNotebookHistory } from './notebookRemote'
 import { useNotebookConfirm } from './NotebookConfirmDialog'
 
 interface NotebookHistoryButtonProps {
@@ -26,6 +28,68 @@ function timeAgo(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'medium' })
 }
 
+async function loadMergedHistory(notebookId: string): Promise<NotebookVersion[]> {
+    const local = getNotebookHistoryNewestFirst(notebookId)
+    try {
+        const remote = await pullNotebookHistory(notebookId)
+        if (remote?.length) {
+            return mergeNotebookHistoryLists(local, remote)
+        }
+    } catch {
+        /* keep local */
+    }
+    return local
+}
+
+function HistoryList({
+    history,
+    restoringVersion,
+    onRestore,
+}: {
+    history: NotebookVersion[]
+    restoringVersion: number | null
+    onRestore: (version: NotebookVersion) => void
+}): JSX.Element {
+    if (history.length === 0) {
+        return (
+            <p className="text-sm text-muted m-0 px-1 leading-snug">
+                Snapshots appear as you write. Restore any version from this list.
+            </p>
+        )
+    }
+    return (
+        <ul className="list-none m-0 p-0 flex flex-col">
+            {history.map((version) => {
+                const hasBody = Boolean(version.content)
+                return (
+                    <li
+                        key={`${version.version}-${version.timestamp}`}
+                        className="flex items-start gap-2 py-2 border-t border-primary first:border-t-0"
+                    >
+                        <div className="min-w-0 flex-1">
+                            <p className="m-0 text-[13px] text-primary truncate">
+                                {version.label || version.title || `v${version.version}`}
+                            </p>
+                            <p className="m-0 text-[11px] text-muted">
+                                {timeAgo(version.timestamp)}
+                                {hasBody ? '' : ' · body discarded'}
+                            </p>
+                        </div>
+                        <OSButton
+                            size="xs"
+                            hover="background"
+                            disabled={!hasBody || restoringVersion === version.version}
+                            onClick={() => onRestore(version)}
+                        >
+                            Restore
+                        </OSButton>
+                    </li>
+                )
+            })}
+        </ul>
+    )
+}
+
 export function NotebookHistoryPanel({
     notebookId,
     currentContent,
@@ -39,6 +103,7 @@ export function NotebookHistoryPanel({
 
     const reload = useCallback(() => {
         setHistory(getNotebookHistoryNewestFirst(notebookId))
+        void loadMergedHistory(notebookId).then(setHistory)
     }, [notebookId])
 
     useEffect(() => {
@@ -55,7 +120,7 @@ export function NotebookHistoryPanel({
         if (!ok) return
         setRestoringVersion(version.version)
         try {
-            const restored = restoreNotebookVersion(notebookId, version.version)
+            const restored = restoreNotebookVersion(notebookId, version.version, version.content)
             if (restored) {
                 onRestored({ content: restored.content, title: restored.title })
                 reload()
@@ -81,41 +146,7 @@ export function NotebookHistoryPanel({
             >
                 Save snapshot
             </OSButton>
-            {history.length === 0 ? (
-                <p className="text-sm text-muted m-0 px-1 leading-snug">
-                    Snapshots appear as you write. Restore any version from this list.
-                </p>
-            ) : (
-                <ul className="list-none m-0 p-0 flex flex-col">
-                    {history.map((version) => {
-                        const hasBody = Boolean(version.content)
-                        return (
-                            <li
-                                key={`${version.version}-${version.timestamp}`}
-                                className="flex items-start gap-2 py-2 border-t border-primary first:border-t-0"
-                            >
-                                <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-[13px] text-primary truncate">
-                                        {version.label || version.title || `v${version.version}`}
-                                    </p>
-                                    <p className="m-0 text-[11px] text-muted">
-                                        {timeAgo(version.timestamp)}
-                                        {hasBody ? '' : ' · body discarded'}
-                                    </p>
-                                </div>
-                                <OSButton
-                                    size="xs"
-                                    hover="background"
-                                    disabled={!hasBody || restoringVersion === version.version}
-                                    onClick={() => void handleRestore(version)}
-                                >
-                                    Restore
-                                </OSButton>
-                            </li>
-                        )
-                    })}
-                </ul>
-            )}
+            <HistoryList history={history} restoringVersion={restoringVersion} onRestore={(version) => void handleRestore(version)} />
         </div>
     )
 }
@@ -134,6 +165,7 @@ export function NotebookHistoryButton({
 
     const reload = useCallback(() => {
         setHistory(getNotebookHistoryNewestFirst(notebookId))
+        void loadMergedHistory(notebookId).then(setHistory)
     }, [notebookId])
 
     useEffect(() => {
@@ -150,7 +182,7 @@ export function NotebookHistoryButton({
         if (!ok) return
         setRestoringVersion(version.version)
         try {
-            const restored = restoreNotebookVersion(notebookId, version.version)
+            const restored = restoreNotebookVersion(notebookId, version.version, version.content)
             if (restored) {
                 onRestored({ content: restored.content, title: restored.title })
                 reload()
@@ -194,35 +226,13 @@ export function NotebookHistoryButton({
                     {history.length === 0 ? (
                         <p className="text-[13px] text-secondary m-0 py-2">No snapshots yet.</p>
                     ) : (
-                        <ul className="list-none m-0 p-0 flex flex-col max-h-64 overflow-y-auto">
-                            {history.map((version) => {
-                                const hasBody = Boolean(version.content)
-                                return (
-                                    <li
-                                        key={`${version.version}-${version.timestamp}`}
-                                        className="flex items-center gap-2 py-1.5 border-t border-primary first:border-t-0"
-                                    >
-                                        <div className="min-w-0 flex-1">
-                                            <p className="m-0 text-[13px] text-primary truncate">
-                                                {version.label || version.title || `v${version.version}`}
-                                            </p>
-                                            <p className="m-0 text-[11px] text-muted">
-                                                {timeAgo(version.timestamp)}
-                                                {hasBody ? '' : ' · body discarded'}
-                                            </p>
-                                        </div>
-                                        <OSButton
-                                            size="xs"
-                                            hover="background"
-                                            disabled={!hasBody || restoringVersion === version.version}
-                                            onClick={() => handleRestore(version)}
-                                        >
-                                            Restore
-                                        </OSButton>
-                                    </li>
-                                )
-                            })}
-                        </ul>
+                        <div className="max-h-64 overflow-y-auto">
+                            <HistoryList
+                                history={history}
+                                restoringVersion={restoringVersion}
+                                onRestore={(version) => void handleRestore(version)}
+                            />
+                        </div>
                     )}
                 </div>
             </Popover>

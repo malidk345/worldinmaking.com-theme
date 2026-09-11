@@ -26,6 +26,7 @@ import {
     IconDrag,
     IconEllipsis,
     IconPeople,
+    IconPlus,
     IconSparkles,
     IconTrash,
     IconX,
@@ -117,7 +118,6 @@ import {
     getCollapsedSelectionRange,
     getCollapsedSelectionRestoreRequest,
     getElementForNode,
-    getElementLineHeight,
     getInlineEditableElementForSelection,
     getNormalizedSelectionBounds,
     getNotebookBlockElement,
@@ -162,6 +162,8 @@ import {
     TextBlockStyle,
     TextSelectionPointerStartEvent,
     TextSelectionPointerState,
+    getDockedFloatingToolbarPosition,
+    isCoarsePointer,
 } from './editorTypes'
 import {
     FormattingToolbar,
@@ -694,22 +696,48 @@ function MarkdownNotebookEditor({
                 clearMobileBlockBar()
             }
         }
-        const handleScrollDismiss = () => clearMobileBlockBar()
+        const dockBar = () => {
+            const vv = window.visualViewport
+            const viewTop = vv?.offsetTop ?? 0
+            const viewLeft = vv?.offsetLeft ?? 0
+            const viewWidth = vv?.width ?? window.innerWidth
+            const viewHeight = vv?.height ?? window.innerHeight
+            const margin = 10
+            setMobileBarAnchor({
+                top: viewTop + viewHeight - margin,
+                left: Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, viewLeft + viewWidth / 2)),
+                placement: 'above',
+            })
+        }
+        const handleScrollDismiss = (event: Event) => {
+            const target = event.target
+            if (target === window || target === window.document || target === window.document.documentElement) {
+                return
+            }
+            if (target instanceof Element && target.closest('.MarkdownNotebook__mobile-block-bar')) {
+                return
+            }
+            clearMobileBlockBar()
+        }
         const domDocument = window.document
         domDocument.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
         domDocument.addEventListener('mousedown', handleOutsideDismiss)
         window.addEventListener('scroll', handleScrollDismiss, true)
+        window.visualViewport?.addEventListener('resize', dockBar)
+        window.visualViewport?.addEventListener('scroll', dockBar)
         return () => {
             domDocument.removeEventListener('touchstart', handleOutsideDismiss)
             domDocument.removeEventListener('mousedown', handleOutsideDismiss)
             window.removeEventListener('scroll', handleScrollDismiss, true)
+            window.visualViewport?.removeEventListener('resize', dockBar)
+            window.visualViewport?.removeEventListener('scroll', dockBar)
         }
     }, [mobileActiveNodeId, clearMobileBlockBar])
 
     const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || isTitle) return
         const target = event.target as HTMLElement | null
-        if (target?.closest('[contenteditable="true"], input, textarea, button, select, a')) {
+        if (target?.closest('input, textarea, button, select, a, .MarkdownNotebook__format-toolbar, .MarkdownNotebook__insert-menu, .MarkdownNotebook__mobile-block-bar')) {
             return
         }
         const touch = event.touches[0]
@@ -730,24 +758,20 @@ function MarkdownNotebookEditor({
                     // Ignore vibration errors
                 }
             }
-            const rect = row.getBoundingClientRect()
             const vv = window.visualViewport
             const viewTop = vv?.offsetTop ?? 0
             const viewLeft = vv?.offsetLeft ?? 0
             const viewWidth = vv?.width ?? window.innerWidth
             const viewHeight = vv?.height ?? window.innerHeight
-            const estimatedHeight = 48
             const margin = 10
-            const placeBelow = rect.top - viewTop < estimatedHeight + margin + 12
             const left = Math.min(
                 viewLeft + viewWidth - margin,
-                Math.max(viewLeft + margin, rect.left + rect.width / 2)
+                Math.max(viewLeft + margin, viewLeft + viewWidth / 2)
             )
-            const top = placeBelow
-                ? Math.min(viewTop + viewHeight - estimatedHeight - margin - 80, rect.bottom)   // klavye açıldığında barı kapatmasın
-                : Math.max(viewTop + margin, rect.top)
-            setMobileBarAnchor({ top, left, placement: placeBelow ? 'below' : 'above' })
+            const top = viewTop + viewHeight - margin
+            setMobileBarAnchor({ top, left, placement: 'above' })
             setMobileActiveNodeId(nodeId)
+            setFloatingToolbar(null)
         }, 340)
 
         touchStartPosRef.current = { x, y, timer, row }
@@ -2288,9 +2312,6 @@ function MarkdownNotebookEditor({
                 return
             }
 
-            const firstSelectedNodeId = textRanges[0]?.node.id ?? codeRanges[0]?.node.id ?? listItemRanges[0]?.node.id
-            const firstSelectedElement = firstSelectedNodeId ? blockRefs.current[firstSelectedNodeId] : null
-            const lineHeight = firstSelectedElement ? getElementLineHeight(firstSelectedElement) : 24
             const vv = window.visualViewport
             const viewLeft = vv?.offsetLeft ?? 0
             const viewTop = vv?.offsetTop ?? 0
@@ -2298,6 +2319,27 @@ function MarkdownNotebookEditor({
             const viewHeight = vv?.height ?? window.innerHeight
             const viewRight = viewLeft + viewWidth
             const viewBottom = viewTop + viewHeight
+
+            if (isCoarsePointer(window)) {
+                const docked = getDockedFloatingToolbarPosition(
+                    {
+                        offsetLeft: viewLeft,
+                        offsetTop: viewTop,
+                        width: viewWidth,
+                        height: viewHeight,
+                    },
+                    FLOATING_TOOLBAR_ESTIMATED_HEIGHT_NARROW
+                )
+                setFloatingToolbar({
+                    textRanges,
+                    codeRanges,
+                    listItemRanges,
+                    selectedMarkdown,
+                    ...docked,
+                })
+                return
+            }
+
             const estimatedHeight = FLOATING_TOOLBAR_ESTIMATED_HEIGHT
             // Anchor directly above the selection, horizontally centered on the selection.
             // Flip below only if there is not enough room at the top of the viewport.
@@ -4927,7 +4969,7 @@ function MarkdownNotebookEditor({
     }
 
     const lockFloatingToolbarPosition = (): void => {
-        if (!floatingToolbar) {
+        if (!floatingToolbar || floatingToolbar.docked) {
             return
         }
 
@@ -5268,7 +5310,7 @@ function MarkdownNotebookEditor({
                         contentEditable={false}
                     />
                 ) : null}
-                {renderNode({
+                    {renderNode({
                     node,
                     nodeIndex: index,
                     mode: nodeMode,
@@ -5447,6 +5489,29 @@ function MarkdownNotebookEditor({
                     restoreSelectionRef,
                     rootEditableInputHtmlByNodeIdRef,
                 })}
+                {mode === 'edit' &&
+                !isTitleRow &&
+                !isAIWritingNode &&
+                !isAIPromptOpen &&
+                !isDiscussionCommentNode(node) &&
+                focusedRowIndex === index &&
+                !isInsertMenuOpen ? (
+                    <button
+                        type="button"
+                        className="MarkdownNotebook__mobile-insert-chip"
+                        contentEditable={false}
+                        aria-label="Add block"
+                        title="Add block"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={(event) => {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            openInsertMenuAtBoundary(index + 1)
+                        }}
+                    >
+                        <IconPlus className="size-4" />
+                    </button>
+                ) : null}
             </div>
         )
     }
@@ -5657,6 +5722,23 @@ function MarkdownNotebookEditor({
                                     onClick={(event) => {
                                         event.preventDefault()
                                         event.stopPropagation()
+                                        const insertAt = mobileBarIndex + 1
+                                        clearMobileBlockBar()
+                                        openInsertMenuAtBoundary(insertAt)
+                                    }}
+                                    title="Add block"
+                                    aria-label="Add block"
+                                >
+                                    <IconPlus className="size-4" />
+                                </button>
+                            ) : null}
+                            {!mobileBarIsPrompt && !mobileBarIsAIWriting && !isDiscussionCommentNode(mobileBarNode) ? (
+                                <button
+                                    type="button"
+                                    className="MarkdownNotebook__mobile-block-bar-btn"
+                                    onClick={(event) => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
                                         clearMobileBlockBar()
                                         startBlockCommentForNode(mobileBarNode.id)
                                     }}
@@ -5755,7 +5837,7 @@ function MarkdownNotebookEditor({
                             </button>
                         </div>
                     ) : null}
-                    {floatingToolbar && mode === 'edit' ? (
+                    {floatingToolbar && mode === 'edit' && !showMobileBlockBar ? (
                         <FormattingToolbar
                             selectedBlockStyle={getSelectedBlockStyle(
                                 floatingToolbar.textRanges,

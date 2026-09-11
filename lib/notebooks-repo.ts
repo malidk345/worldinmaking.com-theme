@@ -669,10 +669,39 @@ export async function appendHistory(
 }
 
 export async function replaceHistory(notebookId: string, entries: NotebookVersionDTO[]): Promise<void> {
-    // Full replace for dual-write sync (local is source of truth for history list)
-    await supabaseAdmin.from('wim_notebook_history').delete().eq('notebook_id', notebookId)
     if (!entries.length) return
-    const rows = entries.map((entry) => ({
+
+    const existing = await listHistory(notebookId)
+    const byVersion = new Map<number, NotebookVersionDTO>()
+    for (const entry of [...existing, ...entries]) {
+        if (!Number.isFinite(entry.version)) continue
+        const prev = byVersion.get(entry.version)
+        const incomingContent = entry.content && entry.content.length > 0 ? entry.content : ''
+        if (!prev) {
+            byVersion.set(entry.version, { ...entry, content: incomingContent })
+            continue
+        }
+        byVersion.set(entry.version, {
+            ...prev,
+            ...entry,
+            content: incomingContent || prev.content,
+            title: entry.title || prev.title,
+            label: entry.label || prev.label,
+            timestamp: entry.timestamp || prev.timestamp,
+        })
+    }
+    const merged = [...byVersion.values()]
+        .sort((a, b) => {
+            const ta = Date.parse(a.timestamp) || 0
+            const tb = Date.parse(b.timestamp) || 0
+            if (ta !== tb) return ta - tb
+            return a.version - b.version
+        })
+        .slice(-100)
+
+    await supabaseAdmin.from('wim_notebook_history').delete().eq('notebook_id', notebookId)
+    if (!merged.length) return
+    const rows = merged.map((entry) => ({
         notebook_id: notebookId,
         version: entry.version,
         content: entry.content ?? '',
