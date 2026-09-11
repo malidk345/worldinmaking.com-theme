@@ -74,7 +74,8 @@ function copyStore(source: IDBObjectStore, target: IDBObjectStore): Promise<void
                 resolve()
                 return
             }
-            target.put(cursor.value)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            void target.put(cursor.value as unknown as Record<string, unknown>)
             cursor.continue()
         }
     })
