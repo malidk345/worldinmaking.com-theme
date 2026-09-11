@@ -15,6 +15,7 @@ import {
     NotebookBlockNode,
     NotebookCodeBlockNode,
     NotebookComponentBlockNode,
+    NotebookComponentProps,
     NotebookDocument,
     NotebookInlineNode,
     NotebookListBlockNode,
@@ -1208,6 +1209,21 @@ export function createInsertedListBlock(options: CreateInsertedListBlockOptions)
         start: options.start,
         blockquote: options.blockquote,
         items: [item],
+    }
+}
+
+
+/** Shared component block used by slash insert and host insertMenuApi. */
+export function createInsertedComponent(
+    id: string,
+    tagName: string,
+    props: NotebookComponentProps = {}
+): NotebookComponentBlockNode {
+    return {
+        id,
+        type: 'component',
+        tagName,
+        props,
     }
 }
 
