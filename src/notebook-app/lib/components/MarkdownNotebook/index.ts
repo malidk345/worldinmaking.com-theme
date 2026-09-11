@@ -1,3 +1,6 @@
+import './MarkdownNotebook.scss'
+import './MarkdownNotebook.mobile.scss'
+
 export { MarkdownNotebook } from './MarkdownNotebook'
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 export type { InsertCommand, MarkdownNotebookInsertMenuApi } from './editorTypes'
