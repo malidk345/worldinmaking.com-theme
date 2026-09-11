@@ -494,21 +494,23 @@ export async function upsertNotebook(
         const contentChanged = previousContent !== saved.content
         if (contentChanged) {
             try {
-                await notifyNotebookMentions({
-                    notebookId: saved.id,
-                    title: saved.title,
-                    content: saved.content,
-                    previousContent,
-                    actorId: userId,
-                })
-                await notifyNotebookComments({
-                    notebookId: saved.id,
-                    title: saved.title,
-                    previousContent,
-                    content: saved.content,
-                    actorId: userId,
-                    ownerUserId: saved.auth_user_id || userId,
-                })
+                await Promise.all([
+                    notifyNotebookMentions({
+                        notebookId: saved.id,
+                        title: saved.title,
+                        content: saved.content,
+                        previousContent,
+                        actorId: userId,
+                    }),
+                    notifyNotebookComments({
+                        notebookId: saved.id,
+                        title: saved.title,
+                        previousContent,
+                        content: saved.content,
+                        actorId: userId,
+                        ownerUserId: saved.auth_user_id || userId,
+                    }),
+                ])
             } catch (err) {
                 console.warn('[notebooks-repo] mention/comment notify failed', err)
             }
@@ -531,13 +533,34 @@ export async function upsertNotebooks(
     const tombstoneIds = new Set(await listSyncTombstoneIds('notebook', ownerKey, userId))
     const isDeleted = (id: string | undefined): boolean => Boolean(id && tombstoneIds.has(id))
 
+    // Resolve existing rows in a constant number of round trips instead of one
+    // `or(id.eq.<nb.id>,short_id.eq.<nb.id>)` select per notebook. Chunked so large
+    // client libraries never exceed URL limits on `in(...)` filters.
+    const EXISTING_COLS = 'id, short_id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template'
+    const existingById = new Map<string, StoredNotebookRow>()
+    const lookupIds = Array.from(new Set(notebooks.map((nb) => nb.id).filter(Boolean)))
+    for (let i = 0; i < lookupIds.length; i += 100) {
+        const chunk = lookupIds.slice(i, i + 100)
+        const { data, error } = await supabaseAdmin.from('wim_notebooks').select(EXISTING_COLS).in('id', chunk)
+        if (error) throw error
+        for (const row of data || []) existingById.set((row as StoredNotebookRow).id, row as StoredNotebookRow)
+    }
+    // Mirror the original `or(id.eq.<nb.id>,short_id.eq.<nb.id>)` semantics for
+    // ids that matched no row, so the batched path behaves exactly like the old
+    // per-notebook query.
+    const shortLookupIds = Array.from(
+        new Set(notebooks.filter((nb) => !existingById.has(nb.id)).map((nb) => nb.id))
+    )
+    const existingByShort = new Map<string, StoredNotebookRow>()
+    for (let i = 0; i < shortLookupIds.length; i += 100) {
+        const chunk = shortLookupIds.slice(i, i + 100)
+        const { data, error } = await supabaseAdmin.from('wim_notebooks').select(EXISTING_COLS).in('short_id', chunk)
+        if (error) throw error
+        for (const row of data || []) existingByShort.set((row as StoredNotebookRow).short_id, row as StoredNotebookRow)
+    }
+
     for (const nb of notebooks) {
-        const { data: existing } = await supabaseAdmin
-            .from('wim_notebooks')
-            .select('id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template')
-            .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
-            .limit(1)
-            .maybeSingle()
+        const existing = existingById.get(nb.id) ?? existingByShort.get(nb.id)
 
         let persistOwnerKey = ownerKey
         if (existing) {
@@ -601,21 +624,28 @@ export async function replaceHistoryForOwner(
     notebookId: string,
     ownerKey: string,
     entries: NotebookVersionDTO[],
-    extraOwnerKeys: string[] = []
+    extraOwnerKeys: string[] = [],
+    userId?: string
 ): Promise<void> {
-    const existing = await getNotebookByIdOrShort(notebookId, {
-        ownerKey,
-        userId: ownerKey,
-        extraOwnerKeys,
-    })
-    if (!existing || !canWriteNotebook(existing.access_role)) {
-        const err = new Error('Forbidden or not found: cannot write history for this notebook') as Error & {
-            status?: number
-        }
-        err.status = 403
-        throw err
+    // Lightweight access check — SELECT only the columns needed to decide write
+    // access. Previously this loaded the full notebook content just to authorize.
+    const { data, error } = await supabaseAdmin
+        .from('wim_notebooks')
+        .select('id, owner_key, auth_user_id')
+        .or(`id.eq.${notebookId},short_id.eq.${notebookId}`)
+        .limit(1)
+        .maybeSingle()
+    if (error) throw error
+    if (!data) {
+        // Missing row on server (e.g. templates, guest drafts) must not fail parent save
+        return
     }
-    await replaceHistory(existing.id, entries)
+    const row = data as { id: string; owner_key: string; auth_user_id: string | null }
+    const role = await resolveNotebookAccess(row, ownerKey, userId || ownerKey, extraOwnerKeys)
+    if (!role || !canWriteNotebook(role)) {
+        return
+    }
+    await replaceHistory(row.id, entries)
 }
 
 export async function deleteNotebook(
@@ -738,9 +768,40 @@ export async function replaceHistory(notebookId: string, entries: NotebookVersio
         })
         .slice(-100)
 
-    await supabaseAdmin.from('wim_notebook_history').delete().eq('notebook_id', notebookId)
-    if (!merged.length) return
-    const rows = merged.map((entry) => ({
+    // Minimal diff write: only delete dropped versions and reinsert changed/new
+    // versions. Previously every save deleted the whole snapshot table and replayed
+    // it (delete-all + insert-all) even when only one new version was appended.
+    const existingByVersion = new Map<number, NotebookVersionDTO>(existing.map((h) => [h.version, h]))
+    const removedVersions = existing
+        .filter((h) => !merged.some((m) => m.version === h.version))
+        .map((h) => h.version)
+    const rewritten = merged.filter((v) => {
+        const cur = existingByVersion.get(v.version)
+        if (!cur) return true
+        return (
+            cur.content !== (v.content ?? '') ||
+            (v.title ?? null) !== (cur.title ?? null) ||
+            (v.label ?? null) !== (cur.label ?? null)
+        )
+    })
+    if (!removedVersions.length && !rewritten.length) return
+
+    if (removedVersions.length) {
+        await supabaseAdmin
+            .from('wim_notebook_history')
+            .delete()
+            .eq('notebook_id', notebookId)
+            .in('version', removedVersions)
+    }
+    const overwriteVersions = rewritten.filter((v) => existingByVersion.has(v.version)).map((v) => v.version)
+    if (overwriteVersions.length) {
+        await supabaseAdmin
+            .from('wim_notebook_history')
+            .delete()
+            .eq('notebook_id', notebookId)
+            .in('version', overwriteVersions)
+    }
+    const rows = rewritten.map((entry) => ({
         notebook_id: notebookId,
         version: entry.version,
         content: entry.content ?? '',

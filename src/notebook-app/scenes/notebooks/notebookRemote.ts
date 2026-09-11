@@ -371,20 +371,27 @@ export function planOpenNotebookRemoteApply(input: {
     if (!shouldAdoptRemoteNotebook(input.current, input.latest)) {
         return { adopt: false, applyContent: false, applyTitle: false, applyRemoteBase: false }
     }
+    const currentTs = Date.parse(input.current.updatedAt || '') || 0
+    const latestTs = Date.parse(input.latest.updatedAt || '') || 0
+    const latestIsOlderThanLocal = latestTs > 0 && currentTs > 0 && latestTs < currentTs
+
     const dirtyContent = input.draftContent !== input.current.content
     const latestIsLastSave = input.latest.content === input.current.content
     const latestIsDraft = input.latest.content === input.draftContent
     // Own save / version echo: the draft already continues from this body. Feeding it back
-    // as remoteValue makes the editor merge a stale ancestor and can rewind keystrokes.
+    // as remoteValue makes the editor merge a stale ancestor and can rewind keystrokes or deletions.
     const latestLooksLikeRewind =
         dirtyContent &&
-        input.latest.content.length < input.draftContent.length &&
-        input.draftContent.startsWith(input.latest.content)
+        ((input.latest.content.length < input.draftContent.length &&
+            input.draftContent.startsWith(input.latest.content)) ||
+        (input.latest.content.length > input.draftContent.length &&
+            (input.latest.content.startsWith(input.draftContent) ||
+                input.latest.content.includes(input.draftContent))))
     return {
-        adopt: true,
-        applyContent: !dirtyContent,
+        adopt: !latestIsOlderThanLocal,
+        applyContent: !dirtyContent && !latestIsOlderThanLocal,
         applyTitle: input.draftTitle === input.current.title,
-        applyRemoteBase: latestIsDraft || (!latestIsLastSave && !latestLooksLikeRewind),
+        applyRemoteBase: !latestIsOlderThanLocal && (latestIsDraft || (!latestIsLastSave && !latestLooksLikeRewind)),
     }
 }
 

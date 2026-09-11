@@ -522,8 +522,8 @@ function MarkdownNotebookEditor({
     // duplicate the overlapping insertions.
     const localSnapshotsRef = useRef<string[]>([value])
     // The three-way merge base: the last server state local edits were derived from.
-    const lastBaseValueRef = useRef(remoteValue ?? value)
-    const lastRemoteValueRef = useRef(remoteValue)
+    const lastBaseValueRef = useRef(remoteValue || value)
+    const lastRemoteValueRef = useRef(remoteValue || value)
     const pendingRemoteValueRef = useRef<string | null>(null)
     const remoteVersionRef = useRef(remoteVersion)
     remoteVersionRef.current = remoteVersion

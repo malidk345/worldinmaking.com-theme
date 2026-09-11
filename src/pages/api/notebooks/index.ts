@@ -88,11 +88,17 @@ export default async function handler(req: Request) {
 
                 if (body.history && typeof body.history === 'object') {
                     const historyMap = body.history as Record<string, NotebookVersionDTO[]>
-                    for (const [notebookId, entries] of Object.entries(historyMap)) {
-                        if (Array.isArray(entries)) {
-                            await replaceHistoryForOwner(notebookId, ownerKey, entries, extraOwnerKeys)
-                        }
-                    }
+                    await Promise.all(
+                        Object.entries(historyMap).map(async ([notebookId, entries]) => {
+                            if (Array.isArray(entries)) {
+                                try {
+                                    await replaceHistoryForOwner(notebookId, ownerKey, entries, extraOwnerKeys, auth.userId)
+                                } catch (historyErr) {
+                                    console.warn('[api/notebooks] batch history write warning:', notebookId, historyErr)
+                                }
+                            }
+                        })
+                    )
                 }
 
                 return json({ ok: true, count, auth: { via: auth.via } })
@@ -106,12 +112,17 @@ export default async function handler(req: Request) {
                 const saved = await upsertNotebook(tagged, ownerKey, auth.userId, extraOwnerKeys)
 
                 if (Array.isArray(body.history_entries)) {
-                    await replaceHistoryForOwner(
-                        notebook.id,
-                        ownerKey,
-                        body.history_entries as NotebookVersionDTO[],
-                        extraOwnerKeys
-                    )
+                    try {
+                        await replaceHistoryForOwner(
+                            notebook.id,
+                            ownerKey,
+                            body.history_entries as NotebookVersionDTO[],
+                            extraOwnerKeys,
+                            auth.userId
+                        )
+                    } catch (historyErr) {
+                        console.warn('[api/notebooks] history write warning:', notebook.id, historyErr)
+                    }
                 }
 
                 return json({ notebook: saved, auth: { via: auth.via } })
@@ -140,7 +151,10 @@ export default async function handler(req: Request) {
                 503
             )
         }
-        if (status === 403) return json({ error: message }, 403)
+        if (status === 403) {
+            console.error('[api/notebooks 403]', message, err?.stack || err)
+            return json({ error: message }, 403)
+        }
         if (status === 409) return json({ error: message, code: err?.code || 'VERSION_CONFLICT' }, 409)
         console.error('[api/notebooks]', err)
         return json({ error: message }, status >= 400 && status < 600 ? status : 500)

@@ -31,6 +31,47 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-12 — Antigravity (Fix Notebook Deleted Content Sync Resurrection & API 403 Prevention)
+- **Scope:**
+  1. Resolved bug where deleted text/blocks inside a notebook reappeared upon background sync or page reload ("bu sync olayı çok acayip sildiğim geri geliyor, notebook içeriğinde olan sildiklerim").
+  2. Root cause 1: Server 403 save failure. When user deleted content and save was triggered, `replaceHistoryForOwner()` failed with HTTP 403 when authorization used ownerKey rather than userId or when notebook was draft/template (`!data`). When save failed with 403, server retained older content and subsequent client polling overwritten the local notebook with the old version. Fixed by passing `userId || ownerKey` to `resolveNotebookAccess`, returning cleanly if `!data`, and wrapping history updates in `try...catch` so history write warnings never block notebook saves.
+  3. Root cause 2: Stale remote rewind in `notebookRemote.ts`. `planOpenNotebookRemoteApply` only checked length expansions when detecting rewinds, ignoring deletions. Added `latestIsOlderThanLocal` guard (`latestTs < currentTs`) and updated `latestLooksLikeRewind` to handle deletions (`input.latest.content.includes(input.draftContent)`), preventing stale remote snapshots from being applied over local deletions.
+  4. Root cause 3: Merge base initialization in `MarkdownNotebook.tsx`. `lastBaseValueRef` initialized with `remoteValue ?? value` fell back to empty string `""` when `remoteValue` was `""`, causing 3-way merge to treat existing blocks as insertions and resurrect deleted blocks. Fixed by using `remoteValue || value`.
+  5. Test suite alignment:
+     - `tests/notebook-frontend.spec.ts`: Aligned slash catalog test with dropped comment/invite side effects.
+     - `src/lib/bots/supabase-edge.ts`: Restored anon key fallback in `getSupabaseConfig` for edge REST requests when service role key is absent.
+     - `src/lib/bots/notebook-rag.ts`: Lowered minimum chunk length threshold from 20 to 3 so short sentences are indexed.
+     - `tests/seo.spec.ts`: Updated home h1 assertion to match current `HOME_H1`.
+- **Verification:**
+  - `pnpm test:smoke`: 430 passed, 0 failed, 1 skipped.
+  - `pnpm run typecheck:shell`: PASS — 0 gated errors in core shell allowlist.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: 44 passed (100%).
+- **Files Modified:**
+  - `lib/notebooks-repo.ts`
+  - `src/pages/api/notebooks/index.ts`
+  - `src/pages/api/notebooks/[id].ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/scenes/notebooks/notebookRemote.ts`
+  - `src/lib/bots/supabase-edge.ts`
+  - `src/lib/bots/notebook-rag.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `tests/seo.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-12 — opencode (big-pickle) (Backend Optimization Round 2: History Writes, Batch Lookups)
+- **Scope:** Continue industry-standard backend optimization on notebook API hot paths. Frontend contract preserved — no response-shape or client-code changes.
+- **Implementation:**
+  1. `lib/notebooks-repo.ts` `replaceHistory` (runs on EVERY save, single + bulk path): replaced delete-all + insert-all replay with a minimal diff write — existing snapshots are merged/compared in memory; only dropped versions are deleted and only changed/new versions reinserted. No-op saves now touch the DB history table zero times; an appended new version costs 1 insert instead of replaying every stored snapshot.
+  2. `lib/notebooks-repo.ts` `replaceHistoryForOwner`: authorization no longer loads the full notebook content — a lightweight `id, owner_key, auth_user_id` access check (same 403 semantics) replaces the previous full-content `getNotebookByIdOrShort`.
+  3. `lib/notebooks-repo.ts` `upsertNotebooks` (bulk client push): existing-row resolution is batched into constant round trips (one `id IN` + one `short_id IN`, chunked at 100) instead of one `or(...)` select per notebook, preserving the exact `id.eq.X OR short_id.eq.X` match semantics.
+  4. `lib/notebooks-repo.ts` `upsertNotebook`: mention + comment notification writes now run in parallel (`Promise.all`) instead of sequentially.
+  5. `src/pages/api/notebooks/index.ts`: bulk POST history writes run in parallel across notebooks.
+- **Verification:** `pnpm run typecheck:shell` — PASS, 0 gated errors (quarantine 0; 1182 non-allowlist errors ignored per policy). Playwright E2E requires live Supabase + dev server, not run in this environment.
+- **Files Modified:**
+  - `lib/notebooks-repo.ts`
+  - `src/pages/api/notebooks/index.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — opencode (big-pickle) (Backend Optimization: Notebook API Hot Paths)
 - **Scope:** Optimize WIM notebook backend so sync/save/list work smoothly. Frontend contract preserved — no response-shape or client-code changes.
 - **Implementation:**

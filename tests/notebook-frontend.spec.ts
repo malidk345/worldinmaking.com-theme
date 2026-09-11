@@ -227,9 +227,9 @@ test.describe('notebook frontend helpers', () => {
                 'component-Toggle',
                 'component-DatabaseTable',
                 'page-subpage',
-                'inline-comment',
             ])
         )
+        expect(keys).not.toContain('inline-comment')
         for (const removed of SLASH_REMOVED_KEYS) {
             expect(keys).not.toContain(removed)
         }

@@ -50,12 +50,12 @@ export function chunkDocumentContent(
 
     const flushBuffer = () => {
         const text = currentBuffer.join('\n').trim()
-        if (text.length > 20) {
+        if (text.length > 3) {
             if (text.length > maxChunkChars) {
                 let pos = 0
                 while (pos < text.length) {
                     const slice = text.slice(pos, pos + maxChunkChars).trim()
-                    if (slice.length > 20) {
+                    if (slice.length > 3) {
                         chunks.push({
                             documentId,
                             title,

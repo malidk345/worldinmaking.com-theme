@@ -86,19 +86,29 @@ export default async function handler(req: Request) {
             const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId, extraOwnerKeys)
 
             if (Array.isArray(body.history_entries)) {
-                await replaceHistoryForOwner(
-                    saved.id,
-                    auth.ownerKey,
-                    body.history_entries as NotebookVersionDTO[],
-                    extraOwnerKeys
-                )
+                try {
+                    await replaceHistoryForOwner(
+                        saved.id,
+                        auth.ownerKey,
+                        body.history_entries as NotebookVersionDTO[],
+                        extraOwnerKeys,
+                        auth.userId
+                    )
+                } catch (historyErr) {
+                    console.warn('[api/notebooks/:id] history write warning:', saved.id, historyErr)
+                }
             } else if (Array.isArray(body.history_append)) {
-                await replaceHistoryForOwner(
-                    saved.id,
-                    auth.ownerKey,
-                    body.history_append as NotebookVersionDTO[],
-                    extraOwnerKeys
-                )
+                try {
+                    await replaceHistoryForOwner(
+                        saved.id,
+                        auth.ownerKey,
+                        body.history_append as NotebookVersionDTO[],
+                        extraOwnerKeys,
+                        auth.userId
+                    )
+                } catch (historyErr) {
+                    console.warn('[api/notebooks/:id] history append warning:', saved.id, historyErr)
+                }
             }
 
             return json({ notebook: saved, auth: { via: auth.via } })
