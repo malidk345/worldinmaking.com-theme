@@ -6,7 +6,7 @@ import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import { Fieldset } from 'components/OSFieldset'
 import type { NotebookPresencePerson } from './notebookPresence'
-import type { NotebookChromeSettings, NotebookAutosaveMs, NotebookFontSize } from './notebookChromeSettings'
+import type { NotebookChromeSettings, NotebookAutosaveMs } from './notebookChromeSettings'
 import type { NotebookSearchHit, NotebookCommentItem } from './notebookSidebarModel'
 import { jumpToNotebookHit } from './notebookSidebarModel'
 import {
@@ -45,21 +45,6 @@ export function NotebookSettingsPanel({
                         options={[
                             { label: 'Fixed', value: 'compact' },
                             { label: 'Full', value: 'full' },
-                        ]}
-                    />
-                    <ToggleGroup
-                        title="Text size"
-                        size="sm"
-                        value={settings.fontSize}
-                        onValueChange={(value) => {
-                            if (value === 'sm' || value === 'md' || value === 'lg') {
-                                onChange({ fontSize: value as NotebookFontSize })
-                            }
-                        }}
-                        options={[
-                            { label: 'S', value: 'sm' },
-                            { label: 'M', value: 'md' },
-                            { label: 'L', value: 'lg' },
                         ]}
                     />
                 </div>
@@ -175,82 +160,28 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
     return (
             <div className="flex flex-col gap-1 px-1 pb-1">
                 <h4 className="font-semibold text-muted m-0 px-1 text-sm">Export</h4>
-                <OSButton
-                    size="sm"
-                    width="full"
-                    align="left"
-                    hover="background"
-                    onClick={() => {
-                        void withBody().then((notebook) => {
-                            if (!notebook) return
-                            downloadTextFile(
-                                notebookFilename(notebook.title || title(), 'md'),
-                                exportNotebookAsMarkdown(notebookId),
-                                'text/markdown;charset=utf-8'
-                            )
-                        })
-                    }}
-                >
-                    Markdown (.md)
-                </OSButton>
-                <OSButton
-                    size="sm"
-                    width="full"
-                    align="left"
-                    hover="background"
-                    onClick={() => {
-                        void withBody().then((notebook) => {
-                            if (!notebook) return
-                            downloadTextFile(
-                                notebookFilename(notebook.title || title(), 'paper.md'),
-                                exportNotebookAsPaperMarkdown(notebookId),
-                                'text/markdown;charset=utf-8'
-                            )
-                        })
-                    }}
-                >
-                    Paper (.md)
-                </OSButton>
-                <OSButton
-                    size="sm"
-                    width="full"
-                    align="left"
-                    hover="background"
-                    onClick={() => {
-                        void withBody().then((notebook) => {
-                            if (!notebook) return
-                            downloadTextFile(
-                                notebookFilename(notebook.title || title(), 'json'),
-                                exportNotebookAsJSON(notebookId),
-                                'application/json;charset=utf-8'
-                            )
-                        })
-                    }}
-                >
-                    JSON
-                </OSButton>
-                <OSButton
-                    size="sm"
-                    width="full"
-                    align="left"
-                    hover="background"
-                    disabled={pdfBusy}
-                    onClick={() => {
-                        void handlePdf()
-                    }}
-                >
+                <OSButton size="sm" width="full" align="left" hover="background" onClick={() => {
+                    void withBody().then((notebook) => {
+                        if (!notebook) return
+                        downloadTextFile(notebookFilename(notebook.title || title(), 'md'), exportNotebookAsMarkdown(notebookId), 'text/markdown;charset=utf-8')
+                    })
+                }}>Markdown (.md)</OSButton>
+                <OSButton size="sm" width="full" align="left" hover="background" onClick={() => {
+                    void withBody().then((notebook) => {
+                        if (!notebook) return
+                        downloadTextFile(notebookFilename(notebook.title || title(), 'paper.md'), exportNotebookAsPaperMarkdown(notebookId), 'text/markdown;charset=utf-8')
+                    })
+                }}>Paper (.md)</OSButton>
+                <OSButton size="sm" width="full" align="left" hover="background" onClick={() => {
+                    void withBody().then((notebook) => {
+                        if (!notebook) return
+                        downloadTextFile(notebookFilename(notebook.title || title(), 'json'), exportNotebookAsJSON(notebookId), 'application/json;charset=utf-8')
+                    })
+                }}>JSON</OSButton>
+                <OSButton size="sm" width="full" align="left" hover="background" disabled={pdfBusy} onClick={() => { void handlePdf() }}>
                     {pdfBusy ? 'Preparing PDF…' : 'PDF'}
                 </OSButton>
-                <OSButton
-                    size="sm"
-                    width="full"
-                    align="left"
-                    hover="background"
-                    disabled={printBusy}
-                    onClick={() => {
-                        void handlePrint()
-                    }}
-                >
+                <OSButton size="sm" width="full" align="left" hover="background" disabled={printBusy} onClick={() => { void handlePrint() }}>
                     {printBusy ? 'Preparing print…' : 'Print'}
                 </OSButton>
             </div>
@@ -259,52 +190,21 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
 
 export function NotebookExportButton({ notebookId }: { notebookId: string }): JSX.Element {
     return (
-        <Popover
-            title="Export"
-            header
-            dataScheme="primary"
-            side="bottom"
-            align="end"
-            trigger={
-                <span>
-                    <OSButton size="md" icon={<IconDownload />} tooltip="Export" />
-                </span>
-            }
-            contentClassName="w-[min(18rem,calc(100vw-1.5rem))] z-[80]"
-        >
+        <Popover title="Export" header dataScheme="primary" side="bottom" align="end" trigger={<span><OSButton size="md" icon={<IconDownload />} tooltip="Export" /></span>} contentClassName="w-[min(18rem,calc(100vw-1.5rem))] z-[80]">
             <NotebookExportPanel notebookId={notebookId} />
         </Popover>
     )
 }
 
-export function SidebarSearchHits({
-    hits,
-    containerRef,
-    onJump,
-}: {
-    hits: NotebookSearchHit[]
-    containerRef?: React.RefObject<HTMLElement | null>
-    onJump?: () => void
-}): JSX.Element {
-    if (hits.length === 0) {
-        return <p className="text-sm text-muted m-0 px-1">No matches in this notebook.</p>
-    }
+export function SidebarSearchHits({ hits, containerRef, onJump }: { hits: NotebookSearchHit[]; containerRef?: React.RefObject<HTMLElement | null>; onJump?: () => void }): JSX.Element {
+    if (hits.length === 0) return <p className="text-sm text-muted m-0 px-1">No matches in this notebook.</p>
     return (
         <div data-sidebar-label className="not-prose">
             <h4 className="font-semibold text-muted m-0 mb-1 text-sm">In this notebook</h4>
             <ul className="list-none m-0 p-0 flex flex-col">
                 {hits.map((hit) => (
                     <li key={hit.id} className="m-0 p-0">
-                        <button
-                            type="button"
-                            className="w-full text-left text-sm text-primary py-1 px-1 bg-transparent border-0 cursor-pointer hover:underline"
-                            onClick={() => {
-                                jumpToNotebookHit(hit.id, containerRef?.current ?? null)
-                                onJump?.()
-                            }}
-                        >
-                            {hit.text}
-                        </button>
+                        <button type="button" className="w-full text-left text-sm text-primary py-1 px-1 bg-transparent border-0 cursor-pointer hover:underline" onClick={() => { jumpToNotebookHit(hit.id, containerRef?.current ?? null); onJump?.() }}>{hit.text}</button>
                     </li>
                 ))}
             </ul>
@@ -312,15 +212,7 @@ export function SidebarSearchHits({
     )
 }
 
-export function SidebarComments({
-    comments,
-    containerRef,
-    onJump,
-}: {
-    comments: NotebookCommentItem[]
-    containerRef?: React.RefObject<HTMLElement | null>
-    onJump?: () => void
-}): JSX.Element {
+export function SidebarComments({ comments, containerRef, onJump }: { comments: NotebookCommentItem[]; containerRef?: React.RefObject<HTMLElement | null>; onJump?: () => void }): JSX.Element {
     return (
         <div data-sidebar-label className="not-prose">
             <h4 className="font-semibold text-muted m-0 mb-1 px-1 text-sm">Notes</h4>
@@ -329,24 +221,9 @@ export function SidebarComments({
             ) : (
                 <div className="flex flex-col gap-px">
                     {comments.map((item) => (
-                        <OSButton
-                            key={item.id}
-                            type="button"
-                            align="left"
-                            width="full"
-                            size="md"
-                            hover="background"
-                            onClick={() => {
-                                jumpToNotebookHit(item.nodeId, containerRef?.current ?? null)
-                                onJump?.()
-                            }}
-                            className="!items-start !h-auto"
-                        >
+                        <OSButton key={item.id} type="button" align="left" width="full" size="md" hover="background" onClick={() => { jumpToNotebookHit(item.nodeId, containerRef?.current ?? null); onJump?.() }} className="!items-start !h-auto">
                             <span className="block min-w-0">
-                                <span className="block text-[11px] text-muted truncate">
-                                    {item.author}
-                                    {item.kind ? ` · ${item.kind}` : ''}
-                                </span>
+                                <span className="block text-[11px] text-muted truncate">{item.author}{item.kind ? ` · ${item.kind}` : ''}</span>
                                 <span className="block text-sm text-primary leading-snug">{item.text}</span>
                             </span>
                         </OSButton>
@@ -367,11 +244,7 @@ export function SidebarPeople({ people }: { people: NotebookPresencePerson[] }):
                 <ul className="list-none m-0 p-0 flex flex-col gap-1">
                     {people.map((person) => (
                         <li key={person.clientId} className="flex items-center gap-2 py-1">
-                            <span
-                                className="size-2.5 rounded-full shrink-0"
-                                style={{ background: person.color }}
-                                aria-hidden
-                            />
+                            <span className="size-2.5 rounded-full shrink-0" style={{ background: person.color }} aria-hidden />
                             <span className="text-sm text-primary truncate">{person.name}</span>
                         </li>
                     ))}
@@ -384,72 +257,17 @@ export function SidebarPeople({ people }: { people: NotebookPresencePerson[] }):
 export function NotebookPeopleButton({ people }: { people: NotebookPresencePerson[] }): JSX.Element {
     const count = people.length
     return (
-        <Popover
-            header
-            title="Here now"
-            dataScheme="secondary"
-            side="bottom"
-            align="end"
-            contentClassName="w-[min(16rem,calc(100vw-1.5rem))] z-[80]"
-            trigger={
-                <span>
-                    <OSButton size="md" tooltip={count ? `${count} here now` : 'Who’s here'}>
-                        <span className="flex items-center gap-0.5">
-                            {count === 0 ? (
-                                <span className="size-2 rounded-full bg-muted" />
-                            ) : (
-                                people.slice(0, 3).map((person) => (
-                                    <span
-                                        key={person.clientId}
-                                        className="size-2.5 rounded-full"
-                                        style={{ background: person.color }}
-                                    />
-                                ))
-                            )}
-                        </span>
-                    </OSButton>
-                </span>
-            }
-        >
+        <Popover header title="Here now" dataScheme="secondary" side="bottom" align="end" contentClassName="w-[min(16rem,calc(100vw-1.5rem))] z-[80]" trigger={<span><OSButton size="md" tooltip={count ? `${count} here now` : 'Who’s here'}><span className="flex items-center gap-0.5">{count === 0 ? <span className="size-2 rounded-full bg-muted" /> : people.slice(0, 3).map((person) => <span key={person.clientId} className="size-2.5 rounded-full" style={{ background: person.color }} />)}</span></OSButton></span>}>
             <SidebarPeople people={people} />
         </Popover>
     )
 }
 
-export function NotebookNotesButton({
-    comments,
-    containerRef,
-}: {
-    comments: NotebookCommentItem[]
-    containerRef?: React.RefObject<HTMLElement | null>
-}): JSX.Element {
+export function NotebookNotesButton({ comments, containerRef }: { comments: NotebookCommentItem[]; containerRef?: React.RefObject<HTMLElement | null> }): JSX.Element {
     const [open, setOpen] = useState(false)
     return (
-        <Popover
-            header
-            title="Notes"
-            dataScheme="secondary"
-            side="bottom"
-            align="start"
-            open={open}
-            onOpenChange={setOpen}
-            contentClassName="w-[min(18rem,calc(100vw-1.5rem))] max-h-[min(24rem,70dvh)] overflow-y-auto z-[80]"
-            trigger={
-                <span>
-                    <OSButton
-                        size="md"
-                        icon={<IconComment />}
-                        tooltip="Notes"
-                        active={open}
-                    />
-                </span>
-            }
-        >
-            <SidebarComments
-                comments={comments}
-                containerRef={containerRef}
-                onJump={() => setOpen(false)}
-            />
+        <Popover header title="Notes" dataScheme="secondary" side="bottom" align="start" open={open} onOpenChange={setOpen} contentClassName="w-[min(18rem,calc(100vw-1.5rem))] max-h-[min(24rem,70dvh)] overflow-y-auto z-[80]" trigger={<span><OSButton size="md" icon={<IconComment />} tooltip="Notes" active={open} /></span>}>
+            <SidebarComments comments={comments} containerRef={containerRef} onJump={() => setOpen(false)} />
         </Popover>
     )
 }
