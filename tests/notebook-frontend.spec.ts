@@ -1491,4 +1491,25 @@ test.describe('notebook frontend helpers', () => {
             end: 16,
         })
     })
+
+    test('mobile block frame rules are compiled and exempt document title rows', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const bundlePath = path.join(process.cwd(), 'src/notebook-app/styles/bundleCss.ts')
+        const mobileChromeCssPath = path.join(process.cwd(), 'src/styles/notebook-mobile-block-chrome.css')
+
+        const bundleContent = fs.readFileSync(bundlePath, 'utf8')
+        const mobileChromeContent = fs.readFileSync(mobileChromeCssPath, 'utf8')
+
+        expect(bundleContent).toContain('MarkdownNotebook__row--focused')
+        expect(bundleContent).toContain('outline-color: var(--color-border-primary)')
+        expect(bundleContent).toContain(':not(.MarkdownNotebook__row--title)')
+
+        expect(mobileChromeContent).toContain('.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within')
+        expect(mobileChromeContent).toContain('.MarkdownNotebook__row--focused')
+        expect(mobileChromeContent).toContain('.MarkdownNotebook__row--mobile-active')
+        expect(mobileChromeContent).toContain(':not(.MarkdownNotebook__row--title)')
+        expect(mobileChromeContent).toContain('outline: 1.5px solid')
+    })
 })
+

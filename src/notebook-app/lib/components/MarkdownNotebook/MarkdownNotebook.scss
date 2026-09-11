@@ -358,7 +358,7 @@ html.dark .MarkdownNotebook,
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .MarkdownNotebook__row:hover {
+    .MarkdownNotebook__row:hover:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)) {
         background: transparent;
         outline-color: var(--color-border-primary);
         box-shadow: none;
@@ -382,6 +382,14 @@ html.dark .MarkdownNotebook,
     background: transparent;
     outline-color: transparent;
     box-shadow: none;
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 640px) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
+    .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
+    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)) {
+        outline-color: var(--color-border-primary);
+    }
 }
 
 .MarkdownNotebook__blockquote-group .MarkdownNotebook__row,

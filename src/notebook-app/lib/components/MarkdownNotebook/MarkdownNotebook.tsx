@@ -5136,6 +5136,8 @@ function MarkdownNotebookEditor({
             <div
                 className={clsx(
                     'MarkdownNotebook__row',
+                    isTitleRow && 'MarkdownNotebook__row--title',
+                    focusedRowIndex === index && 'MarkdownNotebook__row--focused',
                     isInsertMenuOpen && 'MarkdownNotebook__row--insert-menu-open',
                     isAIPromptOpen && 'MarkdownNotebook__row--ai-prompt',
                     isAIWritingNode && 'MarkdownNotebook__row--ai-writing',
@@ -5147,6 +5149,22 @@ function MarkdownNotebookEditor({
                     mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active',
                     findOpen && findQuery.trim() && findMatchNodeIds[findIndex] === node.id && 'MarkdownNotebook__row--find-match'
                 )}
+                onClick={(event) => {
+                    if (mode !== 'edit' || isTitleRow) return
+                    const target = event.target as HTMLElement | null
+                    if (
+                        target?.closest(
+                            'button, a, input, textarea, select, [contenteditable="true"], .MarkdownNotebook__drag-handle, .MarkdownNotebook__block-chrome, .MarkdownNotebook__insert-menu, .MarkdownNotebook__mobile-block-bar'
+                        )
+                    ) {
+                        return
+                    }
+                    handleRowFocus(index)
+                    const editable = event.currentTarget.querySelector<HTMLElement>('[contenteditable="true"]')
+                    if (editable) {
+                        editable.focus()
+                    }
+                }}
                 onMouseEnter={(event) => updateActiveBoundaryFromRow(event, index)}
                 onMouseMove={(event) => updateActiveBoundaryFromRow(event, index)}
                 onFocusCapture={() => handleRowFocus(index)}

@@ -64,3 +64,13 @@
         box-sizing: border-box;
     }
 }
+
+@media (hover: none), (pointer: coarse), (max-width: 640px) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
+    .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
+    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)) {
+        outline: 1.5px solid var(--color-border-primary, rgba(0, 0, 0, 0.2)) !important;
+        outline-offset: -1.5px !important;
+        border-radius: 0.375rem !important;
+    }
+}

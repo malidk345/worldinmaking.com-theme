@@ -31,6 +31,22 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Notebook Mobile Block Frame Outline on Focus and Touch)
+- **Scope:**
+  1. Fixed missing block frame ("blok çerçevesi") on mobile and touch devices. On desktop, block frames were only rendered via `@media (hover: hover) and (pointer: fine) .MarkdownNotebook__row:hover` while `:focus-within` explicitly reset `outline-color: transparent`. Because mobile lacks hover, blocks never displayed boundaries or active frames.
+  2. In `MarkdownNotebook.tsx`, propagated `isTitleRow && 'MarkdownNotebook__row--title'` and `focusedRowIndex === index && 'MarkdownNotebook__row--focused'` to the row container. Added an `onClick` fallback to row empty space so tapping anywhere on a block activates and focuses its contenteditable area.
+  3. In `MarkdownNotebook.scss` and `notebook-mobile-block-chrome.css`, added `@media (hover: none), (pointer: coarse), (max-width: 640px)` rules ensuring `.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within`, `--focused`, and `--mobile-active` display `outline: 1.5px solid var(--color-border-primary)` (with title rows and AI prompt cards cleanly exempted).
+  4. Recompiled notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  5. Added automated regression test in `tests/notebook-frontend.spec.ts`. All 44 Playwright tests passed, and `pnpm run typecheck:shell` passed with 0 gated errors.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/styles/notebook-mobile-block-chrome.css`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — Antigravity (Footnote Canonical OSButton & Mobile Zoom Elimination)
 - **Scope:**
   1. Converted FootnotePopover action buttons to canonical WIM `OSButton`s (`variant="primary" size="sm"` for Save, `size="sm"` for Cancel, `size="sm"` for Delete with icon, and `size="xs"` for header Close). Removed conflicting outer padding/height overrides that distorted the 3D push-button layout.
