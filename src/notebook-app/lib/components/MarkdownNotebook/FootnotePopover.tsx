@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useRef } from 'react'
 import { IconCheck, IconTrash, IconX } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 
@@ -12,6 +12,16 @@ export interface FootnotePopoverProps {
     onSave: () => void
     onClose: () => void
     onDelete: () => void
+}
+
+function viewBox(): { left: number; top: number; width: number; height: number } {
+    const viewport = window.visualViewport
+    return {
+        left: viewport?.offsetLeft ?? 0,
+        top: viewport?.offsetTop ?? 0,
+        width: viewport?.width ?? window.innerWidth,
+        height: viewport?.height ?? window.innerHeight,
+    }
 }
 
 export function FootnotePopover({
@@ -37,6 +47,56 @@ export function FootnotePopover({
             )
         }
     }, [])
+
+    useLayoutEffect(() => {
+        const el = popoverRef.current
+        if (!el) return
+
+        const pinToView = (): void => {
+            const pad = 8
+            const view = viewBox()
+            const narrow = view.width < 420
+            const maxWidth = Math.max(160, view.width - pad * 2)
+            el.style.boxSizing = 'border-box'
+            el.style.maxWidth = `${maxWidth}px`
+            if (narrow) {
+                el.style.width = `${maxWidth}px`
+                el.style.left = `${view.left + pad}px`
+                el.style.right = 'auto'
+                el.style.transform = 'none'
+            } else {
+                el.style.width = ''
+                el.style.transform = 'translate(-50%, 8px)'
+            }
+            const rect = el.getBoundingClientRect()
+            let shiftX = 0
+            let shiftY = 0
+            if (rect.left < view.left + pad) shiftX += view.left + pad - rect.left
+            if (rect.right > view.left + view.width - pad) {
+                shiftX += view.left + view.width - pad - rect.right
+            }
+            if (rect.top < view.top + pad) shiftY += view.top + pad - rect.top
+            if (rect.bottom > view.top + view.height - pad) {
+                shiftY += view.top + view.height - pad - rect.bottom
+            }
+            if (narrow) {
+                el.style.transform = shiftY ? `translateY(${shiftY}px)` : 'none'
+            } else if (shiftX || shiftY) {
+                el.style.transform = `translate(calc(-50% + ${shiftX}px), ${8 + shiftY}px)`
+            }
+        }
+
+        pinToView()
+        const viewport = window.visualViewport
+        viewport?.addEventListener('resize', pinToView)
+        viewport?.addEventListener('scroll', pinToView)
+        window.addEventListener('resize', pinToView)
+        return () => {
+            viewport?.removeEventListener('resize', pinToView)
+            viewport?.removeEventListener('scroll', pinToView)
+            window.removeEventListener('resize', pinToView)
+        }
+    }, [top, left, text])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {

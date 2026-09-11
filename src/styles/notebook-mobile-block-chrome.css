@@ -56,3 +56,11 @@
         pointer-events: auto !important;
     }
 }
+
+@media (max-width: 420px), (pointer: coarse) {
+    .MarkdownNotebook__footnote-popover {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        box-sizing: border-box;
+    }
+}
