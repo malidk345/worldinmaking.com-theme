@@ -10,9 +10,21 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '../../context/App'
 import * as Portal from '@radix-ui/react-portal'
 import { dismissUserNotification } from 'lib/wim-notifications'
+import { notebookNotificationUrl } from 'lib/notebook-notification-url'
 
 dayjs.extend(relativeTime)
 dayjs.extend(isSameOrAfter)
+
+function withNotebookMark(url: string, count: string, title: string): string {
+    if (!url.startsWith('/notebooks/') || url.includes('/invite/') || url.includes('?mark=')) return url
+    const parts = url.split('/').filter(Boolean)
+    if (parts[0] !== 'notebooks' || !parts[1] || parts[1] === 'n') return url
+    const kind = String(count || '').toLowerCase()
+    const text = String(title || '').toLowerCase()
+    if (kind === 'comment' || text.includes('commented on')) return notebookNotificationUrl(parts[1], 'comment')
+    if (kind === 'mention' || text.includes('mentioned you')) return notebookNotificationUrl(parts[1], 'mention')
+    return url
+}
 
 interface NotificationProps {
     url: string
@@ -62,7 +74,7 @@ const Notification = ({ url, title, excerpt, date, count, onDismiss, onItemClick
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault()
         onDismiss()
-        onItemClick(url)
+        onItemClick(withNotebookMark(url, count, title))
     }
 
     return (
