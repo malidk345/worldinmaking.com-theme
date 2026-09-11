@@ -557,27 +557,26 @@ const FEATURE_DATA: Record<string, BaseFeature> = {
     },
 }
 
-const PROCESSED_FEATURES = Object.entries(FEATURE_DATA).reduce((acc, [key, feature]) => {
-    const featureWithSlug: Feature = {
-        ...feature,
-        slug: key,
-        label: feature.label !== undefined ? feature.label : `feature/${slugify(feature.feature)}`,
-    }
-
-    return {
-        ...acc,
-        [key]: featureWithSlug,
-    }
-}, {} as Record<string, Feature>)
-
-const SORTED_FEATURES = Object.values(PROCESSED_FEATURES).sort((a, b) => a.feature.localeCompare(b.feature))
-
 export const useFeatureOwnership = ({ teamSlug }: { teamSlug?: string } = {}): { features: Feature[] } => {
-    const filteredFeatures = useMemo(() => {
-        if (!teamSlug) {
-            return SORTED_FEATURES
+    const features = Object.entries(FEATURE_DATA).reduce((acc, [key, feature]) => {
+        const featureWithSlug: Feature = {
+            ...feature,
+            slug: key,
+            label: feature.label !== undefined ? feature.label : `feature/${slugify(feature.feature)}`,
         }
-        return SORTED_FEATURES.filter((feature) => feature.owner.includes(teamSlug))
+
+        return {
+            ...acc,
+            [key]: featureWithSlug,
+        }
+    }, {} as Record<string, Feature>)
+
+    const filteredFeatures = useMemo(() => {
+        const sortedFeatures = Object.values(features).sort((a, b) => a.feature.localeCompare(b.feature))
+        if (!teamSlug) {
+            return sortedFeatures
+        }
+        return sortedFeatures.filter((feature) => feature.owner.includes(teamSlug))
     }, [teamSlug])
 
     return {
