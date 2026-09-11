@@ -3,6 +3,48 @@ import { useEffect, useState } from 'react'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
 import type { NotebookComponentRenderProps } from './types'
 
+type KatexApi = {
+    renderToString: (tex: string, options: Record<string, unknown>) => string
+}
+
+function loadKatex(): Promise<KatexApi> {
+    if (typeof window === 'undefined') {
+        return Promise.reject(new Error('no window'))
+    }
+    const existing = (window as Window & { katex?: KatexApi }).katex
+    if (existing) return Promise.resolve(existing)
+
+    if (!document.getElementById('wim-katex-css')) {
+        const link = document.createElement('link')
+        link.id = 'wim-katex-css'
+        link.rel = 'stylesheet'
+        link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
+        document.head.appendChild(link)
+    }
+
+    return new Promise((resolve, reject) => {
+        const ready = (): void => {
+            const api = (window as Window & { katex?: KatexApi }).katex
+            if (api) resolve(api)
+            else reject(new Error('katex missing'))
+        }
+        const present = document.getElementById('wim-katex-js') as HTMLScriptElement | null
+        if (present) {
+            present.addEventListener('load', ready, { once: true })
+            present.addEventListener('error', () => reject(new Error('katex script')), { once: true })
+            if ((window as Window & { katex?: KatexApi }).katex) ready()
+            return
+        }
+        const script = document.createElement('script')
+        script.id = 'wim-katex-js'
+        script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js'
+        script.async = true
+        script.onload = ready
+        script.onerror = () => reject(new Error('katex script'))
+        document.head.appendChild(script)
+    })
+}
+
 export function LatexView({ node }: NotebookComponentRenderProps): JSX.Element {
     const content = typeof node.props.content === 'string' ? node.props.content : ''
     const [html, setHtml] = useState('')
@@ -15,11 +57,9 @@ export function LatexView({ node }: NotebookComponentRenderProps): JSX.Element {
             setFailed(false)
             return
         }
-        void (async () => {
-            try {
-                const katex = await import('katex')
-                await import('katex/dist/katex.min.css')
-                const rendered = katex.default.renderToString(content, {
+        void loadKatex()
+            .then((katex) => {
+                const rendered = katex.renderToString(content, {
                     throwOnError: false,
                     displayMode: true,
                     output: 'html',
@@ -28,13 +68,13 @@ export function LatexView({ node }: NotebookComponentRenderProps): JSX.Element {
                     setHtml(rendered)
                     setFailed(false)
                 }
-            } catch {
+            })
+            .catch(() => {
                 if (!cancelled) {
                     setHtml('')
                     setFailed(true)
                 }
-            }
-        })()
+            })
         return () => {
             cancelled = true
         }
