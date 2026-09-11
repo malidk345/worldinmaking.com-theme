@@ -61,7 +61,11 @@ const PostHogDisambiguation: React.FC<PostHogDisambiguationProps> = ({ pendingTo
         }
     }
 
-    return <div className="size-full">null</div>
+    return (
+        <div className="size-full">
+            null
+        </div>
+    )
 }
 
 export default PostHogDisambiguation

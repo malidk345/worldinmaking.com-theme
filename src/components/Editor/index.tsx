@@ -109,9 +109,8 @@ type EditorActionButton = {
     disabled?: boolean
 }
 
-const ScrollWrapper = ({ scrollable, children }: { scrollable: boolean; children: React.ReactNode }) => (
+const ScrollWrapper = ({ scrollable, children }: { scrollable: boolean; children: React.ReactNode }) =>
     <div className="w-full flex-1 overflow-y-auto app-scroll-viewport">{children}</div>
-)
 
 const contentWidthOptions: ToggleOption[] = [
     {

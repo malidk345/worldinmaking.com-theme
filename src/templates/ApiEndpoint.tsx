@@ -618,9 +618,7 @@ export default function ApiEndpoint({ data }: { data: ApiEndpointData }): JSX.El
 
     // Find overview.mdx node for this API entity
     // Note: name uses underscores (from OpenAPI), but file slugs use hyphens
-    const overviewNode = (allMdx?.nodes || [])?.find(
-        (node) => node.slug === `docs/api/${name.replace(/_/g, '-')}/overview`
-    )
+    const overviewNode = (allMdx?.nodes || [])?.find((node) => node.slug === `docs/api/${name.replace(/_/g, '-')}/overview`)
 
     const [hovered, setHovered] = useState(false)
 
@@ -661,9 +659,7 @@ export default function ApiEndpoint({ data }: { data: ApiEndpointData }): JSX.El
                     )}
 
                     {items.map((item, index) => {
-                        const mdxNode = (allMdx?.nodes || [])?.find(
-                            (node) => node.slug.split('/').pop() === item.operationId
-                        )
+                        const mdxNode = (allMdx?.nodes || [])?.find((node) => node.slug.split('/').pop() === item.operationId)
 
                         return (
                             <div className="mt-8" key={item.operationId}>

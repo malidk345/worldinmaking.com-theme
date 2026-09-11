@@ -1,5 +1,4 @@
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import React from 'react'
 import { Stars } from './Reviews'

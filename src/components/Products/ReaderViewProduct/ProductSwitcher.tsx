@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react'
-const navigate = (url) => {
-    if (typeof window !== 'undefined') window.location.href = url
-}
+const navigate = (url) => { if (typeof window !== "undefined") window.location.href = url };
 
 import OSSelect from 'components/OSForm/select'
 import { useSidebarExpanded } from 'components/ReaderView'

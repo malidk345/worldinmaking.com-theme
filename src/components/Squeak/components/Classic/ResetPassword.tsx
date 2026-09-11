@@ -127,7 +127,11 @@ const ResetPasswordForm: React.FC = () => {
         }
     }, [])
 
-    return <div className="size-full">null</div>
+    return (
+        <div className="size-full">
+            null
+        </div>
+    )
 }
 
 export default ResetPasswordForm

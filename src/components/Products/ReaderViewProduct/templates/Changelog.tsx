@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { GatsbyImage, getImage, IGatsbyImageData } from 'gatsby-plugin-image'
 import dayjs from 'dayjs'

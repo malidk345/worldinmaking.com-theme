@@ -59,9 +59,7 @@ export function MaxInput({
                 }
             />
             <div className="MaxInput__hint">
-                <span>
-                    Press <kbd>Enter</kbd> to send
-                </span>
+                <span>Press <kbd>Enter</kbd> to send</span>
             </div>
         </div>
     )

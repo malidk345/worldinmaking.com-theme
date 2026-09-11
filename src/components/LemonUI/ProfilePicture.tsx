@@ -24,8 +24,7 @@ export const ProfilePicture = forwardRef<HTMLSpanElement, ProfilePictureProps>(f
 ) {
     let email = user?.email
     if (user) {
-        name =
-            user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : user.email
+        name = user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : user.email
     }
 
     const displayName = name || email || 'User'

@@ -2,8 +2,10 @@ import React, { forwardRef } from 'react'
 import clsx from 'clsx'
 import { Spinner } from './Spinner'
 
-export interface LemonRowPropsBase<T extends keyof JSX.IntrinsicElements>
-    extends Omit<React.HTMLProps<JSX.IntrinsicElements[T]>, 'ref' | 'size'> {
+export interface LemonRowPropsBase<T extends keyof JSX.IntrinsicElements> extends Omit<
+    React.HTMLProps<JSX.IntrinsicElements[T]>,
+    'ref' | 'size'
+> {
     icon?: React.ReactElement | null
     tag?: T
     status?: 'default' | 'success' | 'warning' | 'danger' | 'highlighted' | 'muted'

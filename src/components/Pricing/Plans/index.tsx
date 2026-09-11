@@ -1,5 +1,4 @@
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { capitalize } from 'instantsearch.js/es/lib/utils'
 import React, { useEffect, useState } from 'react'

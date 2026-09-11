@@ -21,7 +21,11 @@ export default function IntegrationPrompt() {
                 </button>
             </div>
             <p className="text-sm text-secondary mt-2">
-                Or <Link to="/docs/getting-started/install?tab=snippet">install manually</Link>.
+                Or{' '}
+                <Link to="/docs/getting-started/install?tab=snippet">
+                    install manually
+                </Link>
+                .
             </p>
         </>
     )

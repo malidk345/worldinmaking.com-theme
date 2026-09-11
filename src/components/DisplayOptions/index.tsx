@@ -8,10 +8,7 @@ export default function DisplayOptions(): JSX.Element {
     const handleThemeChange = (colorMode: 'light' | 'dark' | 'system') => {
         let theme: 'light' | 'dark' = 'light'
         if (colorMode === 'system') {
-            theme =
-                typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-                    ? 'dark'
-                    : 'light'
+            theme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         } else {
             theme = colorMode
         }
@@ -26,10 +23,7 @@ export default function DisplayOptions(): JSX.Element {
     }
 
     return (
-        <div
-            data-scheme="primary"
-            className="p-6 bg-accent text-primary h-full max-w-xl mx-auto space-y-6 overflow-y-auto"
-        >
+        <div data-scheme="primary" className="p-6 bg-accent text-primary h-full max-w-xl mx-auto space-y-6 overflow-y-auto">
             <div>
                 <h2 className="text-xl font-bold mb-1">Display options</h2>
                 <p className="text-sm text-secondary">Customize your visual interface experience.</p>
@@ -134,10 +128,7 @@ export default function DisplayOptions(): JSX.Element {
                     </div>
                     <button
                         onClick={() =>
-                            updateSiteSettings({
-                                ...siteSettings,
-                                screensaverDisabled: !siteSettings.screensaverDisabled,
-                            })
+                            updateSiteSettings({ ...siteSettings, screensaverDisabled: !siteSettings.screensaverDisabled })
                         }
                         className={`px-3 py-1 rounded text-xs font-semibold ${
                             !siteSettings?.screensaverDisabled
@@ -159,7 +150,9 @@ export default function DisplayOptions(): JSX.Element {
                             updateSiteSettings({ ...siteSettings, performanceBoost: !siteSettings.performanceBoost })
                         }
                         className={`px-3 py-1 rounded text-xs font-semibold ${
-                            siteSettings?.performanceBoost ? 'bg-green-600 text-white' : 'bg-secondary/20 text-primary'
+                            siteSettings?.performanceBoost
+                                ? 'bg-green-600 text-white'
+                                : 'bg-secondary/20 text-primary'
                         }`}
                     >
                         {siteSettings?.performanceBoost ? 'On' : 'Off'}
@@ -173,10 +166,7 @@ export default function DisplayOptions(): JSX.Element {
                     </div>
                     <button
                         onClick={() =>
-                            updateSiteSettings({
-                                ...siteSettings,
-                                reduceTransparency: !siteSettings.reduceTransparency,
-                            })
+                            updateSiteSettings({ ...siteSettings, reduceTransparency: !siteSettings.reduceTransparency })
                         }
                         className={`px-3 py-1 rounded text-xs font-semibold ${
                             siteSettings?.reduceTransparency

@@ -29,8 +29,7 @@ import {
 } from './pricingLogic'
 
 import { LinearSlider, LogSlider, sliderCurve } from 'components/Pricing/PricingSlider/Slider'
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { allProductsData } from './Pricing'
 

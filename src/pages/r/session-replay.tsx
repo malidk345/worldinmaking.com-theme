@@ -171,7 +171,9 @@ export default function SessionReplayLanding(): JSX.Element {
                                 <strong>PostHog Wizard</strong> analyzes your codebase and automatically sets up session
                                 replay, autocapture, and dashboards tailored to your product. One command does it all:
                             </p>
+
                             null
+
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Get started free
@@ -229,9 +231,13 @@ export default function SessionReplayLanding(): JSX.Element {
                                 and ask it to find sessions, trace errors, and generate fixes without leaving your
                                 editor. Bug report to PR, no context switching.
                             </p>
+
                             <h3>Install in 30 seconds</h3>
+
                             <PlatformInstall variant="inline" command="mcp add" slim />
+
                             null
+
                             <h3>Try prompts like</h3>
                             <ul>
                                 <li>
@@ -259,12 +265,15 @@ export default function SessionReplayLanding(): JSX.Element {
                                     </em>
                                 </li>
                             </ul>
+
                             <h3>Or use AI inside PostHog</h3>
                             <p>
                                 Can't watch every recording? PostHog AI can. Use natural language to search sessions, or
                                 ask AI to summarize a batch of recordings and surface the patterns you'd otherwise miss.
                             </p>
+
                             null
+
                             <div className="flex flex-wrap gap-2 mt-4">
                                 <CallToAction
                                     type="primary"
@@ -302,13 +311,16 @@ export default function SessionReplayLanding(): JSX.Element {
                                 Console logs, network requests, rage clicks, dead clicks, performance data, all of it.
                                 When a user says "it just broke," you no longer have to guess.
                             </p>
+
                             null
+
                             <ul>
                                 <li>Jump to any event in the timeline to skip straight to what matters</li>
                                 <li>See console errors and warnings as they fired, in exact context</li>
                                 <li>Inspect the network waterfall to find slow or failed API calls</li>
                                 <li>Spot rage clicks and dead clicks automatically (no tagging needed)</li>
                             </ul>
+
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -340,7 +352,9 @@ export default function SessionReplayLanding(): JSX.Element {
                                 </Link>{' '}
                                 returns the matching collection in your editor.
                             </p>
+
                             null
+
                             <ul>
                                 <li>Filter by rage clicks, dead clicks, errors, custom events, or user properties</li>
                                 <li>
@@ -352,6 +366,7 @@ export default function SessionReplayLanding(): JSX.Element {
                                     automatically
                                 </li>
                             </ul>
+
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -380,7 +395,9 @@ export default function SessionReplayLanding(): JSX.Element {
                                 from your editor. Then drop straight into a playlist of session replays for the users
                                 behind any data point.
                             </p>
+
                             null
+
                             <h3>
                                 <IconToggle className="text-seagreen w-7 -mt-1 inline-block" /> Feature flags
                             </h3>
@@ -391,7 +408,9 @@ export default function SessionReplayLanding(): JSX.Element {
                                 </Link>{' '}
                                 from Claude Code or Cursor. Roll out fixes to affected users without a full deploy.
                             </p>
+
                             null
+
                             <h3>
                                 <IconWarning className="text-orange w-7 -mt-1 inline-block" /> Error tracking
                             </h3>
@@ -402,7 +421,9 @@ export default function SessionReplayLanding(): JSX.Element {
                                 </Link>
                                 , then write the fix. No reproduction needed, no tab switching.
                             </p>
+
                             null
+
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Install session replay

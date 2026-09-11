@@ -1,6 +1,5 @@
 import React from 'react'
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { IconArrowRight, IconArrowUpRight } from '@posthog/icons'
 import CommunityQuestionsList from './CommunityQuestionsList'

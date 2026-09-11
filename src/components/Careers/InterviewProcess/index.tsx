@@ -4,6 +4,7 @@ import { Structure } from '../../Structure'
 import Slider from 'react-slick'
 import SliderNav from '../../SliderNav'
 
+
 import { Application, Culture, Offer, Superday, Technical } from '../Images'
 
 const SliderItem = ({ Image, title, subtitle, description }) => {

@@ -8,10 +8,7 @@ export interface LemonSkeletonProps {
     active?: boolean
 }
 
-function LemonSkeletonItem({
-    className,
-    active = true,
-}: Pick<LemonSkeletonProps, 'className' | 'active'>): JSX.Element {
+function LemonSkeletonItem({ className, active = true }: Pick<LemonSkeletonProps, 'className' | 'active'>): JSX.Element {
     return (
         <span
             className={clsx('LemonSkeleton', className)}
@@ -45,10 +42,5 @@ LemonSkeleton.Button = function LemonSkeletonButton({ className }: { className?:
     return <LemonSkeletonItem className={clsx('LemonSkeleton--button', className)} />
 }
 LemonSkeleton.Circle = function LemonSkeletonCircle({ className, size = 40 }: { className?: string; size?: number }) {
-    return (
-        <LemonSkeletonItem
-            className={clsx('LemonSkeleton--circle', className)}
-            style={{ width: size, height: size } as React.CSSProperties}
-        />
-    )
+    return <LemonSkeletonItem className={clsx('LemonSkeleton--circle', className)} style={{ width: size, height: size } as React.CSSProperties} />
 }

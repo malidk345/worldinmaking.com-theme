@@ -305,9 +305,7 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
     const firstSpeakerProfile: EventGraphicSpeaker | undefined = React.useMemo(() => {
         const squeakId = formik.values.speakers[0]
         if (!squeakId) return undefined
-        const profile = (data?.allSqueakProfile?.nodes || []).find(
-            (node: { squeakId: string }) => node.squeakId === squeakId
-        )
+        const profile = (data?.allSqueakProfile?.nodes || []).find((node: { squeakId: string }) => node.squeakId === squeakId)
         if (!profile) return undefined
         return {
             name: [profile.firstName, profile.lastName].filter(Boolean).join(' '),
@@ -315,7 +313,7 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
             avatarUrl: profile.avatar?.url || undefined,
             companyRole: profile.companyRole || undefined,
         }
-    }, [formik.values.speakers, data?.allSqueakProfile?.nodes || []])
+    }, [formik.values.speakers, (data?.allSqueakProfile?.nodes || [])])
 
     const handleDownloadGraphic = async () => {
         if (!graphicRef.current) return

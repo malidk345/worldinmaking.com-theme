@@ -35,23 +35,22 @@ export interface LemonSelectSection<T> {
 
 export type LemonSelectOptions<T> = LemonSelectSection<T>[] | LemonSelectOption<T>[]
 
-export interface LemonSelectPropsBase<T>
-    extends Pick<
-        LemonButtonProps,
-        | 'id'
-        | 'className'
-        | 'loading'
-        | 'fullWidth'
-        | 'disabled'
-        | 'disabledReason'
-        | 'data-attr'
-        | 'aria-label'
-        | 'onClick'
-        | 'type'
-        | 'status'
-        | 'active'
-        | 'icon'
-    > {
+export interface LemonSelectPropsBase<T> extends Pick<
+    LemonButtonProps,
+    | 'id'
+    | 'className'
+    | 'loading'
+    | 'fullWidth'
+    | 'disabled'
+    | 'disabledReason'
+    | 'data-attr'
+    | 'aria-label'
+    | 'onClick'
+    | 'type'
+    | 'status'
+    | 'active'
+    | 'icon'
+> {
     options: LemonSelectOptions<T>
     onSelect?: (newValue: T) => void
     className?: string
@@ -122,11 +121,7 @@ export function LemonSelect<T extends string | number | boolean | null>({
                 {...buttonProps}
             >
                 <span className="LemonSelect__value">
-                    {activeLeaf
-                        ? activeLeaf.label
-                        : value !== null && value !== undefined
-                        ? String(value)
-                        : placeholder}
+                    {activeLeaf ? activeLeaf.label : (value !== null && value !== undefined ? String(value) : placeholder)}
                 </span>
             </LemonButton>
         </LemonMenu>

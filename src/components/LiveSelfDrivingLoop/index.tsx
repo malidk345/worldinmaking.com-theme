@@ -236,8 +236,7 @@ const LiveSelfDrivingLoop = (): JSX.Element => {
                             {hero ? (
                                 <>
                                     Watch{' '}
-                                    <Link
-                                        href={hero.url}
+                                    <Link href={hero.url}
                                         external
                                         externalNoIcon
                                         className="font-mono text-red hover:underline"

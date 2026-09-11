@@ -4,8 +4,10 @@ import React, { forwardRef, ReactNode, useImperativeHandle, useState } from 'rea
 import { LemonButton, LemonButtonProps } from './LemonButton'
 import { LemonModal, LemonModalProps } from './LemonModal'
 
-export interface LemonDialogProps
-    extends Pick<LemonModalProps, 'title' | 'description' | 'width' | 'maxWidth' | 'inline' | 'footer' | 'className'> {
+export interface LemonDialogProps extends Pick<
+    LemonModalProps,
+    'title' | 'description' | 'width' | 'maxWidth' | 'inline' | 'footer' | 'className'
+> {
     primaryButton?: LemonButtonProps | null
     secondaryButton?: LemonButtonProps | null
     tertiaryButton?: LemonButtonProps | null
@@ -48,15 +50,14 @@ export const LemonDialogComponent = forwardRef<LemonDialogRef, LemonDialogProps>
         []
     )
 
-    const resolvedPrimary =
-        primaryButton === null
-            ? null
-            : {
-                  children: 'Okay',
-                  type: 'primary' as const,
-                  ...primaryButton,
-                  disabledReason: shouldAwaitSubmit && isLoading ? 'Please wait...' : primaryButton?.disabledReason,
-              }
+    const resolvedPrimary = primaryButton === null
+        ? null
+        : {
+              children: 'Okay',
+              type: 'primary' as const,
+              ...primaryButton,
+              disabledReason: shouldAwaitSubmit && isLoading ? 'Please wait...' : primaryButton?.disabledReason,
+          }
 
     const renderButton = (button: LemonButtonProps | null | undefined): JSX.Element | null => {
         if (!button) {

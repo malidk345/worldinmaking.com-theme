@@ -169,18 +169,15 @@ export function InProgress(
                 return
             }
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/subscribe`,
-                {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/subscribe`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            })
 
             if (res.ok) {
                 addToast({ message: `Subscribed to ${title}. We'll email you with updates!` })
@@ -240,18 +237,15 @@ export function InProgress(
                 return
             }
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/unsubscribe`,
-                {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/unsubscribe`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            })
 
             if (res.ok) {
                 addToast({ message: `Unsubscribed from ${title}. You will no longer receive updates.` })

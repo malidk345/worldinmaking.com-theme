@@ -25,7 +25,9 @@ function getBreakpoints(width: number): Breakpoints {
 
 export function useBreakpoint(): Breakpoints {
     const [breakpoints, setBreakpoints] = useState<Breakpoints>(() =>
-        typeof window !== 'undefined' ? getBreakpoints(window.innerWidth) : getBreakpoints(0)
+        typeof window !== 'undefined'
+            ? getBreakpoints(window.innerWidth)
+            : getBreakpoints(0)
     )
 
     useEffect(() => {

@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-const graphql = (s) => s
-const useStaticQuery = () => ({})
+const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { AnimatePresence, motion } from 'framer-motion'
 import groupBy from 'lodash.groupby'

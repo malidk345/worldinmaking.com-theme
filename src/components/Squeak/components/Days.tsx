@@ -23,8 +23,7 @@ const Edit = ({ image, color, name, date, profileID, text }) => {
                     >
                         {name}
                     </Link>{' '}
-                    <span className="text-secondary">{text}</span>{' '}
-                    <span suppressHydrationWarning>{dayjs(date).fromNow()}</span>
+                    <span className="text-secondary">{text}</span> <span suppressHydrationWarning>{dayjs(date).fromNow()}</span>
                 </span>
             </span>
         </li>

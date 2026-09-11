@@ -96,7 +96,13 @@ export function LemonModal({
         <div className="LemonModal__container" data-attr={dataAttr}>
             {closable && !hideCloseButton && (
                 <div className="LemonModal__close">
-                    <LemonButton icon={<IconX />} size="small" type="tertiary" onClick={onClose} aria-label="close" />
+                    <LemonButton
+                        icon={<IconX />}
+                        size="small"
+                        type="tertiary"
+                        onClick={onClose}
+                        aria-label="close"
+                    />
                 </div>
             )}
             <div className="LemonModal__layout">

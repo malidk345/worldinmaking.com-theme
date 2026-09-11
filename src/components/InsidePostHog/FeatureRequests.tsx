@@ -28,8 +28,7 @@ export default function FeatureRequests() {
     const roadmaps = other.roadmaps.map(({ id, attributes }) => {
         const likeCount = attributes?.likes?.data?.length || 0
         const staticLikeCount =
-            (staticRoadmaps?.nodes || []).find((node) => node.squeakId === id)?.githubPages?.[0]?.reactions
-                ?.total_count || 0
+            (staticRoadmaps?.nodes || []).find((node) => node.squeakId === id)?.githubPages?.[0]?.reactions?.total_count || 0
         return { id, attributes: { ...attributes, likeCount: likeCount + staticLikeCount } }
     })
 
@@ -46,8 +45,8 @@ export default function FeatureRequests() {
                         .map((roadmap) => {
                             const likeCount = roadmap?.attributes?.likes?.data?.length || 0
                             const staticLikeCount =
-                                (staticRoadmaps?.nodes || []).find((node) => node.squeakId === roadmap.id)
-                                    ?.githubPages?.[0]?.reactions?.total_count || 0
+                                (staticRoadmaps?.nodes || []).find((node) => node.squeakId === roadmap.id)?.githubPages?.[0]
+                                    ?.reactions?.total_count || 0
                             const totalLikes = likeCount + staticLikeCount
                             return (
                                 <li key={roadmap.squeakId} className="flex flex-wrap gap-1">
