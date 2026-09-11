@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef } from 'react'
 import { IconGitBranch, IconCommit, IconCode, IconPeople, IconDocument, IconComment } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 
@@ -37,14 +37,6 @@ export const ChangelogPRMetadata = ({
 }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-    const commentersList = useMemo(() => {
-        return [
-            githubPRMetadata.user,
-            ...(githubPRMetadata.reviewers || []),
-            ...(githubPRMetadata.commenters || []),
-        ].filter(Boolean)
-    }, [githubPRMetadata])
-
     const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
         if (scrollContainerRef.current) {
             const container = scrollContainerRef.current
@@ -80,7 +72,13 @@ export const ChangelogPRMetadata = ({
                     onMouseLeave={handleMouseLeave}
                     className="flex flex-row items-center group overflow-x-auto scrollbar-hide"
                 >
-                    {commentersList.map((commenter, index, array) => (
+                    {[
+                        githubPRMetadata.user,
+                        ...(githubPRMetadata.reviewers || []),
+                        ...(githubPRMetadata.commenters || []),
+                    ]
+                        .filter(Boolean)
+                        .map((commenter, index, array) => (
                             <Tooltip
                                 key={`avatar-${commenter?.login}`}
                                 trigger={
