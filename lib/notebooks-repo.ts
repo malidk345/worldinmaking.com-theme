@@ -6,7 +6,7 @@ import { supabaseAdmin } from './supabase-admin'
 import { getCollaboratorRole, listCollaboratorRoles } from './notebook-collaborators'
 import { canWriteNotebook, type NotebookAccessRole } from '../src/lib/notebook-sharing'
 import { notifyNotebookComments, notifyNotebookMentions } from './notebook-mentions'
-import { listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
+import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
 
 export type NotebookPublishMeta = {
     publicTitle?: string
