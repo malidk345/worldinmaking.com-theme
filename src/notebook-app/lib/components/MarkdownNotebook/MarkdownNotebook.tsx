@@ -109,6 +109,7 @@ import {
     planInsertEmptyParagraphAfter,
     planInsertMarkdownAfter,
     planInsertNodesAtBoundary,
+    planMoveBlockToBoundary,
     planApplyBlockStyle,
     planMergeAdjacentTextBlocks,
     planMergeTextIntoPreviousNonText,
@@ -4141,24 +4142,11 @@ function MarkdownNotebookEditor({
     const moveBlockToBoundary = (nodeId: string, boundaryIndex: number): void => {
         const currentDocument = documentRef.current
         const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const fromIndex = nodes.findIndex((node) => node.id === nodeId)
-        if (fromIndex <= 0) {
+        const plan = planMoveBlockToBoundary(nodes, nodeId, boundaryIndex)
+        if (!plan) {
             return
         }
-
-        const clampedBoundaryIndex = Math.max(1, Math.min(boundaryIndex, nodes.length))
-        if (clampedBoundaryIndex === fromIndex || clampedBoundaryIndex === fromIndex + 1) {
-            return
-        }
-
-        const nextNodes = [...nodes]
-        const [movedNode] = nextNodes.splice(fromIndex, 1)
-        nextNodes.splice(
-            clampedBoundaryIndex > fromIndex ? clampedBoundaryIndex - 1 : clampedBoundaryIndex,
-            0,
-            movedNode
-        )
-        commitDocument({ ...currentDocument, nodes: nextNodes })
+        commitDocument({ ...currentDocument, nodes: plan.nodes })
     }
 
     const handleBlockDragStart = (event: ReactDragEvent<HTMLDivElement>, nodeId: string): void => {
