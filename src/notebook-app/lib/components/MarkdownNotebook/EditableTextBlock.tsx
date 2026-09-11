@@ -288,7 +288,7 @@ function EditableTextBlockInner({
         const nextChildren = updateChildren(elementChildren)
         const nextText = getInlineText(nextChildren)
         if (isToolInsertMenuOpen) {
-            openInsertMenuRef.current(nextText)
+            openInsertMenuRef.current(getInsertMenuFilterQuery(nextText, caret))
             return
         }
 
@@ -525,7 +525,7 @@ function EditableTextBlockInner({
                 restoreSelection(event.currentTarget, selectionStart, selectionStart)
                 updateChildren(nextChildren)
                 if (isToolInsertMenuOpen) {
-                    openInsertMenuRef.current(getInlineText(nextChildren))
+                    openInsertMenuRef.current(getInsertMenuFilterQuery(getInlineText(nextChildren), selectionStart))
                 }
                 restoreSelectionRef.current = { nodeId: node.id, start: selectionStart, end: selectionStart }
                 return

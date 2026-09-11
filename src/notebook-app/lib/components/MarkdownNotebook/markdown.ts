@@ -118,6 +118,7 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
     const lines = body.split('\n')
     const nodes: NotebookBlockNode[] = []
     const errors: NotebookParseError[] = []
+    const footnotes: Record<string, string> = {}
     const pushParsedNode = (node: NotebookBlockNode): void => {
         nodes.push(node)
     }
@@ -131,6 +132,20 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
         if (blockIdMatch) {
             pendingBlockId = blockIdMatch[1]
             lineIndex += 1
+            continue
+        }
+
+        const footnoteDefMatch = line.trim().match(/^\[\^([a-zA-Z0-9_-]+)\]:\s*(.*)$/)
+        if (footnoteDefMatch) {
+            const fnId = footnoteDefMatch[1]
+            let fnText = footnoteDefMatch[2] || ''
+            lineIndex += 1
+            while (lineIndex < lines.length && (lines[lineIndex].startsWith('    ') || lines[lineIndex].startsWith('\t'))) {
+                fnText += '\n' + lines[lineIndex].replace(/^(?: {4}|\t)/, '')
+                lineIndex += 1
+            }
+            footnotes[fnId] = fnText.trim()
+            blankLinesBeforeBlock = 0
             continue
         }
 
@@ -172,10 +187,12 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
         lineIndex = Math.max(result.nextLineIndex, lineIndex + 1)
     }
 
+    const hasFootnotes = Object.keys(footnotes).length > 0
     const lifted = liftNotesFromMarks({
         type: 'doc',
         nodes,
         annotations,
+        footnotes: hasFootnotes ? footnotes : undefined,
         errors,
     })
     const occurrences = new Map<string, number>()
@@ -192,7 +209,8 @@ export function parseMarkdownNotebook(markdown: string | null | undefined): Note
 }
 
 export function serializeMarkdownNotebook(document: NotebookDocument): string {
-    if (document.nodes.length === 1 && isEmptyNotebookTitleNode(document.nodes[0]) && !document.annotations) {
+    const hasFootnotes = document.footnotes && Object.keys(document.footnotes).length > 0
+    if (document.nodes.length === 1 && isEmptyNotebookTitleNode(document.nodes[0]) && !document.annotations && !hasFootnotes) {
         return ''
     }
 
@@ -212,7 +230,22 @@ export function serializeMarkdownNotebook(document: NotebookDocument): string {
     const shouldPreserveTrailingEmptyParagraph =
         shouldPreserveEmptyParagraphs && isEmptyParagraphNode(lastNode) && previousNode?.type !== 'component'
 
-    const body = shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
+    let body = shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
+    if (hasFootnotes) {
+        const footnoteEntries = Object.entries(document.footnotes || {})
+        if (footnoteEntries.length) {
+            const footnoteLines = footnoteEntries
+                .map(([id, text]) => {
+                    const lines = text.split('\n')
+                    if (lines.length <= 1) {
+                        return `[^${id}]: ${text}`
+                    }
+                    return `[^${id}]: ${lines[0]}\n${lines.slice(1).map((l) => `    ${l}`).join('\n')}`
+                })
+                .join('\n')
+            body = body ? `${body}\n\n${footnoteLines}` : footnoteLines
+        }
+    }
     const sidecar = serializeAnnotationsSidecar(document.annotations, collectAnnotationKeepIds(document.nodes))
     return sidecar ? `${body}${body ? '\n\n' : ''}${sidecar}` : body
 }
@@ -423,6 +456,18 @@ export function parseInlineMarkdown(markdown: string, marks: NotebookInlineMark[
                         continue
                     }
                 }
+            }
+
+            const footnoteMatch = markdown.slice(index).match(/^\[\^([a-zA-Z0-9_-]+)\]/)
+            if (footnoteMatch) {
+                const fnId = footnoteMatch[1]
+                nodes.push({
+                    type: 'text',
+                    text: fnId,
+                    marks: [...marks, { type: 'footnote', id: fnId }],
+                })
+                index += footnoteMatch[0].length
+                continue
             }
 
             const link = parseInlineLink(markdown, index)
@@ -1573,6 +1618,9 @@ function wrapInlineText(text: string, mark: NotebookInlineMark, marks: NotebookI
     if (mark.type === 'ref') {
         return mark.id ? `<ref id=${JSON.stringify(mark.id)}>${text}</ref>` : text
     }
+    if (mark.type === 'footnote') {
+        return mark.id ? `[^${mark.id}]` : text
+    }
     if (mark.type === 'mention') {
         return mark.id ? `<mention id=${JSON.stringify(mark.id)}>${text}</mention>` : text
     }
@@ -1678,6 +1726,12 @@ function htmlNodeToInlineNodes(node: ChildNode, marks: NotebookInlineMark[]): No
             nextMarks.push({ type: 'mention', id: mentionId })
         }
     }
+    if (tagName === 'sup') {
+        const footnoteId = node.getAttribute('data-notebook-footnote')
+        if (footnoteId) {
+            nextMarks.push({ type: 'footnote', id: footnoteId })
+        }
+    }
 
     const children = htmlChildNodesToInlineNodes(node, nextMarks)
 
@@ -1729,6 +1783,9 @@ function wrapHtmlText(html: string, mark: NotebookInlineMark, _annotations?: Not
         // in this string makes the browser serialize a different fragment and the
         // contenteditable rewrite loop throws at `element.innerHTML = renderedHtml`.
         return `<span class="MarkdownNotebook__ref" data-notebook-ref="${escapeAttribute(mark.id)}">${html}</span>`
+    }
+    if (mark.type === 'footnote') {
+        return `<sup class="MarkdownNotebook__footnote" data-notebook-footnote="${escapeAttribute(mark.id)}" contenteditable="false">${html}</sup>`
     }
     if (mark.type === 'link') {
         if (mark.href?.startsWith('#wikilink:')) {

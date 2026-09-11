@@ -232,10 +232,12 @@ export function marksEqual(left: NotebookInlineMark[], right: NotebookInlineMark
         const r = normRight[i]
         if (!l || !r || l.type !== r.type) return false
         if (l.type === 'link' && r.type === 'link') {
-            if (l.href !== r.href || l.title !== r.title) return false
+            if (l.href !== r.href) return false
         } else if (l.type === 'mention' && r.type === 'mention') {
             if (l.id !== r.id) return false
         } else if (l.type === 'ref' && r.type === 'ref') {
+            if (l.id !== r.id) return false
+        } else if (l.type === 'footnote' && r.type === 'footnote') {
             if (l.id !== r.id) return false
         }
     }
@@ -279,6 +281,9 @@ function getInlineMarkOrder(mark: NotebookInlineMark): number {
     if (mark.type === 'ref') {
         // Outermost, so the ref tag wraps the fully formatted text.
         return 7
+    }
+    if (mark.type === 'footnote') {
+        return 8
     }
     return 5
 }

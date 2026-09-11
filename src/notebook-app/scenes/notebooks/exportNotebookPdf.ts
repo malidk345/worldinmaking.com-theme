@@ -53,7 +53,12 @@ function inlineToText(nodes: NotebookInlineNode[]): string {
             out += '\n'
             continue
         }
-        out += node.text
+        const isFootnote = node.marks?.some((mark) => mark.type === 'footnote')
+        if (isFootnote) {
+            out += `[${node.text}]`
+        } else {
+            out += node.text
+        }
         const link = node.marks?.find((mark) => mark.type === 'link')
         if (link && link.type === 'link' && link.href && !node.text.includes(link.href)) {
             out += ` (${link.href})`
@@ -245,6 +250,31 @@ function buildPrintArticle(title: string, markdown: string): HTMLElement {
     for (const node of doc.nodes) {
         const block = renderBlock(node)
         if (block) article.appendChild(block)
+    }
+    if (doc.footnotes && Object.keys(doc.footnotes).length) {
+        const hr = document.createElement('hr')
+        applyStyles(hr, { border: '0', borderTop: '1px solid #ccc', margin: '24px 0 12px' })
+        article.appendChild(hr)
+
+        const fnSection = document.createElement('div')
+        applyStyles(fnSection, { fontSize: '11px', color: '#555', marginTop: '12px' })
+        const fnHeader = textEl('h4', 'Footnotes', {
+            fontSize: '12px',
+            fontWeight: 'bold',
+            margin: '0 0 8px',
+            color: '#333',
+        })
+        fnSection.appendChild(fnHeader)
+
+        const ol = document.createElement('ol')
+        applyStyles(ol, { paddingLeft: '16px', margin: '0' })
+        for (const [, text] of Object.entries(doc.footnotes)) {
+            const li = textEl('li', `${text}`)
+            applyStyles(li, { marginBottom: '4px', lineHeight: '1.4' })
+            ol.appendChild(li)
+        }
+        fnSection.appendChild(ol)
+        article.appendChild(fnSection)
     }
     if (!article.childElementCount) {
         article.appendChild(textEl('p', 'This notebook is empty.', { color: '#666' }))

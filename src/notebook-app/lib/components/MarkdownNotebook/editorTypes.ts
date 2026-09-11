@@ -43,6 +43,7 @@ export type InsertCommand = {
     closeOnRun?: boolean
     disabled?: boolean
     run: (targetNodeId: string) => void
+    scope?: 'inline' | 'block' | 'all'
 }
 
 /** Insertion primitives handed to caller-supplied insert commands so they can add blocks without

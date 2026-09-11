@@ -25,11 +25,64 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — notebook mobile UX + history restore from remote.
+- **Status:** `[IDLE / READY FOR NEXT TASK]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Antigravity (Notebook Inline Footnotes & Slash Editor Refinement)
+- **Scope:**
+  1. Add native markdown round-trip footnote system (`[^1]` in markdown and `[^1]: text` at document end).
+  2. Elegant typographical superscript number styling in text (no clunky border/badge/box/pill, matching line-height with `display: inline; vertical-align: super; line-height: 0;`).
+  3. Integrated footnote trigger in slash insert menu (`/footnote`, `/dipnot`, `/fn`), using PostHog `IconDocument`.
+  4. Fix slash menu behavior so opening the slash menu or inserting an inline element does NOT split the text block or open/create an unnecessary separate block.
+  5. Context-aware Slash Menu: When `/` is typed in the middle/end of text (`inline` context), it only shows inline-relevant commands (Footnote top priority, compact popup suitable for mobile and desktop without cluttering prose). When `/` is typed in an empty block or new line (`block` context), it presents the full block library (Headings, Tables, Lists, Code, Quotes, Dividers, Components, AI).
+  6. Fixed "No matching blocks" and ReferenceError when querying slash commands inside sentences by parsing slash tokens with caret position in `getInsertMenuFilterQuery` and scoping `caret` properly in `handleInlineEditableInput`.
+  7. Frosted glass footnote popover editor (`FootnotePopover.tsx`) with English UI, and bottom auto-generated footnotes section with direct edit (`✎`) and jump-to-text (`↩`) buttons.
+  8. PDF export support (`exportNotebookPdf.ts`) for footnote marks and document end footnotes list.
+- **Root Cause & Implementation:**
+  - Previous slash menu logic eagerly split text blocks upon `/` keystroke before a command was even chosen, forcing subsequent insertions (like footnotes) into a detached block. Updated `startInsertMenuAtCurrentTextSelection`, `openSlashMenuAtToken`, and `addFootnoteAtTarget` to stay in the current node without splitting, strip the typed `/...` trigger, and place the footnote mark inline at the caret.
+  - Context-aware filtering added to `getFilteredInsertCommands(commands, query, context)` with `getTargetNodeInsertContext(nodeId)`.
+  - Footnote styling simplified from heavy pill badge to clean typographic superscript without borders or background containers, preventing line-height shifts.
+  - Recompiled notebook style bundles using `pnpm run build:notebook-styles`.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/types.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/utils.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/inlineContent.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/markdown.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/documentModel.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditableTextBlock.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/FootnotePopover.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/InsertMenu.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/scenes/notebooks/exportNotebookPdf.ts`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-11 — Antigravity (Notebook Block Drag Handle Restoration & ClaudeWorkspaceChat Abort Guard)
+- **Scope:** 
+  1. Restore the notebook 6-dot block drag handle (`.MarkdownNotebook__drag-handle`, `IconDrag` ⠿) which disappeared after earlier layout changes.
+  2. Fix unhandled exception `controller.abort()` in `src/components/ClaudeWorkspaceChat/index.tsx (581:18)`.
+- **Root Cause & Implementation:**
+  - **Drag Handle:** 
+    - Previous styles used an old PostHog offset `left: calc(var(--markdown-notebook-content-offset) * -1 - 1rem);` (-42px) which left an 18px empty dead gap between the block boundary and the handle. When hovering a row and moving the mouse towards the handle, the cursor traversed the empty gap, losing `:hover` and causing the handle to vanish before it could be reached.
+    - Repositioned `.MarkdownNotebook__drag-handle` to `left: -1.75rem` (-28px) with `width: 1.5rem` and `height: 1.5rem`.
+    - Added an invisible hit bridge `::after` (`top: -6px; bottom: -6px; left: -6px; right: -16px; z-index: -1`) so the cursor maintains continuous hover while moving from text content into the handle.
+    - Set hover styling with subtle rounded background `background: rgb(var(--accent) / 0.75)`, opacity 0.55 on row hover/focus-within, opacity 1.0 on handle hover, and `cursor: grab / grabbing`.
+    - Updated `onClick` in `MarkdownNotebook.tsx` to safely trigger block options.
+    - Recompiled notebook style bundles via `pnpm run build:notebook-styles`.
+  - **ClaudeWorkspaceChat Abort Guard:**
+    - Safely wrapped `controller.abort()` inside `try ... catch` and reset `abortControllerRef.current = null` before calling abort to prevent unhandled abortion exceptions during unmount or stream cancellation.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-11 — Grok (notebook mobile UX + history restore)
 - **Scope:** After PDF PR #538. Highest remaining directive is mobile writing: no popovers on the selection, no horizontal shifts, insert still possible without hover `+`. Also local history compact left older snapshots unrestorable.

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { ReactNode, type CSSProperties, useEffect, useMemo, useRef } from 'react'
 
-import { IconCheck, IconCode, IconList, IconPencil, IconSparkles } from '@posthog/icons'
+import { IconCheck, IconCode, IconDocument, IconList, IconPencil, IconSparkles } from '@posthog/icons'
 
 import {
     INSERT_MENU_GAP,
@@ -54,6 +54,7 @@ export function InsertMenu({
     position,
     selectedIndex,
     onClose,
+    context = 'block',
 }: {
     id?: string
     query: string
@@ -62,9 +63,13 @@ export function InsertMenu({
     position: InsertMenuPosition | null
     selectedIndex: number
     onClose: () => void
+    context?: 'inline' | 'block'
 }): JSX.Element {
     const selectedItemRef = useRef<HTMLButtonElement | null>(null)
-    const filteredCommands = useMemo(() => getFilteredInsertCommands(commands, query), [commands, query])
+    const filteredCommands = useMemo(
+        () => getFilteredInsertCommands(commands, query, context),
+        [commands, query, context]
+    )
     const commandsByCategory = useMemo(() => groupInsertCommandsByCategory(filteredCommands), [filteredCommands])
     const selectedCommandIndex = getClampedInsertMenuSelectedIndex(selectedIndex, filteredCommands.length)
     const selectedCommand = filteredCommands[selectedCommandIndex]
@@ -178,15 +183,34 @@ function normalizeForSearch(str: string): string {
         .trim()
 }
 
-export function getFilteredInsertCommands(commands: InsertCommand[], query: string): InsertCommand[] {
+export function getFilteredInsertCommands(
+    commands: InsertCommand[],
+    query: string,
+    context: 'inline' | 'block' = 'block'
+): InsertCommand[] {
     const rawQuery = query.trim().toLowerCase()
-    if (!rawQuery) {
-        return commands
-    }
-
     const cleanQuery = normalizeForSearch(rawQuery)
 
-    return commands.filter((command) => {
+    // Context-aware filtering:
+    // In inline context (slash typed inside text/sentence):
+    // If no query yet, show only inline-scoped commands (e.g. Footnote).
+    // If query is present, search all commands but prioritize inline commands first.
+    let baseCommands = commands
+    if (context === 'inline') {
+        if (!rawQuery) {
+            return commands.filter((c) => c.scope === 'inline' || c.scope === 'all')
+        }
+        baseCommands = [
+            ...commands.filter((c) => c.scope === 'inline' || c.scope === 'all'),
+            ...commands.filter((c) => c.scope !== 'inline' && c.scope !== 'all'),
+        ]
+    }
+
+    if (!rawQuery) {
+        return baseCommands
+    }
+
+    return baseCommands.filter((command) => {
         const text = getInsertCommandSearchText(command)
         if (text.includes(rawQuery)) {
             return true
@@ -242,7 +266,8 @@ export function buildInsertCommands(
     openAIPrompt?: (nodeId: string) => void,
     isAskAIDisabled?: boolean,
     extraCommands: InsertCommand[] = [],
-    focusInsertedList?: (nodeId: string) => void
+    focusInsertedList?: (nodeId: string) => void,
+    insertFootnote?: (targetNodeId: string) => void
 ): InsertCommand[] {
     const commonCategory = COMMON_INSERT_COMMAND_CATEGORY
 
@@ -538,7 +563,30 @@ export function buildInsertCommands(
         },
     ]
 
-    return [...aiCommands, ...textCommands, ...mediaCommands, ...componentCommands, ...textStyleCommands, ...extraCommands]
+    const footnoteCommands: InsertCommand[] = insertFootnote
+        ? [
+              {
+                  key: 'insert-footnote',
+                  label: 'Footnote',
+                  category: commonCategory,
+                  description: 'Insert a footnote reference',
+                  aliases: ['footnote', 'dipnot', 'fn', 'note'],
+                  icon: <IconDocument />,
+                  run: insertFootnote,
+                  scope: 'all',
+              },
+          ]
+        : []
+
+    return [
+        ...aiCommands,
+        ...footnoteCommands,
+        ...textCommands,
+        ...mediaCommands,
+        ...componentCommands,
+        ...textStyleCommands,
+        ...extraCommands,
+    ]
 }
 
 function getVisibleViewport(): { top: number; left: number; width: number; height: number; bottom: number; right: number } {

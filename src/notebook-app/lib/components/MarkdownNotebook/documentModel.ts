@@ -768,9 +768,17 @@ export function getSlashCommandQuery(text: string): string | null {
 
 export type SlashToken = { start: number; query: string }
 
-/** Filter string for the insert menu: strip a leading `/` if the whole line is a slash command. */
-export function getInsertMenuFilterQuery(text: string): string {
-    return getSlashCommandQuery(text) ?? text
+/** Filter string for the insert menu: extract the query after `/` if present, or clean text. */
+export function getInsertMenuFilterQuery(text: string, caret?: number): string {
+    const token = getSlashTokenAt(text, caret ?? text.length)
+    if (token !== null) {
+        return token.query
+    }
+    const slashIdx = text.lastIndexOf('/')
+    if (slashIdx !== -1) {
+        return text.slice(slashIdx + 1).trim()
+    }
+    return text.startsWith('/') ? text.slice(1) : text
 }
 
 /** Text put back when the slash menu closes without inserting. */

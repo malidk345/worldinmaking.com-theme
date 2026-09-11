@@ -577,8 +577,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const abortActiveStream = useCallback(() => {
     const controller = abortControllerRef.current
-    if (controller && !controller.signal.aborted) {
-      controller.abort()
+    abortControllerRef.current = null
+    if (controller) {
+      try {
+        if (!controller.signal.aborted) {
+          controller.abort()
+        }
+      } catch {
+        /* already aborted or closed */
+      }
     }
     const reader = streamReaderRef.current
     streamReaderRef.current = null

@@ -30,6 +30,8 @@ export type NotebookInlineMark =
     | { type: 'ref'; id: string; notes?: InlinePhilosopherNote[] }
     /** A person mention: `<mention id="5">@Name</mention>` — the text is the display label. */
     | { type: 'mention'; id: string }
+    /** Footnote reference: `[^1]` or `[^note-id]`. Footnote texts live on `NotebookDocument.footnotes`. */
+    | { type: 'footnote'; id: string }
 
 export type NotebookTextInlineNode = {
     type: 'text'
@@ -155,6 +157,8 @@ export type NotebookDocument = {
     nodes: NotebookBlockNode[]
     /** In-text comments keyed by `<ref id>`. Not stored on the mark; serialized as a sidecar. */
     annotations?: NotebookAnnotationMap
+    /** Footnote texts keyed by footnote id. Serialized as `[^id]: text` at document end. */
+    footnotes?: Record<string, string>
     errors: NotebookParseError[]
 }
 

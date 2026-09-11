@@ -224,8 +224,8 @@ export function setMark(
     markType: NotebookInlineMark['type'],
     shouldApplyMark: boolean
 ): NotebookInlineMark[] | undefined {
-    // Marks that carry an identity (link href, ref/mention ids) cannot be toggled generically.
-    if (markType === 'link' || markType === 'ref' || markType === 'mention') {
+    // Marks that carry an identity (link href, ref/mention ids, footnote ids) cannot be toggled generically.
+    if (markType === 'link' || markType === 'ref' || markType === 'mention' || markType === 'footnote') {
         return marks.length ? marks : undefined
     }
 
@@ -341,4 +341,28 @@ export function splitInlineNodesAt(
     })
 
     return [normalizeInlineNodes(before), normalizeInlineNodes(after)]
+}
+
+/** Inserts a footnote anchor mark node at the given offset or selection end. */
+export function insertFootnoteAt(
+    nodes: NotebookInlineNode[],
+    offset: number,
+    footnoteId: string
+): NotebookInlineNode[] {
+    const [before, after] = splitInlineNodesAt(nodes, offset)
+    const footnoteNode: NotebookInlineNode = {
+        type: 'text',
+        text: footnoteId,
+        marks: [{ type: 'footnote', id: footnoteId }],
+    }
+    return normalizeInlineNodes([...before, footnoteNode, ...after])
+}
+
+/** Removes footnote marks with the given id completely from nodes (including the label text). */
+export function removeFootnoteFromInlineNodes(nodes: NotebookInlineNode[], footnoteId: string): NotebookInlineNode[] {
+    const output = nodes.filter((node) => {
+        if (node.type === 'hardBreak') return true
+        return !node.marks?.some((m) => m.type === 'footnote' && m.id === footnoteId)
+    })
+    return normalizeInlineNodes(output)
 }
