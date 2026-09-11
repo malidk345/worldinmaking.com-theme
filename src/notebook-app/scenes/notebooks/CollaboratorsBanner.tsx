@@ -56,15 +56,23 @@ export function CollaboratorsBanner({
     const displayName = personDisplayName(actor)
     const when = formatEditedAgo(updatedAt)
     const [sharedFaces, setSharedFaces] = useState<NotebookFace[]>([])
+    const [markdownFacesSource, setMarkdownFacesSource] = useState(markdown)
+
+    // Parsing the full notebook on every keystroke resizes the face stack and
+    // makes the mobile header jump while typing.
+    useEffect(() => {
+        const handle = window.setTimeout(() => setMarkdownFacesSource(markdown), 400)
+        return () => window.clearTimeout(handle)
+    }, [markdown])
 
     const localFaces = useMemo(
         () =>
             collectLocalNotebookFaces({
                 createdBy: createdBy || actor,
                 lastModifiedBy: person,
-                markdown,
+                markdown: markdownFacesSource,
             }),
-        [createdBy, person, actor, markdown]
+        [createdBy, person, actor, markdownFacesSource]
     )
 
     useEffect(() => {
