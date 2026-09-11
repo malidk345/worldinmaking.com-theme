@@ -78,6 +78,21 @@ test.describe('window path', () => {
         expect(parseNotebookRoute('/notebooks', '', '')).toEqual({ page: 'list' })
         expect(notebookPathForRoute({ page: 'editor', notebookId: 'nb-1' })).toBe('/notebooks/nb-1')
         expect(extractNotebookId('/notebooks/invite/abc')).toBeNull()
+        expect(parseNotebookRoute('/notebooks/nb-1', '', '?mark=mention')).toEqual({
+            page: 'editor',
+            notebookId: 'nb-1',
+            mark: 'mention',
+        })
+        expect(parseNotebookRoute('/notebooks/nb-1?mark=comment')).toEqual({
+            page: 'editor',
+            notebookId: 'nb-1',
+            mark: 'comment',
+        })
+        expect(notebookPathForRoute({ page: 'editor', notebookId: 'nb-1', mark: 'mention' })).toBe(
+            '/notebooks/nb-1?mark=mention'
+        )
+        expect(canonicalWindowPath('/notebooks/nb-1?mark=mention')).toBe('/notebooks/nb-1?mark=mention')
+        expect(notebookWindowPath('nb-1', 'mention')).toBe('/notebooks/nb-1?mark=mention')
         expect(parseNotebookRoute('/notebooks/invite/abc')).toEqual({ page: 'invite', token: 'abc' })
     })
 
