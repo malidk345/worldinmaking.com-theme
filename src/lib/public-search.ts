@@ -1,6 +1,9 @@
 /**
  * Public site search. Anon Supabase only — RLS must hide drafts, private
  * notebooks, inner thoughts, and PII. Never use the service role here.
+ *
+ * Posts prefer RPC `search_posts` (tsvector + websearch_to_tsquery).
+ * Other types stay lexical but never pull full document bodies for ranking.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { notebookPublicPath } from './window-path'
@@ -56,15 +59,6 @@ function publicNotebookTitle(row: { title?: string | null; publish?: Record<stri
     return publicTitle || String(row.title || 'Untitled notebook').trim() || 'Untitled notebook'
 }
 
-function publicNotebookBody(row: { content?: unknown; publish?: Record<string, unknown> | null }): string {
-    const pub = row.publish || {}
-    const subtitle = typeof pub.subtitle === 'string' ? pub.subtitle : ''
-    const tags = Array.isArray(pub.tags) ? pub.tags.filter((t) => typeof t === 'string').join(' ') : ''
-    const category = typeof pub.category === 'string' ? pub.category : ''
-    const content = typeof row.content === 'string' ? row.content : ''
-    return [subtitle, category, tags, content].filter(Boolean).join('\n')
-}
-
 function rank(query: string, docs: SemanticDocument[], type: PublicSearchType): PublicSearchHit[] {
     return searchLexicalDocuments(query, docs, PER_TYPE).map((h) =>
         hit({
@@ -78,32 +72,41 @@ function rank(query: string, docs: SemanticDocument[], type: PublicSearchType): 
     )
 }
 
+function mapPostRows(data: Array<Record<string, unknown>>): SemanticDocument[] {
+    return data.map((row) => {
+        const slugRaw = String(row.slug || row.id)
+        const slug = slugRaw.startsWith('/') ? slugRaw : `/posts/${slugRaw.replace(/^(posts|blog)\//, '')}`
+        return {
+            id: String(row.id),
+            title: String(row.title || 'Untitled'),
+            content: String(row.excerpt || ''),
+            type: 'post',
+            slug,
+        }
+    })
+}
+
 export async function searchPublicPosts(
     supabase: SupabaseClient,
     query: string
 ): Promise<PublicSearchHit[]> {
     const needle = sanitizeSearchNeedle(query)
     if (needle.length < 2) return []
+
+    const rpc = await supabase.rpc('search_posts', { q: needle, lim: 25 })
+    if (!rpc.error && rpc.data?.length) {
+        return rank(query, mapPostRows(rpc.data as Array<Record<string, unknown>>), 'post')
+    }
+
     const { data, error } = await supabase
         .from('posts')
-        .select('id, title, slug, excerpt, content')
+        .select('id, title, slug, excerpt')
         .eq('published', true)
-        .or(`title.ilike.%${needle}%,excerpt.ilike.%${needle}%,content.ilike.%${needle}%`)
+        .or(`title.ilike.%${needle}%,excerpt.ilike.%${needle}%`)
         .order('created_at', { ascending: false })
         .limit(25)
     if (error || !data?.length) return []
-    const docs: SemanticDocument[] = data.map((row) => {
-        const slugRaw = String(row.slug || row.id)
-        const slug = slugRaw.startsWith('/') ? slugRaw : `/posts/${slugRaw.replace(/^(posts|blog)\//, '')}`
-        return {
-            id: String(row.id),
-            title: String(row.title || 'Untitled'),
-            content: String(row.excerpt || row.content || ''),
-            type: 'post',
-            slug,
-        }
-    })
-    return rank(query, docs, 'post')
+    return rank(query, mapPostRows(data as Array<Record<string, unknown>>), 'post')
 }
 
 export async function searchPublicCommunity(
@@ -114,21 +117,20 @@ export async function searchPublicCommunity(
     if (needle.length < 2) return []
     const { data, error } = await supabase
         .from('community_posts')
-        .select('id, title, content, post_slug, is_archived')
+        .select('id, title, post_slug')
         .eq('is_archived', false)
-        .or(`title.ilike.%${needle}%,content.ilike.%${needle}%`)
+        .ilike('title', `%${needle}%`)
         .order('created_at', { ascending: false })
         .limit(25)
     if (error || !data?.length) return []
     const docs: SemanticDocument[] = data.map((row) => {
         const permalink = String(row.post_slug || row.id)
-        const slug = `/questions/${permalink}`
         return {
             id: `community-${row.id}`,
             title: String(row.title || 'Untitled thread'),
-            content: String(row.content || ''),
+            content: String(row.title || ''),
             type: 'post',
-            slug,
+            slug: `/questions/${permalink}`,
         }
     })
     return rank(query, docs, 'community')
@@ -142,7 +144,7 @@ export async function searchPublicPeople(
     if (needle.length < 2) return []
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name, bio, avatar_url, is_bot')
+        .select('id, username, first_name, last_name, bio, is_bot')
         .not('username', 'is', null)
         .or(
             `username.ilike.%${needle}%,first_name.ilike.%${needle}%,last_name.ilike.%${needle}%,bio.ilike.%${needle}%`
@@ -179,20 +181,22 @@ export async function searchPublicNotebooks(
     if (needle.length < 2) return []
     const { data, error } = await supabase
         .from('wim_notebooks')
-        .select('id, short_id, title, content, publish')
+        .select('id, short_id, title, publish')
         .eq('is_published', true)
         .is('deleted_at', null)
         .or(
-            `title.ilike.%${needle}%,content.ilike.%${needle}%,publish->>publicTitle.ilike.%${needle}%,publish->>subtitle.ilike.%${needle}%`
+            `title.ilike.%${needle}%,publish->>publicTitle.ilike.%${needle}%,publish->>subtitle.ilike.%${needle}%`
         )
         .limit(25)
     if (error || !data?.length) return []
     const docs: SemanticDocument[] = data.map((row) => {
         const publicId = String(row.short_id || row.id)
+        const pub = (row.publish || {}) as Record<string, unknown>
+        const subtitle = typeof pub.subtitle === 'string' ? pub.subtitle : ''
         return {
             id: String(row.id),
             title: publicNotebookTitle(row),
-            content: publicNotebookBody(row),
+            content: subtitle,
             type: 'notebook',
             slug: notebookPublicPath(publicId),
         }
