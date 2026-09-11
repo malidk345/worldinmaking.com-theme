@@ -23,6 +23,7 @@ import { NotebookInvitePanel, NotebookPublishPanel } from './NotebookShareModal'
 import type { NotebookPresencePerson } from './notebookPresence'
 import type { NotebookChromeSettings } from './notebookChromeSettings'
 import type { NotebookPublishPayload } from './NotebookShareModal'
+import { useNotebookMarkFocus } from './useNotebookMarkFocus'
 
 interface NotebookEditorReaderProps {
     markdown: string
@@ -70,6 +71,8 @@ export function NotebookEditorReader({
     onPublish,
     stickyHeader,
 }: NotebookEditorReaderProps): JSX.Element {
+    useNotebookMarkFocus(notebookId)
+
     const comments = useMemo(
         () => extractNotebookComments(currentContent || markdown),
         [currentContent, markdown]
