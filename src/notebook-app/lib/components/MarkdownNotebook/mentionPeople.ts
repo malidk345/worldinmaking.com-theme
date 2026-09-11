@@ -28,8 +28,10 @@ export function collaboratorToMentionPerson(entry: NotebookCollaborator): Mentio
         person?.email ||
         ''
     if (!label.trim()) return null
+    const id = entry.user_id || person?.id || ''
+    if (!id) return null
     return {
-        id: person?.username || person?.id || entry.user_id,
+        id,
         label: label.trim(),
         avatar: person?.avatar_url,
     }

@@ -324,11 +324,13 @@ export function App() {
   }, [currentNotebook?.id, route.page])
 
   const editorMentionPeople = useMemo(() => {
-    const live = presence.people.map((person) => ({
-      id: person.clientId,
-      label: person.name,
-      avatar: person.avatarUrl,
-    }))
+    const live = presence.people
+      .filter((person) => person.userId)
+      .map((person) => ({
+        id: person.userId as string,
+        label: person.name,
+        avatar: person.avatarUrl,
+      }))
     return [...mentionPeople, ...live]
   }, [mentionPeople, presence.people])
 
@@ -499,23 +501,29 @@ export function App() {
       }
     }
 
+    let cancelled = false
     const nb = getNotebook(editorNotebookId)
     if (nb) {
       apply(nb)
-      return
+      if (nb.contentOmitted) {
+        void pullNotebookById(editorNotebookId).then((remote) => {
+          if (cancelled || !remote) return
+          rememberRemoteNotebook(remote)
+          apply(remote)
+        })
+      }
+    } else {
+      setCurrentNotebook(null)
+      void pullNotebookById(editorNotebookId).then((remote) => {
+        if (cancelled || !remote) return
+        rememberRemoteNotebook(remote)
+        apply(remote)
+      })
     }
-    setCurrentNotebook(null)
-
-    let cancelled = false
-    void pullNotebookById(editorNotebookId).then((remote) => {
-      if (cancelled || !remote) return
-      rememberRemoteNotebook(remote)
-      apply(remote)
-    })
 
     const onHydrated = () => {
       const remote = getNotebook(editorNotebookId)
-      if (remote) apply(remote)
+      if (remote && !remote.contentOmitted) apply(remote)
     }
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, onHydrated)
     return () => {

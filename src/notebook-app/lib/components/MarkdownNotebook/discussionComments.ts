@@ -7,6 +7,7 @@ export type DiscussionReply = {
     createdAt: string
     botId?: string
     pending?: boolean
+    mentionedIds?: string[]
 }
 
 export function parseDiscussionReplies(value: unknown): DiscussionReply[] {
@@ -25,6 +26,11 @@ export function parseDiscussionReplies(value: unknown): DiscussionReply[] {
             createdAt: typeof record.createdAt === 'string' ? record.createdAt : '',
             botId: typeof record.botId === 'string' ? record.botId : undefined,
             pending: record.pending === true,
+            mentionedIds: Array.isArray(record.mentionedIds)
+                ? record.mentionedIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+                : typeof record.mentionedIds === 'string'
+                  ? record.mentionedIds.split(/[,\s]+/).filter(Boolean)
+                  : undefined,
         })
     }
     return replies
@@ -40,6 +46,7 @@ export function repliesToPropValue(replies: DiscussionReply[]): NotebookPropValu
         }
         if (reply.botId) value.botId = reply.botId
         if (reply.pending) value.pending = true
+        if (reply.mentionedIds?.length) value.mentionedIds = reply.mentionedIds.join(',')
         return value
     })
 }

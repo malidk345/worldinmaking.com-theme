@@ -74,6 +74,8 @@ export interface StoredNotebook {
     tags?: string[]
     kind?: NotebookKind
     dailyDate?: string
+    preview?: string
+    contentOmitted?: boolean
 }
 
 export interface NotebookVersion {
@@ -183,6 +185,7 @@ function queueRemote(promise: Promise<unknown>, options: { report?: boolean } = 
 }
 
 function canPushNotebook(notebook: StoredNotebook): boolean {
+    if (notebook.contentOmitted) return false
     if (notebook.access_role === 'viewer') return false
     if (notebook.isTemplate) return false
     if (notebook.id === 'welcome-notebook' && notebook.content === WELCOME_CONTENT) return false
@@ -593,7 +596,7 @@ export function toNotebookBrowserItem(notebook: StoredNotebook, keepContent = fa
     const { content, ...rest } = notebook
     return {
         ...rest,
-        preview: notebookPreviewExcerpt(content, 2000),
+        preview: notebook.preview || notebookPreviewExcerpt(content, 2000),
         ...(keepContent ? { content } : {}),
     }
 }
@@ -675,6 +678,22 @@ export function rememberRemoteNotebook(notebook: StoredNotebook): StoredNotebook
     notebooks.push(notebook)
     writeAll(notebooks)
     return notebook
+}
+
+export function rememberRemoteNotebooks(notebooks: StoredNotebook[]): void {
+    if (!notebooks.length) return
+    const current = getNotebooks()
+    const map = new Map(current.map((nb) => [nb.id, nb]))
+    for (const notebook of notebooks) {
+        const existing = map.get(notebook.id)
+        map.set(
+            notebook.id,
+            existing
+                ? { ...pickNewerNotebook(existing, notebook), access_role: notebook.access_role || existing.access_role }
+                : notebook
+        )
+    }
+    writeAll(Array.from(map.values()))
 }
 
 export async function leaveSharedNotebook(id: string): Promise<boolean> {

@@ -25,12 +25,21 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — slash insert menu visibility.
-
+- **Status:** `[COMPLETED by Grok]` — notebook slim list + mention/comment notifications + Supabase audit.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (notebook list/mentions/notify)
+- **Scope:** Continue notebook optimization after PR #534. Audit live Supabase `iydypisgfaksqkjdraiu` and close gaps. No Yjs. Markdown remains source of truth.
+- **Live audit:** 120 notebooks (avg 932 chars, p90 552, max 55k). RLS on. Realtime on `wim_notebooks`. `organize` already present. Missing: `preview` column, `wim_notebook_notifications`, auth `uri_allow_list` pages.dev wildcards. Duplicate owner/auth indexes left in place. Collaborator writes stay on service-role API. `notebook-media` public read / API write by design.
+- **Implementation:**
+  - List GET omits `content` (`preview` + `contentOmitted`). Editor hydrates via GET by id. Tasks view opt-in `include=content`. Slim remote merge keeps local body.
+  - Mention marks store auth UUID. Server extracts `<mention>` + comment `mentionedIds` (UUID or username) and writes `wim_notebook_notifications`. New discussion replies notify owner + collaborators.
+  - Auth allow-list adds `https://*.worldinmaking.pages.dev/**` and `https://*.pages.dev/**`.
+- **Files Modified:** notebooks-repo, notebook-mentions, notebooks API, App, notebookRemote/Storage, NotebooksListScene, mentionPeople, notebookPresence, DiscussionCommentBlock, discussionComments, wim-notifications, wim-supabase-bootstrap, 20260911_notebook_list_preview_and_mentions.sql, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
+- **Do not commit the pasted Supabase PAT. Rotate it after this PR.**
 
 ### 2026-09-11 — Grok (slash insert menu)
 - **Scope:** Slash `/` menu was not appearing after the content-visibility typing sprint.

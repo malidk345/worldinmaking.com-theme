@@ -37,10 +37,10 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf + paste/mentions/PDF polish + slash menu visibility
-- **Last Model Action:** Grok 4.6 — slash `/` insert menu was clipped by `content-visibility: auto` (fixed popover inside the text group). Portaled the menu to the notebook root, forced visibility on `--insert-menu-open` groups, callback refs, position fallback. Did not start a Yjs rewrite. Open `plan*` PRs (#511–#519) still extract more editor plans; merge when rebase-clean.
+- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf + paste/mentions/PDF polish + slash menu visibility + slim list/preview + mention/comment notifications
+- **Last Model Action:** Grok 4.6 — live Supabase audit (`iydypisgfaksqkjdraiu`). List GET no longer ships full bodies (`preview` column + `contentOmitted`). @mentions and new discussion comments write `wim_notebook_notifications` (panel already reads them). Auth redirect allow-list includes Cloudflare Pages previews. Did not start a Yjs rewrite. Open `plan*` PRs (#511–#519) still extract more editor plans; merge when rebase-clean.
 - **Instruction for Next AI Agent:**
-  > Follow-ups left: comment notifications, richer PDF text (not a screenshot of the article). Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs. Playwright smoke is already red on `main` (placeholder.supabase.co) — do not treat that as caused by notebook editor changes. Slash `/` is for body blocks, not the title row.
+  > Follow-ups left: richer PDF text (not a screenshot of the article). Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs. Playwright smoke is already red on `main` (placeholder.supabase.co) — do not treat that as caused by notebook editor changes. Slash `/` is for body blocks, not the title row. Rotate the Supabase personal access token that was pasted in chat.
 
 ---
 

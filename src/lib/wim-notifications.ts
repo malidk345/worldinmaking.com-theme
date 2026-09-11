@@ -247,14 +247,30 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                 console.warn('[wim-notifications] fetch notebook collabs', collabsError.message)
             }
 
+            const { data: mentions, error: mentionsError } = await supabase
+                .from('wim_notebook_notifications')
+                .select('id, notebook_id, kind, actor_id, excerpt, created_at')
+                .eq('user_id', userId)
+                .is('dismissed_at', null)
+                .order('created_at', { ascending: false })
+                .limit(20)
+
+            if (mentionsError && mentionsError.code !== 'PGRST205' && mentionsError.code !== '42P01') {
+                console.warn('[wim-notifications] fetch notebook mentions', mentionsError.message)
+            }
+
             const filteredInvites = (invites || []).filter((i) => !dismissedIds.has(`invite_${i.id}`))
             const filteredCollabs = (collabs || []).filter((c) => !dismissedIds.has(`collab_${c.id}`))
+            const filteredMentions = (mentions || []).filter((m) => !dismissedIds.has(`nbmention_${m.id}`))
 
             const inviterIds = Array.from(
-                new Set([
-                    ...filteredInvites.map((i) => i.invited_by),
-                    ...filteredCollabs.map((c) => c.invited_by),
-                ].filter(Boolean))
+                new Set(
+                    [
+                        ...filteredInvites.map((i) => i.invited_by),
+                        ...filteredCollabs.map((c) => c.invited_by),
+                        ...filteredMentions.map((m) => m.actor_id),
+                    ].filter(Boolean)
+                )
             )
 
             let inviterMap = new Map<string, string>()
@@ -268,7 +284,10 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                 }
             }
 
-            const collabNotebookIds = filteredCollabs.map((c) => c.notebook_id).filter(Boolean)
+            const collabNotebookIds = [
+                ...filteredCollabs.map((c) => c.notebook_id),
+                ...filteredMentions.map((m) => m.notebook_id),
+            ].filter(Boolean)
             let notebookTitles = new Map<string, string>()
             if (collabNotebookIds.length > 0) {
                 const { data: notebooks } = await supabase
@@ -313,6 +332,25 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                     },
                 })
             }
+
+            for (const mention of filteredMentions) {
+                const actor = mention.actor_id ? inviterMap.get(mention.actor_id) || 'Someone' : 'Someone'
+                const title = notebookTitles.get(mention.notebook_id) || mention.excerpt || 'Notebook'
+                const isComment = mention.kind === 'comment'
+                notebookNotifications.push({
+                    id: `nbmention_${mention.id}`,
+                    date: mention.created_at,
+                    context: {
+                        excerpt: 'Notebook',
+                        title: isComment
+                            ? `${actor} commented on "${title}"`
+                            : `${actor} mentioned you in "${title}"`,
+                        count: isComment ? 'Comment' : 'Mention',
+                        date: mention.created_at,
+                        url: `/notebooks/${mention.notebook_id}`,
+                    },
+                })
+            }
         }
     } catch (err) {
         console.warn('[wim-notifications] error processing notebook notifications', err)
@@ -332,6 +370,18 @@ export async function dismissUserNotification(id: number | string): Promise<{ ok
     }
     if (strId.startsWith('invite_') || strId.startsWith('collab_') || strId.startsWith('notebook_')) {
         markDismissedNotebookNotificationId(strId)
+        return { ok: true }
+    }
+    if (strId.startsWith('nbmention_')) {
+        markDismissedNotebookNotificationId(strId)
+        const rowId = strId.slice('nbmention_'.length)
+        const { error } = await supabase
+            .from('wim_notebook_notifications')
+            .update({ dismissed_at: new Date().toISOString() })
+            .eq('id', rowId)
+        if (error && error.code !== 'PGRST205' && error.code !== '42P01') {
+            return { ok: false, error: error.message }
+        }
         return { ok: true }
     }
     const numId = Number(id)

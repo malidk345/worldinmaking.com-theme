@@ -57,9 +57,11 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
             const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
+            const includeContent =
+                url.searchParams.get('include') === 'content' || url.searchParams.get('bodies') === '1'
 
             const [notebooks, deletedIds] = await Promise.all([
-                listNotebooksByOwner(auth.ownerKey, auth.userId, extraOwnerKeys),
+                listNotebooksByOwner(auth.ownerKey, auth.userId, extraOwnerKeys, { includeContent }),
                 listDeletedNotebookIds(auth.ownerKey, auth.userId, extraOwnerKeys),
             ])
             return json({ notebooks, deleted_ids: deletedIds, auth: { via: auth.via } })

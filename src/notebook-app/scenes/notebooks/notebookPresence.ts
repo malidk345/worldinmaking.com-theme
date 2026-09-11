@@ -10,6 +10,7 @@ const PRESENCE_COLORS = ['#1d4d4f', '#38817a', '#c17f3a', '#8b3a3a', '#3d5a80', 
 
 export type NotebookPresencePerson = {
     clientId: string
+    userId?: string
     name: string
     color: string
     avatarUrl?: string
@@ -17,6 +18,7 @@ export type NotebookPresencePerson = {
 
 type PresencePayload = {
     clientId: string
+    userId?: string
     userName: string
     color: string
     avatarUrl?: string
@@ -66,7 +68,7 @@ export function presenceStateToCarets(
         const clientId = payload.clientId || key
         const color = payload.color || caretColorForClient(clientId)
         const name = payload.userName || 'Someone'
-        people.push({ clientId, name, color, avatarUrl: payload.avatarUrl })
+        people.push({ clientId, userId: payload.userId, name, color, avatarUrl: payload.avatarUrl })
         if (payload.position && typeof payload.position.nodeIndex === 'number') {
             carets.push({
                 clientId,
@@ -108,6 +110,7 @@ export function useNotebookPresence({
         if (!channel || typeof (channel as { track?: unknown }).track !== 'function') return
         const payload: PresencePayload = {
             clientId,
+            userId: getAuthUserId() || undefined,
             userName: displayNameForActor(actor),
             color: caretColorForClient(clientId),
             avatarUrl: actor?.avatar_url,
