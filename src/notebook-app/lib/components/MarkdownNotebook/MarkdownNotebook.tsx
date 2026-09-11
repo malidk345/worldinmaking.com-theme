@@ -3443,7 +3443,10 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const anchorElement = blockRefs.current[insertMenu.nodeId]
+        const anchorElement =
+            blockRefs.current[insertMenu.nodeId] ??
+            getNotebookBlockElement(canvasRef.current, insertMenu.nodeId) ??
+            getNotebookBlockElement(notebookRef.current, insertMenu.nodeId)
         if (!anchorElement) {
             setInsertMenuPosition(null)
             return
@@ -3602,6 +3605,9 @@ function MarkdownNotebookEditor({
             const activeBlockElement = blockRefs.current[insertMenu.nodeId]
             const activeRowElement = activeBlockElement?.closest('.MarkdownNotebook__row')
             if (activeRowElement?.contains(target)) {
+                return
+            }
+            if (target instanceof Element && target.closest('.MarkdownNotebook__insert-menu')) {
                 return
             }
 
@@ -5441,17 +5447,6 @@ function MarkdownNotebookEditor({
                     restoreSelectionRef,
                     rootEditableInputHtmlByNodeIdRef,
                 })}
-                {isToolInsertMenuOpen ? (
-                    <InsertMenu
-                        id={insertMenuDomId}
-                        query={insertMenu.query}
-                        commands={insertCommands}
-                        targetNodeId={node.id}
-                        position={insertMenuPosition}
-                        selectedIndex={insertMenu.selectedIndex}
-                        onClose={clearInsertMenu}
-                    />
-                ) : null}
             </div>
         )
     }
@@ -5515,6 +5510,17 @@ function MarkdownNotebookEditor({
                         setFindIndex((index) => (index - 1 + findMatchNodeIds.length) % findMatchNodeIds.length)
                     }}
                     onClose={() => setFindOpen(false)}
+                />
+            ) : null}
+            {insertMenu && (insertMenu.mode ?? 'tools') === 'tools' ? (
+                <InsertMenu
+                    id={insertMenuDomId}
+                    query={insertMenu.query}
+                    commands={insertCommands}
+                    targetNodeId={insertMenu.nodeId}
+                    position={insertMenuPosition}
+                    selectedIndex={insertMenu.selectedIndex}
+                    onClose={clearInsertMenu}
                 />
             ) : null}
             <div className="MarkdownNotebook__debug-layout">

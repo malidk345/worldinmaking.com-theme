@@ -400,7 +400,8 @@ html.dark .MarkdownNotebook,
 }
 
 .MarkdownNotebook__row--insert-menu-open {
-    z-index: var(--z-popover);
+    z-index: var(--z-popover, 1060);
+    overflow: visible;
 }
 
 .MarkdownNotebook__row--ai-prompt {
@@ -755,8 +756,10 @@ html.dark .MarkdownNotebook,
         border-color: transparent;
     }
 
-    &:focus-within {
+    &:focus-within,
+    &:has(.MarkdownNotebook__row--insert-menu-open) {
         content-visibility: visible;
+        contain-intrinsic-size: none;
     }
 }
 
@@ -2342,7 +2345,7 @@ h6.MarkdownNotebook__text-block {
     position: fixed;
     top: var(--markdown-notebook-insert-menu-top);
     left: var(--markdown-notebook-insert-menu-left);
-    z-index: calc(var(--z-popover) + 1);
+    z-index: calc(var(--z-popover, 1060) + 1);
     box-sizing: border-box;
     width: var(--markdown-notebook-insert-menu-width);
     min-width: 180px;

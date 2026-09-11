@@ -25,11 +25,22 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — notebook paste / mentions / PDF polish.
+- **Status:** `[COMPLETED by Grok]` — slash insert menu visibility.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (slash insert menu)
+- **Scope:** Slash `/` menu was not appearing after the content-visibility typing sprint.
+- **Cause:** InsertMenu is `position: fixed` + `visibility: hidden` until positioned, and was rendered inside `.MarkdownNotebook__text-group` / rows with `content-visibility: auto`. That applies paint/layout containment, so fixed descendants position against the group and get clipped; a 0×0 anchor rect leaves the menu hidden. Nested canvas `contenteditable` means the group is often not `:focus-within`. Memoized text blocks also ignored slash callbacks.
+- **Implementation:**
+  - Render one InsertMenu at the notebook root (next to the find bar), outside any content-visibility group.
+  - Force `content-visibility: visible` on groups/rows with `--insert-menu-open`; `--z-popover` fallback 1060.
+  - Position fallback via `getNotebookBlockElement` if `blockRefs` missed the node.
+  - Outside-click ignores the portaled menu.
+  - EditableTextBlock keeps slash/insert callbacks on refs so memo does not freeze a stale opener.
+- **Files Modified:** MarkdownNotebook.tsx, MarkdownNotebook.scss, EditableTextBlock.tsx, ensureNotebookProductStyles.ts, AI_MEMORY, NOTEBOOK_SAAS_ROADMAP.
 
 ### 2026-09-11 — Grok (notebook paste / mentions / PDF)
 - **Scope:** Continue the notebook sprint after typing/list/find. Paste screenshots as Image blocks, mention collaborators in comments and body, make PDF export fail visibly.

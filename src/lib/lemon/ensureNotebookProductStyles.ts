@@ -42,14 +42,23 @@ const NOTEBOOK_TAG_CSS = `
   --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --primary-rgb: 29, 78, 216;
+  --z-popover: 1060;
 }
-.MarkdownNotebook__canvas > .MarkdownNotebook__text-group:not(:focus-within) {
+.MarkdownNotebook__canvas > .MarkdownNotebook__text-group:not(:focus-within):not(:has(.MarkdownNotebook__row--insert-menu-open)) {
   content-visibility: auto;
   contain-intrinsic-size: auto 8rem;
 }
-.MarkdownNotebook__canvas > .MarkdownNotebook__row:not(:focus-within):not(.MarkdownNotebook__row--ai-prompt) {
+.MarkdownNotebook__canvas > .MarkdownNotebook__row:not(:focus-within):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--insert-menu-open) {
   content-visibility: auto;
   contain-intrinsic-size: auto 4.5rem;
+}
+.MarkdownNotebook__text-group:focus-within,
+.MarkdownNotebook__text-group:has(.MarkdownNotebook__row--insert-menu-open),
+.MarkdownNotebook__row--insert-menu-open {
+  content-visibility: visible;
+}
+.MarkdownNotebook__insert-menu {
+  z-index: calc(var(--z-popover, 1060) + 1);
 }
 .MarkdownNotebook__row--find-match {
   outline: 2px solid rgba(29, 78, 216, 0.55);
