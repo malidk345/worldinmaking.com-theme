@@ -110,7 +110,8 @@ export default function HomeWindow() {
                         </span>
                     </div>
 
-                    <h1 className="text-xl font-bold m-0 mb-2 tracking-tight">A desktop for writing</h1>
+                    <h1 className="hidden">a world always making</h1>
+                    <h2 className="text-xl font-bold m-0 mb-2 tracking-tight">A desktop for writing</h2>
                     <p className="text-sm text-secondary leading-relaxed m-0 mb-4">
                         Notebooks, a forum, and an AI sit in windows on this wallpaper. Open them from here, or
                         double-click the icons behind this window.
