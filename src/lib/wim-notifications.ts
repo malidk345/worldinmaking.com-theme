@@ -9,6 +9,7 @@
 import { supabase } from 'lib/supabase'
 import { matchPhilosopherId } from './philosopher-avatar'
 import { dismissAssistantNotice, isAssistantNoticeId, listAssistantNotifications } from './assistant-notices'
+import { notebookNotificationUrl } from './notebook-notification-url'
 import { PHILOSOPHER_BOTS } from '../notebook-app/lib/philosophers'
 
 export type WimNotification = {
@@ -115,7 +116,6 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
     const notebookNotifications: WimNotification[] = []
 
     try {
-        // 1. Fetch forum & philosopher notifications
         const { data: notifRows, error: notifError } = await supabase
             .from('user_notifications')
             .select('id, post_id, title, excerpt, reply_count, created_at')
@@ -211,7 +211,6 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
         console.warn('[wim-notifications] error processing forum notifications', err)
     }
 
-    // 2. Fetch notebook collaboration invites & additions
     try {
         const { data: authData } = await supabase.auth.getSession()
         const userId = authData.session?.user?.id
@@ -219,7 +218,6 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
         if (userId) {
             const dismissedIds = getDismissedNotebookNotificationIds()
 
-            // A) Pending invites for current user
             const { data: invites, error: invitesError } = await supabase
                 .from('wim_notebook_invites')
                 .select('id, notebook_id, token, role, invited_by, created_at, expires_at')
@@ -234,7 +232,6 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                 console.warn('[wim-notifications] fetch notebook invites', invitesError.message)
             }
 
-            // B) Direct collaborator additions
             const { data: collabs, error: collabsError } = await supabase
                 .from('wim_notebook_collaborators')
                 .select('id, notebook_id, role, invited_by, created_at')
@@ -328,7 +325,7 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                         title: `${inviter} added you to "${title}"`,
                         count: roleLabel,
                         date: col.created_at,
-                        url: `/notebooks/${col.notebook_id}`,
+                        url: notebookNotificationUrl(col.notebook_id),
                     },
                 })
             }
@@ -347,7 +344,7 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
                             : `${actor} mentioned you in "${title}"`,
                         count: isComment ? 'Comment' : 'Mention',
                         date: mention.created_at,
-                        url: `/notebooks/${mention.notebook_id}`,
+                        url: notebookNotificationUrl(mention.notebook_id, isComment ? 'comment' : 'mention'),
                     },
                 })
             }
