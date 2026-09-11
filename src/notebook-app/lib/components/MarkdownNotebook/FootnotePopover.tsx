@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef } from 'react'
 import { IconCheck, IconTrash, IconX } from '@posthog/icons'
-import OSButton from 'components/OSButton'
+import OSButton from '../../../../components/OSButton'
 
 export interface FootnotePopoverProps {
     id: string
@@ -133,7 +133,7 @@ export function FootnotePopover({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="text-muted hover:text-primary transition-colors p-1 rounded-sm"
+                    className="text-muted hover:text-primary transition-colors p-1.5 rounded-sm inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation"
                     title="Close (Esc)"
                     aria-label="Close"
                 >

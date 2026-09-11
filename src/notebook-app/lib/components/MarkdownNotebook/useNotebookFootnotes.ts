@@ -475,10 +475,10 @@ export function useNotebookFootnotes({
                                         }
                                     },
                                     className:
-                                        'text-xs text-muted hover:text-primary p-1 rounded transition-colors',
+                                        'text-xs text-muted hover:text-primary p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation',
                                     title: 'Edit footnote',
                                 },
-                                '?'
+                                '\u270E'
                             ),
                             React.createElement(
                                 'button',
@@ -504,10 +504,10 @@ export function useNotebookFootnotes({
                                         }
                                     },
                                     className:
-                                        'text-xs text-muted hover:text-blue-500 p-1 rounded transition-colors',
+                                        'text-xs text-muted hover:text-blue-500 p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation',
                                     title: 'Back to text',
                                 },
-                                '?'
+                                '\u21A9'
                             )
                         )
                     )

@@ -31,6 +31,23 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-11 — Antigravity (Notebook Selection Hook Extraction & API Tombstone Import Fix)
+- **Scope:**
+  1. Extracted selection preservation and DOM focus restoration into standalone hook `useNotebookSelection.ts`, decoupling `restoreSelectionRef`, `focusNodeRef`, and the post-render `useLayoutEffect` DOM reconciliation from `MarkdownNotebook.tsx`.
+  2. Fixed backend Next.js API server error: imported missing `listSyncTombstoneIds` and `recordSyncTombstone` in `lib/notebooks-repo.ts` from `./sync-tombstones`.
+  3. Hardened touch targets (`min-w-[28px] min-h-[28px] touch-manipulation`) and Unicode edit/jump glyphs (`\u270E`, `\u21A9`) in `FootnotePopover.tsx` and `useNotebookFootnotes.ts`.
+  4. Converted non-relative import of `OSButton` in `FootnotePopover.tsx` to relative path to ensure clean compatibility across headless test runners.
+  5. Added comprehensive test coverage in `tests/notebook-frontend.spec.ts` for footnote round-trip serialization and document-change caret offset mapping (`mapRestoreSelectionThroughDocumentChange`).
+  6. Verification: 43 Playwright tests pass (`pnpm exec playwright test tests/notebook-frontend.spec.ts`), `pnpm run typecheck:shell` passes with zero gated errors, and style bundles compiled cleanly.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookSelection.ts` (new)
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/FootnotePopover.tsx`
+  - `lib/notebooks-repo.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-11 — Antigravity (Notebook Architecture Stabilization, Hook Modularization & Inline Integrity)
 - **Scope:**
   1. Decompose monolithic footnote and slash menu logic from `MarkdownNotebook.tsx` into standalone modular hooks (`useNotebookFootnotes.ts`, `useNotebookSlashMenu.ts`).

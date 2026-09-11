@@ -56,6 +56,7 @@ import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
 import { FootnotePopover } from './FootnotePopover'
 import { useNotebookFootnotes } from './useNotebookFootnotes'
+import { useNotebookSelection } from './useNotebookSelection'
 import { InvitePhilosopherPicker } from './InvitePhilosopherPicker'
 import { MentionPicker } from './MentionPicker'
 import {
@@ -136,7 +137,6 @@ import {
     isNativeEditableElement,
     rangeIntersectsNode,
     restoreSelection,
-    restoreTextSelectionRanges,
     scrollNotebookElementIntoView,
 } from './domSelection'
 import {
@@ -414,8 +414,13 @@ function MarkdownNotebookEditor({
     const textSelectionPointerStateRef = useRef<TextSelectionPointerState | null>(null)
     const floatingToolbarPointerAnchorRef = useRef<FloatingToolbarPointerAnchor | null>(null)
     const floatingToolbarPositionLockRef = useRef<FloatingToolbarPosition | null>(null)
-    const focusNodeRef = useRef<string | null>(null)
-    const restoreSelectionRef = useRef<RestoreSelectionRequest | null>(null)
+    const { restoreSelectionRef, focusNodeRef } = useNotebookSelection({
+        document,
+        notebookRef,
+        blockRefs,
+        listItemRefs,
+        tableCellRefs,
+    })
     const aiSelectionReviewRef = useRef<{
         promptNodeId: string
         targetNodeId: string
@@ -808,46 +813,6 @@ function MarkdownNotebookEditor({
         }
         touchStartPosRef.current = null
     }
-
-    useLayoutEffect(() => {
-        const request = restoreSelectionRef.current
-        if (request) {
-            restoreSelectionRef.current = null
-            if ('textRanges' in request) {
-                restoreTextSelectionRanges(request.textRanges, blockRefs.current, listItemRefs.current)
-                return
-            }
-
-            const listItemRefKey =
-                request.listItemId ?? (request.listItemIndex === undefined ? undefined : String(request.listItemIndex))
-            const element =
-                request.tableCell !== undefined
-                    ? tableCellRefs.current[getTableCellRefKey(request.nodeId, request.tableCell)]
-                    : listItemRefKey === undefined
-                      ? (blockRefs.current[request.nodeId] ??
-                        getNotebookBlockElement(notebookRef.current, request.nodeId))
-                      : (listItemRefs.current[getListItemRefKey(request.nodeId, listItemRefKey)] ??
-                        (request.listItemIndex === undefined
-                            ? undefined
-                            : listItemRefs.current[getListItemRefKey(request.nodeId, request.listItemIndex)]))
-            if (element) {
-                element.focus()
-                restoreSelection(element, request.start, request.end)
-                scrollNotebookElementIntoView(element)
-            }
-            return
-        }
-
-        const focusNodeId = focusNodeRef.current
-        if (focusNodeId) {
-            focusNodeRef.current = null
-            const element = blockRefs.current[focusNodeId]
-            element?.focus()
-            if (element) {
-                scrollNotebookElementIntoView(element)
-            }
-        }
-    }, [document])
 
     useEffect(() => {
         if (!autoFocus || mode !== 'edit') {

@@ -107,6 +107,7 @@ import {
     planInsertNodesAtBoundary,
     planMergeAdjacentTextBlocks,
     planPasteInlineChildren,
+    mapRestoreSelectionThroughDocumentChange,
     planPasteIntoTextBlock,
     shouldPasteInlineMarkdown,
     planMergeTextIntoPreviousNonText,
@@ -1452,5 +1453,42 @@ test.describe('notebook frontend helpers', () => {
         expect(withFootnote.type).toBe('paragraph')
         expect(withFootnote.children).toHaveLength(2)
         expect(withFootnote.children[1]).toEqual({ type: 'footnote', id: '1' })
+    })
+
+    test('footnote markdown round-trip parses and serializes without data loss', () => {
+        const markdown = '# Footnote Document\n\nThis is a sentence with a footnote[^1] and another[^2].\n\n[^1]: First detailed reference.\n[^2]: Second citation source.'
+        const parsed = parseMarkdownNotebook(markdown)
+        expect(parsed.footnotes).toEqual({
+            '1': 'First detailed reference.',
+            '2': 'Second citation source.',
+        })
+        const bodyParagraph = parsed.nodes.find((n) => n.type === 'paragraph') as NotebookTextBlockNode
+        expect(bodyParagraph).toBeDefined()
+        const footnoteMarks = bodyParagraph.children.flatMap((c) => (c.marks || []).filter((m) => m.type === 'footnote'))
+        expect(footnoteMarks.map((m) => m.id)).toEqual(['1', '2'])
+
+        const serialized = serializeMarkdownNotebook(parsed)
+        expect(serialized).toContain('[^1]: First detailed reference.')
+        expect(serialized).toContain('[^2]: Second citation source.')
+        expect(serialized).toContain('footnote[^1]')
+        expect(serialized).toContain('another[^2]')
+    })
+
+    test('mapRestoreSelectionThroughDocumentChange maps caret through text insertions', () => {
+        const prevDoc = parseMarkdownNotebook('Hello World')
+        const nextDoc = parseMarkdownNotebook('Hello Beautiful World')
+        const targetNode = prevDoc.nodes[0]
+        nextDoc.nodes[0].id = targetNode.id
+        const request = {
+            nodeId: targetNode.id,
+            start: 6,
+            end: 6,
+        }
+        const mapped = mapRestoreSelectionThroughDocumentChange(request, prevDoc, nextDoc)
+        expect(mapped).toEqual({
+            nodeId: targetNode.id,
+            start: 16,
+            end: 16,
+        })
     })
 })
