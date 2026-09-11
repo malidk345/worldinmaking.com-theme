@@ -185,36 +185,30 @@ export function NotebookEditorReader({
     ]
 
     return (
-        <div className="flex h-full min-h-0 flex-col">
-            {stickyHeader ? (
-                <div className="not-prose shrink-0 z-30 px-2 pt-2 pb-1 @md:px-3 @md:pt-3">
-                    <div className="notebook-topbar-glass overflow-hidden">{stickyHeader}</div>
-                </div>
-            ) : null}
-            <ReaderView
-                hideTitle
-                showQuestions={false}
-                showAbout={false}
-                hideMobileTableOfContents
-                hideAppOptions
-                hideBookmark
-                hideRightSidebar
-                padding={true}
-                className="h-full min-h-0 flex-1"
-                menuTabs={menuTabs}
-                menuTabsLayout="list"
-                rightActionButtons={
-                    chrome && onChromeChange ? (
-                        <NotebookSettingsPopover
-                            settings={chrome}
-                            onChange={onChromeChange}
-                            extra={optionsExtra}
-                        />
-                    ) : undefined
-                }
-            >
-                <div className="min-w-0 flex-1 py-2">{children}</div>
-            </ReaderView>
-        </div>
+        <ReaderView
+            hideTitle
+            showQuestions={false}
+            showAbout={false}
+            hideMobileTableOfContents
+            hideAppOptions
+            hideBookmark
+            hideRightSidebar
+            padding={true}
+            className="h-full min-h-0"
+            stickyHeader={stickyHeader}
+            menuTabs={menuTabs}
+            menuTabsLayout="list"
+            rightActionButtons={
+                chrome && onChromeChange ? (
+                    <NotebookSettingsPopover
+                        settings={chrome}
+                        onChange={onChromeChange}
+                        extra={optionsExtra}
+                    />
+                ) : undefined
+            }
+        >
+            <div className="min-w-0 flex-1 py-2">{children}</div>
+        </ReaderView>
     )
 }
