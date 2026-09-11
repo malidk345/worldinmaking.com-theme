@@ -54,3 +54,7 @@ tsconfig.tsbuildinfo
 playwright-report/
 test-results/
 scratch/
+
+# Heavy local demo captures — do not grow the git pack
+demo-video/out/
+demo-video/public/recordings/*.webm

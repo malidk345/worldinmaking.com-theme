@@ -32,7 +32,7 @@ export default async function handler(req: Request) {
             : url.searchParams.get('facetFilters')
     )
     const requestedType = facetFilters.find((filter) => filter.startsWith('type:'))?.replace('type:', '')
-    const cache = 's-maxage=120, stale-while-revalidate=300'
+    const cache = 'public, s-maxage=300, stale-while-revalidate=600'
 
     if (query.length < 2) {
         return json({ hits: [], nbHits: 0, facets: { type: {} } }, 200, cache)
