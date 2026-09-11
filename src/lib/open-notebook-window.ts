@@ -7,6 +7,7 @@ export function openNotebookWindow({
     isMobile,
     addWindow,
     updateWindow,
+    mark,
 }: {
     notebookId: string
     notebookTitle?: string
@@ -14,12 +15,16 @@ export function openNotebookWindow({
     isMobile?: boolean
     addWindow: (item: Record<string, unknown>) => void
     updateWindow: (windowItem: AppWindow, updates: Partial<AppWindow>) => void
+    mark?: 'mention' | 'comment' | string
 }): void {
-    const targetPath = `/notebooks/${notebookId}`
-    const existing = windows.find((w) => w.path === targetPath || w.key === `notebook-${notebookId}`)
+    const suffix = mark ? `?mark=${encodeURIComponent(mark)}` : ''
+    const targetPath = `/notebooks/${notebookId}${suffix}`
+    const existing = windows.find(
+        (w) => w.key === `notebook-${notebookId}` || String(w.path || '').startsWith(`/notebooks/${notebookId}`)
+    )
 
     if (existing) {
-        updateWindow(existing, { minimized: false, focused: true })
+        updateWindow(existing, { minimized: false, focused: true, path: targetPath })
         return
     }
 
