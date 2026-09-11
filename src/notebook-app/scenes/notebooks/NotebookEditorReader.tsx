@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import ReaderView, { type MenuTab } from 'components/ReaderView'
 import {
     IconClockRewind,
@@ -24,6 +24,7 @@ import type { NotebookPresencePerson } from './notebookPresence'
 import type { NotebookChromeSettings } from './notebookChromeSettings'
 import type { NotebookPublishPayload } from './NotebookShareModal'
 import { useNotebookMarkFocus } from './useNotebookMarkFocus'
+import { useMobileBlockChrome } from './useMobileBlockChrome'
 
 interface NotebookEditorReaderProps {
     markdown: string
@@ -72,6 +73,8 @@ export function NotebookEditorReader({
     stickyHeader,
 }: NotebookEditorReaderProps): JSX.Element {
     useNotebookMarkFocus(notebookId)
+    const mobileRootRef = useRef<HTMLDivElement | null>(null)
+    useMobileBlockChrome(mobileRootRef)
 
     const comments = useMemo(
         () => extractNotebookComments(currentContent || markdown),
@@ -208,7 +211,9 @@ export function NotebookEditorReader({
                 ) : undefined
             }
         >
-            <div className="min-w-0 flex-1 py-2">{children}</div>
+            <div ref={mobileRootRef} className="min-w-0 flex-1 py-2">
+                {children}
+            </div>
         </ReaderView>
     )
 }
