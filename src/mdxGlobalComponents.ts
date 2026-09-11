@@ -1,34 +1,46 @@
+import dynamic from 'next/dynamic'
+import type { ComponentType } from 'react'
 import { RainbowText } from 'components/RainbowText'
-import AboutPostHog from './components/AboutPostHog'
-import CountriesWeHireIn from './components/AMCharts/CountriesWeHireIn'
-import { ArrayCTA } from './components/ArrayCTA'
-import { BasicHedgehogImage } from './components/BasicHedgehogImage'
 import { BorderWrapper } from './components/BorderWrapper'
-import { BrandLogos } from './components/BrandLogos'
 import { CallToAction } from './components/CallToAction'
 import { Caption } from './components/Caption'
-import { CompensationCalculator } from './components/CompensationCalculator'
 import { CalloutBox } from './components/Docs/CalloutBox'
-import { DecisionTree } from './components/Docs/DecisionTree'
 import { Step, Steps } from './components/Docs/Steps'
-import { ProductChangelog } from './components/Docs/ProductChangelog'
 import { Emoji } from './components/Emoji'
-import { FormulaScreenshot } from './components/FormulaScreenshot'
-import { GDPRForm } from './components/GDPRForm'
-import ImageSlider from './components/ImageSlider'
 import Link from './components/Link'
 import OSButton from './components/OSButton'
 import { OSQuote } from './components/OSQuote'
 import { OverflowXSection } from './components/OverflowXSection'
 import { PrivateLink } from './components/PrivateLink'
-import SmallTeam from './components/SmallTeam'
 import { StarRepoButton } from './components/StarRepoButton'
-import TaskOwnershipTable from './components/TaskOwnershipTable'
-import TeamMember from './components/TeamMember'
-import WistiaEmbed from './components/WistiaEmbed'
-import PlatformInstall from './components/PlatformInstall'
 
-// Global MDX components
+const named = (load: () => Promise<Record<string, unknown>>, exportName: string, ssr = true) =>
+    dynamic(() => load().then((m) => ({ default: m[exportName] as ComponentType<any> })), {
+        ssr,
+        loading: () => null,
+    })
+
+const AboutPostHog = dynamic(() => import('./components/AboutPostHog'), { loading: () => null })
+const CountriesWeHireIn = dynamic(() => import('./components/AMCharts/CountriesWeHireIn'), {
+    ssr: false,
+    loading: () => null,
+})
+const ArrayCTA = named(() => import('./components/ArrayCTA'), 'ArrayCTA')
+const BasicHedgehogImage = named(() => import('./components/BasicHedgehogImage'), 'BasicHedgehogImage')
+const BrandLogos = named(() => import('./components/BrandLogos'), 'BrandLogos')
+const CompensationCalculator = named(() => import('./components/CompensationCalculator'), 'CompensationCalculator')
+const DecisionTree = named(() => import('./components/Docs/DecisionTree'), 'DecisionTree')
+const ProductChangelog = named(() => import('./components/Docs/ProductChangelog'), 'ProductChangelog')
+const FormulaScreenshot = named(() => import('./components/FormulaScreenshot'), 'FormulaScreenshot')
+const GDPRForm = named(() => import('./components/GDPRForm'), 'GDPRForm')
+const HiddenSection = named(() => import('./components/HiddenSection'), 'HiddenSection')
+const ImageSlider = dynamic(() => import('./components/ImageSlider'), { loading: () => null })
+const SmallTeam = dynamic(() => import('./components/SmallTeam'), { loading: () => null })
+const TaskOwnershipTable = dynamic(() => import('./components/TaskOwnershipTable'), { loading: () => null })
+const TeamMember = dynamic(() => import('./components/TeamMember'), { loading: () => null })
+const WistiaEmbed = dynamic(() => import('./components/WistiaEmbed'), { ssr: false, loading: () => null })
+const PlatformInstall = dynamic(() => import('./components/PlatformInstall'), { loading: () => null })
+
 export const shortcodes = {
     AboutPostHog,
     ArrayCTA,
@@ -44,6 +56,7 @@ export const shortcodes = {
     FormulaScreenshot,
     ImageSlider,
     GDPRForm,
+    HiddenSection,
     OverflowXSection,
     OSQuote,
     OSButton,

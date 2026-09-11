@@ -6,8 +6,7 @@ import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
 import '../components/MdxAnchorHeaders/style.css'
 import '../components/RadixUI/css/toast.css'
-import 'react-medium-image-zoom/dist/styles.css'
-import 'rc-slider/assets/index.css'
+// Zoom CSS is imported from ZoomImage (node_modules CSS is allowed outside _app).
 // Do NOT import components/LemonUI/lemon-ui.css or MarkdownNotebook.scss globally.
 // LemonScope/chat still load the full kit via ensureLemonStyles().
 // Notebook windows load the slim table+editor kit via ensureNotebookProductStyles().

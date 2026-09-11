@@ -1,51 +1,58 @@
-// AUTO GENERATED FILE
-
-import AboutPostHog from './components/AboutPostHog'
-import CountriesWeHireIn from './components/AMCharts/CountriesWeHireIn'
-import { ArrayCTA } from './components/ArrayCTA'
-import AskAIInput from './components/AskAIInput'
-import { BasicHedgehogImage } from './components/BasicHedgehogImage'
+import dynamic from 'next/dynamic'
 import { BorderWrapper } from './components/BorderWrapper'
-import { BrandLogos } from './components/BrandLogos'
 import { CallToAction } from './components/CallToAction'
 import { Caption } from './components/Caption'
-import { HearAboutUsCarousel } from './components/CardStackCarousel/HearAboutUsCarousel'
-import CloudinaryImage from './components/CloudinaryImage'
-import { CompensationCalculator } from './components/CompensationCalculator'
-import ContentViewer from './components/ContentViewer'
+import { CalloutBox } from './components/Docs/CalloutBox'
 import { Step, Steps } from './components/Docs/Steps'
-import EmbeddedSurvey from './components/Docs/EmbeddedSurvey'
-import { Drawer } from './components/Drawer'
 import { Emoji } from './components/Emoji'
-import { FormulaScreenshot } from './components/FormulaScreenshot'
-import { GDPRForm } from './components/GDPRForm'
-import { AdvisoryAnchor } from './components/Heading'
-import { HiddenSection } from './components/HiddenSection'
-import ImageSlider from './components/ImageSlider'
 import KeyboardShortcut from './components/KeyboardShortcut'
 import Link from './components/Link'
 import { List } from './components/List'
-import { LPCTA } from './components/LPCTA'
-import { MaxCTA } from './components/MaxCTA'
 import OSButton from './components/OSButton'
 import { OSQuote } from './components/OSQuote'
 import { OverflowXSection } from './components/OverflowXSection'
 import { PrivateLink } from './components/PrivateLink'
-import QuickLinks from './components/QuickLinks'
-import { Quote2 } from './components/Quote2'
 import { RainbowText } from './components/RainbowText'
-import SmallTeam from './components/SmallTeam'
 import { StarRepoButton } from './components/StarRepoButton'
-import TaskOwnershipTable from './components/TaskOwnershipTable'
-import TeamMember from './components/TeamMember'
-import { TracksCTA } from './components/TracksCTA'
-import { Tweet } from './components/Tweet'
-import { CalloutBox } from './components/Docs/CalloutBox'
-import SolvedQuestions from './components/Docs/SolvedQuestions'
-import WistiaEmbed from './components/WistiaEmbed'
+import { AdvisoryAnchor } from './components/Heading'
+import CloudinaryImage from './components/CloudinaryImage'
 import Label from './components/Label'
 
-// Deleted/stubbed components
+const named = (load, exportName, ssr = true) =>
+    dynamic(() => load().then((m) => ({ default: m[exportName] })), { ssr, loading: () => null })
+
+const AboutPostHog = dynamic(() => import('./components/AboutPostHog'), { loading: () => null })
+const CountriesWeHireIn = dynamic(() => import('./components/AMCharts/CountriesWeHireIn'), {
+    ssr: false,
+    loading: () => null,
+})
+const ArrayCTA = named(() => import('./components/ArrayCTA'), 'ArrayCTA')
+const AskAIInput = dynamic(() => import('./components/AskAIInput'), { loading: () => null })
+const BasicHedgehogImage = named(() => import('./components/BasicHedgehogImage'), 'BasicHedgehogImage')
+const BrandLogos = named(() => import('./components/BrandLogos'), 'BrandLogos')
+const HearAboutUsCarousel = named(() => import('./components/CardStackCarousel/HearAboutUsCarousel'), 'HearAboutUsCarousel')
+const CompensationCalculator = named(() => import('./components/CompensationCalculator'), 'CompensationCalculator')
+const ContentViewer = dynamic(() => import('./components/ContentViewer'), { loading: () => null })
+const EmbeddedSurvey = dynamic(() => import('./components/Docs/EmbeddedSurvey'), { loading: () => null })
+const Drawer = named(() => import('./components/Drawer'), 'Drawer')
+const FormulaScreenshot = named(() => import('./components/FormulaScreenshot'), 'FormulaScreenshot')
+const GDPRForm = named(() => import('./components/GDPRForm'), 'GDPRForm')
+const HiddenSection = dynamic(() => import('./components/HiddenSection').then((m) => ({ default: m.HiddenSection })), {
+    loading: () => null,
+})
+const ImageSlider = dynamic(() => import('./components/ImageSlider'), { loading: () => null })
+const LPCTA = named(() => import('./components/LPCTA'), 'LPCTA')
+const MaxCTA = named(() => import('./components/MaxCTA'), 'MaxCTA')
+const QuickLinks = dynamic(() => import('./components/QuickLinks'), { loading: () => null })
+const Quote2 = named(() => import('./components/Quote2'), 'Quote2')
+const SmallTeam = dynamic(() => import('./components/SmallTeam'), { loading: () => null })
+const TaskOwnershipTable = dynamic(() => import('./components/TaskOwnershipTable'), { loading: () => null })
+const TeamMember = dynamic(() => import('./components/TeamMember'), { loading: () => null })
+const TracksCTA = named(() => import('./components/TracksCTA'), 'TracksCTA')
+const Tweet = named(() => import('./components/Tweet'), 'Tweet')
+const SolvedQuestions = dynamic(() => import('./components/Docs/SolvedQuestions'), { loading: () => null })
+const WistiaEmbed = dynamic(() => import('./components/WistiaEmbed'), { ssr: false, loading: () => null })
+
 const Images = () => null
 const Snippet = () => null
 const lib = () => null
@@ -64,7 +71,6 @@ const SlackPage = () => null
 const WizardCommand = () => null
 const WizardCTA = () => null
 const Quote = () => null
-// Products sub-components stubbed
 const FAQ = () => null
 const Feature = () => null
 const Marquee = () => null

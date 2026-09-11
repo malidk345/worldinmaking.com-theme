@@ -25,11 +25,52 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
+- **Status:** `[COMPLETED by Grok]` — pass 8 leftover Explorer/Timeline + Jules PR close.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 8)
+- **Scope:** Close Jules/Bolt PR noise; drop more unused leftovers; fix repo metadata. No visual/product change.
+- **Implementation:**
+  - Closed 270 open Jules/Bolt PRs (`author:app/google-labs-jules`). Left all `malidk345` PRs open, including #530 (body says do not merge until asked) and the notebook `plan*` series.
+  - Repo description: `WorldInMaking — a desktop for writing`. Homepage: https://worldinmaking.com
+  - Deleted unused `Explorer`, `LemonProvider`, `Timeline`. Kept `src/components/LemonTable` (notebook LemonTable is the live one).
+- **Files Modified:** Explorer, LemonProvider, Timeline, AI_MEMORY. GitHub metadata + 270 PR closes.
+
+### 2026-09-11 — Grok (pass 7)
+- **Scope:** Agent-doc path fix + drop unused PostHog art-library page. No visual/product change.
+- **Implementation:**
+  - `AGENTS.md`: relative docs links (was a Windows `file:///D:/all works/posthog.com/...` path). Title no longer says posthog.com.
+  - Deleted unused `src/pages/art-library.tsx` (PostHog Vercel iframe, zero importers).
+  - Left `baa`/`dpa`/`subprocessors` — they are live Legal routes, not leftovers.
+- **Files Modified:** AGENTS.md, art-library.tsx, AI_MEMORY.
+
+### 2026-09-11 — Grok (pass 6)
+- **Scope:** More unused PostHog leftover deletion. No visual/product change.
+- **User Intent:** Continue optimization on PR 533 after Cloudflare CSS fix.
+- **Implementation:**
+  - Deleted unused component folders: Chip, CommunityCTA, HubSpotForm, Job, NoHatingAllowed, PostHogUI, ProfileStickers, Signatures, TeamMembers, TeamPatch.
+  - Deleted unused `src/templates/Changelog.tsx`.
+  - Removed unused packages `query-string` and `@dotlottie/react-player`. Dropped dead `components/PostHogUI` tsconfig path.
+- **Files Modified:** unused component folders, Changelog.tsx, package.json, pnpm-lock.yaml, tsconfig.json, LemonUI comment, AI_MEMORY.
+
+
+---
+
+## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 5)
+- **Scope:** Lazy MDX shortcodes + drop more unused PostHog leftovers. No visual/product change.
+- **User Intent:** After merging PR 531, continue unused-code deletion and speed work in a new PR. Keep the live site as-is.
+- **Implementation:**
+  - Heavy MDX shortcodes (amcharts, wistia, sliders, calculators, team, hedgehog, etc.) load via `next/dynamic` in `mdxGlobalComponents.ts` / `.js`.
+  - BlogPost / Tutorial defer TutorialsSlider, TutorialsList, NewsletterForm, BuiltBy. Restored ReaderView import.
+  - Zoom CSS (`react-medium-image-zoom`, node_modules) lives on ZoomImage. First-party HiddenSection / MdxAnchorHeaders CSS stays in `_app` — Next.js Pages Router forbids global CSS imports from components (Cloudflare/Playwright compile error). Removed unused `rc-slider` CSS.
+  - Deleted unused leftover folders: About (v2), Hub, PostCard, Cards, Blog chrome (+684KB default.jpg), Contact/index.js, Structure, Team.
+  - Removed leftover unused npm packages (Gatsby webpack loaders, rc-slider, patch-package, hast/unist leftovers, etc.).
+- **Files Modified:** mdxGlobalComponents.ts/js, BlogPost.tsx, Tutorial.tsx, ZoomImage, HiddenSection, MdxAnchorHeaders, `_app.tsx`, package.json, pnpm-lock.yaml, unused component folders.
 
 ### 2026-09-11 — Grok (pass 4)
 - **Scope:** Drop unreferenced `src/images` (~23MB PostHog marketing art) and slim leftover Vercel/Gatsby `vercel.json`. No visual/product change.
