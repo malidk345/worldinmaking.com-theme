@@ -35,22 +35,26 @@
 - **Scope:**
   1. Positioned mobile floating formatting toolbar dynamically above or below the active text selection range instead of locking/docking to the virtual keyboard or viewport bottom (`MarkdownNotebook.tsx`).
   2. Long-press mobile block action bar (up/down arrow reorder, indent, outdent, delete) now computes its position relative to the target row bounding box (`getBoundingClientRect()`), floating right above or below the pressed row clamped within viewport edges instead of docking to the bottom of the screen.
-  3. Redesigned mobile block action bar to match the unified OS liquid glass styling (`notebook-taskbar-glass.css`, `MarkdownNotebook.scss`, `notebook-mobile-block-chrome.css`):
+  3. Extracted pure positioning and viewport clamping logic to `src/notebook-app/lib/components/MarkdownNotebook/mobileBlockBarModel.ts` (`computeMobileBlockBarPosition`). Added dynamic re-docking on block movement (`moveBlockUp`/`moveBlockDown`), automatic dismissal when scrolled off-screen, and zero text-selection collisions (`clearMobileBlockBar`).
+  4. Redesigned mobile block action bar to match the unified OS liquid glass styling (`notebook-taskbar-glass.css`, `MarkdownNotebook.scss`, `notebook-mobile-block-chrome.css`):
      - Added `.MarkdownNotebook__mobile-block-bar` to `.notebook-topbar-glass` selector for `background: rgb(var(--bg) / 0.5) !important` and `backdrop-filter: blur(64px) !important`.
      - Compacted bar height to 32px with 2px padding and 1px gap, 4px border radius.
      - Reduced button size to 26px x 26px with 14px icons (matching the inline formatting toolbar), removing the 40px oversized mobile override.
-  4. Recompiled notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  5. Recompiled notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  6. Added automated unit & integration regression tests covering mobile block bar glass rules and `computeMobileBlockBarPosition` math in `tests/notebook-frontend.spec.ts`.
 - **Verification:**
   - `pnpm run typecheck:shell` — PASS, 0 gated errors.
-  - `pnpm exec playwright test tests/notebook-frontend.spec.ts` — PASS, 44 of 44 tests passed.
-  - `pnpm test:smoke` — PASS, 430 of 430 tests passed.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts` — PASS, 46 of 46 tests passed.
+  - `pnpm test:smoke` — PASS, 432 of 432 tests passed.
 - **Files Modified:**
   - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/mobileBlockBarModel.ts`
   - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
   - `src/styles/notebook-taskbar-glass.css`
   - `src/styles/notebook-mobile-block-chrome.css`
   - `src/notebook-app/styles/bundleCss.ts`
   - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
   - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Fix Notebook Deleted Content Sync Resurrection & API 403 Prevention)

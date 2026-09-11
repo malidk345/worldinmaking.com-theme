@@ -1511,5 +1511,75 @@ test.describe('notebook frontend helpers', () => {
         expect(mobileChromeContent).toContain(':not(.MarkdownNotebook__row--title)')
         expect(mobileChromeContent).toContain('outline: 1.5px solid')
     })
+
+    test('mobile block bar glass rules are unified, 32px height and 26px compact buttons', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const glassCssPath = path.join(process.cwd(), 'src/styles/notebook-taskbar-glass.css')
+        const mobileChromeCssPath = path.join(process.cwd(), 'src/styles/notebook-mobile-block-chrome.css')
+        const bundlePath = path.join(process.cwd(), 'src/notebook-app/styles/bundleCss.ts')
+
+        const glassContent = fs.readFileSync(glassCssPath, 'utf8')
+        const mobileChromeContent = fs.readFileSync(mobileChromeCssPath, 'utf8')
+        const bundleContent = fs.readFileSync(bundlePath, 'utf8')
+
+        expect(glassContent).toContain('.MarkdownNotebook__mobile-block-bar')
+        expect(glassContent).toContain('backdrop-filter: blur(64px) !important')
+        expect(glassContent).toContain('background: rgb(var(--bg) / 0.5) !important')
+
+        expect(mobileChromeContent).toContain('.MarkdownNotebook__mobile-block-bar')
+        expect(mobileChromeContent).toContain('height: 32px')
+        expect(mobileChromeContent).toContain('width: 26px')
+        expect(mobileChromeContent).toContain('height: 26px')
+
+        expect(bundleContent).toContain('MarkdownNotebook__mobile-block-bar')
+    })
+
+    test('computeMobileBlockBarPosition calculates placement, centers on mobile, and clamps correctly', () => {
+        const { computeMobileBlockBarPosition } = require('../src/notebook-app/lib/components/MarkdownNotebook/mobileBlockBarModel')
+
+        const mobileViewport = { offsetLeft: 0, offsetTop: 0, width: 375, height: 667 }
+
+        // 1. Normal block with room above -> places above
+        const posAbove = computeMobileBlockBarPosition(
+            { getBoundingClientRect: () => ({ top: 200, bottom: 250, left: 10, right: 365, width: 355, height: 50 }) },
+            { viewport: mobileViewport }
+        )
+        expect(posAbove).toEqual({
+            placement: 'above',
+            top: 200,
+            left: 188, // Math.round(375 / 2) = 188
+        })
+
+        // 2. Block at top of screen with space below -> flips below
+        const posBelow = computeMobileBlockBarPosition(
+            { getBoundingClientRect: () => ({ top: 10, bottom: 60, left: 10, right: 365, width: 355, height: 50 }) },
+            { viewport: mobileViewport }
+        )
+        expect(posBelow).toEqual({
+            placement: 'below',
+            top: 60,
+            left: 188,
+        })
+
+        // 3. Block scrolled off-screen -> returns null to dismiss
+        const posOffscreen = computeMobileBlockBarPosition(
+            { getBoundingClientRect: () => ({ top: -200, bottom: -50, left: 10, right: 365, width: 355, height: 150 }) },
+            { viewport: mobileViewport }
+        )
+        expect(posOffscreen).toBeNull()
+
+        // 4. Tablet/wide screen -> centers on row instead of entire viewport
+        const tabletViewport = { offsetLeft: 0, offsetTop: 0, width: 800, height: 600 }
+        const posTablet = computeMobileBlockBarPosition(
+            { getBoundingClientRect: () => ({ top: 250, bottom: 300, left: 100, right: 300, width: 200, height: 50 }) },
+            { viewport: tabletViewport }
+        )
+        expect(posTablet).toEqual({
+            placement: 'above',
+            top: 250,
+            left: 200, // rowCenter = 100 + 100 = 200
+        })
+    })
 })
 

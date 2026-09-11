@@ -305,6 +305,7 @@ import { useNotebookUndo } from './useNotebookUndo'
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
 export { collectFootnoteIdsFromNodes } from './useNotebookFootnotes'
+export { computeMobileBlockBarPosition, type MobileBlockBarAnchor } from './mobileBlockBarModel'
 
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
     return <MarkdownNotebookEditor {...props} />
@@ -557,11 +558,7 @@ function MarkdownNotebookEditor({
     const [invitePickerPosition, setInvitePickerPosition] = useState<InsertMenuPosition | null>(null)
     const [blockMenuNodeId, setBlockMenuNodeId] = useState<string | null>(null)
     const [mobileActiveNodeId, setMobileActiveNodeId] = useState<string | null>(null)
-    const [mobileBarAnchor, setMobileBarAnchor] = useState<{
-        top: number
-        left: number
-        placement: 'above' | 'below'
-    } | null>(null)
+    const [mobileBarAnchor, setMobileBarAnchor] = useState<MobileBlockBarAnchor | null>(null)
     const touchStartPosRef = useRef<{
         x: number
         y: number
@@ -708,6 +705,29 @@ function MarkdownNotebookEditor({
         setMobileBarAnchor(null)
     }, [])
 
+    const dockBar = useCallback((): void => {
+        if (!mobileActiveNodeId) return
+        const row = window.document.querySelector<HTMLElement>(
+            `.MarkdownNotebook__row[data-node-id="${mobileActiveNodeId}"], .MarkdownNotebook__row--mobile-active`
+        )
+        if (!row) {
+            clearMobileBlockBar()
+            return
+        }
+        const position = computeMobileBlockBarPosition(row)
+        if (!position) {
+            clearMobileBlockBar()
+            return
+        }
+        setMobileBarAnchor(position)
+    }, [mobileActiveNodeId, clearMobileBlockBar])
+
+    useLayoutEffect(() => {
+        if (mobileActiveNodeId) {
+            dockBar()
+        }
+    }, [document, mobileActiveNodeId, dockBar])
+
     useEffect(() => {
         if (!mobileActiveNodeId) return
         const handleOutsideDismiss = (e: MouseEvent | TouchEvent) => {
@@ -715,33 +735,6 @@ function MarkdownNotebookEditor({
             if (!target?.closest('.MarkdownNotebook__mobile-block-bar') && !target?.closest('.MarkdownNotebook__row--mobile-active')) {
                 clearMobileBlockBar()
             }
-        }
-        const dockBar = () => {
-            const row = window.document.querySelector<HTMLElement>(
-                `.MarkdownNotebook__row[data-node-id="${mobileActiveNodeId}"], .MarkdownNotebook__row--mobile-active`
-            )
-            if (!row) {
-                clearMobileBlockBar()
-                return
-            }
-            const vv = window.visualViewport
-            const viewTop = vv?.offsetTop ?? 0
-            const viewLeft = vv?.offsetLeft ?? 0
-            const viewWidth = vv?.width ?? window.innerWidth
-            const viewHeight = vv?.height ?? window.innerHeight
-            const margin = 8
-            const barEstimatedHeight = 36
-            const rowRect = row.getBoundingClientRect()
-            const spaceAbove = rowRect.top - viewTop
-            const spaceBelow = viewTop + viewHeight - rowRect.bottom
-            const shouldPlaceBelow = spaceAbove < barEstimatedHeight + 8 && spaceBelow >= barEstimatedHeight + 8
-            const placement: 'above' | 'below' = shouldPlaceBelow ? 'below' : 'above'
-            const top = Math.round(placement === 'above' ? rowRect.top : rowRect.bottom)
-            const rowCenter = rowRect.left + rowRect.width / 2
-            const left = Math.round(
-                Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, rowCenter))
-            )
-            setMobileBarAnchor({ top, left, placement })
         }
         const handleScrollDismiss = (event: Event) => {
             const target = event.target
@@ -766,7 +759,7 @@ function MarkdownNotebookEditor({
             window.visualViewport?.removeEventListener('resize', dockBar)
             window.visualViewport?.removeEventListener('scroll', dockBar)
         }
-    }, [mobileActiveNodeId, clearMobileBlockBar])
+    }, [mobileActiveNodeId, clearMobileBlockBar, dockBar])
 
     const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || isTitle) return
@@ -792,24 +785,12 @@ function MarkdownNotebookEditor({
                     // Ignore vibration errors
                 }
             }
-            const vv = window.visualViewport
-            const viewTop = vv?.offsetTop ?? 0
-            const viewLeft = vv?.offsetLeft ?? 0
-            const viewWidth = vv?.width ?? window.innerWidth
-            const viewHeight = vv?.height ?? window.innerHeight
-            const margin = 8
-            const barEstimatedHeight = 36
-            const rowRect = row.getBoundingClientRect()
-            const spaceAbove = rowRect.top - viewTop
-            const spaceBelow = viewTop + viewHeight - rowRect.bottom
-            const shouldPlaceBelow = spaceAbove < barEstimatedHeight + 8 && spaceBelow >= barEstimatedHeight + 8
-            const placement: 'above' | 'below' = shouldPlaceBelow ? 'below' : 'above'
-            const top = Math.round(placement === 'above' ? rowRect.top : rowRect.bottom)
-            const rowCenter = rowRect.left + rowRect.width / 2
-            const left = Math.round(
-                Math.min(viewLeft + viewWidth - margin, Math.max(viewLeft + margin, rowCenter))
-            )
-            setMobileBarAnchor({ top, left, placement })
+            const position = computeMobileBlockBarPosition(row, { touchY: y })
+            if (!position) {
+                clearMobileBlockBar()
+                return
+            }
+            setMobileBarAnchor(position)
             setMobileActiveNodeId(nodeId)
             setFloatingToolbar(null)
         }, 340)
@@ -2306,6 +2287,7 @@ function MarkdownNotebookEditor({
             const toolbarLeft = Math.round(selectionRect.left + selectionRect.width / 2)
             const lockedPosition = floatingToolbarPositionLockRef.current
 
+            clearMobileBlockBar()
             setFloatingToolbar({
                 textRanges,
                 codeRanges,
@@ -5743,7 +5725,7 @@ function MarkdownNotebookEditor({
                                     title="Add block"
                                     aria-label="Add block"
                                 >
-                                    <IconPlus className="size-4" />
+                                    <IconPlus className="size-3.5" />
                                 </button>
                             ) : null}
                             {!mobileBarIsPrompt && !mobileBarIsAIWriting && !isDiscussionCommentNode(mobileBarNode) ? (
@@ -5759,7 +5741,7 @@ function MarkdownNotebookEditor({
                                     title="Comment"
                                     aria-label="Comment"
                                 >
-                                    <IconComment className="size-4" />
+                                    <IconComment className="size-3.5" />
                                 </button>
                             ) : null}
                             {onAskAI && !mobileBarIsPrompt ? (
@@ -5775,7 +5757,7 @@ function MarkdownNotebookEditor({
                                     title="Ask AI"
                                     aria-label="Ask AI"
                                 >
-                                    <IconSparkles className="size-4 text-blue-400" />
+                                    <IconSparkles className="size-3.5 text-blue-500" />
                                 </button>
                             ) : null}
                             {mobileBarIndex > 1 ? (
@@ -5790,7 +5772,7 @@ function MarkdownNotebookEditor({
                                     title="Move up"
                                     aria-label="Move up"
                                 >
-                                    <ArrowUp className="size-4" />
+                                    <ArrowUp className="size-3.5" />
                                 </button>
                             ) : null}
                             {mobileBarIndex < renderedNodes.length - 1 ? (
@@ -5805,7 +5787,7 @@ function MarkdownNotebookEditor({
                                     title="Move down"
                                     aria-label="Move down"
                                 >
-                                    <ArrowDown className="size-4" />
+                                    <ArrowDown className="size-3.5" />
                                 </button>
                             ) : null}
                             <button
@@ -5820,7 +5802,7 @@ function MarkdownNotebookEditor({
                                 title="Duplicate"
                                 aria-label="Duplicate"
                             >
-                                <IconCopy className="size-4" />
+                                <IconCopy className="size-3.5" />
                             </button>
                             <button
                                 type="button"
@@ -5834,7 +5816,7 @@ function MarkdownNotebookEditor({
                                 title="Delete"
                                 aria-label="Delete"
                             >
-                                <IconTrash className="size-4" />
+                                <IconTrash className="size-3.5" />
                             </button>
                             <button
                                 type="button"
@@ -5847,7 +5829,7 @@ function MarkdownNotebookEditor({
                                 title="Close"
                                 aria-label="Close"
                             >
-                                <IconX className="size-4" />
+                                <IconX className="size-3.5" />
                             </button>
                         </div>
                     ) : null}

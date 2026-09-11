@@ -99,7 +99,7 @@
     .MarkdownNotebook__mobile-block-bar {
         height: 32px;
         padding: 2px 4px;
-        gap: 2px;
+        gap: 1px;
         max-width: calc(100vw - 16px);
         overflow-x: auto;
     }
