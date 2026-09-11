@@ -97,13 +97,12 @@ function padWritingFrame(frame: HTMLElement | null): void {
 function scrollRectIntoOverlay(rect: DOMRect, node: HTMLElement, inset: number, bottomGutter = 16): void {
     if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0)) return
     const delta = keyboardRevealDelta(rect, 12, overlaySafeBottom(window.innerHeight, inset, bottomGutter))
-    if (delta === 0) return
+    if (Math.abs(delta) < 8) return
     const scroller = scrollableParent(node)
     if (scroller) {
         scroller.scrollTop += delta
         return
     }
-    node.scrollIntoView({ block: 'nearest', inline: 'nearest' })
 }
 
 function keepNotebookCaretInView(inset: number): void {
@@ -142,15 +141,9 @@ function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     return target.isContentEditable
 }
 
-function resetVisualPan(vv: VisualViewport | null | undefined): void {
-    try {
-        vv?.scrollTo(0, 0)
-    } catch {
-        /* older Safari */
-    }
-    if (window.scrollX !== 0 || window.scrollY !== 0) {
-        window.scrollTo(0, 0)
-    }
+function isNotebookEditing(): boolean {
+    const active = document.activeElement
+    return Boolean(isEditableTarget(active) && active.closest(NOTEBOOK_EDITOR))
 }
 
 /** Overlay the keyboard. Keep the OS shell at layout size — no zoom, no window jump. */
@@ -160,15 +153,15 @@ export function useKeyboardInset(): void {
 
         const apply = (keepCaret = false) => {
             const vv = window.visualViewport
-            resetVisualPan(vv)
             const layoutH = window.innerHeight
             const visibleH = vv?.height ?? layoutH
             const offsetTop = vv?.offsetTop ?? 0
             const { inset, pan, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
+            const notebook = isNotebookEditing()
 
             root.style.setProperty('--keyboard-inset', `${inset}px`)
             root.style.setProperty('--vv-height', `${Math.round(visibleH)}px`)
-            root.style.setProperty('--vv-offset-top', `${pan}px`)
+            root.style.setProperty('--vv-offset-top', `${notebook ? 0 : pan}px`)
             root.style.setProperty('--app-shell-height', `${layoutH}px`)
 
             if (open) root.setAttribute('data-keyboard', 'open')
@@ -176,14 +169,13 @@ export function useKeyboardInset(): void {
 
             const focused = document.activeElement
             const active = isEditableTarget(focused) ? focused : null
-            const inNotebook = Boolean(active?.closest(NOTEBOOK_EDITOR))
             const inDock = Boolean(active?.closest(WRITING_DOCK))
 
-            if (inNotebook) root.setAttribute('data-keyboard-surface', 'notebook')
+            if (notebook) root.setAttribute('data-keyboard-surface', 'notebook')
             else if (active && open) root.setAttribute('data-keyboard-surface', 'write')
             else root.removeAttribute('data-keyboard-surface')
 
-            if (open && active && !inDock) {
+            if (open && active && !inDock && !notebook) {
                 const frame = pickWritingFrame(active, inset)
                 if (frame) padWritingFrame(frame)
                 else clearWritingPad()
@@ -191,7 +183,7 @@ export function useKeyboardInset(): void {
                 clearWritingPad()
             }
 
-            if (keepCaret && open && active) {
+            if (keepCaret && open && active && notebook) {
                 const field = active
                 requestAnimationFrame(() => revealWritingSurface(field, inset))
             }
@@ -206,38 +198,23 @@ export function useKeyboardInset(): void {
         const onFocusOut = () => {
             timers.push(window.setTimeout(() => apply(false), 0))
         }
-        let selectionRaf = 0
-        const onSelectionChange = () => {
-            if (!root.hasAttribute('data-keyboard')) return
-            if (selectionRaf) return
-            selectionRaf = requestAnimationFrame(() => {
-                selectionRaf = 0
-                const active = document.activeElement
-                if (!isEditableTarget(active) || !active.isContentEditable) return
-                const inset = Number.parseFloat(root.style.getPropertyValue('--keyboard-inset')) || 0
-                revealWritingSurface(active, inset)
-            })
-        }
 
         const applyVars = () => apply(false)
         const applyAndKeepCaret = () => apply(true)
         apply(false)
         window.visualViewport?.addEventListener('resize', applyAndKeepCaret)
         window.visualViewport?.addEventListener('scroll', applyVars)
-        window.addEventListener('resize', applyAndKeepCaret)
+        window.addEventListener('resize', applyVars)
         document.addEventListener('focusin', onFocusIn)
         document.addEventListener('focusout', onFocusOut)
-        document.addEventListener('selectionchange', onSelectionChange)
 
         return () => {
             timers.forEach((id) => window.clearTimeout(id))
-            if (selectionRaf) cancelAnimationFrame(selectionRaf)
             window.visualViewport?.removeEventListener('resize', applyAndKeepCaret)
             window.visualViewport?.removeEventListener('scroll', applyVars)
-            window.removeEventListener('resize', applyAndKeepCaret)
+            window.removeEventListener('resize', applyVars)
             document.removeEventListener('focusin', onFocusIn)
             document.removeEventListener('focusout', onFocusOut)
-            document.removeEventListener('selectionchange', onSelectionChange)
             clearWritingPad()
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')
