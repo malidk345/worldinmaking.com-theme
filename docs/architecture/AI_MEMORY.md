@@ -25,11 +25,19 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — pass 7 AGENTS.md path + dead art-library.
+- **Status:** `[COMPLETED by Grok]` — pass 8 leftover Explorer/Timeline + Jules PR close.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (pass 8)
+- **Scope:** Close Jules/Bolt PR noise; drop more unused leftovers; fix repo metadata. No visual/product change.
+- **Implementation:**
+  - Closed 270 open Jules/Bolt PRs (`author:app/google-labs-jules`). Left all `malidk345` PRs open, including #530 (body says do not merge until asked) and the notebook `plan*` series.
+  - Repo description: `WorldInMaking — a desktop for writing`. Homepage: https://worldinmaking.com
+  - Deleted unused `Explorer`, `LemonProvider`, `Timeline`. Kept `src/components/LemonTable` (notebook LemonTable is the live one).
+- **Files Modified:** Explorer, LemonProvider, Timeline, AI_MEMORY. GitHub metadata + 270 PR closes.
 
 ### 2026-09-11 — Grok (pass 7)
 - **Scope:** Agent-doc path fix + drop unused PostHog art-library page. No visual/product change.
