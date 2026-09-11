@@ -15,9 +15,10 @@ import {
     exportNotebookAsPaperMarkdown,
     downloadTextFile,
     getNotebook,
+    getNotebookWithContent,
 } from './notebookStorage'
 import { notebookFilename } from './outlineModel'
-import { exportNotebookAsPdf } from './exportNotebookPdf'
+import { exportNotebookAsPdf, printNotebook } from './exportNotebookPdf'
 import { useToast } from '../../../context/Toast'
 
 export function NotebookSettingsPanel({
@@ -132,8 +133,18 @@ export function NotebookSettingsPopover({
 
 export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX.Element {
     const [pdfBusy, setPdfBusy] = useState(false)
+    const [printBusy, setPrintBusy] = useState(false)
     const { addToast } = useToast()
     const title = () => getNotebook(notebookId)?.title || 'notebook'
+
+    const withBody = async (): Promise<Awaited<ReturnType<typeof getNotebookWithContent>>> => {
+        const notebook = await getNotebookWithContent(notebookId)
+        if (!notebook || notebook.contentOmitted) {
+            addToast({ description: 'Could not load the notebook body for export.', error: true })
+            return undefined
+        }
+        return notebook
+    }
 
     const handlePdf = async () => {
         if (pdfBusy) return
@@ -150,6 +161,17 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
         }
     }
 
+    const handlePrint = async () => {
+        if (printBusy) return
+        setPrintBusy(true)
+        try {
+            const ok = await printNotebook(notebookId)
+            if (!ok) addToast({ description: 'Could not open print preview.', error: true })
+        } finally {
+            setPrintBusy(false)
+        }
+    }
+
     return (
             <div className="flex flex-col gap-1 px-1 pb-1">
                 <h4 className="font-semibold text-muted m-0 px-1 text-sm">Export</h4>
@@ -159,11 +181,14 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
                     align="left"
                     hover="background"
                     onClick={() => {
-                        downloadTextFile(
-                            notebookFilename(title(), 'md'),
-                            exportNotebookAsMarkdown(notebookId),
-                            'text/markdown;charset=utf-8'
-                        )
+                        void withBody().then((notebook) => {
+                            if (!notebook) return
+                            downloadTextFile(
+                                notebookFilename(notebook.title || title(), 'md'),
+                                exportNotebookAsMarkdown(notebookId),
+                                'text/markdown;charset=utf-8'
+                            )
+                        })
                     }}
                 >
                     Markdown (.md)
@@ -174,11 +199,14 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
                     align="left"
                     hover="background"
                     onClick={() => {
-                        downloadTextFile(
-                            notebookFilename(title(), 'paper.md'),
-                            exportNotebookAsPaperMarkdown(notebookId),
-                            'text/markdown;charset=utf-8'
-                        )
+                        void withBody().then((notebook) => {
+                            if (!notebook) return
+                            downloadTextFile(
+                                notebookFilename(notebook.title || title(), 'paper.md'),
+                                exportNotebookAsPaperMarkdown(notebookId),
+                                'text/markdown;charset=utf-8'
+                            )
+                        })
                     }}
                 >
                     Paper (.md)
@@ -189,11 +217,14 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
                     align="left"
                     hover="background"
                     onClick={() => {
-                        downloadTextFile(
-                            notebookFilename(title(), 'json'),
-                            exportNotebookAsJSON(notebookId),
-                            'application/json;charset=utf-8'
-                        )
+                        void withBody().then((notebook) => {
+                            if (!notebook) return
+                            downloadTextFile(
+                                notebookFilename(notebook.title || title(), 'json'),
+                                exportNotebookAsJSON(notebookId),
+                                'application/json;charset=utf-8'
+                            )
+                        })
                     }}
                 >
                     JSON
@@ -210,8 +241,17 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
                 >
                     {pdfBusy ? 'Preparing PDF…' : 'PDF'}
                 </OSButton>
-                <OSButton size="sm" width="full" align="left" hover="background" onClick={() => window.print()}>
-                    Print
+                <OSButton
+                    size="sm"
+                    width="full"
+                    align="left"
+                    hover="background"
+                    disabled={printBusy}
+                    onClick={() => {
+                        void handlePrint()
+                    }}
+                >
+                    {printBusy ? 'Preparing print…' : 'Print'}
                 </OSButton>
             </div>
     )

@@ -182,13 +182,19 @@ html.dark &,
         color: #111 !important;
     }
 
+    .notebook-app-scope .MarkdownNotebook__text-group,
+    .notebook-app-scope .MarkdownNotebook__row {
+        content-visibility: visible !important;
+    }
+
     .notebook-app-scope .notebook-outline,
     .notebook-app-scope .notebook-tools-sidebar,
     .notebook-app-scope .LemonButton,
     .notebook-app-scope [class*='floating'],
     .notebook-app-scope .MarkdownNotebook__format-toolbar,
     .notebook-app-scope .MarkdownNotebook__insert-menu,
-    .notebook-app-scope .MarkdownNotebook__invite-picker {
+    .notebook-app-scope .MarkdownNotebook__invite-picker,
+    .notebook-app-scope .MarkdownNotebook__find-bar {
         display: none !important;
     }
 }

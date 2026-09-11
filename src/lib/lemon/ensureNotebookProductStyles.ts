@@ -108,6 +108,22 @@ const NOTEBOOK_TAG_CSS = `
 .MarkdownNotebook__find-btn:hover {
   background: rgb(var(--bg-accent, 0 0 0) / 0.06);
 }
+@media print {
+  .MarkdownNotebook__text-group,
+  .MarkdownNotebook__row,
+  .MarkdownNotebook__canvas > .MarkdownNotebook__text-group,
+  .MarkdownNotebook__canvas > .MarkdownNotebook__row {
+    content-visibility: visible !important;
+  }
+  .MarkdownNotebook__find-bar,
+  .MarkdownNotebook__insert-menu,
+  .MarkdownNotebook__format-toolbar,
+  .MarkdownNotebook__invite-picker,
+  .notebook-outline,
+  [data-sidebar-label] {
+    display: none !important;
+  }
+}
 `
 
 let injectCount = 0
