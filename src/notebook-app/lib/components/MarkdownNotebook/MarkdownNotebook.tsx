@@ -270,6 +270,7 @@ import {
     CommitDocumentOptions,
     EMPTY_AI_WRITING_NODE_INDEX_SET,
     MAX_TRACKED_LOCAL_SNAPSHOTS,
+    SERIALIZE_IDLE_MS,
     POINTER_INERT_LINK_CONTAINER_SELECTOR,
     buildBlockMoreMenuItems,
     canShowBlockMoreMenu,
@@ -283,6 +284,7 @@ import {
     type MarkdownNotebookProps,
     type RemoteCaretAnchor,
 } from './notebookEditorModel'
+import { NotebookFindBar, notebookNodeSearchText } from './NotebookFindBar'
 import { applyPhilosopherInviteNotes } from './inviteApply'
 import { planOpenAIPromptInsert } from './planAIPromptInsert'
 import { useNotebookClipboard } from './useNotebookClipboard'
@@ -456,6 +458,41 @@ function MarkdownNotebookEditor({
         })
     }
     const lastSerializedValueRef = useRef(value)
+    const onChangeRef = useRef(onChange)
+    onChangeRef.current = onChange
+    const serializeTimerRef = useRef<number | null>(null)
+    const [findOpen, setFindOpen] = useState(false)
+    const [findQuery, setFindQuery] = useState('')
+    const [findIndex, setFindIndex] = useState(0)
+    const findMatchNodeIds = useMemo(() => {
+        const needle = findQuery.trim().toLowerCase()
+        if (!findOpen || !needle) {
+            return [] as string[]
+        }
+        const ids: string[] = []
+        for (const node of document.nodes) {
+            if (notebookNodeSearchText(node).toLowerCase().includes(needle)) {
+                ids.push(node.id)
+            }
+        }
+        return ids
+    }, [document.nodes, findOpen, findQuery])
+
+    useEffect(() => {
+        if (!findOpen || !findMatchNodeIds.length) return
+        const safeIndex = ((findIndex % findMatchNodeIds.length) + findMatchNodeIds.length) % findMatchNodeIds.length
+        if (safeIndex !== findIndex) {
+            setFindIndex(safeIndex)
+            return
+        }
+        const nodeId = findMatchNodeIds[safeIndex]
+        const element =
+            (nodeId ? blockRefs.current[nodeId] : null) ||
+            (nodeId ? notebookRef.current?.querySelector(`[data-markdown-notebook-node-id="${nodeId}"]`) : null)
+        if (element instanceof HTMLElement) {
+            element.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }
+    }, [findIndex, findMatchNodeIds, findOpen])
     // Recent local serializations, oldest first. A remote update matching one of these is the
     // echo of our own save — already contained in the local state, so merging it back in would
     // duplicate the overlapping insertions.
@@ -599,16 +636,13 @@ function MarkdownNotebookEditor({
     })
 
     useEffect(() => {
-        if (!undoApiRef) return
-        undoApiRef.current = { undo: undoHistory, redo: redoHistory }
-        return () => {
-            undoApiRef.current = null
-        }
-    }, [redoHistory, undoApiRef, undoHistory])
-
-    useEffect(() => {
         if (value === lastSerializedValueRef.current) {
             return
+        }
+
+        if (serializeTimerRef.current !== null) {
+            window.clearTimeout(serializeTimerRef.current)
+            serializeTimerRef.current = null
         }
 
         const restoreSelectionRequest = notebookRef.current
@@ -814,6 +848,18 @@ function MarkdownNotebookEditor({
         }
     }, [])
 
+    const flushPendingMarkdown = useCallback((): string => {
+        if (serializeTimerRef.current !== null) {
+            window.clearTimeout(serializeTimerRef.current)
+            serializeTimerRef.current = null
+        }
+        const serialized = serializeMarkdownNotebook(documentRef.current)
+        lastSerializedValueRef.current = serialized
+        trackLocalSnapshot(serialized)
+        onChangeRef.current?.(serialized)
+        return serialized
+    }, [trackLocalSnapshot])
+
     const commitDocument = useCallback(
         (nextDocument: NotebookDocument, options: CommitDocumentOptions = {}): void => {
             const editableDocument = ensureEditableNotebookDocument(nextDocument)
@@ -829,19 +875,54 @@ function MarkdownNotebookEditor({
             // Rendered remote carets ride along with the text they sit in.
             mapRemoteCaretAnchors(previousDocument, editableDocument, options.remoteMergeVersion)
 
-            const serialized = serializeMarkdownNotebook(editableDocument)
             documentRef.current = editableDocument
-            lastSerializedValueRef.current = serialized
-            trackLocalSnapshot(serialized)
             setDocument(editableDocument)
-            onChange?.(serialized)
+
+            const shouldFlush = options.flush === true || options.coalesce === false
+            if (shouldFlush) {
+                flushPendingMarkdown()
+                return
+            }
+
+            if (serializeTimerRef.current !== null) {
+                window.clearTimeout(serializeTimerRef.current)
+            }
+            serializeTimerRef.current = window.setTimeout(() => {
+                serializeTimerRef.current = null
+                flushPendingMarkdown()
+            }, SERIALIZE_IDLE_MS)
         },
-        [onChange, pushHistoryEntry, mapRemoteCaretAnchors, trackLocalSnapshot]
+        [flushPendingMarkdown, pushHistoryEntry, mapRemoteCaretAnchors]
     )
     bindCommitDocument(commitDocument)
 
+    useEffect(() => {
+        if (!undoApiRef) return
+        undoApiRef.current = { undo: undoHistory, redo: redoHistory, flushPending: flushPendingMarkdown }
+        return () => {
+            undoApiRef.current = null
+        }
+    }, [flushPendingMarkdown, redoHistory, undoApiRef, undoHistory])
+
+    useEffect(() => {
+        const flush = () => {
+            flushPendingMarkdown()
+        }
+        const onVisibility = () => {
+            if (window.document.visibilityState === 'hidden') flush()
+        }
+        window.addEventListener('pagehide', flush, true)
+        window.document.addEventListener('visibilitychange', onVisibility, true)
+        return () => {
+            flush()
+            window.removeEventListener('pagehide', flush, true)
+            window.document.removeEventListener('visibilitychange', onVisibility, true)
+        }
+    }, [flushPendingMarkdown])
+
     const applyRemoteValue = useCallback(
         (nextRemoteValue: string): void => {
+            flushPendingMarkdown()
             const localMarkdown = lastSerializedValueRef.current
             const snapshotIndex =
                 nextRemoteValue === localMarkdown
@@ -917,13 +998,14 @@ function MarkdownNotebookEditor({
             commitDocument(reconciledDocument, {
                 addToHistory: false,
                 remoteMergeVersion: remoteVersionRef.current,
+                flush: true,
             })
 
             if (mergeResult.conflicts.length) {
                 onConflict?.(mergeResult.conflicts)
             }
         },
-        [commitDocument, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange]
+        [commitDocument, flushPendingMarkdown, onConflict, onCaretChange, rebaseHistoryThroughDocumentChange]
     )
 
     useEffect(() => {
@@ -5028,7 +5110,8 @@ function MarkdownNotebookEditor({
                     draggingNodeId === node.id && 'MarkdownNotebook__row--dragging',
                     inlineNotePopover?.nodeId === node.id && 'MarkdownNotebook__row--note-open',
                     isBlockMenuOpen && 'MarkdownNotebook__row--menu-open',
-                    mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active'
+                    mobileActiveNodeId === node.id && 'MarkdownNotebook__row--mobile-active',
+                    findOpen && findQuery.trim() && findMatchNodeIds[findIndex] === node.id && 'MarkdownNotebook__row--find-match'
                 )}
                 onMouseEnter={(event) => updateActiveBoundaryFromRow(event, index)}
                 onMouseMove={(event) => updateActiveBoundaryFromRow(event, index)}
@@ -5394,8 +5477,41 @@ function MarkdownNotebookEditor({
             onCopy={handleCopy}
             onCut={handleCut}
             onPaste={handleNotebookPaste}
-            onKeyDownCapture={handleNotebookKeyDown}
+            onKeyDownCapture={(event) => {
+                if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setFindOpen(true)
+                    return
+                }
+                if (findOpen && event.key === 'Escape') {
+                    event.preventDefault()
+                    setFindOpen(false)
+                    return
+                }
+                handleNotebookKeyDown(event)
+            }}
         >
+            {findOpen ? (
+                <NotebookFindBar
+                    query={findQuery}
+                    current={findMatchNodeIds.length ? findIndex + 1 : 0}
+                    total={findMatchNodeIds.length}
+                    onQueryChange={(next) => {
+                        setFindQuery(next)
+                        setFindIndex(0)
+                    }}
+                    onNext={() => {
+                        if (!findMatchNodeIds.length) return
+                        setFindIndex((index) => (index + 1) % findMatchNodeIds.length)
+                    }}
+                    onPrev={() => {
+                        if (!findMatchNodeIds.length) return
+                        setFindIndex((index) => (index - 1 + findMatchNodeIds.length) % findMatchNodeIds.length)
+                    }}
+                    onClose={() => setFindOpen(false)}
+                />
+            ) : null}
             <div className="MarkdownNotebook__debug-layout">
                 <div className="MarkdownNotebook__main" ref={mainRef} onMouseDown={handleMainMouseDown} onClick={handleMainClick}>
                     {document.errors.length ? (

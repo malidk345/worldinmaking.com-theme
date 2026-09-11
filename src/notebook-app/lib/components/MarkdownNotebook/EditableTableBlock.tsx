@@ -4,6 +4,7 @@ import {
     FormEvent,
     MutableRefObject,
     type CSSProperties,
+    memo,
     useCallback,
     useEffect,
     useLayoutEffect,
@@ -109,7 +110,7 @@ export function clampTableInsertControlCenter(center: number, start: number, ext
     return Math.min(Math.max(center, start + half), start + extent - half)
 }
 
-export function EditableTableBlock({
+function EditableTableBlockInner({
     node,
     mode,
     setBlockRef,
@@ -546,6 +547,17 @@ export function EditableTableBlock({
         </div>
     )
 }
+
+
+export const EditableTableBlock = memo(EditableTableBlockInner, (previous, next) => {
+    return (
+        previous.node === next.node &&
+        previous.mode === next.mode &&
+        previous.updateNode === next.updateNode &&
+        previous.handleSelectionChange === next.handleSelectionChange &&
+        previous.startTextSelectionPointer === next.startTextSelectionPointer
+    )
+})
 
 export function TableStructureControlButton({
     label,

@@ -3,6 +3,7 @@ import {
     FormEvent,
     MutableRefObject,
     ReactNode,
+    memo,
     useCallback,
     useLayoutEffect,
     useMemo,
@@ -22,7 +23,7 @@ import { htmlElementToInlineNodes, htmlStringToInlineNodes, inlineNodesToHtml, p
 import { NotebookBlockNode, NotebookInlineNode, NotebookListBlockNode, NotebookListItem, NotebookMode } from './types'
 import { getInlineText } from './utils'
 
-export function EditableListBlock({
+function EditableListBlockInner({
     node,
     mode,
     setBlockRef,
@@ -311,6 +312,17 @@ export function EditableListBlock({
         </div>
     )
 }
+
+
+export const EditableListBlock = memo(EditableListBlockInner, (previous, next) => {
+    return (
+        previous.node === next.node &&
+        previous.mode === next.mode &&
+        previous.updateNode === next.updateNode &&
+        previous.handleSelectionChange === next.handleSelectionChange &&
+        previous.startTextSelectionPointer === next.startTextSelectionPointer
+    )
+})
 
 export function EditableListItemContent({
     node,

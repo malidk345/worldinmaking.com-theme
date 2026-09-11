@@ -18,7 +18,7 @@ export function notebookPreviewExcerpt(content: string, max = 92): string {
 }
 
 export function notebookMatchesQuery(
-    notebook: { title?: string; content?: string; folder?: string; tags?: string[] },
+    notebook: { title?: string; content?: string; preview?: string; folder?: string; tags?: string[] },
     query: string
 ): boolean {
     const q = query.trim().toLowerCase()
@@ -26,5 +26,6 @@ export function notebookMatchesQuery(
     if ((notebook.title || '').toLowerCase().includes(q)) return true
     if ((notebook.folder || '').toLowerCase().includes(q)) return true
     if ((notebook.tags || []).some((tag) => tag.toLowerCase().includes(q.replace(/^#/, '')))) return true
-    return notebookPreviewExcerpt(notebook.content || '', 2000).toLowerCase().includes(q)
+    const haystack = notebook.preview || notebookPreviewExcerpt(notebook.content || '', 2000)
+    return haystack.toLowerCase().includes(q)
 }

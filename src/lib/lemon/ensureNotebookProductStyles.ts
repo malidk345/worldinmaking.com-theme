@@ -43,6 +43,62 @@ const NOTEBOOK_TAG_CSS = `
   --primary-foreground: #ffffff;
   --primary-rgb: 29, 78, 216;
 }
+.MarkdownNotebook__canvas > .MarkdownNotebook__text-group:not(:focus-within) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 8rem;
+}
+.MarkdownNotebook__canvas > .MarkdownNotebook__row:not(:focus-within):not(.MarkdownNotebook__row--ai-prompt) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4.5rem;
+}
+.MarkdownNotebook__row--find-match {
+  outline: 2px solid rgba(29, 78, 216, 0.55);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.MarkdownNotebook__find-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  margin: 0 0 0.5rem;
+  background: rgb(var(--bg, 255 255 255) / 0.92);
+  border: 1px solid rgb(var(--border, 0 0 0) / 0.12);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+}
+.MarkdownNotebook__find-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+.MarkdownNotebook__find-count {
+  font-size: 0.75rem;
+  color: rgb(var(--text-muted, 100 100 100));
+  white-space: nowrap;
+}
+.MarkdownNotebook__find-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.MarkdownNotebook__find-btn:hover {
+  background: rgb(var(--bg-accent, 0 0 0) / 0.06);
+}
 `
 
 let injectCount = 0

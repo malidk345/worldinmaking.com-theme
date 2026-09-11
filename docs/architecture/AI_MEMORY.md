@@ -25,11 +25,21 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Grok]` — pass 8 leftover Explorer/Timeline + Jules PR close.
+- **Status:** `[COMPLETED by Grok]` — notebook typing/list/find perf pass.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-11 — Grok (notebook typing/list/find)
+- **Scope:** Make the notebook editor cheaper to type in, slim the notebooks list, add in-notebook Cmd+F. Markdown stays source of truth. No Yjs rewrite. Did not merge stale Jules or `plan*` PRs.
+- **Implementation:**
+  - Idle serialize (`SERIALIZE_IDLE_MS` 320ms) + `flushPending` on remote merge, pagehide, unmount, autosave.
+  - Memoized text/list/code/table blocks; `content-visibility: auto` on unfocused groups.
+  - List/palette hold `preview` instead of full bodies; tasks view keeps content.
+  - Cmd+F find bar with match row highlight.
+  - Unmount/history-restore flushes are scoped by notebook id + `markdownVersion` so they cannot write the previous draft into the next notebook.
+- **Files Modified:** MarkdownNotebook.tsx, notebookEditorModel.ts, NotebookFindBar.tsx, Editable* blocks, MarkdownNotebook.scss, ensureNotebookProductStyles.ts, App.tsx, notebookStorage.ts, notebookPreview.ts, NotebooksListScene.tsx, CommandPaletteModal.tsx, README, NOTEBOOK_SAAS_ROADMAP, AI_MEMORY.
 
 ### 2026-09-11 — Grok (pass 8)
 - **Scope:** Close Jules/Bolt PR noise; drop more unused leftovers; fix repo metadata. No visual/product change.

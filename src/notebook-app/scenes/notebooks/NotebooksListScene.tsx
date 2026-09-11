@@ -14,8 +14,10 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Select } from 'components/RadixUI/Select'
 import { useToast } from '../../../context/Toast'
 import {
-    StoredNotebook,
     getNotebooks,
+    listNotebooksForBrowser,
+    toNotebookBrowserItem,
+    type NotebookBrowserItem,
     getNotebook,
     saveNotebook,
     deleteNotebook,
@@ -75,7 +77,7 @@ export function NotebooksListScene({
         mode: 'folder' | 'tag'
         value: string
     } | null>(null)
-    const [notebooks, setNotebooks] = useState<StoredNotebook[]>(() => getNotebooks())
+    const [notebooks, setNotebooks] = useState(() => listNotebooksForBrowser())
     const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
     const leavingIdsRef = useRef<Set<string>>(new Set())
     const { addToast } = useToast()
@@ -86,13 +88,14 @@ export function NotebooksListScene({
     }, [searchInput])
 
     const reloadNotebooks = useCallback(() => {
-        const live = getNotebooks()
+        const raw = getNotebooks()
+        const live = listView === 'tasks' ? raw.map((nb) => toNotebookBrowserItem(nb, true)) : raw.map((nb) => toNotebookBrowserItem(nb))
         const liveIds = new Set(live.map((nb) => nb.id))
         setNotebooks((current) => {
             const extras = current.filter((nb) => leavingIdsRef.current.has(nb.id) && !liveIds.has(nb.id))
             return extras.length ? [...live, ...extras] : live
         })
-    }, [])
+    }, [listView])
 
     useEffect(() => {
         reloadNotebooks()
@@ -111,7 +114,7 @@ export function NotebooksListScene({
         window.setTimeout(() => {
             leavingIdsRef.current.delete(id)
             setLeavingIds(new Set(leavingIdsRef.current))
-            setNotebooks(getNotebooks())
+            setNotebooks(listView === 'tasks' ? getNotebooks().map((nb) => toNotebookBrowserItem(nb, true)) : listNotebooksForBrowser())
             addToast({ description: `“${title}” deleted` })
         }, 240)
     }
@@ -121,7 +124,7 @@ export function NotebooksListScene({
         reloadNotebooks()
     }
 
-    const handleExportJSON = (notebook: StoredNotebook) => {
+    const handleExportJSON = (notebook: NotebookBrowserItem) => {
         const jsonStr = exportNotebookAsJSON(notebook.id)
         const blob = new Blob([jsonStr], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -132,7 +135,7 @@ export function NotebooksListScene({
         URL.revokeObjectURL(url)
     }
 
-    const handleExportMd = (notebook: StoredNotebook) => {
+    const handleExportMd = (notebook: NotebookBrowserItem) => {
         const md = exportNotebookAsMarkdown(notebook.id)
         const blob = new Blob([md], { type: 'text/markdown' })
         const url = URL.createObjectURL(blob)
@@ -173,8 +176,8 @@ export function NotebooksListScene({
     const dailyDates = notebooks
         .filter((notebook) => notebook.kind === 'daily' && notebook.dailyDate)
         .map((notebook) => notebook.dailyDate as string)
-    const allTasks = collectNotebookTasks(notebooks)
-    const tasks = collectNotebookTasks(filteredNotebooks)
+    const allTasks = collectNotebookTasks(getNotebooks())
+    const tasks = collectNotebookTasks(listView === 'tasks' ? filteredNotebooks : [])
     const taskGroups = groupNotebookTasks(tasks)
     const openTaskCount = allTasks.filter((task) => !task.done).length
 
@@ -227,7 +230,7 @@ export function NotebooksListScene({
         reloadNotebooks()
     }
 
-    const handlePinToDesktop = (notebook: StoredNotebook) => {
+    const handlePinToDesktop = (notebook: NotebookBrowserItem) => {
         try {
             const customAppsKey = 'wim_os_desktop_pinned_items'
             const existing = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
@@ -257,13 +260,13 @@ export function NotebooksListScene({
         }
     }
 
-    const columns: LemonTableColumns<StoredNotebook> = [
+    const columns: LemonTableColumns<NotebookBrowserItem> = [
         {
             title: 'Title',
             dataIndex: 'title' as any,
             key: 'title',
             width: '100%',
-            render: function RenderTitle(_: any, notebook: StoredNotebook) {
+            render: function RenderTitle(_: any, notebook: NotebookBrowserItem) {
                 return (
                     <div className="flex flex-wrap items-center gap-1.5">
                     <a
@@ -320,19 +323,19 @@ export function NotebooksListScene({
                     </div>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+            sorter: (a: NotebookBrowserItem, b: NotebookBrowserItem) =>
                 (a.title ?? 'Untitled').localeCompare(b.title ?? 'Untitled'),
         },
         {
             title: 'Created by',
             key: 'created_by',
-            render: function RenderCreatedBy(_: any, notebook: StoredNotebook) {
+            render: function RenderCreatedBy(_: any, notebook: NotebookBrowserItem) {
                 const faces = notebook.isTemplate
                     ? [{ key: 'wim', name: 'WIM', role: 'author' as const }]
                     : collectLocalNotebookFaces({
                           createdBy: notebook.created_by || { first_name: 'You' },
                           lastModifiedBy: notebook.last_modified_by,
-                          markdown: notebook.content,
+                          markdown: notebook.content || notebook.preview || '',
                       })
                 const lead = faces[0]
                 return (
@@ -347,7 +350,7 @@ export function NotebooksListScene({
             title: 'Created',
             key: 'createdAt',
             align: 'right',
-            render: function RenderCreated(_: any, notebook: StoredNotebook) {
+            render: function RenderCreated(_: any, notebook: NotebookBrowserItem) {
                 return (
                     <div className="whitespace-nowrap text-right">
                         <span
@@ -359,14 +362,14 @@ export function NotebooksListScene({
                     </div>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+            sorter: (a: NotebookBrowserItem, b: NotebookBrowserItem) =>
                 new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         },
         {
             title: 'Last modified',
             key: 'updatedAt',
             align: 'right',
-            render: function RenderModified(_: any, notebook: StoredNotebook) {
+            render: function RenderModified(_: any, notebook: NotebookBrowserItem) {
                 return (
                     <div className="whitespace-nowrap text-right">
                         <span
@@ -378,13 +381,13 @@ export function NotebooksListScene({
                     </div>
                 )
             },
-            sorter: (a: StoredNotebook, b: StoredNotebook) =>
+            sorter: (a: NotebookBrowserItem, b: NotebookBrowserItem) =>
                 new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(),
         },
         {
             title: '',
             key: 'actions',
-            render: function RenderActions(_: any, notebook: StoredNotebook) {
+            render: function RenderActions(_: any, notebook: NotebookBrowserItem) {
                 if (notebook.isTemplate) {
                     return null
                 }

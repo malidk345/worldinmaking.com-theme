@@ -61,7 +61,9 @@ The component receives two props: `value` (the local content owned by the caller
 - `lastSerializedValueRef` — the last markdown emitted through `onChange`
 - `lastBaseValueRef` — the last server state local edits were derived from; this is always a server-side value, never a local or merged one, since it is the common ancestor for the next three-way merge
 
-When `remoteValue` changes it is merged with `mergeNotebookMarkdownChanges({ base, local, remote })`, and the merged document is committed without touching the merge base (the merge result still contains unsaved local changes). When `remoteValue` catches up with the local serialization (autosave echo), the component is fully synced; undo history is intentionally preserved in that case.
+Typing commits update the in-memory `NotebookDocument` immediately. `serializeMarkdownNotebook` + `onChange` wait for 320ms of idle (`SERIALIZE_IDLE_MS`), a structural `coalesce: false` commit, remote merge, `pagehide` / `visibilitychange`, or unmount. `undoApiRef.flushPending()` lets the app serialize immediately before autosave. Incoming `value` changes cancel the idle timer without emitting, so a remount cannot write the previous notebook's draft into the next one.
+
+When `remoteValue` changes it is merged with `mergeNotebookMarkdownChanges({ base, local, remote })` after flushing any pending serialize, and the merged document is committed without touching the merge base (the merge result still contains unsaved local changes). When `remoteValue` catches up with the local serialization (autosave echo), the component is fully synced; undo history is intentionally preserved in that case.
 
 Save conflicts (HTTP 409) are resolved through the same path: `notebookLogic` reloads the fresh server content, which flows in as `remoteValue`, the editor merges and re-emits, and the save is retried against the new version.
 

@@ -37,10 +37,10 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[PACKAGES A–C COMPLETE]` + human notebook invites
-- **Last Model Action:** Human multi-writer invites shipped by Grok 4.6. Share modal invites by username/email or link; collaborators write through the existing markdown merge + presence; viewers are read-only. Philosopher invite-to-comment is unchanged.
+- **Current Status:** `[PACKAGES A–C COMPLETE]` + typing perf pass
+- **Last Model Action:** Grok 4.6 — idle serialize (320ms), memoized blocks, content-visibility, slim list rows, Cmd+F. Did not start a Yjs rewrite. Open `plan*` PRs (#511–#519) still extract more editor plans; merge when rebase-clean.
 - **Instruction for Next AI Agent:**
-  > Optional follow-ups: comment @mentions, PDF export, more invite bots. Do not start a Yjs rewrite.
+  > Optional follow-ups: comment @mentions, paste-image polish, PDF export. Do not start a Yjs rewrite. Do not merge stale Jules Bolt PRs.
 
 ---
 

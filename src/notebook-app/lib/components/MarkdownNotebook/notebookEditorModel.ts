@@ -54,6 +54,7 @@ export type MarkdownNotebookProps = {
 export type MarkdownNotebookUndoApi = {
     undo: () => boolean
     redo: () => boolean
+    flushPending: () => string
 }
 
 export type MarkdownNotebookAskAIRequest = {
@@ -79,6 +80,8 @@ export type CommitDocumentOptions = {
     historyOperations?: NotebookOperation[]
     remoteMergeVersion?: number
     coalesce?: boolean
+    /** Serialize markdown and notify `onChange` immediately (remote merge, blur, unmount). */
+    flush?: boolean
 }
 
 export type RemoteCaretAnchor = {
@@ -103,6 +106,7 @@ export const POINTER_INERT_LINK_CONTAINER_SELECTOR =
     '.MarkdownNotebook__text-block[contenteditable="true"], .MarkdownNotebook__list-block[contenteditable="true"], .MarkdownNotebook__table-cell-content[contenteditable="true"]'
 
 export const UNDO_TYPING_GROUP_MS = 1000
+export const SERIALIZE_IDLE_MS = 320
 export const MAX_TRACKED_LOCAL_SNAPSHOTS = 100
 export const EMPTY_AI_WRITING_NODE_INDEX_SET = new Set<number>()
 

@@ -219,6 +219,7 @@ export function App() {
     saveInFlightRef.current = true
     let didSave = false
     try {
+      editorUndoRef.current?.flushPending?.()
       do {
         saveQueuedRef.current = false
         const current = notebookRef.current
@@ -811,6 +812,31 @@ export function App() {
     []
   )
 
+  const editorGenerationRef = useRef({ id: '', version: 0 })
+  if (currentNotebook) {
+    editorGenerationRef.current = { id: currentNotebook.id, version: markdownVersion }
+  }
+
+  const handleMarkdownChange = useCallback((notebookId: string, editorVersion: number, val: string) => {
+    const live = editorGenerationRef.current
+    if (live.id === notebookId && live.version === editorVersion) {
+      const current = notebookRef.current
+      if (current && !canWriteNotebook(current.access_role)) return
+      markdownRef.current = val
+      setMarkdown(val)
+      const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
+      if (heading) setTitle(heading)
+      return
+    }
+    if (live.id === notebookId) {
+      return
+    }
+    const previous = getNotebook(notebookId)
+    if (!previous || !canWriteNotebook(previous.access_role) || previous.content === val) return
+    const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
+    saveNotebook({ ...previous, content: val, ...(heading ? { title: heading } : {}) })
+  }, [])
+
   useEffect(() => {
     setOutlineMarkdown(markdown)
   }, [currentNotebook?.id])
@@ -985,12 +1011,7 @@ export function App() {
                       onUndoStateChange={setTextHistory}
                       mode={canWriteNotebook(currentNotebook.access_role) ? 'edit' : 'view'}
                       focusAIPromptRequest={aiPromptRequest}
-                      onChange={(val) => {
-                        if (!canWriteNotebook(currentNotebook.access_role)) return
-                        setMarkdown(val)
-                        const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
-                        if (heading) setTitle(heading)
-                      }}
+                      onChange={(val) => handleMarkdownChange(currentNotebook.id, markdownVersion, val)}
                       onAskAI={canWriteNotebook(currentNotebook.access_role) ? handleNotebookAskAI : undefined}
                       isAskAIDisabled={isAskAIBusy || !canWriteNotebook(currentNotebook.access_role)}
                       extraInsertCommands={extraCommands}

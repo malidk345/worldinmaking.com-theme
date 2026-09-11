@@ -4,6 +4,7 @@ import {
     FormEvent,
     KeyboardEvent,
     MutableRefObject,
+    memo,
     useCallback,
     useLayoutEffect,
     useMemo,
@@ -44,7 +45,7 @@ import { NotebookBlockNode, NotebookInlineNode, NotebookMode, NotebookTextBlockN
 import { getInlineText, normalizeInlineNodes } from './utils'
 import { NOTEBOOK_AI_WRITING_PLACEHOLDER } from './notebookAI'
 
-export function EditableTextBlock({
+function EditableTextBlockInner({
     node,
     isTitleBlock,
     mode,
@@ -666,3 +667,24 @@ export function EditableTextBlock({
         </div>
     )
 }
+
+
+export const EditableTextBlock = memo(EditableTextBlockInner, (previous, next) => {
+    return (
+        previous.node === next.node &&
+        previous.isTitleBlock === next.isTitleBlock &&
+        previous.mode === next.mode &&
+        previous.placeholder === next.placeholder &&
+        previous.showInlineInsertMenuButton === next.showInlineInsertMenuButton &&
+        previous.isInlineInsertMenuButtonVisible === next.isInlineInsertMenuButtonVisible &&
+        previous.isInsertMenuOpen === next.isInsertMenuOpen &&
+        previous.insertMenuMode === next.insertMenuMode &&
+        previous.hasInvalidInsertMenuQuery === next.hasInvalidInsertMenuQuery &&
+        previous.isAIWriting === next.isAIWriting &&
+        previous.isAIWritingPlaceholder === next.isAIWritingPlaceholder &&
+        previous.isAIShimmering === next.isAIShimmering &&
+        previous.updateNode === next.updateNode &&
+        previous.handleSelectionChange === next.handleSelectionChange &&
+        previous.startTextSelectionPointer === next.startTextSelectionPointer
+    )
+})
