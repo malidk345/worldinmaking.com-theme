@@ -2,6 +2,7 @@ import { AppProps } from 'next/app'
 import '../styles/global.css'
 import '../styles/notebook-taskbar-glass.css'
 import '../styles/taskbar-keyboard-lock.css'
+import '../styles/notebook-mobile-block-chrome.css'
 import '../components/HiddenSection/style.css'
 import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
@@ -57,7 +58,6 @@ export default function App({ Component, pageProps }: AppProps) {
         }
     }, [router.events])
 
-    // Initialize PostHog client analytics and track SPA pageviews
     React.useEffect(() => {
         initPostHog()
         trackPageView()
@@ -100,8 +100,6 @@ export default function App({ Component, pageProps }: AppProps) {
         }
     }, [router?.asPath])
 
-    // Pages that set `Component.noLayout = true` render without the standard wrapper
-    // so full-screen embeds (e.g. /notebooks) can fill the entire viewport.
     const isNotFound = !!(Component as { isWimNotFound?: boolean }).isWimNotFound
 
     if ((Component as any).noLayout) {

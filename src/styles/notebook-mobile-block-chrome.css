@@ -1,0 +1,58 @@
+@media (hover: none), (pointer: coarse) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome,
+    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active .MarkdownNotebook__block-chrome,
+    .MarkdownNotebook--edit .MarkdownNotebook__row--menu-open .MarkdownNotebook__block-chrome {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook--edit .MarkdownNotebook__block-more-btn {
+        display: inline-flex !important;
+        width: 2rem;
+        height: 2rem;
+        opacity: 0.92 !important;
+        pointer-events: auto !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__mobile-insert-chip {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        margin: 0.35rem auto 0.1rem;
+        opacity: 0.95 !important;
+        pointer-events: auto !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within .MarkdownNotebook__block-chrome {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__block-comment-btn,
+    .MarkdownNotebook--edit .MarkdownNotebook__block-more-btn {
+        display: inline-flex !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__mobile-insert-chip {
+        display: inline-flex !important;
+        pointer-events: auto !important;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__insert-boundary:last-child {
+        display: block !important;
+        min-height: 1.75rem;
+    }
+
+    .MarkdownNotebook--edit .MarkdownNotebook__insert-boundary:last-child .MarkdownNotebook__insert-boundary-button {
+        display: inline-flex !important;
+        opacity: 0.8 !important;
+        pointer-events: auto !important;
+    }
+}
