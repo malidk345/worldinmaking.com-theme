@@ -384,9 +384,9 @@ html.dark .MarkdownNotebook,
 }
 
 /* Focused row frame: when inside a block (cursor in text or mobile active), show the frame outline on desktop & mobile */
-.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
     background: transparent;
     outline: 1.5px solid var(--color-border-primary, rgb(var(--border, 191 193 183)));
     outline-color: var(--color-border-primary, rgb(var(--border, 191 193 183)));
@@ -397,11 +397,23 @@ html.dark .MarkdownNotebook,
 
 .MarkdownNotebook__blockquote-group .MarkdownNotebook__row,
 .MarkdownNotebook__code-group .MarkdownNotebook__row,
+.MarkdownNotebook__row--component,
+.MarkdownNotebook__row--table,
 .MarkdownNotebook__row:has(.MarkdownNotebook__component-shell),
 .MarkdownNotebook__row--ai-prompt {
     background: transparent;
-    outline-color: transparent;
-    box-shadow: none;
+    outline: none !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.MarkdownNotebook__row--component .MarkdownNotebook__mobile-insert-chip,
+.MarkdownNotebook__row--table .MarkdownNotebook__mobile-insert-chip,
+.MarkdownNotebook__row--component + .MarkdownNotebook__insert-boundary .MarkdownNotebook__insert-boundary-button,
+.MarkdownNotebook__row--table + .MarkdownNotebook__insert-boundary .MarkdownNotebook__insert-boundary-button {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

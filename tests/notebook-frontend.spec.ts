@@ -1654,5 +1654,35 @@ test.describe('notebook frontend helpers', () => {
         expect(Number.isFinite(posZero.top)).toBe(true)
         expect(Number.isFinite(posZero.left)).toBe(true)
     })
+
+    test('component and table rows are exempt from block outline frames and plus buttons', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const bundlePath = path.join(process.cwd(), 'src/notebook-app/styles/bundleCss.ts')
+        const mobileChromeCssPath = path.join(process.cwd(), 'src/styles/notebook-mobile-block-chrome.css')
+        const notebookPath = path.join(process.cwd(), 'src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx')
+
+        const bundleContent = fs.readFileSync(bundlePath, 'utf8')
+        const mobileChromeContent = fs.readFileSync(mobileChromeCssPath, 'utf8')
+        const notebookContent = fs.readFileSync(notebookPath, 'utf8')
+
+        // Bundle CSS has explicit outline exclusion for component and table rows
+        expect(bundleContent).toContain(':not(.MarkdownNotebook__row--component)')
+        expect(bundleContent).toContain(':not(.MarkdownNotebook__row--table)')
+        expect(bundleContent).toContain('.MarkdownNotebook__row--component')
+        expect(bundleContent).toContain('outline: none !important')
+
+        // Mobile block chrome CSS has outline exclusion and plus button suppression
+        expect(mobileChromeContent).toContain(':not(.MarkdownNotebook__row--component)')
+        expect(mobileChromeContent).toContain(':not(.MarkdownNotebook__row--table)')
+        expect(mobileChromeContent).toContain('.MarkdownNotebook--edit .MarkdownNotebook__row--component')
+        expect(mobileChromeContent).toContain('.MarkdownNotebook--edit .MarkdownNotebook__row--component .MarkdownNotebook__mobile-insert-chip')
+        expect(mobileChromeContent).toContain('display: none !important')
+
+        // MarkdownNotebook adds row--component and row--component-<tag> classes and prevents mobile-insert-chip on components
+        expect(notebookContent).toContain("node.type === 'component' && 'MarkdownNotebook__row--component'")
+        expect(notebookContent).toContain("node.type !== 'component' &&")
+        expect(notebookContent).toContain("node.type !== 'table' &&")
+    })
 })
 

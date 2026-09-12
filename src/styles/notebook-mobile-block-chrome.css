@@ -86,18 +86,39 @@
 }
 
 /* Block frame outline: clearly visible when inside a block on mobile & touch devices */
-.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
     outline: 1.5px solid var(--color-border-primary, rgb(var(--border, 191 193 183))) !important;
     outline-offset: -1.5px !important;
     border-radius: 0.375rem !important;
 }
 
-.dark .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.dark .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
-.dark .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
     outline-color: var(--color-border-primary, #3e424f) !important;
+}
+
+.MarkdownNotebook--edit .MarkdownNotebook__row--component,
+.MarkdownNotebook--edit .MarkdownNotebook__row--component:focus-within,
+.MarkdownNotebook--edit .MarkdownNotebook__row--component.MarkdownNotebook__row--focused,
+.MarkdownNotebook--edit .MarkdownNotebook__row--component.MarkdownNotebook__row--mobile-active,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table:focus-within,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table.MarkdownNotebook__row--focused,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table.MarkdownNotebook__row--mobile-active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.MarkdownNotebook--edit .MarkdownNotebook__row--component .MarkdownNotebook__mobile-insert-chip,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table .MarkdownNotebook__mobile-insert-chip,
+.MarkdownNotebook--edit .MarkdownNotebook__row--component + .MarkdownNotebook__insert-boundary .MarkdownNotebook__insert-boundary-button,
+.MarkdownNotebook--edit .MarkdownNotebook__row--table + .MarkdownNotebook__insert-boundary .MarkdownNotebook__insert-boundary-button {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 @media (pointer: coarse), (max-width: 640px) {

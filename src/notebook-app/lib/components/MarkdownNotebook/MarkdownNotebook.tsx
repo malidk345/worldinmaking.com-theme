@@ -5173,6 +5173,9 @@ function MarkdownNotebookEditor({
                 className={clsx(
                     'MarkdownNotebook__row',
                     isTitleRow && 'MarkdownNotebook__row--title',
+                    node.type === 'component' && 'MarkdownNotebook__row--component',
+                    node.type === 'component' && `MarkdownNotebook__row--component-${node.tagName.toLowerCase()}`,
+                    node.type === 'table' && 'MarkdownNotebook__row--table',
                     focusedRowIndex === index && 'MarkdownNotebook__row--focused',
                     isInsertMenuOpen && 'MarkdownNotebook__row--insert-menu-open',
                     isAIPromptOpen && 'MarkdownNotebook__row--ai-prompt',
@@ -5325,210 +5328,212 @@ function MarkdownNotebookEditor({
                         ) : null}
                     </div>
                 ) : null}
-                {dropIndicatorTarget?.index === index ? (
-                    <div
-                        className={clsx(
-                            'MarkdownNotebook__drop-indicator',
-                            dropIndicatorTarget.position === 'after' && 'MarkdownNotebook__drop-indicator--after'
-                        )}
-                        contentEditable={false}
-                    />
-                ) : null}
-                    {renderNode({
-                    node,
-                    nodeIndex: index,
-                    mode: nodeMode,
-                    placeholder: isTitleRow
-                        ? NOTEBOOK_TITLE_PLACEHOLDER
-                        : isToolInsertMenuOpen
-                          ? INSERT_MENU_PLACEHOLDER
-                          : isAIPromptOpen
-                            ? ''
-                            : node.type === 'heading'
-                              ? `Heading ${node.level ?? 1}`
-                              : node.type === 'blockquote'
-                                ? 'Quote'
-                                : node.id === placeholderNodeId
-                                  ? placeholder
-                                  : undefined,
-                    registry: mergedRegistry,
-                    componentPanels: nodeComponentPanels,
-                    rememberedComponentPanels: componentPanelCacheEntry?.remembered,
-                    persistComponentPanelVisibility,
-                    allowViewModeFilters,
-                    isSelected: selectedComponentNodeIds.has(node.id),
-                    toggleComponentPanel: (panel) => {
-                        const nextPanels = {
-                            ...nodeComponentPanels,
-                            [panel]: !nodeComponentPanels[panel],
+            {dropIndicatorTarget?.index === index ? (
+                <div
+                    className={clsx(
+                        'MarkdownNotebook__drop-indicator',
+                        dropIndicatorTarget.position === 'after' && 'MarkdownNotebook__drop-indicator--after'
+                    )}
+                    contentEditable={false}
+                />
+            ) : null}
+            {renderNode({
+                node,
+                nodeIndex: index,
+                mode: nodeMode,
+                placeholder: isTitleRow
+                    ? NOTEBOOK_TITLE_PLACEHOLDER
+                    : isToolInsertMenuOpen
+                      ? INSERT_MENU_PLACEHOLDER
+                      : isAIPromptOpen
+                        ? ''
+                        : node.type === 'heading'
+                          ? `Heading ${node.level ?? 1}`
+                          : node.type === 'blockquote'
+                            ? 'Quote'
+                            : node.id === placeholderNodeId
+                              ? placeholder
+                              : undefined,
+                registry: mergedRegistry,
+                componentPanels: nodeComponentPanels,
+                rememberedComponentPanels: componentPanelCacheEntry?.remembered,
+                persistComponentPanelVisibility,
+                allowViewModeFilters,
+                isSelected: selectedComponentNodeIds.has(node.id),
+                toggleComponentPanel: (panel) => {
+                    const nextPanels = {
+                        ...nodeComponentPanels,
+                        [panel]: !nodeComponentPanels[panel],
+                    }
+
+                    if (!persistComponentPanelVisibility) {
+                        setLocalComponentPanels(node.id, nextPanels)
+                        return
+                    }
+
+                    updateNode(node.id, (currentNode) => {
+                        if (currentNode.type !== 'component') {
+                            return currentNode
                         }
 
-                        if (!persistComponentPanelVisibility) {
-                            setLocalComponentPanels(node.id, nextPanels)
-                            return
-                        }
-
-                        updateNode(node.id, (currentNode) => {
-                            if (currentNode.type !== 'component') {
-                                return currentNode
-                            }
-
-                            return withPersistedComponentPanelProps(currentNode, componentDefinition, nextPanels)
-                        })
-                    },
-                    setLocalComponentPanels,
-                    rememberComponentPanels,
-                    setBlockRef: (element) => {
-                        if (element) {
-                            blockRefs.current[node.id] = element
-                        } else if (!blockRefs.current[node.id]?.isConnected) {
-                            delete blockRefs.current[node.id]
-                        }
-                    },
-                    setListItemRef: (itemIndex, itemId, element) => {
-                        listItemRefs.current[getListItemRefKey(node.id, itemIndex)] = element
-                        if (itemId) {
-                            listItemRefs.current[getListItemRefKey(node.id, itemId)] = element
-                        }
-                    },
-                    setTableCellRef: (position, element) => {
-                        tableCellRefs.current[getTableCellRefKey(node.id, position)] = element
-                    },
-                    updateNode,
-                    replaceNodeWithNodes,
-                    deleteNode: () => deleteNodeWithRefCleanup(node.id),
-                    deleteNodeAndFocusAdjacent: () => deleteNodeAndFocusAdjacent(node.id),
-                    acceptAISelection: () => {
-                        aiSelectionReviewRef.current = null
-                        deleteNodeAndFocusAdjacent(node.id)
-                    },
-                    rejectAISelection: () => {
-                        const review = aiSelectionReviewRef.current
-                        if (review && review.promptNodeId === node.id) {
-                            replaceInlineRangeInNode(
-                                review.targetNodeId,
-                                review.start,
-                                review.start + review.pendingText.length,
-                                review.originalText,
-                                review.listItemIndex
-                            )
-                        }
-                        aiSelectionReviewRef.current = null
-                        deleteNodeAndFocusAdjacent(node.id)
-                    },
-                    deleteNodeAndFocusPrevious,
-                    deleteSelectedNotebookBlocks,
-                    insertParagraphAfterNode: () => insertEmptyParagraphAfterNode(node.id),
-                    deleteNodeBefore,
-                    moveFocusToAdjacentNode,
-                    openInsertMenu: (query = '') => openInsertMenu(node.id, query),
-                    openSlashMenuAtToken: (token, children) => {
-                        if (!isTextBlockNode(node)) {
-                            return false
-                        }
-                        const caret = token.start + 1 + token.query.length
-                        const slashPlan = planTextBlockTypedSlash(
-                            node,
-                            index,
-                            children,
-                            caret,
-                            insertMenu?.nodeId
+                        return withPersistedComponentPanelProps(currentNode, componentDefinition, nextPanels)
+                    })
+                },
+                setLocalComponentPanels,
+                rememberComponentPanels,
+                setBlockRef: (element) => {
+                    if (element) {
+                        blockRefs.current[node.id] = element
+                    } else if (!blockRefs.current[node.id]?.isConnected) {
+                        delete blockRefs.current[node.id]
+                    }
+                },
+                setListItemRef: (itemIndex, itemId, element) => {
+                    listItemRefs.current[getListItemRefKey(node.id, itemIndex)] = element
+                    if (itemId) {
+                        listItemRefs.current[getListItemRefKey(node.id, itemId)] = element
+                    }
+                },
+                setTableCellRef: (position, element) => {
+                    tableCellRefs.current[getTableCellRefKey(node.id, position)] = element
+                },
+                updateNode,
+                replaceNodeWithNodes,
+                deleteNode: () => deleteNodeWithRefCleanup(node.id),
+                deleteNodeAndFocusAdjacent: () => deleteNodeAndFocusAdjacent(node.id),
+                acceptAISelection: () => {
+                    aiSelectionReviewRef.current = null
+                    deleteNodeAndFocusAdjacent(node.id)
+                },
+                rejectAISelection: () => {
+                    const review = aiSelectionReviewRef.current
+                    if (review && review.promptNodeId === node.id) {
+                        replaceInlineRangeInNode(
+                            review.targetNodeId,
+                            review.start,
+                            review.start + review.pendingText.length,
+                            review.originalText,
+                            review.listItemIndex
                         )
-                        if (slashPlan?.type === 'same-node') {
-                            const element = blockRefs.current[node.id]
-                            const nextHtml = inlineNodesToHtml(slashPlan.children, documentRef.current.annotations)
-                            rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
-                            if (element && element.innerHTML !== nextHtml) {
-                                element.innerHTML = nextHtml
-                            }
-                            updateNode(node.id, (currentNode) =>
-                                isTextBlockNode(currentNode)
-                                    ? { ...currentNode, children: slashPlan.children }
-                                    : currentNode
-                            )
-                            beginSlashInsertMenu(node.id, slashPlan.query, { caret })
-                            return true
-                        }
-                        if (slashPlan?.type === 'split') {
-                            const element = blockRefs.current[node.id]
-                            const nextHtml = inlineNodesToHtml(children, documentRef.current.annotations)
-                            rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
-                            if (element && element.innerHTML !== nextHtml) {
-                                element.innerHTML = nextHtml
-                            }
-                            updateNode(node.id, (currentNode) =>
-                                isTextBlockNode(currentNode)
-                                    ? { ...currentNode, children }
-                                    : currentNode
-                            )
-                            beginSlashInsertMenu(node.id, slashPlan.query, { caret })
-                            return true
-                        }
+                    }
+                    aiSelectionReviewRef.current = null
+                    deleteNodeAndFocusAdjacent(node.id)
+                },
+                deleteNodeAndFocusPrevious,
+                deleteSelectedNotebookBlocks,
+                insertParagraphAfterNode: () => insertEmptyParagraphAfterNode(node.id),
+                deleteNodeBefore,
+                moveFocusToAdjacentNode,
+                openInsertMenu: (query = '') => openInsertMenu(node.id, query),
+                openSlashMenuAtToken: (token, children) => {
+                    if (!isTextBlockNode(node)) {
                         return false
-                    },
-                    openDetachedInsertMenu: () => openDetachedInsertMenuFromNode(node.id),
-                    updateAIPromptQuery: (query) => updateAIPromptQuery(node.id, query),
-                    closeInsertMenu: clearInsertMenu,
-                    moveInsertMenuSelection: (direction) => {
-                        setInsertMenu((currentMenu) => {
-                            if (!currentMenu || currentMenu.nodeId !== node.id) {
-                                return currentMenu
-                            }
-
-                            return {
-                                ...currentMenu,
-                                selectedIndex: getNextInsertMenuSelectedIndex(
-                                    currentMenu.selectedIndex,
-                                    getFilteredInsertCommands(
-                                        insertCommands,
-                                        currentMenu.query,
-                                        getTargetNodeInsertContext(currentMenu.nodeId)
-                                    ).length,
-                                    direction
-                                ),
-                            }
-                        })
-                    },
-                    toggleInsertMenu: () => {
-                        if (isToolInsertMenuOpen || isAIPromptOpen) {
-                            dismissInsertMenu()
-                            return
+                    }
+                    const caret = token.start + 1 + token.query.length
+                    const slashPlan = planTextBlockTypedSlash(
+                        node,
+                        index,
+                        children,
+                        caret,
+                        insertMenu?.nodeId
+                    )
+                    if (slashPlan?.type === 'same-node') {
+                        const element = blockRefs.current[node.id]
+                        const nextHtml = inlineNodesToHtml(slashPlan.children, documentRef.current.annotations)
+                        rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
+                        if (element && element.innerHTML !== nextHtml) {
+                            element.innerHTML = nextHtml
                         }
-                        openInsertMenu(node.id, getInlineInsertMenuQuery(node))
-                    },
-                    activateInlineInsertMenuButton: () => {
-                        setActiveRowIndex(index)
-                        setActiveBoundaryIndex(null)
-                    },
-                    showInlineInsertMenuButton: mode === 'edit' && !isAIWritingNode && shouldShowInlineInsertMenuButton,
-                    isInlineInsertMenuButtonVisible: activeRowIndex === index || isToolInsertMenuOpen || isAIPromptOpen,
-                    isInsertMenuOpen,
-                    insertMenuMode,
-                    hasInvalidInsertMenuQuery,
-                    isAIWriting: isAIWritingNode,
-                    isAIWritingPlaceholder: aiWritingPlaceholderNodeIds.has(node.id),
-                    isAIShimmering:
-                        isAIWritingNode || (isAIPromptSubmitDisabled && aiSelectionReviewRef.current?.targetNodeId === node.id),
-                    aiPromptFocusRequest:
-                        focusAIPromptNodeId === node.id && focusAIPromptRequest !== undefined
-                            ? focusAIPromptRequest
-                            : undefined,
-                    isAIPromptSubmitDisabled,
-                    submitInsertMenuSelection: (queryOverride) =>
-                        submitInsertMenuSelectionForNode(node.id, queryOverride),
-                    submitAIPrompt: (queryOverride) => submitAIPromptForNode(node.id, queryOverride),
-                    handleSelectionChange,
-                    startTextSelectionPointer,
-                    restoreSelectionRef,
-                    rootEditableInputHtmlByNodeIdRef,
-                })}
-                {mode === 'edit' &&
-                !isTitleRow &&
-                !isAIWritingNode &&
-                !isAIPromptOpen &&
-                !isDiscussionCommentNode(node) &&
-                focusedRowIndex === index &&
-                !isInsertMenuOpen ? (
+                        updateNode(node.id, (currentNode) =>
+                            isTextBlockNode(currentNode)
+                                ? { ...currentNode, children: slashPlan.children }
+                                : currentNode
+                        )
+                        beginSlashInsertMenu(node.id, slashPlan.query, { caret })
+                        return true
+                    }
+                    if (slashPlan?.type === 'split') {
+                        const element = blockRefs.current[node.id]
+                        const nextHtml = inlineNodesToHtml(children, documentRef.current.annotations)
+                        rootEditableInputHtmlByNodeIdRef.current[node.id] = nextHtml
+                        if (element && element.innerHTML !== nextHtml) {
+                            element.innerHTML = nextHtml
+                        }
+                        updateNode(node.id, (currentNode) =>
+                            isTextBlockNode(currentNode)
+                                ? { ...currentNode, children }
+                                : currentNode
+                        )
+                        beginSlashInsertMenu(node.id, slashPlan.query, { caret })
+                        return true
+                    }
+                    return false
+                },
+                openDetachedInsertMenu: () => openDetachedInsertMenuFromNode(node.id),
+                updateAIPromptQuery: (query) => updateAIPromptQuery(node.id, query),
+                closeInsertMenu: clearInsertMenu,
+                moveInsertMenuSelection: (direction) => {
+                    setInsertMenu((currentMenu) => {
+                        if (!currentMenu || currentMenu.nodeId !== node.id) {
+                            return currentMenu
+                        }
+
+                        return {
+                            ...currentMenu,
+                            selectedIndex: getNextInsertMenuSelectedIndex(
+                                currentMenu.selectedIndex,
+                                getFilteredInsertCommands(
+                                    insertCommands,
+                                    currentMenu.query,
+                                    getTargetNodeInsertContext(currentMenu.nodeId)
+                                ).length,
+                                direction
+                            ),
+                        }
+                    })
+                },
+                toggleInsertMenu: () => {
+                    if (isToolInsertMenuOpen || isAIPromptOpen) {
+                        dismissInsertMenu()
+                        return
+                    }
+                    openInsertMenu(node.id, getInlineInsertMenuQuery(node))
+                },
+                activateInlineInsertMenuButton: () => {
+                    setActiveRowIndex(index)
+                    setActiveBoundaryIndex(null)
+                },
+                showInlineInsertMenuButton: mode === 'edit' && !isAIWritingNode && shouldShowInlineInsertMenuButton,
+                isInlineInsertMenuButtonVisible: activeRowIndex === index || isToolInsertMenuOpen || isAIPromptOpen,
+                isInsertMenuOpen,
+                insertMenuMode,
+                hasInvalidInsertMenuQuery,
+                isAIWriting: isAIWritingNode,
+                isAIWritingPlaceholder: aiWritingPlaceholderNodeIds.has(node.id),
+                isAIShimmering:
+                    isAIWritingNode || (isAIPromptSubmitDisabled && aiSelectionReviewRef.current?.targetNodeId === node.id),
+                aiPromptFocusRequest:
+                    focusAIPromptNodeId === node.id && focusAIPromptRequest !== undefined
+                        ? focusAIPromptRequest
+                        : undefined,
+                isAIPromptSubmitDisabled,
+                submitInsertMenuSelection: (queryOverride) =>
+                    submitInsertMenuSelectionForNode(node.id, queryOverride),
+                submitAIPrompt: (queryOverride) => submitAIPromptForNode(node.id, queryOverride),
+                handleSelectionChange,
+                startTextSelectionPointer,
+                restoreSelectionRef,
+                rootEditableInputHtmlByNodeIdRef,
+            })}
+            {mode === 'edit' &&
+            !isTitleRow &&
+            !isAIWritingNode &&
+            !isAIPromptOpen &&
+            !isDiscussionCommentNode(node) &&
+            node.type !== 'component' &&
+            node.type !== 'table' &&
+            focusedRowIndex === index &&
+            !isInsertMenuOpen ? (
                     <button
                         type="button"
                         className="MarkdownNotebook__mobile-insert-chip"

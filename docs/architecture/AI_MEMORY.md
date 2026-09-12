@@ -31,6 +31,28 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-12 — Antigravity (Notebook Image, Database & Component Rows Frame Outline & Plus Button Removal)
+- **Scope:**
+  1. Resolved issue where inserting or focusing an Image, DatabaseTable, or other custom/component block showed a surrounding block frame outline and a plus button underneath it ("görsel database vs sv eklendiğinde blok çerçevesi ve altında bir artı butonuyla çıkıyor bunu istemiyorum ama pushlama").
+  2. Block outline frame: Component and table blocks (`node.type === 'component'`, `node.type === 'table'`) now receive explicit CSS classes (`MarkdownNotebook__row--component`, `MarkdownNotebook__row--component-<tag>`, `MarkdownNotebook__row--table`). Excluded them from row focus outlines (`:not(.MarkdownNotebook__row--component):not(.MarkdownNotebook__row--table)`) and added explicit resets (`outline: none !important; box-shadow: none !important;`) in both `MarkdownNotebook.scss` and `notebook-mobile-block-chrome.css`.
+  3. Under-block plus button:
+     - Excluded component and table rows from rendering `MarkdownNotebook__mobile-insert-chip` (`node.type !== 'component' && node.type !== 'table'`) in `MarkdownNotebook.tsx`.
+     - Explicitly suppressed both `.MarkdownNotebook__mobile-insert-chip` and adjacent `.MarkdownNotebook__insert-boundary-button` for `.MarkdownNotebook__row--component` and `.MarkdownNotebook__row--table` in CSS.
+  4. Built notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  5. Added automated unit regression tests in `tests/notebook-frontend.spec.ts`.
+  6. Pushed to origin main per user follow-up confirmation ("pushla").
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (49 of 49 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/styles/notebook-mobile-block-chrome.css`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-12 — Antigravity (Notebook Slash Menu Precise Selection Anchoring & Mobile Upward Jump Fix)
 - **Scope:**
   1. Resolved issue where slash insert menu occasionally appeared far above the selected block/caret instead of anchoring directly below/above the selected area ("slah menüye basıldığında seçili alanda kalsın böyle çalışıyor ama arada daha yukarıda vs açılabiliyor").
