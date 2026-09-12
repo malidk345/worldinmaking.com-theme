@@ -69,7 +69,7 @@ function getSupabaseClient(): SupabaseClient {
     if (cachedClient) return cachedClient
     const env = getRuntimeEnv()
     const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
-    const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') || (envFrom(env, 'WIM_SKIP_ENV_HARD_FAIL') ? 'placeholder-service-key' : '')
     if (!supabaseUrl || !supabaseServiceKey) {
         if (envFrom(env, 'WIM_SKIP_ENV_HARD_FAIL') === '1') {
             cachedClient = createClient('http://localhost:8000', 'mock-key', {
