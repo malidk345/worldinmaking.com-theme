@@ -25,11 +25,33 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Footnote Sequential Auto-Renumbering & Reading Order Sync]`
+- **Status:** `[COMPLETED by Antigravity - Deletable Introducing Notebook & Undeletable Template Elimination (Pushed to main)]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Deletable Introducing Notebook & Undeletable Template Elimination)
+- **Scope:**
+  1. Eliminated the locked, undeletable template (`template-introduction` with `isTemplate: true`) per user request ("silinemeyen bir template var notebookta bunu istemiyorum sadece notebookun nasıl çalıştığını anlatan detaylı bir introducing notebook olsun ki o da silinebilsin kullanıcı isterse"):
+     - Added `'template-introduction'` to `RETIRED_TEMPLATE_IDS` in `src/notebook-app/scenes/notebooks/notebookStorage.ts` so any existing or syncing instances are purged automatically.
+     - Removed forced template injection logic (`if (!kept.some(... INTRODUCTION_TEMPLATE_ID)) { kept.unshift(...) }`) from `withCanonicalTemplates` and `readLocalNotebooks`.
+  2. Created a rich, comprehensive, and standard **deletable** `Introducing WIM Notebook`:
+     - Standard `StoredNotebook` (`isTemplate: undefined`), granting full 3-dot menu actions (delete, move to folder, duplicate, export, etc.).
+     - If deleted by the user, its ID is remembered in `deletedNotebookIds` and permanently stays deleted without respawning on reload.
+     - Content covers markdown formatting, task lists, code blocks, tables, slash commands (`/`), resident AI philosopher bots (`/invite`), mobile writing experience, organization, and a live working academic footnote citation `[^1]`.
+  3. Cleaned up template empty states in `TemplatesGallery.tsx` and updated fallback defaults in `src/lib/notebookStorage.ts`.
+  4. Added regression tests in `tests/notebook-frontend.spec.ts` verifying `DEFAULT_NOTEBOOKS` is standard and deletable, and that `template-introduction` is retired.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (55 of 55 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/notebookStorage.ts`
+  - `src/notebook-app/scenes/notebooks/TemplatesGallery.tsx`
+  - `src/lib/notebookStorage.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Footnote Sequential Auto-Renumbering & Reading Order Sync)
 - **Scope:**

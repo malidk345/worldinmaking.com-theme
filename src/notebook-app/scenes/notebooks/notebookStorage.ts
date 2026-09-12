@@ -189,7 +189,12 @@ function canPushNotebook(notebook: StoredNotebook): boolean {
     if (notebook.contentOmitted) return false
     if (notebook.access_role === 'viewer') return false
     if (notebook.isTemplate) return false
-    if (notebook.id === 'welcome-notebook' && notebook.content === WELCOME_CONTENT) return false
+    if (
+        (notebook.id === INTRODUCING_NOTEBOOK_ID || notebook.id === 'welcome-notebook') &&
+        notebook.content === INTRODUCING_NOTEBOOK_CONTENT
+    ) {
+        return false
+    }
     return true
 }
 
@@ -320,24 +325,76 @@ function ensureLiveNotebookSync(): void {
     ensureRemoteHydrate()
 }
 
-const WELCOME_CONTENT = `# Welcome to WIM
+export const INTRODUCING_NOTEBOOK_ID = 'introducing-wim-notebook'
 
-WorldInMaking notebooks are living documents for ideas, research, and debate.
+export const INTRODUCING_NOTEBOOK_CONTENT = `# Introducing WIM Notebook
 
-**What you can do here**
-- Write notes in markdown — structure thoughts as you explore a topic
-- Talk with resident philosopher bots (Ask AI) and insert their replies into the page
-- Keep drafts private, then publish a public link when ready
-- Use \`/\` in the editor to insert blocks as you work
+WorldInMaking Notebook is a focused, distraction-free markdown workspace designed for deep thinking, structured research, and creative exploration with resident AI philosopher models.
 
-This is your scratchpad on WIM: a place to think in public form, without needing a finished article yet.
+Here is a quick tour of what you can do.
 
-Start a new notebook anytime, or keep writing below.
+## 1. Fast & Fluid Markdown
+
+Write naturally with standard markdown syntax. The editor transforms your prose into clean typographic blocks:
+- **Rich formatting**: **bold**, *italic*, ~~strikethrough~~, and \`inline code\`.
+- **Lists & Tasks**: bullet points, numbered steps, and interactive task lists:
+  - [x] Create your first thought
+  - [ ] Invite a resident philosopher to critique your idea
+  - [ ] Publish a public link to share with friends
+- **Blockquotes**:
+  > "The unexamined life is not worth living." — Socrates
+
+## 2. The Slash (/) Command Library
+
+Type \`/\` anywhere on a blank line or inline to open the insert menu. You can quickly add:
+- **Headings** (\`/h1\`, \`/h2\`, \`/h3\`)
+- **Tables** with resizable columns and headers
+- **Code blocks** with syntax highlighting:
+\`\`\`typescript
+interface NotebookIdea {
+    title: string
+    tags: string[]
+    published: boolean
+}
+\`\`\`
+- **Dividers**, callout cards, and AI prompts.
+
+## 3. Dynamic Sequential Footnotes
+
+WIM Notebook features an academic-grade footnote citation system[^1]:
+- Type \`/footnote\` or write \`[^1]\` to place a compact superscript footnote mark right at your cursor.
+- **Auto-Renumbering**: If you insert a footnote in between or delete an earlier one, all footnotes throughout your document automatically renumber in sequential order (1, 2, 3...).
+- **Interactive Management**: Click any footnote mark in the text to edit it in a frosted popover, or use the bottom footnotes section to edit, jump to text, or delete citations with one click.
+
+## 4. Resident AI Philosophers (Ask AI & Invites)
+
+Turn your notebook into a collaborative dialectic:
+- Click the three-dot menu (**···**) on any block and choose **Invite Philosopher**.
+- Summon Socrates, Nietzsche, Aristotle, Ada Lovelace, or Descartes to analyze your arguments, offer counterpoints, or challenge assumptions directly in the margin.
+- Use the global **Ask AI** button in the header for real-time idea generation.
+
+## 5. Mobile Writing Experience
+
+On smartphones and tablets, WIM Notebook provides a bespoke touch experience:
+- A floating liquid glass dock with quick actions.
+- Full virtual keyboard awareness with zero screen jitter or header clipping.
+
+## 6. Organization & Publishing
+
+- **Folders & Tags**: Group notes into folders or tag them with \`#ideas\` or \`#drafts\`.
+- **Daily Notes**: Click the **Today** button in the sidebar for daily journaling.
+- **Publish to Web**: Click **Publish** in the top-right corner to generate a live, beautifully formatted public link to your essay.
+
+---
+
+> [!TIP]
+> *This notebook is fully editable and deletable. Feel free to experiment with formatting, add your own notes, or delete it from the notebooks list whenever you are ready to start fresh.*
+
+[^1]: This is an example footnote reference. Footnotes automatically renumber themselves when you add or delete them anywhere in the document.
 `
 
-const INTRODUCTION_TEMPLATE_ID = 'template-introduction'
-
 const RETIRED_TEMPLATE_IDS = new Set([
+    'template-introduction',
     'template-feature-release',
     'template-root-cause',
     'template-sql-report',
@@ -351,23 +408,20 @@ const RETIRED_TEMPLATE_IDS = new Set([
 ])
 
 function isRetiredTemplate(notebook: StoredNotebook): boolean {
-    if (notebook.id === INTRODUCTION_TEMPLATE_ID) return false
     if (RETIRED_TEMPLATE_IDS.has(notebook.id)) return true
     return Boolean(notebook.isTemplate && notebook.id.startsWith('template-'))
 }
 
-function introductionTemplate(): StoredNotebook {
-    const now = new Date().toISOString()
+export function newIntroducingNotebook(): StoredNotebook {
     return {
-        id: INTRODUCTION_TEMPLATE_ID,
-        short_id: 'tmpl-intro',
-        title: 'How to use a notebook',
-        content: WELCOME_CONTENT,
-        createdAt: now,
-        updatedAt: now,
-        pinned: false,
+        id: INTRODUCING_NOTEBOOK_ID,
+        short_id: 'intro-wim',
+        title: 'Introducing WIM Notebook',
+        content: INTRODUCING_NOTEBOOK_CONTENT,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        pinned: true,
         version: 1,
-        isTemplate: true,
         isPublished: false,
         created_by: { first_name: 'WIM', email: 'hello@worldinmaking.com' },
     }
@@ -382,41 +436,24 @@ function withCanonicalTemplates(notebooks: StoredNotebook[]): StoredNotebook[] {
         }
         kept.push(notebook)
     }
-    if (!kept.some((notebook) => notebook.id === INTRODUCTION_TEMPLATE_ID)) {
-        kept.unshift(introductionTemplate())
-    }
     return kept
 }
 
-function newWelcomeNotebook(): StoredNotebook {
-    const id =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? `welcome-${crypto.randomUUID()}`
-            : `welcome-${Date.now().toString(36)}`
-    return {
-        id,
-        short_id: id.replace(/-/g, '').slice(0, 12),
-        title: 'Welcome to WIM',
-        content: WELCOME_CONTENT,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        pinned: true,
-        version: 1,
-        isPublished: false,
-        created_by: { first_name: 'WIM', email: 'hello@worldinmaking.com' },
-    }
-}
-
-export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [introductionTemplate(), newWelcomeNotebook()]
+export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [newIntroducingNotebook()]
 
 function seedDefaults(): StoredNotebook[] {
     const deleted = readLocalDeletedNotebookIds()
-    if (deleted.includes('welcome-notebook') || deleted.includes('welcome')) {
+    if (
+        deleted.includes(INTRODUCING_NOTEBOOK_ID) ||
+        deleted.includes('introducing-wim-notebook') ||
+        deleted.includes('welcome-notebook') ||
+        deleted.includes('welcome')
+    ) {
         const seed = withCanonicalTemplates([])
         setLocalStorageItem(storageKey(), JSON.stringify(seed))
         return seed
     }
-    const seed = withCanonicalTemplates([newWelcomeNotebook()])
+    const seed = withCanonicalTemplates([newIntroducingNotebook()])
     setLocalStorageItem(storageKey(), JSON.stringify(seed))
     for (const key of LEGACY_STORAGE_KEYS) {
         try {
@@ -571,7 +608,7 @@ function readLocalNotebooks(): StoredNotebook[] {
             return seeded
         }
         const kept = withCanonicalTemplates(parsed)
-        if (kept.length !== parsed.length || !parsed.some((notebook) => notebook.id === INTRODUCTION_TEMPLATE_ID)) {
+        if (kept.length !== parsed.length) {
             writeAll(kept)
         }
         inMemoryNotebooksCache = kept

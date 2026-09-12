@@ -26,7 +26,7 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
                 <div className="border border-primary rounded bg-primary p-8 text-center space-y-2">
                     <p className="text-sm text-primary font-medium m-0">No templates yet</p>
                     <p className="text-xs text-muted m-0 max-w-md mx-auto">
-                        Start from <strong>Welcome to WIM</strong> in your notebooks list, or create a new notebook and
+                        Start from <strong>Introducing WIM Notebook</strong> in your notebooks list, or create a new notebook and
                         write freely.
                     </p>
                 </div>

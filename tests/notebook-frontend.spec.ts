@@ -1885,5 +1885,41 @@ test.describe('notebook frontend helpers', () => {
         expect(fnSecond?.text).toBe('2')
         expect(fnSecond?.marks?.[0]).toEqual({ type: 'footnote', id: '2' })
     })
+
+    test('introducing notebook is a standard deletable document without locked template attributes', () => {
+        const {
+            DEFAULT_NOTEBOOKS,
+            INTRODUCING_NOTEBOOK_ID,
+            INTRODUCING_NOTEBOOK_CONTENT,
+        } = require('../src/notebook-app/scenes/notebooks/notebookStorage')
+
+        expect(DEFAULT_NOTEBOOKS).toHaveLength(1)
+        const defaultDoc = DEFAULT_NOTEBOOKS[0]
+
+        // 1. Must be a normal notebook, NOT an undeletable template
+        expect(defaultDoc.id).toBe(INTRODUCING_NOTEBOOK_ID)
+        expect(defaultDoc.isTemplate).toBeUndefined()
+        expect(defaultDoc.title).toBe('Introducing WIM Notebook')
+
+        // 2. Comprehensive guidance content
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 1. Fast & Fluid Markdown')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 2. The Slash (/) Command Library')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 3. Dynamic Sequential Footnotes')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 4. Resident AI Philosophers')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 5. Mobile Writing Experience')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('## 6. Organization & Publishing')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('[^1]')
+        expect(INTRODUCING_NOTEBOOK_CONTENT).toContain('This notebook is fully editable and deletable')
+
+        // 3. template-introduction is retired
+        const fs = require('fs')
+        const path = require('path')
+        const storageCode = fs.readFileSync(
+            path.join(process.cwd(), 'src/notebook-app/scenes/notebooks/notebookStorage.ts'),
+            'utf8'
+        )
+        expect(storageCode).toContain("'template-introduction'")
+        expect(storageCode).not.toContain("notebook.id === INTRODUCTION_TEMPLATE_ID")
+    })
 })
 

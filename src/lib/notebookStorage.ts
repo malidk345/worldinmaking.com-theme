@@ -30,14 +30,13 @@ const HISTORY_KEY_PREFIX = 'ph_notebook_history_'
 
 export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
     {
-        id: 'template-introduction',
-        short_id: 'tmpl-intro',
-        title: 'How to use a notebook',
+        id: 'introducing-wim-notebook',
+        short_id: 'intro-wim',
+        title: 'Introducing WIM Notebook',
         content:
-            '# Welcome to WIM\n\nWorldInMaking notebooks are living documents for ideas, research, and debate.\n\nType `/` to insert a block. Ask WIM AI, invite philosophers, then publish when ready.\n',
+            '# Introducing WIM Notebook\n\nWorldInMaking notebooks are living documents for ideas, research, and debate.\n\nType `/` to insert a block. Ask WIM AI, invite philosophers, then publish when ready.\n',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        isTemplate: true,
         version: 1,
     },
 ]
