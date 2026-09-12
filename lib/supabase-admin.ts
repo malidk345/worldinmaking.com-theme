@@ -68,8 +68,10 @@ let cachedClient: SupabaseClient | null = null
 function getSupabaseClient(): SupabaseClient {
     if (cachedClient) return cachedClient
     const env = getRuntimeEnv()
-    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
-    const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+    // Read fallback values from process.env if available, useful for tests
+    const pEnv = typeof process !== 'undefined' ? process.env : {}
+    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL') || pEnv.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+    const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY') || pEnv.SUPABASE_SERVICE_ROLE_KEY || 'test-service-key'
     if (!supabaseUrl || !supabaseServiceKey) {
         throw new Error(
             'Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'

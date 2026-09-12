@@ -4,6 +4,7 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import type { AppWindow } from '../../context/Window'
+import { cn } from '../../notebook-app/lib/utils/css-classes'
 
 interface WindowChromeProps {
     item: AppWindow
@@ -30,7 +31,7 @@ export default function WindowChrome({
 
     return (
         <div
-            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
+            className={cn('relative', hasToolbar && 'bg-primary flex items-center py-0.5 px-1')}
             onPointerDown={hasToolbar && canDrag ? onDragHandlePointerDown : undefined}
             onDoubleClick={onDoubleClick}
         >
@@ -54,9 +55,10 @@ export default function WindowChrome({
             <div
                 data-scheme="tertiary"
                 onPointerDown={(event) => event.stopPropagation()}
-                className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
+                className={cn(
+                    'inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100',
                     hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
-                }`}
+                )}
             >
                 <div className="window-minimize-control flex justify-end">
                     <Tooltip
