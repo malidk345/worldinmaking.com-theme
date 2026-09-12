@@ -1709,5 +1709,26 @@ test.describe('notebook frontend helpers', () => {
         expect(afterDelete.some((n: any) => n.marks?.some((m: any) => m.type === 'footnote' && m.id === 'fn-1'))).toBe(false)
         expect(afterDelete[0].text).toBe('Sentence with footnote and more text')
     })
+
+    test('inline footnotes in text are compact and black in styling', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const bundlePath = path.join(process.cwd(), 'src/notebook-app/styles/bundleCss.ts')
+        const scssPath = path.join(process.cwd(), 'src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss')
+        const bundleContent = fs.readFileSync(bundlePath, 'utf8')
+        const scssContent = fs.readFileSync(scssPath, 'utf8')
+
+        // Compact font-size (0.68em, smaller than 0.75em)
+        expect(scssContent).toContain('font-size: 0.68em')
+        expect(bundleContent).toContain('font-size: 0.68em')
+
+        // Black color in light mode
+        expect(scssContent).toContain('color: #000000')
+        expect(bundleContent).toContain('color: #000000')
+
+        // White color in dark mode
+        expect(scssContent).toContain('color: #ffffff')
+        expect(bundleContent).toContain('color: #ffffff')
+    })
 })
 

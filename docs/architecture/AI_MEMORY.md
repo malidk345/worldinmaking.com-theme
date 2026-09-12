@@ -31,6 +31,27 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-12 — Antigravity (Compact Black Inline Footnotes Styling & Test Suite Alignment)
+- **Scope:**
+  1. Updated inline footnote typography in `MarkdownNotebook.scss` to be compact and black per user design directive ("tamam ama eklenen footnotelar metin içinde yani biraz daha kompakt ve siyah renkte olsun"):
+     - Adjusted `font-size: 0.68em; line-height: 0; vertical-align: baseline; position: relative; top: -0.4em; letter-spacing: -0.02em; padding: 0 0.5px; margin: 0 0.5px;`.
+     - Set `color: #000000;` (light theme) and `color: #ffffff;` (dark theme), with subtle 0.65 opacity on hover and neutral pulse animation.
+     - Cleaned up popover badge and footnote list back-link styling to use primary/neutral tokens rather than blue-500.
+  2. Rebuilt notebook styles via `pnpm run build:notebook-styles` generating updated `bundleCss.ts` and `productBundleCss.ts`.
+  3. Added unit tests in `tests/notebook-frontend.spec.ts` asserting font-size and color rules across both scss source and compiled bundle.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (51 of 51 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/lib/components/MarkdownNotebook/FootnotePopover.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-12 — Antigravity (Notebook Document Footnotes Section Delete Icon & Mobile Elevation Push)
 - **Scope:**
   1. Added a delete icon button (`IconTrash` from `@posthog/icons`) to each footnote item in the bottom footnotes section (`renderDocumentFootnotesSection`) of the notebook ("tamam iyi hoş notebookta footnote ekleniyor ya alta footnotlarda bir de delete ikonu ekle").

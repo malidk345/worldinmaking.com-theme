@@ -149,7 +149,7 @@ export function FootnotePopover({
         >
             <div className="MarkdownNotebook__footnote-popover-head flex items-center justify-between gap-2 pb-2 mb-2 border-b border-primary/10">
                 <div className="flex items-center gap-1.5 font-medium text-xs text-primary">
-                    <span className="inline-flex items-center justify-center size-4 text-[11px] font-bold rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                    <span className="inline-flex items-center justify-center size-4 text-[11px] font-bold rounded bg-primary/10 text-primary">
                         {number ?? id}
                     </span>
                     <span className="font-semibold tracking-wide">Footnote #{number ?? id}</span>

@@ -527,7 +527,7 @@ export function useNotebookFootnotes({
                                         }
                                     },
                                     className:
-                                        'text-xs text-muted hover:text-blue-500 p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation cursor-pointer',
+                                        'text-xs text-muted hover:text-primary p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation cursor-pointer',
                                     title: 'Back to text',
                                     'aria-label': 'Back to text',
                                     'data-action': 'back-to-text',
