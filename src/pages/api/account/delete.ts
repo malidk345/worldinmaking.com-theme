@@ -4,11 +4,13 @@ import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 import { supabaseRest } from '../../../lib/bots/supabase-edge'
 import { envFrom, getRuntimeEnv } from '../../../lib/bots/runtime-env'
 import { cancelLemonSubscription } from '../../../lib/wim-billing'
+import { checkRateLimitDurable, buildRateLimitHeaders } from '../../../lib/bots/rate-limit'
+import { readJsonObject } from '../../../lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -18,7 +20,18 @@ export default async function handler(req: Request) {
     const user = await getSupabaseUserFromRequest(req)
     if (!user) return json({ error: 'sign in required' }, 401)
 
-    const body = (await req.json().catch(() => ({}))) as { confirm?: string }
+    const env = getRuntimeEnv()
+    const rate = await checkRateLimitDurable(`delete-account:${user.id}`, 5, 60 * 60 * 1000, env, { failClosed: true })
+    if (rate.source === 'unavailable') {
+        return json({ error: 'Rate limit store temporarily unavailable.' }, 503, buildRateLimitHeaders(rate))
+    }
+    if (!rate.allowed) {
+        return json({ error: 'Too many delete attempts. Try again later.' }, 429, buildRateLimitHeaders(rate))
+    }
+
+    const parsed = await readJsonObject(req, 4096)
+    if (!parsed.ok) return json({ error: parsed.error }, parsed.status)
+    const body = parsed.body as { confirm?: string }
     const confirm = String(body.confirm || '').trim().toLowerCase()
     const username = String(
         user.profile?.username || user.user_metadata?.username || user.username || ''
@@ -31,7 +44,6 @@ export default async function handler(req: Request) {
         return json({ error: 'type your username or email to remove this membership' }, 400)
     }
 
-    const env = getRuntimeEnv()
     const found = await supabaseRest<Array<Record<string, any>>>(
         `subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=subscription_id&limit=1`,
         { env }
