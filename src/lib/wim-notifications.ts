@@ -111,7 +111,7 @@ export function mapNotificationRow(row: NotificationRow): WimNotification {
     }
 }
 
-export async function fetchUserNotifications(): Promise<WimNotification[]> {
+export async function fetchUserNotifications(knownUserId?: string): Promise<WimNotification[]> {
     const forumNotifications: WimNotification[] = []
     const notebookNotifications: WimNotification[] = []
 
@@ -212,8 +212,11 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
     }
 
     try {
-        const { data: authData } = await supabase.auth.getSession()
-        const userId = authData.session?.user?.id
+        let userId = knownUserId
+        if (!userId) {
+            const { data: authData } = await supabase.auth.getSession()
+            userId = authData.session?.user?.id
+        }
 
         if (userId) {
             const dismissedIds = getDismissedNotebookNotificationIds()
@@ -353,8 +356,7 @@ export async function fetchUserNotifications(): Promise<WimNotification[]> {
         console.warn('[wim-notifications] error processing notebook notifications', err)
     }
 
-    const assistantNotifications = listAssistantNotifications()
-    const all = [...assistantNotifications, ...forumNotifications, ...notebookNotifications]
+    const all = [...forumNotifications, ...notebookNotifications]
     all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return all
 }
