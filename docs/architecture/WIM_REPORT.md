@@ -1,200 +1,185 @@
-# WorldInMaking — tek rapor
+# WorldInMaking — site eylem planı
 
-**Kaynak:** 2026-09-13 Grok incelemesi + bu sohbetin tamamı  
+**Kanonik.** Ajanlar sadece bunu + `AGENTS.md` + `AI_MEMORY.md` §4 + AI işinde `WIM_AI.md` okur.
+**Tarih:** 2026-09-13  
 **Repo:** `malidk345/worldinmaking.com-theme`  
-**Bu dosya kanoniktir.** Ağustos `FULL_PERFORMANCE_AND_GROWTH_REPORT.md`, parça parça `WIM_PRODUCT_PLAN.md` ve `WIM_ENGINEERING_BACKLOG.md` artık buraya yönlendirilir.
+**Hero:** *Sign in, write a note, and it stays on every device you use. That is the product.*
 
-Ajan protokolü değişmez: `AGENTS.md`, `AI_MEMORY.md` §4 kilit, AI işi için `WIM_AI.md`, UI için `STYLEGUIDE.md`. pnpm only. `git add -A` yok. App Router yok. Yjs yok.
-
----
-
-## 0. Sohbetten çıkan kararlar
-
-1. Eski Ağustos raporu kör kaynak değil; çoğu ölçüm güncel kodda yanlış.
-2. PostHog temizliği olmuş; kalan kalıntı kör silinmez (Lemon/Quill/Squeak/icons yük taşır).
-3. Rapor parça parça yazılmıştı; kullanıcı tek belge istedi — işte o belge.
-4. Kuzey yıldızı sitenin hero'su: *Sign in, write a note, and it stays on every device. That is the product.* Forum ve AI notebook'tan sonra.
+Ağustos performans raporu **silindi**. Plan/backlog stub dosyaları **silindi**. Bu belge onların yeridir.
 
 ---
 
-## 1. Ürün nedir
+## Nasıl kullanılır
 
-Tarayıcıda yazı masasüstü. Ücretsiz **desk**, ücretli **study** (`profiles.role = pro`).
+1. §1–2 ürün ve yüzey envanteri — neyin ne olduğunu buradan öğren.
+2. §3 durum (done / half / hole / leftover).
+3. §4 faz + kart — tek PR, belirtilen glob.
+4. Bitince `AI_MEMORY` §5. Sonraki ajan §4 kilidine bakar.
+
+Yasak (her kartta): App Router, Yjs, ikinci orchestrator, `git add -A`, npm, Lemon/Quill/Squeak/icons silme, placeholder testini silme, global tsc tek committe kırmızı.
+
+---
+
+## 1. Ürün ve mimari
+
+Tarayıcıda yazı OS'u. **desk** ücretsiz, **study** `profiles.role = pro`.
 
 ```
-_app → AppProvider (src/context/App.tsx ~108KB) → Wrapper
-  TaskBar / Desktop / AppWindow (WindowRouter + Chrome + snap)
-  Search / Auth dynamic
-  Notebook lazy chunk
-
-/            home (desktop.tsx ~1.6KB; /desktop → /)
-/[...slug]   yazı + notebook
-/api/*       search, notebooks, forum, chat, bots, billing, seo
+_app → AppProvider (src/context/App.tsx ~108KB)
+  → Wrapper → TaskBar + Desktop + AppWindow listesi
+       AppWindow = WindowChrome + WindowRouter + snap + error boundary
 ```
 
-| Yüzey | İş | Kod |
+**Stack:** Next 14 Pages Router, React 18, Tailwind 3, pnpm 10, Node 22, Supabase.
+**Prod:** Cloudflare Pages. Cron: `.github/workflows/philosopher-bots-cron.yml`.
+**CI:** `typecheck:shell` + Playwright smoke (`placeholder.supabase.co`, `WIM_SKIP_ENV_HARD_FAIL=1`).
+
+Notebook: Lemon + Quill, `.notebook-app-scope` / `LemonScope`. Senkron: markdown + version + three-way merge + tombstone + presence. **Yjs yok.**
+AI: tek `src/lib/bots/orchestrate.ts`. Chat Edge SSE `/api/chat`.
+Görsel: `STYLEGUIDE.md` tokenleri. Stok `bg-blue-500` yasak. WindowRouter login dalında `bg-slate-950/90` — token kaçağı.
+
+---
+
+## 2. Tam yüzey envanteri (koddan, 2026-09-13)
+
+### 2.1 WindowRouter (`src/components/AppWindow/WindowRouter.tsx`)
+
+| Path | Bileşen | Not |
 |---|---|---|
-| OS | pencere, taskbar, wallpaper | `App.tsx`, `AppWindow/*`, `TaskBarMenu`, `_document` |
-| Home | hero, latest writing, notebook CTA, filozof | `src/pages/DesktopPage/*` |
-| Notebook | asıl ürün, local-first + merge | `src/notebook-app/**` |
-| Scratchpad / trash / assistant | OS uygulamaları | `WindowRouter` |
-| Posts | deneme | `/posts`, `BlogPost` |
-| Forum | Inbox | `/questions`, Squeak kökü |
-| WIM AI | workspace chat | `/api/chat`, `lib/bots` |
-| Filozoflar | saatlik forum | GH Actions cron |
-| Study | Lemon | `PricingWindow`, webhook |
-| Hesap | profil / iptal / sil | `AccountWindow` |
+| `/about` | AboutContent | |
+| `/archive` | ArchiveWindow | |
+| `/contact` | ContactWindow | |
+| `/pricing` | PricingWindow | WIM / Lemon |
+| `/home` | HomeWindow | `/` değil |
+| `/account` | AccountWindow | |
+| ask-ai / workspace-chat | AskAiWindow | |
+| `/scratchpad*` | ScratchpadWindow | |
+| `/trash*` | TrashWindow | |
+| `/assistant*` | AssistantWindow | |
+| `/admin` `/community/admin` | AdminDashboard | + 30KB API |
+| `/tape-player` `/mixtapes` | TapePlayer | miras; grep |
+| `/login` `/signup` | WimAuthPortal | `bg-slate-950` kaçağı |
+| `/auth*` | null | callback ayrı sayfa |
+| `/manifesto` `/about-wim` `/world-in-making` | **null** | ölü — redirect |
+| `/display-options` | DisplayOptions | |
+| `/bookmarks` | Bookmarks | |
+| `/notifications` `/community/notifications` | notifications | |
+| `/ideas` `/blueprints` | IdeasHub | miras |
+| profil | Profile | |
+| `/notebooks*` | **NotebooksListSkeleton** | editor `[...slug]`; iskelet kalmasın |
+| `/questions` `/forum` `/community*` | Inbox / Squeak | |
+| `/blog` `/posts` | PostListing | |
+| `/blog/*` `/posts/*` | BlogPost | path ile body |
+| LEGAL_PATHS | Legal | |
+| diğer | placeholder “content for {key}” | |
 
-**Stack:** Next 14 Pages Router, React 18, Tailwind 3, pnpm 10, Node 22, Supabase.  
-**Prod:** Cloudflare Pages. Cron: `.github/workflows/philosopher-bots-cron.yml`. `vercel.json` kalıntı olabilir.
+Posts/questions path-first (F5 boş kabuk).
 
-Taskbar (gerçek menü): Blog, WIM AI, Assistant, Forums, About, Terms, Privacy, Display options, Keyboard shortcuts.
+### 2.2 Sayfalar (`src/pages`, API hariç)
 
-Görsel: token renkleri, `data-scheme`, notebook cam fanus (`.notebook-app-scope` / `LemonScope`). Stok Tailwind mavi yasak.
+Home: `index`, `desktop` (ince), `DesktopPage/{Hero,LatestWriting,NotebookCTA,PhilosopherExplainer,FeatureBento,ManifestoStrip}`.
+Auth: `login`, `signup`, `reset-password`, `auth/callback`.
+Yazı: `posts/*`, `posts/new`, `posts/[slug]/edit`, `blog/*`.
+Notebook: `notebooks/index`, `[...slug].tsx`.
+Forum: `questions/index`, `[permalink]`, `subscriptions`, `questions/topic/max` (PostHog adı).
+Topluluk: `community*`, `profile*`.
+OS wrapper (~150B): account, admin, archive, assistant, bookmarks, contact, home, pricing, trash, workspace-chat, share, share/[token], room/[token].
+Legal: terms, privacy, cookies, guidelines, copyright, refund, subprocessors, **baa ~141B stub**, **dpa stub**.
+Diğer: about (dolu), kbd, 404.js 176B.
 
----
+### 2.3 API
 
-## 2. Ağustos raporunun yalanladığı şeyler
+Search; notebooks CRUD + upload; co-author / collaborators / invite / invite-comment / inline-edit; forum edit/resolve/bot-react; chat + quota + chats; byok/verify; bots act/intent/search/diag; philosopher + cron + bot-queue; admin dashboard 30KB; billing checkout/cancel/status + Lemon webhook; account claim/delete/export; seo sitemap/rss; share + rooms; contact; repair-ui.
 
-| Ağustos | Bugün |
-|---|---|
-| `desktop.tsx` 2.4k satır | ~1615 byte + `DesktopPage/` |
-| Search tüm body'yi RAM'e çeker | `public-search.ts` + `search_posts` FTS; diğerleri title/excerpt |
-| `images.unoptimized` | kalkmış; AVIF/WebP |
-| Dual lockfile / Gatsby README | pnpm + WIM README |
-| Pencere işi yok | WindowRouter + Chrome + snap + error boundary |
+### 2.4 Taskbar
 
-Hâlâ doğru: build TS/ESLint yutar; `reactStrictMode: false`; `App.tsx` ~108KB; image host listesinde posthog.com.
-
----
-
-## 3. Bitmiş sayılacak işler (ajan tekrar yazmasın)
-
-Home split, FTS search, Next Image, window parçaları, notebook claim/fetch/poll/clobber/presence, tek orkestratör, Lemon *kodu*, sitemap+rss, PWA meta, `typecheck:shell`, Playwright yüzeyi, CI placeholder smoke.
-
-CI **bilerek** `placeholder.supabase.co` kullanır. Boş search 200 OK. Çift cihaz senkronu CI'da kanıtlanmaz. Testi silme.
-
----
-
-## 4. Sorunlar ve eklenecekler (doğrulanmış)
-
-### A — Vaad (P0)
-
-Hero yalan olmasın.
-
-- `NOTEBOOK_MULTI_DEVICE.md` canlı projede 10 madde.
-- Dirty editor ezilmez; guest→login claim; silinen hortlamaz.
-- Kabul: telefon + laptop, 5 dk, 0 kayıp paragraf.
-- Yasak: Yjs.
-
-### B — Kimlik (P0)
-
-- `AboutPostHog/index.tsx` hâlâ PostHog reklamı; ReaderView + MDX kullanıyor. WIM about veya kaldır.
-- `HedgehogMode` duruyor. `Squeak` forum bağı — aynı PR'da silinmez.
-- `_document` PostHog analytics preconnect: ölçüm bilinçliyse kalır.
-- `lang="en"`. Kitle TR ise önce `lang` + about/legal, tam çeviri sonra.
-- Kör silme riskli: önce import grafiği (`WindowRouter`, `mdxGlobalComponents`, pages, navs).
-
-### C — OS (P0)
-
-- Path-first router var; `AppWindow/index.tsx` ~23KB hâlâ chrome/drag.
-- `App.tsx` split (hook, davranış değişmez).
-- `WindowMode` tek enum.
-- Test: forum, post, notebook, ask-ai, about, pricing × taskbar/F5/iç nav × 375px.
-
-### D — Keşif (P1, ekle)
-
-- json-ld yazı + public notebook.
-- Sitemap'te yayımlanmış notebook yok — ekle (`notebookPublicPath`, `is_published`).
-- `/dpa` sitemap'te stub — yaz veya çıkar.
-
-### E — Study (P1, fiş)
-
-Kod tam (`docs/billing.md`). Eksik ops: Lemon env + webhook + migration. Fail closed bozulmaz. Pazar yeri yok.
-
-### F — AI (P1)
-
-Tek `orchestrate.ts`. Stream'e gate yapıştırma. Isolate kotası → kalıcı 429. BYOK vault vs header (deepseek/anthropic). Cron idempotency. `modes.ts` kilidi. `fetch_url` SSRF. `posthog-analytics` artifact adını “temizlik” diye değiştirme.
-
-### G — Güven / doküman (P1)
-
-- Build ignore duruyor; CI allowlist var; global tsc tek PR değil.
-- `docs/security.md` Django; `monorepo-layout.md` PostHog; `STRATEJI_VE_MONETIZASYON.md` yanlış stack (App Router / TW4 / TipTap).
-- `AI_MEMORY.md` ~118KB — arşivle.
-- `pnpm-workspace.yaml` Gatsby hoist yorumu.
-
-### Bilerek sonra
-
-TR tam UI, service worker, community FTS, e-posta bülteni, odak bildirimi. Notion klonu yok.
+Blog, WIM AI, Assistant, Forums, About, Terms, Privacy, Display options, Keyboard shortcuts. `SmallTeamsMenuItems.tsx` adı miras — grep.
 
 ---
 
-## 5. Faz planı
+## 3. Durum
 
-| Faz | Süre | İş | Kabul |
-|---|---|---|---|
-| 0 Kimlik | 3–5 gün | AboutPostHog, ölü klasör (0 import), STYLEGUIDE başlık | Yayında PostHog about yok |
-| 1 Vaad | 1 hafta | Canlı checklist, küçük fix | Çift cihaz 0 kayıp |
-| 2 Pencere | 1 hafta | App.tsx split, WindowMode, Playwright | Boş pencere 0 |
-| 3 Keşif + study | 1 hafta paralel | json-ld, notebook sitemap, Lemon env | sitemap + test checkout `pro` |
-| 4 AI ev | sürekli | 429, BYOK, cron log, 10 prompt eval | Abuse isolate ötesi |
-| 5 Sonra | — | TR lang, SW değil cache tasarımı olmadan | — |
+**Done:** home split, desktop redirect, post FTS, Next Image, window parçaları, notebook claim/fetch/poll/clobber/presence, tek orchestrator, Lemon kodu, sitemap+rss (post/soru/profil), PWA meta, typecheck:shell, Playwright, CI smoke.
+
+**Half:** çift cihaz (CI kanıtlamaz); path-first kısmi; notebook pencerede skeleton; SEO json-ld yok; Lemon env yok; kota isolate-memory; BYOK header uyuşmaz; admin authz belirsiz; share/rooms testsiz; legal stub; AGENTS hâlâ silinmiş Ağustos dosyasını gösteriyordu (düzelt).
+
+**Hole:** AboutPostHog ReaderView; WindowRouter null manifesto path; topic/max; slate-950 login; sitemap notebook yok; App.tsx 108KB; build ignore; Django security.md; AI_MEMORY 118KB.
+
+**Leftover yük:** notebook-app, lemon-ui, quill, icons, LemonScope, OS chrome, Squeak.
+**Leftover aday (0 import sonra sil):** HedgehogMode, CompensationCalculator, ContactSales, SalesforceForm, Merch, MaxCTA, SignupCTA, StarRepoButton, DocsPageSurvey, PlatformInstall, HogMap, TapePlayer/Ideas eğer menüde yoksa.
+Pricing WIM. posthog.com preconnect = analytics kararı.
 
 ---
 
-## 6. Ajan kartları
-
-Şablon:
+## 4. Faz + kart
 
 ```
 Title: [Faz.N] fiil
-Why: kullanıcının gördüğü cümle
-Read: bu rapor + WIM_AI.md (AI ise) + AI_MEMORY §4
+Why: kullanıcının gördüğü
+Read: WIM_REPORT + WIM_AI (AI) + AI_MEMORY §4
 Touch: glob
-Do not: Yjs, App Router, Lemon/Quill/Squeak silme, git add -A
-Verify: pnpm typecheck:shell + ilgili spec
-Accept: ölçülebilir
+Verify: typecheck:shell + spec
 Log: AI_MEMORY §5
 ```
 
-Sıra:
+**Faz 0 Kimlik**
+0.1 AboutPostHog / ReaderView → WIM. Kabul: o cümle yayında yok.
+0.2 Import grafiği (silme yok).
+0.3 0-import silme, ayrı PR.
+0.4 manifesto/about-wim/world-in-making → /about.
+0.5 questions/topic/max → /questions.
+0.6 login slate → token.
+0.7 STYLEGUIDE başlık.
+0.8 AGENTS.md Ağustos linkini WIM_REPORT yap.
 
-0.1 ReaderView AboutPostHog → WIM  
-1.1 Canlı çift cihaz checklist  
-2.1 App.tsx hook extract  
-0.2 Import grafiği sonra ölü klasör  
-2.2 Window normalize + Playwright  
-4.1 Kalıcı rate limit  
-3.1 Sitemap notebook + json-ld  
-3.2 Lemon prod env (ops)  
-G.1 AI_MEMORY arşiv + legacy doc damgası
+**Faz 1 Vaad**
+1.1 Canlı NOTEBOOK_MULTI_DEVICE 10 madde.
+1.2 Sadece kırık senkron. Yjs yok.
+1.3 `/notebooks*` skeleton → gerçek liste.
 
-Doğrulama:
+**Faz 2 OS**
+2.1 App.tsx hook split.
+2.2 canonicalWindowPath her addWindow.
+2.3 Playwright 6 yüzey × taskbar/F5/iç × 375.
+
+**Faz 3 Keşif + study**
+3.1 Sitemap published notebook.
+3.2 json-ld.
+3.3 baa/dpa metin veya çıkar.
+3.4 Lemon env (ops).
+3.5 Quota = profiles.role.
+
+**Faz 4 AI**
+4.1 Kalıcı 429.
+4.2 BYOK header/tip.
+4.3 Cron idempotency.
+4.4 10 prompt eval (PR değil).
+
+**Faz 5 sonra:** TR lang, Ideas/Tape kararı, community FTS, SW yok designsız, repair-ui belge, vercel.json, AI_MEMORY arşiv.
+
+---
+
+## 5. Verify
 
 ```bash
 pnpm typecheck:shell
 pnpm test:smoke
-pnpm exec playwright test tests/notebook-frontend.spec.ts tests/keyboard-overlay.spec.ts tests/chrome.spec.ts tests/billing.spec.ts tests/next-image-hosts.spec.ts
+pnpm exec playwright test tests/notebook-frontend.spec.ts tests/keyboard-overlay.spec.ts tests/chrome.spec.ts tests/billing.spec.ts tests/next-image-hosts.spec.ts tests/notebook-authz.spec.ts
 ```
 
----
-
-## 7. Yasaklar
-
-App Router, Yjs, ikinci LLM, global tsc tek commit, CSP envantersiz, yeni chart lib, PostHog isimli load-bearing silme, Ağustos'u güncel sanma, placeholder testini silme, marketplace / merch / careers.
+Placeholder kırmızısı = canlı proje yok, test çöp değil.
 
 ---
 
-## 8. Ölçüt
+## 6. Ölçüt
 
-| Ölçü | Hedef |
-|---|---|
-| Çift cihaz not kaybı | 0 |
-| Boş pencere (6 yüzey) | 0 |
-| Yayında About PostHog | 0 |
-| Sitemap public notebook | ürün yayınlıyorsa var |
-| typecheck:shell | CI yeşil |
-| Study | test kart → `pro` |
-| Chat abuse | kalıcı 429 |
+Çift cihaz kayıp 0. Boş pencere 0. About PostHog 0. Notebook iskelet sonsuz 0. Sitemap notebook (yayın varsa). typecheck yeşil. Study → pro. 429 isolate ötesi. Manifesto null 0.
 
-Bu rapor ürünü şişirmez. Vaadi doğru, kimliği WIM, masaüstü sağlam, yazı bulunabilir, study fişli.
+---
+
+## 7. Sınır
+
+0.2 import grafiği henüz yok — üret, bu dosyaya ekle.
+1.1 canlı koşulmadı.
+Lemon sırları okunmadı.
+Faz bitince §3'ü güncelle; yeni rapor dosyası açma.
