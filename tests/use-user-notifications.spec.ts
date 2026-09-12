@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { test, expect } from '@playwright/test'
 
 // Pure deduplication and sorting logic extracted to prove it handles races correctly
 function mergeNotifications(
@@ -17,8 +17,8 @@ function mergeNotifications(
     )
 }
 
-describe('Notification Deduplication and Merging', () => {
-    it('merges remote and local assistant notes, deduplicating and sorting by date without losing local ones', () => {
+test.describe('Notification Deduplication and Merging', () => {
+    test('merges remote and local assistant notes, deduplicating and sorting by date without losing local ones', () => {
         const localAssistantNotes = [
             { id: 'assistant_1', date: '2025-01-01T12:00:00Z', title: 'A local note' }
         ]
