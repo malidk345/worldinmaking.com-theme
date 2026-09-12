@@ -122,6 +122,7 @@ import {
     withPreservedGroupStart,
 } from './documentModel'
 import {
+    escapeAttributeSelectorValue,
     getClosestEditableBlockElement,
     getCollapsedSelectionRange,
     getCollapsedSelectionRestoreRequest,
@@ -302,10 +303,12 @@ import { useNotebookClipboard } from './useNotebookClipboard'
 import { useNotebookKeyboard } from './useNotebookKeyboard'
 import { useNotebookUndo } from './useNotebookUndo'
 
+import { computeMobileBlockBarPosition, type MobileBlockBarAnchor } from './mobileBlockBarModel'
+
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
 export { collectFootnoteIdsFromNodes } from './useNotebookFootnotes'
-export { computeMobileBlockBarPosition, type MobileBlockBarAnchor } from './mobileBlockBarModel'
+export { computeMobileBlockBarPosition, type MobileBlockBarAnchor }
 
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
     return <MarkdownNotebookEditor {...props} />
@@ -357,6 +360,9 @@ function MarkdownNotebookEditor({
     const [floatingToolbar, setFloatingToolbar] = useState<FloatingToolbarState | null>(null)
     const [insertMenu, setInsertMenu] = useState<InsertMenuState | null>(null)
     const [insertMenuPosition, setInsertMenuPosition] = useState<InsertMenuPosition | null>(null)
+    const insertMenuRef = useRef(insertMenu)
+    insertMenuRef.current = insertMenu
+    const updateInsertMenuPositionRef = useRef<() => void>(() => {})
 
     const clearInsertMenu = useCallback((): void => {
         setInsertMenu(null)
@@ -705,61 +711,55 @@ function MarkdownNotebookEditor({
         setMobileBarAnchor(null)
     }, [])
 
-    const dockBar = useCallback((): void => {
-        if (!mobileActiveNodeId) return
-        const row = window.document.querySelector<HTMLElement>(
-            `.MarkdownNotebook__row[data-node-id="${mobileActiveNodeId}"], .MarkdownNotebook__row--mobile-active`
-        )
-        if (!row) {
-            clearMobileBlockBar()
-            return
-        }
-        const position = computeMobileBlockBarPosition(row)
-        if (!position) {
-            clearMobileBlockBar()
-            return
-        }
-        setMobileBarAnchor(position)
-    }, [mobileActiveNodeId, clearMobileBlockBar])
-
-    useLayoutEffect(() => {
-        if (mobileActiveNodeId) {
-            dockBar()
-        }
-    }, [document, mobileActiveNodeId, dockBar])
+    const redockMobileBarForNode = useCallback((nodeId: string): void => {
+        setTimeout(() => {
+            const row = window.document.querySelector<HTMLElement>(
+                `.MarkdownNotebook__row[data-node-id="${nodeId}"]`
+            )
+            if (!row) {
+                clearMobileBlockBar()
+                return
+            }
+            const position = computeMobileBlockBarPosition(row)
+            if (position) {
+                setMobileBarAnchor(position)
+            } else {
+                clearMobileBlockBar()
+            }
+        }, 60)
+    }, [clearMobileBlockBar])
 
     useEffect(() => {
         if (!mobileActiveNodeId) return
+
         const handleOutsideDismiss = (e: MouseEvent | TouchEvent) => {
             const target = e.target as HTMLElement | null
             if (!target?.closest('.MarkdownNotebook__mobile-block-bar') && !target?.closest('.MarkdownNotebook__row--mobile-active')) {
                 clearMobileBlockBar()
             }
         }
-        const handleScrollDismiss = (event: Event) => {
-            const target = event.target
-            if (target === window || target === window.document || target === window.document.documentElement) {
-                return
-            }
-            if (target instanceof Element && target.closest('.MarkdownNotebook__mobile-block-bar')) {
-                return
-            }
+
+        const handleScrollOrResize = () => {
             clearMobileBlockBar()
         }
+
         const domDocument = window.document
-        domDocument.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
-        domDocument.addEventListener('mousedown', handleOutsideDismiss)
-        window.addEventListener('scroll', handleScrollDismiss, true)
-        window.visualViewport?.addEventListener('resize', dockBar)
-        window.visualViewport?.addEventListener('scroll', dockBar)
+        const timerId = setTimeout(() => {
+            domDocument.addEventListener('touchstart', handleOutsideDismiss, { passive: true })
+            domDocument.addEventListener('mousedown', handleOutsideDismiss)
+        }, 120)
+
+        window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true })
+        window.addEventListener('resize', handleScrollOrResize, { passive: true })
+
         return () => {
+            clearTimeout(timerId)
             domDocument.removeEventListener('touchstart', handleOutsideDismiss)
             domDocument.removeEventListener('mousedown', handleOutsideDismiss)
-            window.removeEventListener('scroll', handleScrollDismiss, true)
-            window.visualViewport?.removeEventListener('resize', dockBar)
-            window.visualViewport?.removeEventListener('scroll', dockBar)
+            window.removeEventListener('scroll', handleScrollOrResize, true)
+            window.removeEventListener('resize', handleScrollOrResize)
         }
-    }, [mobileActiveNodeId, clearMobileBlockBar, dockBar])
+    }, [mobileActiveNodeId, clearMobileBlockBar])
 
     const handleRowTouchStart = (nodeId: string, isTitle: boolean, event: ReactTouchEvent<HTMLDivElement>): void => {
         if (mode !== 'edit' || isTitle) return
@@ -778,21 +778,40 @@ function MarkdownNotebookEditor({
         }
 
         const timer = setTimeout(() => {
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                try {
-                    navigator.vibrate(40)
-                } catch {
-                    // Ignore vibration errors
+            try {
+                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                    try {
+                        navigator.vibrate(40)
+                    } catch {
+                        // Ignore vibration errors
+                    }
                 }
-            }
-            const position = computeMobileBlockBarPosition(row, { touchY: y })
-            if (!position) {
+                const targetRow =
+                    row && typeof window !== 'undefined' && window.document.contains(row)
+                        ? row
+                        : window.document.querySelector<HTMLElement>(`.MarkdownNotebook__row[data-node-id="${nodeId}"]`)
+                if (!targetRow) {
+                    clearMobileBlockBar()
+                    return
+                }
+                const position = computeMobileBlockBarPosition(targetRow, { touchY: y })
+                if (!position) {
+                    clearMobileBlockBar()
+                    return
+                }
+                setMobileBarAnchor((prev) => {
+                    if (prev && prev.top === position.top && prev.left === position.left && prev.placement === position.placement) {
+                        return prev
+                    }
+                    return position
+                })
+                setMobileActiveNodeId(nodeId)
+                setFloatingToolbar(null)
+            } catch {
                 clearMobileBlockBar()
-                return
+            } finally {
+                touchStartPosRef.current = null
             }
-            setMobileBarAnchor(position)
-            setMobileActiveNodeId(nodeId)
-            setFloatingToolbar(null)
         }, 340)
 
         touchStartPosRef.current = { x, y, timer, row }
@@ -2360,6 +2379,9 @@ function MarkdownNotebookEditor({
                     Math.max(0, floatingToolbarRevealAfterRef.current - Date.now())
                 )
             }
+            if (insertMenuRef.current) {
+                updateInsertMenuPositionRef.current()
+            }
             updateSelectedComponentBlocksFromSelection()
             // Non-text blocks (queries, dividers, comments…) never produce a text caret, so
             // fall back to the focused block — collaborators still see who is on it.
@@ -3434,7 +3456,10 @@ function MarkdownNotebookEditor({
         const anchorElement =
             blockRefs.current[insertMenu.nodeId] ??
             getNotebookBlockElement(canvasRef.current, insertMenu.nodeId) ??
-            getNotebookBlockElement(notebookRef.current, insertMenu.nodeId)
+            getNotebookBlockElement(notebookRef.current, insertMenu.nodeId) ??
+            (notebookRef.current?.querySelector<HTMLElement>(
+                `.MarkdownNotebook__row[data-node-id="${escapeAttributeSelectorValue(insertMenu.nodeId)}"]`
+            ) ?? null)
         if (!anchorElement) {
             setInsertMenuPosition(null)
             return
@@ -3442,9 +3467,22 @@ function MarkdownNotebookEditor({
 
         setInsertMenuPosition(getInsertMenuPosition(anchorElement))
     }, [insertMenu])
+    updateInsertMenuPositionRef.current = updateInsertMenuPosition
 
     useLayoutEffect(() => {
         updateInsertMenuPosition()
+        if (insertMenu) {
+            const rafId = requestAnimationFrame(() => {
+                updateInsertMenuPosition()
+            })
+            const timerId = setTimeout(() => {
+                updateInsertMenuPosition()
+            }, 45)
+            return () => {
+                cancelAnimationFrame(rafId)
+                clearTimeout(timerId)
+            }
+        }
     }, [document, insertMenu, updateInsertMenuPosition])
 
     useEffect(() => {
@@ -5131,6 +5169,7 @@ function MarkdownNotebookEditor({
 
         return (
             <div
+                data-node-id={node.id}
                 className={clsx(
                     'MarkdownNotebook__row',
                     isTitleRow && 'MarkdownNotebook__row--title',
@@ -5768,6 +5807,7 @@ function MarkdownNotebookEditor({
                                         event.preventDefault()
                                         event.stopPropagation()
                                         moveBlockUp(mobileBarNode.id)
+                                        redockMobileBarForNode(mobileBarNode.id)
                                     }}
                                     title="Move up"
                                     aria-label="Move up"
@@ -5783,6 +5823,7 @@ function MarkdownNotebookEditor({
                                         event.preventDefault()
                                         event.stopPropagation()
                                         moveBlockDown(mobileBarNode.id)
+                                        redockMobileBarForNode(mobileBarNode.id)
                                     }}
                                     title="Move down"
                                     aria-label="Move down"

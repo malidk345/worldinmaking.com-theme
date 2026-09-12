@@ -377,19 +377,22 @@ html.dark .MarkdownNotebook,
     }
 }
 
-.MarkdownNotebook__row:active,
-.MarkdownNotebook__row:focus-within {
+.MarkdownNotebook__row:active {
     background: transparent;
     outline-color: transparent;
     box-shadow: none;
 }
 
-@media (hover: none), (pointer: coarse), (max-width: 640px) {
-    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
-    .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
-    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)) {
-        outline-color: var(--color-border-primary);
-    }
+/* Focused row frame: when inside a block (cursor in text or mobile active), show the frame outline on desktop & mobile */
+.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+    background: transparent;
+    outline: 1.5px solid var(--color-border-primary, rgb(var(--border, 191 193 183)));
+    outline-color: var(--color-border-primary, rgb(var(--border, 191 193 183)));
+    outline-offset: -1.5px;
+    border-radius: 0.375rem;
+    box-shadow: none;
 }
 
 .MarkdownNotebook__blockquote-group .MarkdownNotebook__row,

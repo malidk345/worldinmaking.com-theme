@@ -31,6 +31,46 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-12 — Antigravity (Notebook Slash Menu Precise Selection Anchoring & Mobile Upward Jump Fix)
+- **Scope:**
+  1. Resolved issue where slash insert menu occasionally appeared far above the selected block/caret instead of anchoring directly below/above the selected area ("slah menüye basıldığında seçili alanda kalsın böyle çalışıyor ama arada daha yukarıda vs açılabiliyor").
+  2. Root cause 1: Premature flipping above viewport. `thresholdBelow` was 160px (desktop) / 80px (mobile). When available space below dropped below 80px (e.g. keyboard open or typing in lower half of viewport), the menu flipped to `'above'` with a 240px `maxHeight` and `transform: translateY(-100%)`, pushing it high above the caret toward the top of the screen. Fixed by lowering `thresholdBelow` to 54px on mobile and 70px on desktop, keeping it placed directly `'below'` (`targetRect.bottom + INSERT_MENU_GAP`) as long as at least 2 items fit scrollably, and clamping `maxHeight` to `availableAbove` when flipped above.
+  3. Root cause 2: Target precision (caret vs whole block). Switched from paragraph element bounding rect to active text selection range bounding rect (`window.getSelection()?.getRangeAt(0).getBoundingClientRect()`), falling back cleanly to block row bounding rect.
+  4. Root cause 3: Asynchronous boundary insertion layout timing. Added `requestAnimationFrame` and 45ms layout stabilization in `openInsertMenuAtBoundary`.
+  5. Extracted pure positioning geometry into `insertMenuModel.ts` and added automated Playwright regression tests.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (48 of 48 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/InsertMenu.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/insertMenuModel.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-12 — Antigravity (Fix Mobile Long-Press Crash & Enable Block Focus Frame Outline on Mobile)
+- **Scope:**
+  1. Resolved runtime fatal `ReferenceError: computeMobileBlockBarPosition is not defined` on mobile long-press: explicitly imported `computeMobileBlockBarPosition` and `type MobileBlockBarAnchor` into module scope in `MarkdownNotebook.tsx` (previously only re-exported via `export { ... } from ...` which didn't bind into lexical scope).
+  2. Added defensive DOM node detachment handling and `try...catch` guards to `handleRowTouchStart`, `dockBar`, and `computeMobileBlockBarPosition` in `mobileBlockBarModel.ts` to guarantee zero unhandled runtime crashes if an element unmounts during long-press timers.
+  3. Ensured the block frame outline (active/hover hairline border) is consistently visible when inside a block on mobile (during editing/focus and touch selection):
+     - Updated `.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within`, `.MarkdownNotebook__row--focused`, and `.MarkdownNotebook__row--mobile-active` in `MarkdownNotebook.scss` and `notebook-mobile-block-chrome.css`.
+     - Replaced brittle chained `:not(:has(...))` selectors (which failed parsing on mobile Safari and WebKit) with standard CSS class exclusions `:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment)`.
+     - Set `outline: 1.5px solid var(--color-border-primary, rgb(var(--border, 191 193 183)))` and `outline-offset: -1.5px` with light and dark mode support.
+  4. Recompiled notebook style bundles (`bundleCss.ts`, `productBundleCss.ts`) via `pnpm run build:notebook-styles`.
+  5. Verified all 47 tests pass in `tests/notebook-frontend.spec.ts`.
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `src/notebook-app/lib/components/MarkdownNotebook/mobileBlockBarModel.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss`
+  - `src/styles/notebook-mobile-block-chrome.css`
+  - `src/notebook-app/styles/bundleCss.ts`
+  - `src/notebook-app/styles/productBundleCss.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
 ### 2026-09-12 — Antigravity (Notebook Mobile Floating Toolbar Positioning & Compact Glass Block Bar)
 - **Scope:**
   1. Positioned mobile floating formatting toolbar dynamically above or below the active text selection range instead of locking/docking to the virtual keyboard or viewport bottom (`MarkdownNotebook.tsx`).

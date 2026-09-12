@@ -9,11 +9,16 @@ import {
     splitListItemAtSlashToken,
     splitTextBlockAtSlashToken,
 } from './documentModel'
-import type {
-    InsertCommand,
-    InsertMenuSelectionDirection,
-    InsertMenuState,
-    RestoreInlineSelectionRequest,
+import {
+    INSERT_MENU_GAP,
+    INSERT_MENU_MAX_HEIGHT,
+    INSERT_MENU_VIEWPORT_PADDING,
+    INSERT_MENU_WIDTH,
+    type InsertCommand,
+    type InsertMenuPosition,
+    type InsertMenuSelectionDirection,
+    type InsertMenuState,
+    type RestoreInlineSelectionRequest,
 } from './editorTypes'
 import { splitInlineNodesAt } from './inlineContent'
 import { makeEmptyParagraph, makeListItemId } from './markdown'
@@ -408,4 +413,131 @@ export function getFilteredInsertCommands(
         }
         return normalizeForSearch(text).includes(cleanQuery)
     })
+}
+
+export function getVisibleViewport(): {
+    top: number
+    left: number
+    width: number
+    height: number
+    bottom: number
+    right: number
+} {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null
+    const left = vv?.offsetLeft ?? 0
+    const top = vv?.offsetTop ?? 0
+    const width =
+        vv?.width ??
+        (typeof window !== 'undefined'
+            ? window.innerWidth || document.documentElement.clientWidth
+            : 375)
+    const height =
+        vv?.height ??
+        (typeof window !== 'undefined'
+            ? window.innerHeight || document.documentElement.clientHeight
+            : 667)
+    return { top, left, width, height, bottom: top + height, right: left + width }
+}
+
+export function getInsertMenuPosition(
+    anchorElement: HTMLElement,
+    size?: { width?: number; maxHeight?: number; minHeight?: number }
+): InsertMenuPosition {
+    const viewport = getVisibleViewport()
+    const isMobile = viewport.width < 640
+    const padding = isMobile ? 12 : INSERT_MENU_VIEWPORT_PADDING
+    const availableViewportWidth = Math.max(0, viewport.width - padding * 2)
+
+    const defaultPreferredWidth = isMobile
+        ? Math.min(256, availableViewportWidth)
+        : INSERT_MENU_WIDTH
+    const preferredWidth = size?.width ?? defaultPreferredWidth
+    const preferredMaxHeight = size?.maxHeight ?? INSERT_MENU_MAX_HEIGHT
+
+    // 1. Resolve true target bounding rect:
+    // Prioritize active selection range (caret / text selection) inside this block or its row
+    let targetRect = anchorElement.getBoundingClientRect()
+    const rowElement =
+        typeof anchorElement.closest === 'function'
+            ? anchorElement.closest<HTMLElement>('.MarkdownNotebook__row')
+            : null
+
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null
+    if (selection && selection.rangeCount > 0) {
+        try {
+            const range = selection.getRangeAt(0)
+            if (
+                anchorElement.contains(range.startContainer) ||
+                (rowElement && rowElement.contains(range.startContainer))
+            ) {
+                const rangeRect = range.getBoundingClientRect()
+                if (rangeRect && (rangeRect.width > 0 || rangeRect.height > 0) && rangeRect.bottom > 0) {
+                    targetRect = rangeRect
+                }
+            }
+        } catch {
+            // Ignore DOM selection read errors
+        }
+    }
+
+    // Defensive fallback: if targetRect has 0 dimensions (e.g. empty paragraph without layout), try the parent row
+    if (targetRect.height === 0 && targetRect.width === 0 && rowElement) {
+        const rowRect = rowElement.getBoundingClientRect()
+        if (rowRect && (rowRect.height > 0 || rowRect.width > 0) && rowRect.bottom > 0) {
+            targetRect = rowRect
+        }
+    }
+
+    // If still completely unrendered/detached (e.g. top and bottom are 0), fallback to focused row
+    if (targetRect.bottom <= 0 && targetRect.top <= 0 && typeof window !== 'undefined') {
+        const activeRow = window.document.querySelector<HTMLElement>(
+            '.MarkdownNotebook__row--focused, .MarkdownNotebook__row--mobile-active, .MarkdownNotebook__row--insert-menu-open'
+        )
+        if (activeRow) {
+            const activeRect = activeRow.getBoundingClientRect()
+            if (activeRect && activeRect.bottom > 0) {
+                targetRect = activeRect
+            }
+        }
+    }
+
+    const width = Math.min(preferredWidth, availableViewportWidth)
+    const maxLeft = Math.max(viewport.left + padding, viewport.right - padding - width)
+    const minLeft = viewport.left + padding
+    const left = Math.max(minLeft, Math.min(targetRect.left, maxLeft))
+
+    const availableBelow = Math.max(
+        0,
+        viewport.bottom - targetRect.bottom - INSERT_MENU_GAP - padding
+    )
+    const availableAbove = Math.max(
+        0,
+        targetRect.top - viewport.top - INSERT_MENU_GAP - padding
+    )
+
+    // Keep the menu attached directly to the selected area/row ('below') whenever possible.
+    // Only flip 'above' if space below is genuinely insufficient to show items (< 54px on mobile, < 70px on desktop)
+    // AND space above is greater than space below.
+    const thresholdBelow = isMobile ? 54 : 70
+    const placement =
+        availableBelow >= thresholdBelow || availableBelow >= availableAbove ? 'below' : 'above'
+
+    let top: number
+    let maxHeight: number
+
+    if (placement === 'below') {
+        top = targetRect.bottom + INSERT_MENU_GAP
+        maxHeight = Math.min(preferredMaxHeight, Math.max(60, availableBelow))
+    } else {
+        top = targetRect.top - INSERT_MENU_GAP
+        maxHeight = Math.min(preferredMaxHeight, Math.max(60, availableAbove))
+    }
+
+    return {
+        placement,
+        top,
+        left,
+        width,
+        maxHeight,
+    }
 }

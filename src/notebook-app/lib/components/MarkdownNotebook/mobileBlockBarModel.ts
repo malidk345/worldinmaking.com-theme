@@ -1,11 +1,11 @@
-﻿export type MobileBlockBarAnchor = {
+export type MobileBlockBarAnchor = {
     top: number
     left: number
     placement: 'above' | 'below'
 }
 
 export function computeMobileBlockBarPosition(
-    row: { getBoundingClientRect: () => { top: number; bottom: number; left: number; right?: number; width: number; height: number } },
+    row: { getBoundingClientRect: () => { top: number; bottom: number; left: number; right?: number; width: number; height: number } } | null | undefined,
     options?: {
         touchY?: number
         viewport?: {
@@ -16,18 +16,27 @@ export function computeMobileBlockBarPosition(
         }
     }
 ): MobileBlockBarAnchor | null {
-    const vv = options?.viewport ?? (typeof window !== 'undefined' ? window.visualViewport : null)
-    const viewTop = vv?.offsetTop ?? 0
-    const viewLeft = vv?.offsetLeft ?? 0
-    const viewWidth = vv?.width ?? (typeof window !== 'undefined' ? window.innerWidth : 375)
-    const viewHeight = vv?.height ?? (typeof window !== 'undefined' ? window.innerHeight : 667)
-    const viewBottom = viewTop + viewHeight
-    const viewRight = viewLeft + viewWidth
-
-    const rowRect = row.getBoundingClientRect()
-    if (rowRect.bottom < viewTop - 10 || rowRect.top > viewBottom + 10) {
+    if (!row || typeof row.getBoundingClientRect !== 'function') {
         return null
     }
+
+    try {
+        const vv = options?.viewport ?? (typeof window !== 'undefined' ? window.visualViewport : null)
+        const viewTop = vv?.offsetTop ?? 0
+        const viewLeft = vv?.offsetLeft ?? 0
+        const viewWidth = vv?.width ?? (typeof window !== 'undefined' ? window.innerWidth : 375)
+        const viewHeight = vv?.height ?? (typeof window !== 'undefined' ? window.innerHeight : 667)
+        const viewBottom = viewTop + viewHeight
+        const viewRight = viewLeft + viewWidth
+
+        const rowRect = row.getBoundingClientRect()
+        if (!rowRect || typeof rowRect.top !== 'number' || typeof rowRect.bottom !== 'number') {
+            return null
+        }
+
+        if (rowRect.bottom < viewTop - 10 || rowRect.top > viewBottom + 10) {
+            return null
+        }
 
     const margin = 8
     const barEstimatedHeight = 36
@@ -74,11 +83,14 @@ export function computeMobileBlockBarPosition(
         }
     }
 
-    if (placement === 'above') {
-        top = Math.max(viewTop + barEstimatedHeight + margin, top)
-    } else {
-        top = Math.min(viewBottom - barEstimatedHeight - margin, top)
-    }
+        if (placement === 'above') {
+            top = Math.max(viewTop + barEstimatedHeight + margin, top)
+        } else {
+            top = Math.min(viewBottom - barEstimatedHeight - margin, top)
+        }
 
-    return { top, left, placement }
+        return { top, left, placement }
+    } catch {
+        return null
+    }
 }

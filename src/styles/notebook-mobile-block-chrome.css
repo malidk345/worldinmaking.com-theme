@@ -85,14 +85,19 @@
     }
 }
 
-@media (hover: none), (pointer: coarse), (max-width: 640px) {
-    .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
-    .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)),
-    .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(:has(.MarkdownNotebook__text-block--title)):not(.MarkdownNotebook__row--ai-prompt):not(:has(.MarkdownNotebook__component-shell)) {
-        outline: 1.5px solid var(--color-border-primary, rgba(0, 0, 0, 0.2)) !important;
-        outline-offset: -1.5px !important;
-        border-radius: 0.375rem !important;
-    }
+/* Block frame outline: clearly visible when inside a block on mobile & touch devices */
+.MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+    outline: 1.5px solid var(--color-border-primary, rgb(var(--border, 191 193 183))) !important;
+    outline-offset: -1.5px !important;
+    border-radius: 0.375rem !important;
+}
+
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row:focus-within:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row--focused:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment),
+.dark .MarkdownNotebook--edit .MarkdownNotebook__row--mobile-active:not(.MarkdownNotebook__row--title):not(.MarkdownNotebook__row--ai-prompt):not(.MarkdownNotebook__row--margin-comment) {
+    outline-color: var(--color-border-primary, #3e424f) !important;
 }
 
 @media (pointer: coarse), (max-width: 640px) {

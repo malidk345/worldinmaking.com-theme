@@ -138,6 +138,7 @@ import {
     planSlashInsertAtTextCaret,
     planSplitTextBlock,
     planTextBlockTypedSlash,
+    getInsertMenuPosition,
 } from '../src/notebook-app/lib/components/MarkdownNotebook/insertMenuModel'
 import type { InsertMenuState } from '../src/notebook-app/lib/components/MarkdownNotebook/editorTypes'
 import { planDeleteListItemAtStart, planSplitListItem } from '../src/notebook-app/lib/components/MarkdownNotebook/listModel'
@@ -1580,6 +1581,78 @@ test.describe('notebook frontend helpers', () => {
             top: 250,
             left: 200, // rowCenter = 100 + 100 = 200
         })
+
+        // 5. Defensive null/invalid element handling -> never throws, returns null
+        expect(computeMobileBlockBarPosition(null)).toBeNull()
+        expect(computeMobileBlockBarPosition(undefined)).toBeNull()
+        expect(computeMobileBlockBarPosition({} as any)).toBeNull()
+        expect(computeMobileBlockBarPosition({ getBoundingClientRect: () => { throw new Error('detached') } } as any)).toBeNull()
+    })
+
+    test('MarkdownNotebook imports and exports computeMobileBlockBarPosition in scope', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const notebookPath = path.join(process.cwd(), 'src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx')
+        const content = fs.readFileSync(notebookPath, 'utf8')
+
+        expect(content).toMatch(/import\s*\{[^}]*computeMobileBlockBarPosition[^}]*\}\s*from\s*['"]\.\/mobileBlockBarModel['"]/)
+        expect(content).toMatch(/export\s*\{[^}]*computeMobileBlockBarPosition[^}]*\}/)
+    })
+
+    test('getInsertMenuPosition anchors precisely at selected area and avoids premature upward jump', () => {
+        const mockAnchor = {
+            getBoundingClientRect: () => ({
+                top: 200,
+                bottom: 224,
+                left: 60,
+                right: 360,
+                width: 300,
+                height: 24,
+            }),
+            closest: () => null,
+            contains: () => false,
+        } as unknown as HTMLElement
+
+        // 1. Standard row in viewport -> sits directly below the block at anchorRect.bottom + GAP
+        const posBelow = getInsertMenuPosition(mockAnchor)
+        expect(posBelow.placement).toBe('below')
+        expect(posBelow.top).toBe(230) // 224 + 6 (INSERT_MENU_GAP)
+        expect(posBelow.left).toBe(60)
+
+        // 2. Near bottom of viewport where space below is tight but sufficient -> stays below
+        const mockTightBelowAnchor = {
+            getBoundingClientRect: () => ({
+                top: 550,
+                bottom: 580,
+                left: 80,
+                right: 380,
+                width: 300,
+                height: 30,
+            }),
+            closest: () => null,
+            contains: () => false,
+        } as unknown as HTMLElement
+        const posTight = getInsertMenuPosition(mockTightBelowAnchor)
+        expect(posTight.placement).toBe('below')
+        expect(posTight.top).toBe(586) // 580 + 6, directly below, NOT flying 240px to top of page!
+
+        // 3. Completely unrendered / 0-dimension target doesn't crash or return NaN
+        const mockZeroAnchor = {
+            getBoundingClientRect: () => ({
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                width: 0,
+                height: 0,
+            }),
+            closest: () => null,
+            contains: () => false,
+        } as unknown as HTMLElement
+        const posZero = getInsertMenuPosition(mockZeroAnchor)
+        expect(posZero).toBeDefined()
+        expect(Number.isFinite(posZero.top)).toBe(true)
+        expect(Number.isFinite(posZero.left)).toBe(true)
     })
 })
 

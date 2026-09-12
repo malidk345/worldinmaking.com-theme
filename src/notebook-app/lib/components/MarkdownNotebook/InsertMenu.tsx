@@ -516,55 +516,6 @@ export function buildInsertCommands(
     ]
 }
 
-function getVisibleViewport(): { top: number; left: number; width: number; height: number; bottom: number; right: number } {
-    const vv = window.visualViewport
-    const left = vv?.offsetLeft ?? 0
-    const top = vv?.offsetTop ?? 0
-    const width = vv?.width ?? (window.innerWidth || document.documentElement.clientWidth)
-    const height = vv?.height ?? (window.innerHeight || document.documentElement.clientHeight)
-    return { top, left, width, height, bottom: top + height, right: left + width }
-}
+export { getInsertMenuPosition, getVisibleViewport } from './insertMenuModel'
 
-export function getInsertMenuPosition(
-    anchorElement: HTMLElement,
-    size?: { width?: number; maxHeight?: number; minHeight?: number }
-): InsertMenuPosition {
-    const viewport = getVisibleViewport()
-    const isMobile = viewport.width < 640
-    const padding = isMobile ? 12 : INSERT_MENU_VIEWPORT_PADDING
-    const availableViewportWidth = Math.max(0, viewport.width - padding * 2)
 
-    const defaultPreferredWidth = isMobile
-        ? Math.min(256, availableViewportWidth)
-        : INSERT_MENU_WIDTH
-    const preferredWidth = size?.width ?? defaultPreferredWidth
-    const preferredMaxHeight = size?.maxHeight ?? INSERT_MENU_MAX_HEIGHT
-    const preferredMinHeight = size?.minHeight ?? INSERT_MENU_MIN_HEIGHT
-
-    const anchorRect = anchorElement.getBoundingClientRect()
-    const width = Math.min(preferredWidth, availableViewportWidth)
-    const maxLeft = Math.max(viewport.left + padding, viewport.right - padding - width)
-    const minLeft = viewport.left + padding
-    const left = Math.max(minLeft, Math.min(anchorRect.left, maxLeft))
-
-    const availableBelow = Math.max(
-        0,
-        viewport.bottom - anchorRect.bottom - INSERT_MENU_GAP - padding
-    )
-    const availableAbove = Math.max(
-        0,
-        anchorRect.top - viewport.top - INSERT_MENU_GAP - padding
-    )
-    const effectiveMinHeight = isMobile ? 80 : preferredMinHeight
-    const placement =
-        availableBelow >= effectiveMinHeight || availableBelow >= availableAbove ? 'below' : 'above'
-    const availableHeight = placement === 'below' ? availableBelow : availableAbove
-
-    return {
-        placement,
-        top: placement === 'below' ? anchorRect.bottom + INSERT_MENU_GAP : anchorRect.top - INSERT_MENU_GAP,
-        left,
-        width,
-        maxHeight: Math.min(preferredMaxHeight, Math.max(60, availableHeight)),
-    }
-}
