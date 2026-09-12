@@ -55,7 +55,7 @@ import {
 import { actorToInlineNote, applyRefToRange } from './inlineNotes'
 import { InlineNotePopover } from './InlineNotePopover'
 import { FootnotePopover } from './FootnotePopover'
-import { useNotebookFootnotes } from './useNotebookFootnotes'
+import { useNotebookFootnotes, renumberDocumentFootnotes } from './useNotebookFootnotes'
 import { useNotebookSelection } from './useNotebookSelection'
 import { InvitePhilosopherPicker } from './InvitePhilosopherPicker'
 import { MentionPicker } from './MentionPicker'
@@ -307,7 +307,7 @@ import { computeMobileBlockBarPosition, type MobileBlockBarAnchor } from './mobi
 
 export type { MarkdownNotebookAskAIRequest, MarkdownNotebookProps } from './notebookEditorModel'
 
-export { collectFootnoteIdsFromNodes } from './useNotebookFootnotes'
+export { collectFootnoteIdsFromNodes, renumberDocumentFootnotes } from './useNotebookFootnotes'
 export { computeMobileBlockBarPosition, type MobileBlockBarAnchor }
 
 export function MarkdownNotebook(props: MarkdownNotebookProps): JSX.Element {
@@ -4169,7 +4169,11 @@ function MarkdownNotebookEditor({
         if (!plan) {
             return
         }
-        commitDocument({ ...currentDocument, nodes: plan.nodes })
+        const hasFootnotes = currentDocument.footnotes && Object.keys(currentDocument.footnotes).length > 0
+        const docToCommit = hasFootnotes
+            ? renumberDocumentFootnotes({ ...currentDocument, nodes: plan.nodes }).document
+            : { ...currentDocument, nodes: plan.nodes }
+        commitDocument(docToCommit)
     }
 
     const handleBlockDragStart = (event: ReactDragEvent<HTMLDivElement>, nodeId: string): void => {

@@ -46,6 +46,164 @@ export function collectFootnoteIdsFromNodes(nodes: NotebookBlockNode[]): string[
     return list
 }
 
+export function renumberInlineNodes(
+    children: NotebookInlineNode[],
+    idMap: Map<string, string>
+): NotebookInlineNode[] {
+    let hasAnyFootnote = false
+    for (const child of children) {
+        if (child.type !== 'hardBreak' && child.marks?.some((m) => m.type === 'footnote' && idMap.has(m.id))) {
+            hasAnyFootnote = true
+            break
+        }
+    }
+    if (!hasAnyFootnote) {
+        return children
+    }
+
+    return children.map((child) => {
+        if (child.type === 'hardBreak') return child
+        const fnMark = child.marks?.find((m) => m.type === 'footnote' && idMap.has(m.id))
+        if (!fnMark) return child
+
+        const newId = idMap.get(fnMark.id)!
+        const marks = child.marks?.map((m) => {
+            if (m.type === 'footnote' && m.id && idMap.has(m.id)) {
+                return { ...m, id: newId }
+            }
+            return m
+        })
+
+        return {
+            ...child,
+            text: newId,
+            marks,
+        }
+    })
+}
+
+export function renumberDocumentFootnotes(document: NotebookDocument): {
+    document: NotebookDocument
+    idMap: Map<string, string>
+} {
+    const orderedIds = collectFootnoteIdsFromNodes(document.nodes)
+    const idMap = new Map<string, string>()
+    let needsRenumber = false
+
+    orderedIds.forEach((oldId, idx) => {
+        const expectedId = String(idx + 1)
+        idMap.set(oldId, expectedId)
+        if (oldId !== expectedId) {
+            needsRenumber = true
+        }
+    })
+
+    const checkInlineFootnoteSync = (children: NotebookInlineNode[]): boolean => {
+        for (const child of children) {
+            if (child.type === 'hardBreak') continue
+            const fnMark = child.marks?.find((m) => m.type === 'footnote')
+            if (fnMark && idMap.has(fnMark.id) && child.text !== idMap.get(fnMark.id)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    if (!needsRenumber) {
+        for (const node of document.nodes) {
+            if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'blockquote') {
+                if (checkInlineFootnoteSync(node.children)) {
+                    needsRenumber = true
+                    break
+                }
+            } else if (node.type === 'list') {
+                for (const item of node.items) {
+                    if (checkInlineFootnoteSync(item.children)) {
+                        needsRenumber = true
+                        break
+                    }
+                }
+            } else if (node.type === 'table') {
+                for (const cell of node.headers) {
+                    if (checkInlineFootnoteSync(cell.children)) {
+                        needsRenumber = true
+                        break
+                    }
+                }
+                for (const row of node.rows) {
+                    for (const cell of row) {
+                        if (checkInlineFootnoteSync(cell.children)) {
+                            needsRenumber = true
+                            break
+                        }
+                    }
+                }
+            }
+            if (needsRenumber) break
+        }
+    }
+
+    const currentFootnoteKeys = Object.keys(document.footnotes || {})
+    if (currentFootnoteKeys.length !== orderedIds.length) {
+        needsRenumber = true
+    }
+
+    if (!needsRenumber) {
+        return { document, idMap }
+    }
+
+    const nextNodes = document.nodes.map((node) => {
+        if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'blockquote') {
+            return {
+                ...node,
+                children: renumberInlineNodes(node.children, idMap),
+            }
+        }
+        if (node.type === 'list') {
+            return {
+                ...node,
+                items: node.items.map((item) => ({
+                    ...item,
+                    children: renumberInlineNodes(item.children, idMap),
+                })),
+            }
+        }
+        if (node.type === 'table') {
+            return {
+                ...node,
+                headers: node.headers.map((cell) => ({
+                    ...cell,
+                    children: renumberInlineNodes(cell.children, idMap),
+                })),
+                rows: node.rows.map((row) =>
+                    row.map((cell) => ({
+                        ...cell,
+                        children: renumberInlineNodes(cell.children, idMap),
+                    }))
+                ),
+            }
+        }
+        return node
+    })
+
+    const nextFootnotes: Record<string, string> = {}
+    const oldFootnotes = document.footnotes || {}
+    for (const oldId of orderedIds) {
+        const newId = idMap.get(oldId)!
+        nextFootnotes[newId] = oldFootnotes[oldId] || ''
+    }
+
+    return {
+        document: {
+            ...document,
+            nodes: nextNodes,
+            footnotes: Object.keys(nextFootnotes).length ? nextFootnotes : undefined,
+        },
+        idMap,
+    }
+}
+
+
 export interface UseNotebookFootnotesProps {
     documentRef: React.MutableRefObject<NotebookDocument>
     commitDocument: (document: NotebookDocument) => void
@@ -168,21 +326,12 @@ export function useNotebookFootnotes({
             const node = nodes[targetIndex]
             if (!node || node.type === 'component' || node.type === 'divider') return
 
-            const orderedIds = collectFootnoteIdsFromNodes(nodes)
-            let nextNum = 1
-            while (
-                orderedIds.includes(String(nextNum)) ||
-                (currentDocument.footnotes &&
-                    currentDocument.footnotes[String(nextNum)] !== undefined)
-            ) {
-                nextNum++
-            }
-            const nextId = String(nextNum)
+            const tempId = `__new_fn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}__`
 
             const footnoteNode: NotebookInlineNode = {
                 type: 'text',
-                text: nextId,
-                marks: [{ type: 'footnote', id: nextId }],
+                text: tempId,
+                marks: [{ type: 'footnote', id: tempId }],
             }
 
             if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'blockquote') {
@@ -259,19 +408,23 @@ export function useNotebookFootnotes({
                 }
             }
 
-            const nextFootnotes = { ...(currentDocument.footnotes || {}), [nextId]: '' }
-            commitDocument({
+            const unrenumberedFootnotes = { ...(currentDocument.footnotes || {}), [tempId]: '' }
+            const { document: renumberedDocument, idMap } = renumberDocumentFootnotes({
                 ...currentDocument,
                 nodes,
-                footnotes: nextFootnotes,
+                footnotes: unrenumberedFootnotes,
             })
+            const targetNewId = idMap.get(tempId) || '1'
+            const targetNewNum = parseInt(targetNewId, 10) || 1
+
+            commitDocument(renumberedDocument)
             floatingToolbarPositionLockRef.current = null
             setFloatingToolbar(null)
             clearInsertMenu()
 
             setTimeout(() => {
                 const footnoteEl = window.document.querySelector(
-                    `[data-notebook-footnote="${nextId}"]`
+                    `[data-notebook-footnote="${targetNewId}"]`
                 ) as HTMLElement | null
                 const rect = footnoteEl?.getBoundingClientRect() || {
                     top: 250,
@@ -280,8 +433,8 @@ export function useNotebookFootnotes({
                 }
                 const overlay = clampOverlayPosition(rect)
                 setActiveFootnotePopover({
-                    id: nextId,
-                    number: nextNum,
+                    id: targetNewId,
+                    number: targetNewNum,
                     text: '',
                     top: overlay.top,
                     left: overlay.left,
@@ -371,11 +524,12 @@ export function useNotebookFootnotes({
                 }
                 return node
             })
-            commitDocument({
+            const { document: renumberedDocument } = renumberDocumentFootnotes({
                 ...documentRef.current,
                 nodes: nextNodes,
-                footnotes: Object.keys(nextFootnotes).length ? nextFootnotes : undefined,
+                footnotes: nextFootnotes,
             })
+            commitDocument(renumberedDocument)
             setActiveFootnotePopover(null)
         },
         [commitDocument, documentRef]
@@ -403,7 +557,10 @@ export function useNotebookFootnotes({
         if (!footnoteEntries.length) return null
 
         const orderedFootnoteIds = collectFootnoteIdsFromNodes(documentRef.current.nodes)
-        const sortedEntries = [...footnoteEntries].sort(([aId], [bId]) => {
+        const validEntries = footnoteEntries.filter(([fnId]) => orderedFootnoteIds.includes(fnId))
+        if (!validEntries.length) return null
+
+        const sortedEntries = [...validEntries].sort(([aId], [bId]) => {
             const aIdx = orderedFootnoteIds.indexOf(aId)
             const bIdx = orderedFootnoteIds.indexOf(bId)
             if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx

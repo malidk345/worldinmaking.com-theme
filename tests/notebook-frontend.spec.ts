@@ -1730,5 +1730,160 @@ test.describe('notebook frontend helpers', () => {
         expect(scssContent).toContain('color: #ffffff')
         expect(bundleContent).toContain('color: #ffffff')
     })
+
+    test('deleting a footnote sequentially renumbers remaining footnotes', () => {
+        const { renumberDocumentFootnotes } = require('../src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes')
+        const doc: NotebookDocument = {
+            type: 'doc',
+            nodes: [
+                {
+                    id: 'p-1',
+                    type: 'paragraph',
+                    children: [{ type: 'text', text: 'Sentence one with no footnote' }],
+                },
+                {
+                    id: 'p-2',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Sentence two ' },
+                        { type: 'text', text: '2', marks: [{ type: 'footnote', id: '2' }] },
+                    ],
+                },
+                {
+                    id: 'p-3',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Sentence three ' },
+                        { type: 'text', text: '3', marks: [{ type: 'footnote', id: '3' }] },
+                    ],
+                },
+            ],
+            footnotes: {
+                '2': 'Second source citation',
+                '3': 'Third source citation',
+            },
+        }
+
+        const result = renumberDocumentFootnotes(doc)
+        expect(result.document.footnotes).toEqual({
+            '1': 'Second source citation',
+            '2': 'Third source citation',
+        })
+
+        const p2 = result.document.nodes[1] as NotebookTextBlockNode
+        const p3 = result.document.nodes[2] as NotebookTextBlockNode
+        const fn2 = p2.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+        const fn3 = p3.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+
+        expect(fn2?.text).toBe('1')
+        expect(fn2?.marks?.[0]).toEqual({ type: 'footnote', id: '1' })
+
+        expect(fn3?.text).toBe('2')
+        expect(fn3?.marks?.[0]).toEqual({ type: 'footnote', id: '2' })
+    })
+
+    test('inserting a footnote between existing footnotes renumbers subsequent ones', () => {
+        const { renumberDocumentFootnotes } = require('../src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes')
+        const doc: NotebookDocument = {
+            type: 'doc',
+            nodes: [
+                {
+                    id: 'p-1',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Sentence one ' },
+                        { type: 'text', text: '1', marks: [{ type: 'footnote', id: '1' }] },
+                    ],
+                },
+                {
+                    id: 'p-new',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Inserted middle sentence ' },
+                        { type: 'text', text: 'temp-fn', marks: [{ type: 'footnote', id: 'temp-fn' }] },
+                    ],
+                },
+                {
+                    id: 'p-2',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Sentence two ' },
+                        { type: 'text', text: '2', marks: [{ type: 'footnote', id: '2' }] },
+                    ],
+                },
+            ],
+            footnotes: {
+                '1': 'First note',
+                'temp-fn': '',
+                '2': 'Second note',
+            },
+        }
+
+        const result = renumberDocumentFootnotes(doc)
+        expect(result.document.footnotes).toEqual({
+            '1': 'First note',
+            '2': '',
+            '3': 'Second note',
+        })
+
+        const pNew = result.document.nodes[1] as NotebookTextBlockNode
+        const p2 = result.document.nodes[2] as NotebookTextBlockNode
+        const fnMiddle = pNew.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+        const fnLast = p2.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+
+        expect(fnMiddle?.text).toBe('2')
+        expect(fnMiddle?.marks?.[0]).toEqual({ type: 'footnote', id: '2' })
+
+        expect(fnLast?.text).toBe('3')
+        expect(fnLast?.marks?.[0]).toEqual({ type: 'footnote', id: '3' })
+    })
+
+    test('reordering blocks with footnotes renumbers them to match visual reading order', () => {
+        const { renumberDocumentFootnotes } = require('../src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes')
+        // Originally: Paragraph A (with fn 1) was above Paragraph B (with fn 2)
+        // Now: Paragraph B was moved above Paragraph A
+        const doc: NotebookDocument = {
+            type: 'doc',
+            nodes: [
+                {
+                    id: 'p-b',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Paragraph B ' },
+                        { type: 'text', text: '2', marks: [{ type: 'footnote', id: '2' }] },
+                    ],
+                },
+                {
+                    id: 'p-a',
+                    type: 'paragraph',
+                    children: [
+                        { type: 'text', text: 'Paragraph A ' },
+                        { type: 'text', text: '1', marks: [{ type: 'footnote', id: '1' }] },
+                    ],
+                },
+            ],
+            footnotes: {
+                '1': 'Note A originally first',
+                '2': 'Note B originally second',
+            },
+        }
+
+        const result = renumberDocumentFootnotes(doc)
+        expect(result.document.footnotes).toEqual({
+            '1': 'Note B originally second',
+            '2': 'Note A originally first',
+        })
+
+        const firstBlock = result.document.nodes[0] as NotebookTextBlockNode
+        const secondBlock = result.document.nodes[1] as NotebookTextBlockNode
+        const fnFirst = firstBlock.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+        const fnSecond = secondBlock.children.find((c) => c.marks?.some((m) => m.type === 'footnote'))
+
+        expect(fnFirst?.text).toBe('1')
+        expect(fnFirst?.marks?.[0]).toEqual({ type: 'footnote', id: '1' })
+
+        expect(fnSecond?.text).toBe('2')
+        expect(fnSecond?.marks?.[0]).toEqual({ type: 'footnote', id: '2' })
+    })
 })
 

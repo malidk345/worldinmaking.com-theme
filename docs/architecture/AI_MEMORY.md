@@ -25,11 +25,32 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Mobile Writing Architecture & Notebook Footnotes Delete Icon (Pushed to main)]`
+- **Status:** `[COMPLETED by Antigravity - Footnote Sequential Auto-Renumbering & Reading Order Sync]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Footnote Sequential Auto-Renumbering & Reading Order Sync)
+- **Scope:**
+  1. Implemented automatic sequential renumbering for document footnotes (`renumberDocumentFootnotes`, `renumberInlineNodes` in `useNotebookFootnotes.ts`):
+     - When any footnote is deleted (`deleteFootnote`), the remaining footnotes are automatically renumbered sequentially (`2 -> 1, 3 -> 2, 4 -> 3...`).
+     - When a footnote is added anywhere in the document (`addFootnoteAtTarget`), whether at the top, middle, or bottom, it takes its exact sequential index in reading order, and all subsequent footnotes are automatically shifted up.
+     - When notebook blocks are reordered via keyboard or drag (`moveBlockToBoundary` in `MarkdownNotebook.tsx`), all footnotes are re-indexed based on the document's new physical reading order.
+     - In `useNotebookFootnotes.ts`, `renderDocumentFootnotesSection` now filters out orphan footnote definitions not present in document inline nodes, ensuring 100% harmony between inline superscripts `[1], [2]...` and bottom list indices `1., 2....`.
+  2. Added unit regression test coverage in `tests/notebook-frontend.spec.ts`:
+     - Verified middle and leading footnote deletion renumbers remaining items and syncs document footnotes dictionary.
+     - Verified middle footnote insertion between existing footnotes shifts subsequent ones.
+     - Verified block reordering renumbers footnotes according to visual reading order.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (54 of 54 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Compact Black Inline Footnotes Styling & Test Suite Alignment)
 - **Scope:**
