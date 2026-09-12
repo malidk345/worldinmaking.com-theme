@@ -25,11 +25,46 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Notebook Auto-Save & Typing Interruption Elimination]`
+- **Status:** `[COMPLETED by Antigravity - Cross-Device Notebook Sync & Author Face Deduplication]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Cross-Device Notebook Sync & Author Face Deduplication)
+- **Scope:**
+  1. Resolved cross-device sync disparity ("bir hesap bazlı değilde cihaz bazlı mı notebooklar kaydediliyor biz cihazda hesabımla kaydettiğim diğerinde çıkmıyor"):
+     - Identified root cause: Notebooks created in guest/unauthenticated mode or before JWT hydration were saved under device keys (`owner_178...`) with `auth_user_id: null` in Supabase PostgreSQL (`wim_notebooks`).
+     - Previously, `claimThisDeviceIfNeeded` was only called during manual password submit in `wim-auth.ts`, and was locked by a permanent localStorage flag (`wim_device_claimed`), missing sessions restored via OAuth, cookies, or page reloads.
+     - Added automatic claiming hook in `src/hooks/useUser.tsx` on both `validateUser` (session restoration on startup) and `onAuthStateChange`.
+     - Replaced rigid localStorage lock in `src/lib/claim-device-client.ts` with a debounce throttle to allow ongoing claim recovery.
+     - In `lib/notebooks-repo.ts` and `src/pages/api/notebooks/index.ts`: added `claimDeviceNotebooksForUser`, which auto-claims any unattached guest notes matching the browser's device key on authenticated GET/POST requests. Also updated `upsertNotebook` to seamlessly adopt unassigned guest rows (`auth_user_id === null`) when pushed by an authenticated user instead of throwing 403 Forbidden.
+     - In `src/notebook-app/scenes/notebooks/notebookRemote.ts`: made `notebookAuthHeadersFresh` proactively refresh Supabase session and resolve `wim_auth_user_id` *before* ownerKey is read, preventing queries with frozen guest device keys.
+     - In `src/notebook-app/scenes/notebooks/notebookStorage.ts`: forced remote pull on initial hydration and emitted `WIM_NOTEBOOKS_CHANGED_EVENT`.
+     - Directly claimed and updated the user's two stranded guest notes in Supabase ("nanef" and "12 Eyl 2026") to `auth_user_id: 15e06f59-7d51-46c7-bd10-287f91a8e4ee` with author profile details.
+  2. Resolved author face duplication ("yukarıda yazarlarda farklı kişiler gibi beni gösteriyor"):
+     - **Discrepant presence key:** In `notebookFaces.ts`, `facesFromPresence` used `peer.clientId` as key, which never matched `skipKeys` (author name/username). When the user had another tab or device open, they showed up twice: once as Author and once as "Here now".
+     - **Weak actor mismatch:** In `collectLocalNotebookFaces`, if a note had `createdBy: { first_name: 'You' }` and `lastModifiedBy: { first_name: 'm. ali' }`, both "You" (Author) and "m. ali" (Shared) were displayed.
+     - Added weak person upgrading (`isWeakPerson`) and identity comparison (`arePersonsSame`) in `collectLocalNotebookFaces` so weak actors upgrade to the logged-in user and duplicate faces are eliminated.
+     - In `facesFromPresence`: added `currentUserId` matching (`peer.userId === activeUserId`) and keying by `peer.userId || peer.name` against `skipKeys` (which now checks all names, emails, and usernames of the active author/user).
+  3. Added regression test in `tests/notebook-frontend.spec.ts` asserting weak person upgrading, identity matching, and presence self-deduplication.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (58 of 58 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/notebookFaces.ts`
+  - `src/notebook-app/scenes/notebooks/CollaboratorsBanner.tsx`
+  - `src/notebook-app/scenes/notebooks/notebookRemote.ts`
+  - `src/notebook-app/scenes/notebooks/notebookStorage.ts`
+  - `src/hooks/useUser.tsx`
+  - `src/lib/claim-device-client.ts`
+  - `src/lib/account-claim.ts`
+  - `lib/notebooks-repo.ts`
+  - `src/pages/api/notebooks/index.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Elimination of Auto-Save Typing Rewinds & Clobbering)
 - **Scope:**

@@ -21,6 +21,7 @@ import {
     upsertNotebook,
     upsertNotebooks,
     replaceHistoryForOwner,
+    claimDeviceNotebooksForUser,
     type StoredNotebookDTO,
     type NotebookVersionDTO,
 } from '../../../../lib/notebooks-repo'
@@ -61,6 +62,13 @@ export default async function handler(req: Request) {
             const auth = await resolveNotebookOwner(req, claimedOwner)
             if (!auth.ok) return json({ error: auth.error }, auth.status)
             const extraOwnerKeys = extraOwnerKeysFromRequest(req, auth.ownerKey)
+            if (auth.userId && extraOwnerKeys.length > 0) {
+                try {
+                    await claimDeviceNotebooksForUser(extraOwnerKeys, auth.userId)
+                } catch {
+                    /* best-effort auto claim */
+                }
+            }
             const includeContent =
                 url.searchParams.get('include') === 'content' || url.searchParams.get('bodies') === '1'
 
@@ -77,6 +85,13 @@ export default async function handler(req: Request) {
             if (!auth.ok) return json({ error: auth.error }, auth.status)
             const ownerKey = auth.ownerKey
             const extraOwnerKeys = extraOwnerKeysFromRequest(req, ownerKey)
+            if (auth.userId && extraOwnerKeys.length > 0) {
+                try {
+                    await claimDeviceNotebooksForUser(extraOwnerKeys, auth.userId)
+                } catch {
+                    /* best-effort auto claim */
+                }
+            }
 
             if (Array.isArray(body.notebooks)) {
                 const notebooks = body.notebooks as StoredNotebookDTO[]

@@ -8,6 +8,7 @@ import { fetchNotebookPeople } from '../../../lib/notebook-collaborators-client'
 import { getNotebookHistory } from './notebookStorage'
 import type { NotebookPresencePerson } from './notebookPresence'
 import { NotebookSyncInfo, type NotebookChromeSyncStatus } from './NotebookMeta'
+import { getAuthUserId } from '../../../lib/wim-identity'
 import {
     collectLocalNotebookFaces,
     facesFromCollaborators,
@@ -71,6 +72,7 @@ export function CollaboratorsBanner({
                 createdBy: createdBy || actor,
                 lastModifiedBy: person,
                 markdown: markdownFacesSource,
+                currentActor: actor,
             }),
         [createdBy, person, actor, markdownFacesSource]
     )
@@ -93,9 +95,22 @@ export function CollaboratorsBanner({
 
     const faces = useMemo(() => {
         const merged = mergeNotebookFaces(localFaces, sharedFaces)
-        const skip = new Set(merged.map((face) => face.key))
-        return mergeNotebookFaces(merged, facesFromPresence(livePeople, skip))
-    }, [localFaces, sharedFaces, livePeople])
+        const skip = new Set<string>()
+        for (const face of merged) {
+            if (face.key) skip.add(face.key.toLowerCase())
+            if (face.name) skip.add(face.name.toLowerCase())
+        }
+        if (actor) {
+            const actorName = personDisplayName(actor).toLowerCase()
+            skip.add(actorName)
+            if (actor.username) skip.add(actor.username.toLowerCase())
+            if (actor.email) skip.add(actor.email.toLowerCase())
+        }
+        const authUserId = getAuthUserId()
+        if (authUserId) skip.add(authUserId.toLowerCase())
+
+        return mergeNotebookFaces(merged, facesFromPresence(livePeople, skip, authUserId))
+    }, [localFaces, sharedFaces, livePeople, actor])
 
     const activities = useMemo(() => {
         if (!notebookId) return []

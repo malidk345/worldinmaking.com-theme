@@ -12,11 +12,17 @@ function claimFlag(userId: string, deviceKey: string): string {
     return `wim_device_claimed:${userId}:${deviceKey}`
 }
 
+let lastClaimAttempt = 0
+
 export async function claimThisDeviceIfNeeded(userId?: string | null, accessToken?: string | null): Promise<boolean> {
     if (typeof window === 'undefined') return false
     const uid = String(userId || '').trim()
     const token = String(accessToken || window.localStorage.getItem('jwt') || '').trim()
     if (!uid || token.length < 20) return false
+
+    const now = Date.now()
+    if (now - lastClaimAttempt < 5000) return false
+    lastClaimAttempt = now
 
     const notebookKey = getDeviceOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)
     const chatKey = getDeviceOwnerKey(DEVICE_CHAT_OWNER_KEY)
@@ -25,7 +31,6 @@ export async function claimThisDeviceIfNeeded(userId?: string | null, accessToke
 
     let any = false
     for (const previous of keys) {
-        if (window.localStorage.getItem(claimFlag(uid, previous)) === '1') continue
         try {
             const res = await fetch('/api/account/claim', {
                 method: 'POST',

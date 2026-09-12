@@ -1971,5 +1971,41 @@ test.describe('notebook frontend helpers', () => {
         // to suspend remote merges during active keystrokes
         expect(appCode).toContain("deferRemoteValue={syncStatus === 'edited'}")
     })
+
+    test('notebook author faces deduplicate weak actors and presence self across devices', () => {
+        const { collectLocalNotebookFaces, facesFromPresence, arePersonsSame, isWeakPerson } = require('../src/notebook-app/scenes/notebooks/notebookFaces')
+
+        // 1. Weak person detection
+        expect(isWeakPerson({ first_name: 'You' })).toBe(true)
+        expect(isWeakPerson({ first_name: 'WIM' })).toBe(true)
+        expect(isWeakPerson({ first_name: 'm. ali', username: 'ali' })).toBe(false)
+
+        // 2. Same person detection
+        expect(arePersonsSame({ first_name: 'You' }, { first_name: 'm. ali', username: 'ali' })).toBe(false)
+        expect(arePersonsSame({ first_name: 'm. ali', username: 'ali' }, { first_name: 'm. ali', username: 'ali' })).toBe(true)
+        expect(arePersonsSame({ first_name: 'm. ali', email: 'ali@test.com' }, { first_name: 'Ali D', email: 'ali@test.com' })).toBe(true)
+
+        // 3. collectLocalNotebookFaces upgrades weak "You" to active actor and deduplicates
+        const faces = collectLocalNotebookFaces({
+            createdBy: { first_name: 'You' },
+            lastModifiedBy: { first_name: 'm. ali', username: 'ali' },
+            currentActor: { first_name: 'm. ali', username: 'ali' },
+        })
+        expect(faces).toHaveLength(1)
+        expect(faces[0].name).toBe('m. ali')
+        expect(faces[0].role).toBe('author')
+
+        // 4. facesFromPresence filters out user's own other tab/device
+        const presencePeers = [
+            { clientId: 'tab-1', userId: 'user-123', name: 'm. ali', color: '#111' },
+            { clientId: 'tab-2', userId: 'user-456', name: 'Jane Collaborator', color: '#222' },
+        ]
+        const skipKeys = new Set(['user-123', 'ali', 'm. ali'])
+        const presenceFaces = facesFromPresence(presencePeers, skipKeys, 'user-123')
+        expect(presenceFaces).toHaveLength(1)
+        expect(presenceFaces[0].name).toBe('Jane Collaborator')
+        expect(presenceFaces[0].role).toBe('here')
+    })
 })
+
 

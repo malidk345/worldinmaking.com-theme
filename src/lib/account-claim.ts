@@ -12,9 +12,33 @@ export async function claimTableForUser(
 ): Promise<number> {
     if (!isSafeOwnerKey(deviceKey) || !isUuid(userId) || deviceKey === userId) return 0
 
+    const updatePayload: Record<string, unknown> = { owner_key: userId, auth_user_id: userId }
+
+    if (table === 'wim_notebooks') {
+        try {
+            const { data: profile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name, username, avatar_url')
+                .eq('id', userId)
+                .maybeSingle()
+            if (profile) {
+                const actor = {
+                    first_name: profile.first_name || profile.username || 'Author',
+                    last_name: profile.last_name || undefined,
+                    username: profile.username || undefined,
+                    avatar_url: profile.avatar_url || undefined,
+                }
+                updatePayload.created_by = actor
+                updatePayload.last_modified_by = actor
+            }
+        } catch {
+            /* profile enrichment is optional */
+        }
+    }
+
     const { data, error } = await supabaseAdmin
         .from(table)
-        .update({ owner_key: userId, auth_user_id: userId })
+        .update(updatePayload)
         .eq('owner_key', deviceKey)
         .is('deleted_at', null)
         .select('id')

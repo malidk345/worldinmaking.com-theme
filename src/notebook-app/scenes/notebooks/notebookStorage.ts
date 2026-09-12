@@ -270,7 +270,7 @@ function ensureRemoteHydrate(): void {
     queueRemote(
         (async () => {
             await claimDeviceAccountOnLogin()
-            const remote = await pullNotebooksFromRemote()
+            const remote = await pullNotebooksFromRemote({ force: true })
             if (!remote) {
                 // Table missing or offline: still try to push local when API becomes ready later
                 schedulePushAll()
@@ -295,10 +295,12 @@ function ensureRemoteHydrate(): void {
                     queueRemote(pushAllNotebooksToRemote(fresh, history), { report: false })
                 }
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
+                emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
                 return
             }
             mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
+            emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
         })(),
         { report: false }
     )

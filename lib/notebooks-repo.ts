@@ -252,6 +252,27 @@ function applyOwnerScope<T extends { or: Function; eq: Function }>(
     return query.or(parts.join(','))
 }
 
+export async function claimDeviceNotebooksForUser(deviceKeys: string[], userId: string): Promise<number> {
+    const valid = deviceKeys.filter((k) => typeof k === 'string' && k.length >= 8 && k.length <= 128 && k !== userId)
+    if (!valid.length || !userId) return 0
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('wim_notebooks')
+            .update({ owner_key: userId, auth_user_id: userId })
+            .in('owner_key', valid)
+            .is('auth_user_id', null)
+            .is('deleted_at', null)
+            .select('id')
+        if (error) {
+            console.warn('[notebooks-repo] claimDeviceNotebooksForUser warning:', error)
+            return 0
+        }
+        return Array.isArray(data) ? data.length : 0
+    } catch {
+        return 0
+    }
+}
+
 export async function listNotebooksByOwner(
     ownerKey: string,
     userId?: string,
@@ -420,7 +441,10 @@ export async function upsertNotebook(
 
     if (existing) {
         const current = existing as StoredNotebookRow
-        const role = await resolveNotebookAccess(current, ownerKey, userId || ownerKey, extraOwnerKeys)
+        let role = await resolveNotebookAccess(current, ownerKey, userId || ownerKey, extraOwnerKeys)
+        if (!role && current.auth_user_id === null && userId) {
+            role = 'owner'
+        }
         if (!role || !canWriteNotebook(role)) {
             const err = new Error('Forbidden: notebook owned by another principal') as Error & { status?: number }
             err.status = 403

@@ -31,6 +31,7 @@ import {
 import { ASSISTANT_NOTICES_EVENT, listAssistantNotifications } from 'lib/assistant-notices'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
 import { AUTH_USER_ID_KEY, emitIdentityChanged } from 'lib/wim-identity'
+import { claimThisDeviceIfNeeded } from 'lib/claim-device-client'
 
 // Sentinel value used by posthog-js for cookieless tracking mode
 const COOKIELESS_SENTINEL_VALUE = '$posthog_cookieless'
@@ -237,6 +238,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                         try {
                             localStorage.setItem(AUTH_USER_ID_KEY, String(u.id))
                             emitIdentityChanged()
+                            void claimThisDeviceIfNeeded(String(u.id), token)
                         } catch {
                             /* ignore */
                         }
@@ -273,6 +275,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     setUser(u)
                     try {
                         localStorage.setItem(AUTH_USER_ID_KEY, String(u.id))
+                        emitIdentityChanged()
+                        void claimThisDeviceIfNeeded(String(u.id), session.access_token)
                     } catch {
                         /* ignore */
                     }

@@ -66,12 +66,8 @@ function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
     return headers
 }
 
-export async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = false): Promise<HeadersInit> {
-    const headers = { ...(notebookAuthHeaders(ownerKey, jsonBody) as Record<string, string>) }
+export async function notebookAuthHeadersFresh(ownerKey?: string, jsonBody = false): Promise<HeadersInit> {
     try {
-        const { getStoredJwt } = await import('../../../lib/chat-remote')
-        let token = getStoredJwt()
-
         const { supabase, isSupabaseConfigured } = await import('../../../lib/supabase')
         if (isSupabaseConfigured) {
             try {
@@ -89,8 +85,7 @@ export async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = fals
                 }
 
                 if (session?.access_token) {
-                    token = session.access_token
-                    localStorage.setItem('jwt', token)
+                    localStorage.setItem('jwt', session.access_token)
                     if (session.user?.id) {
                         localStorage.setItem('wim_auth_user_id', session.user.id)
                     }
@@ -99,12 +94,20 @@ export async function notebookAuthHeadersFresh(ownerKey: string, jsonBody = fals
                 /* fallback to cached token */
             }
         }
+    } catch {
+        /* keep cached headers */
+    }
 
+    const resolvedOwner = getOrCreateOwnerKey() || ownerKey || ''
+    const headers = { ...(notebookAuthHeaders(resolvedOwner, jsonBody) as Record<string, string>) }
+    try {
+        const { getStoredJwt } = await import('../../../lib/chat-remote')
+        const token = getStoredJwt()
         if (token && token.length >= 20) {
             headers.Authorization = `Bearer ${token}`
         }
     } catch {
-        /* keep cached headers */
+        /* keep cached token */
     }
     return headers
 }
@@ -144,13 +147,14 @@ export async function pullNotebooksFromRemote(options?: {
     }
     lastPullAt = now
 
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
         const params = new URLSearchParams({ owner_key: ownerKey })
         if (options?.includeContent) params.set('include', 'content')
         const res = await fetch(`/api/notebooks?${params.toString()}`, {
             method: 'GET',
-            headers: await notebookAuthHeadersFresh(ownerKey),
+            headers,
             cache: 'no-store',
         })
         if (res.status === 503) {
@@ -179,11 +183,12 @@ export async function pullNotebooksFromRemote(options?: {
 
 export async function pullNotebookById(id: string): Promise<StoredNotebook | null> {
     if (typeof window === 'undefined' || !id) return null
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch(
             `/api/notebooks/${encodeURIComponent(id)}?owner_key=${encodeURIComponent(ownerKey)}`,
-            { method: 'GET', headers: await notebookAuthHeadersFresh(ownerKey) }
+            { method: 'GET', headers }
         )
         if (!res.ok) return null
         const body = await parseJson<OneResponse>(res)
@@ -195,11 +200,12 @@ export async function pullNotebookById(id: string): Promise<StoredNotebook | nul
 
 export async function pullNotebookHistory(id: string): Promise<NotebookVersion[] | null> {
     if (typeof window === 'undefined' || !id) return null
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch(
             `/api/notebooks/${encodeURIComponent(id)}?owner_key=${encodeURIComponent(ownerKey)}&history=1`,
-            { method: 'GET', headers: await notebookAuthHeadersFresh(ownerKey) }
+            { method: 'GET', headers }
         )
         if (!res.ok) return null
         const body = await parseJson<OneResponse>(res)
@@ -250,11 +256,12 @@ export async function pushNotebookToRemote(
 ): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean; gone?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
     if (notebook.contentOmitted) return { ok: true }
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey(), true)
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch('/api/notebooks', {
             method: 'POST',
-            headers: await notebookAuthHeadersFresh(ownerKey, true),
+            headers,
             body: JSON.stringify({
                 owner_key: ownerKey,
                 notebook,
@@ -291,11 +298,12 @@ export async function pushAllNotebooksToRemote(
     if (typeof window === 'undefined') return false
     const writable = notebooks.filter((nb) => !nb.contentOmitted)
     if (!writable.length) return true
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey(), true)
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch('/api/notebooks', {
             method: 'POST',
-            headers: await notebookAuthHeadersFresh(ownerKey, true),
+            headers,
             body: JSON.stringify({
                 owner_key: ownerKey,
                 notebooks: writable,
@@ -316,11 +324,12 @@ export async function pushAllNotebooksToRemote(
 
 export async function deleteNotebookRemote(id: string): Promise<boolean> {
     if (typeof window === 'undefined') return false
+    const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
         const res = await fetch(
             `/api/notebooks/${encodeURIComponent(id)}?owner_key=${encodeURIComponent(ownerKey)}`,
-            { method: 'DELETE', headers: await notebookAuthHeadersFresh(ownerKey) }
+            { method: 'DELETE', headers }
         )
         if (res.status === 503) {
             remoteAvailable = false
