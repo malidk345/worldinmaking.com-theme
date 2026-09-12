@@ -202,37 +202,31 @@ export function NotebookComponentShell({
         setComponentPanels(nextPanelVisibility)
     }
     const updateProps = (props: Partial<NotebookComponentProps>): void => {
-        const propKeysToRemove = new Set(
-            Object.entries(props)
-                .filter(([, value]) => value === undefined)
-                .map(([key]) => key)
-        )
-        const nextProps = Object.entries(props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
-            if (value !== undefined) {
-                accumulator[key] = value
-            }
-            return accumulator
-        }, {})
-
         updateNode(node.id, (currentNode) => {
             if (currentNode.type !== 'component') {
                 return currentNode
             }
+
+            // Bolt: Optimize prop merging by avoiding Object.entries().reduce() and Sets.
+            // Using a shallow clone and standard for-in loops eliminates intermediate
+            // array allocations for O(N) allocation and significantly faster execution.
+            const nextProps = { ...currentNode.props }
+
+            for (const key in props) {
+                if (props[key] === undefined) {
+                    delete nextProps[key]
+                } else {
+                    nextProps[key] = props[key]
+                }
+            }
+
             return {
                 ...currentNode,
                 // An intentional edit supersedes any malformed source captured at parse time —
                 // stale `raw` would otherwise win over the new props on serialize
                 raw: undefined,
                 errors: undefined,
-                props: {
-                    ...Object.entries(currentNode.props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
-                        if (!propKeysToRemove.has(key)) {
-                            accumulator[key] = value
-                        }
-                        return accumulator
-                    }, {}),
-                    ...nextProps,
-                },
+                props: nextProps,
             }
         })
     }
@@ -439,11 +433,7 @@ export function NotebookComponentShell({
                                         {
                                             hideChevron: true,
                                             trigger: (
-                                                <OSButton
-                                                    size="xs"
-                                                    icon={<IconEllipsis />}
-                                                    tooltip="More actions"
-                                                />
+                                                <OSButton size="xs" icon={<IconEllipsis />} tooltip="More actions" />
                                             ),
                                             items: (Array.isArray(toolbarMenuItems) ? toolbarMenuItems : [])
                                                 .filter(Boolean)
@@ -457,12 +447,7 @@ export function NotebookComponentShell({
                                 />
                             ) : null}
                             {mode === 'edit' ? (
-                                <OSButton
-                                    size="xs"
-                                    icon={<IconTrash />}
-                                    tooltip="Delete"
-                                    onClick={deleteNode}
-                                />
+                                <OSButton size="xs" icon={<IconTrash />} tooltip="Delete" onClick={deleteNode} />
                             ) : null}
                         </div>
                     ) : null}
@@ -511,12 +496,7 @@ export function NotebookComponentShell({
                 {toolbarActions ? (
                     <div className="MarkdownNotebook__component-custom-actions">
                         {toolbarActions.map((action, index) => (
-                            <OSButton
-                                key={index}
-                                size="xs"
-                                icon={action.icon}
-                                onClick={action.onClick}
-                            >
+                            <OSButton key={index} size="xs" icon={action.icon} onClick={action.onClick}>
                                 {action.text}
                             </OSButton>
                         ))}
