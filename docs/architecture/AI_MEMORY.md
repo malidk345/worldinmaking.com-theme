@@ -25,11 +25,25 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Cross-Device Notebook Sync & Author Face Deduplication]`
+- **Status:** `[COMPLETED by Antigravity - Notebook Content Staleness Fix (cross-device content not updating on open)]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Cross-Device Notebook Content Staleness Fix)
+- **Scope:** Fixed the bug where writing content on Device A and opening the same notebook on Device B would show the old/stale content ("bir yerde yazdığım diğer yerde açınca çıkmıyor").
+- **Root cause:** `App.tsx` only called `pullNotebookById` (full Supabase fetch) when `contentOmitted === true`. When Device B had a local cache of the notebook (any previous open), `contentOmitted` was `false`, so no remote fetch happened on open — Device B silently showed stale content. The `applyRemoteIfNewer` listener only processed list-level sync events that always return `contentOmitted: true` stubs, so even background list polls could not deliver fresh body content.
+- **Fixes applied:**
+  1. **`src/notebook-app/App.tsx` — "Always fetch on open":** Changed the `editorNotebookId` effect to *always* call `pullNotebookById` in the background when opening a notebook (not just when `contentOmitted`). If local content exists, the result is passed through `planOpenNotebookRemoteApply` to safely apply only if remote is genuinely newer — protecting against clobbering unsaved user typing.
+  2. **`src/notebook-app/App.tsx` — 30s content poll + visibility re-fetch:** Added a dedicated 30-second content poll (`scheduleContentPoll`) and a `visibilitychange` / `focus` listener (`onVisible`) inside the `applyRemoteIfNewer` effect. Every 30s (and whenever the user switches back to the tab), the full body of the open notebook is fetched from Supabase and applied if newer. This covers the case where Device A saves while Device B has the same notebook already open.
+- **Verification:**
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (59 of 59 tests, including new test `planOpenNotebookRemoteApply correctly detects stale local content and fresh remote on open`).
+- **Files Modified:**
+  - `src/notebook-app/App.tsx`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Cross-Device Notebook Sync & Author Face Deduplication)
 - **Scope:**

@@ -2006,6 +2006,55 @@ test.describe('notebook frontend helpers', () => {
         expect(presenceFaces[0].name).toBe('Jane Collaborator')
         expect(presenceFaces[0].role).toBe('here')
     })
+
+    test('planOpenNotebookRemoteApply correctly detects stale local content and fresh remote on open', () => {
+        const { planOpenNotebookRemoteApply } = require('../src/notebook-app/scenes/notebooks/notebookRemote')
+
+        const baseContent = '# Hello\nSome text here.'
+        const newContent = '# Hello\nSome text here.\n\nNew paragraph from Device A.'
+        const ts1 = new Date(Date.now() - 60_000).toISOString() // 1 minute ago (older)
+        const ts2 = new Date(Date.now() - 5_000).toISOString()  // 5 seconds ago (newer)
+
+        // Case 1: Remote is newer — Device B should adopt new content when user hasn't typed
+        const plan1 = planOpenNotebookRemoteApply({
+            current:      { version: 3, updatedAt: ts1, content: baseContent, title: 'Test' },
+            latest:       { version: 4, updatedAt: ts2, content: newContent, title: 'Test' },
+            draftContent: baseContent, // user hasn't changed anything
+            draftTitle:   'Test',
+        })
+        expect(plan1.adopt).toBe(true)
+        expect(plan1.applyContent).toBe(true)  // must update editor with new content
+        expect(plan1.applyTitle).toBe(true)
+
+        // Case 2: Remote is older — Device B should NOT clobber local with stale data
+        const plan2 = planOpenNotebookRemoteApply({
+            current:      { version: 5, updatedAt: ts2, content: newContent, title: 'Test' },
+            latest:       { version: 3, updatedAt: ts1, content: baseContent, title: 'Test' },
+            draftContent: newContent,
+            draftTitle:   'Test',
+        })
+        expect(plan2.adopt).toBe(false)  // older remote must not overwrite local
+
+        // Case 3: Remote is newer but user is actively typing — apply base but not content
+        const userTypingContent = newContent + ' still typing...'
+        const plan3 = planOpenNotebookRemoteApply({
+            current:      { version: 3, updatedAt: ts1, content: baseContent, title: 'Test' },
+            latest:       { version: 4, updatedAt: ts2, content: newContent, title: 'Test' },
+            draftContent: userTypingContent, // user has unsaved changes beyond remote
+            draftTitle:   'Test',
+        })
+        expect(plan3.adopt).toBe(true)
+        expect(plan3.applyContent).toBe(false)  // must NOT clobber user's unsaved typing
+
+        // Case 4: Same version — no adoption needed
+        const plan4 = planOpenNotebookRemoteApply({
+            current:      { version: 4, updatedAt: ts2, content: newContent, title: 'Test' },
+            latest:       { version: 4, updatedAt: ts2, content: newContent, title: 'Test' },
+            draftContent: newContent,
+            draftTitle:   'Test',
+        })
+        expect(plan4.adopt).toBe(false)
+    })
 })
 
 

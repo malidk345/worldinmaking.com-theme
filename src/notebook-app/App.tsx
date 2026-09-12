@@ -504,13 +504,34 @@ export function App() {
     const nb = getNotebook(editorNotebookId)
     if (nb) {
       apply(nb)
-      if (nb.contentOmitted) {
-        void pullNotebookById(editorNotebookId).then((remote) => {
-          if (cancelled || !remote) return
-          rememberRemoteNotebook(remote)
+      // Always fetch remote in background — even if local copy exists (contentOmitted=false).
+      // This is the fix for cross-device stale content: Device B may have an old cached version
+      // while Device A saved newer content. pullNotebookById always goes to Supabase fresh.
+      void pullNotebookById(editorNotebookId).then((remote) => {
+        if (cancelled || !remote) return
+        rememberRemoteNotebook(remote)
+        if (nb.contentOmitted) {
+          // No local content yet — just apply directly
           apply(remote)
-        })
-      }
+        } else {
+          // Local content exists — only apply if remote is genuinely newer
+          // and the user hasn't started typing (planOpenNotebookRemoteApply handles that)
+          const plan = planOpenNotebookRemoteApply({
+            current: nb,
+            latest: remote,
+            draftContent: markdownRef.current,
+            draftTitle: titleRef.current,
+          })
+          if (plan.adopt) {
+            notebookRef.current = remote
+            setCurrentNotebook(remote)
+            if (plan.applyRemoteBase) setRemoteMarkdown(remote.content)
+            if (plan.applyContent) setMarkdown(remote.content)
+            if (plan.applyTitle) setTitle(remote.title)
+            if (plan.applyContent && plan.applyTitle) setSyncStatus('saved')
+          }
+        }
+      })
     } else {
       setCurrentNotebook(null)
       void pullNotebookById(editorNotebookId).then((remote) => {
@@ -539,29 +560,65 @@ export function App() {
   useEffect(() => {
     if (route.page !== 'editor' || !currentNotebook) return
     const notebookId = currentNotebook.id
-    const applyRemoteIfNewer = () => {
-      const latest = getNotebook(notebookId)
+
+    const applyIfNewer = (remote: StoredNotebook) => {
       const current = notebookRef.current
-      if (!latest || !current || current.id !== notebookId) {
-        return
-      }
+      if (!current || current.id !== notebookId) return
       const plan = planOpenNotebookRemoteApply({
         current,
-        latest,
+        latest: remote,
         draftContent: markdownRef.current,
         draftTitle: titleRef.current,
       })
       if (!plan.adopt) return
-      notebookRef.current = latest
-      setCurrentNotebook(latest)
-      if (plan.applyRemoteBase) setRemoteMarkdown(latest.content)
-      if (plan.applyContent) setMarkdown(latest.content)
-      if (plan.applyTitle) setTitle(latest.title)
+      notebookRef.current = remote
+      setCurrentNotebook(remote)
+      if (plan.applyRemoteBase) setRemoteMarkdown(remote.content)
+      if (plan.applyContent) setMarkdown(remote.content)
+      if (plan.applyTitle) setTitle(remote.title)
       if (plan.applyContent && plan.applyTitle) setSyncStatus('saved')
     }
+
+    // Called by list-level sync events (contentOmitted=true stubs from background pulls)
+    const applyRemoteIfNewer = () => {
+      const latest = getNotebook(notebookId)
+      if (latest) applyIfNewer(latest)
+    }
+
+    // Content-specific poll: fetch the full body of the open notebook every 30s.
+    // List polling only brings contentOmitted=true stubs so this is the only reliable
+    // way to pick up edits made on another device/tab when both have local content.
+    let contentPollTimer: ReturnType<typeof window.setTimeout> | undefined
+    const pollOpenNotebookContent = () => {
+      if (document.visibilityState !== 'visible') return
+      void pullNotebookById(notebookId).then((remote) => {
+        if (!remote) return
+        rememberRemoteNotebook(remote)
+        applyIfNewer(remote)
+      })
+    }
+    const scheduleContentPoll = () => {
+      window.clearTimeout(contentPollTimer)
+      contentPollTimer = window.setTimeout(() => {
+        pollOpenNotebookContent()
+        scheduleContentPoll() // reschedule
+      }, 30_000)
+    }
+    scheduleContentPoll()
+
+    // Also re-fetch on tab focus / page becoming visible (user switches back from other device context)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pollOpenNotebookContent()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
     window.addEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, applyRemoteIfNewer)
     window.addEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, applyRemoteIfNewer)
     return () => {
+      window.clearTimeout(contentPollTimer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
       window.removeEventListener(WIM_NOTEBOOKS_HYDRATED_EVENT, applyRemoteIfNewer)
       window.removeEventListener(WIM_NOTEBOOKS_CHANGED_EVENT, applyRemoteIfNewer)
     }
