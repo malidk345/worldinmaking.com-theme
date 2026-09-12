@@ -25,11 +25,39 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Deletable Introducing Notebook & Undeletable Template Elimination (Pushed to main)]`
+- **Status:** `[COMPLETED by Antigravity - Realtime Channel Resilience & Lifecycle Hardening (Pushed to main)]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Supabase Realtime Channel Resilience & Exception Guarding)
+- **Scope:**
+  1. Resolved uncaught runtime error (`src\notebook-app\scenes\notebooks\notebookPresence.ts (151:14) @ on`):
+     - In `@supabase/realtime-js`, calling `channel.on('presence', ...)` or `channel.on('postgres_changes', ...)` throws `Error: cannot add callbacks after subscribe()` if the channel is in `isJoining()` or `isJoined()` state.
+     - In React (StrictMode remounting, fast navigation, or when auth user state loaded and updated `actor`), `supabase.removeChannel` runs asynchronously while the next `supabase.channel(...)` call immediately returned the existing channel before unsubscription completed.
+     - Furthermore, `publishNow` had `actor` in its dependency array and was itself a dependency of the channel `useEffect`, causing unnecessary channel teardowns and recreations on auth load.
+  2. Implemented comprehensive resilience in `notebookPresence.ts`:
+     - Preserved `actor` in an `actorRef` so `publishNow` identity is stable and presence re-publishing happens without recreating the WebSocket channel.
+     - Decoupled `publishNow` from channel effect dependencies using `publishNowRef`.
+     - Added synchronous stale channel eviction via `supabase.realtime._remove(existing)` and `supabase.removeChannel(existing)` prior to channel creation.
+     - Added channel adapter state check (`adapter.isJoined() || adapter.isJoining()`) so `.on()` is never invoked after subscription.
+     - Wrapped channel initialization and listeners in a non-fatal `try/catch` with graceful degradation to guarantee presence errors never crash the notebook editor.
+  3. Applied the same channel deduplication and adapter state guards to `notebookRemote.ts` (`subscribeToWorkspaceNotebooks`) and `chat-remote.ts` (`subscribeToWorkspaceChats`).
+  4. Added `getChannels: () => []` fallback to `mockClient` in `src/lib/supabase.ts`.
+  5. Added regression test in `tests/notebook-frontend.spec.ts` verifying channel eviction, state guards, and error resilience.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (56 of 56 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/scenes/notebooks/notebookPresence.ts`
+  - `src/notebook-app/scenes/notebooks/notebookRemote.ts`
+  - `src/lib/chat-remote.ts`
+  - `src/lib/supabase.ts`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Deletable Introducing Notebook & Undeletable Template Elimination)
 - **Scope:**

@@ -336,33 +336,65 @@ export function subscribeToWorkspaceChats(onChange: () => void): () => void {
     if (!userId && !ownerKey) return () => {}
 
     try {
-        let channel = supabase.channel(`wim-chats-live-${userId || ownerKey}`)
-        if (userId) {
-            channel = channel.on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'wim_chats', filter: `auth_user_id=eq.${userId}` },
-                () => onChange()
-            )
-        }
-        if (ownerKey) {
-            channel = channel.on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'wim_chats', filter: `owner_key=eq.${ownerKey}` },
-                () => onChange()
-            )
-        }
-        channel = channel.on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'wim_chat_messages' },
-            () => onChange()
-        )
-        channel.subscribe((status) => {
-            if (status === 'CHANNEL_ERROR') {
-                console.warn('[chat-remote] realtime channel error, falling back to polling')
+        const topic = `wim-chats-live-${userId || ownerKey}`
+        const realtimeTopic = `realtime:${topic}`
+
+        try {
+            const getChannels = (supabase as unknown as { getChannels?: () => Array<{ topic?: string }> }).getChannels
+            const existingList = typeof getChannels === 'function' ? getChannels.call(supabase) : []
+            const existing = existingList?.find?.((c) => c?.topic === realtimeTopic || c?.topic === topic)
+            if (existing) {
+                void supabase.removeChannel(existing as any)
+                const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+                if (typeof rt?._remove === 'function') {
+                    rt._remove(existing)
+                }
             }
-        })
+        } catch {
+            /* best-effort */
+        }
+
+        let channel = supabase.channel(topic)
+        const adapter = (channel as unknown as { channelAdapter?: { isJoined?: () => boolean; isJoining?: () => boolean } }).channelAdapter
+        const isSubscribedOrJoining = Boolean(adapter?.isJoined?.() || adapter?.isJoining?.())
+
+        if (!isSubscribedOrJoining) {
+            if (userId) {
+                channel = channel.on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'wim_chats', filter: `auth_user_id=eq.${userId}` },
+                    () => onChange()
+                )
+            }
+            if (ownerKey) {
+                channel = channel.on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'wim_chats', filter: `owner_key=eq.${ownerKey}` },
+                    () => onChange()
+                )
+            }
+            channel = channel.on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'wim_chat_messages' },
+                () => onChange()
+            )
+            channel.subscribe((status) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.warn('[chat-remote] realtime channel error, falling back to polling')
+                }
+            })
+        }
+
         return () => {
             void supabase.removeChannel(channel)
+            const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+            if (typeof rt?._remove === 'function') {
+                try {
+                    rt._remove(channel)
+                } catch {
+                    /* best-effort */
+                }
+            }
         }
     } catch (err) {
         console.warn('[chat-remote] realtime subscription failed:', err)

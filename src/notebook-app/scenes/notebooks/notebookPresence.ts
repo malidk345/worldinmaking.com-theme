@@ -104,6 +104,8 @@ export function useNotebookPresence({
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
     const versionRef = useRef(version)
     versionRef.current = version
+    const actorRef = useRef(actor)
+    actorRef.current = actor
 
     const publishNow = useCallback(async () => {
         const channel = channelRef.current
@@ -111,9 +113,9 @@ export function useNotebookPresence({
         const payload: PresencePayload = {
             clientId,
             userId: getAuthUserId() || undefined,
-            userName: displayNameForActor(actor),
+            userName: displayNameForActor(actorRef.current),
             color: caretColorForClient(clientId),
-            avatarUrl: actor?.avatar_url,
+            avatarUrl: actorRef.current?.avatar_url,
             version: versionRef.current,
             position: positionRef.current,
         }
@@ -122,7 +124,10 @@ export function useNotebookPresence({
         } catch {
             /* presence is best-effort */
         }
-    }, [actor, clientId])
+    }, [clientId])
+
+    const publishNowRef = useRef(publishNow)
+    publishNowRef.current = publishNow
 
     useEffect(() => {
         if (!notebookId || !isSupabaseConfigured || !getAuthUserId()) {
@@ -131,39 +136,87 @@ export function useNotebookPresence({
             return
         }
 
-        const channel = supabase.channel(`wim-notebook-presence-${notebookId}`, {
-            config: { presence: { key: clientId } },
-        })
-        channelRef.current = channel
+        let isCancelled = false
+        const topic = `wim-notebook-presence-${notebookId}`
+        const realtimeTopic = `realtime:${topic}`
 
-        const syncFromChannel = () => {
-            const raw =
-                typeof (channel as { presenceState?: () => Record<string, PresencePayload[]> }).presenceState ===
-                'function'
-                    ? (channel as { presenceState: () => Record<string, PresencePayload[]> }).presenceState()
-                    : {}
-            const next = presenceStateToCarets(raw, clientId)
-            setCarets(next.carets)
-            setPeople(next.people)
+        // Clean up any stale existing channel for this topic before recreating
+        try {
+            const getChannels = (supabase as unknown as { getChannels?: () => Array<{ topic?: string }> }).getChannels
+            const existingList = typeof getChannels === 'function' ? getChannels.call(supabase) : []
+            const existing = existingList?.find?.((c) => c?.topic === realtimeTopic || c?.topic === topic)
+            if (existing) {
+                void supabase.removeChannel(existing as any)
+                const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+                if (typeof rt?._remove === 'function') {
+                    rt._remove(existing)
+                }
+            }
+        } catch {
+            /* best-effort cleanup */
         }
 
-        channel
-            .on('presence', { event: 'sync' }, syncFromChannel)
-            .on('presence', { event: 'join' }, syncFromChannel)
-            .on('presence', { event: 'leave' }, syncFromChannel)
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') void publishNow()
+        let channel: ReturnType<typeof supabase.channel> | null = null
+        try {
+            channel = supabase.channel(topic, {
+                config: { presence: { key: clientId } },
             })
+            channelRef.current = channel
+
+            const syncFromChannel = () => {
+                if (isCancelled || !channel) return
+                const raw =
+                    typeof (channel as { presenceState?: () => Record<string, PresencePayload[]> }).presenceState ===
+                    'function'
+                        ? (channel as { presenceState: () => Record<string, PresencePayload[]> }).presenceState()
+                        : {}
+                const next = presenceStateToCarets(raw, clientId)
+                setCarets(next.carets)
+                setPeople(next.people)
+            }
+
+            const adapter = (channel as unknown as { channelAdapter?: { isJoined?: () => boolean; isJoining?: () => boolean } }).channelAdapter
+            const isSubscribedOrJoining = Boolean(adapter?.isJoined?.() || adapter?.isJoining?.())
+
+            if (!isSubscribedOrJoining) {
+                channel
+                    .on('presence', { event: 'sync' }, syncFromChannel)
+                    .on('presence', { event: 'join' }, syncFromChannel)
+                    .on('presence', { event: 'leave' }, syncFromChannel)
+                    .subscribe((status) => {
+                        if (isCancelled) return
+                        if (status === 'SUBSCRIBED') void publishNowRef.current()
+                    })
+            } else {
+                syncFromChannel()
+                void publishNowRef.current()
+            }
+        } catch (err) {
+            console.warn('[notebookPresence] Channel initialization failed, running offline:', err)
+            channel = null
+            channelRef.current = null
+        }
 
         return () => {
+            isCancelled = true
             if (caretTimerRef.current) window.clearTimeout(caretTimerRef.current)
             caretTimerRef.current = 0
             channelRef.current = null
-            void supabase.removeChannel(channel)
+            if (channel) {
+                try {
+                    void supabase.removeChannel(channel)
+                    const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+                    if (typeof rt?._remove === 'function') {
+                        rt._remove(channel)
+                    }
+                } catch {
+                    /* best-effort */
+                }
+            }
             setCarets([])
             setPeople([])
         }
-    }, [notebookId, clientId, publishNow])
+    }, [notebookId, clientId])
 
     useEffect(() => {
         if (!notebookId) return

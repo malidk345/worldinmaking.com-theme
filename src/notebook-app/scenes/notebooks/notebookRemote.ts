@@ -402,24 +402,62 @@ export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void 
     const userId = getAuthUserId()
     const ownerKey = getOrCreateOwnerKey()
     if (!userId && !ownerKey) return () => {}
-    let channel = supabase.channel(`wim-notebooks-live-${userId || ownerKey}`)
-    if (userId) {
-        channel = channel.on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `auth_user_id=eq.${userId}` },
-            () => onChange()
-        )
-    }
-    if (ownerKey) {
-        channel = channel.on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `owner_key=eq.${ownerKey}` },
-            () => onChange()
-        )
-    }
-    channel.subscribe()
-    return () => {
-        void supabase.removeChannel(channel)
+
+    try {
+        const topic = `wim-notebooks-live-${userId || ownerKey}`
+        const realtimeTopic = `realtime:${topic}`
+
+        try {
+            const getChannels = (supabase as unknown as { getChannels?: () => Array<{ topic?: string }> }).getChannels
+            const existingList = typeof getChannels === 'function' ? getChannels.call(supabase) : []
+            const existing = existingList?.find?.((c) => c?.topic === realtimeTopic || c?.topic === topic)
+            if (existing) {
+                void supabase.removeChannel(existing as any)
+                const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+                if (typeof rt?._remove === 'function') {
+                    rt._remove(existing)
+                }
+            }
+        } catch {
+            /* best-effort */
+        }
+
+        let channel = supabase.channel(topic)
+        const adapter = (channel as unknown as { channelAdapter?: { isJoined?: () => boolean; isJoining?: () => boolean } }).channelAdapter
+        const isSubscribedOrJoining = Boolean(adapter?.isJoined?.() || adapter?.isJoining?.())
+
+        if (!isSubscribedOrJoining) {
+            if (userId) {
+                channel = channel.on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'wim_notebooks', filter: `auth_user_id=eq.${userId}` },
+                    () => onChange()
+                )
+            }
+            if (ownerKey) {
+                channel = channel.on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'wim_notebooks', filter: `owner_key=eq.${ownerKey}` },
+                    () => onChange()
+                )
+            }
+            channel.subscribe()
+        }
+
+        return () => {
+            void supabase.removeChannel(channel)
+            const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+            if (typeof rt?._remove === 'function') {
+                try {
+                    rt._remove(channel)
+                } catch {
+                    /* best-effort */
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[notebookRemote] failed to subscribe to workspace notebooks:', err)
+        return () => {}
     }
 }
 

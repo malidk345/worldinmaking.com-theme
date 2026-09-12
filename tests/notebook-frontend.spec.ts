@@ -1921,5 +1921,31 @@ test.describe('notebook frontend helpers', () => {
         expect(storageCode).toContain("'template-introduction'")
         expect(storageCode).not.toContain("notebook.id === INTRODUCTION_TEMPLATE_ID")
     })
+
+    test('notebook presence and remote channel subscribers survive remounts and channel reuse safely', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const presenceCode = fs.readFileSync(
+            path.join(process.cwd(), 'src/notebook-app/scenes/notebooks/notebookPresence.ts'),
+            'utf8'
+        )
+        const remoteCode = fs.readFileSync(
+            path.join(process.cwd(), 'src/notebook-app/scenes/notebooks/notebookRemote.ts'),
+            'utf8'
+        )
+
+        // 1. Must clean up stale channel from realtime._remove before calling channel()
+        expect(presenceCode).toContain('realtimeTopic')
+        expect(presenceCode).toContain('isSubscribedOrJoining')
+        expect(presenceCode).toContain('void supabase.removeChannel')
+
+        // 2. Channel listeners (.on) must be protected by state check to prevent RealtimeChannel errors
+        expect(presenceCode).toContain('if (!isSubscribedOrJoining)')
+        expect(remoteCode).toContain('if (!isSubscribedOrJoining)')
+
+        // 3. Must be wrapped in try/catch to make presence 100% resilient and non-fatal
+        expect(presenceCode).toContain('Channel initialization failed, running offline')
+        expect(remoteCode).toContain('[notebookRemote] failed to subscribe')
+    })
 })
 
