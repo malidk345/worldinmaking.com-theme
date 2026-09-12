@@ -143,3 +143,8 @@
         height: 14px;
     }
 }
+
+html[data-keyboard='open'][data-keyboard-surface='notebook'] .MarkdownNotebook__canvas {
+    padding-bottom: calc(var(--keyboard-inset, 0px) + 6rem) !important;
+    scroll-padding-bottom: calc(var(--keyboard-inset, 0px) + 3rem) !important;
+}

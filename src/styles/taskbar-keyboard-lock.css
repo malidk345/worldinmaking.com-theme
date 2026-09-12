@@ -2,11 +2,47 @@
    iOS already overlays the keyboard (interactive-widget=overlays-content).
    translateY(--vv-offset-top) was lifting the whole site, including #taskbar. */
 @media (max-width: 767px) {
-    html[data-keyboard='open'] #app-container {
+    html,
+    body {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
+    }
+
+    #app-container {
+        transform: none !important;
+        top: 0 !important;
+    }
+
+    #taskbar {
         transform: none !important;
     }
 
-    html[data-keyboard='open'] #taskbar {
-        transform: none !important;
+    /* Mobile: Never pad or lift windows */
+    html[data-keyboard='open'] [data-app="AppWindow"],
+    html[data-keyboard='open'] [data-window-content] {
+        padding-bottom: 0 !important;
+    }
+
+    /* Mobile reply: ONLY the active writing area elevates above the virtual keyboard */
+    html[data-keyboard='open'] [data-reply-composer='true']:focus-within {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: var(--keyboard-inset, 0px) !important;
+        z-index: 99999 !important;
+        background-color: rgb(var(--bg)) !important;
+        border-top: 1.5px solid rgb(var(--border)) !important;
+        box-shadow: 0 -10px 35px -5px rgba(0, 0, 0, 0.3) !important;
+        padding: 0.75rem 1rem !important;
+        max-height: calc(100vh - var(--keyboard-inset, 0px) - 48px) !important;
+        overflow-y: auto !important;
+        will-change: bottom;
     }
 }
+
+

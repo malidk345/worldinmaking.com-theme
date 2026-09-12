@@ -1684,5 +1684,30 @@ test.describe('notebook frontend helpers', () => {
         expect(notebookContent).toContain("node.type !== 'component' &&")
         expect(notebookContent).toContain("node.type !== 'table' &&")
     })
+
+    test('document footnotes section renders a delete icon button that cleans up footnote definitions and marks', () => {
+        const { removeFootnoteFromInlineNodes } = require('../src/notebook-app/lib/components/MarkdownNotebook/inlineContent')
+        const fs = require('fs')
+        const path = require('path')
+        const footnotesHookPath = path.join(process.cwd(), 'src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts')
+        const hookContent = fs.readFileSync(footnotesHookPath, 'utf8')
+
+        // 1. Verifies delete icon button exists in the footnotes section
+        expect(hookContent).toContain("title: 'Delete footnote'")
+        expect(hookContent).toContain("'data-action': 'delete-footnote'")
+        expect(hookContent).toContain('IconTrash')
+        expect(hookContent).toContain('deleteFootnote(fnId)')
+
+        // 2. Verifies inline content removal logic for footnotes
+        const nodes: NotebookInlineNode[] = [
+            { type: 'text', text: 'Sentence with footnote' },
+            { type: 'text', text: '1', marks: [{ type: 'footnote', id: 'fn-1' }] },
+            { type: 'text', text: ' and more text' },
+        ]
+        const afterDelete = removeFootnoteFromInlineNodes(nodes, 'fn-1')
+        expect(afterDelete).toHaveLength(1)
+        expect(afterDelete.some((n: any) => n.marks?.some((m: any) => m.type === 'footnote' && m.id === 'fn-1'))).toBe(false)
+        expect(afterDelete[0].text).toBe('Sentence with footnote and more text')
+    })
 })
 

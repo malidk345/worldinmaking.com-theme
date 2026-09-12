@@ -16,6 +16,8 @@ import Link from 'components/Link'
 import Input from 'components/OSForm/input'
 import { OSSelect } from 'components/OSForm'
 import { postSupabaseCommunityQuestion } from 'lib/supabaseCommunity'
+import { IconX } from '@posthog/icons'
+import { useApp } from 'context/App'
 
 type QuestionFormValues = {
     subject: string
@@ -202,30 +204,35 @@ function QuestionFormMain({
                                         />
                                     </>
                                 )}
-                                <RichText
-                                    onSubmit={submitForm}
-                                    autoFocus={!subject}
-                                    setFieldValue={setFieldValue}
-                                    initialValue={initialValues?.body}
-                                    values={values}
-                                    mentions={formType === 'reply'}
-                                    loading={loading}
-                                    isValid={isValid}
-                                    user={user}
-                                    cta={() => (
-                                        <OSButton disabled={loading || !isValid} type="submit" variant="primary">
-                                            {loading ? 'Posting...' : user ? 'Post' : 'Login & post'}
-                                        </OSButton>
-                                    )}
-                                />
-                                <Field
-                                    className="opacity-0 absolute left-0 top-0 h-0 w-0 -z-[50] border-0 p-0"
-                                    name="url"
-                                    id="url"
-                                    type="text"
-                                    tabIndex={-1}
-                                    autoComplete="off"
-                                />
+                                <div
+                                    data-reply-composer={formType === 'reply' ? 'true' : undefined}
+                                    className="relative"
+                                >
+                                    <RichText
+                                        onSubmit={submitForm}
+                                        autoFocus={!subject}
+                                        setFieldValue={setFieldValue}
+                                        initialValue={initialValues?.body}
+                                        values={values}
+                                        mentions={formType === 'reply'}
+                                        loading={loading}
+                                        isValid={isValid}
+                                        user={user}
+                                        cta={() => (
+                                            <OSButton disabled={loading || !isValid} type="submit" variant="primary">
+                                                {loading ? 'Posting...' : user ? 'Post' : 'Login & post'}
+                                            </OSButton>
+                                        )}
+                                    />
+                                    <Field
+                                        className="opacity-0 absolute left-0 top-0 h-0 w-0 -z-[50] border-0 p-0"
+                                        name="url"
+                                        id="url"
+                                        type="text"
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                    />
+                                </div>
                             </div>
 
                             {disclaimer && (
@@ -276,10 +283,14 @@ export const QuestionForm = ({
     ...other
 }: QuestionFormProps) => {
     const { user, getJwt, logout } = useUser()
+    const { isMobile } = useApp()
     const [formValues, setFormValues] = useState<QuestionFormValues | null>(null)
     const [view, setView] = useState<string | null>(initialView || null)
     const [loading, setLoading] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
+    const isMobileReply = Boolean(
+        (isMobile || (typeof window !== 'undefined' && window.innerWidth < 768)) && formType === 'reply'
+    )
 
     const buttonText =
         other.buttonText ??

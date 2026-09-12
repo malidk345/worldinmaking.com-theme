@@ -25,11 +25,54 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[AVAILABLE]`
+- **Status:** `[COMPLETED by Antigravity - Mobile Writing Architecture & Notebook Footnotes Delete Icon (Pushed to main)]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Notebook Document Footnotes Section Delete Icon & Mobile Elevation Push)
+- **Scope:**
+  1. Added a delete icon button (`IconTrash` from `@posthog/icons`) to each footnote item in the bottom footnotes section (`renderDocumentFootnotesSection`) of the notebook ("tamam iyi hoş notebookta footnote ekleniyor ya alta footnotlarda bir de delete ikonu ekle").
+  2. Clicking the delete icon calls `deleteFootnote(fnId)`, safely stripping the footnote reference from the document's `footnotes` dictionary as well as all inline marks across paragraphs, headings, blockquotes, lists, and tables.
+  3. Replaced unicode edit symbol `\u270E` with modern `IconPencil` from `@posthog/icons` for visual consistency.
+  4. Added `editable: mode !== 'view'` support to `useNotebookFootnotes` so editing/deleting buttons only appear when the notebook is editable.
+  5. Added unit regression test in `tests/notebook-frontend.spec.ts` verifying footnote delete button rendering and inline content cleanup.
+  6. Pushed all changes to origin `main` per user request ("tamam hoş her şeyi pushla").
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (50 of 50 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/lib/components/MarkdownNotebook/useNotebookFootnotes.ts`
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.tsx`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+
+### 2026-09-12 — Antigravity (Mobile Writing Keyboard Architecture & Jitter-Free Elevation Fix)
+- **Scope:**
+  1. Resolved site shaking / jitter ("oynama titreme") and chat unintended lifting when virtual keyboard opens in WIM AI and Community forum replies:
+     - Root cause 1 (Chat lifting): In `src/components/ClaudeWorkspaceChat/index.tsx`, `handleMobileKeyboard` had an observer calling `pinChatToBottom()` on keyboard open, and the message container had `pb-[calc(10rem+var(--keyboard-inset...))]` which continuously expanded the scroll height and forced all chat messages to scroll up. Removed the auto-scroll observer and set stable static padding `pb-36 sm:pb-40` so the chat remains 100% stationary and calm when focusing the input. Only the floating dock rises above the keyboard.
+     - Root cause 2 (Jitter & interpolation fighting): Removed `transition-[padding-bottom]` from `ClaudeWorkspaceChat`, `transition: padding-bottom` and `transition: bottom` from `[data-writing-dock]`, `.keyboard-lift`, `.keyboard-pad` in `global.css`, `taskbar-keyboard-lock.css`, and `QuestionForm.tsx`. Because `--keyboard-inset` updates at 60/120fps from hardware during viewport resize, CSS transitions were continually interrupting and restarting their curves, causing lag, stutter, and layout reflow.
+     - Root cause 3 (Viewport pan & scroll thrashing): In `src/hooks/useKeyboardInset.ts`, guarded `resetVisualPan` to only execute `vv.scrollTo(0, 0)` and `window.scrollTo(0, 0)` when offsets are actually non-zero (`Math.abs > 0.5`), breaking infinite scroll event feedback loops in Mobile Safari. Guarded DOM style and attribute updates to avoid restyle invalidation when values are unchanged.
+     - Root cause 4 (Community reply elevation): Ensured reply opens normally inline in the thread (`QuestionForm.tsx`), and only elevates above the keyboard when its writing area is active (`html[data-keyboard='open'] [data-reply-composer='true']:focus-within`) with zero window lifting or header shift.
+  2. Local-only changes (NO PUSH per user constraint "ama pushlama").
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (49 of 49 tests passed).
+- **Files Modified:**
+  - `src/hooks/useKeyboardInset.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`
+  - `src/components/Squeak/components/QuestionForm.tsx`
+  - `src/components/Squeak/components/RichText.tsx`
+  - `src/components/Inbox/index.tsx`
+  - `src/styles/global.css`
+  - `src/styles/taskbar-keyboard-lock.css`
+  - `src/styles/notebook-mobile-block-chrome.css`
+  - `tests/keyboard-overlay.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Notebook Image, Database & Component Rows Frame Outline & Plus Button Removal)
 - **Scope:**

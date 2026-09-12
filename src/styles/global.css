@@ -3244,14 +3244,13 @@ article.reader-view-content-container:has(.quest-sidebar) {
     --app-shell-height: 100dvh;
 }
 
-/* Keyboard overlays the shell. Cancel iOS visual-viewport pan so windows stay put. */
+/* Keyboard overlays the shell. Windows stay stationary. */
 html[data-keyboard='open'] #app-container {
-    transform: translateY(var(--vv-offset-top, 0px));
+    transform: none !important;
 }
 
 [data-writing-dock] {
     padding-bottom: calc(0.75rem + var(--keyboard-inset, 0px));
-    transition: padding-bottom 0.16s ease-out;
 }
 
 [data-writing-surface] {
@@ -3263,6 +3262,12 @@ html[data-keyboard='open'] #app-container {
 html[data-keyboard='open'] [data-keyboard-padded] {
     padding-bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+    html[data-keyboard='open'] [data-keyboard-padded] {
+        padding-bottom: 0 !important;
+    }
 }
 
 /* Compact tall comment editors so the field + Post stay above the keyboard. */
@@ -3290,17 +3295,26 @@ html[data-keyboard='open'] {
 
 .keyboard-lift {
     bottom: var(--keyboard-inset, 0px) !important;
-    transition: bottom 0.16s ease-out;
 }
 
 .keyboard-pad {
     padding-bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px));
-    transition: padding-bottom 0.16s ease-out;
 }
 
 html[data-keyboard='open'] [data-os-toolbar] {
     opacity: 0;
     pointer-events: none;
+}
+
+@media (max-width: 767px) {
+    html[data-keyboard='open'] [data-question-toolbar] {
+        display: none !important;
+    }
+}
+
+html[data-keyboard='open'][data-keyboard-surface='notebook'] .MarkdownNotebook__canvas {
+    padding-bottom: calc(var(--keyboard-inset, 0px) + 6rem) !important;
+    scroll-padding-bottom: calc(var(--keyboard-inset, 0px) + 3rem) !important;
 }
 
 .reader-content-container {

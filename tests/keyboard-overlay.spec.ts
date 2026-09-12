@@ -56,4 +56,89 @@ test.describe('keyboard overlay', () => {
         const fontSize = await page.locator('[data-test-writing]').evaluate((el) => getComputedStyle(el).fontSize)
         expect(fontSize).toBe('16px')
     })
+
+    test('notebook canvas gains dynamic scroll clearance when keyboard is open', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto('/', { waitUntil: 'domcontentloaded' })
+        const paddingBottom = await page.evaluate(() => {
+            document.documentElement.setAttribute('data-keyboard', 'open')
+            document.documentElement.setAttribute('data-keyboard-surface', 'notebook')
+            document.documentElement.style.setProperty('--keyboard-inset', '300px')
+            const canvas = document.createElement('div')
+            canvas.className = 'MarkdownNotebook__canvas'
+            document.body.appendChild(canvas)
+            const pb = getComputedStyle(canvas).paddingBottom
+            canvas.remove()
+            return pb
+        })
+        // 300px + 6rem (96px) = 396px
+        expect(parseFloat(paddingBottom)).toBeGreaterThanOrEqual(380)
+    })
+
+    test('forum question toolbar is hidden on mobile when virtual keyboard is open', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto('/', { waitUntil: 'domcontentloaded' })
+        const { displayBefore, displayAfter } = await page.evaluate(() => {
+            const tb = document.createElement('div')
+            tb.setAttribute('data-question-toolbar', '')
+            document.body.appendChild(tb)
+            document.documentElement.removeAttribute('data-keyboard')
+            const displayBefore = getComputedStyle(tb).display
+
+            document.documentElement.setAttribute('data-keyboard', 'open')
+            const displayAfter = getComputedStyle(tb).display
+            tb.remove()
+            return { displayBefore, displayAfter }
+        })
+        expect(displayBefore).not.toBe('none')
+        expect(displayAfter).toBe('none')
+    })
+
+    test('mobile shell permanently locks html and body to fixed position', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto('/', { waitUntil: 'domcontentloaded' })
+        const { htmlPos, bodyPos, overflow } = await page.evaluate(() => {
+            const htmlStyle = getComputedStyle(document.documentElement)
+            const bodyStyle = getComputedStyle(document.body)
+            return {
+                htmlPos: htmlStyle.position,
+                bodyPos: bodyStyle.position,
+                overflow: bodyStyle.overflow,
+            }
+        })
+        expect(htmlPos).toBe('fixed')
+        expect(bodyPos).toBe('fixed')
+        expect(overflow).toBe('hidden')
+    })
+
+    test('reply writing area elevates above keyboard when focused on mobile', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto('/', { waitUntil: 'load' })
+        await page.waitForFunction(() => document.documentElement.style.getPropertyValue('--keyboard-inset') !== '')
+        const styles = await page.evaluate(() => {
+            Object.defineProperty(window.visualViewport, 'height', { value: 500, configurable: true })
+            window.visualViewport?.dispatchEvent(new Event('resize'))
+            const composer = document.createElement('div')
+            composer.setAttribute('data-reply-composer', 'true')
+            const input = document.createElement('textarea')
+            composer.appendChild(input)
+            document.body.appendChild(composer)
+            input.focus()
+
+            const computed = getComputedStyle(composer)
+            const result = {
+                position: computed.position,
+                bottom: computed.bottom,
+                zIndex: computed.zIndex,
+            }
+            composer.remove()
+            return result
+        })
+        expect(styles.position).toBe('fixed')
+        // 844 - 500 = 344px keyboard inset
+        expect(styles.bottom).toBe('344px')
+        expect(Number(styles.zIndex)).toBeGreaterThanOrEqual(9999)
+    })
 })
+
+

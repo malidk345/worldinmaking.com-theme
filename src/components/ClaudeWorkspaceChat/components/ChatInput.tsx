@@ -129,7 +129,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const el = textareaRef.current
     if (el) {
       el.style.height = '24px'
-      el.style.height = `${Math.min(Math.max(el.scrollHeight, 24), 160)}px`
+      const isMobileKeyboard =
+        typeof window !== 'undefined' &&
+        window.innerWidth < 768 &&
+        document.documentElement.getAttribute('data-keyboard') === 'open'
+      const maxHeight = isMobileKeyboard ? 100 : 160
+      el.style.height = `${Math.min(Math.max(el.scrollHeight, 24), maxHeight)}px`
     }
     setSlashIndex(0)
   }, [prompt]);

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { IconPencil, IconTrash } from '@posthog/icons'
 import {
     NotebookBlockNode,
     NotebookDocument,
@@ -59,6 +60,7 @@ export interface UseNotebookFootnotesProps {
     setFloatingToolbar: (toolbar: FloatingToolbarState | null) => void
     floatingToolbarPositionLockRef: React.MutableRefObject<FloatingToolbarPosition | null>
     insertMenuQuery?: string
+    editable?: boolean
 }
 
 export interface ActiveFootnotePopoverState {
@@ -80,6 +82,7 @@ export function useNotebookFootnotes({
     setFloatingToolbar,
     floatingToolbarPositionLockRef,
     insertMenuQuery,
+    editable = true,
 }: UseNotebookFootnotesProps) {
     const [activeFootnotePopover, setActiveFootnotePopover] =
         useState<ActiveFootnotePopoverState | null>(null)
@@ -351,6 +354,21 @@ export function useNotebookFootnotes({
                         })),
                     }
                 }
+                if (node.type === 'table') {
+                    return {
+                        ...node,
+                        headers: node.headers.map((cell) => ({
+                            ...cell,
+                            children: removeFootnoteFromInlineNodes(cell.children, id),
+                        })),
+                        rows: node.rows.map((row) =>
+                            row.map((cell) => ({
+                                ...cell,
+                                children: removeFootnoteFromInlineNodes(cell.children, id),
+                            }))
+                        ),
+                    }
+                }
                 return node
             })
             commitDocument({
@@ -450,41 +468,46 @@ export function useNotebookFootnotes({
                                 className:
                                     'flex items-center gap-1 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity',
                             },
-                            React.createElement(
-                                'button',
-                                {
-                                    type: 'button',
-                                    onClick: () => {
-                                        const badge = window.document.querySelector(
-                                            `[data-notebook-footnote="${fnId}"]`
-                                        ) as HTMLElement | null
-                                        if (badge) {
-                                            badge.scrollIntoView({
-                                                behavior: 'smooth',
-                                                block: 'center',
-                                            })
-                                            const rect = badge.getBoundingClientRect()
-                                            const overlay = clampOverlayPosition(rect)
-                                            setActiveFootnotePopover({
-                                                id: fnId,
-                                                number: idx + 1,
-                                                text: String(fnText || ''),
-                                                top: overlay.top,
-                                                left: overlay.left,
-                                            })
-                                        }
+                            editable &&
+                                React.createElement(
+                                    'button',
+                                    {
+                                        type: 'button',
+                                        onClick: (e) => {
+                                            e.stopPropagation()
+                                            const badge = window.document.querySelector(
+                                                `[data-notebook-footnote="${fnId}"]`
+                                            ) as HTMLElement | null
+                                            if (badge) {
+                                                badge.scrollIntoView({
+                                                    behavior: 'smooth',
+                                                    block: 'center',
+                                                })
+                                                const rect = badge.getBoundingClientRect()
+                                                const overlay = clampOverlayPosition(rect)
+                                                setActiveFootnotePopover({
+                                                    id: fnId,
+                                                    number: idx + 1,
+                                                    text: String(fnText || ''),
+                                                    top: overlay.top,
+                                                    left: overlay.left,
+                                                })
+                                            }
+                                        },
+                                        className:
+                                            'text-xs text-muted hover:text-primary p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation cursor-pointer',
+                                        title: 'Edit footnote',
+                                        'aria-label': 'Edit footnote',
+                                        'data-action': 'edit-footnote',
                                     },
-                                    className:
-                                        'text-xs text-muted hover:text-primary p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation',
-                                    title: 'Edit footnote',
-                                },
-                                '\u270E'
-                            ),
+                                    React.createElement(IconPencil, { className: 'size-3.5' })
+                                ),
                             React.createElement(
                                 'button',
                                 {
                                     type: 'button',
-                                    onClick: () => {
+                                    onClick: (e) => {
+                                        e.stopPropagation()
                                         const badge = window.document.querySelector(
                                             `[data-notebook-footnote="${fnId}"]`
                                         ) as HTMLElement | null
@@ -504,17 +527,36 @@ export function useNotebookFootnotes({
                                         }
                                     },
                                     className:
-                                        'text-xs text-muted hover:text-blue-500 p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation',
+                                        'text-xs text-muted hover:text-blue-500 p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation cursor-pointer',
                                     title: 'Back to text',
+                                    'aria-label': 'Back to text',
+                                    'data-action': 'back-to-text',
                                 },
                                 '\u21A9'
-                            )
+                            ),
+                            editable &&
+                                React.createElement(
+                                    'button',
+                                    {
+                                        type: 'button',
+                                        onClick: (e) => {
+                                            e.stopPropagation()
+                                            deleteFootnote(fnId)
+                                        },
+                                        className:
+                                            'text-xs text-muted hover:text-red-500 p-1.5 rounded transition-colors inline-flex items-center justify-center min-w-[28px] min-h-[28px] touch-manipulation cursor-pointer',
+                                        title: 'Delete footnote',
+                                        'aria-label': 'Delete footnote',
+                                        'data-action': 'delete-footnote',
+                                    },
+                                    React.createElement(IconTrash, { className: 'size-3.5' })
+                                )
                         )
                     )
                 )
             )
         )
-    }, [clampOverlayPosition, documentRef])
+    }, [clampOverlayPosition, deleteFootnote, documentRef, editable])
 
     return {
         activeFootnotePopover,

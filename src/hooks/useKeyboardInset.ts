@@ -67,6 +67,8 @@ function scrollableParent(element: HTMLElement): HTMLElement | null {
 }
 
 function pickWritingFrame(element: HTMLElement, inset: number): HTMLElement | null {
+    // Mobile: never shrink or pad windows or panels — windows must stay stationary.
+    if (isMobileShell()) return null
     const layoutHeight = window.innerHeight
     const seen = new Set<HTMLElement>()
     const candidates: HTMLElement[] = []
@@ -121,7 +123,11 @@ function keepNotebookCaretInView(inset: number): void {
             ? range.startContainer
             : range.startContainer.parentElement
     if (!node?.closest(NOTEBOOK_EDITOR)) return
-    scrollRectIntoOverlay(range.getBoundingClientRect(), node, inset, 28)
+    let rect = range.getBoundingClientRect()
+    if (!rect || (rect.height === 0 && rect.top === 0)) {
+        rect = node.getBoundingClientRect()
+    }
+    scrollRectIntoOverlay(rect, node, inset, 28)
 }
 
 function writingSurface(element: HTMLElement): HTMLElement {
@@ -134,6 +140,8 @@ function revealWritingSurface(element: HTMLElement, inset: number): void {
         return
     }
     if (element.closest(WRITING_DOCK)) return
+    // Mobile: do not scroll page/surfaces — composers dock natively above the keyboard.
+    if (isMobileShell()) return
     const surface = writingSurface(element)
     scrollRectIntoOverlay(surface.getBoundingClientRect(), surface, inset, 12)
 }
@@ -156,11 +164,13 @@ function isNotebookEditing(): boolean {
 
 function resetVisualPan(vv: VisualViewport | null | undefined): void {
     try {
-        vv?.scrollTo(0, 0)
+        if (vv && (Math.abs(vv.offsetTop) > 0.5 || Math.abs(vv.offsetLeft) > 0.5)) {
+            vv.scrollTo(0, 0)
+        }
     } catch {
         /* older Safari */
     }
-    if (window.scrollX !== 0 || window.scrollY !== 0) {
+    if (Math.abs(window.scrollX) > 0.5 || Math.abs(window.scrollY) > 0.5) {
         window.scrollTo(0, 0)
     }
 }
@@ -174,28 +184,58 @@ export function useKeyboardInset(): void {
             const vv = window.visualViewport
             const mobile = isMobileShell()
             const notebook = isNotebookEditing()
-            // Mobile: never pan the layout viewport. The logo taskbar lives in #app-container.
-            if (!mobile) resetVisualPan(vv)
+            // Always cancel browser layout/visual-viewport pan so headers & windows stay put.
+            resetVisualPan(vv)
             const layoutH = window.innerHeight
             const visibleH = vv?.height ?? layoutH
             const offsetTop = vv?.offsetTop ?? 0
             const { inset, pan, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
 
-            root.style.setProperty('--keyboard-inset', `${inset}px`)
-            root.style.setProperty('--vv-height', `${Math.round(visibleH)}px`)
-            root.style.setProperty('--vv-offset-top', `${mobile ? 0 : pan}px`)
-            root.style.setProperty('--app-shell-height', `${layoutH}px`)
+            const currentInset = root.style.getPropertyValue('--keyboard-inset')
+            const nextInset = `${inset}px`
+            if (currentInset !== nextInset) {
+                root.style.setProperty('--keyboard-inset', nextInset)
+            }
 
-            if (open) root.setAttribute('data-keyboard', 'open')
-            else root.removeAttribute('data-keyboard')
+            const currentVvH = root.style.getPropertyValue('--vv-height')
+            const nextVvH = `${Math.round(visibleH)}px`
+            if (currentVvH !== nextVvH) {
+                root.style.setProperty('--vv-height', nextVvH)
+            }
+
+            if (root.style.getPropertyValue('--vv-offset-top') !== '0px') {
+                root.style.setProperty('--vv-offset-top', '0px')
+            }
+
+            const nextShellH = `${layoutH}px`
+            if (root.style.getPropertyValue('--app-shell-height') !== nextShellH) {
+                root.style.setProperty('--app-shell-height', nextShellH)
+            }
+
+            if (open) {
+                if (root.getAttribute('data-keyboard') !== 'open') {
+                    root.setAttribute('data-keyboard', 'open')
+                }
+            } else {
+                if (root.hasAttribute('data-keyboard')) {
+                    root.removeAttribute('data-keyboard')
+                }
+            }
 
             const focused = document.activeElement
             const active = isEditableTarget(focused) ? focused : null
             const inDock = Boolean(active?.closest(WRITING_DOCK))
 
-            if (notebook) root.setAttribute('data-keyboard-surface', 'notebook')
-            else if (active && open) root.setAttribute('data-keyboard-surface', 'write')
-            else root.removeAttribute('data-keyboard-surface')
+            const targetSurface = notebook ? 'notebook' : (active && open ? 'write' : null)
+            if (targetSurface) {
+                if (root.getAttribute('data-keyboard-surface') !== targetSurface) {
+                    root.setAttribute('data-keyboard-surface', targetSurface)
+                }
+            } else {
+                if (root.hasAttribute('data-keyboard-surface')) {
+                    root.removeAttribute('data-keyboard-surface')
+                }
+            }
 
             if (open && active && !inDock && !notebook) {
                 const frame = pickWritingFrame(active, inset)
@@ -214,6 +254,8 @@ export function useKeyboardInset(): void {
         const timers: number[] = []
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
+            resetVisualPan(window.visualViewport)
+            apply(true)
             timers.push(window.setTimeout(() => apply(true), 50))
             timers.push(window.setTimeout(() => apply(true), 300))
         }
@@ -221,22 +263,56 @@ export function useKeyboardInset(): void {
             timers.push(window.setTimeout(() => apply(false), 0))
         }
 
+        let caretRaf = 0
+        const onInputOrSelection = () => {
+            if (!isMobileShell()) return
+            const open = root.getAttribute('data-keyboard') === 'open'
+            if (!open) return
+            const active = document.activeElement
+            if (!isEditableTarget(active)) return
+            if (active.closest(NOTEBOOK_EDITOR)) {
+                if (caretRaf) cancelAnimationFrame(caretRaf)
+                caretRaf = requestAnimationFrame(() => {
+                    const inset = parseFloat(root.style.getPropertyValue('--keyboard-inset') || '0')
+                    if (inset > KEYBOARD_THRESHOLD) {
+                        keepNotebookCaretInView(inset)
+                    }
+                })
+            }
+        }
+
         const applyVars = () => apply(false)
         const applyAndKeepCaret = () => apply(true)
+        const onWindowScroll = () => {
+            if (isMobileShell()) {
+                if (Math.abs(window.scrollY) > 0.5 || Math.abs(window.scrollX) > 0.5) {
+                    window.scrollTo(0, 0)
+                }
+            }
+            apply(false)
+        }
+
         apply(false)
         window.visualViewport?.addEventListener('resize', applyAndKeepCaret)
         window.visualViewport?.addEventListener('scroll', applyVars)
         window.addEventListener('resize', applyVars)
+        window.addEventListener('scroll', onWindowScroll, { passive: true })
         document.addEventListener('focusin', onFocusIn)
         document.addEventListener('focusout', onFocusOut)
+        document.addEventListener('input', onInputOrSelection)
+        document.addEventListener('selectionchange', onInputOrSelection)
 
         return () => {
             timers.forEach((id) => window.clearTimeout(id))
+            if (caretRaf) cancelAnimationFrame(caretRaf)
             window.visualViewport?.removeEventListener('resize', applyAndKeepCaret)
             window.visualViewport?.removeEventListener('scroll', applyVars)
             window.removeEventListener('resize', applyVars)
+            window.removeEventListener('scroll', onWindowScroll)
             document.removeEventListener('focusin', onFocusIn)
             document.removeEventListener('focusout', onFocusOut)
+            document.removeEventListener('input', onInputOrSelection)
+            document.removeEventListener('selectionchange', onInputOrSelection)
             clearWritingPad()
             root.style.removeProperty('--keyboard-inset')
             root.style.removeProperty('--vv-height')

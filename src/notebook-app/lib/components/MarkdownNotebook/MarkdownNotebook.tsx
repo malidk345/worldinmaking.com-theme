@@ -2970,6 +2970,7 @@ function MarkdownNotebookEditor({
         setFloatingToolbar,
         floatingToolbarPositionLockRef,
         insertMenuQuery: insertMenu?.query,
+        editable: mode !== 'view',
     })
 
 

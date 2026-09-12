@@ -6,7 +6,7 @@ import { isURL } from 'lib/utils'
 import { CurrentQuestionContext } from './Question'
 import Avatar from './Avatar'
 import { AnimatePresence, motion } from 'framer-motion'
-import { IconImage, IconX } from '@posthog/icons'
+import { IconChevronDown, IconImage, IconX } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import {
     mentionChipHtml,
@@ -405,7 +405,7 @@ export default function RichText({
                     data-scheme="secondary"
                     className="not-prose bg-primary flex items-center justify-between py-0.5 border border-primary rounded-t"
                 >
-                    <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0">
+                    <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0 overflow-x-auto no-scrollbar flex-nowrap">
                         {buttons.map((button, index) => {
                             return (
                                 <li key={index}>
@@ -444,6 +444,20 @@ export default function RichText({
                                 }}
                             />
                         </li>
+                        <li className="ml-auto block sm:hidden">
+                            <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                    e.preventDefault()
+                                    ;(document.activeElement as HTMLElement)?.blur?.()
+                                }}
+                                className="text-secondary hover:text-primary p-1 rounded transition-colors cursor-pointer"
+                                title="Close keyboard"
+                                aria-label="Close keyboard"
+                            >
+                                <IconChevronDown className="size-4" />
+                            </button>
+                        </li>
                     </ul>
                 </div>
                     <div className="relative border border-primary border-t-0 rounded-b">
@@ -475,7 +489,7 @@ export default function RichText({
                             aria-multiline="true"
                             data-placeholder="Type more details..."
                             suppressContentEditableWarning
-                            className={`w-full min-h-40 max-h-[500px] overflow-auto px-3 py-2 outline-none text-[15px] leading-[1.5] break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full [&_.forum-mention]:inline-flex [&_.forum-mention]:items-center [&_.forum-mention]:px-1.5 [&_.forum-mention]:py-px [&_.forum-mention]:rounded-sm [&_.forum-mention]:border [&_.forum-mention]:border-navy [&_.forum-mention]:text-navy [&_.forum-mention]:bg-navy/10 [&_.forum-mention]:font-semibold ${className}`}
+                            className={`w-full min-h-24 sm:min-h-40 max-h-[240px] sm:max-h-[500px] overflow-auto px-3 py-2 outline-none text-[15px] leading-[1.5] break-words [overflow-wrap:anywhere] empty:before:content-[attr(data-placeholder)] empty:before:opacity-50 empty:before:pointer-events-none [&_strong]:font-bold [&_em]:italic [&_code]:px-1 [&_code]:rounded-sm [&_code]:bg-accent [&_a]:underline [&_img]:max-w-full [&_.forum-mention]:inline-flex [&_.forum-mention]:items-center [&_.forum-mention]:px-1.5 [&_.forum-mention]:py-px [&_.forum-mention]:rounded-sm [&_.forum-mention]:border [&_.forum-mention]:border-navy [&_.forum-mention]:text-navy [&_.forum-mention]:bg-navy/10 [&_.forum-mention]:font-semibold ${className}`}
                             onInput={() => {
                                 syncFromEditor()
                                 refreshMentionQuery()

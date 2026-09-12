@@ -764,6 +764,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     pinChatToBottom();
   }, [lastStreamTick, pinChatToBottom]);
 
+
   useEffect(() => {
     if (!isStreaming) return;
     let frame = 0;
@@ -2241,7 +2242,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Floating Input Dock with smooth fade allowing messages to flow underneath */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-2.5 [padding-bottom:calc(0.65rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-2.5 [padding-bottom:calc(0.65rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))] will-change-[padding-bottom]"
         >
           <div className="pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4">
             <ChatInput

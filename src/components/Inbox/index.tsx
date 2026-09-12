@@ -252,11 +252,15 @@ const QuestionToolbar = ({
 }: QuestionToolbarProps) => {
     const navigate = useDesktopNavigate()
     return (
-        <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
+        <div data-question-toolbar className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
             <OSButton
                 variant="secondary"
                 size="xs"
                 onClick={() => {
+                    if (isMobile) {
+                        document.getElementById('question-form-button')?.click()
+                        return
+                    }
                     if (!containerRef.current) return
                     const containerHeight = containerRef.current.getBoundingClientRect().height
                     setBottomHeight(containerHeight)
@@ -432,7 +436,7 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
     }, [])
 
     return (
-        <div data-scheme="secondary" className="bg-primary size-full p-4">
+        <div data-scheme="secondary" className="bg-primary size-full p-4 overflow-y-auto min-h-0">
             <QuestionForm
                 onSubmit={(_values, _type, data) => {
                     onSubmit()
@@ -825,27 +829,9 @@ export default function Inbox(props) {
                                         </div>
                                     </ScrollArea>
                                 </div>
-                                {permalink ? (
+                                 {permalink ? (
                                         <div
                                             ref={bottomContainerRef}
-                                            data-keyboard-frame
-                                            onFocusCapture={(event) => {
-                                                if (!isMobile) return
-                                                const target = event.target
-                                                if (!(target instanceof HTMLElement)) return
-                                                const tag = target.tagName
-                                                const editable =
-                                                    tag === 'TEXTAREA' ||
-                                                    target.isContentEditable ||
-                                                    (tag === 'INPUT' &&
-                                                        !['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'color', 'hidden'].includes(
-                                                            (target as HTMLInputElement).type
-                                                        ))
-                                                if (!editable) return
-                                                const box = containerRef.current?.getBoundingClientRect()
-                                                if (!box || box.height < 120) return
-                                                setBottomHeight(box.height)
-                                            }}
                                             className={`relative min-h-0 min-w-0 flex flex-col overflow-hidden bg-primary ${
                                                 !isDragging ? 'transition-[height,width] duration-200 ease-out' : ''
                                             } ${
