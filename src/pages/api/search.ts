@@ -6,6 +6,9 @@ export const runtime = 'edge'
 
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import { runPublicSearch } from '../../lib/public-search'
+import { checkRateLimitDurable } from '../../lib/bots/rate-limit'
+import { getRuntimeEnv } from '../../lib/bots/runtime-env'
+import { getClientIp } from '../../lib/bots/request-validation'
 
 const getFacetValues = (value: string | string[] | null): string[] => {
     if (!value) return []
@@ -33,6 +36,17 @@ export default async function handler(req: Request) {
     )
     const requestedType = facetFilters.find((filter) => filter.startsWith('type:'))?.replace('type:', '')
     const cache = 'public, s-maxage=300, stale-while-revalidate=600'
+
+    const env = getRuntimeEnv()
+    const ip = getClientIp(req)
+    const rate = await checkRateLimitDurable(`search:${ip}`, 60, 60 * 60 * 1000, env, { failClosed: false })
+    if (!rate.allowed) {
+        return json(
+            { hits: [], nbHits: 0, facets: { type: {} }, error: 'rate_limited' },
+            429,
+            undefined
+        )
+    }
 
     if (query.length < 2) {
         return json({ hits: [], nbHits: 0, facets: { type: {} } }, 200, cache)
