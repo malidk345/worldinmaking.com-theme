@@ -1,7 +1,7 @@
 # WIM Engineering Backlog (current code)
 
 **Repo:** `malidk345/worldinmaking.com-theme`  
-**Inspected SHA:** `348e7df` (2026-09-12)  
+**Inspected SHA:** `348e7df` / docs commit after 2026-09-13  
 **Audience:** humans + coding agents  
 **Supersedes:** `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` (2026-08-06 — stale)
 
@@ -34,18 +34,18 @@ _app → AppProvider (src/context/App.tsx ~108KB) → Wrapper
 
 ## 1. Already done (do not re-litigate)
 
-Agents keep proposing work that landed after August:
-
 | Area | Evidence |
 |---|---|
 | Home split | `src/pages/desktop.tsx` is 1615 bytes; sections live under `src/pages/DesktopPage/` |
-| Public search | `src/lib/public-search.ts` — posts via RPC `search_posts` (tsvector); community/people/notebooks lexical on title/excerpt only; no full-body scan |
+| Public search | `src/lib/public-search.ts` — posts via RPC `search_posts` (tsvector); community/people/notebooks lexical on title/excerpt only |
 | Next Image | `unoptimized` removed; AVIF/WebP + remotePatterns |
 | Window extraction | `WindowRouter.tsx`, `WindowChrome.tsx`, `WindowContent.tsx`, `SnapAssistOverlay.tsx`, `WindowErrorBoundary.tsx` |
-| Notebook sync | Device claim, open-always-fetch, 30s poll, typing clobber guards, presence channel resilience (AI_MEMORY 2026-09-12) |
-| AI kernel | Single orchestrator `src/lib/bots/orchestrate.ts`; `/api/chat` Edge SSE; forum/paper `runBotTurn` tools off |
-| Tests | Large Playwright/unit surface: notebook-frontend, keyboard-overlay, agent-modes, billing, chrome, ask-ai harness |
-| CI | `.github/workflows/ci.yml` + `pnpm typecheck:shell` |
+| Notebook sync | Device claim, open-always-fetch, 30s poll, typing clobber guards, presence resilience |
+| AI kernel | `src/lib/bots/orchestrate.ts`; `/api/chat` Edge SSE; forum/paper `runBotTurn` tools off |
+| Billing code | Lemon checkout + webhook + `profiles.role = pro` (`docs/billing.md`) — store keys are ops, not missing code |
+| SEO feeds | `/api/seo/sitemap`, `/api/seo/rss`, rewrite in next.config |
+| PWA chrome | `_document.tsx` manifest + apple-web-app + theme-color |
+| Tests + CI | Playwright surface + `ci.yml` typecheck:shell + smoke on placeholder Supabase |
 
 ---
 
@@ -53,131 +53,83 @@ Agents keep proposing work that landed after August:
 
 ### P0 — ship / trust
 
-**P0.1 Build ignores errors**  
-`next.config.js`: `eslint.ignoreDuringBuilds: true`, `typescript.ignoreBuildErrors: true`, `reactStrictMode: false`.  
-`typecheck:shell` exists but production build can still ship broken types outside the allowlist.
+**P0.1** `next.config.js` still `ignoreDuringBuilds` / `ignoreBuildErrors` / `reactStrictMode: false`. CI already fails on `typecheck:shell`. Do not flip global tsc in one PR.
 
-**Do:** keep ignore for legacy paths; fail CI on `typecheck:shell`; next phase eslint allowlist (`AppWindow`, `context`, `pages/api`, `lib/bots`). Do not flip global tsc in one PR.
+**P0.2** `src/context/App.tsx` ~108KB god-object. Extract hooks, no behavior change.
 
-**P0.2 `App.tsx` god-object**  
-`src/context/App.tsx` ~108KB. Windows, nav, auth side-effects, notebook events. Highest regression surface.
+**P0.3** `WindowRouter` path-first for posts/questions (F5 empty shell). `AppWindow/index.tsx` ~23KB still owns chrome/drag. Normalize descriptors. Playwright matrix.
 
-**Do:** extract hooks only: `useWindowRegistry`, `useShellNav`, `useAuthBridge`. No behavior change PR. Touch glob: `src/context/**`, tests that import App.
+**P0.4** Docs poison: Django security doc, PostHog monorepo layout, strategy file claiming App Router/Tailwind 4/TipTap. `AI_MEMORY.md` ~118KB.
 
-**P0.3 Window path vs element**  
-`WindowRouter` already path-first for posts/questions because F5 `item.element` is an empty shell until `router.query` hydrates. `AppWindow/index.tsx` is still ~23KB and still owns chrome/drag.
+### P1 — PostHog leftovers (verified 2026-09-13)
 
-**Do:** all product routes go through `canonicalWindowPath` + `WindowRouter` only. Normalize window descriptors before they enter App state. Playwright: open from taskbar, from slug F5, in-window nav — zero blank panes.
+Still on disk and **not empty stubs**:
 
-**P0.4 Docs poison**  
-Delete or quarantine: August report (stubbed), `docs/security.md` (Django/HogQL), `docs/architecture/monorepo-layout.md`, `STRATEJI_VE_MONETIZASYON.md` stack claims (App Router / Tailwind 4 / TipTap — false). `AI_MEMORY.md` ~118KB — archive monthly, keep §1–4 + last 10 logs.
+- `src/components/AboutPostHog/index.tsx` — live PostHog marketing blockquote. Comment says ReaderView + MDX shortcode still use it. **This is a product bug:** WIM pages can append “About PostHog”. Replace copy with WIM about or stop auto-append.
+- `src/components/HedgehogMode/index.tsx` — still a component (~3KB).
+- `src/components/Squeak/**` — full tree. Treat as forum dependency until Inbox imports are mapped. Do not delete in the same PR as AboutPostHog.
 
-### P1 — leftover PostHog (safe vs unsafe)
+`_document.tsx` still preconnects `us.i.posthog.com` / `eu.i.posthog.com`. That is analytics, not a stray folder. Keep if PostHog product analytics is intentional; otherwise drop preconnect + `posthog-js` together.
 
-`src/components` still has ~170 top-level names. Lemon/OS/Quill are **load-bearing**. Marketing names are not.
+Pricing window is WIM (`docs/billing.md`). Not trash.
 
-**Do not delete without import graph:**  
-`notebook-app/**`, `@posthog/lemon-ui` alias, `@posthog/quill` shim, `@posthog/icons` shim, `LemonScope`, `OSButton`, `OSChrome`, `RadixUI`, `Squeak` (forum may still sit on it), `posthog-js` if analytics is intentional.
+Lemon/Quill/icons/notebook-app: load-bearing.
 
-**Delete candidates (grep first: WindowRouter, mdxGlobalComponents, pages, navs):**  
-`AboutPostHog`, `BasicHedgehogImage`, `HedgehogMode`, `CompensationCalculator`, `ContactSales`, `SalesforceForm`, `Merch`, `MaxCTA`, `SignupCTA`, `StarRepoButton`, `DocsPageSurvey`, `PlatformInstall`, `HogMap`, `SmallTeam` / careers-shaped `TeamMember` if unused.
+### P1 — search / AI / notebook
 
-`WindowRouter` still mounts `PricingWindow` at `/pricing` — that is a WIM window, not automatic trash.
+Unchanged from first pass. Search is good enough for posts; community FTS later. No second orchestrator. No Yjs. Durable rate limit still missing. Multi-device checklist is manual on a real project — CI cannot prove it (`placeholder.supabase.co` in `ci.yml`).
 
-`next.config.js` remotePatterns include `posthog.com` / `*.posthog.com`. Remove only after `tests/next-image-hosts.spec.ts` + grep pass.
+### P2 — verified product gaps (add these, not a Notion clone)
 
-`pnpm-workspace.yaml` still talks about Gatsby hoist and `@posthog/*` exclude. Clean comments/packages after unused deps drop.
+These are missing or half-wired in current code:
 
-**Method:** 0 imports + 0 routes → delete in a dedicated PR. 1 MDX reference → retarget then delete. Never a 50-folder commit.
+1. **Replace AboutPostHog in ReaderView** with WIM copy or remove the auto-blockquote. Highest-visibility leftover.
+2. **Sitemap omits published notebooks.** `src/pages/api/seo/sitemap.ts` indexes `/`, posts, questions (numeric id only), profiles. Public `wim_notebooks` (`is_published`) are not listed. Add `/notebooks/:short_id` (or whatever `notebookPublicPath` is) for published rows only.
+3. **JSON-LD on post + public notebook pages** — sitemap exists; structured data was not found as a first-class post template concern in this pass. Add Article/ProfilePage json-ld next to existing `src/lib/seo`.
+4. **Lemon store is code-complete, env-incomplete.** Do not rewrite billing. Ops: keys + webhook + migration on the live project. Product add-on only if checkout UX fails with a dead button when keys missing (docs say it must fail closed — keep that).
+5. **`Html lang="en"` only.** If the writing audience is Turkish-first, that is a real add: `lang` from profile/locale, not a full i18n rewrite. Do not invent translation of the OS in the same PR.
+6. **PWA manifest without claiming offline-app.** Manifest link exists; do not add a service worker that caches notebook HTML stale unless you design cache keys. Optional later.
+7. **Legal stubs** `baa.tsx` / `dpa.tsx` still in sitemap STATIC_PATHS (`/dpa`). Either real text or drop from sitemap + redirect.
+8. **Durable rate limit** for `/api/chat` and public philosopher-bot (in-memory isolate today).
+9. **BYOK header/vault mismatch** (deepseek/anthropic in vault, not in chat headers).
 
-### P1 — search / data (improve, don’t rewrite)
-
-Posts already FTS. Community/people/notebooks are `ilike` on short fields — acceptable at small N. Next: `search_posts`-style RPC for `community_posts` titles; do not pull notebook bodies into public search (RLS + privacy).
-
-`ilike.%${needle}%` uses `sanitizeSearchNeedle` — keep that. No service role on `/api/search`.
-
-### P1 — AI / bots
-
-Follow `WIM_AI.md`.
-
-- Do not add a second generation path.
-- Stream path has no `applyQualityGate` on purpose (tokens already flushed). Gate needs SSE buffer redesign — separate PR.
-- Hourly limiter is in-memory per isolate. Durable limit (Upstash already in tree or CF KV) for `/api/chat` and public `philosopher-bot`.
-- BYOK vault has deepseek/anthropic; chat does not send `x-byok-deepseek`. Either wire or drop from vault type.
-- Cron: topic then reply; add idempotency key + failure log. Do not fetch RSS on the edge.
-- `fetch_url` SSRF rules stay. Do not rename `posthog-analytics` artifact kind.
-
-### P1 — notebook (verify, don’t invent collab)
-
-Walk `docs/architecture/NOTEBOOK_MULTI_DEVICE.md` on a **real** Supabase project. Placeholder URL makes smoke red — do not delete tests.
-
-Keep: three-way markdown merge + poll + presence. Forbidden: Yjs.
-
-API: list pagination + omit body; ETag optional. Guest adopt only matching `device_key`.
-
-### P2 — product gaps that fit the OS (add)
-
-Not a Notion clone. Add only what the shell already implies:
-
-1. **Reader/SEO already started** (`/api/seo/sitemap`, `/api/seo/rss`) — finish json-ld + indexable post body on slug pages so Google does not depend on window JS.
-2. **Notifications** exist (`wim-notifications`, `?mark=mention|comment`) — unread badge + focus scroll must keep working; no new notification product.
-3. **Billing** APIs + `tests/billing.spec.ts` + Lemon script exist — finish one `is_pro` source of truth wired to existing chat quotas. Do not build a marketplace.
-4. **Forum bot quality** — `runBotTurn` already gated; human queue only if public volume hurts.
-5. **Dead legal stubs** (`baa.tsx`, `dpa.tsx` ~140B) — either real WIM legal copy or redirect to `/guidelines` / cookies.
-
-### P2 — performance
-
-- Measure First Load JS (`@next/bundle-analyzer`) for `/` and one notebook route before deleting more deps. Budget after baseline, not before.
-- Inactive windows: unmount or `content-visibility`; disable motion while drag (partially present).
-- `predev` always rebuilds notebook CSS — make conditional if local loop hurts.
-- Do not add amcharts/mapbox/sandpack to the cold shell (chunks already split in webpack).
+Do **not** add: marketplace, Yjs, App Router, second chatbot, careers, merch, compensation calculator, weekly email product until Lemon + SEO + AboutPostHog are clean.
 
 ---
 
 ## 3. Agent task cards (execute in order)
 
-### T1 — Quarantine stale docs
-Touch: `docs/architecture/*`, README links.  
-Replace August file with stub (done). Point README at this file. Mark PostHog security/monorepo docs `LEGACY — not WIM`.
+T1 docs quarantine — README already points here; August file stubbed. Still mark `docs/security.md` + `monorepo-layout.md` LEGACY.
 
-### T2 — Import graph of PostHog-named components
-Command idea: ripgrep `AboutPostHog|HedgehogMode|CompensationCalculator|SalesforceForm|ContactSales|Merch|MaxCTA|SignupCTA` from `src/pages`, `src/components/AppWindow`, `src/mdxGlobalComponents.*`, `src/navs`.  
-Output a table: used-by vs unused. Delete only unused in T3.
+T2 import graph (required before deletes). Start with `AboutPostHog` — known live via ReaderView comment.
 
-### T3 — Delete unused marketing folders (one PR)
-Verify: `pnpm typecheck:shell`, smoke routes `/`, `/login`, `/posts`, `/questions`.
+T3 delete only 0-import folders after T2 table.
 
-### T4 — Split App.tsx with zero behavior change
-Accept: same window open/close/snap; file < half size or three hooks extracted.
+T4 split App.tsx.
 
-### T5 — Window descriptor normalize + Playwright matrix
-Paths: forum thread, post slug, notebook, ask-ai, pricing, about. Mobile 375 + visualViewport.
+T5 window Playwright matrix.
 
-### T6 — Durable chat/bot rate limit
-Keep 429 contract. Skip in local/dev as today.
+T6 durable rate limit.
 
-### T7 — Multi-device notebook checklist on live project
-Do not merge stale Bolt PRs. Do not commit secrets.
+T7 live multi-device checklist.
 
-### T8 — SEO json-ld on published posts + public notebooks
+T8 sitemap + json-ld including published notebooks.
 
-### T9 — Pro flag → existing quota tables only
+T9 Lemon env on production (ops) + quota reads `profiles.role`.
 
-### T10 — Archive AI_MEMORY logs older than 30 days
+T10 archive AI_MEMORY.
+
+T11 replace AboutPostHog shortcode/ReaderView block with WIM about.
 
 ---
 
 ## 4. Forbidden
 
-- App Router migration
-- Yjs / CRDT rewrite
-- Enabling full-repo tsc fail in one shot
-- CSP enforce without script inventory
-- New chart library
-- Second orchestrator
-- Treating `docs/security.md` as WIM policy
-- Deleting Lemon/Quill/icons because the package name says PostHog
-- Claiming search/images/desktop-split are still August-level broken
+- App Router migration, Yjs, global tsc fail in one shot, CSP enforce without inventory
+- New chart library, second orchestrator
+- Deleting Lemon/Quill/Squeak/icons because the name says PostHog
+- Claiming search/images/desktop-split are still August-broken
+- Deleting tests that fail on placeholder Supabase
 
 ---
 
@@ -186,11 +138,11 @@ Do not merge stale Bolt PRs. Do not commit secrets.
 ```bash
 pnpm typecheck:shell
 pnpm test:smoke
-pnpm exec playwright test tests/notebook-frontend.spec.ts tests/keyboard-overlay.spec.ts tests/chrome.spec.ts
+pnpm exec playwright test tests/notebook-frontend.spec.ts tests/keyboard-overlay.spec.ts tests/chrome.spec.ts tests/billing.spec.ts tests/next-image-hosts.spec.ts
 ```
 
-If smoke fails on `placeholder.supabase.co`, say so. Do not delete the test.
+CI smoke **intentionally** uses `https://placeholder.supabase.co` + `WIM_SKIP_ENV_HARD_FAIL=1`. Empty search hits are OK. Live sync is not proven in CI.
 
 ---
 
-*Generated from repository inspection 2026-09-13. Secrets were not read.*
+*Verification pass 2026-09-13. Secrets were not read.*
