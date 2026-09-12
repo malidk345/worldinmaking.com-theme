@@ -9,7 +9,8 @@ Desktop OS shell product built on a Next.js (Pages Router) codebase inherited fr
 | **Product surface** | Desktop windows, taskbar, search, auth, notebooks, community/forum, AI bots |
 | **Package manager** | **pnpm only** (`pnpm-lock.yaml`) — do not use npm or commit `package-lock.json` |
 | **Node** | 22.x |
-| **Architecture** | [`docs/architecture/WIM_ENGINEERING_BACKLOG.md`](docs/architecture/WIM_ENGINEERING_BACKLOG.md) |
+| **Product plan** | [`docs/architecture/WIM_PRODUCT_PLAN.md`](docs/architecture/WIM_PRODUCT_PLAN.md) |
+| **Engineering backlog** | [`docs/architecture/WIM_ENGINEERING_BACKLOG.md`](docs/architecture/WIM_ENGINEERING_BACKLOG.md) |
 | **AI architecture** | [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) |
 
 ---
@@ -106,7 +107,7 @@ Key paths:
 
 Multiple AI agents share this repo. **Before coding:**
 
-1. Read [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) and [`docs/architecture/WIM_ENGINEERING_BACKLOG.md`](docs/architecture/WIM_ENGINEERING_BACKLOG.md).
+1. Read [`docs/architecture/WIM_PRODUCT_PLAN.md`](docs/architecture/WIM_PRODUCT_PLAN.md), [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md), and [`docs/architecture/WIM_ENGINEERING_BACKLOG.md`](docs/architecture/WIM_ENGINEERING_BACKLOG.md).
 2. Stay on that stream’s files; no broad `git add -A`.
 3. Prefer small PRs aligned with Infra, Shell, Performance, Data, AI/Bots.
 
