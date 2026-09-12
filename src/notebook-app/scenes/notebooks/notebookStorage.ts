@@ -315,12 +315,22 @@ function ensureLiveNotebookSync(): void {
         window.clearTimeout(livePullTimer)
         livePullTimer = window.setTimeout(() => refreshNotebooksFromRemote(false), 350)
     }
-    const stopRealtime = subscribeToWorkspaceNotebooks(schedulePull)
-    const stopPolling = startNotebookPolling(schedulePull, 20_000)
+    let stopRealtime = () => {}
+    try {
+        stopRealtime = subscribeToWorkspaceNotebooks(schedulePull) || (() => {})
+    } catch (err) {
+        console.warn('[notebookStorage] realtime subscription failed, fallback to polling:', err)
+    }
+    let stopPolling = () => {}
+    try {
+        stopPolling = startNotebookPolling(schedulePull, 20_000) || (() => {})
+    } catch (err) {
+        console.warn('[notebookStorage] polling initialization failed:', err)
+    }
     stopLiveSync = () => {
         window.clearTimeout(livePullTimer)
-        stopRealtime()
-        stopPolling()
+        try { stopRealtime() } catch { /* best effort */ }
+        try { stopPolling() } catch { /* best effort */ }
     }
     ensureRemoteHydrate()
 }

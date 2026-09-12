@@ -25,15 +25,15 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Realtime Channel Resilience & Lifecycle Hardening (Pushed to main)]`
+- **Status:** `[COMPLETED by Antigravity - Bulletproof Realtime Channel Exception Safety & Storage Guarding (Pushed to main)]`
 
 ---
 
 ## 5. AI Change History & Log
 
-### 2026-09-12 — Antigravity (Supabase Realtime Channel Resilience & Exception Guarding)
+### 2026-09-12 — Antigravity (Supabase Realtime Channel Resilience & Storage Exception Guarding)
 - **Scope:**
-  1. Resolved uncaught runtime error (`src\notebook-app\scenes\notebooks\notebookPresence.ts (151:14) @ on`):
+  1. Resolved uncaught runtime error (`src\notebook-app\scenes\notebooks\notebookPresence.ts (151:14) @ on` and `notebookRemote.ts` line 407):
      - In `@supabase/realtime-js`, calling `channel.on('presence', ...)` or `channel.on('postgres_changes', ...)` throws `Error: cannot add callbacks after subscribe()` if the channel is in `isJoining()` or `isJoined()` state.
      - In React (StrictMode remounting, fast navigation, or when auth user state loaded and updated `actor`), `supabase.removeChannel` runs asynchronously while the next `supabase.channel(...)` call immediately returned the existing channel before unsubscription completed.
      - Furthermore, `publishNow` had `actor` in its dependency array and was itself a dependency of the channel `useEffect`, causing unnecessary channel teardowns and recreations on auth load.
@@ -43,7 +43,10 @@
      - Added synchronous stale channel eviction via `supabase.realtime._remove(existing)` and `supabase.removeChannel(existing)` prior to channel creation.
      - Added channel adapter state check (`adapter.isJoined() || adapter.isJoining()`) so `.on()` is never invoked after subscription.
      - Wrapped channel initialization and listeners in a non-fatal `try/catch` with graceful degradation to guarantee presence errors never crash the notebook editor.
-  3. Applied the same channel deduplication and adapter state guards to `notebookRemote.ts` (`subscribeToWorkspaceNotebooks`) and `chat-remote.ts` (`subscribeToWorkspaceChats`).
+  3. Applied end-to-end exception containment to `notebookRemote.ts` and `notebookStorage.ts`:
+     - Moved entire `subscribeToWorkspaceNotebooks` execution (including auth user and owner key resolution) into an outer `try/catch` block.
+     - Wrapped each individual `.on('postgres_changes', ...)` and `.subscribe()` call in localized `try/catch` blocks so partial failure never prevents returning a valid teardown callback.
+     - In `notebookStorage.ts` (`ensureLiveNotebookSync`), defensively wrapped `subscribeToWorkspaceNotebooks(schedulePull)` and `startNotebookPolling(schedulePull)` in `try/catch` to guarantee that live sync failure can never block local storage hydration or crash notebook mounting.
   4. Added `getChannels: () => []` fallback to `mockClient` in `src/lib/supabase.ts`.
   5. Added regression test in `tests/notebook-frontend.spec.ts` verifying channel eviction, state guards, and error resilience.
 - **Verification:**

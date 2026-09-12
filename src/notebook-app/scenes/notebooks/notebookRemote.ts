@@ -399,11 +399,12 @@ export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void 
     if (typeof window === 'undefined' || !isSupabaseConfigured) {
         return () => {}
     }
-    const userId = getAuthUserId()
-    const ownerKey = getOrCreateOwnerKey()
-    if (!userId && !ownerKey) return () => {}
 
     try {
+        const userId = getAuthUserId()
+        const ownerKey = getOrCreateOwnerKey()
+        if (!userId && !ownerKey) return () => {}
+
         const topic = `wim-notebooks-live-${userId || ownerKey}`
         const realtimeTopic = `realtime:${topic}`
 
@@ -422,34 +423,54 @@ export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void 
             /* best-effort */
         }
 
-        let channel = supabase.channel(topic)
-        const adapter = (channel as unknown as { channelAdapter?: { isJoined?: () => boolean; isJoining?: () => boolean } }).channelAdapter
-        const isSubscribedOrJoining = Boolean(adapter?.isJoined?.() || adapter?.isJoining?.())
+        let channel: ReturnType<typeof supabase.channel> | null = null
+        try {
+            channel = supabase.channel(topic)
+            const adapter = (channel as unknown as { channelAdapter?: { isJoined?: () => boolean; isJoining?: () => boolean } }).channelAdapter
+            const isSubscribedOrJoining = Boolean(adapter?.isJoined?.() || adapter?.isJoining?.())
 
-        if (!isSubscribedOrJoining) {
-            if (userId) {
-                channel = channel.on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: 'wim_notebooks', filter: `auth_user_id=eq.${userId}` },
-                    () => onChange()
-                )
+            if (!isSubscribedOrJoining) {
+                if (userId) {
+                    try {
+                        channel = channel.on(
+                            'postgres_changes',
+                            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `auth_user_id=eq.${userId}` },
+                            () => onChange()
+                        )
+                    } catch {
+                        /* ignore */
+                    }
+                }
+                if (ownerKey) {
+                    try {
+                        channel = channel.on(
+                            'postgres_changes',
+                            { event: '*', schema: 'public', table: 'wim_notebooks', filter: `owner_key=eq.${ownerKey}` },
+                            () => onChange()
+                        )
+                    } catch {
+                        /* ignore */
+                    }
+                }
+                try {
+                    channel.subscribe()
+                } catch {
+                    /* ignore */
+                }
             }
-            if (ownerKey) {
-                channel = channel.on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: 'wim_notebooks', filter: `owner_key=eq.${ownerKey}` },
-                    () => onChange()
-                )
-            }
-            channel.subscribe()
+        } catch (err) {
+            console.warn('[notebookRemote] channel setup failed:', err)
+            channel = null
         }
 
         return () => {
-            void supabase.removeChannel(channel)
-            const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
-            if (typeof rt?._remove === 'function') {
+            if (channel) {
                 try {
-                    rt._remove(channel)
+                    void supabase.removeChannel(channel)
+                    const rt = (supabase as unknown as { realtime?: { _remove?: (ch: unknown) => void } }).realtime
+                    if (typeof rt?._remove === 'function') {
+                        rt._remove(channel)
+                    }
                 } catch {
                     /* best-effort */
                 }
