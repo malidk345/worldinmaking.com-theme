@@ -1,44 +1,45 @@
 # WorldInMaking — AI Agent Rules & Engineering Standards
 
 **Document Location:** `AGENTS.md`  
-**Applies To:** All AI Models & Assistant Agents (Claude, Gemini, Antigravity, GPT, Cursor, Grok, DeepSeek) working on this codebase.
+**Applies To:** All AI models working on this codebase.
 
 ---
 
 ## 1. Multi-Agent Memory & Protocol Rules
 
-1. **Mandatory Context Reading:** Always read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) before executing tasks.
-2. **Task Claiming (Locking):** Update Section 4 of `AI_MEMORY.md` to `[IN PROGRESS by <YourModelName>]` before editing code.
-3. **Change Logging:** Append a new entry under Section 5 ("AI Change History & Log") in `AI_MEMORY.md` upon completion with exact files modified, test status, and handoff notes.
+1. **Mandatory context:** Read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and [`docs/architecture/WIM_REPORT.md`](docs/architecture/WIM_REPORT.md) before executing tasks. AI work also requires [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md).
+2. **Task claiming:** Update Section 4 of `AI_MEMORY.md` to `[IN PROGRESS by <YourModelName>]` before editing code.
+3. **Change logging:** Append a Section 5 entry in `AI_MEMORY.md` with files, tests, and handoff notes.
+4. **Do not** cite `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` — that file was deleted. `WIM_REPORT.md` is the only plan.
 
 ---
 
-## 2. Package Manager & Build System Rules
+## 2. Package Manager & Build
 
-- **Package Manager:** Use `pnpm` exclusively (`pnpm install`, `pnpm dev`, `pnpm build`, `pnpm test:smoke`).
-- **Forbidden:** Never run `npm` or `yarn`. Never generate or commit `package-lock.json`.
-- **Pre-scripts:** Always respect `predev` and `prebuild` scripts (`build:notebook-styles`).
-
----
-
-## 3. Architecture & Code Quality Rules
-
-- **Framework:** Next.js 14 Pages Router + React 18 + Tailwind CSS 3.
-- **Lazy Loading (Performance):** All heavy below-the-fold components (marketing sections, carousels, Wistia videos, complex stickers) must be lazy-loaded via `next/dynamic`.
-- **Image Optimization:** Always use `next/image` with explicit width/height or fill mode. Do not set `unoptimized: true` in `next.config.js`. Remote image patterns are restricted to Cloudinary, GitHub, and Supabase domains.
-- **Shell Decomposition:** Keep global OS shell logic isolated. Prefer single-purpose hooks and extracted routers (e.g. `WindowRouter`) over growing `src/context/App.tsx`.
+- Use `pnpm` only. Never `npm` / `yarn` / `package-lock.json`.
+- Respect `predev` / `prebuild` (`build:notebook-styles`).
 
 ---
 
-## 4. Data, Auth & API Security Rules
+## 3. Architecture
 
-- **Auth Standard:** Supabase Auth is the single identity system (`src/lib/wim-auth.ts`). Do not invoke legacy Strapi/Squeak OAuth endpoints.
-- **Search Performance:** `/api/search` must query Supabase PostgreSQL (`searchSupabasePosts` in `src/lib/supabaseBlog.ts`). Never fetch all posts into Node/Edge process memory.
-- **Bot Safety & Rate Limiting:** All LLM / Bot API endpoints (`src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`) must enforce `checkRateLimit` (HTTP 429) and validate JSON payloads (`validateForumTopicPayload`, `validateForumReplyPayload`).
+- Next.js 14 Pages Router + React 18 + Tailwind 3. No App Router migration.
+- Images: `next/image`, no `unoptimized: true`.
+- Do not grow `src/context/App.tsx`. Extract hooks / routers.
+- Notebook collab is markdown merge + poll + presence. Not Yjs.
+- No second LLM orchestrator. Do not delete Lemon / Quill / Squeak / `@posthog/icons` because of the name.
 
 ---
 
-## 5. Verification & Testing Guidelines
+## 4. Data, Auth & API
 
-- Run `pnpm test:smoke` or relevant verification commands before declaring success.
-- Never fix errors by swallowing exceptions, deleting failing tests, or returning dummy 0-byte fallbacks without root cause diagnosis.
+- Auth: Supabase only (`src/lib/wim-auth.ts`). No Strapi OAuth.
+- Search: `src/lib/public-search.ts` / `search_posts` RPC. Never load all posts into memory.
+- Bots: `checkRateLimit` + payload validators. Durable limit is a planned task in `WIM_REPORT.md`.
+
+---
+
+## 5. Verification
+
+- `pnpm typecheck:shell` and relevant Playwright. Do not delete tests that fail on `placeholder.supabase.co`.
+- Never swallow exceptions or ship dummy 0-byte fallbacks to make CI green.
