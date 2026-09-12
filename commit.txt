@@ -1,0 +1,3 @@
+Fix window state update merging for element clearing
+
+Modified `mergeWindowUpdate` to check `updates.element !== undefined` instead of using truthiness, allowing window content to be explicitly cleared by passing `undefined` or `null`.

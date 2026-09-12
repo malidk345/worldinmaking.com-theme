@@ -71,6 +71,13 @@ function getSupabaseClient(): SupabaseClient {
     const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
     const supabaseServiceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseServiceKey) {
+        if (envFrom(env, 'WIM_SKIP_ENV_HARD_FAIL') === '1') {
+            cachedClient = createClient('http://localhost:8000', 'mock-key', {
+                auth: { autoRefreshToken: false, persistSession: false },
+                global: { fetch: getCustomFetch() },
+            })
+            return cachedClient
+        }
         throw new Error(
             'Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
         )
