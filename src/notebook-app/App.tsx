@@ -237,7 +237,6 @@ export function App() {
         const saved = saveNotebook({ ...current, title: nextTitle, content: nextContent })
         notebookRef.current = saved
         setCurrentNotebook(saved)
-        setRemoteMarkdown(saved.content)
         didSave = true
       } while (saveQueuedRef.current)
 
@@ -522,6 +521,11 @@ export function App() {
     }
 
     const onHydrated = () => {
+      // If the editor already has this notebook loaded, subsequent updates
+      // are handled safely by applyRemoteIfNewer without clobbering active typing.
+      if (notebookRef.current?.id === editorNotebookId && !notebookRef.current.contentOmitted) {
+        return
+      }
       const remote = getNotebook(editorNotebookId)
       if (remote && !remote.contentOmitted) apply(remote)
     }
@@ -1049,6 +1053,7 @@ export function App() {
                       value={markdown}
                       remoteValue={remoteMarkdown}
                       remoteVersion={currentNotebook.version}
+                      deferRemoteValue={syncStatus === 'edited'}
                       remoteCarets={presence.carets}
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}

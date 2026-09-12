@@ -1947,5 +1947,29 @@ test.describe('notebook frontend helpers', () => {
         expect(presenceCode).toContain('Channel initialization failed, running offline')
         expect(remoteCode).toContain('[notebookRemote] failed to subscribe')
     })
+
+    test('notebook auto-save does not rewind or interrupt active user typing', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const appCode = fs.readFileSync(
+            path.join(process.cwd(), 'src/notebook-app/App.tsx'),
+            'utf8'
+        )
+
+        // 1. persistOpenNotebookDraft must not echo saved content into setRemoteMarkdown
+        // because feeding local saves into remoteValue triggers 3-way merge loops while typing.
+        const persistDraftMatch = appCode.match(/const persistOpenNotebookDraft =[\s\S]*?return didSave\s*\n\s*\},/)?.[0]
+        expect(persistDraftMatch).toBeDefined()
+        expect(persistDraftMatch).not.toContain('setRemoteMarkdown(saved.content)')
+
+        // 2. onHydrated must not overwrite an already loaded editor notebook
+        const onHydratedMatch = appCode.match(/const onHydrated = \(\) => \{[\s\S]*?\n\s*\}/)?.[0]
+        expect(onHydratedMatch).toBeDefined()
+        expect(onHydratedMatch).toContain('notebookRef.current?.id === editorNotebookId && !notebookRef.current.contentOmitted')
+
+        // 3. MarkdownNotebook component must receive deferRemoteValue={syncStatus === 'edited'}
+        // to suspend remote merges during active keystrokes
+        expect(appCode).toContain("deferRemoteValue={syncStatus === 'edited'}")
+    })
 })
 

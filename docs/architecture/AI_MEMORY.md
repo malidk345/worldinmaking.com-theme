@@ -25,11 +25,28 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Bulletproof Realtime Channel Exception Safety & Storage Guarding (Pushed to main)]`
+- **Status:** `[COMPLETED by Antigravity - Notebook Auto-Save & Typing Interruption Elimination]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-12 — Antigravity (Elimination of Auto-Save Typing Rewinds & Clobbering)
+- **Scope:**
+  1. Diagnosed and eliminated root causes of text jumping, rewinding, or changing while the user is actively writing/typing:
+     - **Rogue `onHydrated` in `src/notebook-app/App.tsx`:** Listened to `WIM_NOTEBOOKS_HYDRATED_EVENT` (which fires ~350ms after every local save and remote fetch). When fired, it unconditionally called `apply(remote)` -> `setMarkdown(remote.content)` without checking if the user was dirty or typing, overwriting the user's active editor with older saved state. Added a strict guard so `onHydrated` only applies if the notebook is not already open and loaded in the editor (`notebookRef.current?.id === editorNotebookId && !notebookRef.current.contentOmitted`).
+     - **Local Save Echo via `setRemoteMarkdown`:** In `persistOpenNotebookDraft`, after local save it invoked `setRemoteMarkdown(saved.content)`. This echoed the user's own save back into `remoteValue` prop of `MarkdownNotebook`. If the user typed or backspaced in that window, `isKnownEcho` failed, triggering a 3-way merge (`mergeNotebookMarkdownChanges`) and DOM re-render (`commitDocument`) that resurrected deleted letters or duplicated words. Removed `setRemoteMarkdown(saved.content)` from local draft persistence.
+     - **Deferred Remote Value during Active Typing:** `<MarkdownNotebook />` supports `deferRemoteValue` to hold remote collaborator merges in queue while editing. Wired `deferRemoteValue={syncStatus === 'edited'}` in `App.tsx` so external sync never interrupts mid-keystroke.
+  2. Added regression test in `tests/notebook-frontend.spec.ts` asserting no `setRemoteMarkdown` call in `persistOpenNotebookDraft`, presence of `notebookRef.current` guard in `onHydrated`, and `deferRemoteValue={syncStatus === 'edited'}` in `MarkdownNotebook`.
+- **Verification:**
+  - `pnpm run build:notebook-styles`: PASS.
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/notebook-frontend.spec.ts`: PASS (57 of 57 tests passed).
+  - `pnpm exec playwright test tests/keyboard-overlay.spec.ts`: PASS (11 of 11 tests passed).
+- **Files Modified:**
+  - `src/notebook-app/App.tsx`
+  - `tests/notebook-frontend.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
 
 ### 2026-09-12 — Antigravity (Supabase Realtime Channel Resilience & Storage Exception Guarding)
 - **Scope:**
