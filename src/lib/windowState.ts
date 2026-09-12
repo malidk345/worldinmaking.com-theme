@@ -61,7 +61,7 @@ export const mergeWindowUpdate = (window: AppWindow, updates: WindowUpdate): App
         size: { ...window.size, ...(updates.size || {}) },
         previousPosition: { ...window.previousPosition, ...(updates.previousPosition || {}) },
         previousSize: { ...window.previousSize, ...(updates.previousSize || {}) },
-        ...(updates.element ? { element: updates.element } : {}),
+        ...(updates.element !== undefined ? { element: updates.element } : {}),
         ...(updates.expanded !== undefined ? { expanded: updates.expanded } : {}),
         ...(updates.windowed !== undefined ? { windowed: updates.windowed } : {}),
         ...(updates.snapped !== undefined ? { snapped: updates.snapped } : {}),
