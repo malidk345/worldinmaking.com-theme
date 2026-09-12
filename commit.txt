@@ -1,5 +1,0 @@
-Refactor AppWindow styling and logic
-
-- Refactored `AppWindow`, `WindowContent`, and `WindowChrome` to use `cn` (clsx + tailwind-merge wrapper) for much cleaner class name generation.
-- Extracted recursive menu calculation into a new custom hook `useWindowMenu`.
-- Fixed a potentially infinite loop by correctly wrapping the menu calculation dependencies in `useMemo`.

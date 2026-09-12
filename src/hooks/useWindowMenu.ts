@@ -25,7 +25,7 @@ export const recursiveSearch = (array: MenuItem[] | undefined, value: string): b
 }
 
 export function useWindowMenu(item: AppWindow, appMenu: any, setMenu: (menu: IMenu[]) => void) {
-    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
+    const safeAppMenu = useMemo(() => Array.isArray(appMenu) ? appMenu : [], [appMenu])
     const parent = useMemo(() => {
         return (
             safeAppMenu.find(({ children, url }: any) => {
