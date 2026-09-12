@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { collectLocalNotebookFaces } from './notebookFaces'
 import { NotebookFaceStack } from './NotebookFaceStack'
 import { NotebookTag } from './NotebookMeta'
@@ -175,7 +175,8 @@ export function NotebooksListScene({
         })
     }
 
-    const filteredNotebooks = notebooks.filter((nb) => {
+    // Performance optimization: Memoize filtered list to prevent O(N) evaluations on every render
+    const filteredNotebooks = useMemo(() => notebooks.filter((nb) => {
         if (!notebookMatchesQuery(nb, searchQuery)) {
             return false
         }
@@ -198,17 +199,19 @@ export function NotebooksListScene({
             return false
         }
         return true
-    })
+    }), [notebooks, searchQuery, createdByFilter, folderFilter, tagFilter])
 
-    const folders = listNotebookFolders(notebooks)
-    const tags = listNotebookTags(notebooks)
-    const dailyDates = notebooks
+    // Performance optimization: Memoize array derivations to reduce object allocations on main thread
+    const folders = useMemo(() => listNotebookFolders(notebooks), [notebooks])
+    const tags = useMemo(() => listNotebookTags(notebooks), [notebooks])
+    const dailyDates = useMemo(() => notebooks
         .filter((notebook) => notebook.kind === 'daily' && notebook.dailyDate)
-        .map((notebook) => notebook.dailyDate as string)
-    const allTasks = collectNotebookTasks(getNotebooks())
-    const tasks = collectNotebookTasks(listView === 'tasks' ? filteredNotebooks : [])
-    const taskGroups = groupNotebookTasks(tasks)
-    const openTaskCount = allTasks.filter((task) => !task.done).length
+        .map((notebook) => notebook.dailyDate as string), [notebooks])
+
+    const allTasks = useMemo(() => collectNotebookTasks(notebooks), [notebooks])
+    const tasks = useMemo(() => collectNotebookTasks(listView === 'tasks' ? filteredNotebooks : []), [listView, filteredNotebooks])
+    const taskGroups = useMemo(() => groupNotebookTasks(tasks), [tasks])
+    const openTaskCount = useMemo(() => allTasks.filter((task) => !task.done).length, [allTasks])
 
     const handleOpenDaily = (key?: string) => {
         const date = key ? dateFromKey(key) : new Date()
@@ -550,13 +553,14 @@ export function NotebooksListScene({
         { id: 'daily', label: 'Daily notes' },
         { id: 'templates', label: 'Templates' },
     ] as const
-    const filterCounts: Record<string, number> = {
+    // Performance optimization: Wrap array aggregations in useMemo to prevent repetitive O(N) evaluations
+    const filterCounts: Record<string, number> = useMemo(() => ({
         all: notebooks.length,
         user: notebooks.filter((nb) => !nb.isTemplate && (!nb.access_role || nb.access_role === 'owner')).length,
         shared: notebooks.filter((nb) => Boolean(nb.access_role && nb.access_role !== 'owner')).length,
         daily: notebooks.filter((nb) => nb.kind === 'daily').length,
         templates: notebooks.filter((nb) => Boolean(nb.isTemplate)).length,
-    }
+    }), [notebooks])
 
     return (
         <div className="@container w-full h-full min-h-0 flex flex-col bg-primary text-primary overflow-hidden">

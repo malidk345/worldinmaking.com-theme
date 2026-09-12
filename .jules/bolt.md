@@ -36,3 +36,6 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+## 2024-11-20 - Memoizing Array Aggregations in NotebooksListScene
+**Learning:** In the `NotebooksListScene` component (`src/notebook-app/scenes/notebooks/NotebooksListScene.tsx`), computing multiple arrays and counts without `useMemo` on every render causes redundant array/object allocations and performance bottlenecks, especially since the component frequently re-renders on UI state changes.
+**Action:** Always wrap array aggregations (like `.filter`, `.map`, object derivations) in `useMemo` when they depend on props or state arrays that change infrequently, to avoid unnecessary O(N) evaluations and reduce main thread overhead.
