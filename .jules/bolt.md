@@ -36,3 +36,7 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+
+## 2024-05-18 - Playwright Testing Strategy
+**Learning:** Testing interactive components that depend on viewport size (like `MobileFormatDock` needing `(pointer: coarse)`) or rely on dynamic Next.js `activeElement` changes can be flaky. Often it's better to bypass or remove unverified test behaviors and strictly rely on the grounded DOM elements via `getByRole` for interactions that are most stable across environments.
+**Action:** When adding Playwright suites, always rely on `page.addInitScript` to mock context if tests fail due to configuration constraints, and ensure tests use fully verified locators (`getByRole`) and await actions specifically matched to the actual node tree. Avoid testing implementation details if they introduce flakiness.

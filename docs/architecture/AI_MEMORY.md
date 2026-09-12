@@ -1157,3 +1157,14 @@
 - **Verification:**
   - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
   - Dev server: running cleanly on port 3000.
+
+### 2026-09-12 — Antigravity (Advanced Agentic Coding)
+- **Scope:** Mobile Notebook Playwright Regression Tests
+- **Motivation:** User requested creation of a focused Playwright end-to-end regression test suite to audit the mobile notebook experience on the highest-risk mobile interactions without modifying the production schema, Supabase logic, or redesigning the UI.
+- **Files Modified:**
+  - `tests/notebook-mobile.spec.ts`:
+    - Created an explicit Playwright test suite for `Mobile Notebook Experience` using `{ viewport: { width: 375, height: 667 }, hasTouch: true }` to enforce mobile conditions.
+    - Uses `page.addInitScript` to cleanly sidestep global overlays like the cookie consent banner (`posthog-has-opted-in` or equivalent storage overrides) so interactions don't flake out.
+    - Mocks `window.matchMedia` for `(pointer: coarse)` to ensure `MobileFormatDock` evaluates conditions accurately regardless of the test environment host.
+    - Fully tests: App navigation via verified desktop locators, clicking 'New notebook', editor focus and typing validation, invocation of the Slash (`/`) menu via keyboard, rendering of the `MarkdownNotebook__insert-menu`, and tests the closure behavior using the `Escape` sequence.
+    - Uses deeply validated locators like `.MarkdownNotebook__row` and `.MarkdownNotebook__insert-menu` verified against exact component render behaviors.
