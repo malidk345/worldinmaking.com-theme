@@ -98,6 +98,48 @@ describe('Interactive Visual Artifacts (Canvas, 3D Models, Parametric Simulation
         expect(parsed?.outputs[0].id).toBe('peace')
     })
 
+    it('creates and parses an arbitrary 3D architectural house model with objects and primitives', async () => {
+        const houseSpec = {
+            title: 'Modern Müstakil Ev',
+            description: 'Bahçeli, çatılı ve pencereli 3D mimari model',
+            grid: true,
+            ground: { show: true, color: '#15803d', size: 30 },
+            objects: [
+                { name: 'Zemin / Çimen', type: 'box', size: [24, 0.2, 24], position: [0, -0.1, 0], color: '#166534' },
+                { name: 'Ev Gövdesi (Duvarlar)', type: 'box', size: [8, 4, 6], position: [0, 2, 0], color: '#f8fafc' },
+                { name: 'Piramit Çatı', type: 'pyramid', radius: 6, height: 2.5, position: [0, 5.25, 0], color: '#dc2626' },
+                { name: 'Baca', type: 'box', size: [0.8, 2, 0.8], position: [2.2, 5.5, 1], color: '#7f1d1d' },
+                { name: 'Kapı', type: 'box', size: [1.4, 2.4, 0.15], position: [0, 1.2, 3.05], color: '#78350f' },
+                { name: 'Pencereler', type: 'box', size: [1.5, 1.5, 0.1], position: [-2.4, 2.2, 3.05], color: '#38bdf8', transparent: true, opacity: 0.7 },
+            ],
+        }
+
+        const result = await executeToolCall({
+            id: 'call-house-3d',
+            name: 'create_artifact',
+            argumentsJson: JSON.stringify({
+                type: 'model3d',
+                title: '3D House Architecture',
+                content: JSON.stringify(houseSpec),
+            }),
+        })
+
+        expect(result.ok).toBe(true)
+        expect(result.artifact?.type).toBe('model3d')
+
+        const parsed = parseModel3DSpec(result.artifact?.content)
+        expect(parsed.preset).toBe('custom')
+        expect(parsed.grid).toBe(true)
+        expect(parsed.ground?.show).toBe(true)
+        expect(parsed.ground?.color).toBe('#15803d')
+        expect(parsed.objects).toBeDefined()
+        expect(parsed.objects?.length).toBe(6)
+        expect(parsed.objects?.[1].name).toBe('Ev Gövdesi (Duvarlar)')
+        expect(parsed.objects?.[1].size).toEqual([8, 4, 6])
+        expect(parsed.objects?.[2].type).toBe('pyramid')
+        expect(parsed.objects?.[5].transparent).toBe(true)
+    })
+
     it('handles malformed JSON gracefully in parsers without crashing', () => {
         expect(parseCanvasSpec('')).toBeNull()
         expect(parseCanvasSpec('{ invalid json')).toBeNull()

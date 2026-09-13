@@ -35,7 +35,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'create_artifact',
             description:
-                'Create an interactive on-screen artifact: infinite hand-drawn vector canvas/mindmap (canvas), 360° interactive 3D concept model (model3d), parametric simulation with live sliders (simulation), PostHog analytics dashboard (posthog-analytics), React UI, chart, table, markdown document, HTML, or SVG. Use this for rich visual models, diagrams, and live interactive designs instead of raw code dumps.',
+                'Create an interactive on-screen artifact: infinite hand-drawn vector canvas/mindmap (canvas), 360° interactive 3D scene & model with arbitrary objects/architecture/primitives and inspector (model3d), parametric simulation with live sliders (simulation), PostHog analytics dashboard (posthog-analytics), React UI, chart, table, markdown document, HTML, or SVG. Use this for rich visual models, diagrams, 3D architecture, and live interactive designs instead of raw code dumps.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -52,7 +52,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     content: {
                         type: 'string',
                         description:
-                            'Body only: canvas JSON (nodes and edges), model3d JSON (preset and theme), simulation JSON (variables, outputs, chart), PostHog analytics JSON, mermaid source, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
+                            'Body only: canvas JSON (nodes and edges), model3d JSON (objects array with arbitrary 3D primitives [box, cylinder, cone, pyramid, wedge/prism, sphere, torus, plane] with position, rotation, size, color, materials, or preset and theme), simulation JSON (variables, outputs, chart), PostHog analytics JSON, mermaid source, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
                     },
                 },
                 required: ['type', 'title', 'content'],
@@ -759,7 +759,7 @@ TOOL USE:
 - generate_image: Generate real visual imagery with Cloudflare FLUX.1 and save to R2. Supports aspect_ratio (e.g. '16:9' for wallpapers, '9:16' for portrait) and style (e.g. 'oil_painting', 'vintage_etching', 'cinematic', 'renaissance'). After the tool returns, embed the image in markdown as ![description](url) in your reply.
 - create_artifact is the only way to put an interactive visual canvas, 3D model, parametric simulation, analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble:
   * For mind maps, concept maps, or architectural flows: call create_artifact with type="canvas" and structured JSON {"title":"...","nodes":[{"id":"1","label":"...","description":"...","x":100,"y":80,"color":"amber"}],"edges":[{"from":"1","to":"2","label":"..."}]}.
-  * For 3D interactive models (philosophical ontologies, orbital systems, DNA, polyhedra): call create_artifact with type="model3d" and structured JSON {"title":"...","preset":"polyhedra"|"orbital_system"|"dna_helix"|"torus_knot","theme":"gold"|"cyan"|"emerald"|"crimson"}.
+  * For 3D interactive models and scenes (architecture, houses, rooms, furniture, mechanisms, vehicles, or scientific structures): call create_artifact with type="model3d" and structured JSON {"title":"...","description":"...","grid":true,"ground":{"show":true,"color":"#166534"},"objects":[{"name":"Gövde / Duvarlar","type":"box","size":[8,4,6],"position":[0,2,0],"color":"#f8fafc"},{"name":"Çatı","type":"wedge"|"prism"|"pyramid"|"cone","size":[8.5,2.5,6.5],"position":[0,5.25,0],"color":"#dc2626"},{"name":"Kapı","type":"box","size":[1.4,2.2,0.1],"position":[0,1.1,3.05],"color":"#78350f"},{"name":"Pencereler","type":"box","size":[1.2,1.2,0.1],"position":[-2,2,3.05],"color":"#38bdf8","opacity":0.7,"transparent":true}]}. Supported primitives: box, cube, sphere, cylinder, cone, pyramid, wedge/prism (gable roofs/ramps), plane, torus, capsule. For mathematical/atomic presets, preset="polyhedra"|"orbital_system"|"dna_helix"|"torus_knot" is also supported.
   * For parametric simulations with interactive sliders and live dynamic curves: call create_artifact with type="simulation" and structured JSON {"title":"...","variables":[{"id":"x","label":"...","min":0,"max":100,"default":50}],"outputs":[{"id":"y","label":"...","formula":"x * 1.5"}],"chart":{"type":"area"}}.
   * For charts, KPI metrics, funnels, or data tables: call create_artifact with type="posthog-analytics" and structured JSON {"metrics":[...],"graph":{...},"table":{...},"funnel":[...]}.
   * After a visual artifact succeeds, write one short sentence. If the user asked you to write an article, essay, story, or a word count, that text belongs in the public bubble — do not replace it with a one-line confirmation.

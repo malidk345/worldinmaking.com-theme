@@ -57,6 +57,26 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Arbitrary 3D Scene & Object Composition Engine: Architecture, Primitives, Raycaster Inspector)
+- **Scope:** Solved the limitation where 3D generation was restricted to abstract mathematical presets (`polyhedra`, `orbital_system`, `dna_helix`). Upgraded the 3D engine into an arbitrary scene composition platform capable of building realistic architectures (houses, rooms, buildings), mechanical assemblies, furniture, vehicles, and custom environments.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; wired into existing `create_artifact` tool pipeline (`spec.ts`, `visual-artifacts.ts`).
+  2. Native Three.js WebGL rendering with zero external iframe dependencies.
+  3. Preserved backwards compatibility with mathematical presets.
+- **Changes Applied:**
+  1. `src/lib/ai/visual-artifacts.ts`: Expanded `Model3DObjectSpec` supporting primitives (`box`, `cube`, `sphere`, `cylinder`, `cone`, `pyramid`, `wedge`/`prism` gable roof, `plane`, `torus`, `capsule`), transforms (`position`, `rotation`, `scale`), materials (`color`, `roughness`, `metalness`, `opacity`, `transparent`, `emissive`), hierarchy (`children`), and scene settings (`grid`, `ground`, `camera`).
+  2. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Built procedural geometry generator including triangular gable roofs (`createPrismGeometry`), pyramids, and custom primitives.
+     - Added studio lighting (sun directional light with soft shadows, fill light, ambient, hemisphere).
+     - Added Raycaster Object Inspector: Real-time hover tooltip displaying object name, type, and coordinates; click selection card.
+     - Added Camera View Presets (Isometric ISO, Front ÖN, Top ÜST, Reset, Free Orbit).
+     - Added floor grid toggle and custom ground plane support.
+  3. `src/lib/bots/tools/spec.ts`: Updated `create_artifact` description, parameter JSON schemas, and `TOOL_PROTOCOL` instructing the AI on arbitrary 3D modeling with concrete architectural house examples.
+  4. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Added unit test verifying full 3D house model creation and object parsing.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (WIM Interactive Visual Engine: Infinite Canvas, 3D Models, Parametric Simulations)
 - **Scope:** Replaced fragile code sandbox iframes with 3 native, robust interactive visual artifact formats:
   1. **Infinite Vector Mindmap & Flow Canvas (`type: 'canvas'`)**: High-performance draggable nodes, zoom/pan navigation via `react-zoom-pan-pinch`, bezier curve connectors, color-coded node themes (emerald, blue, purple, amber, rose), and live search/reset.
