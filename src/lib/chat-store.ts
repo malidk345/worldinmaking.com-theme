@@ -303,6 +303,7 @@ export async function upsertChatWithMessages(
         throw Object.assign(new Error('Chat was deleted'), { status: 410 })
     }
 
+    let chatRowResult: ChatRow
     if (existing) {
         // Preserve an already-issued share token unless the client is explicitly sharing.
         row.share_token = (existing as ChatRow).share_token
@@ -311,13 +312,15 @@ export async function upsertChatWithMessages(
             row.owner_key = userId
             row.auth_user_id = userId
         }
-        let update = supabaseAdmin.from('wim_chats').update(row).eq('id', chatId)
+        let update = supabaseAdmin.from('wim_chats').update(row).eq('id', chatId).select()
         update = applyOwnerScope(update, ownerKey, userId)
-        const { error } = await update
+        const { error, data } = await update.single()
         if (error) throw error
+        chatRowResult = data as ChatRow
     } else {
-        const { error } = await supabaseAdmin.from('wim_chats').insert(row)
+        const { error, data } = await supabaseAdmin.from('wim_chats').insert(row).select().single()
         if (error) throw error
+        chatRowResult = data as ChatRow
     }
 
     const persistable = (chat.messages || [])
@@ -325,27 +328,64 @@ export async function upsertChatWithMessages(
         .filter((message) => message.role === 'user' || (message.content || '').trim().length > 0)
         .slice(0, MAX_MESSAGES)
 
-    const existingMessages = await listMessages(chatId)
-    const existingIds = new Set(existingMessages.map((message) => message.id))
+    const { data: exMsgData, error: exMsgErr } = await supabaseAdmin
+        .from('wim_chat_messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('sort_index', { ascending: true })
+        .limit(MAX_MESSAGES)
+    if (exMsgErr) throw exMsgErr
+
+    const existingMessageRows = (exMsgData as MessageRow[] | null) || []
+    const existingMap = new Map(existingMessageRows.map((r) => [r.id, r]))
     const incomingRows = persistable.map((message, index) => messageToRow(chatId, message, index))
-    const inserts = incomingRows.filter((row) => !existingIds.has(row.id))
-    const updates = incomingRows.filter((row) => existingIds.has(row.id))
 
-    if (inserts.length > 0) {
-        const { error: insertError } = await supabaseAdmin.from('wim_chat_messages').insert(inserts)
-        if (insertError) throw insertError
+    const toWrite: Partial<MessageRow>[] = []
+    const compareJson = (a: any, b: any) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+
+    for (const inRow of incomingRows) {
+        const exRow = existingMap.get(inRow.id)
+        if (!exRow) {
+            const { created_at, ...rest } = inRow
+            toWrite.push(rest)
+        } else {
+            const isChanged =
+                inRow.content !== exRow.content ||
+                inRow.role !== exRow.role ||
+                (inRow.model_used ?? null) !== (exRow.model_used ?? null) ||
+                inRow.sort_index !== exRow.sort_index ||
+                (inRow.liked ?? null) !== (exRow.liked ?? null) ||
+                (inRow.edited_from_id ?? null) !== (exRow.edited_from_id ?? null) ||
+                !compareJson(inRow.thinking_process, exRow.thinking_process) ||
+                !compareJson(inRow.artifacts, exRow.artifacts) ||
+                !compareJson(inRow.citations, exRow.citations) ||
+                !compareJson(inRow.attachments, exRow.attachments) ||
+                !compareJson(inRow.os_action, exRow.os_action)
+
+            if (isChanged) {
+                const { created_at, ...rest } = inRow
+                toWrite.push(rest)
+            }
+        }
     }
-    for (const row of updates) {
-        const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
-        const { error: updateError } = await supabaseAdmin
+
+    let writtenRows: MessageRow[] = []
+    if (toWrite.length > 0) {
+        const { data, error: upsertError } = await supabaseAdmin
             .from('wim_chat_messages')
-            .update(patch)
-            .eq('id', row.id)
-            .eq('chat_id', chatId)
-        if (updateError) throw updateError
+            .upsert(toWrite, { onConflict: 'id' })
+            .select()
+        if (upsertError) throw upsertError
+        writtenRows = data as MessageRow[]
     }
 
-    return getChatForOwner(chatId, ownerKey, userId) as Promise<Chat>
+    const finalMap = new Map<string, MessageRow>(existingMessageRows.map((r) => [r.id, r]))
+    for (const row of writtenRows) {
+        finalMap.set(row.id, row)
+    }
+
+    const finalMessageRows = incomingRows.map((inRow) => finalMap.get(inRow.id)!).filter(Boolean)
+    return rowToChat(chatRowResult, finalMessageRows.map(rowToMessage))
 }
 
 export async function patchChatForOwner(

@@ -39,3 +39,6 @@
 ## 2026-09-12 - [API Defenses]
 **Learning:** Replaced unsafe `req.json()` calls with size-bounded `readJsonObject` on mutating endpoints to prevent payload exhaustion, and applied `checkRateLimitDurable` to public routes. Ensure `!parsed.ok` handles the 413 error status correctly when introducing `readJsonObject`.
 **Action:** Enforce size constraints and rate limits natively on all new API route controllers.
+## 2026-09-13 - [Optimize chat save database roundtrips]
+**Learning:** Performing multiple granular insert and update queries dynamically during chat saving (`upsertChatWithMessages`) along with final re-fetches causes severe DB roundtrip bloat, degrading mobile performance and UI responsivenes. Supabase's `upsert` handles batched inserts/updates in a single transaction efficiently, and caching unmodified database timestamps via direct reads avoids overriding or losing metadata without requiring individual updates.
+**Action:** Consolidate redundant multi-query DB operations for identical records into single bulk `upsert` calls by stripping non-updatable keys from the JS payload, computing deterministic updates via `JSON.stringify` diffs, and utilizing the `data` returned from `.select()` to avoid secondary refetches.
