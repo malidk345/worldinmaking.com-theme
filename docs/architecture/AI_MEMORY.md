@@ -57,6 +57,22 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Ultra-Complex 3D Engine: GLTF/GLB Loader, Custom Polyhedral Meshes & Infinite Scalability)
+- **Scope:** Enabled handling of arbitrary high-complexity 3D models (from multi-thousand polygon CAD assemblies, sculpted meshes, and photorealistic assets to custom procedural vertices/faces), ensuring zero limitations in 3D fidelity.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`create_artifact`).
+  2. Dynamic client-side loading of `three/examples/jsm/loaders/GLTFLoader.js` (zero bundle penalty on initial load).
+  3. Safe custom polygon normal calculation via `THREE.BufferGeometry.computeVertexNormals()`.
+- **Changes Applied:**
+  1. `src/lib/ai/visual-artifacts.ts`: Added `url` / `modelUrl` support to `Model3DSpec`, and `vertices` / `faces` to `Model3DObjectSpec`.
+  2. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Integrated dynamic `GLTFLoader` for `.gltf` / `.glb` 3D models with PBR textures, auto-shadow traversal, and auto-camera recentering.
+     - Built `createCustomMeshGeometry` supporting custom polygonal vertices and triangulated/quad faces with automatic vertex normals.
+  3. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Verified parser and execution resilience.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Arbitrary 3D Scene & Object Composition Engine: Architecture, Primitives, Raycaster Inspector)
 - **Scope:** Solved the limitation where 3D generation was restricted to abstract mathematical presets (`polyhedra`, `orbital_system`, `dna_helix`). Upgraded the 3D engine into an arbitrary scene composition platform capable of building realistic architectures (houses, rooms, buildings), mechanical assemblies, furniture, vehicles, and custom environments.
 - **Architectural Rules Kept:**

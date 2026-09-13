@@ -26,6 +26,37 @@ function createPrismGeometry(width: number, height: number, depth: number): THRE
   return geo
 }
 
+function createCustomMeshGeometry(vertices: number[][], faces?: number[][]): THREE.BufferGeometry {
+  const geo = new THREE.BufferGeometry()
+  if (Array.isArray(faces) && faces.length > 0) {
+    const posArray: number[] = []
+    for (const f of faces) {
+      if (f.length >= 3) {
+        const v0 = vertices[f[0]] || [0, 0, 0]
+        const v1 = vertices[f[1]] || [0, 0, 0]
+        const v2 = vertices[f[2]] || [0, 0, 0]
+        posArray.push(v0[0], v0[1], v0[2], v1[0], v1[1], v1[2], v2[0], v2[1], v2[2])
+        if (f.length === 4) {
+          const v3 = vertices[f[3]] || [0, 0, 0]
+          posArray.push(v0[0], v0[1], v0[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2])
+        }
+      }
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(posArray, 3))
+  } else if (Array.isArray(vertices) && vertices.length > 0) {
+    const flat: number[] = []
+    for (const v of vertices) {
+      flat.push(v[0] || 0, v[1] || 0, v[2] || 0)
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(flat, 3))
+  } else {
+    return new THREE.BoxGeometry(1, 1, 1)
+  }
+  geo.computeVertexNormals()
+  geo.center()
+  return geo
+}
+
 export function Model3DArtifactRenderer({ content }: { content: string | unknown }): JSX.Element {
   const spec = useMemo(() => parseModel3DSpec(content), [content])
   const containerRef = useRef<HTMLDivElement>(null)
@@ -146,7 +177,10 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           geo = new THREE.ConeGeometry(baseSize, height, 4)
           geo.rotateY(Math.PI / 4)
           break
-        }
+        case 'mesh':
+        case 'custom_mesh':
+          geo = createCustomMeshGeometry(obj.vertices || [], obj.faces)
+          break
         case 'wedge':
         case 'prism':
         case 'roof':
@@ -168,7 +202,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           break
         case 'group':
         default:
-          geo = new THREE.BoxGeometry(0.01, 0.01, 0.01)
+          geo = obj.vertices && obj.vertices.length > 0 ? createCustomMeshGeometry(obj.vertices, obj.faces) : new THREE.BoxGeometry(0.01, 0.01, 0.01)
           break
       }
 
@@ -227,7 +261,43 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
     const hasCustomObjects = Array.isArray(spec.objects) && spec.objects.length > 0
 
-    if (hasCustomObjects) {
+    if (spec.url || spec.modelUrl) {
+      const modelUrl = spec.url || spec.modelUrl!
+      import('three/examples/jsm/loaders/GLTFLoader.js').then(({ GLTFLoader }) => {
+        const loader = new GLTFLoader()
+        loader.load(
+          modelUrl,
+          (gltf) => {
+            gltf.scene.traverse((child) => {
+              if ((child as THREE.Mesh).isMesh) {
+                const m = child as THREE.Mesh
+                m.castShadow = true
+                m.receiveShadow = true
+                interactiveMeshes.push(m)
+                if (!m.userData?.name) {
+                  m.userData = {
+                    name: m.name || 'Model Parçası',
+                    type: 'gltf-mesh',
+                    position: [m.position.x, m.position.y, m.position.z],
+                  }
+                }
+              }
+            })
+            modelGroup.add(gltf.scene)
+            const box = new THREE.Box3().setFromObject(modelGroup)
+            const c = box.getCenter(new THREE.Vector3())
+            const s = box.getSize(new THREE.Vector3())
+            const md = Math.max(s.x, s.y, s.z, 2)
+            camera.position.set(c.x + md * 1.3, c.y + md * 0.9, c.z + md * 1.5)
+            camera.lookAt(c)
+          },
+          undefined,
+          (err) => {
+            console.error('[Model3D] Failed to load GLTF model:', err)
+          }
+        )
+      })
+    } else if (hasCustomObjects) {
       for (const objSpec of spec.objects!) {
         const objMesh = buildObjectMesh(objSpec)
         modelGroup.add(objMesh)

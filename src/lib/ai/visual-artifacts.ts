@@ -94,6 +94,8 @@ export type Model3DPrimitiveType =
     | 'capsule'
     | 'wedge'
     | 'prism'
+    | 'mesh'
+    | 'custom_mesh'
     | 'group'
 
 export interface Model3DObjectSpec {
@@ -118,12 +120,16 @@ export interface Model3DObjectSpec {
     wireframe?: boolean
     emissive?: string
     emissiveIntensity?: number
+    vertices?: number[][] // [[x, y, z], ...] for custom polyhedral mesh
+    faces?: number[][] // [[i1, i2, i3], ...]
     children?: Model3DObjectSpec[]
 }
 
 export interface Model3DSpec {
     title?: string
     description?: string
+    url?: string // Direct URL to load external GLTF / GLB 3D model
+    modelUrl?: string
     preset?: 'polyhedra' | 'orbital_system' | 'dna_helix' | 'ontology_network' | 'torus_knot' | 'custom'
     theme?: 'gold' | 'cyan' | 'emerald' | 'crimson' | 'violet' | 'studio'
     wireframe?: boolean
@@ -145,7 +151,7 @@ export interface Model3DSpec {
 
 function normalizeObject(rawObj: any): Model3DObjectSpec | null {
     if (!rawObj || typeof rawObj !== 'object') return null
-    const type = String(rawObj.type || 'box').toLowerCase() as Model3DPrimitiveType
+    const type = String(rawObj.type || (rawObj.vertices ? 'custom_mesh' : 'box')).toLowerCase() as Model3DPrimitiveType
     return {
         id: rawObj.id ? String(rawObj.id) : undefined,
         name: rawObj.name ? String(rawObj.name) : undefined,
@@ -168,6 +174,8 @@ function normalizeObject(rawObj: any): Model3DObjectSpec | null {
         wireframe: typeof rawObj.wireframe === 'boolean' ? rawObj.wireframe : undefined,
         emissive: typeof rawObj.emissive === 'string' ? rawObj.emissive : undefined,
         emissiveIntensity: typeof rawObj.emissiveIntensity === 'number' ? rawObj.emissiveIntensity : undefined,
+        vertices: Array.isArray(rawObj.vertices) ? rawObj.vertices : undefined,
+        faces: Array.isArray(rawObj.faces) ? rawObj.faces : undefined,
         children: Array.isArray(rawObj.children) ? rawObj.children.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[] : undefined,
     }
 }
@@ -176,10 +184,13 @@ export function parseModel3DSpec(content: string | unknown): Model3DSpec {
     const buildSpec = (raw: any): Model3DSpec => {
         const rawObjects = Array.isArray(raw.objects) ? raw.objects : (Array.isArray(raw.scene) ? raw.scene : (Array.isArray(raw.elements) ? raw.elements : undefined))
         const objects = rawObjects ? (rawObjects.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[]) : undefined
+        const url = typeof raw.url === 'string' ? raw.url : (typeof raw.modelUrl === 'string' ? raw.modelUrl : (typeof raw.src === 'string' ? raw.src : undefined))
 
         return {
             title: raw.title || (objects && objects.length > 0 ? '3D Sahne ve Model' : '3D Konsept Modeli'),
             description: raw.description,
+            url,
+            modelUrl: url,
             preset: raw.preset || (objects && objects.length > 0 ? 'custom' : 'polyhedra'),
             theme: raw.theme || 'studio',
             wireframe: raw.wireframe === true,
