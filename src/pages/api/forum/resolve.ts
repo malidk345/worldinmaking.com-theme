@@ -4,6 +4,7 @@ export const runtime = 'edge'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
 import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
+import { readJsonObject } from 'lib/bots/request-validation'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
 function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
@@ -24,13 +25,9 @@ export default async function handler(req: Request) {
     if (userError || !userData?.user) return json({ error: 'Invalid or expired session' }, 401)
 
     const env = getRuntimeEnv()
-    const rate = await checkRateLimitDurable(
-        `forum-resolve:${userData.user.id}`,
-        40,
-        60 * 60 * 1000,
-        env,
-        { failClosed: true }
-    )
+    const rate = await checkRateLimitDurable(`forum-resolve:${userData.user.id}`, 40, 60 * 60 * 1000, env, {
+        failClosed: true,
+    })
     if (rate.source === 'unavailable') {
         return json(
             {
@@ -50,7 +47,9 @@ export default async function handler(req: Request) {
         )
     }
 
-    const body = await req.json().catch(() => null)
+    const jsonRes = await readJsonObject(req, 4096)
+    if (!jsonRes.ok) return json({ error: jsonRes.error }, jsonRes.status)
+    const body = jsonRes.body
     const postId = String((body as { postId?: unknown })?.postId || '').trim()
     if (!postId) return json({ error: 'postId required' }, 400)
     const rawReply = (body as { replyId?: unknown })?.replyId
@@ -65,9 +64,11 @@ export default async function handler(req: Request) {
     if (postError) return json({ error: postError.message }, 500)
     if (!post) return json({ error: 'Thread not found' }, 404)
 
-    const staff = await verifyAdminRequest(req)
     const isAuthor = String(post.author_id) === userData.user.id
-    if (!isAuthor && !staff.ok) return json({ error: 'Only the author or staff can resolve this thread' }, 403)
+    if (!isAuthor) {
+        const staff = await verifyAdminRequest(req)
+        if (!staff.ok) return json({ error: 'Only the author or staff can resolve this thread' }, 403)
+    }
 
     if (replyId != null) {
         const { data: reply } = await supabaseAdmin
@@ -80,7 +81,10 @@ export default async function handler(req: Request) {
         }
     }
 
-    const { error } = await supabaseAdmin.from('community_posts').update({ resolved_reply_id: replyId }).eq('id', postId)
+    const { error } = await supabaseAdmin
+        .from('community_posts')
+        .update({ resolved_reply_id: replyId })
+        .eq('id', postId)
     if (error) return json({ error: error.message }, 500)
     return json({ success: true })
 }

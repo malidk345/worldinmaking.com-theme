@@ -4,6 +4,7 @@ export const runtime = 'edge'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 import { verifyAdminRequest } from '../../../../lib/admin-auth'
 import { checkRateLimitDurable } from 'lib/bots/rate-limit'
+import { readJsonObject } from 'lib/bots/request-validation'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -23,19 +24,17 @@ export default async function handler(req: Request) {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !userData?.user) return json({ error: 'Invalid or expired session' }, 401)
 
-    const rate = await checkRateLimitDurable(
-        `forum-edit:${userData.user.id}`,
-        60,
-        60 * 60 * 1000,
-        getRuntimeEnv(),
-        { failClosed: true }
-    )
+    const rate = await checkRateLimitDurable(`forum-edit:${userData.user.id}`, 60, 60 * 60 * 1000, getRuntimeEnv(), {
+        failClosed: true,
+    })
     if (rate.source === 'unavailable') {
         return json({ error: 'Rate limit store temporarily unavailable', code: 'RATE_LIMIT_UNAVAILABLE' }, 503)
     }
     if (!rate.allowed) return json({ error: 'Rate limited', code: 'RATE_LIMITED' }, 429)
 
-    const body = await req.json().catch(() => null)
+    const jsonRes = await readJsonObject(req, 32768)
+    if (!jsonRes.ok) return json({ error: jsonRes.error }, jsonRes.status)
+    const body = jsonRes.body
     if (!body) return json({ error: 'Invalid JSON payload' }, 400)
 
     const type = body.type === 'reply' ? 'reply' : 'question'
@@ -45,8 +44,8 @@ export default async function handler(req: Request) {
 
     if (!id) return json({ error: 'ID is required' }, 400)
     if (!content) return json({ error: 'Content cannot be empty' }, 400)
-
-    const staff = await verifyAdminRequest(req)
+    if (content.length > 10000) return json({ error: 'Content too long' }, 400)
+    if (title && title.length > 150) return json({ error: 'Title too long' }, 400)
 
     if (type === 'question') {
         const { data: post, error: postError } = await supabaseAdmin
@@ -59,8 +58,11 @@ export default async function handler(req: Request) {
         if (!post) return json({ error: 'Thread not found' }, 404)
 
         const isAuthor = String(post.author_id) === userData.user.id
-        if (!isAuthor && !staff.ok) {
-            return json({ error: 'Only the author or staff can edit this thread' }, 403)
+        if (!isAuthor) {
+            const staff = await verifyAdminRequest(req)
+            if (!staff.ok) {
+                return json({ error: 'Only the author or staff can edit this thread' }, 403)
+            }
         }
 
         const updatePayload: Record<string, unknown> = {
@@ -71,10 +73,7 @@ export default async function handler(req: Request) {
             updatePayload.title = title
         }
 
-        const { error: updateError } = await supabaseAdmin
-            .from('community_posts')
-            .update(updatePayload)
-            .eq('id', id)
+        const { error: updateError } = await supabaseAdmin.from('community_posts').update(updatePayload).eq('id', id)
 
         if (updateError) return json({ error: updateError.message }, 500)
         return json({ success: true })
@@ -89,14 +88,14 @@ export default async function handler(req: Request) {
         if (!reply) return json({ error: 'Reply not found' }, 404)
 
         const isAuthor = String(reply.author_id) === userData.user.id
-        if (!isAuthor && !staff.ok) {
-            return json({ error: 'Only the author or staff can edit this reply' }, 403)
+        if (!isAuthor) {
+            const staff = await verifyAdminRequest(req)
+            if (!staff.ok) {
+                return json({ error: 'Only the author or staff can edit this reply' }, 403)
+            }
         }
 
-        const { error: updateError } = await supabaseAdmin
-            .from('community_replies')
-            .update({ content })
-            .eq('id', id)
+        const { error: updateError } = await supabaseAdmin.from('community_replies').update({ content }).eq('id', id)
 
         if (updateError) return json({ error: updateError.message }, 500)
         return json({ success: true })
