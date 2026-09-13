@@ -5,7 +5,7 @@ import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { fetchPublicUrl } from './fetch-url'
-import { searchAcademicCorpus } from '../academic-search'
+import { searchAcademicCorpus, type AcademicSearchOptions } from '../academic-search'
 import { executeReadDocument } from './read-document'
 import {
     executeAnnotateNotebook,
@@ -317,6 +317,7 @@ async function executeWebSearch(
 
 async function executeGenerateImage(
     prompt: string,
+    options?: { aspect_ratio?: string; style?: string },
     env?: EnvStore,
     _host?: HostSnapshot
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
@@ -344,13 +345,17 @@ async function executeGenerateImage(
     }
 
     try {
+        const payload: Record<string, any> = { prompt }
+        if (options?.aspect_ratio) payload.aspect_ratio = options.aspect_ratio
+        if (options?.style) payload.style = options.style
+
         const res = await fetch(`${workerUrl}/image`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${authToken}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ prompt }),
+            body: JSON.stringify(payload),
         })
 
         if (!res.ok) {
@@ -364,7 +369,14 @@ async function executeGenerateImage(
             }
         }
 
-        const data = (await res.json()) as { storage_key: string; url: string }
+        const data = (await res.json()) as {
+            storage_key: string
+            url: string
+            aspect_ratio?: string
+            style?: string
+            width?: number
+            height?: number
+        }
         const fullUrl = `${workerUrl}${data.url.startsWith('/') ? '' : '/'}${data.url}`
         const safeAlt = prompt.slice(0, 48).replace(/[\[\]"]/g, '').trim()
 
@@ -374,6 +386,9 @@ async function executeGenerateImage(
                 ok: true,
                 url: fullUrl,
                 storage_key: data.storage_key,
+                aspect_ratio: data.aspect_ratio,
+                style: data.style,
+                dimensions: data.width && data.height ? `${data.width}x${data.height}` : undefined,
                 markdown: `![${safeAlt}](${fullUrl})`,
                 instruction: `Image generated and stored in R2. Embed it in your public response as: ![${safeAlt}](${fullUrl})`,
             }),
@@ -391,11 +406,10 @@ async function executeGenerateImage(
 
 async function executeAcademicSearch(
     query: string,
-    field?: string,
-    limit?: number
+    options?: AcademicSearchOptions
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     try {
-        const result = await searchAcademicCorpus(query, { field, limit })
+        const result = await searchAcademicCorpus(query, options)
         const citations: AiCitation[] = result.papers.map((p, idx) => ({
             id: idx + 1,
             url: p.doi || p.pdfUrl || `https://openalex.org/${p.id}`,
@@ -413,6 +427,7 @@ async function executeAcademicSearch(
                     query: result.query,
                     papers: result.papers,
                     formatted: result.formatted,
+                    bibliography: result.bibliography,
                 }),
                 MAX_TOOL_RESULT
             ),
@@ -755,7 +770,9 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'prompt is required for generate_image' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const executed = await executeGenerateImage(prompt, env, host)
+            const aspect_ratio = asText(args.aspect_ratio, 10).trim() || undefined
+            const style = asText(args.style, 30).trim() || undefined
+            const executed = await executeGenerateImage(prompt, { aspect_ratio, style }, env, host)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'search_academic_corpus') {
@@ -766,7 +783,21 @@ export async function executeToolCall(
             }
             const field = asText(args.field, 60).trim() || undefined
             const limit = typeof args.limit === 'number' ? Math.min(Math.max(1, args.limit), 10) : 5
-            const executed = await executeAcademicSearch(query, field, limit)
+            const yearFrom = typeof args.year_from === 'number' ? args.year_from : undefined
+            const yearTo = typeof args.year_to === 'number' ? args.year_to : undefined
+            const sortBy =
+                typeof args.sort_by === 'string' && ['citations', 'recent', 'relevance'].includes(args.sort_by)
+                    ? (args.sort_by as 'citations' | 'recent' | 'relevance')
+                    : undefined
+            const openAccessOnly = typeof args.open_access_only === 'boolean' ? args.open_access_only : undefined
+            const executed = await executeAcademicSearch(query, {
+                field,
+                limit,
+                yearFrom,
+                yearTo,
+                sortBy,
+                openAccessOnly,
+            })
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }

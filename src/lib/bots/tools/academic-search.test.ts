@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { executeToolCall } from './execute'
-import { reconstructAbstract, searchAcademicCorpus } from '../academic-search'
+import { formatApaBibliography, reconstructAbstract, searchAcademicCorpus } from '../academic-search'
 
 describe('search_academic_corpus tool & academic-search', () => {
     const originalFetch = globalThis.fetch
@@ -30,6 +30,36 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(reconstructAbstract(null)).toBe('')
             expect(reconstructAbstract(undefined)).toBe('')
             expect(reconstructAbstract({})).toBe('')
+        })
+    })
+
+    describe('formatApaBibliography', () => {
+        it('formats papers into proper APA style references', () => {
+            const papers = [
+                {
+                    id: 'w1',
+                    title: 'The Concept of Mind',
+                    authors: ['Gilbert Ryle'],
+                    year: 1949,
+                    venue: 'Hutchinson',
+                    citationCount: 14500,
+                    doi: 'https://doi.org/10.4324/9780203875858',
+                    source: 'OpenAlex' as const,
+                },
+                {
+                    id: 'w2',
+                    title: 'Word and Object',
+                    authors: ['Willard Van Orman Quine'],
+                    year: 1960,
+                    venue: 'MIT Press',
+                    citationCount: 12000,
+                    source: 'OpenAlex' as const,
+                },
+            ]
+            const bib = formatApaBibliography(papers)
+            expect(bib).toContain('### References')
+            expect(bib).toContain('Gilbert Ryle (1949). The Concept of Mind. *Hutchinson*. https://doi.org/10.4324/9780203875858')
+            expect(bib).toContain('Willard Van Orman Quine (1960). Word and Object. *MIT Press*.')
         })
     })
 
@@ -80,8 +110,39 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(parsed.papers[0].title).toBe('The Concept of Mind')
             expect(parsed.papers[0].authors[0]).toBe('Gilbert Ryle')
             expect(parsed.papers[0].citationCount).toBe(14500)
+            expect(parsed.bibliography).toContain('References')
             expect(result.citations).toBeDefined()
             expect(result.citations?.[0].title).toContain('Gilbert Ryle')
+        })
+
+        it('forwards year_from, sort_by, and open_access_only filters to OpenAlex query', async () => {
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    results: [],
+                }),
+            })
+            globalThis.fetch = mockFetch
+
+            await executeToolCall({
+                id: 'call-filters',
+                name: 'search_academic_corpus',
+                argumentsJson: JSON.stringify({
+                    query: 'quantum entanglement',
+                    year_from: 2020,
+                    year_to: 2024,
+                    sort_by: 'citations',
+                    open_access_only: true,
+                }),
+            })
+
+            expect(mockFetch).toHaveBeenCalled()
+            const requestedUrl = mockFetch.mock.calls[0][0] as string
+            expect(requestedUrl).toContain('filter=')
+            expect(requestedUrl).toContain('publication_year%3A%3E2019')
+            expect(requestedUrl).toContain('publication_year%3A%3C2025')
+            expect(requestedUrl).toContain('is_oa%3Atrue')
+            expect(requestedUrl).toContain('sort=cited_by_count:desc')
         })
     })
 
@@ -96,6 +157,22 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(first.authors.length).toBeGreaterThan(0)
             expect(first.citationCount).toBeGreaterThan(0)
             expect(result.formatted).toContain(first.title)
+            expect(result.bibliography).toContain('References')
+        }, 15000)
+
+        it('queries recent literature with publication date filter and sorting', async () => {
+            const result = await searchAcademicCorpus('Large language model reasoning', {
+                limit: 3,
+                yearFrom: 2023,
+                sortBy: 'citations',
+            })
+            expect(result.ok).toBe(true)
+            expect(result.papers.length).toBeGreaterThan(0)
+            for (const paper of result.papers) {
+                if (paper.year) {
+                    expect(paper.year).toBeGreaterThanOrEqual(2023)
+                }
+            }
         }, 15000)
     })
 })

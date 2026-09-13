@@ -1,7 +1,7 @@
 /**
  * Live Academic Corpus Search for WorldInMaking AI.
  * Queries peer-reviewed academic literature, philosophy journals, DOIs,
- * citation counts, and open-access PDFs via OpenAlex & ArXiv.
+ * citation counts, concepts, and open-access PDFs via OpenAlex & ArXiv.
  */
 
 export interface AcademicPaper {
@@ -14,7 +14,17 @@ export interface AcademicPaper {
     doi?: string
     pdfUrl?: string
     abstract?: string
+    concepts?: string[]
     source: 'OpenAlex' | 'ArXiv' | 'Semantic Scholar'
+}
+
+export interface AcademicSearchOptions {
+    limit?: number
+    field?: string
+    yearFrom?: number
+    yearTo?: number
+    sortBy?: 'citations' | 'recent' | 'relevance'
+    openAccessOnly?: boolean
 }
 
 export interface AcademicSearchResult {
@@ -23,6 +33,7 @@ export interface AcademicSearchResult {
     total: number
     papers: AcademicPaper[]
     formatted: string
+    bibliography?: string
     error?: string
 }
 
@@ -45,6 +56,7 @@ export function reconstructAbstract(invertedIndex?: Record<string, number[]> | n
     return full.length > maxChars ? `${full.slice(0, maxChars)}…` : full
 }
 
+/** Formats academic results into high-impact Markdown */
 export function formatAcademicResults(papers: AcademicPaper[]): string {
     if (!papers || papers.length === 0) return 'No academic papers found matching the query.'
 
@@ -54,8 +66,9 @@ export function formatAcademicResults(papers: AcademicPaper[]): string {
             const yearStr = p.year ? ` (${p.year})` : ''
             const venueStr = p.venue ? ` — *${p.venue}*` : ''
             const citeStr = p.citationCount > 0 ? ` [Cited by ${p.citationCount}]` : ''
+            const conceptStr = p.concepts && p.concepts.length > 0 ? `\n   - **Topics:** ${p.concepts.join(', ')}` : ''
 
-            let item = `${idx + 1}. **${p.title}**${yearStr}\n   - **Authors:** ${authorStr}${venueStr}${citeStr}`
+            let item = `${idx + 1}. **${p.title}**${yearStr}\n   - **Authors:** ${authorStr}${venueStr}${citeStr}${conceptStr}`
             if (p.doi) {
                 item += `\n   - **DOI:** ${p.doi}`
             }
@@ -70,15 +83,46 @@ export function formatAcademicResults(papers: AcademicPaper[]): string {
         .join('\n\n')
 }
 
+/** Formats papers into standard APA bibliography format suitable for WIM notebooks */
+export function formatApaBibliography(papers: AcademicPaper[]): string {
+    if (!papers || papers.length === 0) return ''
+
+    const lines = papers.map((p) => {
+        const authors = p.authors.length > 0 ? p.authors.join(', ') : 'Anonymous'
+        const year = p.year ? `(${p.year})` : '(n.d.)'
+        const venue = p.venue ? `*${p.venue}*.` : ''
+        const doi = p.doi ? ` ${p.doi}` : ''
+        return `${authors} ${year}. ${p.title}. ${venue}${doi}`
+    })
+
+    return `### References / Kaynakça\n\n${lines.join('\n\n')}`
+}
+
 /**
- * Queries OpenAlex for academic papers (primary engine).
+ * Queries OpenAlex for academic papers with filters and sorting.
  */
-async function queryOpenAlex(query: string, limit = 5): Promise<AcademicPaper[]> {
+async function queryOpenAlex(query: string, options?: AcademicSearchOptions): Promise<AcademicPaper[]> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
 
     try {
-        const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${Math.min(limit, 10)}&mailto=dursunkayamustafa@gmail.com`
+        const limit = Math.min(options?.limit || 5, 10)
+        const filters: string[] = []
+
+        if (options?.yearFrom) filters.push(`publication_year:>${options.yearFrom - 1}`)
+        if (options?.yearTo) filters.push(`publication_year:<${options.yearTo + 1}`)
+        if (options?.openAccessOnly) filters.push('is_oa:true')
+
+        let sortQuery = ''
+        if (options?.sortBy === 'citations') {
+            sortQuery = '&sort=cited_by_count:desc'
+        } else if (options?.sortBy === 'recent') {
+            sortQuery = '&sort=publication_date:desc'
+        }
+
+        const filterQuery = filters.length > 0 ? `&filter=${encodeURIComponent(filters.join(','))}` : ''
+        const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${limit}${filterQuery}${sortQuery}&mailto=dursunkayamustafa@gmail.com`
+
         const res = await fetch(url, {
             headers: {
                 'User-Agent': USER_AGENT,
@@ -100,6 +144,7 @@ async function queryOpenAlex(query: string, limit = 5): Promise<AcademicPaper[]>
                 authorships?: Array<{ author?: { display_name?: string } }>
                 open_access?: { oa_url?: string }
                 abstract_inverted_index?: Record<string, number[]>
+                concepts?: Array<{ display_name?: string }>
             }>
         }
 
@@ -109,6 +154,11 @@ async function queryOpenAlex(query: string, limit = 5): Promise<AcademicPaper[]>
             const authors = (r.authorships || [])
                 .map((a) => a.author?.display_name?.trim())
                 .filter((name): name is string => Boolean(name))
+                .slice(0, 4)
+
+            const concepts = (r.concepts || [])
+                .map((c) => c.display_name?.trim())
+                .filter((c): c is string => Boolean(c))
                 .slice(0, 4)
 
             return {
@@ -121,6 +171,7 @@ async function queryOpenAlex(query: string, limit = 5): Promise<AcademicPaper[]>
                 doi: r.doi || undefined,
                 pdfUrl: r.open_access?.oa_url || undefined,
                 abstract: reconstructAbstract(r.abstract_inverted_index),
+                concepts: concepts.length > 0 ? concepts : undefined,
                 source: 'OpenAlex',
             }
         })
@@ -149,7 +200,7 @@ async function queryArXiv(query: string, limit = 3): Promise<AcademicPaper[]> {
 
         const xml = await res.text()
         const entries = xml.split('<entry>')
-        entries.shift() // Remove header chunk
+        entries.shift()
 
         const papers: AcademicPaper[] = []
 
@@ -196,11 +247,11 @@ async function queryArXiv(query: string, limit = 3): Promise<AcademicPaper[]> {
 }
 
 /**
- * Searches the academic corpus across peer-reviewed repositories.
+ * Searches the academic corpus across peer-reviewed repositories with advanced filters.
  */
 export async function searchAcademicCorpus(
     query: string,
-    options?: { limit?: number; field?: string }
+    options?: AcademicSearchOptions
 ): Promise<AcademicSearchResult> {
     const cleanQuery = query.trim()
     if (!cleanQuery) {
@@ -219,8 +270,8 @@ export async function searchAcademicCorpus(
 
     // Run OpenAlex and ArXiv in parallel
     const [openAlexPapers, arxivPapers] = await Promise.all([
-        queryOpenAlex(enhancedQuery, limit),
-        queryArXiv(cleanQuery, 2),
+        queryOpenAlex(enhancedQuery, { ...options, limit }),
+        options?.openAccessOnly ? [] : queryArXiv(cleanQuery, 2),
     ])
 
     // Merge papers, prioritizing OpenAlex (peer-reviewed & cited) followed by ArXiv
@@ -236,8 +287,10 @@ export async function searchAcademicCorpus(
         if (combined.length >= limit) break
     }
 
-    // Sort by citation count descending
-    combined.sort((a, b) => b.citationCount - a.citationCount)
+    // Default to citation sort unless explicitly set to recent or relevance
+    if (!options?.sortBy || options.sortBy === 'citations') {
+        combined.sort((a, b) => b.citationCount - a.citationCount)
+    }
 
     return {
         ok: combined.length > 0,
@@ -245,5 +298,6 @@ export async function searchAcademicCorpus(
         total: combined.length,
         papers: combined,
         formatted: formatAcademicResults(combined),
+        bibliography: formatApaBibliography(combined),
     }
 }

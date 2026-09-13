@@ -51,11 +51,38 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Live Academic Corpus Search Integration]`
+- **Status:** `[IDLE]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-13 — Antigravity (Battle-Hardened WIM AI Tool Engine: Studio Image Gen & Scholarly RAG)
+- **Scope:** Upgraded WIM AI's tool capabilities from basic baseline calls to studio-grade generation and deep academic research engines.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`).
+  2. Maintained zero external secret dependencies for scholarly queries (polite OpenAlex + arXiv).
+  3. Direct Cloudflare Workers AI + R2 integration for zero-latency private storage and public CDN delivery.
+- **Changes Applied:**
+  1. **Cloudflare Storage Worker (`worldinmaking-storage-full/src/index.ts`):**
+     - Enhanced `/image` endpoint to parse `aspect_ratio` (`1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`) and `style` (`oil_painting`, `vintage_etching`, `cinematic`, `renaissance`, `minimalist`, `cyberpunk`, `watercolor`, `hyperrealistic`).
+     - Automatic prompt enrichment with tailored lighting, textural, and artistic descriptors.
+     - Accurate pixel dimension mapping (`1024x576`, `576x1024`, `1024x768`, etc.) passed directly to FLUX.1 Schnell.
+     - Returns `aspect_ratio`, `style`, `width`, `height`, and R2 storage metadata.
+     - Deployed live (Version ID: `14786242-63db-4841-8b7b-ce208a49e203`).
+  2. **Scholarly Engine & Bibliography (`src/lib/bots/academic-search.ts`):**
+     - Upgraded `searchAcademicCorpus` with `AcademicSearchOptions` (`yearFrom`, `yearTo`, `sortBy`, `openAccessOnly`, `field`).
+     - Built OpenAlex query builder with multi-clause `&filter=` (`publication_year:>YYYY`, `publication_year:<YYYY`, `is_oa:true`) and `&sort=cited_by_count:desc` or `publication_date:desc`.
+     - Added topic concept extraction (`concepts` array on `AcademicPaper`).
+     - Built `formatApaBibliography` generating publication-ready APA reference lists with DOIs and journal italics for notebooks.
+  3. **Tool Execution & Specifications (`src/lib/bots/tools/execute.ts`, `spec.ts`):**
+     - Enriched `generate_image` JSON Schema with `aspect_ratio` and `style` enums, forwarded to Cloudflare worker.
+     - Enriched `search_academic_corpus` JSON Schema with `year_from`, `year_to`, `sort_by`, `open_access_only`.
+     - Wired options forwarding and type guards in `executeToolCall`.
+  4. **Verification & Testing:**
+     - `src/lib/bots/tools/execute-image.test.ts`: 5/5 passed (including live FLUX.1 16:9 generation to R2 in 3.2s).
+     - `src/lib/bots/tools/academic-search.test.ts`: 8/8 passed (including live OpenAlex queries with citation filters and APA references).
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
 
 ### 2026-09-13 — Antigravity (Live Academic Corpus Search Integration)
 - **Scope:** Equipped WIM AI with `search_academic_corpus` tool for direct, keyless searching of peer-reviewed philosophy and scientific literature across OpenAlex (250M+ papers) and arXiv.
