@@ -1,0 +1,6 @@
+⚡ Bolt: Optimize filter loop array allocations
+
+💡 What: Extracted `Object.keys()` out of the `filterData` loop in `ViewerFilters.tsx`.
+🎯 Why: `Object.keys(filters)` was creating a new array on every iteration of `data.filter`, causing redundant memory allocations (O(N)) and garbage collection overhead.
+📊 Impact: Reduces memory churn and improves main thread performance during list filtering, especially for large datasets.
+🔬 Measurement: Profile the CPU and Memory tabs in DevTools before and after while interacting with Viewer Filters.
