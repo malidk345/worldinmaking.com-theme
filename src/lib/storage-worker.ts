@@ -402,9 +402,12 @@ export async function transcribeAudio(audio: Blob | ArrayBuffer): Promise<{ text
 }
 
 /**
- * Summarizes text using Cloudflare Workers AI Llama 3.3.
+ * Summarizes text using Cloudflare Workers AI (defaults to DeepSeek R1 Distill 32B).
  */
-export async function summarizeText(text: string): Promise<{ summary: string }> {
+export async function summarizeText(
+    text: string,
+    options?: { model?: string }
+): Promise<{ summary: string }> {
     const { accessToken } = await getAuthSession()
     if (!isStorageWorkerConfigured()) {
         throw new Error('Storage Worker URL is not configured.')
@@ -416,7 +419,7 @@ export async function summarizeText(text: string): Promise<{ summary: string }> 
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, model: options?.model }),
     })
 
     if (!res.ok) {
@@ -428,9 +431,12 @@ export async function summarizeText(text: string): Promise<{ summary: string }> 
 }
 
 /**
- * Generates an image using Stable Diffusion XL via Cloudflare Workers AI and saves it directly to R2.
+ * Generates an image using Cloudflare Workers AI (defaults to FLUX.1 Schnell) and saves it directly to R2.
  */
-export async function generateAIImage(prompt: string): Promise<{ storage_key: string; url: string }> {
+export async function generateAIImage(
+    prompt: string,
+    options?: { model?: string }
+): Promise<{ storage_key: string; url: string }> {
     const { accessToken } = await getAuthSession()
     if (!isStorageWorkerConfigured()) {
         throw new Error('Storage Worker URL is not configured.')
@@ -442,7 +448,7 @@ export async function generateAIImage(prompt: string): Promise<{ storage_key: st
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, model: options?.model }),
     })
 
     if (!res.ok) {
@@ -450,9 +456,51 @@ export async function generateAIImage(prompt: string): Promise<{ storage_key: st
         throw new Error((err as { error?: string })?.error || `Image generation failed (${res.status})`)
     }
 
-    const data = await res.json() as { storage_key: string; url: string }
+    const data = (await res.json()) as { storage_key: string; url: string }
     return {
         storage_key: data.storage_key,
         url: getFileUrl(data.storage_key),
+    }
+}
+
+/**
+ * Executes an OpenAI-compatible Chat Completion via the Cloudflare Storage Worker.
+ * Allows seamless integration with WorldInMaking AI Orchestrator or direct client calls.
+ */
+export async function createChatCompletion(
+    messages: Array<{ role: string; content: string }>,
+    options?: { model?: string; temperature?: number; max_tokens?: number }
+): Promise<{ content: string; model: string }> {
+    const { accessToken } = await getAuthSession()
+    if (!isStorageWorkerConfigured()) {
+        throw new Error('Storage Worker URL is not configured.')
+    }
+
+    const res = await fetch(`${STORAGE_WORKER_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            messages,
+            model: options?.model || '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+            temperature: options?.temperature,
+            max_tokens: options?.max_tokens,
+        }),
+    })
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error((err as { error?: string })?.error || `Chat completion failed (${res.status})`)
+    }
+
+    const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string } }>
+        model: string
+    }
+    return {
+        content: data.choices?.[0]?.message?.content || '',
+        model: data.model,
     }
 }

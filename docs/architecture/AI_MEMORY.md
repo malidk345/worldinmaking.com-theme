@@ -33,11 +33,45 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Cloudflare R2 Storage Worker & file_metadata Migration]`
+- **Status:** `[COMPLETED by Antigravity - Cloudflare Workers AI & FLUX.1 Tool Integration]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-13 — Antigravity (Cloudflare Workers AI & FLUX.1 Tool Integration)
+- **Scope:** Wired Cloudflare Workers AI (FLUX.1 Schnell, Whisper Large V3 Turbo, DeepSeek R1 Distill 32B) directly into the central Ask AI / philosopher bot toolset (`src/lib/bots/tools/`) and storage worker client.
+- **Architectural Rules Kept:**
+  1. No competing or second orchestrators created (`WIM_AI.md` adherence). Kept within existing `streamBotTurn` / `runToolLoop` architecture.
+  2. Single wire format: OpenAI chat completion tool definition via `src/lib/bots/tools/spec.ts`.
+  3. Image generation automatically stores output in private Cloudflare R2 bucket (`users/:userId/generated/:id.png`) and returns CDN/proxy URL + markdown snippet.
+  4. Dual auth support: Accepts user JWT, Supabase `service_role` key, or Supabase `anon` key.
+- **Changes Applied:**
+  1. **Worker Service (`worldinmaking-storage-full/src/index.ts`):**
+     - Deployed Cloudflare Worker with `AI` binding (version `af548f6d-d1aa-44fb-b8e8-6063eceb038b`).
+     - Added support for `payload.role === 'anon'` in `verifySupabaseJWT` alongside `service_role` and user JWTs.
+     - Active endpoints: `/image` (FLUX.1 Schnell -> R2), `/transcribe` (Whisper Large V3 Turbo), `/summarize` (DeepSeek R1 Distill 32B), `/chat/completions` (OpenAI format).
+  2. **Bot Tool Specifications & Aliases (`src/lib/bots/tools/spec.ts`, `execute.ts`, `labels.ts`, `modes.ts`):**
+     - Added `generate_image` tool definition, parameters, and protocol instructions.
+     - Added aliases (`create_image`, `draw_image`, `paint_image`, `generate_picture`, `text_to_image`).
+     - Registered in `MUTATING_TOOL_NAMES` in `modes.ts`.
+     - Added UI streaming labels in `labels.ts`.
+  3. **Tool Dispatch & Execution (`src/lib/bots/tools/execute.ts`):**
+     - Implemented `executeGenerateImage` calling `${STORAGE_WORKER_URL}/image`.
+     - Added dispatch branch in `executeToolCall` with argument normalization and fallback auth.
+  4. **Verification & Tests:**
+     - Added unit test suite `src/lib/bots/tools/execute-image.test.ts` (3 tests passed).
+     - Storage worker unit tests `src/lib/storage-worker.test.ts` (8 tests passed).
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+- **Files Modified/Created:**
+  - `src/lib/bots/tools/execute.ts` (MODIFIED)
+  - `src/lib/bots/tools/spec.ts` (MODIFIED)
+  - `src/lib/bots/tools/labels.ts` (MODIFIED)
+  - `src/lib/bots/agent/modes.ts` (MODIFIED)
+  - `src/lib/storage-worker.ts` (MODIFIED)
+  - `src/lib/bots/tools/execute-image.test.ts` (NEW)
+  - `worldinmaking-storage-full/src/index.ts` (MODIFIED & DEPLOYED)
+  - `docs/architecture/AI_MEMORY.md` (MODIFIED)
 
 ### 2026-09-13 — Antigravity (Cloudflare R2 Storage Worker & file_metadata Migration)
 - **Scope:** Implemented Cloudflare R2 object storage integration with Supabase Postgres metadata and Cloudflare Storage Worker proxy.

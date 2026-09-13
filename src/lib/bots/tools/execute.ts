@@ -148,6 +148,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     remember: { memory: 'fact', note: 'fact', text: 'fact', content: 'fact' },
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
+    generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -312,6 +313,80 @@ async function executeWebSearch(
     }
 }
 
+async function executeGenerateImage(
+    prompt: string,
+    env?: EnvStore,
+    _host?: HostSnapshot
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const workerUrl = (
+        process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        env?.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        'https://worldinmaking-storage.dursunkayamustafa.workers.dev'
+    ).replace(/\/+$/, '')
+
+    const authToken =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        env?.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        ''
+
+    if (!authToken) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'Authentication key is not configured for image generation.',
+            }),
+        }
+    }
+
+    try {
+        const res = await fetch(`${workerUrl}/image`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt }),
+        })
+
+        if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            return {
+                ok: false,
+                result: JSON.stringify({
+                    ok: false,
+                    error: err?.error || `Cloudflare image generation failed (${res.status}).`,
+                }),
+            }
+        }
+
+        const data = (await res.json()) as { storage_key: string; url: string }
+        const fullUrl = `${workerUrl}${data.url.startsWith('/') ? '' : '/'}${data.url}`
+        const safeAlt = prompt.slice(0, 48).replace(/[\[\]"]/g, '').trim()
+
+        return {
+            ok: true,
+            result: JSON.stringify({
+                ok: true,
+                url: fullUrl,
+                storage_key: data.storage_key,
+                markdown: `![${safeAlt}](${fullUrl})`,
+                instruction: `Image generated and stored in R2. Embed it in your public response as: ![${safeAlt}](${fullUrl})`,
+            }),
+        }
+    } catch (err: any) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: err?.message || 'Failed to connect to Cloudflare image generator.',
+            }),
+        }
+    }
+}
+
 const TOOL_NAME_ALIASES: Record<string, string> = {
     google_search: 'web_search',
     search: 'web_search',
@@ -354,6 +429,11 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     submit_plan: 'finalize_plan',
     subagent: 'task',
     sub_task: 'task',
+    create_image: 'generate_image',
+    draw_image: 'generate_image',
+    paint_image: 'generate_image',
+    generate_picture: 'generate_image',
+    text_to_image: 'generate_image',
 }
 
 export function resolveToolName(raw: string): string {
@@ -623,6 +703,15 @@ export async function executeToolCall(
             }
             const result = JSON.stringify({ ok: true, goal })
             return { ...base, ok: true, result, summary: `Running subtask` }
+        }
+        if (name === 'generate_image') {
+            const prompt = asText(args.prompt, 1_000).trim()
+            if (!prompt) {
+                const result = JSON.stringify({ ok: false, error: 'prompt is required for generate_image' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const executed = await executeGenerateImage(prompt, env, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }
     } catch (error) {

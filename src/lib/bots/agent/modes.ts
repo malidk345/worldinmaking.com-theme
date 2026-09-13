@@ -45,6 +45,7 @@ export const MUTATING_TOOL_NAMES = [
     'set_system_appearance',
     'annotate_notebook',
     'publish_to_forum',
+    'generate_image',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {

@@ -30,6 +30,7 @@ const LABELS: Record<string, [string, string, string]> = {
     remember: ['Saving memory', 'Saved memory', 'Could not save memory'],
     finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
+    generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
