@@ -57,6 +57,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Task Scale Elasticity & Long-Form Notebook Construction)
+- **Scope:** Upgraded orchestrator prompts and tool protocols (`spec.ts`, `modes.ts`) to provide dynamic scale calibration: micro requests (greetings, simple queries) remain immediate and concise with zero tool bloat, while macro/comprehensive requests trigger iterative multi-section notebook construction (`create_notebook` + consecutive `insert_notebook_block` calls with academic footnotes `[^1]`, `[^2]`) and full 16-step stamina.
+- **Architectural Rules Kept:**
+  1. No second orchestrator.
+  2. Preserves lightweight zero-tool direct path for greetings and micro requests.
+  3. Uses existing `create_notebook` and `insert_notebook_block` host actions for long-form chunked persistence.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/spec.ts`: Added `TASK SCALE ELASTICITY & STAMINA` instructions to `TOOL_PROTOCOL`.
+  2. `src/lib/bots/agent/modes.ts`: Updated `PLAN_MODE_PROMPT`, `PLAN_TOOL_PROTOCOL`, and `EXECUTION_TRANSITION_PROMPT` to mandate deep notebook construction and prevent premature 2-step termination on comprehensive requests.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-multimodal.test.ts src/lib/bots/tools/execute-image.test.ts src/lib/bots/tools/academic-search.test.ts`: PASS (21/21 passed).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Multimodal Intelligence: Vision, STT, TTS Integration)
 - **Scope:** Equipped WIM AI with sensory multimodal capabilities: Image Analysis/Vision via Llama 3.2 Vision / LLaVA, Speech-to-Text via Whisper Large V3 Turbo, and Text-to-Speech via MeloTTS + Deepgram Aura.
 - **Architectural Rules Kept:**

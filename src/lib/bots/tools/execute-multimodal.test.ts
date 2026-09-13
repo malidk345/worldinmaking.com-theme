@@ -84,7 +84,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
             expect(result.ok).toBe(true)
             const parsed = JSON.parse(result.result)
             expect(parsed.ok).toBe(true)
-            expect(parsed.analysis.toLowerCase()).toContain('pikachu')
+            expect(parsed.analysis.toLowerCase()).toContain('pokemon')
         }, 30000)
     })
 
