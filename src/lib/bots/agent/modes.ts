@@ -34,6 +34,9 @@ export const PLAN_TOOL_NAMES = [
     'remember',
     'finalize_plan',
     'task',
+    'cross_examine_argument',
+    'verified_corpus_search',
+    'export_notebook',
 ] as const
 
 export const MUTATING_TOOL_NAMES = [
@@ -51,6 +54,9 @@ export const MUTATING_TOOL_NAMES = [
     'generate_image',
     'synthesize_speech',
     'add_notebook_footnote',
+    'arrange_workspace_preset',
+    'generate_flashcards',
+    'create_concept_map',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {

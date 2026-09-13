@@ -740,6 +740,206 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'cross_examine_argument',
+            description:
+                'Dialectical Socratic cross-examination tool. Rigorously tests philosophical claims, propositions, or thesis statements: exposes logical fallacies, unstated dogmas/assumptions, creates challenging Socratic dilemmas, and generates counter-perspectives from historical schools of thought (Nietzschean, Stoic, Kantian, Existentialist). Call this when examining arguments, debating positions, or challenging unexamined assumptions.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    argument: {
+                        type: 'string',
+                        description: 'The central claim, thesis, or philosophical proposition to cross-examine.',
+                    },
+                    perspective: {
+                        type: 'string',
+                        description: 'Target philosophical stance or school to challenge from ("socratic", "nietzschean", "stoic", "kantian", "existentialist", "skeptic", "utilitarian").',
+                    },
+                    rigor: {
+                        type: 'string',
+                        enum: ['standard', 'deep'],
+                        description: 'Analytical depth of cross-examination (default "deep").',
+                    },
+                },
+                required: ['argument'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'verified_corpus_search',
+            description:
+                'Search verified canonical philosophical texts (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) for authentic aphorisms, propositions, and exact citations without LLM hallucination. Call this when citing primary philosophical sources, looking up specific aphorisms, or verifying historical philosophical concepts.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    query: {
+                        type: 'string',
+                        description: 'Philosophical concept, quote fragment, or topic to search (e.g. "eternal recurrence", "amor dei intellectualis", "categorical imperative", "inner citadel", "cave", "abyss", "conatus", "pendulum").',
+                    },
+                    thinker: {
+                        type: 'string',
+                        enum: ['nietzsche', 'spinoza', 'kant', 'schopenhauer', 'marcus_aurelius', 'plato', 'aristotle', 'camus', 'kierkegaard', 'all'],
+                        description: 'Filter by canonical philosopher (default "all").',
+                    },
+                    work: {
+                        type: 'string',
+                        description: 'Filter by primary work title (e.g. "Ethics", "Beyond Good and Evil", "Meditations", "The World as Will and Representation").',
+                    },
+                    limit: {
+                        type: 'number',
+                        description: 'Maximum number of citations to return (1-10, default 4).',
+                    },
+                },
+                required: ['query'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'arrange_workspace_preset',
+            description:
+                'Desktop OS Workspace Preset Automation: Instantly arrange and snap desktop windows into curated productivity and focus layouts. Call this when the user asks to set up their workspace for reading, research, deep work, or writing.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    preset: {
+                        type: 'string',
+                        enum: ['deep_reading', 'studio', 'minimal', 'split_dual', 'research'],
+                        description: 'Target workspace layout preset: "deep_reading" (Reader split left, Notebook split right), "studio" (Chat left, Scratchpad/Artifact right), "minimal" (Focused full notebook), "split_dual" (Two windows tiled side-by-side), "research" (Search left, Notebook right).',
+                    },
+                },
+                required: ['preset'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'generate_flashcards',
+            description:
+                'Generate structured active recall flashcards (front/question, back/answer, mnemonic hint, tags) from concepts, notes, or articles. Can optionally save the study deck directly to the user\'s notebook for spaced repetition.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    topic: {
+                        type: 'string',
+                        description: 'Title or subject of the flashcard study deck.',
+                    },
+                    cards: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                front: { type: 'string', description: 'Question, prompt, or concept.' },
+                                back: { type: 'string', description: 'Core explanation or answer.' },
+                                hint: { type: 'string', description: 'Optional mnemonic clue or context.' },
+                                tags: { type: 'array', items: { type: 'string' } },
+                            },
+                            required: ['front', 'back'],
+                        },
+                        description: 'Array of flashcards.',
+                    },
+                    save_to_notebook: {
+                        type: 'boolean',
+                        description: 'If true, appends the flashcard study table directly to the active or specified notebook.',
+                    },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Target notebook ID if saving to notebook.',
+                    },
+                },
+                required: ['topic', 'cards'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'export_notebook',
+            description:
+                'Compile a user notebook into a complete, standalone, publication-ready formatted document (markdown, LaTeX, HTML, or plaintext) with structured table of contents, footnotes, and metadata. Call this when the user wants to export, compile, or prepare a notebook for publishing.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    notebook_id: {
+                        type: 'string',
+                        description: 'ID or title of the notebook to compile. If omitted, uses active notebook.',
+                    },
+                    format: {
+                        type: 'string',
+                        enum: ['markdown', 'latex', 'html', 'text'],
+                        description: 'Target document format (default "markdown").',
+                    },
+                    include_toc: {
+                        type: 'boolean',
+                        description: 'Whether to generate an automatic Table of Contents (default true).',
+                    },
+                    include_footnotes: {
+                        type: 'boolean',
+                        description: 'Whether to compile footnotes at the end of the document (default true).',
+                    },
+                },
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'create_concept_map',
+            description:
+                'Create an interactive visual concept map / knowledge graph artifact (type: canvas) on screen with structured ideas (nodes) and directed relationships (edges). Call this when visualizing complex concept networks, mindmaps, ontological structures, or idea flows.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    title: {
+                        type: 'string',
+                        description: 'Title of the concept map.',
+                    },
+                    concepts: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'Unique identifier (e.g. "c1", "will_to_power").' },
+                                label: { type: 'string', description: 'Concept label or title.' },
+                                description: { type: 'string', description: 'Brief explanation or notes.' },
+                                color: { type: 'string', enum: ['amber', 'emerald', 'rose', 'blue', 'purple', 'slate'] },
+                                tags: { type: 'array', items: { type: 'string' } },
+                            },
+                            required: ['id', 'label'],
+                        },
+                        description: 'List of ideas, concepts, or entities.',
+                    },
+                    relationships: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                from: { type: 'string', description: 'Source concept ID.' },
+                                to: { type: 'string', description: 'Target concept ID.' },
+                                label: { type: 'string', description: 'Relationship description (e.g. "causes", "negates", "manifests as", "presupposes").' },
+                                style: { type: 'string', enum: ['solid', 'dashed', 'dotted'] },
+                            },
+                            required: ['from', 'to'],
+                        },
+                        description: 'Directed semantic connections between concepts.',
+                    },
+                },
+                required: ['title', 'concepts', 'relationships'],
+            },
+        },
+    },
 ]
 
 export const TOOL_PROTOCOL = `
@@ -772,8 +972,13 @@ TOOL USE:
 - open_path: open an allowed OS window. Do not invent paths.
 - read_post: read one site post by slug after search_site.
 - manage_windows: tile, snap left/right, minimize, or close desktop windows.
-- set_system_appearance: change theme (dark/light/system) or wallpaper background.
 - publish_to_forum: publish a new topic or question to the Community forum.
+- cross_examine_argument: dialectical Socratic cross-examination. Rigorously tests claims, exposes logical fallacies, unstated dogmas, creates challenging Socratic dilemmas, and generates counter-perspectives from historical schools of thought (Nietzschean, Stoic, Kantian, Existentialist).
+- verified_corpus_search: look up exact aphorisms, propositions, and canonical text fragments (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) with authentic book/section citations to avoid quote hallucinations.
+- arrange_workspace_preset: desktop OS workspace preset automation. Instantly arranges windows into curated layouts: deep_reading (Reader left, Notebook right), studio (Chat left, Scratchpad/Artifact right), minimal (Focused notebook), split_dual (Tiled windows), research (Search left, Notebook right).
+- generate_flashcards: generate active recall study decks (front, back, hint, tags). Set save_to_notebook=true to append the study table directly to a notebook.
+- export_notebook: compile a user notebook into complete, publication-ready formatted document (markdown, LaTeX, HTML, text) with automatic Table of Contents and footnotes.
+- create_concept_map: construct and visualize an interactive idea network / knowledge graph artifact (type="canvas") with labeled concepts (nodes) and directed relationships (edges).
 - Notebook Tools (Full Authority):
   * list_notebooks: see all notebooks in this OS.
   * read_notebook: read full notebook content.

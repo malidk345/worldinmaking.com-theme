@@ -31,6 +31,9 @@ import {
 import { isToolAllowedInMode, parseAgentMode, type AgentMode } from '../agent/modes'
 import { toolResultSummary } from './labels'
 import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, type ArtifactToolType } from './spec'
+import { searchPhilosophicalCorpus } from './philosophical-corpus'
+import { crossExamineArgument } from './argument-cross-examination'
+import type { CanvasSpec } from '../../ai/visual-artifacts'
 
 const MAX_TITLE = 80
 const MAX_ARTIFACT_BODY = 120_000
@@ -168,6 +171,58 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
     search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field' },
+    cross_examine_argument: {
+        arg: 'argument',
+        claim: 'argument',
+        thesis: 'argument',
+        text: 'argument',
+        school: 'philosophical_tradition',
+        tradition: 'philosophical_tradition',
+        perspective: 'philosophical_tradition',
+    },
+    verified_corpus_search: {
+        q: 'query',
+        search: 'query',
+        text: 'query',
+        term: 'query',
+        author: 'philosopher',
+        source: 'philosopher',
+    },
+    arrange_workspace_preset: {
+        preset: 'preset_name',
+        name: 'preset_name',
+        layout: 'preset_name',
+        mode: 'preset_name',
+    },
+    generate_flashcards: {
+        cards: 'flashcards',
+        deck: 'flashcards',
+        items: 'flashcards',
+        topic: 'deck_title',
+        title: 'deck_title',
+        name: 'deck_title',
+        save: 'save_to_notebook',
+        save_notebook: 'save_to_notebook',
+    },
+    export_notebook: {
+        notebookId: 'notebook_id',
+        id: 'notebook_id',
+        notebook: 'notebook_id',
+        type: 'format',
+        as: 'format',
+        output: 'format',
+        toc: 'include_toc',
+        footnotes: 'include_footnotes',
+    },
+    create_concept_map: {
+        name: 'title',
+        map_title: 'title',
+        elements: 'nodes',
+        concepts: 'nodes',
+        connections: 'edges',
+        links: 'edges',
+        relations: 'edges',
+    },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -702,6 +757,505 @@ async function executeSynthesizeSpeech(
     }
 }
 
+function executeCrossExamineArgument(
+    argumentText: string,
+    tradition?: string,
+    counterTarget?: string
+): Omit<ToolExecution, 'callId' | 'name'> {
+    const analysis = crossExamineArgument(argumentText, tradition, counterTarget)
+    return {
+        ok: true,
+        result: clip(JSON.stringify({ ok: true, ...analysis }), MAX_READ_RESULT),
+    }
+}
+
+function executeVerifiedCorpusSearch(
+    query: string,
+    philosopher?: string,
+    work?: string,
+    maxResults: number = 5
+): Omit<ToolExecution, 'callId' | 'name'> {
+    const searchRes = searchPhilosophicalCorpus(query, {
+        thinker: philosopher,
+        work,
+        limit: maxResults,
+    })
+
+    const citations: AiCitation[] = searchRes.matches.map((r, i) => ({
+        id: i + 1,
+        title: `${r.thinker} — ${r.work}${r.section ? ` (${r.section})` : ''}`,
+        url: `corpus://${encodeURIComponent(r.thinker.toLowerCase())}/${encodeURIComponent(r.work.toLowerCase())}`,
+        snippet: r.fragment,
+    }))
+
+    return {
+        ok: true,
+        result: clip(
+            JSON.stringify({
+                ok: true,
+                query,
+                total_found: searchRes.count,
+                citations: searchRes.matches.map((m) => ({
+                    philosopher: m.thinker,
+                    work: m.work,
+                    section: m.section,
+                    quote: m.fragment,
+                    context: m.context,
+                })),
+            }),
+            MAX_TOOL_RESULT
+        ),
+        citations: citations.length > 0 ? citations : undefined,
+    }
+}
+
+function executeArrangeWorkspacePreset(
+    presetName: string,
+    host?: HostSnapshot
+): { ok: boolean; result: string; action: HostOsAction } {
+    const p = presetName.toLowerCase().trim()
+    let action = 'tile'
+    let leftPath: string | undefined
+    let rightPath: string | undefined
+    let focusPath: string | undefined
+
+    switch (p) {
+        case 'deep_reading':
+            action = 'split'
+            leftPath = '/posts'
+            rightPath = '/notebooks'
+            break
+        case 'studio':
+            action = 'split'
+            leftPath = '/notebooks'
+            rightPath = '/workspace'
+            break
+        case 'minimal':
+            action = 'focus'
+            focusPath = '/notebooks'
+            break
+        case 'split_dual':
+            action = 'split'
+            leftPath = host?.path || '/notebooks'
+            rightPath = '/posts'
+            break
+        case 'research':
+        default:
+            action = 'tile'
+            leftPath = '/search'
+            rightPath = '/notebooks'
+            break
+    }
+
+    const executed = executeManageWindows(host, action, focusPath, leftPath, rightPath)
+    return {
+        ok: true,
+        result: JSON.stringify({
+            ok: true,
+            preset: p,
+            layout: action,
+            path: focusPath,
+            left_path: leftPath,
+            right_path: rightPath,
+        }),
+        action: {
+            ...executed.action,
+            title: `Workspace preset: ${p.replace(/_/g, ' ')}`,
+            description: `Applied ${p} workspace preset (${action})`,
+        },
+    }
+}
+
+function executeGenerateFlashcards(
+    rawCards: unknown,
+    deckTitle?: string,
+    saveToNotebook?: boolean,
+    notebookId?: string,
+    host?: HostSnapshot
+): { ok: boolean; result: string; action?: HostOsAction } {
+    let cards: Array<{ front: string; back: string; hint?: string; tags?: string[] }> = []
+    if (Array.isArray(rawCards)) {
+        cards = rawCards
+            .filter((c) => c && typeof c === 'object')
+            .map((c: any) => ({
+                front: String(c.front || c.question || c.q || '').trim(),
+                back: String(c.back || c.answer || c.a || '').trim(),
+                hint: c.hint ? String(c.hint).trim() : undefined,
+                tags: Array.isArray(c.tags) ? c.tags.map((t: any) => String(t).trim()) : undefined,
+            }))
+            .filter((c) => c.front.length > 0 && c.back.length > 0)
+    }
+
+    if (cards.length === 0) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'At least one valid flashcard with "front" and "back" is required.',
+            }),
+        }
+    }
+
+    const title = (deckTitle || 'Study Flashcards').trim()
+
+    const markdownDeck = [
+        `# 🗂️ ${title}`,
+        '',
+        `> **Deck Summary**: ${cards.length} active-recall flashcard(s).`,
+        '',
+        ...cards.map((card, idx) => {
+            const tagsFormatted = card.tags && card.tags.length > 0 ? ` \`[${card.tags.join(', ')}]\`` : ''
+            const hintFormatted = card.hint ? `\n> *Hint: ${card.hint}*` : ''
+            return `### Card ${idx + 1}${tagsFormatted}\n**Q: ${card.front}**\n\n<details>\n<summary>Reveal Answer</summary>\n\n**A:** ${card.back}\n</details>${hintFormatted}\n`
+        }),
+    ].join('\n')
+
+    let action: HostOsAction | undefined
+    if (saveToNotebook) {
+        const targetId = notebookId || host?.notebookId || host?.notebooks?.[0]?.id
+        if (targetId) {
+            action = {
+                type: 'insert_notebook_block',
+                title: `Appended flashcard deck "${title}" to notebook`,
+                description: `Appended ${cards.length} flashcards to notebook`,
+                payload: {
+                    notebookId: targetId,
+                    content: `\n\n${markdownDeck}\n`,
+                },
+            }
+        } else {
+            action = {
+                type: 'create_notebook',
+                title: `Create flashcard notebook: ${title}`,
+                description: `Created flashcard deck notebook with ${cards.length} cards`,
+                payload: {
+                    title,
+                    content: markdownDeck,
+                },
+            }
+        }
+    }
+
+    return {
+        ok: true,
+        result: clip(
+            JSON.stringify({
+                ok: true,
+                deck_title: title,
+                total_cards: cards.length,
+                flashcards: cards,
+                saved_to_notebook: Boolean(saveToNotebook),
+                notebook_markdown: markdownDeck,
+            }),
+            MAX_TOOL_RESULT
+        ),
+        action,
+    }
+}
+
+function compileNotebookToMarkdown(title: string, rawContent: string, includeToc = true): string {
+    const lines = rawContent.split('\n')
+    const headings: Array<{ level: number; text: string; slug: string }> = []
+
+    if (includeToc) {
+        for (const line of lines) {
+            const match = line.match(/^(#{1,4})\s+(.+)$/)
+            if (match) {
+                const level = match[1].length
+                const text = match[2].trim()
+                const slug = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')
+                headings.push({ level, text, slug })
+            }
+        }
+    }
+
+    let toc = ''
+    if (headings.length > 0) {
+        toc = '## Table of Contents\n\n' + headings
+            .map((h) => `${'  '.repeat(Math.max(0, h.level - 1))}- [${h.text}](#${h.slug})`)
+            .join('\n') + '\n\n---\n\n'
+    }
+
+    return `# ${title}\n\n${toc}${rawContent}`
+}
+
+function compileNotebookToLatex(title: string, rawContent: string, includeToc = true): string {
+    const lines = rawContent.split('\n')
+    const convertedLines = lines.map((line) => {
+        if (/^####\s+(.+)$/.test(line)) {
+            const h = line.replace(/^####\s+/, '').replace(/([&%$_{}])/g, '\\$1')
+            return `\\paragraph{${h}}`
+        }
+        if (/^###\s+(.+)$/.test(line)) {
+            const h = line.replace(/^###\s+/, '').replace(/([&%$_{}])/g, '\\$1')
+            return `\\subsubsection{${h}}`
+        }
+        if (/^##\s+(.+)$/.test(line)) {
+            const h = line.replace(/^##\s+/, '').replace(/([&%$_{}])/g, '\\$1')
+            return `\\subsection{${h}}`
+        }
+        if (/^#\s+(.+)$/.test(line)) {
+            const h = line.replace(/^#\s+/, '').replace(/([&%$_{}])/g, '\\$1')
+            return `\\section{${h}}`
+        }
+        return line
+            .replace(/\\/g, '\\textbackslash ')
+            .replace(/([&%$#_{}])/g, '\\$1')
+            .replace(/~/g, '\\textasciitilde ')
+            .replace(/\^/g, '\\textasciicircum ')
+    })
+
+    const body = convertedLines.join('\n')
+    const safeTitle = title.replace(/([&%$#_{}])/g, '\\$1')
+    return [
+        '\\documentclass[11pt,a4paper]{article}',
+        '\\usepackage[utf8]{inputenc}',
+        '\\usepackage{hyperref}',
+        '\\usepackage{geometry}',
+        '\\geometry{margin=1in}',
+        `\\title{${safeTitle}}`,
+        '\\author{WorldInMaking Notebook}',
+        '\\date{\\today}',
+        '\\begin{document}',
+        '\\maketitle',
+        includeToc ? '\\tableofcontents\n\\newpage' : '',
+        '',
+        body,
+        '',
+        '\\end{document}',
+    ].filter(Boolean).join('\n')
+}
+
+function compileNotebookToHtml(title: string, rawContent: string, _includeToc = true): string {
+    const escaped = rawContent
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+
+    const formatted = escaped
+        .replace(/^### (.*$)/gim, '<h3 id="$1">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 id="$1">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 id="$1">$1</h1>')
+        .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/`([^`]+)`/gim, '<code>$1</code>')
+        .replace(/\n\n+/g, '</p><p>')
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #1e293b; background: #fafaf9; }
+    h1, h2, h3 { color: #0f172a; margin-top: 1.5em; }
+    h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 0.3em; }
+    blockquote { border-left: 4px solid #3b82f6; margin: 1em 0; padding: 0.5em 1em; background: #f0f9ff; color: #1e3a8a; }
+    code { background: #f1f5f9; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+    p { margin: 1em 0; }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <p>${formatted}</p>
+</body>
+</html>`
+}
+
+function compileNotebookToText(title: string, rawContent: string): string {
+    const border = '='.repeat(Math.max(40, title.length + 4))
+    return `${border}\n  ${title.toUpperCase()}\n${border}\n\n${rawContent}`
+}
+
+function executeExportNotebook(
+    format: string,
+    notebookId?: string,
+    includeToc: boolean = true,
+    _includeFootnotes: boolean = true,
+    host?: HostSnapshot
+): { ok: boolean; result: string; artifact?: ArtifactDocument } {
+    const requested = (notebookId || '').trim()
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    const match = host?.notebooks?.find((n) => n.id === targetId || n.title.toLowerCase() === requested.toLowerCase())
+
+    const title = match?.title || host?.notebookTitle || 'Exported Notebook'
+    const content = match?.content || host?.selection || '(Empty Notebook)'
+    const fmt = format.toLowerCase().trim() || 'markdown'
+
+    let compiled = ''
+    let lang = 'markdown'
+    let artType: ArtifactKind = 'markdown'
+
+    switch (fmt) {
+        case 'latex':
+        case 'tex':
+            compiled = compileNotebookToLatex(title, content, includeToc)
+            lang = 'latex'
+            artType = 'markdown'
+            break
+        case 'html':
+            compiled = compileNotebookToHtml(title, content, includeToc)
+            lang = 'html'
+            artType = 'html'
+            break
+        case 'text':
+        case 'txt':
+            compiled = compileNotebookToText(title, content)
+            lang = 'text'
+            artType = 'markdown'
+            break
+        case 'markdown':
+        case 'md':
+        default:
+            compiled = compileNotebookToMarkdown(title, content, includeToc)
+            lang = 'markdown'
+            artType = 'markdown'
+            break
+    }
+
+    const artifact: ArtifactDocument = {
+        id: `export-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        identifier: `export-${fmt}`,
+        title: `${title} (${fmt.toUpperCase()})`,
+        type: artType,
+        language: lang,
+        content: compiled,
+        description: `Exported publication document: ${title}`,
+        version: 1,
+        createdAt: new Date().toISOString(),
+    }
+
+    return {
+        ok: true,
+        result: clip(
+            JSON.stringify({
+                ok: true,
+                format: fmt,
+                title,
+                notebook_id: targetId || undefined,
+                content_length: compiled.length,
+                document: compiled,
+            }),
+            MAX_READ_RESULT
+        ),
+        artifact,
+    }
+}
+
+function executeCreateConceptMap(
+    title: string,
+    nodesRaw: unknown,
+    edgesRaw: unknown,
+    description?: string
+): { ok: boolean; result: string; artifact?: ArtifactDocument } {
+    const mapTitle = (title || 'Concept Map').trim()
+    let nodesList: any[] = []
+    if (Array.isArray(nodesRaw)) {
+        nodesList = nodesRaw.filter((n) => n && typeof n === 'object')
+    }
+    let edgesList: any[] = []
+    if (Array.isArray(edgesRaw)) {
+        edgesList = edgesRaw.filter((e) => e && typeof e === 'object')
+    }
+
+    if (nodesList.length === 0) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'At least one node is required for create_concept_map.',
+            }),
+        }
+    }
+
+    const COLS = Math.ceil(Math.sqrt(nodesList.length)) || 3
+    const GAP_X = 260
+    const GAP_Y = 160
+    const START_X = 100
+    const START_Y = 100
+
+    const formattedNodes = nodesList.map((n, idx) => {
+        const row = Math.floor(idx / COLS)
+        const col = idx % COLS
+        const id = String(n.id || `node-${idx + 1}`).trim()
+        const label = String(n.label || n.title || n.name || id).trim()
+        const x = typeof n.x === 'number' ? n.x : START_X + col * GAP_X
+        const y = typeof n.y === 'number' ? n.y : START_Y + row * GAP_Y
+        const color = typeof n.color === 'string' ? n.color : undefined
+        const icon = typeof n.icon === 'string' ? n.icon : undefined
+        const nodeType = typeof n.type === 'string' ? n.type : 'concept'
+        const tags = Array.isArray(n.tags) ? n.tags.map((t: any) => String(t).trim()) : undefined
+        const desc = typeof n.description === 'string' ? n.description.trim() : undefined
+
+        return {
+            id,
+            label,
+            description: desc,
+            x,
+            y,
+            color,
+            icon,
+            type: nodeType,
+            tags,
+        }
+    })
+
+    const formattedEdges = edgesList
+        .map((e) => {
+            const from = String(e.from || e.source || '').trim()
+            const to = String(e.to || e.target || '').trim()
+            const label = e.label ? String(e.label).trim() : undefined
+            const style = ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid'
+            const color = typeof e.color === 'string' ? e.color : undefined
+
+            return {
+                from,
+                to,
+                label,
+                style,
+                color,
+            }
+        })
+        .filter((e) => e.from && e.to)
+
+    const canvasSpec: CanvasSpec = {
+        title: mapTitle,
+        description: description || `Visual concept map for ${mapTitle}`,
+        nodes: formattedNodes,
+        edges: formattedEdges,
+    }
+
+    const artifactContent = JSON.stringify(canvasSpec, null, 2)
+    const artifact: ArtifactDocument = {
+        id: `art-canvas-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        identifier: `canvas-${Date.now()}`,
+        title: mapTitle,
+        type: 'canvas',
+        language: 'json',
+        content: artifactContent,
+        description: description || `Visual concept map: ${mapTitle}`,
+        version: 1,
+        createdAt: new Date().toISOString(),
+    }
+
+    return {
+        ok: true,
+        result: clip(
+            JSON.stringify({
+                ok: true,
+                id: artifact.id,
+                title: mapTitle,
+                nodes_count: formattedNodes.length,
+                edges_count: formattedEdges.length,
+            }),
+            MAX_TOOL_RESULT
+        ),
+        artifact,
+    }
+}
+
 const TOOL_NAME_ALIASES: Record<string, string> = {
     google_search: 'web_search',
     search: 'web_search',
@@ -776,6 +1330,32 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     footnote: 'add_notebook_footnote',
     add_dipnot: 'add_notebook_footnote',
     dipnot: 'add_notebook_footnote',
+    cross_examine: 'cross_examine_argument',
+    socratic_cross_examine: 'cross_examine_argument',
+    socratic_examine: 'cross_examine_argument',
+    examine_argument: 'cross_examine_argument',
+    dialectical_examination: 'cross_examine_argument',
+    corpus_search: 'verified_corpus_search',
+    philosophical_corpus: 'verified_corpus_search',
+    search_philosophy_corpus: 'verified_corpus_search',
+    philosophy_search: 'verified_corpus_search',
+    search_canonical_texts: 'verified_corpus_search',
+    canonical_search: 'verified_corpus_search',
+    workspace_preset: 'arrange_workspace_preset',
+    arrange_workspace: 'arrange_workspace_preset',
+    set_workspace_preset: 'arrange_workspace_preset',
+    apply_workspace_preset: 'arrange_workspace_preset',
+    create_flashcards: 'generate_flashcards',
+    flashcards: 'generate_flashcards',
+    study_flashcards: 'generate_flashcards',
+    make_flashcards: 'generate_flashcards',
+    compile_notebook: 'export_notebook',
+    export_notes: 'export_notebook',
+    download_notebook: 'export_notebook',
+    concept_map: 'create_concept_map',
+    generate_concept_map: 'create_concept_map',
+    mindmap: 'create_concept_map',
+    create_mindmap: 'create_concept_map',
 }
 
 export function resolveToolName(raw: string): string {
@@ -1124,6 +1704,70 @@ export async function executeToolCall(
             }
             const language = asText(args.language || args.lang, 10).trim() || undefined
             const executed = await executeSynthesizeSpeech(text, language, env, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'cross_examine_argument') {
+            const argumentText = asText(args.argument || args.claim || args.thesis || args.text, 2_000).trim()
+            if (!argumentText) {
+                const result = JSON.stringify({ ok: false, error: 'argument is required for cross_examine_argument' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const tradition = asText(args.philosophical_tradition || args.tradition || args.school, 60).trim() || undefined
+            const counterTarget = asText(args.counter_target || args.target, 200).trim() || undefined
+            const executed = executeCrossExamineArgument(argumentText, tradition, counterTarget)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'verified_corpus_search') {
+            const query = asText(args.query || args.search || args.q, MAX_SEARCH_QUERY).trim()
+            if (!query) {
+                const result = JSON.stringify({ ok: false, error: 'query is required for verified_corpus_search' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const philosopher = asText(args.philosopher || args.author, 60).trim() || undefined
+            const work = asText(args.work || args.book, 100).trim() || undefined
+            const maxResults = typeof args.max_results === 'number' ? Math.min(Math.max(1, args.max_results), 10) : 5
+            const executed = executeVerifiedCorpusSearch(query, philosopher, work, maxResults)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'arrange_workspace_preset') {
+            const presetName = asText(args.preset_name || args.preset || args.name, 40).trim()
+            if (!presetName) {
+                const result = JSON.stringify({ ok: false, error: 'preset_name is required for arrange_workspace_preset' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const executed = executeArrangeWorkspacePreset(presetName, host)
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'generate_flashcards') {
+            const rawCards = args.flashcards || args.cards || args.deck
+            const deckTitle = asText(args.deck_title || args.title || args.topic, 100).trim() || undefined
+            const saveToNotebook = typeof args.save_to_notebook === 'boolean' ? args.save_to_notebook : undefined
+            const notebookId = asText(args.notebook_id || args.notebookId, 80).trim() || undefined
+            const executed = executeGenerateFlashcards(rawCards, deckTitle, saveToNotebook, notebookId, host)
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'export_notebook') {
+            const format = asText(args.format || args.type || args.as, 20).trim() || 'markdown'
+            const notebookId = asText(args.notebook_id || args.notebookId, 80).trim() || undefined
+            const includeToc = typeof args.include_toc === 'boolean' ? args.include_toc : true
+            const includeFootnotes = typeof args.include_footnotes === 'boolean' ? args.include_footnotes : true
+            const executed = executeExportNotebook(format, notebookId, includeToc, includeFootnotes, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'create_concept_map') {
+            const title = asText(args.title || args.name, 100).trim() || 'Concept Map'
+            const nodes = args.nodes || args.elements || args.concepts
+            const edges = args.edges || args.connections || args.relations
+            const description = asText(args.description, 300).trim() || undefined
+            const executed = executeCreateConceptMap(title, nodes, edges, description)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }

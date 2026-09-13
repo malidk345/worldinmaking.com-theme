@@ -32,21 +32,21 @@
 
 - **WIM AI Tool Expansion Roadmap (Approved Architecture):**
   1. **Multimodal Capabilities (Cloudflare Workers AI):**
-     - `analyze_image` / `inspect_visual`: Vision via LLaVA 1.5 7B / ResNet for analyzing uploaded documents, screenshots, handwritten notes, and diagrams.
-     - `transcribe_audio_note`: Voice note to structured notebook blocks via Whisper Large V3 Turbo (reusing Worker `/transcribe`).
-     - `synthesize_voice` / `speak_quote`: Text-to-Speech via MeloTTS / ElevenLabs for philosopher audio narrations.
+     - `analyze_image` / `inspect_visual`: Vision via LLaVA 1.5 7B / ResNet for analyzing uploaded documents, screenshots, handwritten notes, and diagrams (Completed).
+     - `transcribe_audio`: Voice note to structured notebook blocks via Whisper Large V3 Turbo (Completed).
+     - `synthesize_speech`: Text-to-Speech via MeloTTS / Cloudflare for philosopher audio narrations (Completed).
   2. **Semantic Memory & Philosophical RAG:**
-     - `semantic_search_notebooks`: Meaning-based search across all user notebooks via Cloudflare Vectorize + BGE M3 embeddings.
-     - `cross_examine_argument`: Socratic challenger mode to identify logical fallacies, contradictions, and counter-perspectives from historical thinkers.
-     - `verified_corpus_search`: Fact-checked citations from canonical philosophical texts (Nietzsche, Spinoza, Kant, Schopenhauer) to prevent hallucinations.
+     - `cross_examine_argument`: Socratic challenger / dialectical cross-examiner exposing logical fallacies, unstated dogmas, creating Socratic dilemmas and counter-perspectives from historical schools (Completed).
+     - `verified_corpus_search`: Fact-checked primary citation search engine (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) to eliminate hallucinations (Completed).
+     - `semantic_search_notebooks`: Meaning-based search across all user notebooks via Cloudflare Vectorize + BGE M3 embeddings (Planned).
   3. **Desktop OS & Workspace Automation:**
-     - `arrange_workspace_preset`: Contextual workspace layouts (e.g., "Deep Reading Mode" snapping Reader left, Notebook right, dark theme).
-     - `export_notebook`: Compiling notebook or thread into formatted PDF/LaTeX/EPUB hosted on R2.
-     - `run_code_sandbox`: Secure lightweight calculation and visualization sandbox.
+     - `arrange_workspace_preset`: Contextual workspace layouts (deep_reading, studio, minimal, split_dual, research) (Completed).
+     - `export_notebook`: Compiling notebook into standalone publication-ready documents (markdown with TOC, LaTeX article, styled HTML5, text) (Completed).
+     - `run_code_sandbox`: Lightweight calculation and visualization sandbox (Planned).
   4. **Interactive Notebook & Learning Tools:**
-     - `create_concept_map`: Visualizing idea networks and philosophical concept relationships via interactive graphs.
-     - `generate_flashcards`: Automatic active recall / spaced repetition decks from notebook highlights.
-     - `daily_reflection_prompt`: Context-aware evening reflection / stoic journal prompts based on daily writings.
+     - `create_concept_map`: Visualizing idea networks and philosophical concept relationships via interactive vector canvas artifacts with auto-grid layout (Completed).
+     - `generate_flashcards`: Automatic active recall / spaced repetition study decks with optional notebook block saving (Completed).
+     - `daily_reflection_prompt`: Context-aware evening reflection / stoic journal prompts based on daily writings (Planned).
 
 ---
 
@@ -56,6 +56,30 @@
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-13 — Antigravity (Implementation of Roadmap AI Tools: Philosophical RAG, Socratic Cross-Examiner, Workspace Presets, Flashcards, Notebook Exporter, Concept Maps)
+- **Scope:** Implemented the full suite of approved AI tools from the architectural roadmap (`AI_MEMORY.md` §3):
+  1. `cross_examine_argument`: Dialectical Socratic cross-examiner identifying formal/informal logical fallacies, extracting unstated assumptions, formulating Socratic dilemmas, and synthesizing multi-tradition philosophical counter-perspectives (Nietzschean, Stoic, Kantian, Existentialist).
+  2. `verified_corpus_search`: Primary philosophical source engine indexing 9 canonical philosophers (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) with authentic aphorisms, book sections, and primary citations to prevent quote hallucinations.
+  3. `arrange_workspace_preset`: Automated desktop OS layout manager mapping presets (`deep_reading`, `studio`, `minimal`, `split_dual`, `research`) directly into window manager actions.
+  4. `generate_flashcards`: Active-recall flashcard study deck generator with collapsible question/answer details, mnemonic hints, topic tags, and optional direct notebook saving.
+  5. `export_notebook`: Document compiler transforming notebook markdown into publication-ready documents (`markdown` with anchor-linked TOC, `latex` article with table of contents and formatted sections, responsive styled `html`, clean `text`).
+  6. `create_concept_map`: Automatic visual idea network builder generating interactive `canvas` artifacts with auto-calculated non-overlapping grid coordinates and directed semantic relationships.
+- **Architectural Rules Kept:**
+  1. No second orchestrator: All tools wire directly into `spec.ts` (tool protocol & schema), `modes.ts` (plan vs execute mode constraints), `labels.ts` (workbench badges), and `execute.ts` (dispatcher & executors).
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors.
+  3. Plan mode security: Read-only and analytical tools (`cross_examine_argument`, `verified_corpus_search`, `export_notebook`) permitted in plan mode; mutating tools (`arrange_workspace_preset`, `generate_flashcards`, `create_concept_map`) strictly locked until plan execution.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/philosophical-corpus.ts`: Created curated canonical database and keyword relevance search engine across 9 philosophers.
+  2. `src/lib/bots/tools/argument-cross-examination.ts`: Created dialectical cross-examination and fallacy detection engine.
+  3. `src/lib/bots/agent/modes.ts`: Configured plan vs execute tool permissions.
+  4. `src/lib/bots/tools/labels.ts`: Registered badges and previews for all 6 tools.
+  5. `src/lib/bots/tools/spec.ts`: Defined schemas in `OPENAI_CHAT_TOOLS` and protocol documentation in `TOOL_PROTOCOL`.
+  6. `src/lib/bots/tools/execute.ts`: Implemented argument aliases, tool name aliases, execution helpers, and switch dispatching.
+  7. `src/lib/bots/tools/execute-roadmap-tools.test.ts`: Created 17 unit tests verifying tool dispatch, arguments, aliases, artifact generation, error handling, and plan mode isolation.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-roadmap-tools.test.ts`: PASS (17/17 tests passed).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
 
 ### 2026-09-13 — Antigravity (Resilient Chat Stream Abort & Cancellation Handling)
 - **Scope:** Fixed runtime error in `src/components/ClaudeWorkspaceChat/index.tsx (623:22) @ abort` where stream cancellation, unmounting, or user-initiated abort could cause an unhandled promise rejection or race condition during fetch/stream reader cleanup.
