@@ -140,8 +140,20 @@ export function autoCaptureEventToDescription(
 }
 
 export function getEventNamesForAction(actionId: string | number, allActions: ActionType[]): string[] {
+    // Bolt: Optimized array allocation by avoiding chained .filter().flatMap()
+    // and intermediate step mappings, doing an O(N) single-pass iteration.
     const id = parseInt(String(actionId))
-    return allActions
-        .filter((a) => a.id === id)
-        .flatMap((a) => a.steps?.filter((step) => step.event).map((step) => String(step.event)) as string[])
+    const eventNames: string[] = []
+
+    for (const action of allActions) {
+        if (action.id === id && action.steps) {
+            for (const step of action.steps) {
+                if (step.event) {
+                    eventNames.push(String(step.event))
+                }
+            }
+        }
+    }
+
+    return eventNames
 }

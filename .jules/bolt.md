@@ -47,3 +47,7 @@
 ## 2024-05-30 - [Performance] Optimize url parameter serialization
 **Learning:** `Object.entries().filter().reduce().map()` chains inside utility functions that run frequently (like URL param parsers used for fetch calls or routing) generate unnecessary intermediate arrays and O(N) memory churn.
 **Action:** Replaced chained array methods with a single standard `for...in` loop and `.push()` in `toParams` to improve serialization performance by 60%+ and eliminate intermediate object allocations.
+
+## 2024-05-15 - Array spread optimization in `getEventNamesForAction`
+**Learning:** Chaining `.filter().flatMap(a => a.steps?.filter().map())` in helper functions like `getEventNamesForAction` allocates redundant intermediate arrays, causing memory churn and GC pressure in tight loops.
+**Action:** Replace functional array chaining with nested `for...of` loops and `.push()` to process the items sequentially in a single pass, which is an O(N) allocation approach without creating throwaway arrays.
