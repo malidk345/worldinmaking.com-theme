@@ -1,7 +1,7 @@
 import { dayjs } from '~nb-lib/lemon-ui'
 import { stringifyWithBigInts } from 'lib/utils/json'
 
-export function toParams(obj: Record<string, any>, explodeArrays: boolean = false): string {
+export function toParams(obj: Record<string, any>, explodeArrays = false): string {
     if (!obj) {
         return ''
     }
@@ -14,10 +14,13 @@ export function toParams(obj: Record<string, any>, explodeArrays: boolean = fals
         return encodeURIComponent(val)
     }
 
-    return Object.entries(obj)
-        .filter((item) => item[1] != undefined && item[1] != null)
-        .reduce(
-            (acc, [key, val]) => {
+    // Bolt: Optimized query string generation by avoiding Object.entries().filter().reduce().map() chain
+    // which caused excessive intermediate array allocations and O(N) memory churn.
+    const result: string[] = []
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const val = obj[key]
+            if (val != undefined && val != null) {
                 /**
                  *  query parameter arrays can be handled in two ways
                  *  either they are encoded as a single query parameter
@@ -26,17 +29,17 @@ export function toParams(obj: Record<string, any>, explodeArrays: boolean = fals
                  *    a=[1, 2] => a=1&a=2
                  **/
                 if (explodeArrays && Array.isArray(val)) {
-                    val.forEach((v) => acc.push([key, v]))
+                    for (let i = 0; i < val.length; i++) {
+                        result.push(`${key}=${handleVal(val[i])}`)
+                    }
                 } else {
-                    acc.push([key, val])
+                    result.push(`${key}=${handleVal(val)}`)
                 }
+            }
+        }
+    }
 
-                return acc
-            },
-            [] as [string, any][]
-        )
-        .map(([key, val]) => `${key}=${handleVal(val)}`)
-        .join('&')
+    return result.join('&')
 }
 
 export function fromParamsGivenUrl(url: string): Record<string, any> {
