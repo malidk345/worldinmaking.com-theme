@@ -1174,3 +1174,17 @@
 ## 2023-10-18 - Forum API Validation and Reliability Improvements
 **Learning:** `req.json()` in Edge endpoints must be carefully bounded. Unbounded JSON bodies expose APIs to memory exhaustion from excessively large request payloads. Furthermore, placing rate-limiting assertions in front of heavy conditional blocks (like bot logic gates) can consume limited burst tokens on rejected/skipped processes. Also, calling wrapper authentication functions that execute `getUser()` when a `getUser()` call has already happened causes duplicate database network trips.
 **Action:** When working on JSON-heavy edge handlers (e.g., in `pages/api`), prefer `readJsonObject(req, size_limit)` to assert boundary limits *before* deserialization. Additionally, carefully defer rate limits until immediately before the guarded operation runs (after validation gates) to prevent users from consuming limits on blocked requests. Avoid redundant `getUser()` calls by caching and cascading user data, or by checking deterministic logic first before querying DB authorizations.
+
+### $(date +%Y-%m-%d) — Jules (A1 ReaderView PostHog about)
+- **Scope:** Replaced PostHog marketing copy in ReaderView with WorldInMaking about text.
+- **Files Modified:** `src/components/AboutPostHog/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm test:smoke`, `rg "PostHog is the leading" src`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished card is A2.
+
+### $(date +%Y-%m-%d) — Jules (A1 ReaderView PostHog about)
+- **Scope:** Replaced PostHog marketing copy in ReaderView with WorldInMaking about text.
+- **Files Modified:** `src/components/AboutPostHog/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm test:smoke`, `rg "PostHog is the leading" src`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished card is A2.
