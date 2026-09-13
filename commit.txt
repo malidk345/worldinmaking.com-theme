@@ -1,6 +1,0 @@
-⚡ Bolt: optimize getEventNamesForAction to reduce array allocations
-
-What: Replaced chained array methods (.filter().flatMap().filter().map()) in `getEventNamesForAction` with a single-pass `for...of` loop.
-Why: The chained approach creates multiple redundant intermediate arrays for every step, causing unnecessary memory allocation and garbage collection overhead, particularly when called frequently in tight loops or rendering cycles.
-Impact: Reduces memory churn and execution time from O(N) multiple pass with many array allocations down to O(N) single pass with zero throwaway array allocations.
-Measurement: Compare memory profiling before and after. Function execution time will be faster.
