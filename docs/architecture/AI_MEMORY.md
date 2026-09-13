@@ -57,6 +57,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Exhaustive Full-Scale Code Generation & Artifact Buffer Expansion)
+- **Scope:** Solved the issue where the AI was producing lazy, superficial 30–50 line demo skeletons or placeholders ("// ...") for complex engineering, architectural, and visual tasks. Expanded artifact buffer capacity 5x (from 24KB to 120KB) and enforced strict full-scale production directives across all system prompts.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; wired directly into `src/lib/bots/ask-ai.ts`, `src/lib/bots/tools/spec.ts`, and `src/lib/bots/tools/execute.ts`.
+  2. Maintained 8,192 token completion window in `loop.ts`.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/execute.ts`: Increased `MAX_ARTIFACT_BODY` from `24_000` to `120_000` characters, eliminating premature truncation of large, multi-hundred/thousand-line implementations.
+  2. `src/lib/bots/ask-ai.ts`: Added `EXHAUSTIVE IMPLEMENTATION & FULL SCALE (NO 50-LINE TOYS)` directive into `OPERATING RULES`.
+  3. `src/lib/bots/tools/spec.ts`: Added `Production-Scale Code & Interactive Artifacts` directive into `TOOL_PROTOCOL` under `TASK SCALE ELASTICITY & STAMINA`, banning lazy placeholders, TODOs, and superficial skeletons.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Universal Generative Interactive Engine: Unconstrained HTML/Three.js/Canvas/Lucide Runtime)
 - **Scope:** Abolished rigid domain-specific silos and fixed schemas. Replaced fragile sandbox failures with a bulletproof Universal Interactive Runtime where the AI has full generative freedom to build any application required on the fly (architectural CAD floorplanners with 3D views, physics particle sandboxes, mechanical simulations, playable mini-games, custom calculators, synthesizers) without schema restrictions.
 - **Architectural Rules Kept:**

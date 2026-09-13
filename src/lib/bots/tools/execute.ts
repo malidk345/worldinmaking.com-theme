@@ -33,7 +33,7 @@ import { toolResultSummary } from './labels'
 import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, type ArtifactToolType } from './spec'
 
 const MAX_TITLE = 80
-const MAX_ARTIFACT_BODY = 24_000
+const MAX_ARTIFACT_BODY = 120_000
 const MAX_SEARCH_QUERY = 300
 const MAX_TOOL_RESULT = 4_000
 const MAX_READ_RESULT = 8_000

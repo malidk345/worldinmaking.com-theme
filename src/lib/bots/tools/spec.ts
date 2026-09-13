@@ -810,6 +810,10 @@ TOOL USE:
        - Back up arguments with real literature citations via search_academic_corpus or web_search.
        - Use the tool loop budget (up to 16 steps) to actually build the comprehensive body of work.
     3. In the final public bubble, deliver an executive synthesis, outline the sections created in the user's notebook, and include key citations and conclusions.
+  * Production-Scale Code & Interactive Artifacts (NO 50-LINE TOYS OR LAZY SKELETONS):
+    - When building an interactive application, 3D scene, architectural CAD plan, simulation, game, or technical tool, NEVER produce lazy 30-50 line demo skeletons or placeholders ("// add remaining logic here", "// TODO", "// ...").
+    - If the user asks for a house, room, tool, machine, game, or simulation, fully implement every single part, geometry, coordinate, event listener, control slider, and calculation.
+    - When a task requires complexity, write out the comprehensive code (hundreds or thousands of lines) without artificial brevity. Maximize depth, fidelity, and professional craftsmanship.
 - Never print <tool_code>, <tool_call>, Python-style todo_write(...), or default_api.* in the bubble. Tools go through the function channel only.
 - If no tool is needed, answer normally and at the length they asked for.
 `.trim()
