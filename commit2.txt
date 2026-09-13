@@ -1,3 +1,0 @@
-Fix CI failure: handle WIM_SKIP_ENV_HARD_FAIL in supabase-admin.ts
-
-Modified `getSupabaseClient` to return a mock client when `WIM_SKIP_ENV_HARD_FAIL` is set to 1 and the real environment variables are missing. This matches the fallback behavior needed for CI smoke tests without real keys.

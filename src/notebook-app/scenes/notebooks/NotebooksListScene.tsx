@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { collectLocalNotebookFaces } from './notebookFaces'
 import { NotebookFaceStack } from './NotebookFaceStack'
 import { NotebookTag } from './NotebookMeta'
@@ -175,40 +175,54 @@ export function NotebooksListScene({
         })
     }
 
-    const filteredNotebooks = notebooks.filter((nb) => {
-        if (!notebookMatchesQuery(nb, searchQuery)) {
-            return false
-        }
-        if (createdByFilter === 'templates' && !nb.isTemplate) {
-            return false
-        }
-        if (createdByFilter === 'user' && (nb.isTemplate || (nb.access_role && nb.access_role !== 'owner'))) {
-            return false
-        }
-        if (createdByFilter === 'shared' && (!nb.access_role || nb.access_role === 'owner')) {
-            return false
-        }
-        if (createdByFilter === 'daily' && nb.kind !== 'daily') {
-            return false
-        }
-        if (folderFilter && normalizeFolder(nb.folder) !== folderFilter) {
-            return false
-        }
-        if (tagFilter && !uniqueTags(nb.tags).some((tag) => tag.toLowerCase() === tagFilter.toLowerCase())) {
-            return false
-        }
-        return true
-    })
+    const filteredNotebooks = useMemo(() => {
+        return notebooks.filter((nb) => {
+            if (!notebookMatchesQuery(nb, searchQuery)) {
+                return false
+            }
+            if (createdByFilter === 'templates' && !nb.isTemplate) {
+                return false
+            }
+            if (createdByFilter === 'user' && (nb.isTemplate || (nb.access_role && nb.access_role !== 'owner'))) {
+                return false
+            }
+            if (createdByFilter === 'shared' && (!nb.access_role || nb.access_role === 'owner')) {
+                return false
+            }
+            if (createdByFilter === 'daily' && nb.kind !== 'daily') {
+                return false
+            }
+            if (folderFilter && normalizeFolder(nb.folder) !== folderFilter) {
+                return false
+            }
+            if (tagFilter && !uniqueTags(nb.tags).some((tag) => tag.toLowerCase() === tagFilter.toLowerCase())) {
+                return false
+            }
+            return true
+        })
+    }, [notebooks, searchQuery, createdByFilter, folderFilter, tagFilter])
 
-    const folders = listNotebookFolders(notebooks)
-    const tags = listNotebookTags(notebooks)
-    const dailyDates = notebooks
-        .filter((notebook) => notebook.kind === 'daily' && notebook.dailyDate)
-        .map((notebook) => notebook.dailyDate as string)
-    const allTasks = collectNotebookTasks(getNotebooks())
-    const tasks = collectNotebookTasks(listView === 'tasks' ? filteredNotebooks : [])
-    const taskGroups = groupNotebookTasks(tasks)
-    const openTaskCount = allTasks.filter((task) => !task.done).length
+    const folders = useMemo(() => listNotebookFolders(notebooks), [notebooks])
+    const tags = useMemo(() => listNotebookTags(notebooks), [notebooks])
+
+    const dailyDates = useMemo(() => {
+        return notebooks
+            .filter((notebook) => notebook.kind === 'daily' && notebook.dailyDate)
+            .map((notebook) => notebook.dailyDate as string)
+    }, [notebooks])
+
+    const openTaskCount = useMemo(() => {
+        const t = collectNotebookTasks(getNotebooks())
+        return t.filter((task) => !task.done).length
+    }, [notebooks])
+
+    const { tasks, taskGroups } = useMemo(() => {
+        const filteredTasks = collectNotebookTasks(listView === 'tasks' ? filteredNotebooks : [])
+        return {
+            tasks: filteredTasks,
+            taskGroups: groupNotebookTasks(filteredTasks),
+        }
+    }, [listView, filteredNotebooks])
 
     const handleOpenDaily = (key?: string) => {
         const date = key ? dateFromKey(key) : new Date()
@@ -619,7 +633,7 @@ export function NotebooksListScene({
                                             ? `tag:${tagFilter}`
                                             : `filter:${createdByFilter}`
                                 }
-                                onValueChange={(value) => {
+                                onValueChange={(value: string) => {
                                     if (!value) return
                                     if (value === 'view:tasks') {
                                         setListView('tasks')
