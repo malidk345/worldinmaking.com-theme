@@ -27,6 +27,21 @@ const MermaidPreview = dynamic(
   { ssr: false }
 )
 
+const CanvasArtifactRenderer = dynamic(
+  () => import('./CanvasArtifactRenderer').then((module) => module.CanvasArtifactRenderer),
+  { ssr: false }
+)
+
+const Model3DArtifactRenderer = dynamic(
+  () => import('./Model3DArtifactRenderer').then((module) => module.Model3DArtifactRenderer),
+  { ssr: false }
+)
+
+const SimulationArtifactRenderer = dynamic(
+  () => import('./SimulationArtifactRenderer').then((module) => module.SimulationArtifactRenderer),
+  { ssr: false }
+)
+
 interface ArtifactWindowContentProps {
   artifact: Artifact
   onInsertToNotebook?: (content: string) => void
@@ -64,6 +79,9 @@ export function ArtifactWindowContent({
 
   const postHogSpec = parsePostHogAnalyticsSpec(content) || (artifact.type === 'posthog-analytics' ? (typeof artifact.content === 'object' ? artifact.content : parsePostHogAnalyticsSpec(artifact.content)) : null)
   const isMermaid = artifactLooksLikeMermaid(artifact)
+  const isCanvas = artifact.type === 'canvas' || ['canvas', 'mindmap', 'sketch', 'whiteboard'].includes(lang)
+  const isModel3D = artifact.type === 'model3d' || ['model3d', '3d', 'three'].includes(lang)
+  const isSimulation = artifact.type === 'simulation' || ['simulation', 'sim', 'parametric'].includes(lang)
   const isChart = artifact.type === 'chart' || Boolean(artifact.chartSpec)
   const isReact = artifact.type === 'react' || ['react', 'tsx', 'jsx', 'wim-ui'].includes(lang)
   const isHtml =
@@ -133,7 +151,19 @@ export function ArtifactWindowContent({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-primary">
         {activeTab === 'preview' ? (
           <div className="absolute inset-0 min-h-0 w-full">
-            {postHogSpec ? (
+            {isCanvas ? (
+              <div className="h-full min-h-0 w-full">
+                <CanvasArtifactRenderer content={artifact.content} />
+              </div>
+            ) : isModel3D ? (
+              <div className="h-full min-h-0 w-full">
+                <Model3DArtifactRenderer content={artifact.content} />
+              </div>
+            ) : isSimulation ? (
+              <div className="h-full min-h-0 w-full overflow-auto">
+                <SimulationArtifactRenderer content={artifact.content} />
+              </div>
+            ) : postHogSpec ? (
               <div className="h-full min-h-0 p-4 overflow-auto">
                 <PostHogAnalyticsDashboard spec={postHogSpec} />
               </div>

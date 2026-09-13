@@ -57,6 +57,16 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
         }
     }
 
+    if (artifact.type === 'canvas') {
+        return [title, fence('canvas', body)].filter(Boolean).join('\n\n')
+    }
+    if (artifact.type === 'model3d') {
+        return [title, fence('model3d', body)].filter(Boolean).join('\n\n')
+    }
+    if (artifact.type === 'simulation') {
+        return [title, fence('simulation', body)].filter(Boolean).join('\n\n')
+    }
+
     if (artifact.type === 'table') {
         return [title, asMarkdownTable(body)].filter(Boolean).join('\n\n')
     }

@@ -72,7 +72,7 @@ export interface ThinkingProcess {
   currentNode?: 'root' | 'tools' | 'synthesis'
 }
 
-export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
+export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics' | 'canvas' | 'model3d' | 'simulation'
 
 export type ArtifactOrigin = {
   top: number

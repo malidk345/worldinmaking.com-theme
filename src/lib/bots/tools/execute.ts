@@ -193,6 +193,24 @@ const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
     kpi: 'posthog-analytics',
     metrics: 'posthog-analytics',
     funnel: 'posthog-analytics',
+    canvas: 'canvas',
+    mindmap: 'canvas',
+    concept_map: 'canvas',
+    idea_map: 'canvas',
+    flow_diagram: 'canvas',
+    whiteboard: 'canvas',
+    sketch: 'canvas',
+    model3d: 'model3d',
+    '3d': 'model3d',
+    '3d_model': 'model3d',
+    model: 'model3d',
+    scene: 'model3d',
+    mesh: 'model3d',
+    simulation: 'simulation',
+    sim: 'simulation',
+    calculator: 'simulation',
+    parametric: 'simulation',
+    interactive_model: 'simulation',
 }
 
 function parseObjectJson(raw: string): Record<string, unknown> | null {
@@ -245,7 +263,7 @@ function normalizeArgs(name: string, args: Record<string, unknown>): Record<stri
 function languageFor(type: ArtifactKind): string | undefined {
     if (type === 'mermaid') return 'mermaid'
     if (type === 'react') return 'tsx'
-    if (type === 'chart' || type === 'json') return 'json'
+    if (type === 'chart' || type === 'json' || type === 'canvas' || type === 'model3d' || type === 'simulation') return 'json'
     if (type === 'html') return 'html'
     if (type === 'svg') return 'svg'
     if (type === 'table' || type === 'markdown') return 'markdown'

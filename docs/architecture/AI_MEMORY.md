@@ -57,6 +57,32 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (WIM Interactive Visual Engine: Infinite Canvas, 3D Models, Parametric Simulations)
+- **Scope:** Replaced fragile code sandbox iframes with 3 native, robust interactive visual artifact formats:
+  1. **Infinite Vector Mindmap & Flow Canvas (`type: 'canvas'`)**: High-performance draggable nodes, zoom/pan navigation via `react-zoom-pan-pinch`, bezier curve connectors, color-coded node themes (emerald, blue, purple, amber, rose), and live search/reset.
+  2. **Interactive 3D Concept & Scene Viewer (`type: 'model3d'`)**: Zero-install Three.js WebGL viewport with touch/mouse inertia damping, rotation/zoom, wireframe toggle, auto-rotate, and presets (`polyhedra`, `orbital`, `dna_helix`, `network_nodes`, `custom_mesh`).
+  3. **Parametric Interactive Simulation & Reactive Cards (`type: 'simulation'`)**: Dynamic parameter sliders with real-time math evaluation, continuous 60 FPS Recharts area/line/bar charts, and reactive KPI metric cards.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; fully integrated into existing `create_artifact` tool pipeline (`src/lib/bots/tools/execute.ts`, `spec.ts`).
+  2. Native React 18 client-side rendering with dynamic `next/dynamic` imports — zero broken iframe runtimes, zero security sandbox escapes.
+  3. Seamless markdown embedding support in notebook blocks via `src/lib/notebook-artifact-block.ts`.
+- **Changes Applied:**
+  1. `package.json`: Installed `three` and `@types/three` via `pnpm`.
+  2. `src/lib/artifacts/kinds.ts`: Added `'canvas' | 'model3d' | 'simulation'` to canonical `ArtifactKind` union.
+  3. `src/components/ClaudeWorkspaceChat/types.ts`: Extended `ArtifactType` union to include `'canvas' | 'model3d' | 'simulation'`.
+  4. `src/lib/ai/visual-artifacts.ts`: Implemented type schemas (`CanvasArtifactSpec`, `Model3DArtifactSpec`, `SimulationArtifactSpec`) and robust tolerant JSON parsers (`parseCanvasSpec`, `parseModel3DSpec`, `parseSimulationSpec`).
+  5. `src/components/ClaudeWorkspaceChat/components/CanvasArtifactRenderer.tsx`: Canvas viewport with pan, pinch-zoom, draggable nodes, and SVG connector curves.
+  6. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`: Full Three.js WebGL scene with procedural geometry generation, rotation controls, wireframe mode, and ambient lighting.
+  7. `src/components/ClaudeWorkspaceChat/components/SimulationArtifactRenderer.tsx`: Interactive sliders, safe formula computation, metric cards, and responsive charts.
+  8. `src/components/ClaudeWorkspaceChat/components/ArtifactWindowContent.tsx`: Integrated dynamic renderers into the workspace artifact preview window.
+  9. `src/lib/bots/tools/spec.ts`: Extended `create_artifact` spec types, protocol instructions, and JSON schemas for visual formats.
+  10. `src/lib/bots/tools/execute.ts`: Added format aliases (`mindmap`, `concept_map`, `3d`, `model`, `parametric`, `sim`), language mapping, and execution dispatch.
+  11. `src/lib/notebook-artifact-block.ts`: Added markdown block serialization for canvas, 3D, and simulation artifacts into notebooks.
+  12. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Created unit tests verifying visual artifact creation, alias resolution, and resilient fallback parsing.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (32/32 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Notebook Footnote Integration & Scholarly Notation Engine)
 - **Scope:** Equipped WIM AI with `add_notebook_footnote` tool and real-time OS client integration, allowing the AI to seamlessly anchor footnotes (`[^1]`, `[^2]`, or custom identifiers) to specific text passages/sentences and define formatted citations at the bottom of the document.
 - **Architectural Rules Kept:**
