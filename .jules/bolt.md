@@ -43,3 +43,7 @@
 ## 2026-09-12 - Optimize notification refresh pipeline
 **Learning:** Polling loops combined with focus listeners and panel-open effects can cause cascading redundant network requests. Supabase `auth.getSession()` inside fetchers is slow if the session is already known by the caller context.
 **Action:** Unify multiple fetch triggers behind a single debounced sync function with `useRef` tracking the last fetch time. Pass known user IDs downward to avoid redundant session reads.
+
+## 2025-05-20 - Avoid Object methods inside hot loops
+**Learning:** Calling `Object.keys()` inside a `.filter()` or `.map()` callback creates a new array allocation on every iteration, leading to $O(N)$ unnecessary memory allocations and garbage collection pressure. This creates a significant performance bottleneck when rendering large lists.
+**Action:** When filtering or mapping data based on an object's properties, always extract the `Object.keys()`, `Object.values()`, or `Object.entries()` call outside the loop to compute it once in $O(1)$ time.

@@ -39,14 +39,15 @@ const filterData = (
     data: any[],
     filters: Record<string, { value: any; filter: (obj: any, value: any) => boolean }>
 ) => {
+    // Bolt: Pre-calculate active filters and avoid Object methods in the hot loop
+    // to eliminate O(N) intermediate array allocations and reduce GC pressure.
+    const activeFilters = Object.values(filters).filter((f) => f.value !== undefined)
+
+    // Bolt: Preserve referential equality if no filters are active to prevent downstream re-renders.
+    if (activeFilters.length === 0) return data
+
     return data.filter((obj: any) => {
-        return Object.keys(filters).every((key) => {
-            const { value, filter } = filters[key]
-            if (value === undefined) {
-                return true
-            }
-            return filter(obj, value)
-        })
+        return activeFilters.every(({ value, filter }) => filter(obj, value))
     })
 }
 
