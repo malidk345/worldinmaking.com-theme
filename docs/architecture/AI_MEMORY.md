@@ -57,6 +57,21 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Resilient Chat Stream Abort & Cancellation Handling)
+- **Scope:** Fixed runtime error in `src/components/ClaudeWorkspaceChat/index.tsx (623:22) @ abort` where stream cancellation, unmounting, or user-initiated abort could cause an unhandled promise rejection or race condition during fetch/stream reader cleanup.
+- **Architectural Rules Kept:**
+  1. Maintained standard single `AbortController` lifecycle without introducing external state managers.
+  2. Safe cancellation handling without memory leaks or unhandled promise rejections.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Hardened `abortActiveStream`: Safely verified `controller && typeof controller.abort === 'function'` with null-safe optional chaining (`controller.signal?.aborted`), and attached `.catch(() => {})` to `reader.cancel('client-stop')` to eliminate unhandled promise rejections.
+     - Hardened `isAbortError`: Expanded detection to handle `'client-stop'`, DOMException error code 20 (`ABORT_ERR`), string error variants, and message inspection.
+     - Pinned `activeController` in `handleSendMessage`: Eliminated potential null dereference when `abortActiveStream` clears `abortControllerRef.current` during asynchronous auth headers fetching.
+     - Wrapped `reader.read()` in try/catch inside the stream loop to cleanly re-throw as an `AbortError` whenever the stream signal is aborted or reader rejects on cancellation.
+- **Verification:**
+  1. `pnpm typecheck:shell`: PASS (zero gated errors).
+  2. `pnpm vitest run --environment node src/lib/bots/tools/execute-visual-artifacts.test.ts`: PASS (5/5 tests passed).
+
 ### 2026-09-13 — Antigravity (Viewport UI Overhaul: Clean Professional CAD/3D Aesthetics & Localization Purge)
 - **Scope:** Completely eliminated childish/silly decorative elements (Sparkles, Compass, Eye icons), patronizing tutorial banners ("Fareyle döndürün, tekerlekle yaklaşın...", "Sürükleyerek gezinin..."), and hardcoded Turkish labels across 3D, Canvas, and Simulation renderers. Upgraded viewport interfaces to universal, minimalist professional CAD engineering standards (ISO, FRONT, TOP, WIREFRAME, GRID, RESET).
 - **Architectural Rules Kept:**

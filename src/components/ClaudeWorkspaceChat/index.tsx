@@ -133,9 +133,20 @@ function sanitizePublicAssistantText(value: string): string {
 }
 
 function isAbortError(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false
-  const name = (err as { name?: unknown }).name
-  return name === 'AbortError'
+  if (!err) return false
+  if (err === 'client-stop') return true
+  if (typeof err === 'string') {
+    const lower = err.toLowerCase()
+    return lower.includes('abort') || lower.includes('client-stop')
+  }
+  if (typeof err === 'object') {
+    const e = err as { name?: unknown; message?: unknown; code?: unknown }
+    if (e.name === 'AbortError') return true
+    if (e.code === 20) return true // DOMException.ABORT_ERR
+    const msg = String(e.message || '').toLowerCase()
+    if (msg.includes('aborted') || msg.includes('abort') || msg.includes('client-stop')) return true
+  }
+  return false
 }
 
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
@@ -617,9 +628,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const abortActiveStream = useCallback(() => {
     const controller = abortControllerRef.current
     abortControllerRef.current = null
-    if (controller) {
+    if (controller && typeof controller.abort === 'function') {
       try {
-        if (!controller.signal.aborted) {
+        if (!controller.signal?.aborted) {
           controller.abort()
         }
       } catch {
@@ -628,9 +639,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     const reader = streamReaderRef.current
     streamReaderRef.current = null
-    if (reader) {
+    if (reader && typeof reader.cancel === 'function') {
       try {
-        void reader.cancel('client-stop')
+        reader.cancel('client-stop').catch(() => {
+          /* already closed or aborted */
+        })
       } catch {
         /* already closed */
       }
@@ -991,7 +1004,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('auto'));
     abortActiveStream();
-    abortControllerRef.current = new AbortController();
+    const activeController = new AbortController();
+    abortControllerRef.current = activeController;
     streamReaderRef.current = null;
 
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
@@ -1118,10 +1132,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       const authHeaders = await chatAuthHeadersFresh(true);
+      if (activeController.signal.aborted || abortControllerRef.current !== activeController) {
+        return;
+      }
       const sseRes = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders,
-        signal: abortControllerRef.current.signal,
+        signal: activeController.signal,
         body: JSON.stringify({
           prompt: effectivePrompt,
           byok: getActiveByokPayload(),
@@ -1223,14 +1240,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       let streamedCitations: Message['citations'] = [];
 
       let lastTokenFlushTime = 0;
-      const streamSignal = abortControllerRef.current?.signal;
+      const streamSignal = activeController.signal;
 
       while (true) {
-        if (streamSignal?.aborted) {
+        if (streamSignal.aborted) {
           const abortErr = new DOMException('The operation was aborted.', 'AbortError')
           throw abortErr
         }
-        const { value, done } = await reader.read();
+        let readResult: ReadableStreamReadResult<Uint8Array>
+        try {
+          readResult = await reader.read();
+        } catch (readErr) {
+          if (streamSignal.aborted || isAbortError(readErr)) {
+            throw new DOMException('The operation was aborted.', 'AbortError')
+          }
+          throw readErr
+        }
+        const { value, done } = readResult;
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
