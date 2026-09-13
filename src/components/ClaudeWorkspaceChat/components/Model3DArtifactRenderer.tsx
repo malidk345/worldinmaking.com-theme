@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import * as THREE from 'three'
-import { Play, Pause, RotateCcw, Box, Eye, Sparkles, Compass, Grid } from 'lucide-react'
+import { Play, Pause, RotateCcw, Box, Grid } from 'lucide-react'
 
 import { Model3DSpec, Model3DObjectSpec, parseModel3DSpec } from '../../../lib/ai/visual-artifacts'
 export type { Model3DSpec, Model3DObjectSpec }
@@ -277,7 +277,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
                 interactiveMeshes.push(m)
                 if (!m.userData?.name) {
                   m.userData = {
-                    name: m.name || 'Model Parçası',
+                    name: m.name || 'Mesh',
                     type: 'gltf-mesh',
                     position: [m.position.x, m.position.y, m.position.z],
                   }
@@ -324,13 +324,13 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
           const s1 = new THREE.Mesh(sphereGeo, sphereMat1)
           s1.position.set(x1, y, z1)
-          s1.userData = { name: `DNA Baz Cifti ${i + 1}A`, type: 'sphere', position: [x1, y, z1] }
+          s1.userData = { name: `DNA Base Pair ${i + 1}A`, type: 'sphere', position: [x1, y, z1] }
           modelGroup.add(s1)
           interactiveMeshes.push(s1)
 
           const s2 = new THREE.Mesh(sphereGeo, sphereMat2)
           s2.position.set(x2, y, z2)
-          s2.userData = { name: `DNA Baz Cifti ${i + 1}B`, type: 'sphere', position: [x2, y, z2] }
+          s2.userData = { name: `DNA Base Pair ${i + 1}B`, type: 'sphere', position: [x2, y, z2] }
           modelGroup.add(s2)
           interactiveMeshes.push(s2)
 
@@ -345,7 +345,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         const sunGeo = new THREE.SphereGeometry(0.8, 32, 32)
         const sunMat = new THREE.MeshStandardMaterial({ color: activeColor.primary, roughness: 0.2, emissive: activeColor.glow, emissiveIntensity: 0.4 })
         const sun = new THREE.Mesh(sunGeo, sunMat)
-        sun.userData = { name: 'Merkezi Yildiz', type: 'sphere', position: [0, 0, 0] }
+        sun.userData = { name: 'Core', type: 'sphere', position: [0, 0, 0] }
         modelGroup.add(sun)
         interactiveMeshes.push(sun)
 
@@ -361,7 +361,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           const satMat = new THREE.MeshStandardMaterial({ color: activeColor.secondary, metalness: 0.8 })
           const sat = new THREE.Mesh(satGeo, satMat)
           sat.position.set(r, 0, 0)
-          sat.userData = { name: `Yorunge Gezegeni ${idx + 1}`, type: 'sphere', position: [r, 0, 0] }
+          sat.userData = { name: `Orbital Node ${idx + 1}`, type: 'sphere', position: [r, 0, 0] }
           modelGroup.add(sat)
           interactiveMeshes.push(sat)
         })
@@ -376,7 +376,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           metalness: 0.8,
         })
         const outerMesh = new THREE.Mesh(outerGeo, outerMat)
-        outerMesh.userData = { name: 'Dis Ikosahedron', type: 'polyhedra', position: [0, 0, 0] }
+        outerMesh.userData = { name: 'Outer Polyhedron', type: 'polyhedra', position: [0, 0, 0] }
         modelGroup.add(outerMesh)
         interactiveMeshes.push(outerMesh)
 
@@ -388,7 +388,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           metalness: 0.9,
         })
         const innerMesh = new THREE.Mesh(innerGeo, innerMat)
-        innerMesh.userData = { name: 'Ic Oktahedron', type: 'polyhedra', position: [0, 0, 0] }
+        innerMesh.userData = { name: 'Inner Polyhedron', type: 'polyhedra', position: [0, 0, 0] }
         modelGroup.add(innerMesh)
         interactiveMeshes.push(innerMesh)
       }
@@ -570,15 +570,15 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-zinc-950 select-none font-sans">
-      {/* Top Floating Glass Bar */}
+      {/* Top Header Bar */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2.5 rounded-lg border border-white/10 bg-zinc-900/85 px-3 py-1.5 backdrop-blur-md shadow-lg">
-        <Sparkles className="h-4 w-4 text-sky-400" />
+        <Box className="h-4 w-4 text-zinc-400" />
         <div className="flex flex-col">
-          <span className="text-xs font-semibold text-white">{spec.title || '3D Scene & Object Viewport'}</span>
+          <span className="text-xs font-semibold text-white">{spec.title || '3D Viewport'}</span>
           {spec.description && <span className="text-[10px] text-zinc-400 line-clamp-1 max-w-sm">{spec.description}</span>}
         </div>
         <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-zinc-300 uppercase">
-          {spec.objects && spec.objects.length > 0 ? `${spec.objects.length} Parça` : (spec.preset || '3D')}
+          {spec.objects && spec.objects.length > 0 ? `${spec.objects.length} Objects` : (spec.preset || '3D')}
         </span>
       </div>
 
@@ -587,7 +587,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         <button
           type="button"
           onClick={() => setIsRotating((prev) => !prev)}
-          title={isRotating ? 'Döndürmeyi Durdur' : 'Otomatik Döndür'}
+          title={isRotating ? 'Pause Rotation' : 'Rotate'}
           className="flex size-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
         >
           {isRotating ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
@@ -596,7 +596,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         <button
           type="button"
           onClick={() => setWireframe((prev) => !prev)}
-          title="Tel Çerçeve / Dolu Mod"
+          title="Toggle Wireframe"
           className={`flex size-7 items-center justify-center rounded cursor-pointer transition-colors ${
             wireframe ? 'text-amber-400 bg-amber-400/15' : 'text-zinc-400 hover:text-white hover:bg-white/10'
           }`}
@@ -607,7 +607,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         <button
           type="button"
           onClick={() => setShowGrid((prev) => !prev)}
-          title="Zemin Izgarası (Grid)"
+          title="Toggle Grid"
           className={`flex size-7 items-center justify-center rounded cursor-pointer transition-colors ${
             showGrid ? 'text-sky-400 bg-sky-400/15' : 'text-zinc-400 hover:text-white hover:bg-white/10'
           }`}
@@ -620,7 +620,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         <button
           type="button"
           onClick={() => resetCameraRef.current?.('isometric')}
-          title="İzometrik Görünüm"
+          title="Isometric View"
           className="flex size-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors text-[10px] font-mono font-bold"
         >
           ISO
@@ -628,34 +628,34 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         <button
           type="button"
           onClick={() => resetCameraRef.current?.('front')}
-          title="Ön Görünüm"
-          className="flex size-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors text-[10px] font-mono font-bold"
+          title="Front View"
+          className="flex px-1.5 h-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors text-[10px] font-mono font-bold"
         >
-          ÖN
+          FRONT
         </button>
         <button
           type="button"
           onClick={() => resetCameraRef.current?.('top')}
-          title="Üst Görünüm"
-          className="flex size-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors text-[10px] font-mono font-bold"
+          title="Top View"
+          className="flex px-1.5 h-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors text-[10px] font-mono font-bold"
         >
-          ÜST
+          TOP
         </button>
         <button
           type="button"
           onClick={() => resetCameraRef.current?.('default')}
-          title="Kamerayı Sıfırla"
+          title="Reset Camera"
           className="flex size-7 items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* Hover Tooltip / Interactive Inspector */}
+      {/* Hover Tooltip / Inspector */}
       {hoveredObject && (
-        <div className="absolute top-14 left-3 z-10 flex items-center gap-2 rounded-md border border-sky-500/30 bg-zinc-900/90 px-2.5 py-1 text-xs text-white backdrop-blur-md shadow-md animate-in fade-in duration-150 pointer-events-none">
-          <Compass className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-          <span className="font-semibold text-sky-300">{hoveredObject.name}</span>
+        <div className="absolute top-14 left-3 z-10 flex items-center gap-2 rounded-md border border-white/15 bg-zinc-900/90 px-2.5 py-1 text-xs text-white backdrop-blur-md shadow-md animate-in fade-in duration-150 pointer-events-none">
+          <span className="size-1.5 rounded-full bg-sky-400 shrink-0" />
+          <span className="font-semibold text-zinc-200">{hoveredObject.name}</span>
           <span className="text-[10px] text-zinc-400 font-mono">({hoveredObject.type})</span>
           <span className="text-[10px] text-zinc-500 font-mono">
             [{hoveredObject.position.map((v) => Number(v.toFixed(1))).join(', ')}]
@@ -665,10 +665,10 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
       {/* Selected Object Card */}
       {selectedObject && (
-        <div className="absolute bottom-3 right-3 z-10 flex items-center gap-3 rounded-lg border border-sky-500/30 bg-zinc-900/90 px-3 py-2 text-xs text-white backdrop-blur-md shadow-xl">
+        <div className="absolute bottom-3 right-3 z-10 flex items-center gap-3 rounded-lg border border-white/15 bg-zinc-900/90 px-3 py-2 text-xs text-white backdrop-blur-md shadow-xl">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sky-400">{selectedObject.name}</span>
+              <span className="font-bold text-white">{selectedObject.name}</span>
               {selectedObject.color && (
                 <span
                   className="size-2.5 rounded-full border border-white/20"
@@ -677,7 +677,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
               )}
             </div>
             <span className="text-[10px] text-zinc-400 font-mono">
-              Geometri: {selectedObject.type} | Konum: [{selectedObject.position.join(', ')}]
+              Type: {selectedObject.type} | Pos: [{selectedObject.position.join(', ')}]
             </span>
           </div>
           <button
@@ -689,12 +689,6 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           </button>
         </div>
       )}
-
-      {/* Bottom Navigation Hints */}
-      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2 text-[11px] text-zinc-400 bg-zinc-900/75 backdrop-blur-xs px-2.5 py-1 rounded-md border border-white/10 pointer-events-none">
-        <Eye className="h-3 w-3 text-zinc-400" />
-        <span>Sol tıkla döndür, tekerlekle yaklaş, sağ tıkla kaydır. Nesnelerin üzerine gelerek incele.</span>
-      </div>
 
       {/* Three.js Canvas Container */}
       <div ref={containerRef} className="h-full w-full cursor-grab active:cursor-grabbing" />

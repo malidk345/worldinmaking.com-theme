@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
-import { ZoomIn, ZoomOut, RotateCcw, Move, Sparkles, Layers, Share2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, Layers } from 'lucide-react'
 
 import { CanvasSpec, CanvasNode, CanvasEdge, parseCanvasSpec } from '../../../lib/ai/visual-artifacts'
 export type { CanvasSpec, CanvasNode, CanvasEdge }
@@ -62,8 +62,8 @@ export function CanvasArtifactRenderer({ content }: { content: string | unknown 
       <div className="flex h-full w-full items-center justify-center p-6 text-center text-muted">
         <div>
           <Layers className="mx-auto mb-2 h-8 w-8 opacity-40" />
-          <p className="font-medium">Geçerli bir tuval verisi bulunamadı.</p>
-          <p className="text-xs opacity-75">Tuval JSON formatında düğüm (node) ve bağlantı (edge) listesi içermelidir.</p>
+          <p className="font-medium">No canvas data found.</p>
+          <p className="text-xs opacity-75">Provide nodes and edges in the canvas specification.</p>
         </div>
       </div>
     )
@@ -136,13 +136,13 @@ export function CanvasArtifactRenderer({ content }: { content: string | unknown 
           <>
             {/* Top Info & Floating Controls */}
             <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/90 px-3 py-1.5 backdrop-blur-md shadow-sm">
-              <Sparkles className="h-4 w-4 text-amber-500" />
+              <Layers className="h-4 w-4 text-muted" />
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-primary">{spec.title || 'İnteraktif Zihin Haritası & Tuval'}</span>
+                <span className="text-xs font-semibold text-primary">{spec.title || 'Canvas'}</span>
                 {spec.description && <span className="text-[10px] text-muted line-clamp-1 max-w-xs">{spec.description}</span>}
               </div>
               <span className="ml-2 rounded bg-accent/60 px-1.5 py-0.5 text-[10px] font-mono text-muted border border-primary/10">
-                {nodes.length} düğüm
+                {nodes.length} nodes
               </span>
             </div>
 
@@ -150,7 +150,7 @@ export function CanvasArtifactRenderer({ content }: { content: string | unknown 
               <button
                 type="button"
                 onClick={() => zoomIn()}
-                title="Yakınlaştır"
+                title="Zoom In"
                 className="flex size-7 items-center justify-center rounded text-muted hover:text-primary hover:bg-accent cursor-pointer transition-colors"
               >
                 <ZoomIn className="h-3.5 w-3.5" />
@@ -158,7 +158,7 @@ export function CanvasArtifactRenderer({ content }: { content: string | unknown 
               <button
                 type="button"
                 onClick={() => zoomOut()}
-                title="Uzaklaştır"
+                title="Zoom Out"
                 className="flex size-7 items-center justify-center rounded text-muted hover:text-primary hover:bg-accent cursor-pointer transition-colors"
               >
                 <ZoomOut className="h-3.5 w-3.5" />
@@ -166,17 +166,11 @@ export function CanvasArtifactRenderer({ content }: { content: string | unknown 
               <button
                 type="button"
                 onClick={() => resetTransform()}
-                title="Görünümü Sıfırla"
+                title="Reset View"
                 className="flex size-7 items-center justify-center rounded text-muted hover:text-primary hover:bg-accent cursor-pointer transition-colors"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
               </button>
-            </div>
-
-            {/* Bottom Help Tip */}
-            <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 text-[11px] text-muted/80 bg-primary/80 backdrop-blur-xs px-2.5 py-1 rounded-md border border-primary/10 pointer-events-none">
-              <Move className="h-3 w-3" />
-              <span>Sürükleyerek gezinin, tekerlekle yakınlaşın, kutuları tutup taşıyabilirsiniz.</span>
             </div>
 
             {/* Canvas World */}

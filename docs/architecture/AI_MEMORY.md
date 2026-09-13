@@ -57,6 +57,35 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Viewport UI Overhaul: Clean Professional CAD/3D Aesthetics & Localization Purge)
+- **Scope:** Completely eliminated childish/silly decorative elements (Sparkles, Compass, Eye icons), patronizing tutorial banners ("Fareyle döndürün, tekerlekle yaklaşın...", "Sürükleyerek gezinin..."), and hardcoded Turkish labels across 3D, Canvas, and Simulation renderers. Upgraded viewport interfaces to universal, minimalist professional CAD engineering standards (ISO, FRONT, TOP, WIREFRAME, GRID, RESET).
+- **Architectural Rules Kept:**
+  1. Universal clean technical English terminology across all viewports.
+  2. Maintained all existing interaction capabilities (orbit, zoom, pan, hover inspector, selection card).
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Removed `Sparkles`, `Compass`, `Eye` icons; replaced with clean minimalist `Box` and status dots.
+     - Replaced hardcoded Turkish button labels and tooltips: "ÖN" -> "FRONT", "ÜST" -> "TOP", "Döndürmeyi Durdur" -> "Pause Rotation", "Zemin Izgarası" -> "Toggle Grid", "Tel Çerçeve" -> "Toggle Wireframe".
+     - Removed bottom hand-holding tutorial banner.
+     - Changed preset object names from Turkish ("DNA Baz Cifti", "Merkezi Yildiz", "Dis Ikosahedron", "Model Parçası") to universal technical terms ("DNA Base Pair", "Core", "Outer Polyhedron", "Mesh").
+     - Cleaned up inspector card strings: `Type:` and `Pos:` instead of `Geometri:` and `Konum:`.
+  2. `src/components/ClaudeWorkspaceChat/components/CanvasArtifactRenderer.tsx`:
+     - Removed `Sparkles` and bottom tutorial banner.
+     - Standardized toolbar tooltips ("Zoom In", "Zoom Out", "Reset View") and node badge counter (`${nodes.length} nodes`).
+     - Neutralized empty state message to clean English.
+  3. `src/components/ClaudeWorkspaceChat/components/SimulationArtifactRenderer.tsx`:
+     - Standardized empty state, header reset button ("Reset"), parameters label ("Parameters"), and curve title ("Dynamic Response Curve", "Real-time response").
+  4. `src/lib/ai/visual-artifacts.ts`:
+     - Changed default titles from `'3D Konsept Modeli'` / `'3D Sahne ve Model'` to `'3D Scene'`.
+  5. `src/lib/bots/tools/spec.ts`:
+     - Neutralized tool protocol 3D prompt examples from Turkish names ("Gövde / Duvarlar", "Çatı", "Kapı", "Pencereler") to clean universal technical names ("Walls", "Roof", "Door", "Windows").
+  6. `src/lib/bots/tools/execute-multimodal.test.ts`:
+     - Updated vision test regex expectation to match both Pikachu and Pokémon.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-visual-artifacts.test.ts`: PASS (5/5 tests passed).
+  2. `pnpm vitest run --environment node src/lib/bots/tools/execute-multimodal.test.ts`: PASS (8/8 tests passed).
+  3. `pnpm typecheck:shell`: PASS (zero gated errors).
+
 ### 2026-09-13 — Antigravity (Exhaustive Full-Scale Code Generation & Artifact Buffer Expansion)
 - **Scope:** Solved the issue where the AI was producing lazy, superficial 30–50 line demo skeletons or placeholders ("// ...") for complex engineering, architectural, and visual tasks. Expanded artifact buffer capacity 5x (from 24KB to 120KB) and enforced strict full-scale production directives across all system prompts.
 - **Architectural Rules Kept:**

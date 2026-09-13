@@ -105,7 +105,7 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
     for (let t = 1; t <= steps; t++) {
       const stepScope: Record<string, number> = { ...values, t, time: t, step: t }
       const point: Record<string, any> = {
-        name: `Adım ${t}`,
+        name: `T+${t}`,
         step: t,
       }
 
@@ -128,8 +128,8 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
       <div className="flex h-full w-full items-center justify-center p-6 text-center text-muted">
         <div>
           <Activity className="mx-auto mb-2 h-8 w-8 opacity-40" />
-          <p className="font-medium">Geçerli bir simülasyon modeli bulunamadı.</p>
-          <p className="text-xs opacity-75">Model variables (değişkenler) ve outputs (çıktılar) içermelidir.</p>
+          <p className="font-medium">No simulation model found.</p>
+          <p className="text-xs opacity-75">Model requires variables and outputs specification.</p>
         </div>
       </div>
     )
@@ -149,7 +149,7 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
         <div>
           <div className="flex items-center gap-2">
             <Sliders className="h-5 w-5 text-amber-500" />
-            <h3 className="text-base font-bold text-primary">{spec.title || 'Parametrik Simülasyon Kartı'}</h3>
+            <h3 className="text-base font-bold text-primary">{spec.title || 'Simulation Model'}</h3>
           </div>
           {spec.description && (
             <p className="text-xs text-muted mt-1 max-w-2xl leading-relaxed">{spec.description}</p>
@@ -161,7 +161,7 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
           className="flex items-center gap-1.5 self-start sm:self-auto rounded-md border border-primary/20 bg-accent/40 hover:bg-accent px-2.5 py-1 text-xs font-medium text-muted hover:text-primary transition-colors cursor-pointer"
         >
           <RotateCcw className="h-3 w-3" />
-          <span>Sıfırla</span>
+          <span>Reset</span>
         </button>
       </div>
 
@@ -188,7 +188,7 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
         <div className="lg:col-span-5 flex flex-col space-y-4 rounded-xl border border-primary/20 bg-accent/10 p-4">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-primary pb-2 border-b border-primary/10">
             <Sliders className="h-3.5 w-3.5 text-amber-500" />
-            <span>Parametreleri Ayarlayın</span>
+            <span>Parameters</span>
           </div>
 
           <div className="space-y-4 flex-1 overflow-y-auto pr-1">
@@ -229,9 +229,9 @@ export function SimulationArtifactRenderer({ content }: { content: string | unkn
           <div className="flex items-center justify-between text-xs font-semibold text-primary pb-2 mb-3 border-b border-primary/10">
             <span className="flex items-center gap-1.5">
               <Activity className="h-3.5 w-3.5 text-emerald-500" />
-              <span>Dinamik Davranış Eğrisi</span>
+              <span>Dynamic Response Curve</span>
             </span>
-            <span className="text-[10px] font-normal text-muted">Gerçek zamanlı tepki</span>
+            <span className="text-[10px] font-normal text-muted">Real-time response</span>
           </div>
 
           <div className="flex-1 w-full min-h-[220px]">

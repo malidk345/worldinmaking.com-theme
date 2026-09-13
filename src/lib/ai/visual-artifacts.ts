@@ -187,7 +187,7 @@ export function parseModel3DSpec(content: string | unknown): Model3DSpec {
         const url = typeof raw.url === 'string' ? raw.url : (typeof raw.modelUrl === 'string' ? raw.modelUrl : (typeof raw.src === 'string' ? raw.src : undefined))
 
         return {
-            title: raw.title || (objects && objects.length > 0 ? '3D Sahne ve Model' : '3D Konsept Modeli'),
+            title: raw.title || (objects && objects.length > 0 ? '3D Scene' : '3D Viewport'),
             description: raw.description,
             url,
             modelUrl: url,
@@ -236,7 +236,7 @@ export function parseModel3DSpec(content: string | unknown): Model3DSpec {
     }
 
     return {
-        title: '3D Konsept Modeli',
+        title: '3D Scene',
         preset: 'polyhedra',
         theme: 'gold',
         wireframe: false,
