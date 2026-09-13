@@ -1,3 +1,21 @@
-Fix window state update merging for element clearing
+⚡ Bolt: [performance improvement] Optimize notification refresh pipeline
 
-Modified `mergeWindowUpdate` to check `updates.element !== undefined` instead of using truthiness, allowing window content to be explicitly cleared by passing `undefined` or `null`.
+What:
+- Removes redundant 45-second polling interval in `useUser.tsx`.
+- Removes redundant `fetchUser()` call when opening the notifications panel.
+- Refactors `useUser.tsx` to use a debounced `syncNotifications` function.
+- Skips redundant `supabase.auth.getSession()` calls by passing known `userId`.
+
+Why:
+- The previous implementation triggered excessive and redundant network requests when opening the panel, focusing the window, and via a background polling timer.
+- Local assistant notifications were merged twice in two different places.
+
+Impact:
+- Significantly reduces backend load and improves client-side performance.
+- Eliminates overlapping fetch race conditions.
+
+Measurement:
+- Removed a `setInterval` of 45s.
+- Avoided 1 `auth.getSession()` per notification fetch.
+- Replaced multiple renders with unified deduplication.
+

@@ -39,3 +39,7 @@
 ## 2026-09-12 - [API Defenses]
 **Learning:** Replaced unsafe `req.json()` calls with size-bounded `readJsonObject` on mutating endpoints to prevent payload exhaustion, and applied `checkRateLimitDurable` to public routes. Ensure `!parsed.ok` handles the 413 error status correctly when introducing `readJsonObject`.
 **Action:** Enforce size constraints and rate limits natively on all new API route controllers.
+
+## 2026-09-12 - Optimize notification refresh pipeline
+**Learning:** Polling loops combined with focus listeners and panel-open effects can cause cascading redundant network requests. Supabase `auth.getSession()` inside fetchers is slow if the session is already known by the caller context.
+**Action:** Unify multiple fetch triggers behind a single debounced sync function with `useRef` tracking the last fetch time. Pass known user IDs downward to avoid redundant session reads.

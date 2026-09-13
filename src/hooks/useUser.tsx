@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import React, { createContext, useEffect, useState } from 'react'
+import React, { createContext, useEffect, useState, useRef } from 'react'
 import { ProfileData } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import Link from 'components/Link'
@@ -289,60 +289,64 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
     }, [])
 
-    useEffect(() => {
-        const mergeAssistant = () => {
-            if (!user) {
-                setNotifications((prev: Array<{ id?: number | string }>) =>
-                    (Array.isArray(prev) ? prev : []).filter(
-                        (item) => !String(item?.id || '').startsWith('assistant_')
-                    )
-                )
-                return
-            }
-            const local = listAssistantNotifications()
-            setNotifications((prev: Array<{ id?: number | string; date?: string }>) => {
-                const incoming = Array.isArray(prev) ? prev : []
-                const localIds = new Set(local.map((item) => String(item.id)))
-                const rest = incoming.filter(
-                    (item) => !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
-                )
-                return [...local, ...rest].sort(
-                    (a, b) => new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
-                )
-            })
-        }
-        mergeAssistant()
-        window.addEventListener(ASSISTANT_NOTICES_EVENT, mergeAssistant)
-        return () => window.removeEventListener(ASSISTANT_NOTICES_EVENT, mergeAssistant)
-    }, [user?.id])
+    const lastFetchTime = useRef<number>(0)
+    const isFetchingNotifications = useRef<boolean>(false)
 
     useEffect(() => {
-        if (!user) return
-        const tick = async () => {
-            const notes = await fetchUserNotifications()
-            const local = listAssistantNotifications()
-            const incoming = Array.isArray(notes) ? notes : []
-            const localIds = new Set(local.map((item) => String(item.id)))
-            const rest = incoming.filter(
-                (item: { id?: number | string }) =>
-                    !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
-            )
-            setNotifications(
-                [...local, ...rest].sort(
-                    (a, b) =>
-                        new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+        const syncNotifications = async (force = false) => {
+            if (!user?.id) {
+                setNotifications([])
+                return
+            }
+            const now = Date.now()
+            if (!force && now - lastFetchTime.current < 30_000) {
+                // Throttle remote fetch, but always merge latest local
+                setNotifications((prev: Array<{ id?: number | string; date?: string }>) => {
+                    const local = listAssistantNotifications()
+                    const localIds = new Set(local.map((item) => String(item.id)))
+                    const incoming = Array.isArray(prev) ? prev : []
+                    const rest = incoming.filter(
+                        (item) => !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
+                    )
+                    return [...local, ...rest].sort(
+                        (a, b) => new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+                    )
+                })
+                return
+            }
+            if (isFetchingNotifications.current) return
+            isFetchingNotifications.current = true
+            try {
+                const remote = await fetchUserNotifications(String(user.id))
+                const local = listAssistantNotifications()
+                const incoming = Array.isArray(remote) ? remote : []
+                const localIds = new Set(local.map((item) => String(item.id)))
+                const rest = incoming.filter(
+                    (item: { id?: number | string }) =>
+                        !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
                 )
-            )
+                setNotifications(
+                    [...local, ...rest].sort(
+                        (a, b) =>
+                            new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+                    )
+                )
+                lastFetchTime.current = Date.now()
+            } finally {
+                isFetchingNotifications.current = false
+            }
         }
-        void tick()
-        const timer = window.setInterval(tick, 45_000)
-        const onFocus = () => {
-            void tick()
-        }
+
+        const onFocus = () => void syncNotifications(false)
+        const onAssistant = () => void syncNotifications(false)
+
+        void syncNotifications(true)
+
         window.addEventListener('focus', onFocus)
+        window.addEventListener(ASSISTANT_NOTICES_EVENT, onAssistant)
         return () => {
-            window.clearInterval(timer)
             window.removeEventListener('focus', onFocus)
+            window.removeEventListener(ASSISTANT_NOTICES_EVENT, onAssistant)
         }
     }, [user?.id])
 
@@ -541,10 +545,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             }
             // Enrich with bookmarks + post likes from Supabase
             const uid = String(meData.id)
-            const [bookmarks, postLikes, notes] = await Promise.all([
+            const [bookmarks, postLikes, remoteNotes] = await Promise.all([
                 fetchUserBookmarks(uid),
                 fetchUserPostLikes(uid),
-                fetchUserNotifications(),
+                fetchUserNotifications(uid),
             ])
             const enriched: User = {
                 ...meData,
@@ -555,7 +559,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 },
             }
             setUser(enriched)
-            setNotifications(notes)
+            lastFetchTime.current = Date.now()
+            const local = listAssistantNotifications()
+            const localIds = new Set(local.map((item) => String(item.id)))
+            const incoming = Array.isArray(remoteNotes) ? remoteNotes : []
+            const rest = incoming.filter(
+                (item: { id?: number | string }) =>
+                    !localIds.has(String(item.id)) && !String(item?.id || '').startsWith('assistant_')
+            )
+            setNotifications(
+                [...local, ...rest].sort(
+                    (a, b) =>
+                        new Date(String(b.date || 0)).getTime() - new Date(String(a.date || 0)).getTime()
+                )
+            )
             try {
                 if (typeof window !== 'undefined') {
                     localStorage.setItem(AUTH_USER_ID_KEY, String(meData.id))

@@ -1157,3 +1157,16 @@
 - **Verification:**
   - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
   - Dev server: running cleanly on port 3000.
+
+### 2026-09-12 — Jules
+- **Scope:** Optimize WorldInMaking notification refresh pipeline.
+- **Motivation:** Eliminate redundant frontend fetch requests caused by interval polling, overlapping focus listeners, and panel open events, while deduplicating local assistant notices cleanly.
+- **Files Modified:**
+  - `src/components/NotificationsPanel/index.tsx`: Removed redundant `fetchUser` on panel open.
+  - `src/hooks/useUser.tsx`: Removed 45s interval poll. Replaced multiple local assistant merging routines with a unified `syncNotifications` function that debounces `fetchUserNotifications`.
+  - `src/lib/wim-notifications.ts`: Bypassed slow `supabase.auth.getSession()` on backend fetches by injecting `userId`. Removed local assistant merge to centralize it in `useUser.tsx`.
+  - `tests/use-user-notifications.spec.ts`: Added unit test covering deduplication and sorting logic to prevent regressions on merged states.
+- **Verification:**
+  - Checked `pnpm typecheck:shell` (0 errors).
+  - Validated build success.
+  - Tests pass, including the new regression coverage.
