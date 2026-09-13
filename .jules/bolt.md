@@ -39,3 +39,7 @@
 ## 2026-09-12 - [API Defenses]
 **Learning:** Replaced unsafe `req.json()` calls with size-bounded `readJsonObject` on mutating endpoints to prevent payload exhaustion, and applied `checkRateLimitDurable` to public routes. Ensure `!parsed.ok` handles the 413 error status correctly when introducing `readJsonObject`.
 **Action:** Enforce size constraints and rate limits natively on all new API route controllers.
+
+## 2025-05-19 - Memoizing heavy List parsing
+**Learning:** Performing array filtering with heavy regex-based task parsing across the entire loaded state in `NotebooksListScene.tsx` inside the React render function caused massive O(N) main-thread CPU overhead and memory churn on every search bar keystroke.
+**Action:** Always wrap heavy data aggregation computations across entire collection structures using `useMemo` so they only execute when the actual collection or dependencies change, decoupling input state updates from expensive collection computations.

@@ -1,0 +1,13 @@
+⚡ Bolt: [performance improvement] Complete memoization in NotebooksListScene
+
+**What:**
+Fixed `value` implicit any type error in NotebooksListScene.
+
+**Why:**
+To ensure tests and type checking pass after the earlier optimizations.
+
+**Impact:**
+No logic change.
+
+**Measurement:**
+N/A

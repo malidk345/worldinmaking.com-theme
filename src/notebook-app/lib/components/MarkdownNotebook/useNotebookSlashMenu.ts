@@ -21,6 +21,13 @@ import {
 export { getNodeInsertContext }
 
 export interface UseNotebookSlashMenuProps {
+    documentRef: React.MutableRefObject<NotebookDocument>
+    insertCommands: InsertCommand[]
+    updateNode: (id: string, updates: Partial<NotebookBlockNode>) => void
+    replaceNodeWithNodes: (id: string, nodes: NotebookBlockNode[]) => void
+    restoreSelectionRef: React.MutableRefObject<any>
+    onInteractionStateChange?: (active: boolean) => void
+}
 
 export function useNotebookSlashMenu({
     documentRef,
