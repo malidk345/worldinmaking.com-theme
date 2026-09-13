@@ -1,7 +1,0 @@
-fix: Optimize Workspace Chat synchronization correctly
-
-- Fix: Prevented duplicate/overlapping syncs by queuing \`syncFromRemote\` via \`isSyncing\` and \`syncPending\` refs instead of a simple timer.
-- Fix: Modified \`startWorkspaceChatPolling\` and \`subscribeToWorkspaceChats\` to ensure 12-second polling is bypassed when Realtime is active, reducing unnecessary syncs.
-- Fix: Modified the realtime subscription for \`wim_chat_messages\` so that sync triggers are now bypassed if the incoming message doesn't belong to a chat ID actively present in \`knownChatIdsRef\`. This dramatically reduces sync overhead.
-- Fix: Optimized \`writeLocalChats\` to only write to \`localStorage\` when the stringified \`chats\` state changes, stopping unnecessary cache writes.
-- Correctness: Repaired \`mergeMessages\` to correctly preserve streaming \`!isTypingDone\` local messages, while properly accepting newer remote edits (even if shorter than the local version) via a \`preferRight\` flag driven by \`mergeChats\` timestamp resolution.

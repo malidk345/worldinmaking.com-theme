@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { test, expect } from '@playwright/test'
 import { mergeChats, mergeMessages } from '../src/lib/chat-merge'
 
 test('mergeMessages correctly prefers streaming local messages', () => {
