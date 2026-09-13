@@ -23,6 +23,7 @@ export const PLAN_TOOL_NAMES = [
     'read_notebook',
     'get_workspace',
     'search_site',
+    'search_academic_corpus',
     'list_notebooks',
     'read_post',
     'write_scratchpad',

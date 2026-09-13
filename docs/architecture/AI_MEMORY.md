@@ -51,11 +51,30 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Cloudflare Workers AI & FLUX.1 Tool Integration]`
+- **Status:** `[COMPLETED by Antigravity - Live Academic Corpus Search Integration]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-13 — Antigravity (Live Academic Corpus Search Integration)
+- **Scope:** Equipped WIM AI with `search_academic_corpus` tool for direct, keyless searching of peer-reviewed philosophy and scientific literature across OpenAlex (250M+ papers) and arXiv.
+- **Architectural Rules Kept:**
+  1. Integrates seamlessly into existing orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`) without adding external framework overhead or competing orchestrators.
+  2. Zero external secret dependencies: Uses OpenAlex polite pool (`mailto:dursunkayamustafa@gmail.com`) and arXiv XML API.
+  3. Structured output: Returns clean paper metadata (authors, year, venue, citation count, DOI, open-access PDF, reconstructed abstract from inverted index).
+  4. Registered in `PLAN_TOOL_NAMES` in `modes.ts` so bots can research academic papers during plan mode.
+- **Changes Applied:**
+  1. `src/lib/bots/academic-search.ts` (NEW): Built search engine module with abstract reconstruction, OpenAlex + arXiv querying, and academic markdown formatting.
+  2. `src/lib/bots/tools/spec.ts` (MODIFIED): Added `search_academic_corpus` tool spec and protocol prompt instructions.
+  3. `src/lib/bots/tools/labels.ts` (MODIFIED): Added streaming status labels (`Searching academic literature` / `Found academic papers`).
+  4. `src/lib/bots/agent/modes.ts` (MODIFIED): Added `search_academic_corpus` to `PLAN_TOOL_NAMES`.
+  5. `src/lib/bots/tools/execute.ts` (MODIFIED): Implemented `executeAcademicSearch` and wired `executeToolCall` dispatch with aliases (`academic_search`, `search_papers`, `find_papers`, etc.).
+  6. `src/lib/bots/tools/academic-search.test.ts` (NEW): 5 unit and live integration tests passed.
+- **Verification:**
+  - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  - `pnpm vitest run --environment node src/lib/bots/tools/academic-search.test.ts`: PASS (5 passed).
+  - `pnpm vitest run --environment node src/lib/bots/tools/execute-image.test.ts`: PASS (4 passed).
 
 ### 2026-09-13 — Antigravity (Cloudflare Workers AI & FLUX.1 Tool Integration)
 - **Scope:** Wired Cloudflare Workers AI (FLUX.1 Schnell, Whisper Large V3 Turbo, DeepSeek R1 Distill 32B) directly into the central Ask AI / philosopher bot toolset (`src/lib/bots/tools/`) and storage worker client.

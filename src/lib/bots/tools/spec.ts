@@ -578,6 +578,33 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'search_academic_corpus',
+            description:
+                'Search peer-reviewed academic literature, philosophical journals, citations, and open-access papers across OpenAlex and arXiv. Use this whenever the user asks about scholarly research, academic philosophy, paper citations, scientific theories, or authors of philosophical papers.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    query: {
+                        type: 'string',
+                        description: 'Academic search query (e.g. "Spinoza substance monism attribute", "Chalmers hard problem consciousness", "Integrated Information Theory Tononi").',
+                    },
+                    field: {
+                        type: 'string',
+                        description: 'Optional academic field filter (e.g. "philosophy", "epistemology", "ethics", "cognitive science", "logic").',
+                    },
+                    limit: {
+                        type: 'number',
+                        description: 'Number of scholarly papers to retrieve (default 5, max 10).',
+                    },
+                },
+                required: ['query'],
+            },
+        },
+    },
 ]
 
 export const TOOL_PROTOCOL = `
@@ -588,8 +615,9 @@ PROCESS (host graph: THINK → ACT → TOOLS → THINK → …):
 - <system_reminder> and <private_thought> and <plan_board> are host notes, not the user. Do not quote them in the bubble.
 TOOL USE:
 - You decide which tools to call through the OpenAI/Gemini tool channel. The host will not guess your plan. Call zero or more tools, then answer.
-- Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
+- Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, search_academic_corpus, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
 - A plan is optional. Use todo_write only when sequencing helps. Never invent a plan for a one-step ask.
+- search_academic_corpus: Search peer-reviewed academic literature, journals, citations, and DOIs (OpenAlex + arXiv). Call this when investigating scholarly philosophy, formal debates, papers, or peer-reviewed studies. Always cite authors, year, journal venue, and DOI/PDF link in your answer.
 - generate_image: Generate real visual imagery with Cloudflare FLUX.1 and save to R2. Call this when the user asks for a drawing, image, concept art, portrait, or scene. After the tool returns, embed the image in markdown as ![description](url) in your reply.
 - create_artifact is the only way to put an analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble. For charts, KPI metrics, funnels, or data tables, call create_artifact with type="posthog-analytics" and structured JSON {"metrics":[...],"graph":{...},"table":{...},"funnel":[...]}. After a visual artifact succeeds, write one short sentence. If the user asked you to write an article, essay, story, or a word count, that text belongs in the public bubble — do not replace it with a one-line confirmation.
 - To revise an on-screen artifact, call create_artifact again with the same title and the full new body.

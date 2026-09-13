@@ -31,6 +31,7 @@ const LABELS: Record<string, [string, string, string]> = {
     finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
     generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
+    search_academic_corpus: ['Searching academic literature', 'Found academic papers', 'Academic search failed'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
@@ -59,7 +60,7 @@ export function parseToolArgPreview(name: string, raw?: string): string {
     try {
         const args = JSON.parse(raw) as Record<string, unknown>
         if (!args || typeof args !== 'object' || Array.isArray(args)) return ''
-        if (name === 'web_search' || name === 'search_site') return pickArg(args, ['query', 'q', 'search'])
+        if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') return pickArg(args, ['query', 'q', 'search'])
         if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
         if (name === 'read_post') return pickArg(args, ['slug', 'id'])
@@ -83,7 +84,7 @@ export function toolActivityTitle(name: string, status: ToolRunStatus, args?: st
     const base = toolStatusLabel(name, status)
     const preview = parseToolArgPreview(name, args)
     if (!preview) return base
-    if (name === 'web_search' || name === 'search_site') {
+    if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') {
         if (status === 'running') return `Searching: ${preview}`
         if (status === 'error') return `Search failed: ${preview}`
         return `Searched: ${preview}`

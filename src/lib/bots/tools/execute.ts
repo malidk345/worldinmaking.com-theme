@@ -5,6 +5,7 @@ import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { fetchPublicUrl } from './fetch-url'
+import { searchAcademicCorpus } from '../academic-search'
 import { executeReadDocument } from './read-document'
 import {
     executeAnnotateNotebook,
@@ -149,6 +150,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
+    search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field' },
 }
 
 const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
@@ -387,6 +389,44 @@ async function executeGenerateImage(
     }
 }
 
+async function executeAcademicSearch(
+    query: string,
+    field?: string,
+    limit?: number
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    try {
+        const result = await searchAcademicCorpus(query, { field, limit })
+        const citations: AiCitation[] = result.papers.map((p, idx) => ({
+            id: idx + 1,
+            url: p.doi || p.pdfUrl || `https://openalex.org/${p.id}`,
+            title: `${p.title} (${p.authors[0] || 'Unknown'}, ${p.year || 'n.d.'})`,
+            snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
+            source: p.venue || p.source,
+        }))
+
+        return {
+            ok: result.ok,
+            result: clip(
+                JSON.stringify({
+                    ok: result.ok,
+                    total: result.total,
+                    query: result.query,
+                    papers: result.papers,
+                    formatted: result.formatted,
+                }),
+                MAX_TOOL_RESULT
+            ),
+            citations,
+        }
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Academic search failed'
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: message }),
+        }
+    }
+}
+
 const TOOL_NAME_ALIASES: Record<string, string> = {
     google_search: 'web_search',
     search: 'web_search',
@@ -434,6 +474,11 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     paint_image: 'generate_image',
     generate_picture: 'generate_image',
     text_to_image: 'generate_image',
+    academic_search: 'search_academic_corpus',
+    search_papers: 'search_academic_corpus',
+    find_papers: 'search_academic_corpus',
+    search_philosophy_papers: 'search_academic_corpus',
+    scholarly_search: 'search_academic_corpus',
 }
 
 export function resolveToolName(raw: string): string {
@@ -711,6 +756,17 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const executed = await executeGenerateImage(prompt, env, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'search_academic_corpus') {
+            const query = asText(args.query, MAX_SEARCH_QUERY).trim()
+            if (!query) {
+                const result = JSON.stringify({ ok: false, error: 'query is required for search_academic_corpus' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const field = asText(args.field, 60).trim() || undefined
+            const limit = typeof args.limit === 'number' ? Math.min(Math.max(1, args.limit), 10) : 5
+            const executed = await executeAcademicSearch(query, field, limit)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }
