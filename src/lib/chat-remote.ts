@@ -327,7 +327,8 @@ export async function setRemoteMessageLiked(chatId: string, messageId: string, l
     }
 }
 
-export function subscribeToWorkspaceChats(onChange: () => void): () => void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function subscribeToWorkspaceChats(onChange: (payload?: any) => void, onStatusChange?: (status: string) => void): () => void {
     if (typeof window === 'undefined' || !isSupabaseConfigured) {
         return () => {}
     }
@@ -376,9 +377,10 @@ export function subscribeToWorkspaceChats(onChange: () => void): () => void {
             channel = channel.on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'wim_chat_messages' },
-                () => onChange()
+                (payload) => onChange(payload)
             )
             channel.subscribe((status) => {
+                if (onStatusChange) onStatusChange(status)
                 if (status === 'CHANNEL_ERROR') {
                     console.warn('[chat-remote] realtime channel error, falling back to polling')
                 }
