@@ -46,10 +46,10 @@ export const emojiUsageLogic = kea<emojiUsageLogicType>([
                     const currentTime = now().valueOf()
                     const thirtyDaysAgo = currentTime - 30 * 24 * 60 * 60 * 1000
 
-                    const newState = { ...state, [emoji]: state[emoji] || [] }
-                    newState[emoji] = [...newState[emoji], currentTime]
-
-                    newState[emoji] = newState[emoji].filter((timestamp: number) => timestamp > thirtyDaysAgo)
+                    const newState = { ...state }
+                    const currentEmojiTimestamps = newState[emoji] ? [...newState[emoji]] : []
+                    currentEmojiTimestamps.push(currentTime)
+                    newState[emoji] = currentEmojiTimestamps.filter((timestamp: number) => timestamp > thirtyDaysAgo)
 
                     if (newState[emoji].length === 0) {
                         delete newState[emoji]
@@ -70,14 +70,11 @@ export const emojiUsageLogic = kea<emojiUsageLogicType>([
             (s) => [s.usedEmojis],
             (usedEmojis: Record<string, number[]>): string[] => {
                 // Get user's favorite emojis sorted by usage count
-                const userFavorites = Object.entries(usedEmojis)
-                    .map(([emoji, timestamps]) => ({
-                        emoji,
-                        count: timestamps.length,
-                    }))
-                    .sort((a, b) => b.count - a.count) // Sort by usage count descending
-                    .slice(0, 5) // Take top 5
-                    .map(({ emoji }) => emoji) // Extract just the emoji strings
+                const items: {emoji: string, count: number}[] = []
+                for (const emoji in usedEmojis) {
+                    items.push({ emoji, count: usedEmojis[emoji].length })
+                }
+                const userFavorites = items.sort((a, b) => b.count - a.count).slice(0, 5).map(i => i.emoji)
 
                 // If we have fewer than 5 favorites, fill with quickEmojis (avoiding duplicates)
                 if (userFavorites.length < 5) {

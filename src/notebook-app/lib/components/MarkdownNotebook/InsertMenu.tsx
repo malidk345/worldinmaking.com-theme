@@ -77,6 +77,7 @@ export function InsertMenu({
         [commands, query, context]
     )
     const commandsByCategory = useMemo(() => groupInsertCommandsByCategory(filteredCommands), [filteredCommands])
+    const commandsByCategoryEntries = useMemo(() => Object.entries(commandsByCategory), [commandsByCategory])
     const selectedCommandIndex = getClampedInsertMenuSelectedIndex(selectedIndex, filteredCommands.length)
     const selectedCommand = filteredCommands[selectedCommandIndex]
     const selectedCommandKey = selectedCommand?.key
@@ -114,7 +115,7 @@ export function InsertMenu({
                     ? `${selectedCommand.label}, ${selectedCommandIndex + 1} of ${filteredCommands.length}`
                     : 'No components found'}
             </div>
-            {Object.entries(commandsByCategory).map(([category, categoryCommands]) => (
+            {commandsByCategoryEntries.map(([category, categoryCommands]) => (
                 <div className="MarkdownNotebook__insert-category" key={category} role="group" aria-label={category}>
                     <h5 aria-hidden="true">{category}</h5>
                     <div className="MarkdownNotebook__insert-grid">
