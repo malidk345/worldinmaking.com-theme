@@ -10,6 +10,7 @@
 - Single auth system: Supabase Auth
 - Package manager: `pnpm` exclusively
 - Styles: Notebook styles require `pnpm run build:notebook-styles` after changes.
+- **Strict User Directive:** Do NOT run Playwright or any automated test suites, and do NOT execute `git push` unless explicitly asked by the user.
 
 ---
 

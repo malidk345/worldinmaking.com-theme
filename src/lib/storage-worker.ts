@@ -371,3 +371,88 @@ export async function uploadAvatar(file: File): Promise<UploadAvatarResult> {
         fileMetadata: meta,
     }
 }
+
+// ── Cloudflare Workers AI Client Functions ──────────────────────────────
+
+/**
+ * Transcribes audio using Cloudflare Workers AI Whisper (multilingual / Turkish supported).
+ */
+export async function transcribeAudio(audio: Blob | ArrayBuffer): Promise<{ text: string }> {
+    const { accessToken } = await getAuthSession()
+    if (!isStorageWorkerConfigured()) {
+        throw new Error('Storage Worker URL is not configured.')
+    }
+
+    const body = audio instanceof Blob ? await audio.arrayBuffer() : audio
+    const res = await fetch(`${STORAGE_WORKER_URL}/transcribe`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/octet-stream',
+        },
+        body,
+    })
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error((err as { error?: string })?.error || `Transcription failed (${res.status})`)
+    }
+
+    return res.json() as Promise<{ text: string }>
+}
+
+/**
+ * Summarizes text using Cloudflare Workers AI Llama 3.3.
+ */
+export async function summarizeText(text: string): Promise<{ summary: string }> {
+    const { accessToken } = await getAuthSession()
+    if (!isStorageWorkerConfigured()) {
+        throw new Error('Storage Worker URL is not configured.')
+    }
+
+    const res = await fetch(`${STORAGE_WORKER_URL}/summarize`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+    })
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error((err as { error?: string })?.error || `Summarization failed (${res.status})`)
+    }
+
+    return res.json() as Promise<{ summary: string }>
+}
+
+/**
+ * Generates an image using Stable Diffusion XL via Cloudflare Workers AI and saves it directly to R2.
+ */
+export async function generateAIImage(prompt: string): Promise<{ storage_key: string; url: string }> {
+    const { accessToken } = await getAuthSession()
+    if (!isStorageWorkerConfigured()) {
+        throw new Error('Storage Worker URL is not configured.')
+    }
+
+    const res = await fetch(`${STORAGE_WORKER_URL}/image`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+    })
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error((err as { error?: string })?.error || `Image generation failed (${res.status})`)
+    }
+
+    const data = await res.json() as { storage_key: string; url: string }
+    return {
+        storage_key: data.storage_key,
+        url: getFileUrl(data.storage_key),
+    }
+}
