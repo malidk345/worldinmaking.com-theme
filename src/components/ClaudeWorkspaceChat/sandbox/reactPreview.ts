@@ -110,6 +110,7 @@ function namespaceFor(mod: string): string | null {
     if (mod === 'lucide-react') return 'LucideReact'
     if (mod === 'recharts') return 'Recharts'
     if (mod === 'framer-motion') return 'Motion'
+    if (mod === 'three' || mod.startsWith('three/')) return 'THREE'
     return null
 }
 
@@ -1229,6 +1230,10 @@ export async function buildReactPreviewSrcDoc(source: string): Promise<string> {
     const recharts = needsRecharts(source)
         ? '<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js" crossorigin="anonymous"></script>\n  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js" crossorigin="anonymous"></script>'
         : ''
+    const needsThree = /from\s+['"]three['"]|THREE\./.test(source)
+    const threeScript = needsThree
+        ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>'
+        : ''
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -1245,6 +1250,7 @@ ${SLATE_CSS}
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
   ${recharts}
+  ${threeScript}
   <script>
     (function () {
       function show(err) {

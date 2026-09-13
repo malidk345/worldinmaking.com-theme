@@ -57,6 +57,20 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Universal Generative Interactive Engine: Unconstrained HTML/Three.js/Canvas/Lucide Runtime)
+- **Scope:** Abolished rigid domain-specific silos and fixed schemas. Replaced fragile sandbox failures with a bulletproof Universal Interactive Runtime where the AI has full generative freedom to build any application required on the fly (architectural CAD floorplanners with 3D views, physics particle sandboxes, mechanical simulations, playable mini-games, custom calculators, synthesizers) without schema restrictions.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; fully integrated into existing `create_artifact` tool pipeline.
+  2. Zero external build friction: pre-injects Tailwind CSS, Three.js + OrbitControls, Lucide Icons, and Chart.js into HTML application artifacts.
+  3. Resilient Error Catcher: Runtime errors inside the preview iframe display clean non-intrusive error badges instead of dead white screens or freezing Babel compilers.
+- **Changes Applied:**
+  1. `src/lib/chrome/inject.ts`: Enhanced `wrapChromeDocument` with conditional pre-injection of Three.js + OrbitControls, Lucide Icons (with automatic `createIcons()`), Chart.js, Tailwind, and an in-iframe runtime error badge.
+  2. `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`: Added `three` module namespace mapping and Three.js runtime script injection for React preview environments.
+  3. `src/lib/bots/tools/spec.ts`: Updated `TOOL_PROTOCOL` instructing the AI to use `type="html"` or `type="react"` for unconstrained, domain-agnostic interactive applications with full WebGL, Canvas 2D, Three.js, and custom controls.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Ultra-Complex 3D Engine: GLTF/GLB Loader, Custom Polyhedral Meshes & Infinite Scalability)
 - **Scope:** Enabled handling of arbitrary high-complexity 3D models (from multi-thousand polygon CAD assemblies, sculpted meshes, and photorealistic assets to custom procedural vertices/faces), ensuring zero limitations in 3D fidelity.
 - **Architectural Rules Kept:**
