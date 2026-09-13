@@ -1,6 +1,6 @@
 import type { Chat, Message } from '../components/ClaudeWorkspaceChat/types'
 
-export function mergeMessages(left: Message[] = [], right: Message[] = []): Message[] {
+export function mergeMessages(left: Message[] = [], right: Message[] = [], preferRight: boolean = false): Message[] {
     const byId = new Map<string, Message>()
     for (const message of left) {
         if (message?.id) byId.set(message.id, message)
@@ -12,9 +12,15 @@ export function mergeMessages(left: Message[] = [], right: Message[] = []): Mess
             byId.set(message.id, message)
             continue
         }
-        const nextLonger = (message.content || '').length >= (existing.content || '').length
-        const nextDone = message.isTypingDone && !existing.isTypingDone
-        byId.set(message.id, nextLonger || nextDone ? { ...existing, ...message } : { ...message, ...existing })
+        let merged: Message
+        if (!existing.isTypingDone) {
+            merged = { ...message, ...existing }
+        } else if (!message.isTypingDone) {
+            merged = { ...existing, ...message }
+        } else {
+            merged = preferRight ? { ...existing, ...message } : { ...message, ...existing }
+        }
+        byId.set(message.id, merged)
     }
 
     const seen = new Set<string>()
@@ -44,12 +50,13 @@ export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] =
         }
         const remoteTime = Date.parse(chat.updatedAt) || 0
         const localTime = Date.parse(existing.updatedAt) || 0
-        const newer = remoteTime >= localTime ? chat : existing
+        const preferRemote = remoteTime >= localTime
+        const newer = preferRemote ? chat : existing
         const older = newer === chat ? existing : chat
         byId.set(chat.id, {
             ...older,
             ...newer,
-            messages: mergeMessages(existing.messages, chat.messages),
+            messages: mergeMessages(existing.messages, chat.messages, preferRemote),
             shareToken: existing.shareToken || chat.shareToken,
             isShared: existing.isShared || chat.isShared,
         })

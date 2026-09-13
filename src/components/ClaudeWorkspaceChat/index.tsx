@@ -489,6 +489,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [shareBusy, setShareBusy] = useState(false);
 
   const persistOwnerRef = useRef(getChatStorageKey())
+  const lastWrittenChatsStrRef = useRef<string>('')
   // Save to LocalStorage
   useEffect(() => {
     try {
@@ -497,7 +498,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         persistOwnerRef.current = key
         return
       }
-      writeLocalChats(chats);
+      const serialized = JSON.stringify(chats)
+      if (serialized !== lastWrittenChatsStrRef.current) {
+        writeLocalChats(chats)
+        lastWrittenChatsStrRef.current = serialized
+      }
     } catch {
       // A full localStorage quota must not break an active conversation.
     }
@@ -519,32 +524,60 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [settings]);
 
+  const knownChatIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    knownChatIdsRef.current = new Set(chats.map((c) => c.id))
+  }, [chats])
+
   useEffect(() => {
     let cancelled = false
+    let isSyncing = false
+    let syncPending = false
+
     const syncFromRemote = async (claim = false) => {
-      if (claim) await claimDeviceAccountOnLogin()
-      if (cancelled) return
-      const remote = await pullChatsFromRemote()
-      if (cancelled || !remote) return
-      const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
-      for (const id of remote.deletedIds) rememberDeletedChatId(id)
-      setChats((prev) => {
-        const merged = mergeChats(prev, remote.chats, deletedIds)
-        if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
-          setActiveChatId(merged[0].id)
+      if (isSyncing) {
+        syncPending = true
+        return
+      }
+      isSyncing = true
+      try {
+        if (claim) await claimDeviceAccountOnLogin()
+        if (cancelled) return
+        const remote = await pullChatsFromRemote()
+        if (cancelled || !remote) return
+        const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
+        for (const id of remote.deletedIds) rememberDeletedChatId(id)
+        setChats((prev) => {
+          const merged = mergeChats(prev, remote.chats, deletedIds)
+          if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
+            setActiveChatId(merged[0].id)
+          }
+          if (merged.length === 0) setActiveChatId('')
+          return merged
+        })
+      } finally {
+        isSyncing = false
+        if (syncPending && !cancelled) {
+          syncPending = false
+          void syncFromRemote(false)
         }
-        if (merged.length === 0) setActiveChatId('')
-        return merged
-      })
+      }
     }
     void syncFromRemote(true)
+
     let pullTimer: number | undefined
-    const schedulePull = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schedulePull = (payload?: any) => {
+      if (payload?.table === 'wim_chat_messages' && payload.new?.chat_id) {
+         if (!knownChatIdsRef.current.has(payload.new.chat_id)) return
+      }
       window.clearTimeout(pullTimer)
       pullTimer = window.setTimeout(() => {
         void syncFromRemote(false)
       }, 350)
     }
+
+    let isRealtimeActive = false
     const onIdentity = () => {
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
@@ -552,9 +585,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       setChats(Array.isArray(stored) ? stored : [])
       void syncFromRemote(true)
     }
+
     window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
-    const stopRealtime = subscribeToWorkspaceChats(schedulePull)
-    const stopPolling = startWorkspaceChatPolling(schedulePull)
+    const stopRealtime = subscribeToWorkspaceChats(schedulePull, (status) => {
+      isRealtimeActive = status === 'SUBSCRIBED'
+    })
+    const stopPolling = startWorkspaceChatPolling(() => {
+      if (!isRealtimeActive) schedulePull()
+    })
+
     return () => {
       cancelled = true
       window.clearTimeout(pullTimer)
