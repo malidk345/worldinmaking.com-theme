@@ -628,6 +628,75 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'analyze_image',
+            description:
+                'Analyze and inspect an image, diagram, screenshot, artwork, or photo using Cloudflare Workers AI Vision (Llama 3.2 Vision / LLaVA). Use this whenever the user asks to explain, inspect, describe, or extract text from an image URL or R2 storage key.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    image_url: {
+                        type: 'string',
+                        description: 'Public HTTP(S) URL or R2 storage key (e.g. /users/.../generated/...png) of the image to analyze.',
+                    },
+                    question: {
+                        type: 'string',
+                        description: 'Optional question or focus for the analysis (e.g. "What is written on the blackboard?", "Explain this architecture diagram", "Describe the art style and mood").',
+                    },
+                },
+                required: ['image_url'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'transcribe_audio',
+            description:
+                'Transcribe spoken voice notes, lectures, podcasts, or audio recordings into accurate text using Cloudflare Workers AI Whisper Large V3 Turbo. Use this whenever the user provides an audio recording, voice note, or audio URL to transcribe into text or insert into a notebook.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    audio_url: {
+                        type: 'string',
+                        description: 'Public HTTP(S) URL or R2 storage key of the audio file to transcribe.',
+                    },
+                    language: {
+                        type: 'string',
+                        description: 'Optional ISO language code (e.g. "tr" for Turkish, "en" for English) to assist transcription.',
+                    },
+                },
+                required: ['audio_url'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'synthesize_speech',
+            description:
+                'Synthesize realistic speech / audio narration from text using Cloudflare Workers AI Text-to-Speech (MeloTTS / Deepgram Aura) and save the resulting audio in Cloudflare R2 storage. Use this when the user asks you to speak, narrate, read aloud, or create an audio version of a quote or philosophical text.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    text: {
+                        type: 'string',
+                        description: 'The text, quote, or narration to synthesize into speech (up to 1,500 characters).',
+                    },
+                    language: {
+                        type: 'string',
+                        description: 'Optional language code: "tr" for Turkish, "en" for English (default).',
+                    },
+                },
+                required: ['text'],
+            },
+        },
+    },
 ]
 
 export const TOOL_PROTOCOL = `
@@ -638,8 +707,11 @@ PROCESS (host graph: THINK → ACT → TOOLS → THINK → …):
 - <system_reminder> and <private_thought> and <plan_board> are host notes, not the user. Do not quote them in the bubble.
 TOOL USE:
 - You decide which tools to call through the OpenAI/Gemini tool channel. The host will not guess your plan. Call zero or more tools, then answer.
-- Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, search_academic_corpus, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
+- Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, search_academic_corpus, analyze_image, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
 - A plan is optional. Use todo_write only when sequencing helps. Never invent a plan for a one-step ask.
+- analyze_image: Vision and OCR analysis of pictures, diagrams, and photos via Llama 3.2 Vision. Call this whenever the user shares an image URL or asks to inspect visual material.
+- transcribe_audio: Transcribe speech/audio to text via Whisper Large V3 Turbo. Call this when the user shares an audio URL or voice note.
+- synthesize_speech: Text-to-speech audio narration saved in R2 via MeloTTS. Call this when the user asks you to speak or narrate.
 - search_academic_corpus: Search peer-reviewed academic literature, journals, citations, and DOIs (OpenAlex + arXiv). Call this when investigating scholarly philosophy, formal debates, papers, or peer-reviewed studies. Always cite authors, year, journal venue, and DOI/PDF link in your answer. You can also format these as an APA bibliography and use insert_notebook_block to add a References section to the notebook.
 - generate_image: Generate real visual imagery with Cloudflare FLUX.1 and save to R2. Supports aspect_ratio (e.g. '16:9' for wallpapers, '9:16' for portrait) and style (e.g. 'oil_painting', 'vintage_etching', 'cinematic', 'renaissance'). After the tool returns, embed the image in markdown as ![description](url) in your reply.
 - create_artifact is the only way to put an analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble. For charts, KPI metrics, funnels, or data tables, call create_artifact with type="posthog-analytics" and structured JSON {"metrics":[...],"graph":{...},"table":{...},"funnel":[...]}. After a visual artifact succeeds, write one short sentence. If the user asked you to write an article, essay, story, or a word count, that text belongs in the public bubble — do not replace it with a one-line confirmation.

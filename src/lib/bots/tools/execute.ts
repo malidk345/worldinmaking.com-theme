@@ -442,6 +442,231 @@ async function executeAcademicSearch(
     }
 }
 
+async function executeAnalyzeImage(
+    imageUrl: string,
+    question?: string,
+    env?: EnvStore,
+    _host?: HostSnapshot
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const workerUrl = (
+        process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        env?.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        'https://worldinmaking-storage.dursunkayamustafa.workers.dev'
+    ).replace(/\/+$/, '')
+
+    const authToken =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        env?.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        ''
+
+    if (!authToken) {
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: 'Authentication key is not configured for image analysis.' }),
+        }
+    }
+
+    try {
+        const res = await fetch(`${workerUrl}/vision`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image_url: imageUrl,
+                prompt: question || 'Analyze this image in detail. Describe its visual elements, style, text, handwriting, concepts, and key information.',
+            }),
+        })
+
+        if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            return {
+                ok: false,
+                result: JSON.stringify({
+                    ok: false,
+                    error: err?.error || `Cloudflare vision analysis failed (${res.status}).`,
+                }),
+            }
+        }
+
+        const data = (await res.json()) as { ok: boolean; analysis: string; model?: string }
+        return {
+            ok: true,
+            result: clip(
+                JSON.stringify({
+                    ok: true,
+                    image_url: imageUrl,
+                    analysis: data.analysis,
+                    model: data.model,
+                }),
+                MAX_READ_RESULT
+            ),
+        }
+    } catch (err: any) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: err?.message || 'Failed to connect to Cloudflare vision service.',
+            }),
+        }
+    }
+}
+
+async function executeTranscribeAudio(
+    audioUrl: string,
+    language?: string,
+    env?: EnvStore,
+    _host?: HostSnapshot
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const workerUrl = (
+        process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        env?.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        'https://worldinmaking-storage.dursunkayamustafa.workers.dev'
+    ).replace(/\/+$/, '')
+
+    const authToken =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        env?.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        ''
+
+    if (!authToken) {
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: 'Authentication key is not configured for audio transcription.' }),
+        }
+    }
+
+    try {
+        const res = await fetch(`${workerUrl}/transcribe`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                audio_url: audioUrl,
+                language,
+            }),
+        })
+
+        if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            return {
+                ok: false,
+                result: JSON.stringify({
+                    ok: false,
+                    error: err?.error || `Cloudflare audio transcription failed (${res.status}).`,
+                }),
+            }
+        }
+
+        const data = (await res.json()) as { ok: boolean; text: string; vtt?: string }
+        return {
+            ok: true,
+            result: clip(
+                JSON.stringify({
+                    ok: true,
+                    audio_url: audioUrl,
+                    transcription: data.text,
+                    vtt: data.vtt,
+                }),
+                MAX_READ_RESULT
+            ),
+        }
+    } catch (err: any) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: err?.message || 'Failed to connect to Cloudflare transcription service.',
+            }),
+        }
+    }
+}
+
+async function executeSynthesizeSpeech(
+    text: string,
+    language?: string,
+    env?: EnvStore,
+    _host?: HostSnapshot
+): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const workerUrl = (
+        process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        env?.NEXT_PUBLIC_STORAGE_WORKER_URL ||
+        'https://worldinmaking-storage.dursunkayamustafa.workers.dev'
+    ).replace(/\/+$/, '')
+
+    const authToken =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        env?.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        ''
+
+    if (!authToken) {
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: 'Authentication key is not configured for speech synthesis.' }),
+        }
+    }
+
+    try {
+        const res = await fetch(`${workerUrl}/speech`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text,
+                lang: language || 'tr',
+            }),
+        })
+
+        if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            return {
+                ok: false,
+                result: JSON.stringify({
+                    ok: false,
+                    error: err?.error || `Cloudflare speech synthesis failed (${res.status}).`,
+                }),
+            }
+        }
+
+        const data = (await res.json()) as { ok: boolean; storage_key: string; url: string; content_type?: string }
+        const fullUrl = `${workerUrl}${data.url.startsWith('/') ? '' : '/'}${data.url}`
+        const safeSnippet = text.slice(0, 48).replace(/[\[\]"]/g, '').trim()
+
+        return {
+            ok: true,
+            result: JSON.stringify({
+                ok: true,
+                url: fullUrl,
+                storage_key: data.storage_key,
+                content_type: data.content_type,
+                player_html: `<audio controls src="${fullUrl}"></audio>`,
+                markdown: `[🔊 Dinle: "${safeSnippet}"](${fullUrl})`,
+                instruction: `Speech synthesized and stored in R2. Embed it in your public response as: [🔊 Dinle: "${safeSnippet}"](${fullUrl}) or <audio controls src="${fullUrl}"></audio>`,
+            }),
+        }
+    } catch (err: any) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: err?.message || 'Failed to connect to Cloudflare speech synthesizer.',
+            }),
+        }
+    }
+}
+
 const TOOL_NAME_ALIASES: Record<string, string> = {
     google_search: 'web_search',
     search: 'web_search',
@@ -494,6 +719,21 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     find_papers: 'search_academic_corpus',
     search_philosophy_papers: 'search_academic_corpus',
     scholarly_search: 'search_academic_corpus',
+    inspect_visual: 'analyze_image',
+    analyze_visual: 'analyze_image',
+    vision: 'analyze_image',
+    ocr_image: 'analyze_image',
+    ocr: 'analyze_image',
+    transcribe: 'transcribe_audio',
+    transcribe_speech: 'transcribe_audio',
+    audio_to_text: 'transcribe_audio',
+    speech_to_text: 'transcribe_audio',
+    voice_to_text: 'transcribe_audio',
+    speak: 'synthesize_speech',
+    speak_text: 'synthesize_speech',
+    text_to_speech: 'synthesize_speech',
+    tts: 'synthesize_speech',
+    narrate: 'synthesize_speech',
 }
 
 export function resolveToolName(raw: string): string {
@@ -798,6 +1038,36 @@ export async function executeToolCall(
                 sortBy,
                 openAccessOnly,
             })
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'analyze_image') {
+            const imageUrl = asText(args.image_url || args.imageUrl || args.url, 2_000).trim()
+            if (!imageUrl) {
+                const result = JSON.stringify({ ok: false, error: 'image_url is required for analyze_image' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const question = asText(args.question || args.prompt, 1_000).trim() || undefined
+            const executed = await executeAnalyzeImage(imageUrl, question, env, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'transcribe_audio') {
+            const audioUrl = asText(args.audio_url || args.audioUrl || args.url, 2_000).trim()
+            if (!audioUrl) {
+                const result = JSON.stringify({ ok: false, error: 'audio_url is required for transcribe_audio' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const language = asText(args.language || args.lang, 10).trim() || undefined
+            const executed = await executeTranscribeAudio(audioUrl, language, env, host)
+            return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'synthesize_speech') {
+            const text = asText(args.text || args.content || args.prompt, 2_000).trim()
+            if (!text) {
+                const result = JSON.stringify({ ok: false, error: 'text is required for synthesize_speech' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const language = asText(args.language || args.lang, 10).trim() || undefined
+            const executed = await executeSynthesizeSpeech(text, language, env, host)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }

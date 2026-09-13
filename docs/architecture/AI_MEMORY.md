@@ -57,6 +57,30 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Multimodal Intelligence: Vision, STT, TTS Integration)
+- **Scope:** Equipped WIM AI with sensory multimodal capabilities: Image Analysis/Vision via Llama 3.2 Vision / LLaVA, Speech-to-Text via Whisper Large V3 Turbo, and Text-to-Speech via MeloTTS + Deepgram Aura.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`). No second orchestrator.
+  2. Single wire format: OpenAI chat tools via `spec.ts`.
+  3. Audio and vision processing run on Cloudflare Workers AI + R2 storage worker with public media streaming.
+- **Changes Applied:**
+  1. **Cloudflare Storage Worker (`worldinmaking-storage-full/src/index.ts`):**
+     - Enhanced `/transcribe`: Supports both direct audio binary and JSON `{ audio_url, audio_key, audio }` fetching from R2 or web with User-Agent header, using `@cf/openai/whisper-large-v3-turbo`.
+     - Added `/vision`: Accepts `{ image_url, image_key, image, prompt }`, runs `@cf/meta/llama-3.2-11b-vision-instruct` (fallback `@cf/llava-hf/llava-1.5-7b-hf`), returns detailed visual analysis and OCR.
+     - Added `/speech`: Accepts `{ text, lang }`, synthesizes audio via `@cf/myshell-ai/melotts` (fallback `@cf/deepgram/aura-2-en`), stores in R2 (`users/:userId/generated/:id.mp3`), returns CDN URL and content type.
+     - Deployed live (Version ID: `717c4d57-3295-4d5c-b9cf-caf3fe3be998`).
+  2. **Bot Tool Specifications & Aliases (`src/lib/bots/tools/spec.ts`, `modes.ts`, `labels.ts`, `execute.ts`):**
+     - Added `analyze_image` tool definition, parameters, and protocol instructions. Registered in `PLAN_TOOL_NAMES`.
+     - Added `transcribe_audio` tool definition and parameters. Registered in `PLAN_TOOL_NAMES`.
+     - Added `synthesize_speech` tool definition and parameters. Registered in `MUTATING_TOOL_NAMES`.
+     - Added UI streaming labels and short previews in `labels.ts`.
+     - Added aliases: `inspect_visual`, `vision`, `ocr_image`, `transcribe_speech`, `voice_to_text`, `audio_to_text`, `speak_text`, `tts`, `narrate`.
+     - Implemented `executeAnalyzeImage`, `executeTranscribeAudio`, and `executeSynthesizeSpeech` in `execute.ts`.
+  3. **Verification & Testing:**
+     - `src/lib/bots/tools/execute-multimodal.test.ts`: 8/8 passed (including live Vision recognizing Pikachu on Cloudflare Workers AI and live TTS synthesizing speech into R2).
+     - Combined tool suite (image, multimodal, academic): 21/21 passed.
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Battle-Hardened WIM AI Tool Engine: Studio Image Gen & Scholarly RAG)
 - **Scope:** Upgraded WIM AI's tool capabilities from basic baseline calls to studio-grade generation and deep academic research engines.
 - **Architectural Rules Kept:**

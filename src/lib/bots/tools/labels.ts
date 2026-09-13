@@ -32,6 +32,9 @@ const LABELS: Record<string, [string, string, string]> = {
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
     generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
     search_academic_corpus: ['Searching academic literature', 'Found academic papers', 'Academic search failed'],
+    analyze_image: ['Analyzing image', 'Analyzed image', 'Image analysis failed'],
+    transcribe_audio: ['Transcribing audio', 'Transcribed audio', 'Audio transcription failed'],
+    synthesize_speech: ['Synthesizing speech', 'Synthesized speech', 'Speech synthesis failed'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
@@ -62,6 +65,9 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (!args || typeof args !== 'object' || Array.isArray(args)) return ''
         if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') return pickArg(args, ['query', 'q', 'search'])
         if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
+        if (name === 'analyze_image') return pickArg(args, ['question', 'prompt', 'image_url'])
+        if (name === 'transcribe_audio') return pickArg(args, ['audio_url', 'language'])
+        if (name === 'synthesize_speech') return pickArg(args, ['text'])
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
         if (name === 'read_post') return pickArg(args, ['slug', 'id'])
         if (name === 'read_document') return pickArg(args, ['name', 'url', 'query'])

@@ -24,6 +24,8 @@ export const PLAN_TOOL_NAMES = [
     'get_workspace',
     'search_site',
     'search_academic_corpus',
+    'analyze_image',
+    'transcribe_audio',
     'list_notebooks',
     'read_post',
     'write_scratchpad',
@@ -47,6 +49,7 @@ export const MUTATING_TOOL_NAMES = [
     'annotate_notebook',
     'publish_to_forum',
     'generate_image',
+    'synthesize_speech',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {
