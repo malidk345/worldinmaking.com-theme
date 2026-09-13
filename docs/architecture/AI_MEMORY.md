@@ -57,6 +57,27 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-13 — Antigravity (Notebook Footnote Integration & Scholarly Notation Engine)
+- **Scope:** Equipped WIM AI with `add_notebook_footnote` tool and real-time OS client integration, allowing the AI to seamlessly anchor footnotes (`[^1]`, `[^2]`, or custom identifiers) to specific text passages/sentences and define formatted citations at the bottom of the document.
+- **Architectural Rules Kept:**
+  1. Integrates cleanly into existing single orchestrator tool loop (`spec.ts`, `host.ts`, `execute.ts`). No second orchestrator.
+  2. Preserves lightweight zero-tool path for conversational & micro queries ("selam").
+  3. Seamless markdown compatibility: leverages native `MarkdownNotebook` inline footnote markers (`[^id]`) and bottom definition lists (`[^id]: text`) already supported by the notebook parser and PDF exporter.
+  4. Automatic time-travel snapshotting preserved on notebook edit (`saveNotebook`).
+- **Changes Applied:**
+  1. `src/lib/bots/tools/host.ts`: Added `'add_notebook_footnote'` to `HostOsAction` type and implemented `executeAddNotebookFootnote` with marker auto-incrementing and span text targeting.
+  2. `src/components/ClaudeWorkspaceChat/types.ts`: Added `'add_notebook_footnote'` to `OSActionCard` interface.
+  3. `src/lib/bots/tools/spec.ts`: Added `add_notebook_footnote` tool specification and documented in `TOOL_PROTOCOL`.
+  4. `src/lib/bots/tools/labels.ts`: Added streaming status labels (`Adding footnote`, `Added footnote`) and arg preview parser.
+  5. `src/lib/bots/agent/modes.ts`: Registered `add_notebook_footnote` in `MUTATING_TOOL_NAMES`.
+  6. `src/lib/bots/tools/execute.ts`: Added argument aliases, tool name aliases (`add_footnote`, `insert_footnote`, `footnote`, `add_dipnot`, `dipnot`), and wired `executeToolCall` dispatch.
+  7. `src/components/ClaudeWorkspaceChat/index.tsx`: Handled `add_notebook_footnote` in `executeOSAction` by dispatching `wimNotebookAddFootnote` CustomEvent and opening notebook window.
+  8. `src/notebook-app/App.tsx`: Added `wimNotebookAddFootnote` event listener to inject anchor `[^marker]` into document content (matching `spanText` or active selection) and append definition `[^marker]: text` at document end with snapshot history.
+  9. `src/lib/bots/tools/execute-notebook-footnote.test.ts`: Created comprehensive unit test suite (7 tests passed).
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-notebook-footnote.test.ts src/lib/bots/tools/execute-multimodal.test.ts src/lib/bots/tools/execute-image.test.ts src/lib/bots/tools/academic-search.test.ts`: PASS (28/28 passed).
+  2. `pnpm typecheck:shell`: PASS (0 gated shell errors).
+
 ### 2026-09-13 — Antigravity (Task Scale Elasticity & Long-Form Notebook Construction)
 - **Scope:** Upgraded orchestrator prompts and tool protocols (`spec.ts`, `modes.ts`) to provide dynamic scale calibration: micro requests (greetings, simple queries) remain immediate and concise with zero tool bloat, while macro/comprehensive requests trigger iterative multi-section notebook construction (`create_notebook` + consecutive `insert_notebook_block` calls with academic footnotes `[^1]`, `[^2]`) and full 16-step stamina.
 - **Architectural Rules Kept:**

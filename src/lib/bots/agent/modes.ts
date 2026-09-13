@@ -50,6 +50,7 @@ export const MUTATING_TOOL_NAMES = [
     'publish_to_forum',
     'generate_image',
     'synthesize_speech',
+    'add_notebook_footnote',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {

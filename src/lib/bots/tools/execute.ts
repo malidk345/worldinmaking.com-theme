@@ -23,6 +23,7 @@ import {
     executeSearchSite,
     executeSetSystemAppearance,
     executeUpdateNotebookTitle,
+    executeAddNotebookFootnote,
     applyRememberedFact,
     type HostOsAction,
     type HostSnapshot,
@@ -141,6 +142,22 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         markdown: 'content',
         text: 'content',
         tag: 'category',
+    },
+    add_notebook_footnote: {
+        quote: 'span_text',
+        selection: 'span_text',
+        span: 'span_text',
+        target_text: 'span_text',
+        target: 'span_text',
+        content: 'text',
+        note: 'text',
+        comment: 'text',
+        citation: 'text',
+        explanation: 'text',
+        id: 'marker',
+        fnId: 'marker',
+        footnoteId: 'marker',
+        notebookId: 'notebook_id',
     },
     create_artifact: { kind: 'type', source: 'content', body: 'content', code: 'content', markdown: 'content' },
     read_document: { doc: 'name', document: 'name', file: 'name', link: 'url', href: 'url', p: 'page', q: 'query' },
@@ -734,6 +751,13 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     text_to_speech: 'synthesize_speech',
     tts: 'synthesize_speech',
     narrate: 'synthesize_speech',
+    add_footnote: 'add_notebook_footnote',
+    insert_footnote: 'add_notebook_footnote',
+    insert_notebook_footnote: 'add_notebook_footnote',
+    notebook_footnote: 'add_notebook_footnote',
+    footnote: 'add_notebook_footnote',
+    add_dipnot: 'add_notebook_footnote',
+    dipnot: 'add_notebook_footnote',
 }
 
 export function resolveToolName(raw: string): string {
@@ -960,6 +984,20 @@ export async function executeToolCall(
                 asText(args.span_text || args.spanText || args.quote || args.selection, 500),
                 asText(args.note || args.comment || args.critique, 2_000),
                 asText(args.notebook_id || args.notebookId, 80)
+            )
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'add_notebook_footnote') {
+            const executed = executeAddNotebookFootnote(
+                host,
+                asText(args.text || args.content || args.note || args.comment || args.citation, 2_000),
+                asText(args.span_text || args.spanText || args.quote || args.selection, 500) || undefined,
+                asText(args.marker || args.id || args.fnId, 40) || undefined,
+                asText(args.notebook_id || args.notebookId, 80) || undefined
             )
             return {
                 ...base,

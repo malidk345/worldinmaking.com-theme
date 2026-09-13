@@ -535,6 +535,37 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'add_notebook_footnote',
+            description:
+                'Add an academic or explanatory footnote ([^1], [^2], or custom marker) to the bound notebook. Places the footnote marker next to the targeted sentence or span, and defines the footnote content ([^marker]: text) at the bottom of the document. Use whenever adding citations, source references, footnotes, or scholarly notes to notebook content.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    text: {
+                        type: 'string',
+                        description: 'The citation, explanation, or footnote text to append at the bottom of the notebook.',
+                    },
+                    span_text: {
+                        type: 'string',
+                        description: 'Optional sentence or phrase in the notebook to attach the footnote marker to. If omitted, attaches to the end of the current selection or document.',
+                    },
+                    marker: {
+                        type: 'string',
+                        description: 'Optional footnote marker/identifier (e.g. "1", "2", "kant1781"). If omitted, auto-increments based on existing footnotes in the document.',
+                    },
+                    notebook_id: {
+                        type: 'string',
+                        description: 'Optional notebook id. Defaults to the bound notebook in the workspace snapshot.',
+                    },
+                },
+                required: ['text'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'publish_to_forum',
             description:
                 'Create and publish a new discussion topic or question on the WorldInMaking Community Forum. Use when the user asks to post to the forum, publish a discussion topic, or share a synthesis to the community.',
@@ -734,6 +765,7 @@ TOOL USE:
   * replace_notebook_selection: replace the active user selection in the notebook.
   * update_notebook_title: rename or set title for the bound notebook.
   * annotate_notebook: attach inline critique or margin notes to a passage in the notebook.
+  * add_notebook_footnote: add an academic footnote ([^1], [^2], or custom marker) to a specific sentence/span in the notebook, and define the citation/explanation at the bottom of the document.
   * All notebook modifications are applied live by the host with automatic time-travel snapshotting. Do not dump the same markdown in the bubble after calling a notebook tool.
 - write_scratchpad: save a quote or fact only when the user asked to keep it, or when extracting from a document they asked you to read. Use type='citation' for quotes, type='concept' for thesis/definitions, type='source' for chapter/document overviews. Do not volunteer scratchpad contents in the public reply.
 - todo_write: create the plan once, then only update statuses with the SAME ids. Do not invent a second plan. Exactly one item in_progress. The host shows one locked plan in the thinking process.

@@ -126,6 +126,7 @@ export interface OSActionCard {
     | 'set_system_appearance'
     | 'annotate_notebook'
     | 'publish_to_forum'
+    | 'add_notebook_footnote'
   title: string
   description: string
   payload: {
@@ -143,6 +144,8 @@ export interface OSActionCard {
       span_text?: string
       note?: string
       category?: string
+      marker?: string
+      text?: string
   }
   executed?: boolean
 }

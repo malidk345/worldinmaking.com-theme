@@ -873,13 +873,81 @@ export function App() {
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
     }
 
+    const handleAddFootnote = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        text: string
+        marker?: string
+        spanText?: string
+        notebookId?: string
+      }>
+      const text = String(customEvent.detail?.text || '').trim()
+      if (!text) return
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+      const current = markdownRef.current || target.content || ''
+      const spanText = String(customEvent.detail?.spanText || '').trim()
+
+      let marker = String(customEvent.detail?.marker || '').trim()
+      if (!marker) {
+        const matches = current.match(/\[\^([0-9]+)\]/g) || []
+        const existingNums = matches
+          .map((m) => parseInt(m.slice(2, -1), 10))
+          .filter((n) => !isNaN(n))
+        const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 1
+        marker = String(nextNum)
+      }
+
+      const footnoteAnchor = `[^${marker}]`
+      const footnoteDef = `[^${marker}]: ${text}`
+
+      let next = current
+      if (spanText && next.includes(spanText)) {
+        const spanIndex = next.indexOf(spanText)
+        const afterSpan = next.slice(spanIndex + spanText.length, spanIndex + spanText.length + footnoteAnchor.length)
+        if (afterSpan !== footnoteAnchor) {
+          next = next.slice(0, spanIndex + spanText.length) + footnoteAnchor + next.slice(spanIndex + spanText.length)
+        }
+      } else {
+        const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
+        if (selection && next.includes(selection)) {
+          const selIdx = next.indexOf(selection)
+          next = next.slice(0, selIdx + selection.length) + footnoteAnchor + next.slice(selIdx + selection.length)
+        } else {
+          const fnMatch = next.search(/\n\[\^[a-zA-Z0-9_-]+\]:/)
+          if (fnMatch !== -1) {
+            next = next.slice(0, fnMatch) + footnoteAnchor + next.slice(fnMatch)
+          } else {
+            next = next.trimEnd() ? `${next.trimEnd()}${footnoteAnchor}\n\n` : `${footnoteAnchor}\n\n`
+          }
+        }
+      }
+
+      const existingDefRegex = new RegExp(`^\\s*\\[\\^${marker}\\]:.*$`, 'm')
+      if (existingDefRegex.test(next)) {
+        next = next.replace(existingDefRegex, footnoteDef)
+      } else {
+        next = `${next.trimEnd()}\n\n${footnoteDef}\n`
+      }
+
+      setCurrentNotebook(target)
+      setMarkdown(next)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: `Added footnote [^${marker}]` })
+    }
+
     window.addEventListener('wimNotebookInsertText', handleInsertText)
     window.addEventListener('wimNotebookSetTitle', handleSetTitle)
     window.addEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+    window.addEventListener('wimNotebookAddFootnote', handleAddFootnote)
     return () => {
       window.removeEventListener('wimNotebookInsertText', handleInsertText)
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
       window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+      window.removeEventListener('wimNotebookAddFootnote', handleAddFootnote)
     }
   }, [appWindow, appActions, openNotebookWindow])
 

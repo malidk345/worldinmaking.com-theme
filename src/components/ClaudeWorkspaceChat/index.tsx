@@ -1913,6 +1913,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           })
         );
         if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+      } else if (action.type === 'add_notebook_footnote') {
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookAddFootnote', {
+            detail: {
+              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              marker: action.payload.marker,
+              text: action.payload.text || action.payload.content || '',
+              spanText: action.payload.span_text,
+            },
+          })
+        );
+        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'open_window') {
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }

@@ -35,6 +35,7 @@ const LABELS: Record<string, [string, string, string]> = {
     analyze_image: ['Analyzing image', 'Analyzed image', 'Image analysis failed'],
     transcribe_audio: ['Transcribing audio', 'Transcribed audio', 'Audio transcription failed'],
     synthesize_speech: ['Synthesizing speech', 'Synthesized speech', 'Speech synthesis failed'],
+    add_notebook_footnote: ['Adding footnote', 'Added footnote', 'Could not add footnote'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
@@ -68,6 +69,7 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (name === 'analyze_image') return pickArg(args, ['question', 'prompt', 'image_url'])
         if (name === 'transcribe_audio') return pickArg(args, ['audio_url', 'language'])
         if (name === 'synthesize_speech') return pickArg(args, ['text'])
+        if (name === 'add_notebook_footnote') return pickArg(args, ['span_text', 'text', 'marker'])
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
         if (name === 'read_post') return pickArg(args, ['slug', 'id'])
         if (name === 'read_document') return pickArg(args, ['name', 'url', 'query'])
