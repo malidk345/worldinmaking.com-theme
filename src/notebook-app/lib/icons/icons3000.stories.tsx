@@ -1,3 +1,4 @@
+import React from "react"
 import { Meta, StoryObj } from '@storybook/react'
 
 import * as packageIcons from '@posthog/icons'
@@ -55,22 +56,24 @@ export const Alphabetical: StoryObj = {
 }
 
 const GroupBase = ({ group }: { group: Record<string, IconCollection> }): JSX.Element => {
+    const panels = React.useMemo(() => Object.entries(group).map(([key, icons]) => {
+        return {
+            key,
+            header: key,
+            content: (
+                <IconTemplate
+                    icons={icons.map((icon) => {
+                        return { name: icon, icon: packageIcons[icon] }
+                    })}
+                />
+            ),
+        }
+    }), [group]);
+
     return (
         <LemonCollapse
             multiple
-            panels={Object.entries(group).map(([key, icons]) => {
-                return {
-                    key,
-                    header: key,
-                    content: (
-                        <IconTemplate
-                            icons={icons.map((icon) => {
-                                return { name: icon, icon: packageIcons[icon] }
-                            })}
-                        />
-                    ),
-                }
-            })}
+            panels={panels}
         />
     )
 }
