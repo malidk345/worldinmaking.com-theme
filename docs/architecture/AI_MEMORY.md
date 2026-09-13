@@ -21,15 +21,61 @@
 
 ## 3. High-Priority Focus Areas
 - WIM Notebook Mobile UX & Responsive Touch Experience.
+- **Cloudflare Ecosystem Roadmap (Planned Expansions):**
+  1. **Custom Domain:** Map `media.worldinmaking.com` to storage worker.
+  2. **Workers AI (Free 10k daily neurons):** Whisper Audio-to-Text for notebook voice notes, Stable Diffusion XL for in-notebook image generation to R2.
+  3. **Turnstile:** Invisible bot/spam prevention on auth & forum.
+  4. **Edge Caching:** CDN caching for published public notebooks and articles.
+  5. **Vectorize:** Semantic vector search for notebook archives.
+  6. **KV Rate Limiting:** Durable edge rate limiting for AI bots and API routes.
 
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Notebook Content Staleness Fix (cross-device content not updating on open)]`
+- **Status:** `[COMPLETED by Antigravity - Cloudflare R2 Storage Worker & file_metadata Migration]`
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-13 — Antigravity (Cloudflare R2 Storage Worker & file_metadata Migration)
+- **Scope:** Implemented Cloudflare R2 object storage integration with Supabase Postgres metadata and Cloudflare Storage Worker proxy.
+- **Architectural Rules Kept:**
+  1. High-volume binary data (avatars, images, attachments, generated files, uploads) -> Cloudflare R2 private bucket.
+  2. Relational data, document search, and notebook JSON remain exclusively in Supabase PostgreSQL (`wim_notebooks`).
+  3. File metadata tracked in `public.file_metadata` with strict RLS (own-row only).
+  4. Dual-engine resilience: seamless fallback to existing Supabase Storage adapter if `NEXT_PUBLIC_STORAGE_WORKER_URL` is not yet configured.
+- **Changes Applied:**
+  1. **Supabase Migration (`supabase/migrations/20260913_file_metadata.sql`):**
+     - Added `file_metadata` table (`file_id`, `owner_id`, `notebook_id`, `filename`, `mime_type`, `size`, `storage_key`, `category`, `created_at`).
+     - Added `avatar_key` column to `public.profiles`.
+     - Configured RLS policies for own-row `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
+     - Added indexes on `owner_id`, `notebook_id`, `storage_key`.
+  2. **Storage Types (`src/lib/storage-types.ts`):**
+     - Defined `StorageCategory` union (`'avatar' | 'notebook' | 'attachment' | 'chat' | 'generated' | 'upload'`).
+     - Defined `StorageKey` and `FileMetadata` interfaces.
+  3. **Storage Worker Client (`src/lib/storage-worker.ts`):**
+     - Implemented `uploadFile`, `uploadAvatar`, `getFileUrl`, `fetchFileBlob`, `deleteFile`, `convertToWebP`, and `computeBlobHash`.
+     - Transaction rollback protection: if metadata creation in Supabase fails after R2 PUT, the file in R2 is immediately deleted to prevent orphaned storage.
+     - Canvas-based client-side WebP compression and SHA-256 hash generation for files/avatars.
+  4. **Adapter Integrations (`src/lib/profile-media.ts` & `src/lib/notebook-upload.ts`):**
+     - `uploadProfileImage` routes to `uploadAvatar` when storage worker is configured.
+     - `uploadNotebookImage` routes to `uploadFile` with category `'notebook'` when user is authenticated and worker is configured.
+  5. **Environment configuration (`.env.example`):**
+     - Added `NEXT_PUBLIC_STORAGE_WORKER_URL`.
+- **Verification:**
+  - `pnpm vitest run src/lib/storage-worker.test.ts`: PASS (8 tests passed).
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/api-security.spec.ts tests/notebook-frontend.spec.ts`: PASS (62 passed).
+- **Files Modified/Created:**
+  - `supabase/migrations/20260913_file_metadata.sql` (NEW)
+  - `src/lib/storage-types.ts` (NEW)
+  - `src/lib/storage-worker.ts` (NEW)
+  - `src/lib/storage-worker.test.ts` (NEW)
+  - `src/lib/profile-media.ts` (MODIFIED)
+  - `src/lib/notebook-upload.ts` (MODIFIED)
+  - `.env.example` (MODIFIED)
+  - `docs/architecture/AI_MEMORY.md` (MODIFIED)
 
 ### 2026-09-12 — Antigravity (Cross-Device Notebook Content Staleness Fix)
 - **Scope:** Fixed the bug where writing content on Device A and opening the same notebook on Device B would show the old/stale content ("bir yerde yazdığım diğer yerde açınca çıkmıyor").

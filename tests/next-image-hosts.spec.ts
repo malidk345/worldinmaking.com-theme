@@ -9,6 +9,12 @@ test.describe('next/image host allowlist', () => {
         expect(canOptimizeRemoteImage('https://iydypisgfaksqkjdraiu.supabase.co/storage/v1/object/public/x.png')).toBe(
             true
         )
+        expect(canOptimizeRemoteImage('https://worldinmaking-storage.dursunkayamustafa.workers.dev/users/123/avatars/test.webp')).toBe(
+            true
+        )
+        expect(canOptimizeRemoteImage('https://media.worldinmaking.com/users/123/notebooks/abc/images/test.webp')).toBe(
+            true
+        )
         expect(canOptimizeRemoteImage('/images/og/default.png')).toBe(true)
     })
 
