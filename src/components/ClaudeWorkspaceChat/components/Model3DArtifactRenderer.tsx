@@ -177,6 +177,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           geo = new THREE.ConeGeometry(baseSize, height, 4)
           geo.rotateY(Math.PI / 4)
           break
+        }
         case 'mesh':
         case 'custom_mesh':
           geo = createCustomMeshGeometry(obj.vertices || [], obj.faces)
