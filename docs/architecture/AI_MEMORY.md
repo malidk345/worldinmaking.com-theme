@@ -24,11 +24,29 @@
 - WIM Notebook Mobile UX & Responsive Touch Experience.
 - **Cloudflare Ecosystem Roadmap (Planned Expansions):**
   1. **Custom Domain:** Map `media.worldinmaking.com` to storage worker.
-  2. **Workers AI (Free 10k daily neurons):** Whisper Audio-to-Text for notebook voice notes, Stable Diffusion XL for in-notebook image generation to R2.
+  2. **Workers AI (Free 10k daily neurons):** Whisper Audio-to-Text for notebook voice notes, Stable Diffusion XL & FLUX.1 for in-notebook image generation to R2 (Completed).
   3. **Turnstile:** Invisible bot/spam prevention on auth & forum.
   4. **Edge Caching:** CDN caching for published public notebooks and articles.
   5. **Vectorize:** Semantic vector search for notebook archives.
   6. **KV Rate Limiting:** Durable edge rate limiting for AI bots and API routes.
+
+- **WIM AI Tool Expansion Roadmap (Approved Architecture):**
+  1. **Multimodal Capabilities (Cloudflare Workers AI):**
+     - `analyze_image` / `inspect_visual`: Vision via LLaVA 1.5 7B / ResNet for analyzing uploaded documents, screenshots, handwritten notes, and diagrams.
+     - `transcribe_audio_note`: Voice note to structured notebook blocks via Whisper Large V3 Turbo (reusing Worker `/transcribe`).
+     - `synthesize_voice` / `speak_quote`: Text-to-Speech via MeloTTS / ElevenLabs for philosopher audio narrations.
+  2. **Semantic Memory & Philosophical RAG:**
+     - `semantic_search_notebooks`: Meaning-based search across all user notebooks via Cloudflare Vectorize + BGE M3 embeddings.
+     - `cross_examine_argument`: Socratic challenger mode to identify logical fallacies, contradictions, and counter-perspectives from historical thinkers.
+     - `verified_corpus_search`: Fact-checked citations from canonical philosophical texts (Nietzsche, Spinoza, Kant, Schopenhauer) to prevent hallucinations.
+  3. **Desktop OS & Workspace Automation:**
+     - `arrange_workspace_preset`: Contextual workspace layouts (e.g., "Deep Reading Mode" snapping Reader left, Notebook right, dark theme).
+     - `export_notebook`: Compiling notebook or thread into formatted PDF/LaTeX/EPUB hosted on R2.
+     - `run_code_sandbox`: Secure lightweight calculation and visualization sandbox.
+  4. **Interactive Notebook & Learning Tools:**
+     - `create_concept_map`: Visualizing idea networks and philosophical concept relationships via interactive graphs.
+     - `generate_flashcards`: Automatic active recall / spaced repetition decks from notebook highlights.
+     - `daily_reflection_prompt`: Context-aware evening reflection / stoic journal prompts based on daily writings.
 
 ---
 
