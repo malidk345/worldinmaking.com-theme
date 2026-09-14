@@ -510,6 +510,17 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             ) : null}
           </div>
 
+          {message.qualityGate === 'failed' && (
+            <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+              Quality check revised this reply
+            </div>
+          )}
+          {message.qualityGate === 'skipped' && (
+            <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+              Quality check unavailable &mdash; reply shown ungated
+            </div>
+          )}
+
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
             <div className="mt-3.5 space-y-2 font-sans">

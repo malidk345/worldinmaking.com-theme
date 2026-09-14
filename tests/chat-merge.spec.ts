@@ -19,3 +19,12 @@ test('mergeMessages correctly prefers remote edits regardless of length when pre
     const merged = mergeMessages(left, right, true)
     expect(merged[0].content).toBe('short')
 })
+
+test('mergeMessages preserves soft qualityGate', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const left = [{ id: '1', role: 'assistant', content: 'local', qualityGate: 'failed', isTypingDone: true, timestamp: '' }] as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const right = [{ id: '1', role: 'assistant', content: 'remote', isTypingDone: true, timestamp: '' }] as any
+    const mergedLocalWin = mergeMessages(left, right, false)
+    expect(mergedLocalWin[0].qualityGate).toBe('failed')
+})

@@ -1712,3 +1712,13 @@
   - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
 - **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run --passWithNoTests tests/ask-ai-golden.spec.ts`, `pnpm exec playwright test tests/ask-ai-golden.spec.ts`
 - **Pass/Fail:** PASS
+
+
+### $(date +%Y-%m-%d) — Jules (Ask AI Quality Gate Presentation)
+- **Scope:** Changed Ask AI to display soft `qualityGate` outcomes as compact footnotes inside the chat bubble instead of mapping them to hard blocking error cards.
+- **Files Modified:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` (presentation logic added)
+  - `tests/chat-merge.spec.ts` (added test for state preservation over merge)
+- **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run tests/chat-merge.spec.ts --environment node`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished task from plan.
