@@ -1912,6 +1912,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
           const target = appWindows.find((w) => w.path === action.payload.path);
           if (target) app.updateWindow(target, { minimized: true });
+        } else if (act === 'focus' && action.payload.path) {
+          appWindows.forEach((w) => {
+            if (w.path !== action.payload.path && app?.updateWindow) {
+              app.updateWindow(w, { minimized: true });
+            }
+          });
+          const target = appWindows.find((w) => w.path === action.payload.path);
+          if (target && app?.bringToFront) {
+            app.bringToFront(target);
+          } else if (app?.addWindow) {
+            app.addWindow({ path: action.payload.path });
+          }
         } else if (act === 'close_all' && app?.closeWindow) {
           appWindows.forEach((w) => app.closeWindow(w));
         } else if (action.payload.path && app?.addWindow) {
