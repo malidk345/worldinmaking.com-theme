@@ -6,6 +6,7 @@
 
 import { resolveToolName, type ToolCall } from './execute'
 import { ALLOWED_TOOL_NAMES } from './spec'
+import { repairAndParseJsonObject } from './json-repair'
 
 const LEAK_BLOCK = /<(tool_code|tool_call|invoke)\b[^>]*>[\s\S]*?<\/\1>/gi
 const LEAK_UNCLOSED = /<(tool_code|tool_call|invoke)\b[^>]*>[\s\S]*$/gi
@@ -59,6 +60,8 @@ function kwargsToJson(inner: string): string | null {
     const trimmed = inner.trim()
     if (!trimmed) return '{}'
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        const repaired = repairAndParseJsonObject(trimmed)
+        if (repaired) return JSON.stringify(repaired)
         try {
             JSON.parse(pythonishToJson(trimmed))
             return pythonishToJson(trimmed)
@@ -92,15 +95,12 @@ function callFromSource(source: string, index: number): ToolCall | null {
     if (!ALLOWED_TOOL_NAMES.has(name)) return null
     const args = kwargsToJson(match[2] || '')
     if (!args) return null
-    try {
-        JSON.parse(args)
-    } catch {
-        return null
-    }
+    const parsed = repairAndParseJsonObject(args)
+    if (!parsed) return null
     return {
         id: `leak-${name}-${index}`,
         name,
-        argumentsJson: args,
+        argumentsJson: JSON.stringify(parsed),
     }
 }
 

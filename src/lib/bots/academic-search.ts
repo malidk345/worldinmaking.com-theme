@@ -37,7 +37,7 @@ export interface AcademicSearchResult {
     error?: string
 }
 
-const SEARCH_TIMEOUT_MS = 8_000
+const SEARCH_TIMEOUT_MS = 12_000
 const USER_AGENT = 'WorldInMaking/1.0 (https://worldinmaking.com; mailto:dursunkayamustafa@gmail.com)'
 
 /** Reconstruct abstract text from OpenAlex inverted index */

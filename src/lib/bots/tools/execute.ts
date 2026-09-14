@@ -34,6 +34,7 @@ import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, type ArtifactToolType } from '
 import { searchPhilosophicalCorpus } from './philosophical-corpus'
 import { crossExamineArgument } from './argument-cross-examination'
 import type { CanvasSpec } from '../../ai/visual-artifacts'
+import { repairAndParseJsonObject } from './json-repair'
 
 const MAX_TITLE = 80
 const MAX_ARTIFACT_BODY = 120_000
@@ -268,30 +269,9 @@ const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
     interactive_model: 'simulation',
 }
 
-function parseObjectJson(raw: string): Record<string, unknown> | null {
-    try {
-        const parsed = JSON.parse(raw)
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>
-        if (parsed == null) return {}
-        return null
-    } catch {
-        return null
-    }
-}
-
-/** Empty or truncated model JSON should not fail zero-arg tools. */
+/** Resilient argument parser repairing LLM syntax quirks, quotes, truncated brackets, and fences. */
 function parseArgs(raw: string): Record<string, unknown> {
-    const text = String(raw || '').trim()
-    if (!text || text === 'null' || text === 'undefined') return {}
-    const direct = parseObjectJson(text)
-    if (direct) return direct
-    const start = text.indexOf('{')
-    const end = text.lastIndexOf('}')
-    if (start >= 0 && end > start) {
-        const sliced = parseObjectJson(text.slice(start, end + 1))
-        if (sliced) return sliced
-    }
-    return {}
+    return repairAndParseJsonObject(raw) || {}
 }
 
 function normalizeArgs(name: string, args: Record<string, unknown>): Record<string, unknown> {
@@ -300,6 +280,24 @@ function normalizeArgs(name: string, args: Record<string, unknown>): Record<stri
     if (aliases) {
         for (const [from, to] of Object.entries(aliases)) {
             if (output[to] == null && output[from] != null) output[to] = output[from]
+        }
+    }
+    // Auto-coerce stringified JSON structures for tools that accept arrays or objects
+    for (const key of Object.keys(output)) {
+        const val = output[key]
+        if (typeof val === 'string') {
+            const trimmed = val.trim()
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    const parsed = JSON.parse(trimmed)
+                    if (parsed && typeof parsed === 'object') {
+                        output[key] = parsed
+                    }
+                } catch {
+                    const repaired = repairAndParseJsonObject(trimmed)
+                    if (repaired) output[key] = repaired
+                }
+            }
         }
     }
     if (name === 'read_post' && typeof output.slug === 'string') {

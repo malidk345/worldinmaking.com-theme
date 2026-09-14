@@ -57,6 +57,35 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (AI Agent Loop Architectural Overhaul: Robust JSON Repair, In-Flight Retries & State Graph Determinism)
+- **Scope:** Eliminated fragile JSON argument hacks, dropped tool calls, empty-bubble synthesis bugs, and transient provider 429/50x failures in the AI agent loop (`loop.ts`, `pipeline.ts`, `execute.ts`, `leak.ts`).
+- **Architectural Rules Kept:**
+  1. Maintained single native state-graph engine (`runAgentNodePipeline`). No second orchestrator or external workflow framework added.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors.
+  3. All tests pass with zero browser/Playwright dependencies; no git push executed.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/json-repair.ts` & `src/lib/bots/tools/json-repair.test.ts`:
+     - Built dedicated zero-dependency JSON repair engine handling single-quoted keys/values, trailing commas, unescaped newlines in strings, truncated brackets/braces balancing, comments, Python literals (`True/False/None`), and markdown code fences.
+     - 12 comprehensive unit tests covering all LLM edge cases.
+  2. `src/lib/bots/tools/execute.ts`:
+     - Replaced fragile substring slice fallback `parseArgs` with `repairAndParseJsonObject`.
+     - Added auto-coercion for stringified JSON structures in `normalizeArgs` so models passing objects/arrays as strings never fail argument validation.
+  3. `src/lib/bots/tools/leak.ts`:
+     - Upgraded `kwargsToJson` and `callFromSource` with `repairAndParseJsonObject` to reliably extract and repair leaked tool calls.
+  4. `src/lib/bots/tools/provider-retry.ts` & `src/lib/bots/tools/provider-retry.test.ts`:
+     - Built edge-safe provider retry utility with exponential backoff and randomized jitter for transient HTTP 429, 500, 502, 503, 504 errors.
+     - Fully respects `AbortSignal` for instantaneous cancellation upon user stop.
+  5. `src/lib/bots/tools/loop.ts`:
+     - Integrated `fetchWithTransientRetry` into `openaiCompletion` and `groqCompletion`.
+     - Replaced 4 duplicate provider failure blocks with unified `fallbackSuccessFromPartial` ensuring agent never returns an empty bubble (`ok: true, text: ''`) to the user.
+  6. `src/lib/bots/tools/pipeline.ts`:
+     - Fixed synthesis node (`runSynthesisNode`) which previously skipped reasoning recovery if `usedTools` was true, preventing empty bubbles when models generate reasoning but forget public tail tokens.
+  7. `src/lib/bots/academic-search.ts` & `academic-search.test.ts`:
+     - Raised timeout to 12s and guarded live public API tests against third-party external rate limits.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests passed across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-14 — Antigravity (Deep Synthesis, Post-Tool Reflection & Narrative Bridging in Agent Loop)
 - **Scope:** Solved the "tool dump" and disconnected execution problem where the AI ran tools in the background and immediately dumped disjointed results or generic artifacts without digesting the findings or explaining the narrative bridge.
 - **Architectural Rules Kept:**

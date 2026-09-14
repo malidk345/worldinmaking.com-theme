@@ -806,16 +806,22 @@ function runSynthesisNode(state: AgentState, params: AgentPipelineParams): void 
     const cycle = state.stepCount
     emitNode(params, 'synthesis', 'started', cycle)
     state.publicText = stripLeakedToolMarkup(state.publicText)
-    if (!state.publicText.trim()) {
-        if (state.interrupt || state.usedTools || state.artifacts.length > 0 || state.citations.length > 0) {
-            state.phase = 'complete'
-            emitNode(params, 'synthesis', 'completed', cycle)
-            return
-        }
 
+    if (!state.publicText.trim()) {
+        // 1. Recover answer if model emitted thinking/reasoning
         const recovered = extractFallbackAnswerFromThinking(state.thinkingText)
         if (recovered) {
             state.publicText = recovered
+        }
+    }
+
+    // 2. If still empty and no interactive interrupt, ensure a clean delivery
+    if (!state.publicText.trim() && !state.interrupt) {
+        if (state.artifacts.length > 0) {
+            // Artifact is the primary output
+            state.publicText = ''
+        } else if (state.usedTools) {
+            state.publicText = 'İstenen işlemler ve araç analizleri başarıyla tamamlandı.'
         }
     }
 

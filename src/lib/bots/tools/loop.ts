@@ -28,6 +28,7 @@ import { modeSystemPrompt, parseAgentMode, PLAN_TOOL_PROTOCOL, type AgentMode } 
 import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, toolsForAgentMode, type OpenAiToolSpec } from './spec'
 import { runAgentNodePipeline, type NodeEvent } from './pipeline'
 import type { AgentActivity } from '../agent/activity'
+import { fetchWithTransientRetry } from './provider-retry'
 
 
 const GEMINI_TOOL_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash'] as const
@@ -188,7 +189,7 @@ async function openaiCompletion(params: {
     try {
         if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
         const url = params.baseUrl || 'https://api.openai.com/v1/chat/completions'
-        const res = await fetch(url, {
+        const res = await fetchWithTransientRetry(url, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${params.apiKey}`,
@@ -208,7 +209,7 @@ async function openaiCompletion(params: {
                           tool_choice: openaiToolChoice(params.toolChoice),
                       }),
             }),
-        })
+        }, { signal: controller.signal })
         if (!res.ok) {
             const raw = await res.text()
             return { ok: false, detail: `${res.status} ${raw.slice(0, 220)}`, status: res.status }
@@ -303,7 +304,7 @@ async function groqCompletion(params: {
     const unlink = linkAbortSignal(controller, params.signal)
     try {
         if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const res = await fetchWithTransientRetry('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${params.apiKey}`,
@@ -324,7 +325,7 @@ async function groqCompletion(params: {
                           tool_choice: openaiToolChoice(params.toolChoice),
                       }),
             }),
-        })
+        }, { signal: controller.signal })
         if (!res.ok) {
             const raw = await res.text()
             return { ok: false, detail: `${res.status} ${raw.slice(0, 220)}`, status: res.status }
@@ -519,6 +520,26 @@ async function runToolSteps(params: {
     }
 }
 
+function fallbackSuccessFromPartial(step: {
+    usedTools: boolean
+    usedWebSearch: boolean
+    text: string
+    artifacts: ArtifactDocument[]
+    citations: AiCitation[]
+    actions: HostOsAction[]
+}, provider: string): ToolLoopResult {
+    const text = step.text.trim() || (step.artifacts.length > 0 ? '' : 'Completed requested tool actions.')
+    return {
+        ok: true,
+        usedTools: step.usedTools,
+        usedWebSearch: step.usedWebSearch,
+        text,
+        artifacts: step.artifacts,
+        citations: step.citations,
+        actions: step.actions,
+        provider,
+    }
+}
 
 export async function runToolLoop(params: {
     systemPrompt: string
@@ -657,16 +678,7 @@ export async function runToolLoop(params: {
             })
             if (step.kind === 'done') return step.result
             if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                return {
-                    ok: true,
-                    usedTools: step.usedTools,
-                    usedWebSearch: step.usedWebSearch,
-                    text: step.text,
-                    artifacts: step.artifacts,
-                    citations: step.citations,
-                    actions: step.actions,
-                    provider: 'openai',
-                }
+                return fallbackSuccessFromPartial(step, 'openai')
             }
             lastError = step.error
             if (isClientAbortDetail(step.error)) {
@@ -732,16 +744,7 @@ export async function runToolLoop(params: {
                 })
                 if (step.kind === 'done') return step.result
                 if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                    return {
-                        ok: true,
-                        usedTools: step.usedTools,
-                        usedWebSearch: step.usedWebSearch,
-                        text: step.text,
-                        artifacts: step.artifacts,
-                        citations: step.citations,
-                        actions: step.actions,
-                        provider: 'nvidia:deepseek',
-                    }
+                    return fallbackSuccessFromPartial(step, 'nvidia:deepseek')
                 }
                 lastError = step.error
                 if (isClientAbortDetail(step.error)) {
@@ -830,16 +833,7 @@ export async function runToolLoop(params: {
                         break
                     }
                     if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                        return {
-                            ok: true,
-                            usedTools: step.usedTools,
-                            usedWebSearch: step.usedWebSearch,
-                            text: step.text,
-                            artifacts: step.artifacts,
-                            citations: step.citations,
-                            actions: step.actions,
-                            provider: 'groq',
-                        }
+                        return fallbackSuccessFromPartial(step, 'groq')
                     }
                 }
             }
@@ -891,16 +885,7 @@ export async function runToolLoop(params: {
                         break
                     }
                     if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                        return {
-                            ok: true,
-                            usedTools: step.usedTools,
-                            usedWebSearch: step.usedWebSearch,
-                            text: step.text,
-                            artifacts: step.artifacts,
-                            citations: step.citations,
-                            actions: step.actions,
-                            provider: 'gemini',
-                        }
+                        return fallbackSuccessFromPartial(step, 'gemini')
                     }
                 }
             }
