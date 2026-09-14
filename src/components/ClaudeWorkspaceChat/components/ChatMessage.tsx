@@ -549,7 +549,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {message.humanTurn ? (
+          {message.humanTurn && message.humanTurn.status !== 'pending' ? (
             <HumanTurnCard
               turn={message.humanTurn}
               disabled={!!message.isStreaming}
