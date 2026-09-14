@@ -50,7 +50,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-xs font-sans">
       <div className="w-full max-w-md rounded-2xl border border-primary bg-primary text-primary p-6 shadow-2xl space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-primary pb-3">
@@ -65,7 +65,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-medium text-stone-700 mb-1">Share link</label>
+            <label className="block font-medium text-primary mb-1">Share link</label>
             {shareUrl ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -73,11 +73,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     type="text"
                     readOnly
                     value={shareUrl}
-                    className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono text-stone-600 select-all"
+                    className="flex-1 rounded-xl border border-primary/20 bg-accent p-2.5 font-mono text-muted select-all"
                   />
                   <button
                     onClick={handleCopy}
-                    className="flex items-center gap-1 shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af]"
+                    className="flex items-center gap-1 shrink-0 rounded-xl bg-primary px-3.5 py-2.5 font-semibold text-white hover:bg-accent"
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -87,7 +87,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   <button
                     onClick={onDisableShare}
                     disabled={shareBusy}
-                    className="text-[11px] text-stone-500 hover:text-stone-800"
+                    className="text-[11px] text-muted hover:text-primary"
                   >
                     Disable link
                   </button>
@@ -97,17 +97,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <button
                 onClick={onEnableShare}
                 disabled={shareBusy || !onEnableShare}
-                className="w-full rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
+                className="w-full rounded-xl bg-primary px-3.5 py-2.5 font-semibold text-white hover:bg-accent disabled:opacity-60"
               >
                 {shareBusy ? 'Creating link…' : 'Create shareable link'}
               </button>
             )}
           </div>
 
-          <div className="pt-2 border-t border-stone-100">
+          <div className="pt-2 border-t border-primary/10">
             <button
               onClick={handleExportMarkdown}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 py-2.5 font-semibold text-stone-800 hover:bg-stone-100 transition-colors"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-accent py-2.5 font-semibold text-primary hover:bg-accent/50 transition-colors"
             >
               <Download className="h-4 w-4" /> Download Markdown
             </button>
@@ -117,7 +117,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="flex items-center justify-end pt-2">
           <button
             onClick={onClose}
-            className="rounded-xl border border-stone-200 px-4 py-2 font-medium text-stone-600 hover:bg-stone-100"
+            className="rounded-xl border border-primary/20 px-4 py-2 font-medium text-muted hover:bg-accent/50"
           >
             Close
           </button>
