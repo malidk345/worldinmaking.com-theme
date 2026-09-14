@@ -6,6 +6,7 @@ import type {
 } from './lib/components/MarkdownNotebook/notebookEditorModel'
 import { LemonBanner } from '../components/LemonUI/LemonBanner'
 import { LemonButton } from '../components/LemonUI/LemonButton'
+import { LemonModal } from '../components/LemonUI/LemonModal'
 import { planOpenNotebookRemoteApply, pullNotebookById } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
@@ -186,6 +187,7 @@ export function App() {
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline' | 'conflict'>('local')
   const [conflictDetails, setConflictDetails] = useState<{ conflicts: NotebookCollaborationConflict[] } | null>(null)
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
 
@@ -1216,12 +1218,29 @@ export function App() {
                         <LemonButton
                           size="small"
                           type="secondary"
-                          onClick={() => setConflictDetails(null)}
+                          onClick={() => setIsReviewModalOpen(true)}
                         >
                           Review
                         </LemonButton>
                       </div>
                     </LemonBanner>
+
+                    <LemonModal
+                      isOpen={isReviewModalOpen}
+                      onClose={() => setIsReviewModalOpen(false)}
+                      title="Review Remote Changes"
+                      footer={
+                        <div className="flex justify-end gap-2 w-full">
+                          <LemonButton type="secondary" onClick={() => setIsReviewModalOpen(false)}>Cancel</LemonButton>
+                          <LemonButton type="secondary" onClick={() => { setIsReviewModalOpen(false); resolveConflictKeepLocal(); }}>Keep local</LemonButton>
+                          <LemonButton type="primary" onClick={() => { setIsReviewModalOpen(false); resolveConflictTakeRemote(); }}>Take remote</LemonButton>
+                        </div>
+                      }
+                    >
+                      <div className="p-3 text-sm whitespace-pre-wrap font-mono overflow-y-auto max-h-[60vh] border border-primary bg-primary text-muted rounded">
+                        {conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown}
+                      </div>
+                    </LemonModal>
                   </div>
                 )}
                   <React.Suspense
