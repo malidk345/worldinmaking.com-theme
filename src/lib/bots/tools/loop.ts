@@ -19,6 +19,7 @@ import {
 import { envFrom, getRuntimeEnv, type EnvStore } from '../runtime-env'
 import type { ToolCall } from './execute'
 import type { HostOsAction, HostSnapshot } from './host'
+import { anthropicToolCompletion } from './anthropic'
 import { geminiToolCompletion, type GeminiPart } from './gemini'
 import { compactToolHistory, type HistoryTurn } from './history'
 import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provider-errors'
@@ -106,7 +107,7 @@ function isClientAbortDetail(detail: string): boolean {
 }
 
 
-export const TOOL_FAMILY_ORDER = ['groq', 'gemini', 'nvidia', 'openai'] as const
+export const TOOL_FAMILY_ORDER = ['groq', 'gemini', 'nvidia', 'openai', 'anthropic'] as const
 
 export type ToolLoopResult = {
     ok: boolean
@@ -629,6 +630,9 @@ export async function runToolLoop(params: {
         return [...order.slice(offset), ...order.slice(0, offset)]
     }
 
+    const anthropicKey = envFrom(env, 'ANTHROPIC_API_KEY', 'ANTHROPIC_KEY').trim()
+    const anthropicModel = envFrom(env, 'ANTHROPIC_MODEL', 'ANTHROPIC_TOOL_MODEL') || 'claude-3-7-sonnet-20250219'
+
     const families = nextToolFamilyOrder()
 
     for (const family of families) {
@@ -645,6 +649,71 @@ export async function runToolLoop(params: {
                 error: 'client request aborted',
             }
         }
+        if (family === 'anthropic' && anthropicKey) {
+            const step = await runToolSteps({
+                provider: 'anthropic',
+                env,
+                host: params.host,
+                forceWebSearch: params.forceWebSearch,
+                holdPublicUntilCitations: params.holdPublicUntilCitations,
+                baseMessages,
+                onToken: params.onToken,
+                onThinking: params.onThinking,
+                onTool: params.onTool,
+                onNode: params.onNode,
+                onMode,
+                onHuman: params.onHuman,
+                onActivity: params.onActivity,
+                checkpoint: params.checkpoint,
+                agentMode,
+                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                    anthropicToolCompletion({
+                        apiKey: anthropicKey,
+                        model: anthropicModel,
+                        systemPrompt,
+                        messages,
+                        toolChoice,
+                        onToken,
+                        onThinking,
+                        omitTools,
+                        maxTokens,
+                        tools: toolsForAgentMode(agentMode),
+                        signal: params.signal,
+                    }),
+            })
+            if (step.kind === 'done') return step.result
+            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+                return fallbackSuccessFromPartial(step, 'anthropic')
+            }
+            lastError = step.error
+            if (isClientAbortDetail(step.error)) {
+                if (step.kind === 'failed') {
+                    return {
+                        ok: false,
+                        usedTools: step.usedTools,
+                        usedWebSearch: step.usedWebSearch,
+                        text: step.text,
+                        artifacts: step.artifacts,
+                        citations: step.citations,
+                        actions: step.actions,
+                        provider: 'none',
+                        error: 'client request aborted',
+                    }
+                }
+                return {
+                    ok: false,
+                    usedTools: false,
+                    usedWebSearch: false,
+                    text: '',
+                    artifacts: [],
+                    citations: [],
+                    actions: [],
+                    provider: 'none',
+                    error: 'client request aborted',
+                }
+            }
+        }
+
         if (family === 'openai' && byokOpenai) {
             const step = await runToolSteps({
                 provider: 'openai',

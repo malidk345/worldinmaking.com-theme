@@ -533,7 +533,7 @@ test.describe('Think skip and Groq-first', () => {
     })
 
     test('tool loop prefers Groq before Gemini', () => {
-        expect([...TOOL_FAMILY_ORDER]).toEqual(['groq', 'gemini', 'nvidia', 'openai'])
+        expect([...TOOL_FAMILY_ORDER]).toEqual(['groq', 'gemini', 'nvidia', 'openai', 'anthropic'])
     })
 
     test('plan mode does not force todo_write; the model may answer or research', async () => {
