@@ -1,0 +1,9 @@
+docs(architecture): refresh WIM_REPORT.md to match latest main state
+
+This PR updates `docs/architecture/WIM_REPORT.md` to match reality on the `main` branch.
+
+- It removes finished cards (A9, B7, B9, B10, B11, B12, C1, C2, C5, C7) and moves them into the completed list at the top.
+- It identifies and adds the newly prioritized notebook↔AI gap cards (A10 `annotate_notebook` listener missing, A11 `replace_notebook_selection` fail-closed missing, A12 Diff Split View dead `wimArrangeWorkspace` listener, B13 `export_notebook include_footnotes` unused, and B14 `studio` preset `/workspace` path mismatch).
+- A6 remains on the list as still open.
+- Explicit UI policy preventing restyling of existing chrome was added.
+- The action sequence was adjusted prioritizing the new AI cards.
