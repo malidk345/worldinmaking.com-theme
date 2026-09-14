@@ -886,7 +886,7 @@ function executeVerifiedCorpusSearch(
 function executeArrangeWorkspacePreset(
     presetName: string,
     host?: HostSnapshot
-): { ok: boolean; result: string; action: HostOsAction } {
+): { ok: boolean; result: string; action?: HostOsAction } {
     const p = presetName.toLowerCase().trim()
     let action = 'tile'
     let leftPath: string | undefined
@@ -914,11 +914,15 @@ function executeArrangeWorkspacePreset(
             rightPath = '/posts'
             break
         case 'research':
-        default:
             action = 'tile'
             leftPath = '/scratchpad'
             rightPath = '/notebooks'
             break
+        default:
+            return {
+                ok: false,
+                result: JSON.stringify({ ok: false, error: 'unknown preset' }),
+            }
     }
 
     const executed = executeManageWindows(host, action, focusPath, leftPath, rightPath)
@@ -1894,6 +1898,9 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const executed = executeArrangeWorkspacePreset(presetName, host)
+            if (!executed.ok) {
+                return { ...base, ok: false, result: executed.result, summary: toolResultSummary(name, false, executed.result) }
+            }
             return {
                 ...base,
                 ...executed,
