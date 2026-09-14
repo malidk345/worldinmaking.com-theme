@@ -2257,6 +2257,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
+          agentMode={activeChat?.agentMode || 'ask'}
+          isPlanLocked={Boolean(isStreaming || activeChat?.messages.some((m) => m.humanTurn?.status === 'pending'))}
+          onChangeAgentMode={(mode) => {
+            if (activeChatId) {
+              setChats((prev) =>
+                prev.map((c) => (c.id === activeChatId ? { ...c, agentMode: mode } : c))
+              );
+            }
+          }}
         />
 
         {/* Chat Stream & Conversation Body */}
