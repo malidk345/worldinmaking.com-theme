@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
 import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
+import { WINDOW_BG } from '../../constants/frostedSurfaces'
 import { useApp } from '../../context/App'
 import { useWindow } from '../../context/Window'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
@@ -166,13 +167,13 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
     if (/^\/login|^\/signup/.test(path)) {
         return (
-            <div className="flex min-h-full items-center justify-center bg-slate-950/90 p-6">
+            <div className={`flex min-h-full items-center justify-center p-6 ${WINDOW_BG}`}>
                 <AuthWindow />
             </div>
         )
     }
     if (path === '/manifesto' || path === '/about-wim' || path === '/world-in-making') {
-        return null
+        return <AboutContent />
     }
     if (path === '/display-options') {
         return <DisplayOptions />
