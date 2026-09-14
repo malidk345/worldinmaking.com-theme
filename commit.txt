@@ -1,3 +1,0 @@
-test: add regression tests for notebook undo/redo
-
-This adds a suite of tests that cover the core behavior of the markdown notebook's operation logic and undo state management.
