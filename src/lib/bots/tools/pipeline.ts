@@ -232,7 +232,7 @@ function emitNode(
 
 function withThinkInstruction(messages: ChatMessage[], postTool = false): ChatMessage[] {
     const instruction = postTool
-        ? 'REFLECTION & SYNTHESIS STEP: Carefully analyze the returned tool results in context. What key facts, contradictions, nuances, or philosophical insights did they reveal? Determine how to bridge these findings into a rich, coherent narrative answer or what subsequent tool action is logically required. Do not call tools in this thought.'
+        ? 'REFLECTION & PROGRESSIVE SYNTHESIS STEP: Carefully analyze the returned tool results in context. What key facts, nuances, or philosophical insights did they reveal? If you already wrote an introductory or prior section, seamlessly plan the subsequent section or continuation from where you left off. Weave the new evidence into the upcoming paragraphs without repeating earlier statements. Do not call tools in this thought.'
         : 'PLANNING & STRATEGY STEP: Analyze the user inquiry. Determine what background facts, canonical citations, or structured visual artifacts are required, and establish a clear approach for an exhaustive, coherent solution. Do not call tools in this thought.'
 
     return messages.map((message, index) => {
@@ -380,6 +380,13 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.usedTools = true
+        if (leftover) {
+            const remainingUnstreamed = leftover.slice(streamedPublicLength)
+            if (remainingUnstreamed) {
+                emitPublic(remainingUnstreamed)
+            }
+            state.publicText += (state.publicText ? '\n\n' : '') + leftover
+        }
         state.messages.push({
             role: 'assistant',
             content: leftover || null,
@@ -400,7 +407,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         if (remainingUnstreamed) {
             emitPublic(remainingUnstreamed)
         }
-        state.publicText += leftover
+        state.publicText += (state.publicText ? '\n\n' : '') + leftover
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.phase = 'synthesis'
@@ -420,16 +427,18 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     }
 
     if (
-        !state.publicText.trim() &&
         state.usedTools &&
         state.stepCount < state.maxSteps &&
-        state.writeNudges < 1
+        state.writeNudges < 1 &&
+        !isLastStep &&
+        !leftover
     ) {
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.writeNudges += 1
-        state.pendingReminder =
-            'Write the full user-requested answer in the public bubble now. No tools. If they asked for a long article, essay, or word count, write that length. Do not outline. Do not summarize.'
+        state.pendingReminder = state.publicText.trim()
+            ? 'Continue writing seamlessly from where you left off. Integrate the returned tool findings to complete the comprehensive piece. No more tools.'
+            : 'Write the full user-requested answer in the public bubble now. No tools. If they asked for a long article, essay, or word count, write that length. Do not outline. Do not summarize.'
         state.phase = 'decision'
         return
     }

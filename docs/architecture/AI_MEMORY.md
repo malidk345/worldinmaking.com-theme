@@ -57,6 +57,24 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (Progressive Interleaved Multi-Turn Generation & Long-Form Continuation Engine)
+- **Scope:** Enabled models to write public text progressively across tool execution turns (interleaved composition) rather than staying silent until the final round. Text emitted before tools is now accumulated and streamed in real-time, allowing uninterrupted long-form composition and narrative continuity across multi-turn research/notebook workflows.
+- **Architectural Rules Kept:**
+  1. Maintained native state-graph pipeline (`runAgentNodePipeline`) without external orchestrator.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. All tests pass with zero browser/Playwright dependencies; NO git push executed (strictly local per user instruction).
+- **Changes Applied:**
+  1. `src/lib/bots/tools/pipeline.ts`:
+     - In `runDecisionNode`, when `currentToolCalls.length > 0` and `leftover` public text exists, the engine now flushes unstreamed tokens and accumulates `leftover` into `state.publicText`.
+     - In post-tool turns, `withThinkInstruction` guides the model to seamlessly plan the subsequent section or continuation from where it left off, weaving new evidence into upcoming paragraphs without repeating earlier statements.
+     - Updated synthesis nudge reminders to direct the model to continue writing seamlessly when prior sections already exist in `state.publicText`.
+  2. `src/lib/bots/tools/spec.ts`:
+     - Added `PROGRESSIVE COMPOSITION & INTERLEAVED OUTPUTS` directive to `TOOL_PROTOCOL`, authorizing the model to emit introductory frameworks and partial analyses before calling tools, and to continue writing uninterruptedly across turns.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  3. Local commit created; ZERO git push executed.
+
 ### 2026-09-14 — Antigravity (Micro-UX Refinement: In-Flight Streaming Diff & Tactile Terminal Cursor without Intrusive Placeholders)
 - **Scope:** Added live in-flight diff streaming (unclosed code fence completion + live line streaming + beacon) and subtle tactile terminal cursor (`TactileWorkstationCursor`) while strictly removing intrusive placeholder/staging cards as requested.
 - **Architectural Rules Kept:**
