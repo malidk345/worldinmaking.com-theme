@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { QuestionForm } from 'components/Squeak'
 import { useRouter } from 'next/router'
 import { useApp } from 'context/App'
@@ -6,6 +6,39 @@ import { useApp } from 'context/App'
 export default function PostEditorWindow(): JSX.Element {
     const router = useRouter()
     const { closeWindow } = useApp()
+    const [initialValues, setInitialValues] = useState<{ subject: string; body: string } | null>(null)
+
+    useEffect(() => {
+        const loadDraft = () => {
+            const draft = sessionStorage.getItem('wim_forum_topic_draft_v1')
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft)
+                    setInitialValues({
+                        subject: parsed.title || '',
+                        body: parsed.content || '',
+                    })
+                    sessionStorage.removeItem('wim_forum_topic_draft_v1')
+                } catch (e) {
+                    // Ignore parse error
+                }
+            }
+        }
+
+        loadDraft()
+
+        const handleDraftEvent = (e: any) => {
+            if (e.detail) {
+                setInitialValues({
+                    subject: e.detail.title || '',
+                    body: e.detail.content || '',
+                })
+            }
+        }
+
+        window.addEventListener('wimForumCreateTopicDraft', handleDraftEvent)
+        return () => window.removeEventListener('wimForumCreateTopicDraft', handleDraftEvent)
+    }, [])
 
     const handleSubmit = (_formValues: any, _type: any, question: any) => {
         const permalink = question?.attributes?.permalink || question?.id
@@ -29,6 +62,7 @@ export default function PostEditorWindow(): JSX.Element {
                     initialView="question-form"
                     formType="question"
                     onSubmit={handleSubmit}
+                    initialValues={initialValues}
                 />
             </div>
         </div>

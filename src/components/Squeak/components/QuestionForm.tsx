@@ -264,6 +264,7 @@ type QuestionFormProps = {
     disclaimer?: boolean
     autoFocus?: boolean
     isInForum?: boolean
+    initialValues?: Partial<QuestionFormValues> | null
 }
 
 export const QuestionForm = ({
@@ -280,6 +281,7 @@ export const QuestionForm = ({
     disclaimer,
     autoFocus,
     isInForum = false,
+    initialValues,
     ...other
 }: QuestionFormProps) => {
     const { user, getJwt, logout } = useUser()
@@ -392,7 +394,7 @@ export const QuestionForm = ({
                         <QuestionFormMain
                             disclaimer={disclaimer}
                             subject={subject ?? formType === 'question'}
-                            initialValues={formValues}
+                            initialValues={formValues || initialValues}
                             loading={loading}
                             onSubmit={handleMessageSubmit}
                             showTopicSelector={showTopicSelector}

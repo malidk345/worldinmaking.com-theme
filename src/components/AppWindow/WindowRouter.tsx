@@ -29,6 +29,7 @@ const routeFallback = () => <div className="h-full min-h-0 flex-1" aria-hidden /
 const IdeasHub = dynamic(() => import('components/Ideas'), { loading: routeFallback })
 const ProfileWrapper = dynamic(() => import('components/Profile'), { loading: routeFallback })
 const Inbox = dynamic(() => import('components/Inbox'), { loading: routeFallback })
+const PostEditorWindow = dynamic(() => import('../Community/PostEditorWindow'), { loading: routeFallback })
 const BlogPost = dynamic(() => import('../../templates/BlogPost'), { loading: routeFallback })
 const PostListing = dynamic(() => import('../../templates/PostListing'), { loading: routeFallback })
 const DisplayOptions = dynamic(() => import('components/DisplayOptions'), { ssr: false, loading: routeFallback })
@@ -204,6 +205,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
     if (path.startsWith('/notebooks/') || (isNotebookWindowPath(path) && path !== '/notebooks')) {
         return <NotebookApp />
+    }
+    if (path === '/community/new' || path === '/questions/new') {
+        return <PostEditorWindow />
     }
     if (/^\/questions|^\/forum|^\/community/.test(path)) {
         // Only real thread slugs open the detail panel — not /questions, /topic/*, /subscriptions
