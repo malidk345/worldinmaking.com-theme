@@ -21,7 +21,7 @@ import Label from './components/Label'
 const named = (load, exportName, ssr = true) =>
     dynamic(() => load().then((m) => ({ default: m[exportName] })), { ssr, loading: () => null })
 
-const AboutPostHog = dynamic(() => import('./components/AboutPostHog'), { loading: () => null })
+const AboutWIM = dynamic(() => import('./components/AboutWIM'), { loading: () => null })
 const CountriesWeHireIn = dynamic(() => import('./components/AMCharts/CountriesWeHireIn'), {
     ssr: false,
     loading: () => null,
@@ -83,7 +83,7 @@ const TextCard = () => null
 const TutorialCard = () => null
 
 export const shortcodes = {
-    AboutPostHog,
+    AboutWIM,
     ArrayCTA,
     BasicHedgehogImage,
     BorderWrapper,
