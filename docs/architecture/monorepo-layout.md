@@ -1,3 +1,4 @@
+LEGACY — not WIM. See docs/architecture/WIM_REPORT.md
 # Monorepo Layout
 
 High-level structure of the PostHog monorepo.

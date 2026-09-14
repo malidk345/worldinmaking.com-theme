@@ -1,3 +1,4 @@
+LEGACY — not WIM. See docs/architecture/WIM_REPORT.md
 # World in Making - Strateji, Geliştirme ve Monetizasyon Raporu
 
 ## 1. Mevcut Durum Analizi
