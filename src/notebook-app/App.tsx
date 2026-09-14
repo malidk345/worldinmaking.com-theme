@@ -2,7 +2,10 @@ import React, { useState, useEffect, Component, useCallback, useRef, useMemo } f
 import type {
     MarkdownNotebookAskAIRequest,
     MarkdownNotebookUndoApi,
+    NotebookCollaborationConflict,
 } from './lib/components/MarkdownNotebook/notebookEditorModel'
+import { LemonBanner } from '../components/LemonUI/LemonBanner'
+import { LemonButton } from '../components/LemonUI/LemonButton'
 import { planOpenNotebookRemoteApply, pullNotebookById } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
@@ -181,7 +184,8 @@ export function App() {
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
-  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
+  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline' | 'conflict'>('local')
+  const [conflictDetails, setConflictDetails] = useState<{ conflicts: NotebookCollaborationConflict[] } | null>(null)
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
 
@@ -1008,6 +1012,34 @@ export function App() {
     saveNotebook({ ...previous, content: val, ...(heading ? { title: heading } : {}) })
   }, [])
 
+  const handleConflict = useCallback((conflicts: NotebookCollaborationConflict[]) => {
+    if (conflicts.length > 0) {
+      setSyncStatus('conflict')
+      setConflictDetails({ conflicts })
+    }
+  }, [])
+
+  const resolveConflictKeepLocal = useCallback(() => {
+    setSyncStatus('edited')
+    setConflictDetails(null)
+    const current = notebookRef.current
+    if (current) {
+      saveNotebook({ ...current, content: markdownRef.current }, { snapshot: true, snapshotLabel: 'Kept local on conflict' })
+    }
+  }, [])
+
+  const resolveConflictTakeRemote = useCallback(() => {
+    setSyncStatus('saved')
+    const remoteMarkdownStr = conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown
+    setMarkdown(remoteMarkdownStr)
+    setMarkdownVersion((v) => v + 1)
+    setConflictDetails(null)
+    const current = notebookRef.current
+    if (current) {
+      saveNotebook({ ...current, content: remoteMarkdownStr }, { snapshot: true, snapshotLabel: 'Took remote on conflict' })
+    }
+  }, [conflictDetails, remoteMarkdown])
+
   useEffect(() => {
     setOutlineMarkdown(markdown)
   }, [currentNotebook?.id])
@@ -1167,6 +1199,31 @@ export function App() {
                     You can read this notebook. Ask the owner for edit access if you need to write.
                   </div>
                 )}
+                {syncStatus === 'conflict' && (
+                  <div className={`mb-4 ${NOTEBOOK_PRODUCT_SCOPE_CLASS}`}>
+                    <LemonBanner
+                      type="warning"
+                      action={{
+                        children: 'Keep local',
+                        onClick: resolveConflictKeepLocal,
+                      }}
+                    >
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span>Two devices edited this note. Review the text, then choose which to keep.</span>
+                        <LemonButton size="small" type="secondary" onClick={resolveConflictTakeRemote}>
+                          Take remote
+                        </LemonButton>
+                        <LemonButton
+                          size="small"
+                          type="secondary"
+                          onClick={() => setConflictDetails(null)}
+                        >
+                          Review
+                        </LemonButton>
+                      </div>
+                    </LemonBanner>
+                  </div>
+                )}
                   <React.Suspense
                     fallback={
                       <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
@@ -1179,6 +1236,7 @@ export function App() {
                       remoteValue={remoteMarkdown}
                       remoteVersion={currentNotebook.version}
                       deferRemoteValue={syncStatus === 'edited'}
+                      onConflict={handleConflict}
                       remoteCarets={presence.carets}
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}
