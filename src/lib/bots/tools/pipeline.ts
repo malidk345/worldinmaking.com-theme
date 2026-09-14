@@ -37,6 +37,8 @@ const TASK_READ_TOOLS = new Set([
     'read_post',
     'get_workspace',
     'list_notebooks',
+    'search_academic_corpus',
+    'verified_corpus_search',
 ])
 
 const THINK_MAX_TOKENS = 512

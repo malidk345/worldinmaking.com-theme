@@ -183,17 +183,19 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         claim: 'argument',
         thesis: 'argument',
         text: 'argument',
-        school: 'philosophical_tradition',
-        tradition: 'philosophical_tradition',
-        perspective: 'philosophical_tradition',
+        school: 'perspective',
+        tradition: 'perspective',
+        philosophical_tradition: 'perspective',
     },
     verified_corpus_search: {
         q: 'query',
         search: 'query',
         text: 'query',
         term: 'query',
-        author: 'philosopher',
-        source: 'philosopher',
+        author: 'thinker',
+        source: 'thinker',
+        philosopher: 'thinker',
+        max_results: 'limit',
     },
     arrange_workspace_preset: {
         preset: 'preset_name',
@@ -1749,9 +1751,9 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'argument is required for cross_examine_argument' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const tradition = asText(args.philosophical_tradition || args.tradition || args.school, 60).trim() || undefined
+            const perspective = asText(args.perspective, 60).trim() || undefined
             const counterTarget = asText(args.counter_target || args.target, 200).trim() || undefined
-            const executed = executeCrossExamineArgument(argumentText, tradition, counterTarget)
+            const executed = executeCrossExamineArgument(argumentText, perspective, counterTarget)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'verified_corpus_search') {
@@ -1760,10 +1762,10 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'query is required for verified_corpus_search' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const philosopher = asText(args.philosopher || args.author, 60).trim() || undefined
+            const thinker = asText(args.thinker, 60).trim() || undefined
             const work = asText(args.work || args.book, 100).trim() || undefined
-            const maxResults = typeof args.max_results === 'number' ? Math.min(Math.max(1, args.max_results), 10) : 5
-            const executed = executeVerifiedCorpusSearch(query, philosopher, work, maxResults)
+            const limit = typeof args.limit === 'number' ? Math.min(Math.max(1, args.limit), 10) : 5
+            const executed = executeVerifiedCorpusSearch(query, thinker, work, limit)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'arrange_workspace_preset') {
