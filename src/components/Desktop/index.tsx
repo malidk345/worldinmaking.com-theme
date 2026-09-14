@@ -168,8 +168,8 @@ function Desktop() {
     const mobileIconListClassName = 'list-none m-0 p-0 flex flex-row flex-wrap pointer-events-auto w-full sm:hidden'
     const desktopIconListClassName = 'list-none m-0 p-0 flex flex-col content-start pointer-events-auto'
     const desktopIconListStyle = {
-        height: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
-        maxHeight: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
+        height: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`,
+        maxHeight: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`,
     } as const
 
     return (
@@ -211,7 +211,7 @@ function Desktop() {
                 >
                     <Wallpapers wallpaper={siteSettings.wallpaper} reduceMotion={siteSettings.performanceBoost} />
 
-                    <nav className="relative z-10 px-1" style={{ paddingTop: DESKTOP_TOP_OFFSET + 16 }}>
+                    <nav className="relative z-10 px-1 pb-[env(safe-area-inset-bottom)]" style={{ paddingTop: `calc(${DESKTOP_TOP_OFFSET + 16}px + env(safe-area-inset-top))` }}>
                         <ul className={mobileIconListClassName}>
                             {[...leftApps, ...rightApps].map((app) => (
                                 <DesktopIcon key={app.label} app={app} />
