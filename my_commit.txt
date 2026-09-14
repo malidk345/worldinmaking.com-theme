@@ -1,7 +1,0 @@
-refactor(site): split App.tsx into window/shell/auth hooks
-
-Extracted `useShellNav` and `useAuthBridge` from `App.tsx` into separate files inside `src/context/hooks/` to mechanically reduce the size of the massive `App.tsx` context provider.
-
-The `useWindowRegistry` extraction was evaluated but found to be heavily entangled with internal refs (`constraintsRef`), legacy `appSettings`, and complex window UI state. It remains in `App.tsx` and is documented here as a follow-up task to prevent fragile rewrites or behavioral changes in this PR.
-
-This commit contains zero intentional behavior changes and preserves all exact WindowMode semantics and existing AI autonomy flags.
