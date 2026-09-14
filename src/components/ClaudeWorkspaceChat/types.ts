@@ -107,7 +107,7 @@ export interface WebCitation {
 export interface FileAttachment {
   id: string
   name: string
-  type: 'image' | 'text' | 'pdf' | 'code'
+  type: 'image' | 'text' | 'pdf' | 'code' | 'audio'
   size: string
   url?: string
   content?: string

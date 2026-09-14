@@ -16,6 +16,7 @@ import { parseDocumentFile } from '../../../lib/document-parser';
 import { useTokenQuota } from '../../../lib/chat-usage-client';
 import { ScratchpadStore } from '../../../lib/scratchpad-store';
 import { useOptionalApp } from '../../../context/App';
+import { uploadFile, getFileUrl } from '../../../lib/storage-worker';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
@@ -213,6 +214,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       try {
         const parsed = await parseDocumentFile(file);
+
+        let uploadedUrl = parsed.type === 'image' ? parsed.content : undefined;
+
+        if (parsed.type === 'image' || parsed.type === 'audio') {
+            try {
+                const meta = await uploadFile({ file, category: 'chat', filename: file.name });
+                uploadedUrl = getFileUrl(meta.storage_key);
+            } catch (uploadErr) {
+                console.error('[ChatInput] Upload failed for', file.name, uploadErr);
+                // Clear tool errors on upload failure
+                return;
+            }
+        }
+
         // Automatically save document into OS Working Memory Scratchpad
         ScratchpadStore.addDocument({
           name: file.name,
@@ -229,7 +244,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             name: file.name,
             type: parsed.type as any,
             size: sizeStr,
-            url: parsed.type === 'image' ? parsed.content : undefined,
+            url: uploadedUrl,
             content: parsed.content,
             contentPreview: parsed.preview,
           },
