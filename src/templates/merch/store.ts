@@ -71,7 +71,8 @@ export const useCartStore = create<CartStore>()(
 function updateCart(variant: ShopifyProductVariant, quantity: number, cartItems: CartItem[]): CartItem[] {
     const cartItem = { ...variant, count: quantity || 1 }
 
-    const productOnCart = cartItems.map((item) => item.shopifyId).includes(cartItem.shopifyId)
+    // Bolt: Optimized from cartItems.map().includes() to avoid intermediate array allocation
+    const productOnCart = cartItems.some((item) => item.shopifyId === cartItem.shopifyId)
 
     if (!productOnCart) {
         return [...cartItems, cartItem]

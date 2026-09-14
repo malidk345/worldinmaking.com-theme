@@ -1,0 +1,6 @@
+⚡ Bolt: Use .some() instead of .map().includes() for cart checks
+
+💡 What: Replaced `cartItems.map((item) => item.shopifyId).includes(cartItem.shopifyId)` with `cartItems.some((item) => item.shopifyId === cartItem.shopifyId)` in `updateCart`.
+🎯 Why: The original approach creates a redundant intermediate array and iterates multiple times, resulting in unnecessary memory allocations and O(N) memory overhead.
+📊 Impact: Reduces memory allocation to O(1) and time complexity from O(2N) to worst-case O(N) by short-circuiting as soon as a match is found.
+🔬 Measurement: Verify tests pass with `pnpm vitest run src/templates/merch/store.ts` (if added) and code compiles correctly using `pnpm run typecheck:shell`.
