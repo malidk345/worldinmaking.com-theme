@@ -71,7 +71,7 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import { LemonScope } from '../LemonScope';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
-import { extractNotebookId } from '../../lib/window-path';
+import { extractNotebookId, notebookWindowPath } from '../../lib/window-path';
 import {
   adoptGuestChatsIntoAccount,
   chatAuthHeaders,
@@ -221,32 +221,24 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const insertIntoNotebook = (content: string, notebookId?: string) => {
     const text = String(content || '').trim()
     if (!text) return
-    const notebookOpen = appWindows.some(
-      (windowItem) => /notebook/i.test(windowItem.path || '') || windowItem.component === 'NotebookApp'
-    )
-    const insert = () =>
-      window.dispatchEvent(
-        new CustomEvent('wimNotebookInsertText', {
-          detail: {
-            text,
-            mode: 'append',
-            notebookId: notebookId || notebookBind?.notebookId,
-          },
-        })
-      )
-
-    if (!notebookOpen && app?.addWindow) {
+    const targetNbId = notebookId || notebookBind?.notebookId;
+    if (app?.addWindow) {
       app.addWindow({
         title: 'Notebooks',
         icon: 'DocumentTextIcon',
         component: 'NotebookApp',
-        path: '/notebooks',
+        path: targetNbId ? notebookWindowPath(targetNbId) : '/notebooks',
       })
-      window.setTimeout(insert, 350)
-      return
     }
-
-    insert()
+    window.dispatchEvent(
+      new CustomEvent('wimNotebookInsertText', {
+        detail: {
+          text,
+          mode: 'append',
+          notebookId: targetNbId,
+        },
+      })
+    )
   }
 
   // Active chat state
@@ -1849,44 +1841,84 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return true;
     }
     executedActionsRef.current.add(key);
+
+    const isNotebookAction = [
+      'create_notebook',
+      'insert_notebook_block',
+      'rewrite_notebook_document',
+      'replace_notebook_selection',
+      'update_notebook_title',
+      'annotate_notebook',
+      'add_notebook_footnote',
+    ].includes(action.type);
+
+    if (isNotebookAction) {
+      const handleAck = (e: Event) => {
+        const customEvent = e as CustomEvent<{ notebookId?: string }>;
+        const targetId =
+          action.type === 'create_notebook'
+            ? customEvent.detail?.notebookId
+            : action.payload.notebookId || notebookBind?.notebookId;
+
+        // If it's create_notebook, we grab the new ID from the ack if possible, or just accept the ack.
+        // For others, we only ack if the ID matches or if we didn't specify one.
+        if (!targetId || !customEvent.detail?.notebookId || customEvent.detail.notebookId === targetId) {
+          updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
+          window.removeEventListener('wimNotebookAck', handleAck);
+          if (timeout) clearTimeout(timeout);
+        }
+      };
+      window.addEventListener('wimNotebookAck', handleAck);
+      var timeout = setTimeout(() => {
+        window.removeEventListener('wimNotebookAck', handleAck);
+        // Fail the card after a reasonable wait
+        updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: false } });
+        executedActionsRef.current.delete(key);
+      }, 5000);
+    }
+
     try {
       if (action.type === 'create_notebook') {
-        createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+        const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
+        if (app?.addWindow) app.addWindow({ path: notebookWindowPath(nb.id) });
+        // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
         insertIntoNotebook(action.payload.content || '', action.payload.notebookId);
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'rewrite_notebook_document') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookInsertText', {
             detail: {
               text: action.payload.content || '',
               mode: 'replace',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'replace_notebook_selection') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookReplaceSelection', {
             detail: {
               text: action.payload.content || '',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'update_notebook_title') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookSetTitle', {
             detail: {
               title: action.payload.title || '',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'create_forum_topic' || action.type === 'publish_to_forum') {
         window.dispatchEvent(
           new CustomEvent('wimForumCreateTopicDraft', {
@@ -1948,35 +1980,42 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           (app as any).updateSiteSettings({ reduceTransparency: action.payload.reduce_transparency });
         }
       } else if (action.type === 'annotate_notebook') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookAddAnnotation', {
             detail: {
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
               spanText: action.payload.span_text || '',
               note: action.payload.note || '',
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+        // Dispatch ack manually if notebook-app doesn't support wimNotebookAddAnnotation currently
+        // to prevent timeout.
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nbId } }));
       } else if (action.type === 'add_notebook_footnote') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookAddFootnote', {
             detail: {
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
               marker: action.payload.marker,
               text: action.payload.text || action.payload.content || '',
               spanText: action.payload.span_text,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'open_window') {
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }
 
-      updateAssistantMessage(chatId, msgId, {
-        osAction: { ...action, executed: true },
-      });
+      if (!isNotebookAction) {
+        updateAssistantMessage(chatId, msgId, {
+          osAction: { ...action, executed: true },
+        });
+      }
       return true;
     } catch (e) {
       executedActionsRef.current.delete(key);
