@@ -221,3 +221,22 @@ export function isForumPath(p: string): boolean {
 export function isBlogPath(p: string): boolean {
     return typeof p === 'string' && /^\/(blog|posts)(\/|$)/.test(p)
 }
+
+export function windowPathMatches(windowPath: string, targetPath: string): boolean {
+    const w = stripPathNoise(windowPath)
+    const t = stripPathNoise(targetPath)
+    if (w === t) return true
+    if (
+        (w === '/workspace-chat' || w === '/assistant') &&
+        (t === '/workspace-chat' || t === '/assistant')
+    ) {
+        return true
+    }
+    if (w === '/notebooks' || w.startsWith('/notebooks/')) {
+        if (t === '/notebooks' || t.startsWith('/notebooks/')) return true
+    }
+    if (w === '/scratchpad' || w.startsWith('/scratchpad/')) {
+        if (t === '/scratchpad' || t.startsWith('/scratchpad/')) return true
+    }
+    return false
+}

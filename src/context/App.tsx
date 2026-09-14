@@ -10,6 +10,8 @@ import React, {
     useRef,
 } from 'react'
 import dynamic from 'next/dynamic'
+import { useShellNav } from './hooks/useShellNav'
+import { useAuthBridge } from './hooks/useAuthBridge'
 import { AppWindow } from './Window'
 import { isSafeInternalPath } from 'lib/utils'
 import { User, useUser } from 'hooks/useUser'
@@ -30,7 +32,6 @@ import {
     migrateAppearanceSettings,
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
-import { isCancelledRouteError } from '../lib/swallow-cancelled-route'
 import {
     canonicalWindowPath,
     extractNotebookId,
@@ -449,7 +450,7 @@ export interface AppSettings {
     [key: string]: AppSetting
 }
 
-const appSettings: AppSettings = {
+export const appSettings: AppSettings = {
 
     '/': {
         experiment: {
@@ -1019,45 +1020,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }
     }, [])
 
-    const routerRef = useRef<any>(null)
-    useEffect(() => {
-        // Capture router on client only to avoid SSR crash
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            routerRef.current = require('next/router').default
-        } catch (e) {
-            // ignore
-        }
-    }, [])
-
-    const safePush = useCallback(
-        (url: string, opts?: any) => {
-            try {
-                if (typeof window !== 'undefined') {
-                    const next = new URL(url, window.location.origin)
-                    if (next.pathname === window.location.pathname && next.search === window.location.search) {
-                        return
-                    }
-                }
-                const r = routerRef.current
-                if (r && typeof r.push === 'function') {
-                    const nav = r.push(url, undefined, opts)
-                    if (nav && typeof nav.catch === 'function') {
-                        nav.catch((err: unknown) => {
-                            if (!isCancelledRouteError(err)) throw err
-                        })
-                    }
-                } else if (typeof window !== 'undefined') {
-                    window.location.href = url
-                }
-            } catch (e) {
-                if (typeof window !== 'undefined') {
-                    window.location.href = url
-                }
-            }
-        },
-        []
-    )
+    const { safePush } = useShellNav()
 
     const [compact, setCompact] = useState(false)
     const constraintsRef = useRef<HTMLDivElement>(null)
@@ -2105,27 +2068,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setSearchOpen(true)
     }
 
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-    const [authModalView, setAuthModalView] = useState<'sign-in' | 'sign-up' | 'forgot-password'>('sign-in')
-    const [authModalOnSuccess, setAuthModalOnSuccess] = useState<((user: User) => void) | null>(null)
-
-    const openSignIn = (onSuccess?: (user: User) => void) => {
-        setAuthModalView('sign-in')
-        setAuthModalOnSuccess(() => onSuccess || null)
-        setIsAuthModalOpen(true)
-    }
-
-    const openRegister = () => {
-        setAuthModalView('sign-up')
-        setAuthModalOnSuccess(null)
-        setIsAuthModalOpen(true)
-    }
-
-    const openForgotPassword = () => {
-        setAuthModalView('forgot-password')
-        setAuthModalOnSuccess(null)
-        setIsAuthModalOpen(true)
-    }
+    const {
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        authModalView,
+        setAuthModalView,
+        authModalOnSuccess,
+        openSignIn,
+        openRegister,
+        openForgotPassword
+    } = useAuthBridge()
 
     const openStart = ({ subdomain, initialTab }: { subdomain?: string; initialTab?: string }) => {
         addWindow(

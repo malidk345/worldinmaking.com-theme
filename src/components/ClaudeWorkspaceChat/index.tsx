@@ -72,7 +72,7 @@ import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyl
 import { LemonScope } from '../LemonScope';
 import { writeForumDraft } from 'lib/wim-os-action-drafts';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
-import { extractNotebookId, notebookWindowPath } from '../../lib/window-path';
+import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../lib/window-path';
 import {
   adoptGuestChatsIntoAccount,
   chatAuthHeaders,
@@ -1943,19 +1943,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } else if (act === 'snap_right' && action.payload.path && app?.addWindow) {
           app.addWindow({ path: action.payload.path, snapped: 'right' });
         } else if (act === 'close' && action.payload.path && app?.closeWindow) {
-          const target = appWindows.find((w) => w.path === action.payload.path);
+          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
           if (target) app.closeWindow(target);
         } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
-          const target = appWindows.find((w) => w.path === action.payload.path);
+          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
           if (target) app.updateWindow(target, { minimized: true });
         } else if (act === 'focus' && action.payload.path) {
-          appWindows.forEach((w) => {
-            if (w.path !== action.payload.path && app?.updateWindow) {
-              app.updateWindow(w, { minimized: true });
-            }
-          });
-          const target = appWindows.find((w) => w.path === action.payload.path);
+          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
           if (target && app?.bringToFront) {
+            if (target.minimized && app?.updateWindow) {
+              app.updateWindow(target, { minimized: false });
+            }
             app.bringToFront(target);
           } else if (app?.addWindow) {
             app.addWindow({ path: action.payload.path });
