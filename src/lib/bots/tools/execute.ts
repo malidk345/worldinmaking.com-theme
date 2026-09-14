@@ -902,7 +902,7 @@ function executeArrangeWorkspacePreset(
         case 'studio':
             action = 'split'
             leftPath = '/notebooks'
-            rightPath = '/workspace'
+            rightPath = '/workspace-chat'
             break
         case 'minimal':
             action = 'focus'
@@ -916,7 +916,7 @@ function executeArrangeWorkspacePreset(
         case 'research':
         default:
             action = 'tile'
-            leftPath = '/search'
+            leftPath = '/scratchpad'
             rightPath = '/notebooks'
             break
     }

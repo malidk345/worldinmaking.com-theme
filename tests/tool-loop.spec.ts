@@ -681,6 +681,18 @@ I will summarize after the host returns.`
         expect(result.action?.payload.right_path).toBe('/posts')
     })
 
+    test('manage_windows emits window organization host action for focus', async () => {
+        const result = await executeToolCall({
+            id: 'call-win-focus',
+            name: 'manage_windows',
+            argumentsJson: JSON.stringify({ action: 'focus', path: '/notebooks' }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.action?.type).toBe('manage_windows')
+        expect(result.action?.payload.action).toBe('focus')
+        expect(result.action?.payload.path).toBe('/notebooks')
+    })
+
     test('set_system_appearance updates theme and wallpaper', async () => {
         const result = await executeToolCall({
             id: 'call-app',
