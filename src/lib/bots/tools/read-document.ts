@@ -1,4 +1,4 @@
-import { isBlockedFetchUrl } from './fetch-url'
+import { isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import type { HostSnapshot } from './host'
 
 const MAX_BYTES = 500_000
@@ -203,13 +203,27 @@ export async function executeReadDocument(
     const blocked = isBlockedFetchUrl(rawUrl)
     if (blocked) return { ok: false, error: blocked }
 
+    let parsed: URL
+    try {
+        parsed = new URL(rawUrl)
+    } catch {
+        return { ok: false, error: 'url is invalid' }
+    }
+    const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
 
     try {
+        const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
+        if (!ipv4Literal && !parsedHost.includes(':')) {
+            const resolved = await assertPublicHostname(parsedHost, controller.signal)
+            if (resolved) return { ok: false, error: resolved }
+        }
+
         const res = await fetch(rawUrl, {
             method: 'GET',
-            redirect: 'follow',
+            redirect: 'error',
             signal: controller.signal,
             headers: {
                 'User-Agent': 'WorldInMaking-DocumentReader/1.0',
@@ -219,6 +233,11 @@ export async function executeReadDocument(
 
         if (!res.ok) {
             return { ok: false, error: `document fetch failed (${res.status})` }
+        }
+
+        if (!ipv4Literal && !parsedHost.includes(':')) {
+            const rebound = await assertPublicHostname(parsedHost, controller.signal)
+            if (rebound) return { ok: false, error: rebound }
         }
 
         const contentType = (res.headers.get('content-type') || '').toLowerCase()

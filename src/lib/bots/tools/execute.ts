@@ -4,7 +4,7 @@ import type { ArtifactDocument, ArtifactKind } from '../../artifacts/kinds'
 import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
-import { fetchPublicUrl } from './fetch-url'
+import { fetchPublicUrl, isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import {
     searchAcademicCorpus,
     formatAcademicResults,
@@ -183,19 +183,17 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
         claim: 'argument',
         thesis: 'argument',
         text: 'argument',
-        school: 'perspective',
-        tradition: 'perspective',
-        philosophical_tradition: 'perspective',
+        school: 'philosophical_tradition',
+        tradition: 'philosophical_tradition',
+        perspective: 'philosophical_tradition',
     },
     verified_corpus_search: {
         q: 'query',
         search: 'query',
         text: 'query',
         term: 'query',
-        author: 'thinker',
-        source: 'thinker',
-        philosopher: 'thinker',
-        max_results: 'limit',
+        author: 'philosopher',
+        source: 'philosopher',
     },
     arrange_workspace_preset: {
         preset: 'preset_name',
@@ -593,6 +591,23 @@ async function executeAnalyzeImage(
         }
     }
 
+    const blocked = isBlockedFetchUrl(imageUrl)
+    if (blocked) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: blocked }) }
+    }
+    let parsed: URL
+    try {
+        parsed = new URL(imageUrl)
+    } catch {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'url is invalid' }) }
+    }
+    const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+    const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
+    if (!ipv4Literal && !parsedHost.includes(':')) {
+        const resolved = await assertPublicHostname(parsedHost)
+        if (resolved) return { ok: false, result: JSON.stringify({ ok: false, error: resolved }) }
+    }
+
     try {
         const res = await fetch(`${workerUrl}/vision`, {
             method: 'POST',
@@ -665,6 +680,23 @@ async function executeTranscribeAudio(
             ok: false,
             result: JSON.stringify({ ok: false, error: 'Authentication key is not configured for audio transcription.' }),
         }
+    }
+
+    const blocked = isBlockedFetchUrl(audioUrl)
+    if (blocked) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: blocked }) }
+    }
+    let parsed: URL
+    try {
+        parsed = new URL(audioUrl)
+    } catch {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'url is invalid' }) }
+    }
+    const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+    const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
+    if (!ipv4Literal && !parsedHost.includes(':')) {
+        const resolved = await assertPublicHostname(parsedHost)
+        if (resolved) return { ok: false, result: JSON.stringify({ ok: false, error: resolved }) }
     }
 
     try {
@@ -856,28 +888,28 @@ function executeArrangeWorkspacePreset(
 
     switch (p) {
         case 'deep_reading':
-            action = 'tile'
+            action = 'split'
             leftPath = '/posts'
             rightPath = '/notebooks'
             break
         case 'studio':
-            action = 'tile'
+            action = 'split'
             leftPath = '/notebooks'
-            rightPath = '/workspace-chat'
+            rightPath = '/workspace'
             break
         case 'minimal':
             action = 'focus'
             focusPath = '/notebooks'
             break
         case 'split_dual':
-            action = 'tile'
+            action = 'split'
             leftPath = host?.path || '/notebooks'
             rightPath = '/posts'
             break
         case 'research':
         default:
             action = 'tile'
-            leftPath = '/community'
+            leftPath = '/search'
             rightPath = '/notebooks'
             break
     }
@@ -889,9 +921,9 @@ function executeArrangeWorkspacePreset(
             ok: true,
             preset: p,
             layout: action,
-            path: executed.action.payload?.path,
-            left_path: executed.action.payload?.left_path,
-            right_path: executed.action.payload?.right_path,
+            path: focusPath,
+            left_path: leftPath,
+            right_path: rightPath,
         }),
         action: {
             ...executed.action,
@@ -1751,9 +1783,9 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'argument is required for cross_examine_argument' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const perspective = asText(args.perspective, 60).trim() || undefined
+            const tradition = asText(args.philosophical_tradition || args.tradition || args.school, 60).trim() || undefined
             const counterTarget = asText(args.counter_target || args.target, 200).trim() || undefined
-            const executed = executeCrossExamineArgument(argumentText, perspective, counterTarget)
+            const executed = executeCrossExamineArgument(argumentText, tradition, counterTarget)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'verified_corpus_search') {
@@ -1762,10 +1794,10 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'query is required for verified_corpus_search' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const thinker = asText(args.thinker, 60).trim() || undefined
+            const philosopher = asText(args.philosopher || args.author, 60).trim() || undefined
             const work = asText(args.work || args.book, 100).trim() || undefined
-            const limit = typeof args.limit === 'number' ? Math.min(Math.max(1, args.limit), 10) : 5
-            const executed = executeVerifiedCorpusSearch(query, thinker, work, limit)
+            const maxResults = typeof args.max_results === 'number' ? Math.min(Math.max(1, args.max_results), 10) : 5
+            const executed = executeVerifiedCorpusSearch(query, philosopher, work, maxResults)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'arrange_workspace_preset') {
