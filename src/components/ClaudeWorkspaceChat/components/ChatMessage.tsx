@@ -3,7 +3,7 @@ import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, Human
 import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
 
-import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
+import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
@@ -30,25 +30,6 @@ interface ChatMessageProps {
   onAddToNotebook?: (message: Message) => void;
   onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
-}
-
-function detectSpeechLang(text: string): 'tr-TR' | 'en-US' {
-  const sample = text.slice(0, 800)
-  const turkishChars = (sample.match(/[çğıöşüÇĞİÖŞÜ]/g) || []).length
-  if (turkishChars >= 2) return 'tr-TR'
-  const turkishWords = (sample.match(/\b(ve|bir|bu|için|ile|ama|çok|daha|gibi|olarak|değil|nedir|var|yok)\b/gi) || []).length
-  const englishWords = (sample.match(/\b(the|and|for|with|this|that|from|have|not|what|is|are)\b/gi) || []).length
-  if (englishWords > turkishWords) return 'en-US'
-  return turkishChars > 0 ? 'tr-TR' : 'en-US'
-}
-
-function textForSpeech(value: string): string {
-  return value
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[#*_`>]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function formatExactTime(ts?: string): string {
@@ -267,12 +248,6 @@ function artifactCardMeta(art: Artifact): string {
   return art.version > 1 ? `${kind} · v${art.version}` : kind;
 }
 
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return undefined
-  const voices = window.speechSynthesis.getVoices()
-  return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
-}
-
 function InquiryStatusCard({
   kind,
   text,
@@ -394,8 +369,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
-  const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const displayedText = message.content;
   const isLiveAnswer = !isUser && !!message.isStreaming;
   const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
@@ -405,28 +378,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSpeak = () => {
-    if (!('speechSynthesis' in window)) return;
-
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return
-    }
-
-    const spoken = textForSpeech(message.content)
-    if (!spoken) return
-    const lang = detectSpeechLang(spoken)
-    const utterance = new SpeechSynthesisUtterance(spoken);
-    utterance.lang = lang;
-    const voice = pickVoice(lang)
-    if (voice) utterance.voice = voice
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
   };
 
   return (
@@ -622,7 +573,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     )}
                   </div>
                   <span className="font-medium text-secondary text-[11px] leading-none">
-                    {usedModel.name}
+                    {usedModel.name.trim().split(/\s+/).filter(Boolean).pop() || usedModel.name}
                   </span>
                   {message.timestamp && (
                     <span className="text-[10px] text-muted/70 leading-none" suppressHydrationWarning>
@@ -667,16 +618,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 </button>
               )}
 
-              <button
-                onClick={handleSpeak}
-                className={`p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded ${
-                  isSpeaking ? 'text-amber-600' : ''
-                }`}
-                title="Read aloud"
-              >
-                {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5" />}
-              </button>
-
               {onRetry && (
                 <button
                   onClick={() => onRetry(message.id)}
@@ -686,34 +627,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
               )}
-
-              <button
-                onClick={() => {
-                  const next = liked === true ? null : true
-                  setLiked(next)
-                  onFeedback?.(message.id, next)
-                }}
-                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
-                  liked === true ? 'text-emerald-600' : ''
-                }`}
-                title="Good response"
-              >
-                <ThumbsUp className="h-3.5 w-3.5" />
-              </button>
-
-              <button
-                onClick={() => {
-                  const next = liked === false ? null : false
-                  setLiked(next)
-                  onFeedback?.(message.id, next)
-                }}
-                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
-                  liked === false ? 'text-rose-600' : ''
-                }`}
-                title="Bad response"
-              >
-                <ThumbsDown className="h-3.5 w-3.5" />
-              </button>
 
               {message.citations && message.citations.length > 0 && (
                 <button
