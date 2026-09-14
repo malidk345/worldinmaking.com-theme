@@ -7,7 +7,7 @@ import {
   type TimelineItem,
 } from '../../../lib/bots/agent/timeline'
 import dayjs from 'dayjs'
-import { IconBrain, IconWrench, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight } from '@posthog/icons'
+import { IconBrain, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight, IconArrowRight } from '@posthog/icons'
 import { Activity, ShimmeringContent, type ActivityStatus } from './activity/ActivityPrimitives'
 import { ThinkingBangDots } from './ThinkingBangDots'
 
@@ -37,9 +37,21 @@ function toActivityStatus(status: TimelineItem['status']): ActivityStatus {
 const ICON = 'size-3.5'
 
 function toolIcon(name?: string) {
-  if (name === 'web_search' || name === 'search_site' || name === 'fetch_url') return <IconSearch className={ICON} />
-  if (name === 'read_document' || name === 'read_notebook' || name === 'read_post') return <IconNotebook className={ICON} />
-  return <IconWrench className={ICON} />
+  if (name === 'web_search' || name === 'search_site' || name === 'fetch_url' || name === 'academic_search' || name === 'verified_corpus_search') {
+    return <IconSearch className={ICON} />
+  }
+  if (
+    name === 'read_document' ||
+    name === 'read_notebook' ||
+    name === 'read_post' ||
+    name === 'insert_notebook_block' ||
+    name === 'rewrite_notebook_document' ||
+    name === 'export_notebook' ||
+    name === 'add_notebook_footnote'
+  ) {
+    return <IconNotebook className={ICON} />
+  }
+  return <IconArrowRight className={ICON} />
 }
 
 function ReasoningActivity({
