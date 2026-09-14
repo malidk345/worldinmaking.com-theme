@@ -1565,7 +1565,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const applied = executeOSAction(assistantMessageId, parsed.action, targetChatId);
+            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type);
+            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });

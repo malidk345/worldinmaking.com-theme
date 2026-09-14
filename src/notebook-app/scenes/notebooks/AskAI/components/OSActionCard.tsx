@@ -96,7 +96,13 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                                 onExecute()
                             }}
                         >
-                            Dokümana Uygula
+                            {action.type === 'rewrite_notebook_document'
+                                ? 'Belgeyi Değiştir'
+                                : action.type === 'replace_notebook_selection'
+                                ? 'Seçimi Değiştir'
+                                : action.type === 'insert_notebook_block'
+                                ? 'Belgeye Ekle'
+                                : 'Dokümana Uygula'}
                         </LemonButton>
                     )}
                 </div>
