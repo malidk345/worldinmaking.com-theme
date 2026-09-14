@@ -1,7 +1,7 @@
 # WIM_REPORT — ajan iş emirleri
 
 Güncelleme: Latest audit @ main. Bitmiş kartlar bu dosyadan çıkarıldı — yeniden açma:
-A1–A5, A7–A8, A9 (Conflict banner Review), A10 (annotate listener), A11 (replace silent append), B1–B6, B7 (Playwright window-routes), B9 (ARTIFACT_RECIPES), B10 (LemonScope Ask AI), B11 (ask_user composer), B12 (Ask/Plan/Execute UI), B13 (export include_footnotes), B14 (arrange studio path), C1 (Build ignore), C2 (AboutPostHog rename), C5 (Docs banners), C7 (STYLEGUIDE/AGENTS titles), SSRF parity, apply-gate, span/diff, OS path+ack, a11y live regions, Anthropic BYOK, WindowRouter `/auth`, OSActionCard EN+tokens, philosopher avatar tokens, composer quota, BlogPost json-ld, Forum publish compose prefill, WIM_AI.md refresh, OS draft helpers, LemonTable notebooks list restore.
+A1–A5, A7–A8, A9 (Conflict banner Review), A10 (annotate listener), A11 (replace silent append), A13 (annotate premature ack), B1–B6, B7 (Playwright window-routes), B9 (ARTIFACT_RECIPES), B10 (LemonScope Ask AI), B11 (ask_user composer), B12 (Ask/Plan/Execute UI), B13 (export include_footnotes), B14 (arrange studio path), C1 (Build ignore), C2 (AboutPostHog rename), C5 (Docs banners), C7 (STYLEGUIDE/AGENTS titles), SSRF parity, apply-gate, span/diff, OS path+ack, a11y live regions, Anthropic BYOK, WindowRouter `/auth`, OSActionCard EN+tokens, philosopher avatar tokens, composer quota, BlogPost json-ld, Forum publish compose prefill, WIM_AI.md refresh, OS draft helpers, LemonTable notebooks list restore.
 
 Okuyan ajan: kilidi `AI_MEMORY.md` §4'e yaz, **tek kart** yap, `git add -A` yok, bitince §5 log.
 Okuma: bu dosya + `AGENTS.md` + `WIM_AI.md` (AI kartıysa) + `STYLEGUIDE.md` (UI kartıysa).
@@ -26,13 +26,6 @@ Jules PR kuralları: latest `main`; asla `commit.txt` / `commit2.txt` / `commit_
 **Dosya:** `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` ve `src/context/App.tsx` veya ilgili yer.
 **Yap:** `wimArrangeWorkspace` dispatch ediliyor (`detail: { preset: 'split_dual' }`) ama dinleyeni yok. Listener'ı ekle.
 **Bitti:** Split view çalıştığında pencereler `split_dual` şeklinde düzenleniyor.
-
-### A13 — annotate client premature ack
-**Dosya:** `src/components/ClaudeWorkspaceChat/index.tsx`.
-**Yap:** Chat `wimNotebookAddAnnotation` dispatch ettikten hemen sonra beklemeksizin `wimNotebookAck` fire ediyor. Notebook uygulamasının işlemi tamamlamasını beklemeden premature ack yapıyor.
-**Bitti:** Ack süreci notebook event flow'una bağlandı.
-
-*Not: OS action-card narrowing (Jules PR #634) in-flight durumundadır, main'e merge edilene kadar tamamlanmış sayılmamalıdır.*
 
 ---
 
@@ -64,7 +57,7 @@ Jules PR kuralları: latest `main`; asla `commit.txt` / `commit2.txt` / `commit_
 
 ## Sıra
 
-A12 → A13 → A6 → E1 → E2.
+A12 → A6 → E1 → E2.
 
 ---
 
