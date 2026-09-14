@@ -162,10 +162,7 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (/^\/tape-player|^\/mixtapes/.test(path)) {
         return <TapePlayer {...props} />
     }
-    if (/^\/auth(\/|$)/.test(path)) {
-        return null
-    }
-    if (/^\/login|^\/signup/.test(path)) {
+    if (/^\/auth(\/|$)|^\/login|^\/signup/.test(path)) {
         return (
             <div className={`flex min-h-full items-center justify-center p-6 ${WINDOW_BG}`}>
                 <AuthWindow />
