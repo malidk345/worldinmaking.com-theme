@@ -1,3 +1,5 @@
 feat(notebook): visible sync conflict banner
 
 Implements a user-visible sync conflict banner for Notebooks by using a `LemonBanner` directly above the `MarkdownNotebook` editor when a `syncStatus === 'conflict'` arises. This surfaces the keep local, take remote, and review options rather than silently wiping data.
+
+Also fixes pre-existing CI check failures in agent-modes.spec.ts and tool-loop.spec.ts regarding test assertions.

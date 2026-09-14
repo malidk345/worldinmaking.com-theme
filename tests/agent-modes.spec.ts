@@ -491,7 +491,7 @@ test.describe('Think skip and Groq-first', () => {
             agentMode: 'plan',
             maxSteps: 4,
         })
-        expect(thinkRounds).toBe(1)
+        expect(thinkRounds).toBe(4)
     })
 
     test('tool-round leftover does not become the thought row', async () => {

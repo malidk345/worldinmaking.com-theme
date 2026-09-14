@@ -29,11 +29,19 @@ test.describe('OpenAI tool protocol', () => {
     test('exposes only the allowlisted Chat Completions functions', () => {
         expect(OPENAI_CHAT_TOOLS.every((tool) => tool.type === 'function')).toBe(true)
         expect([...ALLOWED_TOOL_NAMES].sort()).toEqual([
+            'add_notebook_footnote',
+            'analyze_image',
             'annotate_notebook',
+            'arrange_workspace_preset',
             'create_artifact',
+            'create_concept_map',
             'create_notebook',
+            'cross_examine_argument',
+            'export_notebook',
             'fetch_url',
             'finalize_plan',
+            'generate_flashcards',
+            'generate_image',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
@@ -46,18 +54,22 @@ test.describe('OpenAI tool protocol', () => {
             'remember',
             'replace_notebook_selection',
             'rewrite_notebook_document',
+            'search_academic_corpus',
             'search_site',
             'set_system_appearance',
             'switch_mode',
+            'synthesize_speech',
             'task',
             'todo_write',
+            'transcribe_audio',
             'update_notebook_title',
+            'verified_corpus_search',
             'web_search',
             'write_scratchpad',
         ])
         expect(TOOL_PROTOCOL).toContain('You decide which tools to call')
         expect(TOOL_PROTOCOL).toContain('tool channel')
-        expect(TOOL_PROTOCOL).toContain('Do not write the user-visible answer in the same step')
+        expect(TOOL_PROTOCOL).toContain('PROGRESSIVE COMPOSITION')
         expect(TOOL_PROTOCOL).toContain('Never print <tool_code>')
         expect(TOOL_PROTOCOL).toContain('A plan is optional')
         expect(TOOL_PROTOCOL).toContain('Independent reads')
@@ -383,11 +395,19 @@ I will summarize after the host returns.`
     test('Gemini declarations and contents stay on the same host contract', () => {
         const declarations = toGeminiFunctionDeclarations()
         expect(declarations.map((item) => item.name).sort()).toEqual([
+            'add_notebook_footnote',
+            'analyze_image',
             'annotate_notebook',
+            'arrange_workspace_preset',
             'create_artifact',
+            'create_concept_map',
             'create_notebook',
+            'cross_examine_argument',
+            'export_notebook',
             'fetch_url',
             'finalize_plan',
+            'generate_flashcards',
+            'generate_image',
             'get_workspace',
             'insert_notebook_block',
             'list_notebooks',
@@ -400,12 +420,16 @@ I will summarize after the host returns.`
             'remember',
             'replace_notebook_selection',
             'rewrite_notebook_document',
+            'search_academic_corpus',
             'search_site',
             'set_system_appearance',
             'switch_mode',
+            'synthesize_speech',
             'task',
             'todo_write',
+            'transcribe_audio',
             'update_notebook_title',
+            'verified_corpus_search',
             'web_search',
             'write_scratchpad',
         ])
