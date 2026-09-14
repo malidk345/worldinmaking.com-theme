@@ -1978,7 +1978,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
-    const nextMode = action === 'run' ? 'execute' : 'plan'
+    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (activeChat.agentMode || 'ask')
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
     if (message.checkpoint) {
       void handleSendMessage('', [], {
