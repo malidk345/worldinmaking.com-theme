@@ -73,8 +73,8 @@ const fields: {
         hubspotField: 'message',
     },
     {
-        name: 'whereDidYouHearAboutPostHog',
-        placeHolder: 'Where did you first hear about PostHog?',
+        name: 'whereDidYouHearAboutWIM',
+        placeHolder: 'Where did you first hear about WorldInMaking?',
         Component: Input,
         hubspotField: 'where_did_you_first_hear_about_posthog_',
     },
@@ -272,7 +272,7 @@ const ValidationSchema = Yup.object().shape({
     role: Yup.string().required('Please select your role'),
     contactSalesMonthlyActiveUsers: Yup.string().nullable(),
     details: Yup.string().nullable(),
-    whereDidYouHearAboutPostHog: Yup.string().nullable(),
+    whereDidYouHearAboutWIM: Yup.string().nullable(),
 })
 
 export default function Contact({

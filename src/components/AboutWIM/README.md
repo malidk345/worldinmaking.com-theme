@@ -1,6 +1,6 @@
-# AboutPostHog
+# AboutWIM
 
-Renders the standard "About PostHog" description as a `Blockquote`. This is the
+Renders the standard "About WorldInMaking" description as a `Blockquote`. This is the
 single source of truth for that copy.
 
 ## Why it exists
@@ -15,20 +15,20 @@ let the two drift apart, so it now lives here once.
 In React:
 
 ```tsx
-import AboutPostHog from 'components/AboutPostHog'
+import AboutWIM from 'components/AboutWIM'
 
-<AboutPostHog />
+<AboutWIM />
 ```
 
 In MDX/Markdown content (registered as a global shortcode in
 `src/mdxGlobalComponents.js` / `.ts`):
 
 ```mdx
-<AboutPostHog />
+<AboutWIM />
 ```
 
 ## Updating the copy
 
-Edit the text in `index.tsx`. Every place that renders `<AboutPostHog />`
+Edit the text in `index.tsx`. Every place that renders `<AboutWIM />`
 (ReaderView's About blockquote and any content page that uses the shortcode)
 updates automatically.
