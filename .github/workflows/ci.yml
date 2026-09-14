@@ -59,7 +59,8 @@ jobs:
           CI: true
           # Placeholders so Next can boot without repo secrets.
           # Search/API smoke only asserts HTTP 200 + JSON shape (empty hits OK).
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:8000
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
           # Allow server modules to start without service role during smoke.
           WIM_SKIP_ENV_HARD_FAIL: '1'

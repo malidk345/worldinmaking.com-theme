@@ -187,7 +187,7 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (isProfilePath(path)) {
         return <ProfileWrapper path={path} {...props} />
     }
-    if (/^\/notebooks/.test(path)) {
+    if (isNotebookWindowPath(path)) {
         return <NotebooksListSkeleton />
     }
     if (/^\/questions|^\/forum|^\/community/.test(path)) {
