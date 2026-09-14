@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { test, expect } from '@playwright/test'
 import { executeExportNotebook } from '../src/lib/bots/tools/execute'
 import { HostSnapshot } from '../src/lib/bots/tools/spec'
 
-describe('executeExportNotebook', () => {
-    it('should strip footnotes when includeFootnotes is false', () => {
+test.describe('executeExportNotebook', () => {
+    test('should strip footnotes when includeFootnotes is false', () => {
         const host: HostSnapshot = {
             notebooks: [
                 {
@@ -27,7 +27,7 @@ describe('executeExportNotebook', () => {
         expect(result.artifact?.content).toContain('And another paragraph.')
     })
 
-    it('should normalize footnotes when includeFootnotes is true', () => {
+    test('should normalize footnotes when includeFootnotes is true', () => {
         const host: HostSnapshot = {
             notebooks: [
                 {

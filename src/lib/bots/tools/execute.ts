@@ -1189,7 +1189,7 @@ function compileNotebookToText(title: string, rawContent: string): string {
     return `${border}\n  ${title.toUpperCase()}\n${border}\n\n${rawContent}`
 }
 
-function executeExportNotebook(
+export function executeExportNotebook(
     format: string,
     notebookId?: string,
     includeToc: boolean = true,
