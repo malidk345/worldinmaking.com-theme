@@ -416,6 +416,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {/* Textarea Placeholder: "Write a message..." */}
         <textarea
           data-composer
+          aria-label="Message composer"
           ref={textareaRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -574,6 +575,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Send"
+                aria-label="Send message"
               >
                 <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
               </button>

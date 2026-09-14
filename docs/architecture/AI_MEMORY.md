@@ -1704,3 +1704,11 @@
 - **Commands run:** `pnpm typecheck:shell`, `pnpm test:smoke`, `rg "PostHog is the leading" src`
 - **Pass/Fail:** PASS
 - **Handoff:** Next unfinished card is A2.
+### 2025-03-05 — Jules (Accessibility polish for WIM Ask AI)
+- **Scope:** Improved screen reader support for the Ask AI chat sidebar, composer, and error live regions.
+- **Files Modified:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run --passWithNoTests tests/ask-ai-golden.spec.ts`, `pnpm exec playwright test tests/ask-ai-golden.spec.ts`
+- **Pass/Fail:** PASS
