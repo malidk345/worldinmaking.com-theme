@@ -13,12 +13,15 @@ interface OSActionCardProps {
  */
 export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardProps): JSX.Element {
     const content = action.payload?.content?.trim()
+    const isAnnotation = action.type === 'annotate_notebook'
+    const buttonLabel = isAnnotation ? 'Annotate' : 'Add to notebook'
+
 
     return (
         <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary font-sans">
             <div className="flex items-center justify-between gap-2">
                 <p className="m-0 font-medium text-[13px] text-primary truncate">
-                    {action.title || 'Add to notebook'}
+                    {action.title || buttonLabel}
                 </p>
 
                 <div className="shrink-0">
@@ -39,7 +42,7 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                             }}
                             className="rounded px-2.5 py-1 text-[12px] font-medium text-white bg-[#1E3A8A] hover:bg-[#1e40af] transition-colors cursor-pointer"
                         >
-                            Add to notebook
+                            {buttonLabel}
                         </button>
                     )}
                 </div>

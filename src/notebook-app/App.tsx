@@ -14,7 +14,11 @@ import {
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
-import { parseMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { parseMarkdownNotebook, serializeMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { upsertAnnotation } from './lib/components/MarkdownNotebook/annotations'
+import { applyRefOnNotebookSpan, resolveAutonomousPlacement, collectExistingRefSpans } from './lib/components/MarkdownNotebook/annotationPlacement'
+import { createNotebookRefId } from './lib/components/MarkdownNotebook/notebookEditorModel'
+import type { InlinePhilosopherNote } from './lib/components/MarkdownNotebook/types'
 import { MarkdownTextDiff } from './lib/components/MarkdownNotebook/MarkdownTextDiff'
 import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebook/freshlyInserted'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
@@ -883,6 +887,61 @@ export function App() {
       window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
+
+    const handleAddAnnotation = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        notebookId?: string
+        spanText: string
+        note: string
+      }>
+      const spanText = String(customEvent.detail?.spanText || '').trim()
+      const note = String(customEvent.detail?.note || '').trim()
+      if (!spanText || !note) {
+        setCloudMessage({ type: 'error', text: 'span_text and note are required' })
+        appActions?.addToast({ type: 'error', message: 'Missing span or note content for annotation' })
+        return
+      }
+
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+
+      const current = markdownRef.current || target.content || ''
+      const document = parseMarkdownNotebook(current)
+      const used = collectExistingRefSpans(document.nodes)
+      const placement = resolveAutonomousPlacement(document.nodes, spanText, 'span', used)
+
+      if (placement.kind !== 'span') {
+        setCloudMessage({ type: 'error', text: 'Could not locate the exact phrase in the notebook' })
+        appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
+        return
+      }
+
+      const refId = createNotebookRefId()
+      const nextNodes = applyRefOnNotebookSpan(document.nodes, placement.span, refId)
+
+      const newNote: InlinePhilosopherNote = {
+        by: 'wimai',
+        name: 'WIM AI',
+        text: note,
+        kind: 'bot',
+        createdAt: new Date().toISOString(),
+      }
+
+      const nextAnnotations = upsertAnnotation(document.annotations, refId, [newNote], { scope: 'span' })
+      const nextDocument = { ...document, nodes: nextNodes, annotations: nextAnnotations }
+      const nextMarkdown = serializeMarkdownNotebook(nextDocument)
+
+      setCurrentNotebook(target)
+      setMarkdown(nextMarkdown)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: nextMarkdown }, { snapshot: true, snapshotLabel: 'Added annotation' })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+    }
+
     const handleAddFootnote = (event: Event) => {
       const customEvent = event as CustomEvent<{
         text: string
@@ -954,11 +1013,13 @@ export function App() {
     window.addEventListener('wimNotebookSetTitle', handleSetTitle)
     window.addEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
     window.addEventListener('wimNotebookAddFootnote', handleAddFootnote)
+    window.addEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     return () => {
       window.removeEventListener('wimNotebookInsertText', handleInsertText)
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
       window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
       window.removeEventListener('wimNotebookAddFootnote', handleAddFootnote)
+      window.removeEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     }
   }, [appWindow, appActions, openNotebookWindow])
 

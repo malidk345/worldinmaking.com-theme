@@ -2066,7 +2066,7 @@ test.describe('notebook frontend helpers', () => {
 
         // Must explicitly check for destructive actions and skip execution on stream
         expect(chatCode).toContain("const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type)")
-        expect(chatCode).toContain("const applied = isDestructive ? false : executeOSAction")
+        expect(chatCode).toContain("const applied = isDestructive ? false : shouldAutoApply ? executeOSAction")
     })
 })
 
