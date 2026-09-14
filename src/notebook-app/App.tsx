@@ -15,6 +15,7 @@ import {
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { applyNotebookPatchText } from '../lib/notebook-patch-text'
 import { upsertAnnotation } from './lib/components/MarkdownNotebook/annotations'
 import { applyRefOnNotebookSpan, resolveAutonomousPlacement, collectExistingRefSpans } from './lib/components/MarkdownNotebook/annotationPlacement'
 import { createNotebookRefId } from './lib/components/MarkdownNotebook/notebookEditorModel'
@@ -842,6 +843,52 @@ export function App() {
       }
     }
 
+    const handlePatchText = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        notebookId?: string
+        removed?: string
+        added?: string
+        spanText?: string
+      }>
+      let target = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) {
+        addToast({ description: 'Patch failed: No open notebook.', error: true })
+        window.dispatchEvent(new CustomEvent('wimNotebookPatchAck', { detail: { ok: false } }))
+        return
+      }
+
+      const current =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+          ? markdownRef.current || target.content || ''
+          : target.content || ''
+
+      const result = applyNotebookPatchText(current, {
+        removed: customEvent.detail?.removed,
+        added: customEvent.detail?.added,
+        spanText: customEvent.detail?.spanText,
+      })
+
+      if (!result.ok) {
+        addToast({ description: result.error, error: true })
+        window.dispatchEvent(new CustomEvent('wimNotebookPatchAck', { detail: { ok: false } }))
+        return
+      }
+
+      setCurrentNotebook(target)
+      setTitle(target.title)
+      setMarkdown(result.next)
+      setMarkdownVersion((v) => v + 1)
+      const label = result.mode === 'span' ? 'Applied patch over selection' : 'Applied patch'
+      saveNotebook({ ...target, content: result.next }, { snapshot: true, snapshotLabel: label })
+      addToast({ description: 'Patched document successfully.' })
+      window.dispatchEvent(new CustomEvent('wimNotebookPatchAck', { detail: { ok: true, notebookId: target.id } }))
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+    }
+
     const handleSetTitle = (event: Event) => {
       const customEvent = event as CustomEvent<{ title: string; notebookId?: string }>
       const newTitle = String(customEvent.detail?.title || '').trim()
@@ -1017,16 +1064,18 @@ export function App() {
     window.addEventListener('wimNotebookInsertText', handleInsertText)
     window.addEventListener('wimNotebookSetTitle', handleSetTitle)
     window.addEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+    window.addEventListener('wimNotebookPatchText', handlePatchText)
     window.addEventListener('wimNotebookAddFootnote', handleAddFootnote)
     window.addEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     return () => {
       window.removeEventListener('wimNotebookInsertText', handleInsertText)
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
       window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+      window.removeEventListener('wimNotebookPatchText', handlePatchText)
       window.removeEventListener('wimNotebookAddFootnote', handleAddFootnote)
       window.removeEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     }
-  }, [appWindow, appActions, openNotebookWindow])
+  }, [appWindow, appActions, openNotebookWindow, addToast])
 
   const handleCanvasSave = (id: string) => {
     openNotebookWindow(id)

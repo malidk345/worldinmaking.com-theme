@@ -7,6 +7,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
+import { readNotebookChatBind } from '../../../lib/notebook-chat-bind';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -72,31 +73,38 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const removedBlockText = React.useMemo(() => {
+    return removedLines.map((l) => l.slice(1)).join('\n');
+  }, [removedLines]);
+
   const handleApplyToNotebook = () => {
     if (typeof window === 'undefined') return;
-    const selection = window.getSelection()?.toString().trim();
-    if (selection) {
-      // If notebook has a non-empty selection, replace that span
-      window.dispatchEvent(
-        new CustomEvent('wimNotebookReplaceSelection', {
-          detail: {
-            text: cleanContentToApply,
-          },
-        })
-      );
-    } else {
-      // Else fallback to append
-      window.dispatchEvent(
-        new CustomEvent('wimNotebookInsertText', {
-          detail: {
-            text: cleanContentToApply,
-            mode: 'append',
-          },
-        })
-      );
-    }
-    setApplied(true);
-    setTimeout(() => setApplied(false), 3000);
+
+    // Capture selection immediately (click may clear DOM selection)
+    const spanText = window.getSelection()?.toString().trim() || '';
+    const notebookId = readNotebookChatBind()?.notebookId;
+
+    const onAck = (e: Event) => {
+      const detail = (e as CustomEvent<{ ok?: boolean }>).detail;
+      window.removeEventListener('wimNotebookPatchAck', onAck);
+      if (detail?.ok) {
+        setApplied(true);
+        setTimeout(() => setApplied(false), 3000);
+      }
+    };
+    window.addEventListener('wimNotebookPatchAck', onAck);
+    window.setTimeout(() => window.removeEventListener('wimNotebookPatchAck', onAck), 4000);
+
+    window.dispatchEvent(
+      new CustomEvent('wimNotebookPatchText', {
+        detail: {
+          notebookId,
+          removed: removedBlockText,
+          added: cleanContentToApply,
+          spanText: spanText || undefined,
+        },
+      })
+    );
   };
 
   const handleSplitScreen = () => {
@@ -135,7 +143,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
               }`}
             >
               <Check className="size-3" />
-              <span>{applied ? 'Added ✓' : 'Add to notebook'}</span>
+              <span>{applied ? 'Applied ✓' : 'Apply to document'}</span>
             </button>
           )}
           <button
