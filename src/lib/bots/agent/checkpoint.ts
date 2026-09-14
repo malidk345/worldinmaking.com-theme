@@ -9,7 +9,7 @@
 import type { AgentMode } from './modes'
 import type { HumanTurn } from './human'
 
-export type ResumeAction = 'run' | 'revise' | 'answer'
+export type ResumeAction = 'run' | 'revise'
 
 export type CheckpointMessage = {
     role: 'system' | 'user' | 'assistant' | 'tool'
@@ -151,7 +151,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
 }
 
 export function parseResumeAction(value: unknown): ResumeAction | undefined {
-    if (value === 'run' || value === 'revise' || value === 'answer') return value
+    if (value === 'run' || value === 'revise') return value
     return undefined
 }
 
@@ -160,11 +160,6 @@ export function resumeUserMessage(action: ResumeAction, payload?: string): strin
         return 'The user approved the plan. Continue in execution mode. Follow the todo list. Mark the current step in_progress, do the work, then mark it completed. Do not wait for another approval.'
     }
     const note = clip(payload, 800)
-    if (action === 'answer') {
-        return note
-            ? `The user answered the question: ${note}. Continue with the task based on this answer.`
-            : 'The user provided an answer. Continue with the task.'
-    }
     return note
         ? `The user asked to revise the plan: ${note}. Update todo_write, research if needed, then call finalize_plan again.`
         : 'The user asked to revise the plan. Update todo_write, then call finalize_plan again.'

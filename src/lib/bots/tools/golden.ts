@@ -151,6 +151,14 @@ export const ASK_AI_REPLAY: ReplayStep[] = [
         expectOk: true,
     },
     {
+        id: 'unknown_ask_user',
+        name: 'ask_user',
+        argumentsJson: '{"question":"wipe?"}',
+        mode: 'execute',
+        expectOk: false,
+        expectIncludes: 'unknown tool',
+    },
+    {
         id: 'open_passwd',
         name: 'open_path',
         argumentsJson: '{"path":"/etc/passwd"}',

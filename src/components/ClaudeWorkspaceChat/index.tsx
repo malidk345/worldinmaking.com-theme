@@ -1569,7 +1569,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             const currentChat = chats.find((c) => c.id === targetChatId);
             const mode = currentChat?.agentMode || 'ask';
             const shouldAutoApply = mode === 'execute';
-            const applied = shouldAutoApply ? executeOSAction(assistantMessageId, parsed.action, targetChatId) : false;
+            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type) || !shouldAutoApply;
+            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -1978,7 +1979,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
-    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (activeChat.agentMode || 'ask')
+    const nextMode = action === 'run' ? 'execute' : 'plan'
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
     if (message.checkpoint) {
       void handleSendMessage('', [], {
