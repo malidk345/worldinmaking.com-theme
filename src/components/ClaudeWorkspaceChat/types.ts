@@ -19,12 +19,11 @@ export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
 export type AgentMode = 'ask' | 'plan' | 'execute'
 
 export type HumanTurn = {
-  kind: 'plan_approval' | 'ask_user'
+  kind: 'plan_approval'
   title: string
-  status: 'pending' | 'approved' | 'revised' | 'answered'
+  status: 'pending' | 'approved' | 'revised'
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
-  question?: string
 }
 
 export type AgentCheckpoint = {

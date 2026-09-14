@@ -26,35 +26,6 @@ if (typeof window !== 'undefined') {
     installCancelledRouteSwallow()
 }
 
-
-function OfflineBanner() {
-    const [isOffline, setIsOffline] = React.useState(false)
-
-    React.useEffect(() => {
-        if (typeof navigator !== 'undefined') {
-            setIsOffline(!navigator.onLine)
-        }
-        const onOnline = () => setIsOffline(false)
-        const onOffline = () => setIsOffline(true)
-        window.addEventListener('online', onOnline)
-        window.addEventListener('offline', onOffline)
-        return () => {
-            window.removeEventListener('online', onOnline)
-            window.removeEventListener('offline', onOffline)
-        }
-    }, [])
-
-    if (!isOffline) return null
-
-    return (
-        <div className="pointer-events-none fixed left-0 right-0 top-0 z-[9999] flex justify-center">
-            <div className="pointer-events-auto w-full border-b border-primary bg-accent py-1 text-center text-xs text-primary shadow-sm">
-                Çevrimdışısın — bazı özellikler çalışmayabilir.
-            </div>
-        </div>
-    )
-}
-
 export default function App({ Component, pageProps }: AppProps) {
     const router = useRouter()
 
@@ -129,8 +100,7 @@ export default function App({ Component, pageProps }: AppProps) {
     if ((Component as any).noLayout) {
         return (
             <ToastProvider>
-                <OfflineBanner />
-            <KeyboardInsetRoot />
+                <KeyboardInsetRoot />
                 <UserProvider>
                     <ArchiveProvider>
                         <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
@@ -147,7 +117,6 @@ export default function App({ Component, pageProps }: AppProps) {
             suppressHydrationWarning
             className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
         >
-            <OfflineBanner />
             <KeyboardInsetRoot />
             <ToastProvider>
                 <UserProvider>
