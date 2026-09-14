@@ -196,6 +196,7 @@ export function isPathRoutedWindow(path: string): boolean {
         /^\/trash(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||
         p === '/notebooks' ||
+        /^\/notebooks\//.test(p) ||
         /^\/(posts|blog)(\/|$)/.test(p) ||
         /^\/(questions|forum)(\/|$)/.test(p) ||
         (p.startsWith('/community') &&
