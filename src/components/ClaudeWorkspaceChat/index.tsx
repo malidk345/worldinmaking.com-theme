@@ -1903,6 +1903,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           new CustomEvent('wimNotebookReplaceSelection', {
             detail: {
               text: action.payload.content || '',
+              spanText: action.payload.span_text || '',
               notebookId: nbId,
             },
           })
