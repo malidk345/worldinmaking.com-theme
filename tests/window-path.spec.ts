@@ -42,11 +42,23 @@ test.describe('window path', () => {
     })
 
     test('canonical path is a clean pathname', () => {
+        // Mock window for this test
+        const originalWindow = global.window
+        global.window = {
+            location: {
+                pathname: '/questions/99/',
+                search: '?a=1',
+                hash: '',
+            }
+        } as any
+
         expect(canonicalWindowPath('/questions/99/?a=1')).toBe('/questions/99')
         expect(isPathRoutedWindow('/workspace-chat')).toBe(true)
         expect(isPathRoutedWindow('/pricing')).toBe(true)
         expect(isPathRoutedWindow('/home')).toBe(true)
         expect(isPathRoutedWindow('/account')).toBe(true)
+
+        global.window = originalWindow
     })
 
     test('home window path is the guest landing, not other apps', () => {

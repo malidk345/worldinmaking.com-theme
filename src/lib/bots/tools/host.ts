@@ -452,6 +452,15 @@ export function executeReplaceNotebookSelection(
 ): { ok: boolean; result: string; action?: HostOsAction } {
     const body = clip(content.trim(), 8_000)
     if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
+    if (!host?.selection?.trim()) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No active selection to replace. Ensure the user has highlighted text first.',
+            }),
+        }
+    }
     const requested = clip((notebookId || '').trim(), 80)
     const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
     if (!targetId) {

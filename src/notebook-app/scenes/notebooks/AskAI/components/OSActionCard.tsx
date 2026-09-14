@@ -39,7 +39,10 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                             }}
                             className="rounded px-2.5 py-1 text-[12px] font-medium text-white bg-[#1E3A8A] hover:bg-[#1e40af] transition-colors cursor-pointer"
                         >
-                            Add to notebook
+                            {action.type === 'replace_notebook_selection' ? 'Replace'
+                                : action.type === 'rewrite_notebook_document' ? 'Rewrite'
+                                : action.type === 'annotate_notebook' ? 'Annotate'
+                                : 'Add'}
                         </button>
                     )}
                 </div>

@@ -74,14 +74,27 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
 
   const handleApplyToNotebook = () => {
     if (typeof window === 'undefined') return;
-    window.dispatchEvent(
-      new CustomEvent('wimNotebookInsertText', {
-        detail: {
-          text: cleanContentToApply,
-          mode: 'append',
-        },
-      })
-    );
+    const selection = window.getSelection()?.toString().trim();
+    if (selection) {
+      // If notebook has a non-empty selection, replace that span
+      window.dispatchEvent(
+        new CustomEvent('wimNotebookReplaceSelection', {
+          detail: {
+            text: cleanContentToApply,
+          },
+        })
+      );
+    } else {
+      // Else fallback to append
+      window.dispatchEvent(
+        new CustomEvent('wimNotebookInsertText', {
+          detail: {
+            text: cleanContentToApply,
+            mode: 'append',
+          },
+        })
+      );
+    }
     setApplied(true);
     setTimeout(() => setApplied(false), 3000);
   };

@@ -873,14 +873,15 @@ export function App() {
       let next = current
       if (selection && current.includes(selection)) {
         next = current.replace(selection, text)
+        setCurrentNotebook(target)
+        setMarkdown(next)
+        setMarkdownVersion((v) => v + 1)
+        saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
       } else {
-        next = current.trim() ? `${current.trim()}\n\n${text}\n` : `${text}\n`
+        console.warn('handleReplaceSelection: No valid selection found in content, aborting replace.');
+        // do not fallback to append
       }
-      setCurrentNotebook(target)
-      setMarkdown(next)
-      setMarkdownVersion((v) => v + 1)
-      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
-      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
     const handleAddFootnote = (event: Event) => {

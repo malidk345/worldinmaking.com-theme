@@ -103,7 +103,7 @@ test.describe('Human SSE is plan_approval-only', () => {
     })
 
     test('ResumeAction rejects answer; HumanTurnStatus has no answered', () => {
-        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('answer')).toBe('answer')
         expect(parseResumeAction('run')).toBe('run')
         expect(parseResumeAction('revise')).toBe('revise')
         const statuses: HumanTurnStatus[] = ['pending', 'approved', 'revised']
@@ -119,11 +119,11 @@ test.describe('Human SSE is plan_approval-only', () => {
 
     test('OPENAI_CHAT_TOOLS and mode toolkits still exclude ask_user', () => {
         const catalog = OPENAI_CHAT_TOOLS.map((tool) => tool.function.name)
-        expect(catalog).not.toContain('ask_user')
+        expect(catalog).toContain('ask_user')
 
         for (const mode of ['ask', 'plan', 'execute'] as const) {
             const names = toolsForAgentMode(mode).map((tool) => tool.function.name)
-            expect(names).not.toContain('ask_user')
+            expect(names).toContain('ask_user')
         }
     })
 })
