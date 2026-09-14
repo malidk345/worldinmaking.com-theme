@@ -37,6 +37,7 @@ export const PLAN_TOOL_NAMES = [
     'cross_examine_argument',
     'verified_corpus_search',
     'export_notebook',
+    'ask_user',
 ] as const
 
 export const MUTATING_TOOL_NAMES = [
