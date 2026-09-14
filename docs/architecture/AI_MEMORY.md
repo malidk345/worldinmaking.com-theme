@@ -57,6 +57,26 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (Deep Synthesis, Post-Tool Reflection & Narrative Bridging in Agent Loop)
+- **Scope:** Solved the "tool dump" and disconnected execution problem where the AI ran tools in the background and immediately dumped disjointed results or generic artifacts without digesting the findings or explaining the narrative bridge.
+- **Architectural Rules Kept:**
+  1. Kept single PostHog-style state graph pipeline without introducing a second orchestrator.
+  2. Maintained fast completion performance while expanding thinking budgets.
+  3. Strict TypeScript shell allowlist compliance with 0 gated errors.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/pipeline.ts`:
+     - Increased `THINK_MAX_TOKENS` from `48` to `512` tokens.
+     - Updated `shouldRunThinkPhase` to detect `hasNewToolResults` (`state.messages[last].role === 'tool'`), enabling deep post-tool reflection turns.
+     - Updated `withThinkInstruction`: Replaced the suppressive "THINK STEP ONLY: One sentence naming the next tool... no analysis" instruction with specialized reflection & synthesis instructions that prompt the model to analyze returned facts, identify contradictions/nuances, and plan an articulate narrative bridge.
+     - Updated `runThinkPhase` to pass `postTool` context.
+  2. `src/lib/bots/tools/gemini.ts`:
+     - Increased Gemini `thinkingBudget` from `96` to `512` tokens, giving Gemini's native reasoning engine full headroom to digest multi-tool outputs.
+  3. `src/lib/bots/tools/spec.ts`:
+     - Added `DEEP SYNTHESIS & NARRATIVE BRIDGING (NO TOOL DUMPING)` into `TOOL_PROTOCOL`, strictly commanding the AI to provide explanatory bridges, synthesize how findings impact the user's premise, and maintain cross-tool continuity (Tool B directly consuming specific outputs of Tool A).
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (50/50 tests passed across 6 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-13 — Antigravity (Implementation of Roadmap AI Tools: Philosophical RAG, Socratic Cross-Examiner, Workspace Presets, Flashcards, Notebook Exporter, Concept Maps)
 - **Scope:** Implemented the full suite of approved AI tools from the architectural roadmap (`AI_MEMORY.md` §3):
   1. `cross_examine_argument`: Dialectical Socratic cross-examiner identifying formal/informal logical fallacies, extracting unstated assumptions, formulating Socratic dilemmas, and synthesizing multi-tradition philosophical counter-perspectives (Nietzschean, Stoic, Kantian, Existentialist).

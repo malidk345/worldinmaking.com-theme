@@ -39,15 +39,17 @@ const TASK_READ_TOOLS = new Set([
     'list_notebooks',
 ])
 
-const THINK_MAX_TOKENS = 48
+const THINK_MAX_TOKENS = 512
 
-/** One next-action sentence at the start of a turn. Later cycles use tools and native reasoning only. */
+/** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
 export function shouldRunThinkPhase(input: {
     userPrompt: string
     agentMode: AgentMode
     stepCount: number
     forceWebSearch?: boolean
+    hasNewToolResults?: boolean
 }): boolean {
+    if (input.hasNewToolResults) return true
     if (input.stepCount > 0) return false
     if (input.agentMode === 'plan' || input.agentMode === 'execute') return true
     if (input.forceWebSearch) return true
@@ -228,12 +230,16 @@ function emitNode(
     params.onNode?.({ name, status, detail: nodeStatusLabel(name, status) })
 }
 
-function withThinkInstruction(messages: ChatMessage[]): ChatMessage[] {
+function withThinkInstruction(messages: ChatMessage[], postTool = false): ChatMessage[] {
+    const instruction = postTool
+        ? 'REFLECTION & SYNTHESIS STEP: Carefully analyze the returned tool results in context. What key facts, contradictions, nuances, or philosophical insights did they reveal? Determine how to bridge these findings into a rich, coherent narrative answer or what subsequent tool action is logically required. Do not call tools in this thought.'
+        : 'PLANNING & STRATEGY STEP: Analyze the user inquiry. Determine what background facts, canonical citations, or structured visual artifacts are required, and establish a clear approach for an exhaustive, coherent solution. Do not call tools in this thought.'
+
     return messages.map((message, index) => {
         if (index === 0 && message.role === 'system') {
             return {
                 ...message,
-                content: `${message.content || ''}\n\nTHINK STEP ONLY: One sentence naming the next tool or step. No essay, no analysis, no user-facing answer. Do not call tools.`,
+                content: `${message.content || ''}\n\n${instruction}`,
             }
         }
         return message
@@ -252,7 +258,12 @@ function emitThoughtDelta(params: AgentPipelineParams, thoughtId: string, piece:
     })
 }
 
-async function runThinkPhase(state: AgentState, params: AgentPipelineParams, thoughtId: string): Promise<void> {
+async function runThinkPhase(
+    state: AgentState,
+    params: AgentPipelineParams,
+    thoughtId: string,
+    postTool = false
+): Promise<void> {
     let nativeThought = 0
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
@@ -268,7 +279,8 @@ async function runThinkPhase(state: AgentState, params: AgentPipelineParams, tho
                 todos: state.todos,
                 reminder: state.pendingReminder,
                 memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
-            })
+            }),
+            postTool
         ),
         toolChoice: 'none',
         omitTools: true,
@@ -286,15 +298,19 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const cycle = state.stepCount
     const thoughtId = `thought-${cycle}-${state.messages.length}`
     emitNode(params, 'root', 'started', cycle)
+    const hasNewToolResults =
+        state.messages.length > 0 && state.messages[state.messages.length - 1]?.role === 'tool'
+
     if (
         shouldRunThinkPhase({
             userPrompt: lastUserText(state.messages),
             agentMode: state.agentMode,
             stepCount: state.stepCount,
             forceWebSearch: params.forceWebSearch,
+            hasNewToolResults,
         })
     ) {
-        await runThinkPhase(state, params, thoughtId)
+        await runThinkPhase(state, params, thoughtId, hasNewToolResults)
     }
     const isLastStep = state.stepCount >= state.maxSteps - 1
     const toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' = isLastStep
