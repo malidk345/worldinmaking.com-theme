@@ -1,0 +1,3 @@
+Adds Anthropic as a native provider option in the `TOOL_FAMILY_ORDER` within the Ask AI tool loop, utilizing a dedicated `anthropicToolCompletion` integration to handle Anthropic's specific Messages API format (bypassing `openaiCompletion`). The logic correctly parses `OPENAI_CHAT_TOOLS` function schemas into Anthropic `tool_use` blocks.
+
+Also cleans up `deepseek` from the `byok-vault` interface and server-side request bindings as specified by WIM_REPORT.md, reconciling unused or un-wired BYOK keys.
