@@ -57,6 +57,24 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (Micro-UX Refinement: In-Flight Streaming Diff & Tactile Terminal Cursor without Intrusive Placeholders)
+- **Scope:** Added live in-flight diff streaming (unclosed code fence completion + live line streaming + beacon) and subtle tactile terminal cursor (`TactileWorkstationCursor`) while strictly removing intrusive placeholder/staging cards as requested.
+- **Architectural Rules Kept:**
+  1. No intrusive boxes: Clean stream flow without flickering empty cards or premature placeholder banners.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. No git push executed; local work only.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Added `ensureClosedCodeFences` to dynamically close open ````diff` blocks during generation so ReactMarkdown parses diffs immediately as they stream.
+     - Upgraded `ChatMessageDiffBlock` with `isLive` mode showing pulsing beacon, in-flight line ticker, and disabled pending button.
+     - Added `TactileWorkstationCursor` with subtle cyan/sky cadence at the exact token stream tip.
+     - Removed distracting placeholder boxes and dashed staging cards.
+  2. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Added `isStreaming` state: button smoothly indicates in-flight generation when action payload is streaming, without extra popup UI.
+- **Verification:**
+  1. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  2. Zero git push executed.
+
 ### 2026-09-14 — Antigravity (Professional AI Workstation UX: Interactive In-Place Diff Reviewer, One-Click Patch Application, Split Workspace Docking)
 - **Scope:** Transformed WIM AI from a passive floating chatbot into a professional workspace co-author (Cursor Composer / Claude Artifacts style) that operates directly on user documents with syntax-highlighted diffs, one-click patch application, and desktop tiling.
 - **Architectural Rules Kept:**

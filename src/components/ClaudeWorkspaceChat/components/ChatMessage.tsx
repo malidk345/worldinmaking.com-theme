@@ -51,7 +51,27 @@ function textForSpeech(value: string): string {
     .trim()
 }
 
-function ChatMessageDiffBlock({ code }: { code: string }) {
+function ensureClosedCodeFences(markdown: string): string {
+  if (!markdown) return markdown;
+  const fenceMatches = markdown.match(/^```/gm);
+  if (fenceMatches && fenceMatches.length % 2 !== 0) {
+    return markdown + '\n```';
+  }
+  return markdown;
+}
+
+function TactileWorkstationCursor({ isLive }: { isLive: boolean }) {
+  if (!isLive) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block w-2 h-3.5 ml-1 -mb-0.5 rounded-[1.5px] bg-[#1E3A8A] dark:bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)] animate-pulse"
+      title="Akış devam ediyor"
+    />
+  );
+}
+
+function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [applied, setApplied] = useState(false);
 
@@ -100,10 +120,20 @@ function ChatMessageDiffBlock({ code }: { code: string }) {
     <div className="my-2.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-md">
       <div className="flex items-center justify-between px-3 py-1.5 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-300 font-mono">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
-            <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
-            WORKSTATION DIFF
-          </span>
+          {isLive ? (
+            <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+              <span className="relative flex size-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+              </span>
+              CANLI YAMA AKIŞI
+            </span>
+          ) : (
+            <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+              <span className="inline-block size-2 rounded-full bg-emerald-500" />
+              WORKSTATION DIFF
+            </span>
+          )}
           <span className="text-stone-500">|</span>
           <span className="text-emerald-400 font-mono text-[10.5px]">+{addedLines.length}</span>
           <span className="text-rose-400 font-mono text-[10.5px]">-{removedLines.length}</span>
@@ -118,19 +148,29 @@ function ChatMessageDiffBlock({ code }: { code: string }) {
             <Columns className="size-3" />
             <span className="hidden sm:inline">Split View</span>
           </button>
-          <button
-            type="button"
-            onClick={handleApplyToNotebook}
-            className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-medium transition-all duration-150 cursor-pointer ${
-              applied
-                ? 'bg-emerald-600 text-white font-semibold shadow-xs'
-                : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
-            }`}
-            title="Değişikliği Canlı Notebook'a Uygula"
-          >
-            <Check className="size-3" />
-            <span>{applied ? 'Uygulandı ✓' : 'Dokümana Uygula'}</span>
-          </button>
+          {isLive ? (
+            <span
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10.5px] font-medium bg-emerald-500/10 text-emerald-300/70 border border-emerald-500/20 select-none cursor-wait"
+              title="Yama satırları akıyor..."
+            >
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Hazırlanıyor…</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleApplyToNotebook}
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-medium transition-all duration-150 cursor-pointer ${
+                applied
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 hover:scale-[1.02] active:scale-[0.98]'
+              }`}
+              title="Değişikliği Canlı Notebook'a Uygula"
+            >
+              <Check className="size-3" />
+              <span>{applied ? 'Uygulandı ✓' : 'Dokümana Uygula'}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleCopy}
@@ -172,14 +212,20 @@ function ChatMessageDiffBlock({ code }: { code: string }) {
             </div>
           );
         })}
+        {isLive && (
+          <div className="flex items-center gap-1.5 py-1 px-1.5 text-[10.5px] text-emerald-400/80 font-mono select-none">
+            <span className="inline-block w-1.5 h-3 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse rounded-xs" />
+            <span className="italic">Canlı yama satırları akıyor…</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ChatMessageCodeBlock({ language, code }: { language: string; code: string }) {
+function ChatMessageCodeBlock({ language, code, isLive }: { language: string; code: string; isLive?: boolean }) {
   if (language === 'diff' || language === 'patch') {
-    return <ChatMessageDiffBlock code={code} />;
+    return <ChatMessageDiffBlock code={code} isLive={isLive} />;
   }
 
   const [copied, setCopied] = useState(false);
@@ -354,6 +400,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const displayedText = message.content;
   const isLiveAnswer = !isUser && !!message.isStreaming;
+  const markdownText = isLiveAnswer ? ensureClosedCodeFences(displayedText) : displayedText;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -483,7 +530,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       const match = /language-(\w+)/.exec(className || '');
                       const codeContent = String(children).replace(/\n$/, '');
                       if (!inline && match) {
-                        return <ChatMessageCodeBlock language={match[1]} code={codeContent} />;
+                        return <ChatMessageCodeBlock language={match[1]} code={codeContent} isLive={isLiveAnswer} />;
                       }
                       if (inline && /^(Page|Sayfa)\s+\d+$/i.test(codeContent.trim())) {
                         return (
@@ -501,14 +548,9 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     },
                   }}
                 >
-                  {displayedText}
+                  {markdownText}
                 </ReactMarkdown>
-                {isLiveAnswer && (
-                  <span
-                    aria-hidden="true"
-                    className="inline-block w-1.5 h-3.5 ml-1 -mb-0.5 bg-primary/70 dark:bg-primary/90 animate-pulse rounded-xs"
-                  />
-                )}
+                <TactileWorkstationCursor isLive={isLiveAnswer} />
               </>
             ) : null}
           </div>
@@ -552,6 +594,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           {message.osAction && !message.osAction.executed ? (
             <OSActionCard
               action={message.osAction}
+              isStreaming={isLiveAnswer}
               onExecute={() => onExecuteOSAction?.(message.id, message.osAction!)}
             />
           ) : null}

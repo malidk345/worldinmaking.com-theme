@@ -6,6 +6,7 @@ import type { OSActionCard as OSActionCardType } from '../types'
 interface OSActionCardProps {
     action: OSActionCardType
     onExecute: () => void
+    isStreaming?: boolean
 }
 
 function actionTypeBadge(type: string): { label: string; className: string } {
@@ -34,7 +35,7 @@ function actionTypeBadge(type: string): { label: string; className: string } {
  * Renders an executable OS action card below an AI reply.
  * Provides high-visibility preview of the exact change, target notebook, and one-click execution.
  */
-export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Element {
+export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardProps): JSX.Element {
     const [expanded, setExpanded] = useState(false)
     const badge = actionTypeBadge(action.type)
     const content = action.payload?.content?.trim()
@@ -51,10 +52,14 @@ export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Elem
     }
 
     return (
-        <div className="mt-2.5 rounded-xl bg-surface-primary border border-primary/20 shadow-xs overflow-hidden transition-all duration-200 hover:border-primary/40 font-sans text-xs">
+        <div className={`mt-2.5 rounded-xl bg-surface-primary border shadow-xs overflow-hidden transition-all duration-200 font-sans text-xs ${
+            isStreaming ? 'border-primary/30 ring-1 ring-sky-500/20' : 'border-primary/20 hover:border-primary/40'
+        }`}>
             <div className="p-3 bg-accent/30 border-b border-primary/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border ${badge.className}`}>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border ${badge.className} ${
+                        isStreaming ? 'animate-pulse' : ''
+                    }`}>
                         {badge.label}
                     </span>
                     <span className="font-semibold text-xs text-primary truncate">
@@ -76,6 +81,11 @@ export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Elem
                             <IconCheck className="size-3.5" />
                             Uygulandı ✓
                         </span>
+                    ) : isStreaming ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 select-none cursor-wait">
+                            <span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
+                            Hazırlanıyor…
+                        </div>
                     ) : (
                         <LemonButton
                             size="xsmall"
@@ -119,6 +129,12 @@ export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Elem
                         <pre className="whitespace-pre-wrap break-words m-0">
                             {expanded || content!.length <= 180 ? content : `${content!.slice(0, 180)}…`}
                         </pre>
+                        {isStreaming && (
+                            <div className="mt-1.5 pt-1 border-t border-stone-800/60 flex items-center gap-1.5 text-[10px] text-amber-400/90 font-mono">
+                                <span className="inline-block size-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                <span>İçerik yazılıyor…</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
