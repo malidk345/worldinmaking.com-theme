@@ -314,16 +314,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDrop={handleDrop}
         className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-200 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] ${
           isDragging
-            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/40 shadow-[0_0_22px_rgba(30,58,138,0.35)] bg-accent'
+            ? 'border-primary ring-2 ring-primary/40 shadow-md bg-accent'
             : prompt.trim().length > 0
-            ? 'border-[#1E3A8A] ring-1 ring-[#1E3A8A]/40 shadow-[0_0_18px_rgba(30,58,138,0.25),0_2px_10px_rgba(30,58,138,0.15)] focus-within:ring-2 focus-within:ring-[#1E3A8A]/50 focus-within:shadow-[0_0_24px_rgba(30,58,138,0.35),0_4px_14px_rgba(30,58,138,0.2)]'
-            : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.5)] focus-within:border-[#1E3A8A] focus-within:ring-2 focus-within:ring-[#1E3A8A]/35 focus-within:shadow-[0_0_20px_rgba(30,58,138,0.28),0_4px_12px_rgba(30,58,138,0.18)]'
+            ? 'border-primary ring-1 ring-primary/40 shadow-md focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-lg'
+            : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.5)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/35 focus-within:shadow-lg'
         }`}
       >
         {/* Dropzone Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#1E3A8A] bg-primary/95 backdrop-blur-md text-primary pointer-events-none shadow-lg">
-            <IconPlus className="size-5 text-[#1E3A8A] dark:text-blue-400 mb-0.5" />
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/95 backdrop-blur-md text-primary pointer-events-none shadow-lg">
+            <IconPlus className="size-5 text-primary mb-0.5" />
             <span className="text-xs font-semibold">Drop files here to attach</span>
             <span className="text-[10px] text-secondary">Images, documents or code snippets</span>
           </div>
@@ -351,7 +351,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {boundNotebookTitle && (
           <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/80 border border-primary/50 px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
             <div className="flex items-center gap-1.5 min-w-0 truncate">
-              <IconDocument className="size-3.5 shrink-0 text-[#1E3A8A] dark:text-blue-400" />
+              <IconDocument className="size-3.5 shrink-0 text-primary" />
               <span className="truncate font-medium text-primary">{boundNotebookTitle}</span>
               <span className="shrink-0 text-muted">· bound</span>
             </div>
@@ -401,7 +401,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {activeSelection && (
           <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/70 border border-primary px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
             <div className="flex items-center gap-1.5 min-w-0 truncate">
-              <span className="shrink-0 font-medium text-[#1E3A8A] dark:text-blue-400">📌 Selection Context:</span>
+              <span className="shrink-0 font-medium text-primary">📌 Selection Context:</span>
               <span className="truncate italic text-muted">"{activeSelection.slice(0, 75)}..."</span>
             </div>
             <button
@@ -499,7 +499,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       {activeModel?.avatarUrl ? (
                         <img src={activeModel.avatarUrl} alt={activeModel.name} className={`size-full ${activeModel.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                       ) : (
-                        <span className={`size-full flex items-center justify-center ${activeModel?.avatarBg || 'bg-accent text-primary'}`}>
+                        <span className={`size-full flex items-center justify-center ${activeModel?.avatarBg || 'bg-primary'}`}>
                           {activeModel?.initials || activeModel?.name.slice(0, 2)}
                         </span>
                       )}
@@ -521,7 +521,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           {opt.avatarUrl ? (
                             <img src={opt.avatarUrl} alt={opt.name} className={`size-full ${opt.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                           ) : (
-                            <span className={`size-full flex items-center justify-center ${opt.avatarBg || 'bg-accent text-primary'}`}>
+                            <span className={`size-full flex items-center justify-center ${opt.avatarBg || 'bg-primary'}`}>
                               {opt.initials || opt.name.slice(0, 2)}
                             </span>
                           )}
@@ -548,7 +548,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               type="button"
               onClick={toggleSpeechRecognition}
               className={`p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer ${
-                isRecording ? 'text-rose-600 animate-pulse' : ''
+                isRecording ? 'text-primary animate-pulse' : ''
               }`}
               title="Voice Input"
             >
@@ -573,8 +573,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 disabled={(!prompt.trim() && attachments.length === 0) || quotaBlocksSend}
                 className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs ${
                    (prompt.trim() || attachments.length > 0) && !quotaBlocksSend
-                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
-                    : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
+                    ? 'bg-primary hover:bg-accent text-white cursor-pointer'
+                    : 'bg-accent/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Send"
                 aria-label="Send message"

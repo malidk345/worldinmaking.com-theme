@@ -96,32 +96,32 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
   };
 
   return (
-    <div className="my-2.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-md">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-300 font-mono">
+    <div className="my-2.5 rounded-xl border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-md">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-accent border-b border-primary/20 text-[11px] text-primary font-mono">
         <div className="flex items-center gap-2">
           {isLive ? (
-            <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+            <span className="font-semibold text-primary flex items-center gap-1.5">
               <span className="relative flex size-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
               </span>
               CANLI YAMA AKIŞI
             </span>
           ) : (
-            <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
-              <span className="inline-block size-2 rounded-full bg-emerald-500" />
+            <span className="font-semibold text-primary flex items-center gap-1.5">
+              <span className="inline-block size-2 rounded-full bg-primary" />
               WORKSTATION DIFF
             </span>
           )}
-          <span className="text-stone-500">|</span>
-          <span className="text-emerald-400 font-mono text-[10.5px]">+{addedLines.length}</span>
-          <span className="text-rose-400 font-mono text-[10.5px]">-{removedLines.length}</span>
+          <span className="text-muted">|</span>
+          <span className="text-primary font-mono text-[10.5px]">+{addedLines.length}</span>
+          <span className="text-muted font-mono text-[10.5px]">-{removedLines.length}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleSplitScreen}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] text-stone-300 hover:text-white bg-stone-800 hover:bg-stone-700 transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] text-primary hover:text-white bg-accent hover:bg-primary transition-colors cursor-pointer"
             title="Notebook ile Yan Yana Aç (Split View)"
           >
             <Columns className="size-3" />
@@ -129,10 +129,10 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
           </button>
           {isLive ? (
             <span
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10.5px] font-medium bg-emerald-500/10 text-emerald-300/70 border border-emerald-500/20 select-none cursor-wait"
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10.5px] font-medium bg-primary/10 text-primary/70 border border-primary/20 select-none cursor-wait"
               title="Yama satırları akıyor..."
             >
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
               <span>Hazırlanıyor…</span>
             </span>
           ) : (
@@ -141,8 +141,8 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
               onClick={handleApplyToNotebook}
               className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-medium transition-all duration-150 cursor-pointer ${
                 applied
-                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
-                  : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 hover:scale-[1.02] active:scale-[0.98]'
+                  ? 'bg-primary text-white font-semibold shadow-xs'
+                  : 'bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40 hover:scale-[1.02] active:scale-[0.98]'
               }`}
               title="Değişikliği Canlı Notebook'a Uygula"
             >
@@ -154,11 +154,11 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
             type="button"
             onClick={handleCopy}
             className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] transition-colors cursor-pointer ${
-              copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'text-stone-400 hover:text-stone-200'
+              copied ? 'text-primary font-semibold bg-accent/40' : 'text-muted hover:text-primary'
             }`}
             title="Temiz Metni Kopyala"
           >
-            {copied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
+            {copied ? <Check className="size-3 text-primary" /> : <Copy className="size-3" />}
           </button>
         </div>
       </div>
@@ -166,34 +166,34 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
         {lines.map((line, idx) => {
           if (line.startsWith('+') && !line.startsWith('+++')) {
             return (
-              <div key={idx} className="bg-emerald-950/35 text-emerald-300 px-1.5 py-0.5 rounded-xs border-l-2 border-emerald-500 whitespace-pre-wrap break-words">
+              <div key={idx} className="bg-accent/35 text-primary px-1.5 py-0.5 rounded-xs border-l-2 border-primary whitespace-pre-wrap break-words">
                 {line}
               </div>
             );
           }
           if (line.startsWith('-') && !line.startsWith('---')) {
             return (
-              <div key={idx} className="bg-rose-950/35 text-rose-300/80 px-1.5 py-0.5 rounded-xs border-l-2 border-rose-500 line-through whitespace-pre-wrap break-words">
+              <div key={idx} className="bg-accent/35 text-muted/80 px-1.5 py-0.5 rounded-xs border-l-2 border-primary/50 line-through whitespace-pre-wrap break-words">
                 {line}
               </div>
             );
           }
           if (line.startsWith('@@')) {
             return (
-              <div key={idx} className="text-sky-400 font-bold bg-sky-950/25 px-1.5 py-0.5 rounded-xs my-0.5 text-[10.5px]">
+              <div key={idx} className="text-primary font-bold bg-accent/25 px-1.5 py-0.5 rounded-xs my-0.5 text-[10.5px]">
                 {line}
               </div>
             );
           }
           return (
-            <div key={idx} className="text-stone-300/90 px-1.5 py-0.2 whitespace-pre-wrap break-words">
+            <div key={idx} className="text-primary/90 px-1.5 py-0.2 whitespace-pre-wrap break-words">
               {line}
             </div>
           );
         })}
         {isLive && (
-          <div className="flex items-center gap-1.5 py-1 px-1.5 text-[10.5px] text-emerald-400/80 font-mono select-none">
-            <span className="inline-block w-1.5 h-3 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse rounded-xs" />
+          <div className="flex items-center gap-1.5 py-1 px-1.5 text-[10.5px] text-primary/80 font-mono select-none">
+            <span className="inline-block w-1.5 h-3 bg-primary shadow-sm animate-pulse rounded-xs" />
             <span className="italic">Canlı yama satırları akıyor…</span>
           </div>
         )}
@@ -214,20 +214,20 @@ function ChatMessageCodeBlock({ language, code, isLive }: { language: string; co
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="my-1.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-2xs">
-      <div className="flex items-center justify-between px-2.5 py-0.5 bg-stone-900 border-b border-stone-800 text-[10.5px] text-stone-400 font-mono">
-        <span className="font-semibold text-stone-300">{language}</span>
+    <div className="my-1.5 rounded-xl border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-2xs">
+      <div className="flex items-center justify-between px-2.5 py-0.5 bg-accent border-b border-primary/20 text-[10.5px] text-muted font-mono">
+        <span className="font-semibold text-primary">{language}</span>
         <button
           type="button"
           onClick={handleCopy}
           className={`flex items-center gap-1 transition-colors cursor-pointer px-1 py-0.5 rounded ${
-            copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'hover:text-stone-200'
+            copied ? 'text-primary font-semibold bg-accent/40' : 'hover:text-primary'
           }`}
           title="Copy code"
         >
           {copied ? (
             <>
-              <Check className="h-3 w-3 text-emerald-400" />
+              <Check className="h-3 w-3 text-primary" />
               <span>Copied ✓</span>
             </>
           ) : (
@@ -427,7 +427,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               className="p-0.5 hover:text-primary transition-colors cursor-pointer"
               title="Copy"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
         </div>
@@ -458,7 +458,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           <div className="wim-ask-reply space-y-1">
           {/* Response Text with Ultra-Compact High-Density Typography */}
           <div
-            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
+            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-primary break-words [overflow-wrap:anywhere]"
           >
             {message.errorKind ? (
               <InquiryStatusCard
@@ -484,7 +484,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       }
                       if (inline && /^(Page|Sayfa)\s+\d+$/i.test(codeContent.trim())) {
                         return (
-                          <span className="inline-flex items-center gap-1 bg-[#1E3A8A]/10 text-[#1E3A8A] dark:text-blue-400 border border-[#1E3A8A]/25 px-1.5 py-0.2 rounded text-[11px] font-sans font-medium mx-0.5 shadow-2xs">
+                          <span className="inline-flex items-center gap-1 bg-accent/50 text-primary border border-primary/25 px-1.5 py-0.2 rounded text-[11px] font-sans font-medium mx-0.5 shadow-2xs">
                             <IconDocument className="size-3 shrink-0" />
                             {codeContent.trim()}
                           </span>
@@ -578,7 +578,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     {usedModel.avatarUrl ? (
                       <img src={usedModel.avatarUrl} alt={usedModel.name} className="size-full object-cover" />
                     ) : (
-                      <span className="flex size-full items-center justify-center text-[7.5px] font-bold text-white bg-stone-700">
+                      <span className="flex size-full items-center justify-center text-[7.5px] font-bold text-white bg-primary">
                         {(usedModel.name || 'AI').slice(0, 2)}
                       </span>
                     )}
@@ -599,7 +599,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
                 title="Copy"
               >
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
 
               {onRetry && (
@@ -621,13 +621,13 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     setTimeout(() => setAddedToNotebook(false), 2000)
                   }}
                   className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${
-                    addedToNotebook ? 'text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/40' : 'hover:text-primary'
+                    addedToNotebook ? 'text-primary font-semibold bg-accent/50 dark:bg-accent/40' : 'hover:text-primary'
                   }`}
                   title="Add to notebook"
                 >
                   {addedToNotebook ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <Check className="h-3.5 w-3.5 text-primary" />
                       <span>Added ✓</span>
                     </>
                   ) : (
