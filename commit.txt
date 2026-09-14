@@ -1,0 +1,3 @@
+fix(wim-ai): LemonScope wrap Ask AI
+
+Wraps the Ask AI window content and composer island in <LemonScope fill> to ensure Lemon UI components (like LemonSelect) inherit the .notebook-app-scope styling correctly, particularly for the Ask AI tool dropdown. It intentionally avoids wrapping the AppWindow chrome or body in the scope to comply with existing architectural boundaries.
