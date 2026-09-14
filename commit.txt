@@ -1,0 +1,13 @@
+🐛 Fix: Update tool loop tests to include generate_image tool
+
+What:
+Added `generate_image` to the expected array in `tests/tool-loop.spec.ts`.
+
+Why:
+The `tool-loop.spec.ts` smoke test was failing in CI because a recent commit added the `generate_image` capability to the `ALLOWED_TOOL_NAMES` array but didn't update the corresponding test snapshot arrays for OpenAI and Gemini tool declarations.
+
+Impact:
+CI smoke tests pass cleanly.
+
+Measurement:
+Run `pnpm run test:smoke tests/tool-loop.spec.ts` yields `39 passed`.
