@@ -2,36 +2,25 @@ import React, { useEffect, useState } from 'react'
 import { QuestionForm } from 'components/Squeak'
 import { useRouter } from 'next/router'
 import { useApp } from 'context/App'
+import { readForumDraft, QuestionFormInitialValues } from 'lib/wim-os-action-drafts'
 
 export default function PostEditorWindow(): JSX.Element {
     const router = useRouter()
     const { closeWindow } = useApp()
-    const [initialValues, setInitialValues] = useState<{ subject: string; body: string } | null>(null)
+    const [initialValues, setInitialValues] = useState<QuestionFormInitialValues | undefined>(undefined)
 
     useEffect(() => {
-        const loadDraft = () => {
-            const draft = sessionStorage.getItem('wim_forum_topic_draft_v1')
-            if (draft) {
-                try {
-                    const parsed = JSON.parse(draft)
-                    setInitialValues({
-                        subject: parsed.title || '',
-                        body: parsed.content || '',
-                    })
-                    sessionStorage.removeItem('wim_forum_topic_draft_v1')
-                } catch (e) {
-                    // Ignore parse error
-                }
-            }
+        const draft = readForumDraft()
+        if (draft) {
+            setInitialValues(draft)
         }
-
-        loadDraft()
 
         const handleDraftEvent = (e: any) => {
             if (e.detail) {
                 setInitialValues({
-                    subject: e.detail.title || '',
-                    body: e.detail.content || '',
+                    subject: e.detail.title || e.detail.subject || '',
+                    body: e.detail.content || e.detail.body || '',
+                    topic: e.detail.category || e.detail.topic || 'discussion',
                 })
             }
         }

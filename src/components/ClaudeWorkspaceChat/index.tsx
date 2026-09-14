@@ -70,6 +70,7 @@ import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import { LemonScope } from '../LemonScope';
+import { writeForumDraft } from 'lib/wim-os-action-drafts';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId, notebookWindowPath } from '../../lib/window-path';
 import {
@@ -1926,11 +1927,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           content: action.payload.content || '',
           category: action.payload.category || 'discussion',
         };
-        try {
-          sessionStorage.setItem('wim_forum_topic_draft_v1', JSON.stringify(detail));
-        } catch (e) {
-          // ignore
-        }
+        writeForumDraft(detail);
         window.dispatchEvent(
           new CustomEvent('wimForumCreateTopicDraft', {
             detail,
