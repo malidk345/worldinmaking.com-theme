@@ -5,7 +5,7 @@ import {
     useDragControls,
 
 } from 'framer-motion'
-import { MenuItem, useApp } from '../../context/App'
+import { useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
@@ -22,32 +22,13 @@ import { useWindowShortcuts } from 'hooks/useWindowShortcuts'
 import { useWindowVisibility } from 'hooks/useWindowVisibility'
 import { useWindowSwitcher } from 'hooks/useWindowSwitcher'
 import { useWindowActions } from 'hooks/useWindowActions'
+import { useWindowMenu } from 'hooks/useWindowMenu'
+import { cn } from '../../notebook-app/lib/utils/css-classes'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
-
-const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
-    if (!array) return false
-
-    for (let i = 0; i < array.length; i++) {
-        const element = array[i]
-
-        if (element.url?.split('?')[0] === value) {
-            return true
-        }
-
-        if (element.children) {
-            const found = recursiveSearch(element.children, value)
-            if (found) {
-                return true
-            }
-        }
-    }
-
-    return false
-}
 
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
     const { closeWindow } = useApp()
@@ -172,29 +153,19 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const isCompositorActive = animating || dragging || isResizing || closing
     const inView = useWindowVisibility({ item, windows, position, size })
 
-    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
-    const parent =
-        safeAppMenu.find(({ children, url }: any) => {
-            const currentURL = item?.path
-            return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
-        }) ||
-        safeAppMenu.find(({ url }: any) => url === `/${item?.path?.split('/')[1]}`) ||
-        safeAppMenu.find(({ name }: any) => name === 'Docs')
-
-    const internalMenu = parent?.children || []
-
-    const getActiveInternalMenu = useCallback(() => {
-        return internalMenu?.find((menuItem: MenuItem) => {
-            const currentURL = item?.path
-            return currentURL === menuItem.url?.split('?')[0] || recursiveSearch(menuItem.children, currentURL)
-        })
-    }, [internalMenu, item])
-
-    const [activeInternalMenu, setActiveInternalMenu] = useState<MenuItem | undefined>(getActiveInternalMenu())
+    const {
+        menu: newMenu,
+        parent,
+        internalMenu,
+        activeInternalMenu,
+        setActiveInternalMenu,
+    } = useWindowMenu({ item, appMenu })
 
     useEffect(() => {
-        setMenu?.(internalMenu)
-    }, [activeInternalMenu])
+        if (setMenu && newMenu) {
+            setMenu(newMenu)
+        }
+    }, [newMenu, setMenu])
 
     useEffect(() => {
         if (windowRef.current) {
@@ -219,10 +190,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         setClosing,
         router,
     })
-
-    useEffect(() => {
-        setActiveInternalMenu(getActiveInternalMenu())
-    }, [item?.path, getActiveInternalMenu])
 
     useWindowShortcuts({
         item,
@@ -357,25 +324,24 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme={isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'primary' : 'tertiary'}
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 ${
+                    className={cn(
+                        'group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col transition-shadow duration-300',
+                        isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'bg-primary' : WINDOW_BG,
+                        isCompositorActive ? MOTION_LAYER : '',
                         focusedWindow?.key === item.key
-                            ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
-                            : `border-primary/40 shadow-sm${
-                                  isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? '' : ' opacity-[0.985]'
-                              }`
-                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
-                        isCompositorActive ? MOTION_LAYER : ''
-                    } ${
+                            ? 'border border-black/5 dark:border-white/5 shadow-[0_24px_64px_rgba(0,0,0,0.2),inset_0_1px_0_0_rgba(255,255,255,0.15)] dark:shadow-[0_32px_80px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.1)] z-[10000]'
+                            : 'border border-black/5 dark:border-white/5 shadow-[0_12px_32px_rgba(0,0,0,0.1),inset_0_1px_0_0_rgba(255,255,255,0.1)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.05)] opacity-[0.985]',
                         item.expanded
-                            ? 'border-t-0 rounded-t-none rounded-b-lg !shadow-none'
+                            ? 'border-t-0 rounded-t-none rounded-b-[32px] !shadow-none'
                             : item.snapped
-                            ? `border-t-0 !shadow-none ${
+                            ? cn(
+                                  'border-t-0 !shadow-none',
                                   item.snapped === 'left'
-                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-lg'
-                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-lg'
-                              }`
-                            : 'rounded-lg'
-                    }`}
+                                      ? 'rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[32px]'
+                                      : 'rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[32px]'
+                              )
+                            : 'rounded-[32px]'
+                    )}
                     style={{
                         pointerEvents: 'auto',
                         // Position with left/top — NOT transform x/y.
@@ -447,7 +413,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                   top: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
                                   width: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
                                   height: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  opacity: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
+                                  opacity: { duration: 0.2, ease: [0.25, 1, 0.5, 1] },
                                   default: { type: 'spring', stiffness: 380, damping: 26 },
                               }
                     }
