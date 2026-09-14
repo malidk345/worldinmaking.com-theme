@@ -69,6 +69,7 @@ import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
+import { LemonScope } from '../LemonScope';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId } from '../../lib/window-path';
 import {
@@ -2210,6 +2211,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat])
 
   return (
+    <LemonScope fill>
     <div className="relative flex h-full min-h-0 w-full min-w-0 bg-primary text-primary font-sans overflow-hidden antialiased">
       {/* Left Collapsible Sidebar */}
       <Sidebar
@@ -2409,6 +2411,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         onDisableShare={handleDisableShare}
       />
     </div>
+    </LemonScope>
   );
 }
 
