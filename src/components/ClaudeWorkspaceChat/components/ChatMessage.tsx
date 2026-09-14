@@ -143,7 +143,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
               }`}
             >
               <Check className="size-3" />
-              <span>{applied ? 'Uygulandı ✓' : 'Dokümana Uygula'}</span>
+              <span>{applied ? 'Applied ✓' : 'Apply to document'}</span>
             </button>
           )}
           <button
