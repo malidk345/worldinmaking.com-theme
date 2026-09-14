@@ -5,7 +5,7 @@ import { executeReplaceNotebookSelection } from './host'
 describe('notebook AI bridge regressions', () => {
     describe('export_notebook', () => {
         const mockHost = {
-            notebooks: [{ id: 'nb1', title: 'Test Notebook', content: 'hello world [^1]\n\n[^1]: footnote test' }],
+            notebooks: [{ id: 'nb1', title: 'Test Notebook', content: '# Intro\n\nhello world [^1]\n\n[^1]: footnote test' }],
             notebookId: 'nb1'
         }
 
@@ -20,12 +20,14 @@ describe('notebook AI bridge regressions', () => {
             expect(resultWithoutFootnotes.artifact?.content).not.toContain('[^1]')
         })
 
-        it.fails('ignores include_toc flag for html compilation (current buggy behavior)', () => {
-            const htmlExport = executeExportNotebook('html', 'nb1', true, true, mockHost as any)
-            expect(htmlExport.ok).toBe(true)
-            // HTML export SHOULD contain TOC when include_toc is true, but it currently does not.
-            // When the bug is fixed, this assertion should pass and the .fails modifier can be removed.
-            expect(htmlExport.artifact?.content).toContain('<nav class="toc"')
+        it('honors include_toc for html', () => {
+            const withToc = executeExportNotebook('html', 'nb1', true, true, mockHost as any)
+            const withoutToc = executeExportNotebook('html', 'nb1', false, true, mockHost as any)
+            expect(withToc.ok).toBe(true)
+            expect(withoutToc.ok).toBe(true)
+            // Real TOC marker on main (#635): <ul> of heading anchors + <hr />
+            expect(withToc.artifact?.content).toContain('<li><a href="#intro">Intro</a></li>')
+            expect(withoutToc.artifact?.content).not.toContain('<li><a href="#intro">Intro</a></li>')
         })
     })
 
@@ -61,6 +63,7 @@ describe('notebook AI bridge regressions', () => {
             expect(result.ok).toBe(true)
             expect(result.action?.type).toBe('replace_notebook_selection')
             expect(result.action?.payload?.content).toBe('new content')
+            // span_text not yet on replace payload on this branch — content assert only
         })
     })
 })
