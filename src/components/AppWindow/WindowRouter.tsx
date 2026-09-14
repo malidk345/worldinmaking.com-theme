@@ -55,6 +55,18 @@ const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), 
 const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false, loading: routeFallback })
 const AssistantWindow = dynamic(() => import('../AssistantWindow'), { ssr: false, loading: routeFallback })
 
+const NotebookApp = dynamic(
+    () => import('../../notebook-app/App').then((mod) => mod.App),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-full w-full items-center justify-center bg-primary text-primary">
+                <div className="animate-pulse text-sm text-muted">loading notebooks...</div>
+            </div>
+        ),
+    }
+)
+
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
 }
@@ -189,6 +201,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
     if (path === '/notebooks') {
         return <NotebooksList />
+    }
+    if (path.startsWith('/notebooks/') || (isNotebookWindowPath(path) && path !== '/notebooks')) {
+        return <NotebookApp />
     }
     if (/^\/questions|^\/forum|^\/community/.test(path)) {
         // Only real thread slugs open the detail panel — not /questions, /topic/*, /subscriptions
