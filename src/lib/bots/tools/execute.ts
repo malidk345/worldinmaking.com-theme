@@ -883,7 +883,7 @@ function executeVerifiedCorpusSearch(
     }
 }
 
-function executeArrangeWorkspacePreset(
+export function executeArrangeWorkspacePreset(
     presetName: string,
     host?: HostSnapshot
 ): { ok: boolean; result: string; action: HostOsAction } {
