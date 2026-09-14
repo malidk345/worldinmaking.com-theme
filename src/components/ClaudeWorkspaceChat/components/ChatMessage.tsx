@@ -51,6 +51,15 @@ function textForSpeech(value: string): string {
     .trim()
 }
 
+function formatExactTime(ts?: string): string {
+  if (!ts) return '';
+  const trimmed = ts.trim();
+  if (/^\d{1,2}:\d{2}$/.test(trimmed)) return trimmed;
+  const d = dayjs(trimmed);
+  if (d.isValid()) return d.format('HH:mm');
+  return trimmed;
+}
+
 function ensureClosedCodeFences(markdown: string): string {
   if (!markdown) return markdown;
   const fenceMatches = markdown.match(/^```/gm);
@@ -389,6 +398,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const displayedText = message.content;
   const isLiveAnswer = !isUser && !!message.isStreaming;
+  const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
   const markdownText = isLiveAnswer ? ensureClosedCodeFences(displayedText) : displayedText;
 
   const handleCopy = () => {
@@ -599,7 +609,29 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           ) : null}
 
           {!isLiveAnswer && (message.isTypingDone || message.stopped) && message.errorKind !== 'quota' && (
-            <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
+            <div className="pt-1 flex items-center gap-1 text-muted font-sans">
+              {usedModel && (
+                <div className="flex items-center gap-1.5 py-0.5 px-1.5 rounded-md bg-accent/40 border border-primary/15 text-[11px] text-muted select-none">
+                  <div className="size-3.5 shrink-0 rounded-full overflow-hidden border border-primary/20 bg-accent">
+                    {usedModel.avatarUrl ? (
+                      <img src={usedModel.avatarUrl} alt={usedModel.name} className="size-full object-cover" />
+                    ) : (
+                      <span className="flex size-full items-center justify-center text-[7.5px] font-bold text-white bg-stone-700">
+                        {(usedModel.name || 'AI').slice(0, 2)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-secondary text-[11px] leading-none">
+                    {usedModel.name}
+                  </span>
+                  {message.timestamp && (
+                    <span className="text-[10px] text-muted/70 leading-none" suppressHydrationWarning>
+                      · {formatExactTime(message.timestamp)}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleCopy}
                 className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
