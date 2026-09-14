@@ -1027,6 +1027,52 @@ function executeGenerateFlashcards(
     }
 }
 
+function processFootnotes(rawContent: string, includeFootnotes: boolean): string {
+    const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g;
+    const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/;
+
+    let lines = rawContent.split('\n');
+    let contentLines: string[] = [];
+    let defs: string[] = [];
+    let inDef = false;
+    let currentDef: string[] = [];
+
+    for (const line of lines) {
+        if (defRegex.test(line)) {
+            if (inDef) defs.push(currentDef.join('\n'));
+            inDef = true;
+            currentDef = [line];
+            continue;
+        }
+        if (inDef) {
+            if (line.trim() === '') {
+                inDef = false;
+                defs.push(currentDef.join('\n'));
+                contentLines.push(line);
+            } else {
+                currentDef.push(line);
+            }
+            continue;
+        }
+        contentLines.push(line);
+    }
+    if (inDef) {
+        defs.push(currentDef.join('\n'));
+    }
+
+    let processedContent = contentLines.join('\n');
+
+    if (!includeFootnotes) {
+        return processedContent.replace(inlineFootnoteRegex, '');
+    }
+
+    processedContent = processedContent.replace(/\n+$/, '');
+    if (defs.length > 0) {
+        processedContent += '\n\n' + defs.join('\n');
+    }
+    return processedContent;
+}
+
 function compileNotebookToMarkdown(title: string, rawContent: string, includeToc = true): string {
     const lines = rawContent.split('\n')
     const headings: Array<{ level: number; text: string; slug: string }> = []
@@ -1147,7 +1193,7 @@ function executeExportNotebook(
     format: string,
     notebookId?: string,
     includeToc: boolean = true,
-    _includeFootnotes: boolean = true,
+    includeFootnotes: boolean = true,
     host?: HostSnapshot
 ): { ok: boolean; result: string; artifact?: ArtifactDocument } {
     const requested = (notebookId || '').trim()
@@ -1155,7 +1201,8 @@ function executeExportNotebook(
     const match = host?.notebooks?.find((n) => n.id === targetId || n.title.toLowerCase() === requested.toLowerCase())
 
     const title = match?.title || host?.notebookTitle || 'Exported Notebook'
-    const content = match?.content || host?.selection || '(Empty Notebook)'
+    const rawContent = match?.content || host?.selection || '(Empty Notebook)'
+    const content = processFootnotes(rawContent, includeFootnotes)
     const fmt = format.toLowerCase().trim() || 'markdown'
 
     let compiled = ''
