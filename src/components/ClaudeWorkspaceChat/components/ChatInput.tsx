@@ -14,6 +14,7 @@ import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { parseDocumentFile } from '../../../lib/document-parser';
 import { useTokenQuota } from '../../../lib/chat-usage-client';
 import { ScratchpadStore } from '../../../lib/scratchpad-store';
+import { useOptionalApp } from '../../../context/App';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
@@ -71,6 +72,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   boundNotebookTitle,
   onDismissNotebookContext,
 }) => {
+  const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [plusOpen, setPlusOpen] = useState(false);
@@ -584,9 +586,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       </div>
 
-      <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
-        WIMBot can make mistakes. please double-check responses.
-      </p>
+      {quotaBlocksSend ? (
+        <div role="status" aria-live="polite" className="mt-1.5 h-4 text-center text-[11px] leading-4 font-sans pointer-events-auto">
+          {quota === null ? (
+            <span className="text-muted animate-pulse">checking inquiry budget...</span>
+          ) : quota?.unavailable ? (
+            <span className="text-muted">can't verify budget — try again later.</span>
+          ) : (
+            <span className="text-secondary">
+              daily limit reached.{' '}
+              <button
+                type="button"
+                onClick={() => app?.addWindow?.({ path: '/pricing' })}
+                className="underline hover:text-primary transition-colors cursor-pointer"
+              >
+                Study
+              </button>{' '}
+              to keep going.
+            </span>
+          )}
+        </div>
+      ) : (
+        <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
+          WIMBot can make mistakes. please double-check responses.
+        </p>
+      )}
     </div>
   );
 };
