@@ -591,6 +591,16 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
 
+              {onRetry && (
+                <button
+                  onClick={() => onRetry(message.id)}
+                  className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
+                  title="Retry"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              )}
+
               {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
                 <button
                   type="button"
@@ -615,16 +625,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       <span>Add</span>
                     </>
                   )}
-                </button>
-              )}
-
-              {onRetry && (
-                <button
-                  onClick={() => onRetry(message.id)}
-                  className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
-                  title="Retry"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
                 </button>
               )}
 
