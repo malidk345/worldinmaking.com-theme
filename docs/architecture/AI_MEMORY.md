@@ -57,6 +57,31 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (Professional AI Workstation UX: Interactive In-Place Diff Reviewer, One-Click Patch Application, Split Workspace Docking)
+- **Scope:** Transformed WIM AI from a passive floating chatbot into a professional workspace co-author (Cursor Composer / Claude Artifacts style) that operates directly on user documents with syntax-highlighted diffs, one-click patch application, and desktop tiling.
+- **Architectural Rules Kept:**
+  1. No second orchestrator: Wires directly into native desktop window manager events (`wimNotebookInsertText`, `wimArrangeWorkspace`, `wimDesktopOpenApp`) and existing notebook glow/scroll markers.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. No browser/Playwright test suites run; no git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Implemented `ChatMessageDiffBlock` for syntax-highlighted visual diffs (emerald `+` additions with green border, rose `-` deletions with strikethrough, sky blue `@@` chunk headers, clean line numbers).
+     - Added header action controls:
+       - **[✓ Dokümana Uygula / Apply to Notebook]**: Extracts clean added lines and dispatches `wimNotebookInsertText` to write directly into the active document with instant feedback ("Uygulandı ✓").
+       - **[⧉ Split View / Yan Yana Aç]**: Dispatches workspace dual split docking (`wimArrangeWorkspace: split_dual`).
+       - **[Copy]**: Copies clean un-prefixed content without git/diff markers.
+  2. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Redesigned action cards into full workstation execution blocks with color-coded badges (`[YENİ NOTEBOOK]`, `[NOTEBOOKA EKLE]`, `[BELGEYİ YENİLE]`, `[MASAÜSTÜ DÜZENİ]`, etc.).
+     - Added collapsible code/text preview showing exact content before execution.
+     - Added instant split docking and one-click execution with "Uygulandı ✓" success state.
+  3. `src/notebook-app/scenes/notebooks/AskAI/types.ts`:
+     - Expanded action type definitions to support all workspace action categories.
+  4. `src/lib/bots/tools/spec.ts`:
+     - Added `WORKSTATION EDITING & IN-PLACE DIFFS` protocol instructing models to output standard structured `diff` blocks when revising documents so the UI can parse them into interactive patch cards.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests passed across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
 ### 2026-09-14 — Antigravity (AI Agent Loop Architectural Overhaul: Robust JSON Repair, In-Flight Retries & State Graph Determinism)
 - **Scope:** Eliminated fragile JSON argument hacks, dropped tool calls, empty-bubble synthesis bugs, and transient provider 429/50x failures in the AI agent loop (`loop.ts`, `pipeline.ts`, `execute.ts`, `leak.ts`).
 - **Architectural Rules Kept:**

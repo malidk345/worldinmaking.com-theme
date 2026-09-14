@@ -3,7 +3,7 @@ import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, Human
 import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
 
-import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
@@ -51,7 +51,137 @@ function textForSpeech(value: string): string {
     .trim()
 }
 
+function ChatMessageDiffBlock({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const [applied, setApplied] = useState(false);
+
+  const lines = code.split('\n');
+  const addedLines = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+  const removedLines = lines.filter((l) => l.startsWith('-') && !l.startsWith('---'));
+
+  // Extract clean content to apply to active notebook
+  const cleanContentToApply = React.useMemo(() => {
+    if (addedLines.length > 0) {
+      return addedLines.map((l) => l.slice(1)).join('\n');
+    }
+    return code;
+  }, [addedLines, code]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(cleanContentToApply || code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleApplyToNotebook = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('wimNotebookInsertText', {
+        detail: {
+          text: cleanContentToApply,
+          mode: 'append',
+        },
+      })
+    );
+    setApplied(true);
+    setTimeout(() => setApplied(false), 3000);
+  };
+
+  const handleSplitScreen = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('wimArrangeWorkspace', {
+        detail: { preset: 'split_dual' },
+      })
+    );
+  };
+
+  return (
+    <div className="my-2.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-md">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-stone-900 border-b border-stone-800 text-[11px] text-stone-300 font-mono">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
+            WORKSTATION DIFF
+          </span>
+          <span className="text-stone-500">|</span>
+          <span className="text-emerald-400 font-mono text-[10.5px]">+{addedLines.length}</span>
+          <span className="text-rose-400 font-mono text-[10.5px]">-{removedLines.length}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleSplitScreen}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] text-stone-300 hover:text-white bg-stone-800 hover:bg-stone-700 transition-colors cursor-pointer"
+            title="Notebook ile Yan Yana Aç (Split View)"
+          >
+            <Columns className="size-3" />
+            <span className="hidden sm:inline">Split View</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleApplyToNotebook}
+            className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-medium transition-all duration-150 cursor-pointer ${
+              applied
+                ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
+            }`}
+            title="Değişikliği Canlı Notebook'a Uygula"
+          >
+            <Check className="size-3" />
+            <span>{applied ? 'Uygulandı ✓' : 'Dokümana Uygula'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] transition-colors cursor-pointer ${
+              copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'text-stone-400 hover:text-stone-200'
+            }`}
+            title="Temiz Metni Kopyala"
+          >
+            {copied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
+          </button>
+        </div>
+      </div>
+      <div className="p-2 overflow-x-auto font-mono text-[11px] leading-snug space-y-0.5 max-h-[360px] overflow-y-auto">
+        {lines.map((line, idx) => {
+          if (line.startsWith('+') && !line.startsWith('+++')) {
+            return (
+              <div key={idx} className="bg-emerald-950/35 text-emerald-300 px-1.5 py-0.5 rounded-xs border-l-2 border-emerald-500 whitespace-pre-wrap break-words">
+                {line}
+              </div>
+            );
+          }
+          if (line.startsWith('-') && !line.startsWith('---')) {
+            return (
+              <div key={idx} className="bg-rose-950/35 text-rose-300/80 px-1.5 py-0.5 rounded-xs border-l-2 border-rose-500 line-through whitespace-pre-wrap break-words">
+                {line}
+              </div>
+            );
+          }
+          if (line.startsWith('@@')) {
+            return (
+              <div key={idx} className="text-sky-400 font-bold bg-sky-950/25 px-1.5 py-0.5 rounded-xs my-0.5 text-[10.5px]">
+                {line}
+              </div>
+            );
+          }
+          return (
+            <div key={idx} className="text-stone-300/90 px-1.5 py-0.2 whitespace-pre-wrap break-words">
+              {line}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ChatMessageCodeBlock({ language, code }: { language: string; code: string }) {
+  if (language === 'diff' || language === 'patch') {
+    return <ChatMessageDiffBlock code={code} />;
+  }
+
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
