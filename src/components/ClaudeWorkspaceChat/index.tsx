@@ -1894,7 +1894,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (app?.addWindow) app.addWindow({ path: '/community' });
       } else if (action.type === 'manage_windows') {
         const act = action.payload.action || 'tile';
-        if (act === 'tile' && action.payload.left_path && action.payload.right_path) {
+        if ((act === 'tile' || act === 'split') && action.payload.left_path && action.payload.right_path) {
           if (app?.addWindow) {
             app.addWindow({ path: action.payload.left_path, snapped: 'left' });
             app.addWindow({ path: action.payload.right_path, snapped: 'right' });
