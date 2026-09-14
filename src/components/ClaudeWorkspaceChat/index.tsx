@@ -69,6 +69,7 @@ import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
+import { LemonScope } from 'components/LemonScope';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId } from '../../lib/window-path';
 import {
@@ -2485,7 +2486,9 @@ export function ClaudeWorkspaceChatPanel() {
              data-skin="classic"
             className={`fixed w-[min(calc(100vw-1rem),26rem)] max-w-[calc(100vw-1rem)] bg-primary text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased ${WINDOW_BG}`}
           >
-            <App onClose={closePanel} />
+            <LemonScope fill>
+              <App onClose={closePanel} />
+            </LemonScope>
           </motion.div>
         )}
       </AnimatePresence>
