@@ -13,9 +13,14 @@ interface OSActionCardProps {
  */
 export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardProps): JSX.Element {
     const content = action.payload?.content?.trim()
-    const isAnnotation = action.type === 'annotate_notebook'
-    const buttonLabel = isAnnotation ? 'Annotate' : 'Add to notebook'
-
+    const buttonLabel =
+        action.type === 'replace_notebook_selection'
+            ? 'Replace'
+            : action.type === 'rewrite_notebook_document'
+              ? 'Rewrite'
+              : action.type === 'annotate_notebook'
+                ? 'Annotate'
+                : 'Add to notebook'
 
     return (
         <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary font-sans">
