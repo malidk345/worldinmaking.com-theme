@@ -49,7 +49,11 @@ import {
     uniqueTags,
     toggleTaskLine,
 } from './notebookOrganize'
-import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
+import {
+    ensureNotebookProductStyles,
+    releaseNotebookProductStyles,
+    NOTEBOOK_PRODUCT_SCOPE_CLASS,
+} from '../../../lib/lemon/ensureNotebookProductStyles'
 import { NotebookDailyCalendar } from './NotebookDailyCalendar'
 
 interface NotebooksListSceneProps {
@@ -88,6 +92,14 @@ export function NotebooksListScene({
     const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
     const leavingIdsRef = useRef<Set<string>>(new Set())
     const { addToast } = useToast()
+
+    // List can mount outside notebook App (WindowRouter /notebooks); inject LemonTable CSS.
+    useEffect(() => {
+        ensureNotebookProductStyles()
+        return () => {
+            releaseNotebookProductStyles()
+        }
+    }, [])
 
     useEffect(() => {
         const timer = window.setTimeout(() => setSearchQuery(searchInput), 180)
