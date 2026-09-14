@@ -63,6 +63,7 @@ async function formatCommunityPost(post: any) {
 export const useQuestions = (options?: UseQuestionsOptions) => {
     const [questions, setQuestions] = useState<{ data: any[] }>({ data: [] })
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [page, setPage] = useState(0)
     const [total, setTotal] = useState(0)
@@ -72,6 +73,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
 
     const load = useCallback(async () => {
         setIsLoading(true)
+        setError(null)
         try {
             const cleanSlug = options?.slug
                 ? options.slug.replace(/^\/posts\/?/, '').replace(/^\/questions\/?/, '').replace(/^\/forum\/?/, '').replace(/^\/community\/?/, '').replace(/^\/+/, '') || undefined
@@ -92,8 +94,9 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
             setPage(0)
             const formatted = await Promise.all(list.slice(0, limit).map(formatCommunityPost))
             setQuestions({ data: formatted as any })
-        } catch (e) {
+        } catch (e: any) {
             console.warn('[useQuestions]', e)
+            setError(e?.message || 'Failed to fetch questions')
             allPostsRef.current = []
             setTotal(0)
             setQuestions({ data: [] })
@@ -129,6 +132,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
         questions,
         fetchMore,
         isLoading,
+        error,
         isLoadingMore,
         refresh: () => {
             void load()

@@ -498,7 +498,7 @@ export default function Inbox(props) {
     const [filters, setFilters] = useState(defaultFilters)
     const { addToast } = useToast()
     const { user, setSubscription, isSubscribed, isValidating } = useUser()
-    const { questions, isLoading, isLoadingMore, fetchMore, hasMore, refresh, pinnedQuestions } = useQuestions({
+    const { questions, isLoading, isLoadingMore, fetchMore, hasMore, refresh, pinnedQuestions, error } = useQuestions({
         limit: 20,
         sortBy: 'activity',
         filters,
@@ -792,7 +792,22 @@ export default function Inbox(props) {
                                                     onOpenThread={openThread}
                                                 />
                                             ))}
+                                            {!isLoading && error && (
+                                                <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-primary">
+                                                    <div className="text-lg mb-2 font-semibold">Could not load threads</div>
+                                                    <div className="text-secondary text-sm mb-4">
+                                                        There was an error fetching the threads.
+                                                    </div>
+                                                    <button
+                                                        onClick={refresh}
+                                                        className="px-4 py-2 bg-primary text-primary border border-primary rounded-full hover:bg-accent transition-colors"
+                                                    >
+                                                        Retry
+                                                    </button>
+                                                </div>
+                                            )}
                                             {!isLoading &&
+                                                !error &&
                                                 !(
                                                     pinnedQuestions?.some((question) =>
                                                         threadMatchesTopic(question, selectedTopic)
