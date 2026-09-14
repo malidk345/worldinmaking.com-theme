@@ -1920,16 +1920,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           })
         );
       } else if (action.type === 'create_forum_topic' || action.type === 'publish_to_forum') {
+        const detail = {
+          title: action.payload.title || '',
+          content: action.payload.content || '',
+          category: action.payload.category || 'discussion',
+        };
+        try {
+          sessionStorage.setItem('wim_forum_topic_draft_v1', JSON.stringify(detail));
+        } catch (e) {
+          // ignore
+        }
         window.dispatchEvent(
           new CustomEvent('wimForumCreateTopicDraft', {
-            detail: {
-              title: action.payload.title || '',
-              content: action.payload.content || '',
-              category: action.payload.category || 'discussion',
-            },
+            detail,
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/community' });
+        if (app?.addWindow) app.addWindow({ path: '/community/new' });
       } else if (action.type === 'manage_windows') {
         const act = action.payload.action || 'tile';
         if ((act === 'tile' || act === 'split') && action.payload.left_path && action.payload.right_path) {
