@@ -807,6 +807,7 @@ export function App() {
       setMarkdown(next)
       const label = mode === 'replace' ? 'Full document rewrite' : 'Inserted artifact'
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: label })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
 
       // Mark the newly inserted nodes to trigger smooth highlight glow
       try {
@@ -851,6 +852,7 @@ export function App() {
       const updated = { ...target, title: newTitle }
       setCurrentNotebook(updated)
       saveNotebook(updated, { snapshot: true, snapshotLabel: `Rename: ${newTitle}` })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
       if (appWindow) {
         appActions.setWindowTitle(appWindow, newTitle)
       }
@@ -878,6 +880,7 @@ export function App() {
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
     const handleAddFootnote = (event: Event) => {
@@ -944,6 +947,7 @@ export function App() {
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: `Added footnote [^${marker}]` })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
     window.addEventListener('wimNotebookInsertText', handleInsertText)
