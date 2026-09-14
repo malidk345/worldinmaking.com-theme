@@ -447,6 +447,7 @@ async function runToolSteps(params: {
     holdPublicUntilCitations?: boolean
     agentMode?: AgentMode
     checkpoint?: AgentCheckpoint
+    signal?: AbortSignal
 }): Promise<
     | { kind: 'done'; result: ToolLoopResult }
     | { kind: 'tools-rejected'; error: string }
@@ -480,6 +481,7 @@ async function runToolSteps(params: {
         holdPublicUntilCitations: params.holdPublicUntilCitations,
         maxSteps: MAX_STEPS,
         agentMode: params.agentMode,
+        signal: params.signal,
     })
 
     if (pipelineRes.ok) {
