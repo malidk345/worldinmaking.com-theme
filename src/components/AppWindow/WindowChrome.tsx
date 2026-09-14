@@ -30,7 +30,7 @@ export default function WindowChrome({
 
     return (
         <div
-            className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
+            className={`relative pt-[env(safe-area-inset-top)] ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}
             onPointerDown={hasToolbar && canDrag ? onDragHandlePointerDown : undefined}
             onDoubleClick={onDoubleClick}
         >
