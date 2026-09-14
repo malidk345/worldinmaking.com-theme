@@ -1,3 +1,4 @@
+LEGACY — not WIM. See docs/architecture/WIM_REPORT.md
 # Security guidelines for agents
 
 ## Principle of Least Privilege

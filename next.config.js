@@ -31,6 +31,9 @@ const nextConfig = {
             'recharts',
         ],
     },
+    // We intentionally bypass Next.js full-repo TS/ESLint build checks.
+    // The legacy Next.js / React surface contains historical type debt that is too noisy.
+    // CI relies on `pnpm typecheck:shell` as the real gate.
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
     images: {
@@ -43,6 +46,9 @@ const nextConfig = {
             { protocol: 'https', hostname: '*.posthog.com' },
             { protocol: 'https', hostname: '*.supabase.co' },
             { protocol: 'https', hostname: '*.supabase.in' },
+            { protocol: 'https', hostname: '*.workers.dev' },
+            { protocol: 'https', hostname: '*.*.workers.dev' },
+            { protocol: 'https', hostname: '*.worldinmaking.com' },
         ],
     },
     trailingSlash: false,
@@ -209,6 +215,8 @@ const nextConfig = {
 
     async redirects() {
         return [
+            { source: '/questions/topic/max', destination: '/questions', permanent: true },
+            { source: '/questions/topic/ai', destination: '/questions', permanent: true },
             { source: '/desktop', destination: '/', permanent: true },
             { source: '/home', destination: '/', permanent: true },
             { source: '/blog', destination: '/posts', permanent: true },

@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase'
+import { isStorageWorkerConfigured, uploadAvatar, uploadFile, getFileUrl } from './storage-worker'
 
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const MAX_INPUT_BYTES = 8 * 1024 * 1024
@@ -53,9 +54,31 @@ export async function uploadProfileImage(
     file: File,
     kind: ProfileImageKind
 ): Promise<string> {
-    if (!isSupabaseConfigured) throw new Error('Storage is not configured')
     if (!userId) throw new Error('Sign in to upload a photo')
     if (!isProfileImageFile(file)) throw new Error('Use a JPG, PNG, WebP, or GIF under 8 MB')
+
+    if (isStorageWorkerConfigured()) {
+        if (kind === 'avatar') {
+            const result = await uploadAvatar(file)
+            return result.avatarUrl
+        }
+        const meta = await uploadFile({
+            file,
+            category: 'avatar',
+            filename: file.name,
+        })
+        const url = getFileUrl(meta.storage_key)
+        await supabase
+            .from('profiles')
+            .update({
+                cover_url: url,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId)
+        return url
+    }
+
+    if (!isSupabaseConfigured) throw new Error('Storage is not configured')
 
     const blob = await compressProfileImage(file, kind)
     const path = `${userId}/${kind}-${Date.now()}.jpg`

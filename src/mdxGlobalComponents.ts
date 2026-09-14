@@ -20,7 +20,7 @@ const named = (load: () => Promise<Record<string, unknown>>, exportName: string,
         loading: () => null,
     })
 
-const AboutPostHog = dynamic(() => import('./components/AboutPostHog'), { loading: () => null })
+const AboutWIM = dynamic(() => import('./components/AboutWIM'), { loading: () => null })
 const CountriesWeHireIn = dynamic(() => import('./components/AMCharts/CountriesWeHireIn'), {
     ssr: false,
     loading: () => null,
@@ -42,7 +42,7 @@ const WistiaEmbed = dynamic(() => import('./components/WistiaEmbed'), { ssr: fal
 const PlatformInstall = dynamic(() => import('./components/PlatformInstall'), { loading: () => null })
 
 export const shortcodes = {
-    AboutPostHog,
+    AboutWIM,
     ArrayCTA,
     BasicHedgehogImage,
     BorderWrapper,

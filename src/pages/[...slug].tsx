@@ -11,7 +11,7 @@ const SharedChatView = dynamic(() =>
     import('../components/Share/SharedChatView').then((m) => ({ default: m.SharedChatView }))
 )
 
-const NotebooksListSkeleton = dynamic(
+const NotebookAppProxy = dynamic(
     () => import('../notebook-app/App').then((mod) => mod.App),
     {
         ssr: false,
@@ -42,7 +42,7 @@ export default function DynamicSlugPage() {
         return <ProfileWrapper key={fullPath} path={fullPath} />
     }
     if (rootSegment === 'notebooks') {
-        return <NotebooksListSkeleton key={fullPath} path={fullPath} />
+        return <NotebookAppProxy key={fullPath} />
     }
     if (rootSegment === 'display-options') {
         return <DisplayOptions key={fullPath} />

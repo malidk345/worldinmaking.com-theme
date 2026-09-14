@@ -69,8 +69,9 @@ import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
+import { LemonScope } from '../LemonScope';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
-import { extractNotebookId } from '../../lib/window-path';
+import { extractNotebookId, notebookWindowPath } from '../../lib/window-path';
 import {
   adoptGuestChatsIntoAccount,
   chatAuthHeaders,
@@ -133,9 +134,20 @@ function sanitizePublicAssistantText(value: string): string {
 }
 
 function isAbortError(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false
-  const name = (err as { name?: unknown }).name
-  return name === 'AbortError'
+  if (!err) return false
+  if (err === 'client-stop') return true
+  if (typeof err === 'string') {
+    const lower = err.toLowerCase()
+    return lower.includes('abort') || lower.includes('client-stop')
+  }
+  if (typeof err === 'object') {
+    const e = err as { name?: unknown; message?: unknown; code?: unknown }
+    if (e.name === 'AbortError') return true
+    if (e.code === 20) return true // DOMException.ABORT_ERR
+    const msg = String(e.message || '').toLowerCase()
+    if (msg.includes('aborted') || msg.includes('abort') || msg.includes('client-stop')) return true
+  }
+  return false
 }
 
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
@@ -209,32 +221,24 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const insertIntoNotebook = (content: string, notebookId?: string) => {
     const text = String(content || '').trim()
     if (!text) return
-    const notebookOpen = appWindows.some(
-      (windowItem) => /notebook/i.test(windowItem.path || '') || windowItem.component === 'NotebookApp'
-    )
-    const insert = () =>
-      window.dispatchEvent(
-        new CustomEvent('wimNotebookInsertText', {
-          detail: {
-            text,
-            mode: 'append',
-            notebookId: notebookId || notebookBind?.notebookId,
-          },
-        })
-      )
-
-    if (!notebookOpen && app?.addWindow) {
+    const targetNbId = notebookId || notebookBind?.notebookId;
+    if (app?.addWindow) {
       app.addWindow({
         title: 'Notebooks',
         icon: 'DocumentTextIcon',
         component: 'NotebookApp',
-        path: '/notebooks',
+        path: targetNbId ? notebookWindowPath(targetNbId) : '/notebooks',
       })
-      window.setTimeout(insert, 350)
-      return
     }
-
-    insert()
+    window.dispatchEvent(
+      new CustomEvent('wimNotebookInsertText', {
+        detail: {
+          text,
+          mode: 'append',
+          notebookId: targetNbId,
+        },
+      })
+    )
   }
 
   // Active chat state
@@ -489,6 +493,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [shareBusy, setShareBusy] = useState(false);
 
   const persistOwnerRef = useRef(getChatStorageKey())
+  const lastWrittenChatsStrRef = useRef<string>('')
   // Save to LocalStorage
   useEffect(() => {
     try {
@@ -497,7 +502,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         persistOwnerRef.current = key
         return
       }
-      writeLocalChats(chats);
+      const serialized = JSON.stringify(chats)
+      if (serialized !== lastWrittenChatsStrRef.current) {
+        writeLocalChats(chats)
+        lastWrittenChatsStrRef.current = serialized
+      }
     } catch {
       // A full localStorage quota must not break an active conversation.
     }
@@ -519,32 +528,60 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [settings]);
 
+  const knownChatIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    knownChatIdsRef.current = new Set(chats.map((c) => c.id))
+  }, [chats])
+
   useEffect(() => {
     let cancelled = false
+    let isSyncing = false
+    let syncPending = false
+
     const syncFromRemote = async (claim = false) => {
-      if (claim) await claimDeviceAccountOnLogin()
-      if (cancelled) return
-      const remote = await pullChatsFromRemote()
-      if (cancelled || !remote) return
-      const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
-      for (const id of remote.deletedIds) rememberDeletedChatId(id)
-      setChats((prev) => {
-        const merged = mergeChats(prev, remote.chats, deletedIds)
-        if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
-          setActiveChatId(merged[0].id)
+      if (isSyncing) {
+        syncPending = true
+        return
+      }
+      isSyncing = true
+      try {
+        if (claim) await claimDeviceAccountOnLogin()
+        if (cancelled) return
+        const remote = await pullChatsFromRemote()
+        if (cancelled || !remote) return
+        const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
+        for (const id of remote.deletedIds) rememberDeletedChatId(id)
+        setChats((prev) => {
+          const merged = mergeChats(prev, remote.chats, deletedIds)
+          if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
+            setActiveChatId(merged[0].id)
+          }
+          if (merged.length === 0) setActiveChatId('')
+          return merged
+        })
+      } finally {
+        isSyncing = false
+        if (syncPending && !cancelled) {
+          syncPending = false
+          void syncFromRemote(false)
         }
-        if (merged.length === 0) setActiveChatId('')
-        return merged
-      })
+      }
     }
     void syncFromRemote(true)
+
     let pullTimer: number | undefined
-    const schedulePull = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schedulePull = (payload?: any) => {
+      if (payload?.table === 'wim_chat_messages' && payload.new?.chat_id) {
+         if (!knownChatIdsRef.current.has(payload.new.chat_id)) return
+      }
       window.clearTimeout(pullTimer)
       pullTimer = window.setTimeout(() => {
         void syncFromRemote(false)
       }, 350)
     }
+
+    let isRealtimeActive = false
     const onIdentity = () => {
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
@@ -552,9 +589,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       setChats(Array.isArray(stored) ? stored : [])
       void syncFromRemote(true)
     }
+
     window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
-    const stopRealtime = subscribeToWorkspaceChats(schedulePull)
-    const stopPolling = startWorkspaceChatPolling(schedulePull)
+    const stopRealtime = subscribeToWorkspaceChats(schedulePull, (status) => {
+      isRealtimeActive = status === 'SUBSCRIBED'
+    })
+    const stopPolling = startWorkspaceChatPolling(() => {
+      if (!isRealtimeActive) schedulePull()
+    })
+
     return () => {
       cancelled = true
       window.clearTimeout(pullTimer)
@@ -578,9 +621,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const abortActiveStream = useCallback(() => {
     const controller = abortControllerRef.current
     abortControllerRef.current = null
-    if (controller) {
+    if (controller && typeof controller.abort === 'function') {
       try {
-        if (!controller.signal.aborted) {
+        if (!controller.signal?.aborted) {
           controller.abort()
         }
       } catch {
@@ -589,9 +632,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     const reader = streamReaderRef.current
     streamReaderRef.current = null
-    if (reader) {
+    if (reader && typeof reader.cancel === 'function') {
       try {
-        void reader.cancel('client-stop')
+        reader.cancel('client-stop').catch(() => {
+          /* already closed or aborted */
+        })
       } catch {
         /* already closed */
       }
@@ -843,7 +888,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const editMessageId = pendingEditMessageIdRef.current
     pendingEditMessageIdRef.current = null
     const sourceChat = chats.find((c) => c.id === (targetChatId || '')) || activeChat
-    const turnAgentMode = options?.agentMode || 'ask'
+    const turnAgentMode = options?.agentMode || sourceChat?.agentMode || 'ask'
     let baseMessages = options?.historyOverride || sourceChat?.messages || []
     if (editMessageId) {
       const editIndex = baseMessages.findIndex((message) => message.id === editMessageId)
@@ -952,7 +997,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('auto'));
     abortActiveStream();
-    abortControllerRef.current = new AbortController();
+    const activeController = new AbortController();
+    abortControllerRef.current = activeController;
     streamReaderRef.current = null;
 
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
@@ -1027,7 +1073,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       const attachmentContext = effectiveAttachments
         .map((attachment) => {
           if (attachment.type === 'image') {
-            return `[Image attachment: ${attachment.name}. Image bytes are not sent to the text model.]`;
+            return `[Image attachment: ${attachment.name}. URL: ${attachment.url || ''}. Image bytes are not sent to the text model.]`;
+          }
+          if (attachment.type === 'audio') {
+            return `[Audio attachment: ${attachment.name}. URL: ${attachment.url || ''}.]`;
           }
           return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 12000)}`;
         })
@@ -1079,10 +1128,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       const authHeaders = await chatAuthHeadersFresh(true);
+      if (activeController.signal.aborted || abortControllerRef.current !== activeController) {
+        return;
+      }
       const sseRes = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders,
-        signal: abortControllerRef.current.signal,
+        signal: activeController.signal,
         body: JSON.stringify({
           prompt: effectivePrompt,
           byok: getActiveByokPayload(),
@@ -1184,14 +1236,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       let streamedCitations: Message['citations'] = [];
 
       let lastTokenFlushTime = 0;
-      const streamSignal = abortControllerRef.current?.signal;
+      const streamSignal = activeController.signal;
 
       while (true) {
-        if (streamSignal?.aborted) {
+        if (streamSignal.aborted) {
           const abortErr = new DOMException('The operation was aborted.', 'AbortError')
           throw abortErr
         }
-        const { value, done } = await reader.read();
+        let readResult: ReadableStreamReadResult<Uint8Array>
+        try {
+          readResult = await reader.read();
+        } catch (readErr) {
+          if (streamSignal.aborted || isAbortError(readErr)) {
+            throw new DOMException('The operation was aborted.', 'AbortError')
+          }
+          throw readErr
+        }
+        const { value, done } = readResult;
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -1500,7 +1561,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const applied = executeOSAction(assistantMessageId, parsed.action, targetChatId);
+            const currentChat = chats.find((c) => c.id === targetChatId);
+            const mode = currentChat?.agentMode || 'ask';
+            const shouldAutoApply = mode === 'execute';
+            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type);
+            const applied = isDestructive ? false : shouldAutoApply ? executeOSAction(assistantMessageId, parsed.action, targetChatId) : false;
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -1777,44 +1842,84 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return true;
     }
     executedActionsRef.current.add(key);
+
+    const isNotebookAction = [
+      'create_notebook',
+      'insert_notebook_block',
+      'rewrite_notebook_document',
+      'replace_notebook_selection',
+      'update_notebook_title',
+      'annotate_notebook',
+      'add_notebook_footnote',
+    ].includes(action.type);
+
+    if (isNotebookAction) {
+      const handleAck = (e: Event) => {
+        const customEvent = e as CustomEvent<{ notebookId?: string }>;
+        const targetId =
+          action.type === 'create_notebook'
+            ? customEvent.detail?.notebookId
+            : action.payload.notebookId || notebookBind?.notebookId;
+
+        // If it's create_notebook, we grab the new ID from the ack if possible, or just accept the ack.
+        // For others, we only ack if the ID matches or if we didn't specify one.
+        if (!targetId || !customEvent.detail?.notebookId || customEvent.detail.notebookId === targetId) {
+          updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
+          window.removeEventListener('wimNotebookAck', handleAck);
+          if (timeout) clearTimeout(timeout);
+        }
+      };
+      window.addEventListener('wimNotebookAck', handleAck);
+      var timeout = setTimeout(() => {
+        window.removeEventListener('wimNotebookAck', handleAck);
+        // Fail the card after a reasonable wait
+        updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: false } });
+        executedActionsRef.current.delete(key);
+      }, 5000);
+    }
+
     try {
       if (action.type === 'create_notebook') {
-        createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+        const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
+        if (app?.addWindow) app.addWindow({ path: notebookWindowPath(nb.id) });
+        // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
         insertIntoNotebook(action.payload.content || '', action.payload.notebookId);
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'rewrite_notebook_document') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookInsertText', {
             detail: {
               text: action.payload.content || '',
               mode: 'replace',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'replace_notebook_selection') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookReplaceSelection', {
             detail: {
               text: action.payload.content || '',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'update_notebook_title') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookSetTitle', {
             detail: {
               title: action.payload.title || '',
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
       } else if (action.type === 'create_forum_topic' || action.type === 'publish_to_forum') {
         window.dispatchEvent(
           new CustomEvent('wimForumCreateTopicDraft', {
@@ -1828,7 +1933,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (app?.addWindow) app.addWindow({ path: '/community' });
       } else if (action.type === 'manage_windows') {
         const act = action.payload.action || 'tile';
-        if (act === 'tile' && action.payload.left_path && action.payload.right_path) {
+        if ((act === 'tile' || act === 'split') && action.payload.left_path && action.payload.right_path) {
           if (app?.addWindow) {
             app.addWindow({ path: action.payload.left_path, snapped: 'left' });
             app.addWindow({ path: action.payload.right_path, snapped: 'right' });
@@ -1843,6 +1948,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
           const target = appWindows.find((w) => w.path === action.payload.path);
           if (target) app.updateWindow(target, { minimized: true });
+        } else if (act === 'focus' && action.payload.path) {
+          appWindows.forEach((w) => {
+            if (w.path !== action.payload.path && app?.updateWindow) {
+              app.updateWindow(w, { minimized: true });
+            }
+          });
+          const target = appWindows.find((w) => w.path === action.payload.path);
+          if (target && app?.bringToFront) {
+            app.bringToFront(target);
+          } else if (app?.addWindow) {
+            app.addWindow({ path: action.payload.path });
+          }
         } else if (act === 'close_all' && app?.closeWindow) {
           appWindows.forEach((w) => app.closeWindow(w));
         } else if (action.payload.path && app?.addWindow) {
@@ -1864,23 +1981,42 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           (app as any).updateSiteSettings({ reduceTransparency: action.payload.reduce_transparency });
         }
       } else if (action.type === 'annotate_notebook') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
         window.dispatchEvent(
           new CustomEvent('wimNotebookAddAnnotation', {
             detail: {
-              notebookId: action.payload.notebookId || notebookBind?.notebookId,
+              notebookId: nbId,
               spanText: action.payload.span_text || '',
               note: action.payload.note || '',
             },
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/notebooks' });
+        // Dispatch ack manually if notebook-app doesn't support wimNotebookAddAnnotation currently
+        // to prevent timeout.
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nbId } }));
+      } else if (action.type === 'add_notebook_footnote') {
+        const nbId = action.payload.notebookId || notebookBind?.notebookId;
+        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
+        window.dispatchEvent(
+          new CustomEvent('wimNotebookAddFootnote', {
+            detail: {
+              notebookId: nbId,
+              marker: action.payload.marker,
+              text: action.payload.text || action.payload.content || '',
+              spanText: action.payload.span_text,
+            },
+          })
+        );
       } else if (action.type === 'open_window') {
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }
 
-      updateAssistantMessage(chatId, msgId, {
-        osAction: { ...action, executed: true },
-      });
+      if (!isNotebookAction) {
+        updateAssistantMessage(chatId, msgId, {
+          osAction: { ...action, executed: true },
+        });
+      }
       return true;
     } catch (e) {
       executedActionsRef.current.delete(key);
@@ -1889,15 +2025,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const handleHumanRespond = (messageId: string, action: 'run' | 'revise', payload?: string) => {
+  const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
     if (isStreaming || !activeChat) return
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
-    const nextStatus = action === 'run' ? 'approved' : 'revised'
+    const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
-    const nextMode = action === 'run' ? 'execute' : 'plan'
+    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (activeChat.agentMode || 'ask')
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
     if (message.checkpoint) {
       void handleSendMessage('', [], {
@@ -1912,6 +2048,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     if (action === 'run') {
       void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
+      return
+    }
+    if (action === 'answer') {
+      void handleSendMessage(payload || 'Yes', [], { agentMode: 'execute' })
       return
     }
     void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
@@ -1955,6 +2095,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       historyOverride: kept,
     });
   };
+
+  const handleAgentModeChange = useCallback((mode: AgentMode) => {
+    if (!activeChatId) return;
+    setChats((prev) => prev.map((c) => (c.id === activeChatId ? { ...c, agentMode: mode, updatedAt: new Date().toISOString() } : c)));
+  }, [activeChatId]);
 
   const handleMessageFeedback = (messageId: string, liked: boolean | null) => {
     if (!activeChatId) return;
@@ -2132,6 +2277,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat])
 
   return (
+    <LemonScope fill>
     <div className="relative flex h-full min-h-0 w-full min-w-0 bg-primary text-primary font-sans overflow-hidden antialiased">
       {/* Left Collapsible Sidebar */}
       <Sidebar
@@ -2252,7 +2398,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
-              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+                            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+              pendingHumanTurn={activeChat?.messages.at(-1)?.humanTurn?.status === 'pending' ? activeChat.messages.at(-1)?.humanTurn : undefined}
+              onHumanRespond={(action, payload) => {
+                const pendingMsgId = activeChat?.messages.at(-1)?.id
+                if (pendingMsgId) handleHumanRespond(pendingMsgId, action, payload)
+              }}
               models={models}
               selectedModelId={selectedModelId}
               onSelectModel={handleSelectModel}
@@ -2260,6 +2411,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               draftNonce={composerDraftNonce}
               incomingAttachments={incomingAttachments}
               boundNotebookTitle={activeNotebookInfo?.title}
+              agentMode={activeChat?.agentMode || 'ask'}
+              onAgentModeChange={handleAgentModeChange}
 
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {
@@ -2331,6 +2484,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         onDisableShare={handleDisableShare}
       />
     </div>
+    </LemonScope>
   );
 }
 

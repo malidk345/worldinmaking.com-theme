@@ -47,6 +47,7 @@ export type HostOsAction = {
         | 'set_system_appearance'
         | 'annotate_notebook'
         | 'publish_to_forum'
+        | 'add_notebook_footnote'
     title: string
     description: string
     payload: {
@@ -64,6 +65,8 @@ export type HostOsAction = {
         span_text?: string
         note?: string
         category?: string
+        marker?: string
+        text?: string
     }
 }
 
@@ -601,4 +604,67 @@ export function executePublishToForum(
         },
     }
 }
+
+export function executeAddNotebookFootnote(
+    host: HostSnapshot | undefined,
+    text: string,
+    spanText?: string,
+    marker?: string,
+    notebookId?: string
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const fnText = clip((text || '').trim(), 2_000)
+    if (!fnText) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'text (footnote explanation or citation) is required' }) }
+    }
+    const requested = clip((notebookId || '').trim(), 80)
+    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
+    if (!targetId) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: 'No notebook is bound. Open or create a notebook first to add footnotes.',
+            }),
+        }
+    }
+    const known = host?.notebooks?.find((item) => item.id === targetId)
+    const title = known?.title || host?.notebookTitle || 'Notebook'
+    const quote = spanText ? clip(spanText.trim(), 500) : undefined
+
+    let resolvedMarker = marker ? clip(marker.trim(), 40) : ''
+    if (!resolvedMarker) {
+        const content = known?.content || host?.selection || ''
+        const matches = content.match(/\[\^([0-9]+)\]/g) || []
+        const existingNums = matches
+            .map((m) => parseInt(m.slice(2, -1), 10))
+            .filter((n) => !isNaN(n))
+        const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 1
+        resolvedMarker = String(nextNum)
+    }
+
+    return {
+        ok: true,
+        result: JSON.stringify({
+            ok: true,
+            notebookId: targetId,
+            title,
+            marker: resolvedMarker,
+            text: fnText,
+            span_text: quote,
+        }),
+        action: {
+            type: 'add_notebook_footnote',
+            title: `Add footnote [^${resolvedMarker}] in ${title}`,
+            description: quote ? `Attach footnote [^${resolvedMarker}] to "${clip(quote, 36)}"` : `Append footnote [^${resolvedMarker}] to notebook`,
+            payload: {
+                notebookId: targetId,
+                title,
+                marker: resolvedMarker,
+                text: fnText,
+                span_text: quote,
+            },
+        },
+    }
+}
+
 

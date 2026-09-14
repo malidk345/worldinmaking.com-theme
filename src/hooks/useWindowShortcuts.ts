@@ -12,6 +12,7 @@ interface UseWindowShortcutsOptions {
     handleClose: () => void
     setClosing: (closing: boolean) => void
     closingAllWindowsAnimation: boolean
+    windowRef: React.RefObject<HTMLDivElement>
 }
 
 export function useWindowShortcuts({
@@ -25,6 +26,7 @@ export function useWindowShortcuts({
     handleClose,
     setClosing,
     closingAllWindowsAnimation,
+    windowRef,
 }: UseWindowShortcutsOptions) {
     useEffect(() => {
         const handleWindowClose = (event: CustomEvent) => {
@@ -41,7 +43,8 @@ export function useWindowShortcuts({
     }, [item.key, handleClose])
 
     useEffect(() => {
-        if (!item.appSettings?.closeOnEscape || focusedWindow !== item || closing) return
+        const shouldCloseOnEscape = item.appSettings?.closeOnEscape || item.modal
+        if (!shouldCloseOnEscape || focusedWindow?.key !== item.key || closing) return
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key !== 'Escape' || event.defaultPrevented) return
@@ -53,7 +56,50 @@ export function useWindowShortcuts({
         window.addEventListener('keydown', handleKeyDown)
 
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [closing, focusedWindow, item, setClosing])
+    }, [closing, focusedWindow?.key, item, setClosing])
+
+    useEffect(() => {
+        if (!item.modal || focusedWindow?.key !== item.key) return
+
+        const handleFocusTrap = (event: KeyboardEvent) => {
+            if (event.key !== 'Tab') return
+
+            const element = windowRef.current
+            if (!element) return
+
+            const focusableElements = Array.from(
+                element.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(
+                (el) =>
+                    el.tabIndex !== -1 && !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'
+            )
+
+            if (focusableElements.length === 0) {
+                event.preventDefault()
+                return
+            }
+
+            const firstElement = focusableElements[0]
+            const lastElement = focusableElements[focusableElements.length - 1]
+
+            if (event.shiftKey) {
+                if (document.activeElement === firstElement || document.activeElement === element) {
+                    lastElement.focus()
+                    event.preventDefault()
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    firstElement.focus()
+                    event.preventDefault()
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleFocusTrap)
+        return () => window.removeEventListener('keydown', handleFocusTrap)
+    }, [focusedWindow?.key, item.key, item.modal, windowRef])
 
     useEffect(() => {
         if (closingAllWindowsAnimation && !closing) {

@@ -9,7 +9,7 @@ Desktop OS shell product built on a Next.js (Pages Router) codebase inherited fr
 | **Product surface** | Desktop windows, taskbar, search, auth, notebooks, community/forum, AI bots |
 | **Package manager** | **pnpm only** (`pnpm-lock.yaml`) — do not use npm or commit `package-lock.json` |
 | **Node** | 22.x |
-| **Architecture** | [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) |
+| **Plan / backlog (single report)** | [`docs/architecture/WIM_REPORT.md`](docs/architecture/WIM_REPORT.md) |
 | **AI architecture** | [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) |
 
 ---
@@ -26,7 +26,7 @@ pnpm dev
 Open:
 
 - **Shell home:** [http://localhost:3000](http://localhost:3000) (renders desktop content)
-- **Desktop route:** [http://localhost:3000/desktop](http://localhost:3000/desktop)
+- **Desktop route:** [http://localhost:3000/desktop](http://localhost:3000/desktop) (redirects to `/`)
 - **Login:** [http://localhost:3000/login](http://localhost:3000/login)
 
 Notebook CSS is rebuilt on `predev` / `prebuild`. First `pnpm dev` may take longer.
@@ -95,7 +95,7 @@ Key paths:
 |------|------|
 | `src/context/App.tsx` | Global shell state |
 | `src/components/AppWindow/` | Window chrome / router |
-| `src/pages/desktop.tsx` | Home content (sections in `DesktopPage/`) |
+| `src/pages/desktop.tsx` | Thin wrapper; home sections in `DesktopPage/` |
 | `src/pages/api/` | Search, notebooks, forum, bots |
 | `src/notebook-app/` | Isolated notebook product (lazy) |
 | `src/lib/wim-auth.ts` | Supabase auth mapping |
@@ -106,7 +106,7 @@ Key paths:
 
 Multiple AI agents share this repo. **Before coding:**
 
-1. Read [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md) and the performance report.
+1. Read [`docs/architecture/WIM_REPORT.md`](docs/architecture/WIM_REPORT.md) and [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md).
 2. Stay on that stream’s files; no broad `git add -A`.
 3. Prefer small PRs aligned with Infra, Shell, Performance, Data, AI/Bots.
 

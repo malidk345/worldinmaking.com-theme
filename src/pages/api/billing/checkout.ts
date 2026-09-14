@@ -2,11 +2,14 @@ export const runtime = 'edge'
 
 import { createCheckoutSession } from '../../../lib/wim-billing'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
+import { checkRateLimitDurable, buildRateLimitHeaders } from '../../../lib/bots/rate-limit'
+import { getRuntimeEnv } from '../../../lib/bots/runtime-env'
+import { readJsonObject } from '../../../lib/bots/request-validation'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -21,7 +24,18 @@ export default async function handler(req: Request) {
             return json({ error: 'sign in to open study.' }, 401)
         }
 
-        const body = (await req.json().catch(() => ({}))) as Record<string, any>
+        const env = getRuntimeEnv()
+        const rate = await checkRateLimitDurable(`checkout:${user.id}`, 10, 60 * 60 * 1000, env, { failClosed: true })
+        if (rate.source === 'unavailable') {
+            return json({ error: 'Rate limit store temporarily unavailable.' }, 503, buildRateLimitHeaders(rate))
+        }
+        if (!rate.allowed) {
+            return json({ error: 'Too many checkout attempts. Try again later.' }, 429, buildRateLimitHeaders(rate))
+        }
+
+        const parsed = await readJsonObject(req, 4096)
+        if (!parsed.ok) return json({ error: parsed.error }, parsed.status)
+        const body = parsed.body
         const { interval } = body || {}
         const planInterval = interval === 'year' ? 'year' : 'month'
 

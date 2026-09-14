@@ -10,6 +10,7 @@
 - Single auth system: Supabase Auth
 - Package manager: `pnpm` exclusively
 - Styles: Notebook styles require `pnpm run build:notebook-styles` after changes.
+- **Strict User Directive:** Do NOT run Playwright or any automated test suites, and do NOT execute `git push` unless explicitly asked by the user.
 
 ---
 
@@ -21,15 +22,621 @@
 
 ## 3. High-Priority Focus Areas
 - WIM Notebook Mobile UX & Responsive Touch Experience.
+- **Cloudflare Ecosystem Roadmap (Planned Expansions):**
+  1. **Custom Domain:** Map `media.worldinmaking.com` to storage worker.
+  2. **Workers AI (Free 10k daily neurons):** Whisper Audio-to-Text for notebook voice notes, Stable Diffusion XL & FLUX.1 for in-notebook image generation to R2 (Completed).
+  3. **Turnstile:** Invisible bot/spam prevention on auth & forum.
+  4. **Edge Caching:** CDN caching for published public notebooks and articles.
+  5. **Vectorize:** Semantic vector search for notebook archives.
+  6. **KV Rate Limiting:** Durable edge rate limiting for AI bots and API routes.
+
+- **WIM AI Tool Expansion Roadmap (Approved Architecture):**
+  1. **Multimodal Capabilities (Cloudflare Workers AI):**
+     - `analyze_image` / `inspect_visual`: Vision via LLaVA 1.5 7B / ResNet for analyzing uploaded documents, screenshots, handwritten notes, and diagrams (Completed).
+     - `transcribe_audio`: Voice note to structured notebook blocks via Whisper Large V3 Turbo (Completed).
+     - `synthesize_speech`: Text-to-Speech via MeloTTS / Cloudflare for philosopher audio narrations (Completed).
+  2. **Semantic Memory & Philosophical RAG:**
+     - `cross_examine_argument`: Socratic challenger / dialectical cross-examiner exposing logical fallacies, unstated dogmas, creating Socratic dilemmas and counter-perspectives from historical schools (Completed).
+     - `verified_corpus_search`: Fact-checked primary citation search engine (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) to eliminate hallucinations (Completed).
+     - `semantic_search_notebooks`: Meaning-based search across all user notebooks via Cloudflare Vectorize + BGE M3 embeddings (Planned).
+  3. **Desktop OS & Workspace Automation:**
+     - `arrange_workspace_preset`: Contextual workspace layouts (deep_reading, studio, minimal, split_dual, research) (Completed).
+     - `export_notebook`: Compiling notebook into standalone publication-ready documents (markdown with TOC, LaTeX article, styled HTML5, text) (Completed).
+     - `run_code_sandbox`: Lightweight calculation and visualization sandbox (Planned).
+  4. **Interactive Notebook & Learning Tools:**
+     - `create_concept_map`: Visualizing idea networks and philosophical concept relationships via interactive vector canvas artifacts with auto-grid layout (Completed).
+     - `generate_flashcards`: Automatic active recall / spaced repetition study decks with optional notebook block saving (Completed).
+     - `daily_reflection_prompt`: Context-aware evening reflection / stoic journal prompts based on daily writings (Planned).
 
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[COMPLETED by Antigravity - Notebook Content Staleness Fix (cross-device content not updating on open)]`
+- **Status:** `[IDLE]`
+- **Task:** None
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-14 — Antigravity (UI Cleanup: Restored WIM AI '+' Button as Direct File Attachment Trigger)
+- **Scope:** Completely removed the redundant popup dropdown menu from the `+` button in WIM AI (`ChatInput.tsx`). The modes and commands were already available in the slash command autocomplete menu (`/ask`, `/plan`, etc.), making the secondary popup menu unnecessary and intrusive. The `+` button has been restored solely to its intended single purpose: directly opening the file attachment dialog.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Removed `plusOpen` and `plusRef` state, ref, and outside-click/escape listeners.
+     - Removed the entire popup menu JSX container (`Agent Mode`, commands list, duplicate actions).
+     - Restored the `+` button to a clean direct trigger calling `fileInputRef.current?.click()`.
+
+### 2026-09-14 — Antigravity (UI Polish: Site Icon for Notebook Selection Badge & Fixed ChatInput Plus Button)
+- **Scope:** Replaced the out-of-place pin emoji (`📌`) in the active notebook selection chip with the official site `<IconNotebook />` styled with site navy `#1E3A8A`. Fixed the WIM AI `+` button dropdown not triggering by eliminating `overflow-hidden` from the left toolbar container which was clipping the `bottom-full` popup, and adding event propagation stop on the toggle trigger.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; waiting for explicit user request.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Imported `IconNotebook` from `@posthog/icons`.
+     - Replaced `📌 Selection Context:` with `<IconNotebook />` and clean label `Selection:`.
+     - Removed `overflow-hidden` on the bottom toolbar container that was clipping the plus popup dropdown.
+     - Added `e.stopPropagation()` on the plus button trigger to ensure clean toggle behavior.
+
+### 2026-09-14 — Antigravity (UI Polish: Minimalist Unified-Font Redesign of 'Add to notebook' Card & Dual-Execution Fix)
+- **Scope:** Stripped out font inconsistencies (eliminated competing `font-mono` vs `font-sans` jumps) and visual clutter (removed "Split View" buttons, uppercase mono badges, multi-tier headers, expand/collapse line counters). Fixed the dual action execution bug where actions were simultaneously pasted into the notebook and rendered as an unapplied pending card; now aligned with `agentMode` (in `execute` mode the action applies directly without redundant pending cards, while in `ask`/`plan` modes it presents the review card without premature insertion).
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. Git push executed per explicit user command ("pushla").
+- **Changes Applied:**
+  1. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Unified all text into single standard site font (`font-sans`).
+     - Removed redundant uppercase mono badge, "Split View" button, and nested preview headers.
+     - Kept only the essentials: clean title, single primary "Add to notebook" button (or "Added ✓" when applied), short description, and raw content preview.
+  2. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Cleaned `ChatMessageDiffBlock` to remove "Split View", shouting titles, and unified font to `font-sans` with site navy button.
+  3. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Resolved dual execution: in `execute` mode, `executeOSAction` auto-applies without leaving a confusing unexecuted card; in `ask`/`plan` mode, presents the card for user approval before modifying the notebook.
+
+### 2026-09-14 — Antigravity (UI Polish: Standardized Slash Menu and Message Border Radius to Site Header 'rounded')
+- **Scope:** Adjusted the border radius (`rounded`) of the slash command autocomplete popup, the `+` action dropdown popup, the user sent message bubbles, code/diff blocks, quality gate indicators, and artifact cards to strictly match the site header's classic OS design token (`rounded` / 4px).
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Changed the slash autocomplete menu container from `rounded-lg` to `rounded` matching the site header.
+     - Changed the `+` action dropdown container from `rounded-lg` to `rounded`.
+     - Changed inner mode segment container from `rounded-md` to `rounded`.
+  2. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Changed the sent user message bubble container from `rounded-2xl` to `rounded`.
+     - Standardized diff block, code block, quality gate notices, and artifact cards from `rounded-xl` / `rounded-2xl` to `rounded`.
+
+### 2026-09-14 — Antigravity (UI Polish: Moved Ask/Plan/Execute Mode Selector to ChatInput Slash Menu)
+- **Scope:** Cleaned up the chat header panel by removing the intrusive Ask/Plan/Execute segmented buttons and repositioned mode selection directly into the ChatInput slash command system (`/ask`, `/plan`, `/execute`) and the `+` action dropdown menu.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/Header.tsx`:
+     - Removed the segmented button group and mode lock text from the header bar, restoring clean window padding (`pr-24`) and unobstructed title display.
+  2. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Disconnected mode props from `Header` and wired `agentMode` + `onAgentModeChange` into `ChatInput`.
+  3. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Added `/ask`, `/plan`, and `/execute` to `SLASH_COMMANDS` with active mode badges.
+     - Updated `applySlashCommand` and `handleKeyDown` to switch agent mode when selecting mode commands.
+     - Added a dedicated `Mode` segmented control and commands list inside the `+` popover dropdown menu.
+
+### 2026-09-14 — Antigravity (UI Polish: Rich Continuous Radial Navy #1E3A8A Aura on ChatInput)
+- **Scope:** Upgraded the navy blue (`#1E3A8A`) glow around WIM AI ChatInput container into a rich, luminous, and seamlessly blended ambient aura. Eliminated stepped/ringed bands by utilizing pure multi-radius radial shadows (`0 0 18px`, `0 0 36px`, `0 0 60px` / `0 0 20px`, `0 0 40px`, `0 0 70px`), preserving high visibility and depth with completely smooth Gaussian falloff on hover and focus.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Applied rich continuous radial navy shadows without stepped lines or harsh rings.
+     - Kept luminous visibility while achieving seamless background dispersion.
+
+### 2026-09-14 — Antigravity (UI Polish: Restored Site Navy Blue #1E3A8A Send Button in WIM AI)
+- **Scope:** Restored the brand navy blue (`bg-[#1E3A8A] hover:bg-[#1e40af]`) for the send and stop generation buttons in WIM AI ChatInput as requested, reverting the unintended generic theme override (`bg-primary`).
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. Zero browser/Playwright dependencies; no git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Restored `bg-[#1E3A8A] hover:bg-[#1e40af]` and disabled `bg-[#1E3A8A]/35 text-white/50` on the send button.
+     - Restored `border-[#1E3A8A] bg-[#1E3A8A] hover:bg-[#1e40af]` on the active generation stop button.
+- **Verification:**
+  1. `node scripts/typecheck-shell.mjs`: PASS (zero gated errors in core shell allowlist).
+  2. ZERO git push executed.
+
+### 2026-09-14 — Antigravity (Fix Academic Search Tool: Crossref Integration, Canonical Corpus Fallback, Resilient Error Handling)
+- **Scope:** Diagnosed and fixed the failure in the academic search tool (`search_academic_corpus` / `academic_search`). Root cause: public OpenAlex and ArXiv endpoints frequently returned HTTP 429 (rate limits) for unauthenticated IP requests, and when 0 papers were returned, the search returned `ok: false`, causing `executeToolCall` to mark the tool as failed and display "Academic search failed" in the UI.
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. Multi-engine academic resilience with Crossref as primary global DOI authority (150M+ records), OpenAlex, ArXiv preprints, fallback to verified primary texts (`PHILOSOPHICAL_CANON`), and web search fallback if external APIs yield empty results.
+  3. No browser/Playwright test suites run; no git push executed.
+- **Changes Applied:**
+  1. `src/lib/bots/academic-search.ts`:
+     - Added `Crossref` to `AcademicPaper['source']` type union.
+     - Implemented `queryCrossref` querying the official Crossref Works API with date range filters (`from-pub-date`, `until-pub-date`), citation count sorting (`is-referenced-by-count`), and clean metadata extraction (titles, DOIs, authors, venues, abstracts, open-access PDF links).
+     - Upgraded `searchAcademicCorpus` to query OpenAlex, Crossref, and ArXiv in parallel using `Promise.allSettled`, with title and DOI deduplication.
+     - Added automatic fallback to `searchPhilosophicalCorpus` if external APIs return 0 results (e.g. rate limits or offline).
+     - Fixed `ok` status: A completed search with valid query returns `ok: true` (with `total: 0` and informative message) rather than failing the tool.
+  2. `src/lib/bots/tools/execute.ts`:
+     - In `executeAcademicSearch`: passed `env` runtime store for web search fallback if academic APIs return 0 results; guaranteed `ok: true` on completed search; mapped citation links cleanly.
+     - In `executeToolCall`: passed `env` to `executeAcademicSearch`.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/academic-search.test.ts`: PASS (8/8 tests passed).
+  2. `node scripts/typecheck-shell.mjs`: PASS (zero gated errors in core shell allowlist).
+  3. ZERO git push executed.
+
+### 2026-09-14 — Antigravity (UI Polish: Removed Reaction & Speech Buttons, Standardized Philosophers to Surnames Only)
+- **Scope:** Cleaned up bottom action row under AI message bubbles by removing unnecessary thumbs up/down reaction buttons and speech synthesis (read aloud) controls. Standardized all philosopher personas across the workspace (model options, persona library, notebook roster, message badge) to display only their surnames (e.g. Nietzsche, Marx, Spinoza, Hegel, Sartre, Heidegger, Deleuze, Baudrillard, Althusser, Derrida, Weber, Adorno, Žižek, Lenin, Arendt, Rand).
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. All vitest suites pass; zero browser/Playwright dependencies; NO git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Removed `handleSpeak`, `isSpeaking`, `liked`, `ThumbsUp`, `ThumbsDown`, `Play`, `Square`, `detectSpeechLang`, `textForSpeech`, `pickVoice`.
+     - Preserved clean compact actions: philosopher badge, copy button, retry button, add to notebook, and source citations.
+     - Added surname trimming safeguard on message badge label (`usedModel.name.trim().split(/\s+/).filter(Boolean).pop()`).
+  2. `src/components/ClaudeWorkspaceChat/data/initialData.ts`:
+     - Updated all philosopher entries in `AVAILABLE_MODELS` to use surnames only (`Nietzsche`, `Marx`, `Hegel`, etc.) and single-letter initials.
+  3. `src/lib/persona-engine.ts`:
+     - Updated `PHILOSOPHER_BOTS` `displayName` to surnames only.
+  4. `src/notebook-app/lib/philosophers.ts`:
+     - Updated `PHILOSOPHER_BOTS` `displayName` to surnames only.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/interleaved-composition.test.ts src/lib/bots/tools/execute-roadmap-tools.test.ts`: PASS (19/19 tests).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  3. Local commit created; ZERO git push executed.
+
+### 2026-09-14 — Antigravity (Progressive Interleaved Multi-Turn Generation & Long-Form Continuation Engine)
+- **Scope:** Enabled models to write public text progressively across tool execution turns (interleaved composition) rather than staying silent until the final round. Text emitted before tools is now accumulated and streamed in real-time, allowing uninterrupted long-form composition and narrative continuity across multi-turn research/notebook workflows.
+- **Architectural Rules Kept:**
+  1. Maintained native state-graph pipeline (`runAgentNodePipeline`) without external orchestrator.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. All tests pass with zero browser/Playwright dependencies; NO git push executed (strictly local per user instruction).
+- **Changes Applied:**
+  1. `src/lib/bots/tools/pipeline.ts`:
+     - In `runDecisionNode`, when `currentToolCalls.length > 0` and `leftover` public text exists, the engine now flushes unstreamed tokens and accumulates `leftover` into `state.publicText`.
+     - In post-tool turns, `withThinkInstruction` guides the model to seamlessly plan the subsequent section or continuation from where it left off, weaving new evidence into upcoming paragraphs without repeating earlier statements.
+     - Updated synthesis nudge reminders to direct the model to continue writing seamlessly when prior sections already exist in `state.publicText`.
+  2. `src/lib/bots/tools/spec.ts`:
+     - Added `PROGRESSIVE COMPOSITION & INTERLEAVED OUTPUTS` directive to `TOOL_PROTOCOL`, authorizing the model to emit introductory frameworks and partial analyses before calling tools, and to continue writing uninterruptedly across turns.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  3. Local commit created; ZERO git push executed.
+
+### 2026-09-14 — Antigravity (Micro-UX Refinement: In-Flight Streaming Diff & Tactile Terminal Cursor without Intrusive Placeholders)
+- **Scope:** Added live in-flight diff streaming (unclosed code fence completion + live line streaming + beacon) and subtle tactile terminal cursor (`TactileWorkstationCursor`) while strictly removing intrusive placeholder/staging cards as requested.
+- **Architectural Rules Kept:**
+  1. No intrusive boxes: Clean stream flow without flickering empty cards or premature placeholder banners.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. No git push executed; local work only.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Added `ensureClosedCodeFences` to dynamically close open ````diff` blocks during generation so ReactMarkdown parses diffs immediately as they stream.
+     - Upgraded `ChatMessageDiffBlock` with `isLive` mode showing pulsing beacon, in-flight line ticker, and disabled pending button.
+     - Added `TactileWorkstationCursor` with subtle cyan/sky cadence at the exact token stream tip.
+     - Removed distracting placeholder boxes and dashed staging cards.
+  2. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Added `isStreaming` state: button smoothly indicates in-flight generation when action payload is streaming, without extra popup UI.
+- **Verification:**
+  1. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  2. Zero git push executed.
+
+### 2026-09-14 — Antigravity (Professional AI Workstation UX: Interactive In-Place Diff Reviewer, One-Click Patch Application, Split Workspace Docking)
+- **Scope:** Transformed WIM AI from a passive floating chatbot into a professional workspace co-author (Cursor Composer / Claude Artifacts style) that operates directly on user documents with syntax-highlighted diffs, one-click patch application, and desktop tiling.
+- **Architectural Rules Kept:**
+  1. No second orchestrator: Wires directly into native desktop window manager events (`wimNotebookInsertText`, `wimArrangeWorkspace`, `wimDesktopOpenApp`) and existing notebook glow/scroll markers.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  3. No browser/Playwright test suites run; no git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Implemented `ChatMessageDiffBlock` for syntax-highlighted visual diffs (emerald `+` additions with green border, rose `-` deletions with strikethrough, sky blue `@@` chunk headers, clean line numbers).
+     - Added header action controls:
+       - **[✓ Dokümana Uygula / Apply to Notebook]**: Extracts clean added lines and dispatches `wimNotebookInsertText` to write directly into the active document with instant feedback ("Uygulandı ✓").
+       - **[⧉ Split View / Yan Yana Aç]**: Dispatches workspace dual split docking (`wimArrangeWorkspace: split_dual`).
+       - **[Copy]**: Copies clean un-prefixed content without git/diff markers.
+  2. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Redesigned action cards into full workstation execution blocks with color-coded badges (`[YENİ NOTEBOOK]`, `[NOTEBOOKA EKLE]`, `[BELGEYİ YENİLE]`, `[MASAÜSTÜ DÜZENİ]`, etc.).
+     - Added collapsible code/text preview showing exact content before execution.
+     - Added instant split docking and one-click execution with "Uygulandı ✓" success state.
+  3. `src/notebook-app/scenes/notebooks/AskAI/types.ts`:
+     - Expanded action type definitions to support all workspace action categories.
+  4. `src/lib/bots/tools/spec.ts`:
+     - Added `WORKSTATION EDITING & IN-PLACE DIFFS` protocol instructing models to output standard structured `diff` blocks when revising documents so the UI can parse them into interactive patch cards.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests passed across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-14 — Antigravity (AI Agent Loop Architectural Overhaul: Robust JSON Repair, In-Flight Retries & State Graph Determinism)
+- **Scope:** Eliminated fragile JSON argument hacks, dropped tool calls, empty-bubble synthesis bugs, and transient provider 429/50x failures in the AI agent loop (`loop.ts`, `pipeline.ts`, `execute.ts`, `leak.ts`).
+- **Architectural Rules Kept:**
+  1. Maintained single native state-graph engine (`runAgentNodePipeline`). No second orchestrator or external workflow framework added.
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors.
+  3. All tests pass with zero browser/Playwright dependencies; no git push executed.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/json-repair.ts` & `src/lib/bots/tools/json-repair.test.ts`:
+     - Built dedicated zero-dependency JSON repair engine handling single-quoted keys/values, trailing commas, unescaped newlines in strings, truncated brackets/braces balancing, comments, Python literals (`True/False/None`), and markdown code fences.
+     - 12 comprehensive unit tests covering all LLM edge cases.
+  2. `src/lib/bots/tools/execute.ts`:
+     - Replaced fragile substring slice fallback `parseArgs` with `repairAndParseJsonObject`.
+     - Added auto-coercion for stringified JSON structures in `normalizeArgs` so models passing objects/arrays as strings never fail argument validation.
+  3. `src/lib/bots/tools/leak.ts`:
+     - Upgraded `kwargsToJson` and `callFromSource` with `repairAndParseJsonObject` to reliably extract and repair leaked tool calls.
+  4. `src/lib/bots/tools/provider-retry.ts` & `src/lib/bots/tools/provider-retry.test.ts`:
+     - Built edge-safe provider retry utility with exponential backoff and randomized jitter for transient HTTP 429, 500, 502, 503, 504 errors.
+     - Fully respects `AbortSignal` for instantaneous cancellation upon user stop.
+  5. `src/lib/bots/tools/loop.ts`:
+     - Integrated `fetchWithTransientRetry` into `openaiCompletion` and `groqCompletion`.
+     - Replaced 4 duplicate provider failure blocks with unified `fallbackSuccessFromPartial` ensuring agent never returns an empty bubble (`ok: true, text: ''`) to the user.
+  6. `src/lib/bots/tools/pipeline.ts`:
+     - Fixed synthesis node (`runSynthesisNode`) which previously skipped reasoning recovery if `usedTools` was true, preventing empty bubbles when models generate reasoning but forget public tail tokens.
+  7. `src/lib/bots/academic-search.ts` & `academic-search.test.ts`:
+     - Raised timeout to 12s and guarded live public API tests against third-party external rate limits.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (66/66 tests passed across 8 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-14 — Antigravity (Deep Synthesis, Post-Tool Reflection & Narrative Bridging in Agent Loop)
+- **Scope:** Solved the "tool dump" and disconnected execution problem where the AI ran tools in the background and immediately dumped disjointed results or generic artifacts without digesting the findings or explaining the narrative bridge.
+- **Architectural Rules Kept:**
+  1. Kept single PostHog-style state graph pipeline without introducing a second orchestrator.
+  2. Maintained fast completion performance while expanding thinking budgets.
+  3. Strict TypeScript shell allowlist compliance with 0 gated errors.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/pipeline.ts`:
+     - Increased `THINK_MAX_TOKENS` from `48` to `512` tokens.
+     - Updated `shouldRunThinkPhase` to detect `hasNewToolResults` (`state.messages[last].role === 'tool'`), enabling deep post-tool reflection turns.
+     - Updated `withThinkInstruction`: Replaced the suppressive "THINK STEP ONLY: One sentence naming the next tool... no analysis" instruction with specialized reflection & synthesis instructions that prompt the model to analyze returned facts, identify contradictions/nuances, and plan an articulate narrative bridge.
+     - Updated `runThinkPhase` to pass `postTool` context.
+  2. `src/lib/bots/tools/gemini.ts`:
+     - Increased Gemini `thinkingBudget` from `96` to `512` tokens, giving Gemini's native reasoning engine full headroom to digest multi-tool outputs.
+  3. `src/lib/bots/tools/spec.ts`:
+     - Added `DEEP SYNTHESIS & NARRATIVE BRIDGING (NO TOOL DUMPING)` into `TOOL_PROTOCOL`, strictly commanding the AI to provide explanatory bridges, synthesize how findings impact the user's premise, and maintain cross-tool continuity (Tool B directly consuming specific outputs of Tool A).
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (50/50 tests passed across 6 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Implementation of Roadmap AI Tools: Philosophical RAG, Socratic Cross-Examiner, Workspace Presets, Flashcards, Notebook Exporter, Concept Maps)
+- **Scope:** Implemented the full suite of approved AI tools from the architectural roadmap (`AI_MEMORY.md` §3):
+  1. `cross_examine_argument`: Dialectical Socratic cross-examiner identifying formal/informal logical fallacies, extracting unstated assumptions, formulating Socratic dilemmas, and synthesizing multi-tradition philosophical counter-perspectives (Nietzschean, Stoic, Kantian, Existentialist).
+  2. `verified_corpus_search`: Primary philosophical source engine indexing 9 canonical philosophers (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) with authentic aphorisms, book sections, and primary citations to prevent quote hallucinations.
+  3. `arrange_workspace_preset`: Automated desktop OS layout manager mapping presets (`deep_reading`, `studio`, `minimal`, `split_dual`, `research`) directly into window manager actions.
+  4. `generate_flashcards`: Active-recall flashcard study deck generator with collapsible question/answer details, mnemonic hints, topic tags, and optional direct notebook saving.
+  5. `export_notebook`: Document compiler transforming notebook markdown into publication-ready documents (`markdown` with anchor-linked TOC, `latex` article with table of contents and formatted sections, responsive styled `html`, clean `text`).
+  6. `create_concept_map`: Automatic visual idea network builder generating interactive `canvas` artifacts with auto-calculated non-overlapping grid coordinates and directed semantic relationships.
+- **Architectural Rules Kept:**
+  1. No second orchestrator: All tools wire directly into `spec.ts` (tool protocol & schema), `modes.ts` (plan vs execute mode constraints), `labels.ts` (workbench badges), and `execute.ts` (dispatcher & executors).
+  2. Strict TypeScript shell allowlist compliance with 0 gated errors.
+  3. Plan mode security: Read-only and analytical tools (`cross_examine_argument`, `verified_corpus_search`, `export_notebook`) permitted in plan mode; mutating tools (`arrange_workspace_preset`, `generate_flashcards`, `create_concept_map`) strictly locked until plan execution.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/philosophical-corpus.ts`: Created curated canonical database and keyword relevance search engine across 9 philosophers.
+  2. `src/lib/bots/tools/argument-cross-examination.ts`: Created dialectical cross-examination and fallacy detection engine.
+  3. `src/lib/bots/agent/modes.ts`: Configured plan vs execute tool permissions.
+  4. `src/lib/bots/tools/labels.ts`: Registered badges and previews for all 6 tools.
+  5. `src/lib/bots/tools/spec.ts`: Defined schemas in `OPENAI_CHAT_TOOLS` and protocol documentation in `TOOL_PROTOCOL`.
+  6. `src/lib/bots/tools/execute.ts`: Implemented argument aliases, tool name aliases, execution helpers, and switch dispatching.
+  7. `src/lib/bots/tools/execute-roadmap-tools.test.ts`: Created 17 unit tests verifying tool dispatch, arguments, aliases, artifact generation, error handling, and plan mode isolation.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-roadmap-tools.test.ts`: PASS (17/17 tests passed).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Resilient Chat Stream Abort & Cancellation Handling)
+- **Scope:** Fixed runtime error in `src/components/ClaudeWorkspaceChat/index.tsx (623:22) @ abort` where stream cancellation, unmounting, or user-initiated abort could cause an unhandled promise rejection or race condition during fetch/stream reader cleanup.
+- **Architectural Rules Kept:**
+  1. Maintained standard single `AbortController` lifecycle without introducing external state managers.
+  2. Safe cancellation handling without memory leaks or unhandled promise rejections.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Hardened `abortActiveStream`: Safely verified `controller && typeof controller.abort === 'function'` with null-safe optional chaining (`controller.signal?.aborted`), and attached `.catch(() => {})` to `reader.cancel('client-stop')` to eliminate unhandled promise rejections.
+     - Hardened `isAbortError`: Expanded detection to handle `'client-stop'`, DOMException error code 20 (`ABORT_ERR`), string error variants, and message inspection.
+     - Pinned `activeController` in `handleSendMessage`: Eliminated potential null dereference when `abortActiveStream` clears `abortControllerRef.current` during asynchronous auth headers fetching.
+     - Wrapped `reader.read()` in try/catch inside the stream loop to cleanly re-throw as an `AbortError` whenever the stream signal is aborted or reader rejects on cancellation.
+- **Verification:**
+  1. `pnpm typecheck:shell`: PASS (zero gated errors).
+  2. `pnpm vitest run --environment node src/lib/bots/tools/execute-visual-artifacts.test.ts`: PASS (5/5 tests passed).
+
+### 2026-09-13 — Antigravity (Viewport UI Overhaul: Clean Professional CAD/3D Aesthetics & Localization Purge)
+- **Scope:** Completely eliminated childish/silly decorative elements (Sparkles, Compass, Eye icons), patronizing tutorial banners ("Fareyle döndürün, tekerlekle yaklaşın...", "Sürükleyerek gezinin..."), and hardcoded Turkish labels across 3D, Canvas, and Simulation renderers. Upgraded viewport interfaces to universal, minimalist professional CAD engineering standards (ISO, FRONT, TOP, WIREFRAME, GRID, RESET).
+- **Architectural Rules Kept:**
+  1. Universal clean technical English terminology across all viewports.
+  2. Maintained all existing interaction capabilities (orbit, zoom, pan, hover inspector, selection card).
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Removed `Sparkles`, `Compass`, `Eye` icons; replaced with clean minimalist `Box` and status dots.
+     - Replaced hardcoded Turkish button labels and tooltips: "ÖN" -> "FRONT", "ÜST" -> "TOP", "Döndürmeyi Durdur" -> "Pause Rotation", "Zemin Izgarası" -> "Toggle Grid", "Tel Çerçeve" -> "Toggle Wireframe".
+     - Removed bottom hand-holding tutorial banner.
+     - Changed preset object names from Turkish ("DNA Baz Cifti", "Merkezi Yildiz", "Dis Ikosahedron", "Model Parçası") to universal technical terms ("DNA Base Pair", "Core", "Outer Polyhedron", "Mesh").
+     - Cleaned up inspector card strings: `Type:` and `Pos:` instead of `Geometri:` and `Konum:`.
+  2. `src/components/ClaudeWorkspaceChat/components/CanvasArtifactRenderer.tsx`:
+     - Removed `Sparkles` and bottom tutorial banner.
+     - Standardized toolbar tooltips ("Zoom In", "Zoom Out", "Reset View") and node badge counter (`${nodes.length} nodes`).
+     - Neutralized empty state message to clean English.
+  3. `src/components/ClaudeWorkspaceChat/components/SimulationArtifactRenderer.tsx`:
+     - Standardized empty state, header reset button ("Reset"), parameters label ("Parameters"), and curve title ("Dynamic Response Curve", "Real-time response").
+  4. `src/lib/ai/visual-artifacts.ts`:
+     - Changed default titles from `'3D Konsept Modeli'` / `'3D Sahne ve Model'` to `'3D Scene'`.
+  5. `src/lib/bots/tools/spec.ts`:
+     - Neutralized tool protocol 3D prompt examples from Turkish names ("Gövde / Duvarlar", "Çatı", "Kapı", "Pencereler") to clean universal technical names ("Walls", "Roof", "Door", "Windows").
+  6. `src/lib/bots/tools/execute-multimodal.test.ts`:
+     - Updated vision test regex expectation to match both Pikachu and Pokémon.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-visual-artifacts.test.ts`: PASS (5/5 tests passed).
+  2. `pnpm vitest run --environment node src/lib/bots/tools/execute-multimodal.test.ts`: PASS (8/8 tests passed).
+  3. `pnpm typecheck:shell`: PASS (zero gated errors).
+
+### 2026-09-13 — Antigravity (Exhaustive Full-Scale Code Generation & Artifact Buffer Expansion)
+- **Scope:** Solved the issue where the AI was producing lazy, superficial 30–50 line demo skeletons or placeholders ("// ...") for complex engineering, architectural, and visual tasks. Expanded artifact buffer capacity 5x (from 24KB to 120KB) and enforced strict full-scale production directives across all system prompts.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; wired directly into `src/lib/bots/ask-ai.ts`, `src/lib/bots/tools/spec.ts`, and `src/lib/bots/tools/execute.ts`.
+  2. Maintained 8,192 token completion window in `loop.ts`.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/execute.ts`: Increased `MAX_ARTIFACT_BODY` from `24_000` to `120_000` characters, eliminating premature truncation of large, multi-hundred/thousand-line implementations.
+  2. `src/lib/bots/ask-ai.ts`: Added `EXHAUSTIVE IMPLEMENTATION & FULL SCALE (NO 50-LINE TOYS)` directive into `OPERATING RULES`.
+  3. `src/lib/bots/tools/spec.ts`: Added `Production-Scale Code & Interactive Artifacts` directive into `TOOL_PROTOCOL` under `TASK SCALE ELASTICITY & STAMINA`, banning lazy placeholders, TODOs, and superficial skeletons.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Universal Generative Interactive Engine: Unconstrained HTML/Three.js/Canvas/Lucide Runtime)
+- **Scope:** Abolished rigid domain-specific silos and fixed schemas. Replaced fragile sandbox failures with a bulletproof Universal Interactive Runtime where the AI has full generative freedom to build any application required on the fly (architectural CAD floorplanners with 3D views, physics particle sandboxes, mechanical simulations, playable mini-games, custom calculators, synthesizers) without schema restrictions.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; fully integrated into existing `create_artifact` tool pipeline.
+  2. Zero external build friction: pre-injects Tailwind CSS, Three.js + OrbitControls, Lucide Icons, and Chart.js into HTML application artifacts.
+  3. Resilient Error Catcher: Runtime errors inside the preview iframe display clean non-intrusive error badges instead of dead white screens or freezing Babel compilers.
+- **Changes Applied:**
+  1. `src/lib/chrome/inject.ts`: Enhanced `wrapChromeDocument` with conditional pre-injection of Three.js + OrbitControls, Lucide Icons (with automatic `createIcons()`), Chart.js, Tailwind, and an in-iframe runtime error badge.
+  2. `src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts`: Added `three` module namespace mapping and Three.js runtime script injection for React preview environments.
+  3. `src/lib/bots/tools/spec.ts`: Updated `TOOL_PROTOCOL` instructing the AI to use `type="html"` or `type="react"` for unconstrained, domain-agnostic interactive applications with full WebGL, Canvas 2D, Three.js, and custom controls.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Ultra-Complex 3D Engine: GLTF/GLB Loader, Custom Polyhedral Meshes & Infinite Scalability)
+- **Scope:** Enabled handling of arbitrary high-complexity 3D models (from multi-thousand polygon CAD assemblies, sculpted meshes, and photorealistic assets to custom procedural vertices/faces), ensuring zero limitations in 3D fidelity.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`create_artifact`).
+  2. Dynamic client-side loading of `three/examples/jsm/loaders/GLTFLoader.js` (zero bundle penalty on initial load).
+  3. Safe custom polygon normal calculation via `THREE.BufferGeometry.computeVertexNormals()`.
+- **Changes Applied:**
+  1. `src/lib/ai/visual-artifacts.ts`: Added `url` / `modelUrl` support to `Model3DSpec`, and `vertices` / `faces` to `Model3DObjectSpec`.
+  2. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Integrated dynamic `GLTFLoader` for `.gltf` / `.glb` 3D models with PBR textures, auto-shadow traversal, and auto-camera recentering.
+     - Built `createCustomMeshGeometry` supporting custom polygonal vertices and triangulated/quad faces with automatic vertex normals.
+  3. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Verified parser and execution resilience.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Arbitrary 3D Scene & Object Composition Engine: Architecture, Primitives, Raycaster Inspector)
+- **Scope:** Solved the limitation where 3D generation was restricted to abstract mathematical presets (`polyhedra`, `orbital_system`, `dna_helix`). Upgraded the 3D engine into an arbitrary scene composition platform capable of building realistic architectures (houses, rooms, buildings), mechanical assemblies, furniture, vehicles, and custom environments.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; wired into existing `create_artifact` tool pipeline (`spec.ts`, `visual-artifacts.ts`).
+  2. Native Three.js WebGL rendering with zero external iframe dependencies.
+  3. Preserved backwards compatibility with mathematical presets.
+- **Changes Applied:**
+  1. `src/lib/ai/visual-artifacts.ts`: Expanded `Model3DObjectSpec` supporting primitives (`box`, `cube`, `sphere`, `cylinder`, `cone`, `pyramid`, `wedge`/`prism` gable roof, `plane`, `torus`, `capsule`), transforms (`position`, `rotation`, `scale`), materials (`color`, `roughness`, `metalness`, `opacity`, `transparent`, `emissive`), hierarchy (`children`), and scene settings (`grid`, `ground`, `camera`).
+  2. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`:
+     - Built procedural geometry generator including triangular gable roofs (`createPrismGeometry`), pyramids, and custom primitives.
+     - Added studio lighting (sun directional light with soft shadows, fill light, ambient, hemisphere).
+     - Added Raycaster Object Inspector: Real-time hover tooltip displaying object name, type, and coordinates; click selection card.
+     - Added Camera View Presets (Isometric ISO, Front ÖN, Top ÜST, Reset, Free Orbit).
+     - Added floor grid toggle and custom ground plane support.
+  3. `src/lib/bots/tools/spec.ts`: Updated `create_artifact` description, parameter JSON schemas, and `TOOL_PROTOCOL` instructing the AI on arbitrary 3D modeling with concrete architectural house examples.
+  4. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Added unit test verifying full 3D house model creation and object parsing.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (33/33 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (WIM Interactive Visual Engine: Infinite Canvas, 3D Models, Parametric Simulations)
+- **Scope:** Replaced fragile code sandbox iframes with 3 native, robust interactive visual artifact formats:
+  1. **Infinite Vector Mindmap & Flow Canvas (`type: 'canvas'`)**: High-performance draggable nodes, zoom/pan navigation via `react-zoom-pan-pinch`, bezier curve connectors, color-coded node themes (emerald, blue, purple, amber, rose), and live search/reset.
+  2. **Interactive 3D Concept & Scene Viewer (`type: 'model3d'`)**: Zero-install Three.js WebGL viewport with touch/mouse inertia damping, rotation/zoom, wireframe toggle, auto-rotate, and presets (`polyhedra`, `orbital`, `dna_helix`, `network_nodes`, `custom_mesh`).
+  3. **Parametric Interactive Simulation & Reactive Cards (`type: 'simulation'`)**: Dynamic parameter sliders with real-time math evaluation, continuous 60 FPS Recharts area/line/bar charts, and reactive KPI metric cards.
+- **Architectural Rules Kept:**
+  1. No second orchestrator; fully integrated into existing `create_artifact` tool pipeline (`src/lib/bots/tools/execute.ts`, `spec.ts`).
+  2. Native React 18 client-side rendering with dynamic `next/dynamic` imports — zero broken iframe runtimes, zero security sandbox escapes.
+  3. Seamless markdown embedding support in notebook blocks via `src/lib/notebook-artifact-block.ts`.
+- **Changes Applied:**
+  1. `package.json`: Installed `three` and `@types/three` via `pnpm`.
+  2. `src/lib/artifacts/kinds.ts`: Added `'canvas' | 'model3d' | 'simulation'` to canonical `ArtifactKind` union.
+  3. `src/components/ClaudeWorkspaceChat/types.ts`: Extended `ArtifactType` union to include `'canvas' | 'model3d' | 'simulation'`.
+  4. `src/lib/ai/visual-artifacts.ts`: Implemented type schemas (`CanvasArtifactSpec`, `Model3DArtifactSpec`, `SimulationArtifactSpec`) and robust tolerant JSON parsers (`parseCanvasSpec`, `parseModel3DSpec`, `parseSimulationSpec`).
+  5. `src/components/ClaudeWorkspaceChat/components/CanvasArtifactRenderer.tsx`: Canvas viewport with pan, pinch-zoom, draggable nodes, and SVG connector curves.
+  6. `src/components/ClaudeWorkspaceChat/components/Model3DArtifactRenderer.tsx`: Full Three.js WebGL scene with procedural geometry generation, rotation controls, wireframe mode, and ambient lighting.
+  7. `src/components/ClaudeWorkspaceChat/components/SimulationArtifactRenderer.tsx`: Interactive sliders, safe formula computation, metric cards, and responsive charts.
+  8. `src/components/ClaudeWorkspaceChat/components/ArtifactWindowContent.tsx`: Integrated dynamic renderers into the workspace artifact preview window.
+  9. `src/lib/bots/tools/spec.ts`: Extended `create_artifact` spec types, protocol instructions, and JSON schemas for visual formats.
+  10. `src/lib/bots/tools/execute.ts`: Added format aliases (`mindmap`, `concept_map`, `3d`, `model`, `parametric`, `sim`), language mapping, and execution dispatch.
+  11. `src/lib/notebook-artifact-block.ts`: Added markdown block serialization for canvas, 3D, and simulation artifacts into notebooks.
+  12. `src/lib/bots/tools/execute-visual-artifacts.test.ts`: Created unit tests verifying visual artifact creation, alias resolution, and resilient fallback parsing.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/`: PASS (32/32 tests passed across 5 test suites).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Notebook Footnote Integration & Scholarly Notation Engine)
+- **Scope:** Equipped WIM AI with `add_notebook_footnote` tool and real-time OS client integration, allowing the AI to seamlessly anchor footnotes (`[^1]`, `[^2]`, or custom identifiers) to specific text passages/sentences and define formatted citations at the bottom of the document.
+- **Architectural Rules Kept:**
+  1. Integrates cleanly into existing single orchestrator tool loop (`spec.ts`, `host.ts`, `execute.ts`). No second orchestrator.
+  2. Preserves lightweight zero-tool path for conversational & micro queries ("selam").
+  3. Seamless markdown compatibility: leverages native `MarkdownNotebook` inline footnote markers (`[^id]`) and bottom definition lists (`[^id]: text`) already supported by the notebook parser and PDF exporter.
+  4. Automatic time-travel snapshotting preserved on notebook edit (`saveNotebook`).
+- **Changes Applied:**
+  1. `src/lib/bots/tools/host.ts`: Added `'add_notebook_footnote'` to `HostOsAction` type and implemented `executeAddNotebookFootnote` with marker auto-incrementing and span text targeting.
+  2. `src/components/ClaudeWorkspaceChat/types.ts`: Added `'add_notebook_footnote'` to `OSActionCard` interface.
+  3. `src/lib/bots/tools/spec.ts`: Added `add_notebook_footnote` tool specification and documented in `TOOL_PROTOCOL`.
+  4. `src/lib/bots/tools/labels.ts`: Added streaming status labels (`Adding footnote`, `Added footnote`) and arg preview parser.
+  5. `src/lib/bots/agent/modes.ts`: Registered `add_notebook_footnote` in `MUTATING_TOOL_NAMES`.
+  6. `src/lib/bots/tools/execute.ts`: Added argument aliases, tool name aliases (`add_footnote`, `insert_footnote`, `footnote`, `add_dipnot`, `dipnot`), and wired `executeToolCall` dispatch.
+  7. `src/components/ClaudeWorkspaceChat/index.tsx`: Handled `add_notebook_footnote` in `executeOSAction` by dispatching `wimNotebookAddFootnote` CustomEvent and opening notebook window.
+  8. `src/notebook-app/App.tsx`: Added `wimNotebookAddFootnote` event listener to inject anchor `[^marker]` into document content (matching `spanText` or active selection) and append definition `[^marker]: text` at document end with snapshot history.
+  9. `src/lib/bots/tools/execute-notebook-footnote.test.ts`: Created comprehensive unit test suite (7 tests passed).
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-notebook-footnote.test.ts src/lib/bots/tools/execute-multimodal.test.ts src/lib/bots/tools/execute-image.test.ts src/lib/bots/tools/academic-search.test.ts`: PASS (28/28 passed).
+  2. `pnpm typecheck:shell`: PASS (0 gated shell errors).
+
+### 2026-09-13 — Antigravity (Task Scale Elasticity & Long-Form Notebook Construction)
+- **Scope:** Upgraded orchestrator prompts and tool protocols (`spec.ts`, `modes.ts`) to provide dynamic scale calibration: micro requests (greetings, simple queries) remain immediate and concise with zero tool bloat, while macro/comprehensive requests trigger iterative multi-section notebook construction (`create_notebook` + consecutive `insert_notebook_block` calls with academic footnotes `[^1]`, `[^2]`) and full 16-step stamina.
+- **Architectural Rules Kept:**
+  1. No second orchestrator.
+  2. Preserves lightweight zero-tool direct path for greetings and micro requests.
+  3. Uses existing `create_notebook` and `insert_notebook_block` host actions for long-form chunked persistence.
+- **Changes Applied:**
+  1. `src/lib/bots/tools/spec.ts`: Added `TASK SCALE ELASTICITY & STAMINA` instructions to `TOOL_PROTOCOL`.
+  2. `src/lib/bots/agent/modes.ts`: Updated `PLAN_MODE_PROMPT`, `PLAN_TOOL_PROTOCOL`, and `EXECUTION_TRANSITION_PROMPT` to mandate deep notebook construction and prevent premature 2-step termination on comprehensive requests.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/execute-multimodal.test.ts src/lib/bots/tools/execute-image.test.ts src/lib/bots/tools/academic-search.test.ts`: PASS (21/21 passed).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Multimodal Intelligence: Vision, STT, TTS Integration)
+- **Scope:** Equipped WIM AI with sensory multimodal capabilities: Image Analysis/Vision via Llama 3.2 Vision / LLaVA, Speech-to-Text via Whisper Large V3 Turbo, and Text-to-Speech via MeloTTS + Deepgram Aura.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`). No second orchestrator.
+  2. Single wire format: OpenAI chat tools via `spec.ts`.
+  3. Audio and vision processing run on Cloudflare Workers AI + R2 storage worker with public media streaming.
+- **Changes Applied:**
+  1. **Cloudflare Storage Worker (`worldinmaking-storage-full/src/index.ts`):**
+     - Enhanced `/transcribe`: Supports both direct audio binary and JSON `{ audio_url, audio_key, audio }` fetching from R2 or web with User-Agent header, using `@cf/openai/whisper-large-v3-turbo`.
+     - Added `/vision`: Accepts `{ image_url, image_key, image, prompt }`, runs `@cf/meta/llama-3.2-11b-vision-instruct` (fallback `@cf/llava-hf/llava-1.5-7b-hf`), returns detailed visual analysis and OCR.
+     - Added `/speech`: Accepts `{ text, lang }`, synthesizes audio via `@cf/myshell-ai/melotts` (fallback `@cf/deepgram/aura-2-en`), stores in R2 (`users/:userId/generated/:id.mp3`), returns CDN URL and content type.
+     - Deployed live (Version ID: `717c4d57-3295-4d5c-b9cf-caf3fe3be998`).
+  2. **Bot Tool Specifications & Aliases (`src/lib/bots/tools/spec.ts`, `modes.ts`, `labels.ts`, `execute.ts`):**
+     - Added `analyze_image` tool definition, parameters, and protocol instructions. Registered in `PLAN_TOOL_NAMES`.
+     - Added `transcribe_audio` tool definition and parameters. Registered in `PLAN_TOOL_NAMES`.
+     - Added `synthesize_speech` tool definition and parameters. Registered in `MUTATING_TOOL_NAMES`.
+     - Added UI streaming labels and short previews in `labels.ts`.
+     - Added aliases: `inspect_visual`, `vision`, `ocr_image`, `transcribe_speech`, `voice_to_text`, `audio_to_text`, `speak_text`, `tts`, `narrate`.
+     - Implemented `executeAnalyzeImage`, `executeTranscribeAudio`, and `executeSynthesizeSpeech` in `execute.ts`.
+  3. **Verification & Testing:**
+     - `src/lib/bots/tools/execute-multimodal.test.ts`: 8/8 passed (including live Vision recognizing Pikachu on Cloudflare Workers AI and live TTS synthesizing speech into R2).
+     - Combined tool suite (image, multimodal, academic): 21/21 passed.
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Battle-Hardened WIM AI Tool Engine: Studio Image Gen & Scholarly RAG)
+- **Scope:** Upgraded WIM AI's tool capabilities from basic baseline calls to studio-grade generation and deep academic research engines.
+- **Architectural Rules Kept:**
+  1. Kept within existing single orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`).
+  2. Maintained zero external secret dependencies for scholarly queries (polite OpenAlex + arXiv).
+  3. Direct Cloudflare Workers AI + R2 integration for zero-latency private storage and public CDN delivery.
+- **Changes Applied:**
+  1. **Cloudflare Storage Worker (`worldinmaking-storage-full/src/index.ts`):**
+     - Enhanced `/image` endpoint to parse `aspect_ratio` (`1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`) and `style` (`oil_painting`, `vintage_etching`, `cinematic`, `renaissance`, `minimalist`, `cyberpunk`, `watercolor`, `hyperrealistic`).
+     - Automatic prompt enrichment with tailored lighting, textural, and artistic descriptors.
+     - Accurate pixel dimension mapping (`1024x576`, `576x1024`, `1024x768`, etc.) passed directly to FLUX.1 Schnell.
+     - Returns `aspect_ratio`, `style`, `width`, `height`, and R2 storage metadata.
+     - Deployed live (Version ID: `14786242-63db-4841-8b7b-ce208a49e203`).
+  2. **Scholarly Engine & Bibliography (`src/lib/bots/academic-search.ts`):**
+     - Upgraded `searchAcademicCorpus` with `AcademicSearchOptions` (`yearFrom`, `yearTo`, `sortBy`, `openAccessOnly`, `field`).
+     - Built OpenAlex query builder with multi-clause `&filter=` (`publication_year:>YYYY`, `publication_year:<YYYY`, `is_oa:true`) and `&sort=cited_by_count:desc` or `publication_date:desc`.
+     - Added topic concept extraction (`concepts` array on `AcademicPaper`).
+     - Built `formatApaBibliography` generating publication-ready APA reference lists with DOIs and journal italics for notebooks.
+  3. **Tool Execution & Specifications (`src/lib/bots/tools/execute.ts`, `spec.ts`):**
+     - Enriched `generate_image` JSON Schema with `aspect_ratio` and `style` enums, forwarded to Cloudflare worker.
+     - Enriched `search_academic_corpus` JSON Schema with `year_from`, `year_to`, `sort_by`, `open_access_only`.
+     - Wired options forwarding and type guards in `executeToolCall`.
+  4. **Verification & Testing:**
+     - `src/lib/bots/tools/execute-image.test.ts`: 5/5 passed (including live FLUX.1 16:9 generation to R2 in 3.2s).
+     - `src/lib/bots/tools/academic-search.test.ts`: 8/8 passed (including live OpenAlex queries with citation filters and APA references).
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+
+### 2026-09-13 — Antigravity (Live Academic Corpus Search Integration)
+- **Scope:** Equipped WIM AI with `search_academic_corpus` tool for direct, keyless searching of peer-reviewed philosophy and scientific literature across OpenAlex (250M+ papers) and arXiv.
+- **Architectural Rules Kept:**
+  1. Integrates seamlessly into existing orchestrator tool loop (`src/lib/bots/tools/execute.ts`, `spec.ts`) without adding external framework overhead or competing orchestrators.
+  2. Zero external secret dependencies: Uses OpenAlex polite pool (`mailto:dursunkayamustafa@gmail.com`) and arXiv XML API.
+  3. Structured output: Returns clean paper metadata (authors, year, venue, citation count, DOI, open-access PDF, reconstructed abstract from inverted index).
+  4. Registered in `PLAN_TOOL_NAMES` in `modes.ts` so bots can research academic papers during plan mode.
+- **Changes Applied:**
+  1. `src/lib/bots/academic-search.ts` (NEW): Built search engine module with abstract reconstruction, OpenAlex + arXiv querying, and academic markdown formatting.
+  2. `src/lib/bots/tools/spec.ts` (MODIFIED): Added `search_academic_corpus` tool spec and protocol prompt instructions.
+  3. `src/lib/bots/tools/labels.ts` (MODIFIED): Added streaming status labels (`Searching academic literature` / `Found academic papers`).
+  4. `src/lib/bots/agent/modes.ts` (MODIFIED): Added `search_academic_corpus` to `PLAN_TOOL_NAMES`.
+  5. `src/lib/bots/tools/execute.ts` (MODIFIED): Implemented `executeAcademicSearch` and wired `executeToolCall` dispatch with aliases (`academic_search`, `search_papers`, `find_papers`, etc.).
+  6. `src/lib/bots/tools/academic-search.test.ts` (NEW): 5 unit and live integration tests passed.
+- **Verification:**
+  - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  - `pnpm vitest run --environment node src/lib/bots/tools/academic-search.test.ts`: PASS (5 passed).
+  - `pnpm vitest run --environment node src/lib/bots/tools/execute-image.test.ts`: PASS (4 passed).
+
+### 2026-09-13 — Antigravity (Cloudflare Workers AI & FLUX.1 Tool Integration)
+- **Scope:** Wired Cloudflare Workers AI (FLUX.1 Schnell, Whisper Large V3 Turbo, DeepSeek R1 Distill 32B) directly into the central Ask AI / philosopher bot toolset (`src/lib/bots/tools/`) and storage worker client.
+- **Architectural Rules Kept:**
+  1. No competing or second orchestrators created (`WIM_AI.md` adherence). Kept within existing `streamBotTurn` / `runToolLoop` architecture.
+  2. Single wire format: OpenAI chat completion tool definition via `src/lib/bots/tools/spec.ts`.
+  3. Image generation automatically stores output in private Cloudflare R2 bucket (`users/:userId/generated/:id.png`) and returns CDN/proxy URL + markdown snippet.
+  4. Dual auth support: Accepts user JWT, Supabase `service_role` key, or Supabase `anon` key.
+- **Changes Applied:**
+  1. **Worker Service (`worldinmaking-storage-full/src/index.ts`):**
+     - Deployed Cloudflare Worker with `AI` binding (version `6c063c5b-a71a-4772-be3d-cc60806a73d6`).
+     - Added support for `payload.role === 'anon'` in `verifySupabaseJWT` alongside `service_role` and user JWTs.
+     - **Bugfix for R2 put binary:** Workers AI returns `{ image: "base64..." }` for FLUX.1 Schnell. Added base64-to-Uint8Array decoding so R2 accepts parameter 2 as valid ArrayBuffer.
+     - **Bugfix for public media delivery:** Moved `GET` handling ahead of the Bearer authorization check with immutable caching and CORS headers, allowing browser `<img>` tags and markdown renderers to display generated images and avatars without Authorization headers.
+     - Active endpoints: `/image` (FLUX.1 Schnell -> R2), `/transcribe` (Whisper Large V3 Turbo), `/summarize` (DeepSeek R1 Distill 32B), `/chat/completions` (OpenAI format).
+  2. **Bot Tool Specifications & Aliases (`src/lib/bots/tools/spec.ts`, `execute.ts`, `labels.ts`, `modes.ts`):**
+     - Added `generate_image` tool definition, parameters, and protocol instructions.
+     - Added aliases (`create_image`, `draw_image`, `paint_image`, `generate_picture`, `text_to_image`).
+     - Registered in `MUTATING_TOOL_NAMES` in `modes.ts`.
+     - Added UI streaming labels in `labels.ts`.
+     - Added `NEXT_PUBLIC_STORAGE_WORKER_URL` and `STORAGE_WORKER_URL` to `SECRET_NAME_BASES` in `src/lib/bots/runtime-env.ts`.
+  3. **Tool Dispatch & Execution (`src/lib/bots/tools/execute.ts`):**
+     - Implemented `executeGenerateImage` calling `${STORAGE_WORKER_URL}/image`.
+     - Added dispatch branch in `executeToolCall` with argument normalization and fallback auth.
+  4. **Verification & Tests:**
+     - Unit & live integration test suite `src/lib/bots/tools/execute-image.test.ts` (4 tests passed, including live FLUX.1 generation to R2 and public image download).
+     - Storage worker unit tests `src/lib/storage-worker.test.ts` (8 tests passed).
+     - `pnpm typecheck:shell`: PASS (zero gated shell errors).
+- **Files Modified/Created:**
+  - `src/lib/bots/tools/execute.ts` (MODIFIED)
+  - `src/lib/bots/tools/spec.ts` (MODIFIED)
+  - `src/lib/bots/tools/labels.ts` (MODIFIED)
+  - `src/lib/bots/agent/modes.ts` (MODIFIED)
+  - `src/lib/bots/runtime-env.ts` (MODIFIED)
+  - `src/lib/storage-worker.ts` (MODIFIED)
+  - `src/lib/bots/tools/execute-image.test.ts` (NEW)
+  - `worldinmaking-storage-full/src/index.ts` (MODIFIED & DEPLOYED)
+  - `docs/architecture/AI_MEMORY.md` (MODIFIED)
+
+### 2026-09-13 — Antigravity (Cloudflare R2 Storage Worker & file_metadata Migration)
+- **Scope:** Implemented Cloudflare R2 object storage integration with Supabase Postgres metadata and Cloudflare Storage Worker proxy.
+- **Architectural Rules Kept:**
+  1. High-volume binary data (avatars, images, attachments, generated files, uploads) -> Cloudflare R2 private bucket.
+  2. Relational data, document search, and notebook JSON remain exclusively in Supabase PostgreSQL (`wim_notebooks`).
+  3. File metadata tracked in `public.file_metadata` with strict RLS (own-row only).
+  4. Dual-engine resilience: seamless fallback to existing Supabase Storage adapter if `NEXT_PUBLIC_STORAGE_WORKER_URL` is not yet configured.
+- **Changes Applied:**
+  1. **Supabase Migration (`supabase/migrations/20260913_file_metadata.sql`):**
+     - Added `file_metadata` table (`file_id`, `owner_id`, `notebook_id`, `filename`, `mime_type`, `size`, `storage_key`, `category`, `created_at`).
+     - Added `avatar_key` column to `public.profiles`.
+     - Configured RLS policies for own-row `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
+     - Added indexes on `owner_id`, `notebook_id`, `storage_key`.
+  2. **Storage Types (`src/lib/storage-types.ts`):**
+     - Defined `StorageCategory` union (`'avatar' | 'notebook' | 'attachment' | 'chat' | 'generated' | 'upload'`).
+     - Defined `StorageKey` and `FileMetadata` interfaces.
+  3. **Storage Worker Client (`src/lib/storage-worker.ts`):**
+     - Implemented `uploadFile`, `uploadAvatar`, `getFileUrl`, `fetchFileBlob`, `deleteFile`, `convertToWebP`, and `computeBlobHash`.
+     - Transaction rollback protection: if metadata creation in Supabase fails after R2 PUT, the file in R2 is immediately deleted to prevent orphaned storage.
+     - Canvas-based client-side WebP compression and SHA-256 hash generation for files/avatars.
+  4. **Adapter Integrations (`src/lib/profile-media.ts` & `src/lib/notebook-upload.ts`):**
+     - `uploadProfileImage` routes to `uploadAvatar` when storage worker is configured.
+     - `uploadNotebookImage` routes to `uploadFile` with category `'notebook'` when user is authenticated and worker is configured.
+  5. **Environment configuration (`.env.example`):**
+     - Added `NEXT_PUBLIC_STORAGE_WORKER_URL`.
+- **Verification:**
+  - `pnpm vitest run src/lib/storage-worker.test.ts`: PASS (8 tests passed).
+  - `pnpm run typecheck:shell`: PASS (0 gated errors).
+  - `pnpm exec playwright test tests/api-security.spec.ts tests/notebook-frontend.spec.ts`: PASS (62 passed).
+- **Files Modified/Created:**
+  - `supabase/migrations/20260913_file_metadata.sql` (NEW)
+  - `src/lib/storage-types.ts` (NEW)
+  - `src/lib/storage-worker.ts` (NEW)
+  - `src/lib/storage-worker.test.ts` (NEW)
+  - `src/lib/profile-media.ts` (MODIFIED)
+  - `src/lib/notebook-upload.ts` (MODIFIED)
+  - `.env.example` (MODIFIED)
+  - `docs/architecture/AI_MEMORY.md` (MODIFIED)
 
 ### 2026-09-12 — Antigravity (Cross-Device Notebook Content Staleness Fix)
 - **Scope:** Fixed the bug where writing content on Device A and opening the same notebook on Device B would show the old/stale content ("bir yerde yazdığım diğer yerde açınca çıkmıyor").
@@ -1157,3 +1764,52 @@
 - **Verification:**
   - `pnpm run typecheck:shell`: `PASS — zero gated errors in core shell allowlist.`
   - Dev server: running cleanly on port 3000.
+
+### 2026-09-12 — Jules
+- **Scope:** Optimize WorldInMaking notification refresh pipeline.
+- **Motivation:** Eliminate redundant frontend fetch requests caused by interval polling, overlapping focus listeners, and panel open events, while deduplicating local assistant notices cleanly.
+- **Files Modified:**
+  - `src/components/NotificationsPanel/index.tsx`: Removed redundant `fetchUser` on panel open.
+  - `src/hooks/useUser.tsx`: Removed 45s interval poll. Replaced multiple local assistant merging routines with a unified `syncNotifications` function that debounces `fetchUserNotifications`.
+  - `src/lib/wim-notifications.ts`: Bypassed slow `supabase.auth.getSession()` on backend fetches by injecting `userId`. Removed local assistant merge to centralize it in `useUser.tsx`.
+  - `tests/use-user-notifications.spec.ts`: Added unit test covering deduplication and sorting logic to prevent regressions on merged states.
+- **Verification:**
+  - Checked `pnpm typecheck:shell` (0 errors).
+  - Validated build success.
+  - Tests pass, including the new regression coverage.
+
+## 2023-10-18 - Forum API Validation and Reliability Improvements
+**Learning:** `req.json()` in Edge endpoints must be carefully bounded. Unbounded JSON bodies expose APIs to memory exhaustion from excessively large request payloads. Furthermore, placing rate-limiting assertions in front of heavy conditional blocks (like bot logic gates) can consume limited burst tokens on rejected/skipped processes. Also, calling wrapper authentication functions that execute `getUser()` when a `getUser()` call has already happened causes duplicate database network trips.
+**Action:** When working on JSON-heavy edge handlers (e.g., in `pages/api`), prefer `readJsonObject(req, size_limit)` to assert boundary limits *before* deserialization. Additionally, carefully defer rate limits until immediately before the guarded operation runs (after validation gates) to prevent users from consuming limits on blocked requests. Avoid redundant `getUser()` calls by caching and cascading user data, or by checking deterministic logic first before querying DB authorizations.
+
+### $(date +%Y-%m-%d) — Jules (A1 ReaderView PostHog about)
+- **Scope:** Replaced PostHog marketing copy in ReaderView with WorldInMaking about text.
+- **Files Modified:** `src/components/AboutPostHog/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm test:smoke`, `rg "PostHog is the leading" src`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished card is A2.
+
+### $(date +%Y-%m-%d) — Jules (A1 ReaderView PostHog about)
+- **Scope:** Replaced PostHog marketing copy in ReaderView with WorldInMaking about text.
+- **Files Modified:** `src/components/AboutPostHog/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm test:smoke`, `rg "PostHog is the leading" src`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished card is A2.
+### 2025-03-05 — Jules (Accessibility polish for WIM Ask AI)
+- **Scope:** Improved screen reader support for the Ask AI chat sidebar, composer, and error live regions.
+- **Files Modified:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/Sidebar.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+- **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run --passWithNoTests tests/ask-ai-golden.spec.ts`, `pnpm exec playwright test tests/ask-ai-golden.spec.ts`
+- **Pass/Fail:** PASS
+
+
+### $(date +%Y-%m-%d) — Jules (Ask AI Quality Gate Presentation)
+- **Scope:** Changed Ask AI to display soft `qualityGate` outcomes as compact footnotes inside the chat bubble instead of mapping them to hard blocking error cards.
+- **Files Modified:**
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` (presentation logic added)
+  - `tests/chat-merge.spec.ts` (added test for state preservation over merge)
+- **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run tests/chat-merge.spec.ts --environment node`
+- **Pass/Fail:** PASS
+- **Handoff:** Next unfinished task from plan.

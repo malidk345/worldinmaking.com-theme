@@ -3,13 +3,14 @@ export const runtime = 'edge'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 import { supabaseRest } from '../../../lib/bots/supabase-edge'
 import { getRuntimeEnv, type EnvStore } from '../../../lib/bots/runtime-env'
+import { checkRateLimitDurable, buildRateLimitHeaders } from '../../../lib/bots/rate-limit'
 
-function json(body: Record<string, unknown>, status = 200, filename?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+function json(body: Record<string, unknown>, status = 200, filename?: string, headers: Record<string, string> = {}) {
+    const mergedHeaders: Record<string, string> = { 'Content-Type': 'application/json', ...headers }
     if (filename) {
-        headers['Content-Disposition'] = `attachment; filename="${filename}"`
+        mergedHeaders['Content-Disposition'] = `attachment; filename="${filename}"`
     }
-    return new Response(JSON.stringify(body), { status, headers })
+    return new Response(JSON.stringify(body), { status, headers: mergedHeaders })
 }
 
 async function rows<T = Record<string, unknown>>(path: string, env: EnvStore): Promise<T[]> {
@@ -25,6 +26,15 @@ export default async function handler(req: Request) {
     if (!user) return json({ error: 'sign in required' }, 401)
 
     const env = getRuntimeEnv()
+
+    const rate = await checkRateLimitDurable(`export:${user.id}`, 5, 60 * 60 * 1000, env, { failClosed: true })
+    if (rate.source === 'unavailable') {
+        return json({ error: 'Rate limit store temporarily unavailable.' }, 503, undefined, buildRateLimitHeaders(rate))
+    }
+    if (!rate.allowed) {
+        return json({ error: 'Too many export attempts. Try again later.' }, 429, undefined, buildRateLimitHeaders(rate))
+    }
+
     const uid = encodeURIComponent(String(user.id))
     const owner = encodeURIComponent(String(user.id))
 

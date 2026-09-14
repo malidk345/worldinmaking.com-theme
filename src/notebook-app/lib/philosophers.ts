@@ -16,22 +16,22 @@ export type PhilosopherBot = {
 }
 
 export const PHILOSOPHER_BOTS: PhilosopherBot[] = [
-    { id: 'nietzsche', name: 'Nietzsche', displayName: 'Friedrich Nietzsche', shortStance: 'Vitalist perspectivism', avatarUrl: '/philosophers/nietzsche.png' },
-    { id: 'marx', name: 'Marx', displayName: 'Karl Marx', shortStance: 'Historical materialism', avatarUrl: '/philosophers/marx.png' },
-    { id: 'hegel', name: 'Hegel', displayName: 'G. W. F. Hegel', shortStance: 'Absolute idealism', avatarUrl: '/philosophers/hegel.png' },
-    { id: 'sartre', name: 'Sartre', displayName: 'Jean-Paul Sartre', shortStance: 'Existential phenomenology', avatarUrl: '/philosophers/sartre.png' },
-    { id: 'heidegger', name: 'Heidegger', displayName: 'Martin Heidegger', shortStance: 'Being and Dasein', avatarUrl: '/philosophers/heidegger.png' },
-    { id: 'deleuze', name: 'Deleuze', displayName: 'Gilles Deleuze', shortStance: 'Difference & becoming', avatarUrl: '/philosophers/deleuze.png' },
-    { id: 'spinoza', name: 'Spinoza', displayName: 'Baruch Spinoza', shortStance: 'Substance monism', avatarUrl: '/philosophers/spinoza.png' },
-    { id: 'baudrillard', name: 'Baudrillard', displayName: 'Jean Baudrillard', shortStance: 'Simulacra & hyperreality', avatarUrl: '/philosophers/baudrillard.png' },
-    { id: 'althusser', name: 'Althusser', displayName: 'Louis Althusser', shortStance: 'Structural Marxism', avatarUrl: '/philosophers/althusser.png' },
-    { id: 'derrida', name: 'Derrida', displayName: 'Jacques Derrida', shortStance: 'Deconstruction', avatarUrl: '/philosophers/derrida.png' },
-    { id: 'weber', name: 'Weber', displayName: 'Max Weber', shortStance: 'Social action & rationalization', avatarUrl: '/philosophers/weber.png' },
-    { id: 'adorno', name: 'Adorno', displayName: 'Theodor W. Adorno', shortStance: 'Critical theory', avatarUrl: '/philosophers/adorno.png' },
-    { id: 'zizek', name: 'Zizek', displayName: 'Slavoj Žižek', shortStance: 'Ideology critique', avatarUrl: '/philosophers/zizek.png' },
-    { id: 'lenin', name: 'Lenin', displayName: 'V. I. Lenin', shortStance: 'Revolutionary praxis', avatarUrl: '/philosophers/lenin.png' },
-    { id: 'arendt', name: 'Arendt', displayName: 'Hannah Arendt', shortStance: 'Political action & plurality', avatarUrl: '/philosophers/arendt.png' },
-    { id: 'rand', name: 'Rand', displayName: 'Ayn Rand', shortStance: 'Objectivist rationalism', avatarUrl: '/philosophers/rand.png' },
+    { id: 'nietzsche', name: 'Nietzsche', displayName: 'Nietzsche', shortStance: 'Vitalist perspectivism', avatarUrl: '/philosophers/nietzsche.png' },
+    { id: 'marx', name: 'Marx', displayName: 'Marx', shortStance: 'Historical materialism', avatarUrl: '/philosophers/marx.png' },
+    { id: 'hegel', name: 'Hegel', displayName: 'Hegel', shortStance: 'Absolute idealism', avatarUrl: '/philosophers/hegel.png' },
+    { id: 'sartre', name: 'Sartre', displayName: 'Sartre', shortStance: 'Existential phenomenology', avatarUrl: '/philosophers/sartre.png' },
+    { id: 'heidegger', name: 'Heidegger', displayName: 'Heidegger', shortStance: 'Being and Dasein', avatarUrl: '/philosophers/heidegger.png' },
+    { id: 'deleuze', name: 'Deleuze', displayName: 'Deleuze', shortStance: 'Difference & becoming', avatarUrl: '/philosophers/deleuze.png' },
+    { id: 'spinoza', name: 'Spinoza', displayName: 'Spinoza', shortStance: 'Substance monism', avatarUrl: '/philosophers/spinoza.png' },
+    { id: 'baudrillard', name: 'Baudrillard', displayName: 'Baudrillard', shortStance: 'Simulacra & hyperreality', avatarUrl: '/philosophers/baudrillard.png' },
+    { id: 'althusser', name: 'Althusser', displayName: 'Althusser', shortStance: 'Structural Marxism', avatarUrl: '/philosophers/althusser.png' },
+    { id: 'derrida', name: 'Derrida', displayName: 'Derrida', shortStance: 'Deconstruction', avatarUrl: '/philosophers/derrida.png' },
+    { id: 'weber', name: 'Weber', displayName: 'Weber', shortStance: 'Social action & rationalization', avatarUrl: '/philosophers/weber.png' },
+    { id: 'adorno', name: 'Adorno', displayName: 'Adorno', shortStance: 'Critical theory', avatarUrl: '/philosophers/adorno.png' },
+    { id: 'zizek', name: 'Zizek', displayName: 'Žižek', shortStance: 'Ideology critique', avatarUrl: '/philosophers/zizek.png' },
+    { id: 'lenin', name: 'Lenin', displayName: 'Lenin', shortStance: 'Revolutionary praxis', avatarUrl: '/philosophers/lenin.png' },
+    { id: 'arendt', name: 'Arendt', displayName: 'Arendt', shortStance: 'Political action & plurality', avatarUrl: '/philosophers/arendt.png' },
+    { id: 'rand', name: 'Rand', displayName: 'Rand', shortStance: 'Objectivist rationalism', avatarUrl: '/philosophers/rand.png' },
 ]
 
 export function getPhilosopherBot(id: string, roster: PhilosopherBot[] = PHILOSOPHER_BOTS): PhilosopherBot {

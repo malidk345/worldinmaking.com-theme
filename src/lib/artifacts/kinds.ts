@@ -3,8 +3,20 @@ import type { ChartSpec } from '../ai/chart-artifacts'
 /** What the user asked the model to produce. One winner per turn. */
 export type ArtifactIntent = 'chat' | 'react_ui' | 'mermaid' | 'chart' | 'table' | 'markdown' | 'code'
 
-/** Canonical artifact kinds. Same union as the SSE/workspace document. */
-export type ArtifactKind = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
+export type ArtifactKind =
+    | 'code'
+    | 'html'
+    | 'svg'
+    | 'markdown'
+    | 'react'
+    | 'json'
+    | 'table'
+    | 'mermaid'
+    | 'chart'
+    | 'posthog-analytics'
+    | 'canvas'
+    | 'model3d'
+    | 'simulation'
 
 export type ArtifactDocument = {
     id: string

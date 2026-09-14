@@ -92,15 +92,14 @@ export const removeUndefinedAndNull = (obj: any): any => {
     if (Array.isArray(obj)) {
         return obj.map(removeUndefinedAndNull)
     } else if (obj && typeof obj === 'object') {
-        return Object.entries(obj).reduce(
-            (acc, [key, value]) => {
-                if (value !== undefined && value !== null) {
-                    acc[key] = removeUndefinedAndNull(value)
-                }
-                return acc
-            },
-            {} as Record<string, any>
-        )
+        const acc: Record<string, any> = {}
+        for (const key in obj) {
+            const value = obj[key]
+            if (value !== undefined && value !== null) {
+                acc[key] = removeUndefinedAndNull(value)
+            }
+        }
+        return acc
     }
     return obj
 }
@@ -137,20 +136,20 @@ export function sortedKeys<T extends Record<string, any> = Record<string, any>>(
 }
 
 export function flattenObject<T extends Record<string, any>>(obj: T): Record<string, any> {
-    return Object.entries(obj).reduce<Record<string, any>>((acc, [key, value]) => {
+    const acc: Record<string, any> = {}
+    for (const key in obj) {
+        const value = obj[key]
         if (value !== null && typeof value === 'object') {
             const flatChild = flattenObject(value)
             const normalizedKey = /^\d+$/.test(key) ? key.padStart(3, '0') : key
-
-            Object.entries(flatChild).forEach(([subKey, subVal]) => {
-                acc[`${normalizedKey}.${subKey}`] = subVal
-            })
-            return acc
+            for (const subKey in flatChild) {
+                acc[`${normalizedKey}.${subKey}`] = flatChild[subKey]
+            }
+        } else {
+            acc[key] = value
         }
-
-        acc[key] = value
-        return acc
-    }, {})
+    }
+    return acc
 }
 
 export function hasFormErrors(object: any): boolean {

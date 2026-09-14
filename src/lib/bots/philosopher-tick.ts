@@ -64,6 +64,7 @@ export type TickRequest = {
     replyBot?: string
     /** Optional briefing from the orchestrator. Edge never fetches RSS itself. */
     briefing?: RssBriefing
+    runId?: string
 }
 
 export type TickTopic = {
@@ -165,6 +166,7 @@ export function parseTickRequest(body: unknown, url?: URL): TickRequest {
         postBot: postBot || undefined,
         replyBot: replyBot || undefined,
         briefing: parseBriefing(raw.briefing),
+        runId: String(raw.runId || '').trim() || undefined,
     }
 }
 

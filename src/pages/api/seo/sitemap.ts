@@ -6,6 +6,7 @@ export const runtime = 'edge'
 import { SITE, canonicalPath } from '../../../lib/seo'
 import { fetchSupabasePostsPage } from '../../../lib/supabaseBlog'
 import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../../lib/supabase-rest'
+import { notebookPublicPath } from '../../../lib/window-path'
 
 const STATIC_PATHS = [
     '/',
@@ -29,6 +30,7 @@ const STATIC_PATHS = [
 
 const MAX_POSTS = 2000
 const MAX_QUESTIONS = 500
+const MAX_NOTEBOOKS = 1000
 const PAGE = 40
 
 function xmlEscape(value: string): string {
@@ -80,6 +82,21 @@ async function fetchPublicProfiles(): Promise<{ username: string; updated_at?: s
     }
 }
 
+async function fetchPublishedNotebooks(): Promise<{ id: string; short_id?: string; updated_at?: string }[]> {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return []
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/wim_notebooks?select=id,short_id,updated_at&is_published=is.true&deleted_at=is.null&order=updated_at.desc&limit=${MAX_NOTEBOOKS}`
+        const rows = await fetchWithCache(url)
+        if (!Array.isArray(rows)) return []
+        return rows
+            .filter((row) => row && row.id != null)
+            .map((row) => ({ id: String(row.id), short_id: row.short_id, updated_at: row.updated_at }))
+    } catch (error) {
+        console.error('[sitemap] wim_notebooks', error)
+        return []
+    }
+}
+
 export default async function handler(req: Request) {
     if (req.method !== 'GET') {
         return new Response('Method not allowed', { status: 405 })
@@ -114,6 +131,13 @@ export default async function handler(req: Request) {
     const profiles = await fetchPublicProfiles()
     for (const profile of profiles) {
         urls.push(urlTag(`/community/profiles/${encodeURIComponent(profile.username)}`, profile.updated_at, '0.5'))
+    }
+
+    const notebooks = await fetchPublishedNotebooks()
+    for (const notebook of notebooks) {
+        const publicId = notebook.short_id || notebook.id
+        if (!publicId) continue
+        urls.push(urlTag(notebookPublicPath(publicId), notebook.updated_at, '0.6'))
     }
 
     const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join(

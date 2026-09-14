@@ -166,12 +166,6 @@ export default function NotificationsPanel() {
     }
 
     useEffect(() => {
-        if (isNotificationsPanelOpen && user) {
-            void fetchUser()
-        }
-    }, [isNotificationsPanelOpen, user?.id])
-
-    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
                 closeNotificationsPanel()

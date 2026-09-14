@@ -3,7 +3,7 @@ import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, Human
 import { getRenderer } from '../../../lib/artifacts'
 import { ThinkingBlock } from './ThinkingBlock';
 
-import { Copy, Check, ThumbsUp, ThumbsDown, Play, Square, Edit2, RotateCcw, FileInput } from 'lucide-react';
+import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
@@ -32,26 +32,156 @@ interface ChatMessageProps {
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
 }
 
-function detectSpeechLang(text: string): 'tr-TR' | 'en-US' {
-  const sample = text.slice(0, 800)
-  const turkishChars = (sample.match(/[çğıöşüÇĞİÖŞÜ]/g) || []).length
-  if (turkishChars >= 2) return 'tr-TR'
-  const turkishWords = (sample.match(/\b(ve|bir|bu|için|ile|ama|çok|daha|gibi|olarak|değil|nedir|var|yok)\b/gi) || []).length
-  const englishWords = (sample.match(/\b(the|and|for|with|this|that|from|have|not|what|is|are)\b/gi) || []).length
-  if (englishWords > turkishWords) return 'en-US'
-  return turkishChars > 0 ? 'tr-TR' : 'en-US'
+function formatExactTime(ts?: string): string {
+  if (!ts) return '';
+  const trimmed = ts.trim();
+  if (/^\d{1,2}:\d{2}$/.test(trimmed)) return trimmed;
+  const d = dayjs(trimmed);
+  if (d.isValid()) return d.format('HH:mm');
+  return trimmed;
 }
 
-function textForSpeech(value: string): string {
-  return value
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[#*_`>]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+function ensureClosedCodeFences(markdown: string): string {
+  if (!markdown) return markdown;
+  const fenceMatches = markdown.match(/^```/gm);
+  if (fenceMatches && fenceMatches.length % 2 !== 0) {
+    return markdown + '\n```';
+  }
+  return markdown;
 }
 
-function ChatMessageCodeBlock({ language, code }: { language: string; code: string }) {
+function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const [applied, setApplied] = useState(false);
+
+  const lines = code.split('\n');
+  const addedLines = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+  const removedLines = lines.filter((l) => l.startsWith('-') && !l.startsWith('---'));
+
+  // Extract clean content to apply to active notebook
+  const cleanContentToApply = React.useMemo(() => {
+    if (addedLines.length > 0) {
+      return addedLines.map((l) => l.slice(1)).join('\n');
+    }
+    return code;
+  }, [addedLines, code]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(cleanContentToApply || code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleApplyToNotebook = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('wimNotebookInsertText', {
+        detail: {
+          text: cleanContentToApply,
+          mode: 'append',
+        },
+      })
+    );
+    setApplied(true);
+    setTimeout(() => setApplied(false), 3000);
+  };
+
+  const handleSplitScreen = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('wimArrangeWorkspace', {
+        detail: { preset: 'split_dual' },
+      })
+    );
+  };
+
+  return (
+    <div className="my-2.5 rounded border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-accent border-b border-primary/20 text-[12px] font-sans">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-primary">
+            {isLive ? 'Patch stream' : 'Patch'}
+          </span>
+          <span className="text-muted text-[11px]">
+            +{addedLines.length} / -{removedLines.length}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {isLive ? (
+            <span className="text-[11px] text-muted animate-pulse select-none">
+              Preparing…
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleApplyToNotebook}
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                applied
+                  ? 'bg-primary text-white font-medium'
+                  : 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white'
+              }`}
+            >
+              <Check className="size-3" />
+              <span>{applied ? 'Added ✓' : 'Add to notebook'}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={`p-1 rounded text-muted hover:text-primary transition-colors cursor-pointer ${
+              copied ? 'text-primary font-medium' : ''
+            }`}
+            title="Copy"
+          >
+            {copied ? <Check className="size-3 text-primary" /> : <Copy className="size-3" />}
+          </button>
+        </div>
+      </div>
+      <div className="p-2 overflow-x-auto font-mono text-[11px] leading-snug space-y-0.5 max-h-[360px] overflow-y-auto">
+        {lines.map((line, idx) => {
+          if (line.startsWith('+') && !line.startsWith('+++')) {
+            return (
+              <div key={idx} className="bg-accent/35 text-primary px-1.5 py-0.5 rounded-xs border-l-2 border-primary whitespace-pre-wrap break-words">
+                {line}
+              </div>
+            );
+          }
+          if (line.startsWith('-') && !line.startsWith('---')) {
+            return (
+              <div key={idx} className="bg-accent/35 text-muted/80 px-1.5 py-0.5 rounded-xs border-l-2 border-primary/50 line-through whitespace-pre-wrap break-words">
+                {line}
+              </div>
+            );
+          }
+          if (line.startsWith('@@')) {
+            return (
+              <div key={idx} className="text-primary font-bold bg-accent/25 px-1.5 py-0.5 rounded-xs my-0.5 text-[10.5px]">
+                {line}
+              </div>
+            );
+          }
+          return (
+            <div key={idx} className="text-primary/90 px-1.5 py-0.2 whitespace-pre-wrap break-words">
+              {line}
+            </div>
+          );
+        })}
+        {isLive && (
+          <div className="flex items-center gap-1.5 py-1 px-1.5 text-[10.5px] text-primary/80 font-mono select-none">
+            <span className="inline-block w-1.5 h-3 bg-primary shadow-sm animate-pulse rounded-xs" />
+            <span className="italic">Canlı yama satırları akıyor…</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChatMessageCodeBlock({ language, code, isLive }: { language: string; code: string; isLive?: boolean }) {
+  if (language === 'diff' || language === 'patch') {
+    return <ChatMessageDiffBlock code={code} isLive={isLive} />;
+  }
+
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -59,20 +189,20 @@ function ChatMessageCodeBlock({ language, code }: { language: string; code: stri
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="my-1.5 rounded-xl border border-stone-800 bg-stone-950 overflow-hidden text-stone-100 text-xs font-sans shadow-2xs">
-      <div className="flex items-center justify-between px-2.5 py-0.5 bg-stone-900 border-b border-stone-800 text-[10.5px] text-stone-400 font-mono">
-        <span className="font-semibold text-stone-300">{language}</span>
+    <div className="my-1.5 rounded border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-2xs">
+      <div className="flex items-center justify-between px-2.5 py-0.5 bg-accent border-b border-primary/20 text-[10.5px] text-muted font-mono">
+        <span className="font-semibold text-primary">{language}</span>
         <button
           type="button"
           onClick={handleCopy}
           className={`flex items-center gap-1 transition-colors cursor-pointer px-1 py-0.5 rounded ${
-            copied ? 'text-emerald-400 font-semibold bg-emerald-950/40' : 'hover:text-stone-200'
+            copied ? 'text-primary font-semibold bg-accent/40' : 'hover:text-primary'
           }`}
           title="Copy code"
         >
           {copied ? (
             <>
-              <Check className="h-3 w-3 text-emerald-400" />
+              <Check className="h-3 w-3 text-primary" />
               <span>Copied ✓</span>
             </>
           ) : (
@@ -93,12 +223,6 @@ function artifactCardMeta(art: Artifact): string {
   return art.version > 1 ? `${kind} · v${art.version}` : kind;
 }
 
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return undefined
-  const voices = window.speechSynthesis.getVoices()
-  return voices.find((v) => v.lang === lang) || voices.find((v) => v.lang.startsWith(lang.slice(0, 2)))
-}
-
 function InquiryStatusCard({
   kind,
   text,
@@ -113,7 +237,7 @@ function InquiryStatusCard({
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
-    <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+    <div role="status" aria-live="polite" className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
       <p className="m-0 font-medium">{title}</p>
       <p className="mt-1 mb-2 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
       {kind === 'quota' && onOpenByok ? (
@@ -150,7 +274,7 @@ function HumanTurnCard({
   const pending = turn.status === 'pending' && !disabled
   if (turn.kind === 'plan_approval') {
     return (
-      <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+      <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="m-0 font-medium">{turn.title}</p>
@@ -220,37 +344,15 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
-  const [liked, setLiked] = useState<boolean | null>(message.liked ?? null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const displayedText = message.content;
   const isLiveAnswer = !isUser && !!message.isStreaming;
+  const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
+  const markdownText = isLiveAnswer ? ensureClosedCodeFences(displayedText) : displayedText;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSpeak = () => {
-    if (!('speechSynthesis' in window)) return;
-
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return
-    }
-
-    const spoken = textForSpeech(message.content)
-    if (!spoken) return
-    const lang = detectSpeechLang(spoken)
-    const utterance = new SpeechSynthesisUtterance(spoken);
-    utterance.lang = lang;
-    const voice = pickVoice(lang)
-    if (voice) utterance.voice = voice
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
   };
 
   return (
@@ -280,7 +382,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          <div className="relative w-fit max-w-[85%] rounded-2xl bg-primary/90 backdrop-blur-md border border-primary/60 px-3.5 py-1.5 text-primary text-[13.5px] sm:text-[14px] leading-normal font-sans shadow-2xs transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
+          <div className="relative w-fit max-w-[85%] rounded bg-primary/90 backdrop-blur-md border border-primary/60 px-3.5 py-1.5 text-primary text-[13.5px] sm:text-[14px] leading-normal font-sans shadow-2xs transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
 
@@ -300,7 +402,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               className="p-0.5 hover:text-primary transition-colors cursor-pointer"
               title="Copy"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
         </div>
@@ -331,7 +433,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           <div className="wim-ask-reply space-y-1">
           {/* Response Text with Ultra-Compact High-Density Typography */}
           <div
-            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-[#1E3A8A] dark:[&_a]:text-blue-400 break-words [overflow-wrap:anywhere]"
+            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-primary break-words [overflow-wrap:anywhere]"
           >
             {message.errorKind ? (
               <InquiryStatusCard
@@ -353,11 +455,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       const match = /language-(\w+)/.exec(className || '');
                       const codeContent = String(children).replace(/\n$/, '');
                       if (!inline && match) {
-                        return <ChatMessageCodeBlock language={match[1]} code={codeContent} />;
+                        return <ChatMessageCodeBlock language={match[1]} code={codeContent} isLive={isLiveAnswer} />;
                       }
                       if (inline && /^(Page|Sayfa)\s+\d+$/i.test(codeContent.trim())) {
                         return (
-                          <span className="inline-flex items-center gap-1 bg-[#1E3A8A]/10 text-[#1E3A8A] dark:text-blue-400 border border-[#1E3A8A]/25 px-1.5 py-0.2 rounded text-[11px] font-sans font-medium mx-0.5 shadow-2xs">
+                          <span className="inline-flex items-center gap-1 bg-accent/50 text-primary border border-primary/25 px-1.5 py-0.2 rounded text-[11px] font-sans font-medium mx-0.5 shadow-2xs">
                             <IconDocument className="size-3 shrink-0" />
                             {codeContent.trim()}
                           </span>
@@ -371,7 +473,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     },
                   }}
                 >
-                  {displayedText}
+                  {markdownText}
                 </ReactMarkdown>
                 {isLiveAnswer && (
                   <span
@@ -383,6 +485,17 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             ) : null}
           </div>
 
+          {message.qualityGate === 'failed' && (
+            <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+              Quality check revised this reply
+            </div>
+          )}
+          {message.qualityGate === 'skipped' && (
+            <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+              Quality check unavailable &mdash; reply shown ungated
+            </div>
+          )}
+
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
             <div className="mt-3.5 space-y-2 font-sans">
@@ -391,7 +504,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">
@@ -411,7 +524,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {message.humanTurn ? (
+          {message.humanTurn && message.humanTurn.status !== 'pending' ? (
             <HumanTurnCard
               turn={message.humanTurn}
               disabled={!!message.isStreaming}
@@ -422,6 +535,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           {message.osAction && !message.osAction.executed ? (
             <OSActionCard
               action={message.osAction}
+              isStreaming={isLiveAnswer}
               onExecute={() => onExecuteOSAction?.(message.id, message.osAction!)}
             />
           ) : null}
@@ -432,50 +546,35 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           ) : null}
 
           {!isLiveAnswer && (message.isTypingDone || message.stopped) && message.errorKind !== 'quota' && (
-            <div className="pt-1 flex items-center gap-0.5 text-muted font-sans">
+            <div className="pt-1 flex items-center gap-1 text-muted font-sans">
+              {usedModel && (
+                <div className="flex items-center gap-1.5 py-0.5 px-1.5 rounded-md bg-accent/40 border border-primary/15 text-[11px] text-muted select-none">
+                  <div className="size-3.5 shrink-0 rounded-full overflow-hidden border border-primary/20 bg-accent">
+                    {usedModel.avatarUrl ? (
+                      <img src={usedModel.avatarUrl} alt={usedModel.name} className="size-full object-cover" />
+                    ) : (
+                      <span className="flex size-full items-center justify-center text-[7.5px] font-bold text-white bg-primary">
+                        {(usedModel.name || 'AI').slice(0, 2)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-secondary text-[11px] leading-none">
+                    {usedModel.name.trim().split(/\s+/).filter(Boolean).pop() || usedModel.name}
+                  </span>
+                  {message.timestamp && (
+                    <span className="text-[10px] text-muted/70 leading-none" suppressHydrationWarning>
+                      · {formatExactTime(message.timestamp)}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleCopy}
                 className="p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded"
                 title="Copy"
               >
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
-
-              {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onAddToNotebook(message)
-                    setAddedToNotebook(true)
-                    setTimeout(() => setAddedToNotebook(false), 2000)
-                  }}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${
-                    addedToNotebook ? 'text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/40' : 'hover:text-primary'
-                  }`}
-                  title="Add to notebook"
-                >
-                  {addedToNotebook ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      <span>Added ✓</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileInput className="h-3.5 w-3.5" />
-                      <span>Add</span>
-                    </>
-                  )}
-                </button>
-              )}
-
-              <button
-                onClick={handleSpeak}
-                className={`p-1 hover:text-primary transition-transform duration-150 active:scale-[0.88] hover:scale-[1.1] cursor-pointer rounded ${
-                  isSpeaking ? 'text-amber-600' : ''
-                }`}
-                title="Read aloud"
-              >
-                {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
 
               {onRetry && (
@@ -488,33 +587,32 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 </button>
               )}
 
-              <button
-                onClick={() => {
-                  const next = liked === true ? null : true
-                  setLiked(next)
-                  onFeedback?.(message.id, next)
-                }}
-                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
-                  liked === true ? 'text-emerald-600' : ''
-                }`}
-                title="Good response"
-              >
-                <ThumbsUp className="h-3.5 w-3.5" />
-              </button>
-
-              <button
-                onClick={() => {
-                  const next = liked === false ? null : false
-                  setLiked(next)
-                  onFeedback?.(message.id, next)
-                }}
-                className={`p-0.5 hover:text-primary transition-colors cursor-pointer ${
-                  liked === false ? 'text-rose-600' : ''
-                }`}
-                title="Bad response"
-              >
-                <ThumbsDown className="h-3.5 w-3.5" />
-              </button>
+              {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddToNotebook(message)
+                    setAddedToNotebook(true)
+                    setTimeout(() => setAddedToNotebook(false), 2000)
+                  }}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${
+                    addedToNotebook ? 'text-primary font-semibold bg-accent/50 dark:bg-accent/40' : 'hover:text-primary'
+                  }`}
+                  title="Add to notebook"
+                >
+                  {addedToNotebook ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                      <span>Added ✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileInput className="h-3.5 w-3.5" />
+                      <span>Add</span>
+                    </>
+                  )}
+                </button>
+              )}
 
               {message.citations && message.citations.length > 0 && (
                 <button

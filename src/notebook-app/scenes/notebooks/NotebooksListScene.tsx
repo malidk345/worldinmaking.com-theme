@@ -4,6 +4,8 @@ import { NotebookFaceStack } from './NotebookFaceStack'
 import { NotebookTag } from './NotebookMeta'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
+import { LemonBanner } from '../../lib/lemon-ui/LemonBanner/LemonBanner'
+import { LemonSkeleton } from '../../lib/lemon-ui/LemonSkeleton/LemonSkeleton'
 import { notebookMatchesQuery } from './notebookPreview'
 import { IconCheckCircle, IconCopy, IconEllipsis, IconFolder, IconNotebook, IconPlus, IconTrash } from '@posthog/icons'
 import OSButton from 'components/OSButton'
@@ -32,7 +34,7 @@ import {
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
-import { pullNotebookById, pullNotebooksFromRemote } from './notebookRemote'
+import { pullNotebookById, pullNotebooksFromRemote, isNotebookRemoteKnownAvailable, resetNotebookPullThrottle } from './notebookRemote'
 import {
     collectNotebookTasks,
     dateFromKey,
@@ -47,7 +49,11 @@ import {
     uniqueTags,
     toggleTaskLine,
 } from './notebookOrganize'
-import { NOTEBOOK_PRODUCT_SCOPE_CLASS } from '../../../lib/lemon/ensureNotebookProductStyles'
+import {
+    ensureNotebookProductStyles,
+    releaseNotebookProductStyles,
+    NOTEBOOK_PRODUCT_SCOPE_CLASS,
+} from '../../../lib/lemon/ensureNotebookProductStyles'
 import { NotebookDailyCalendar } from './NotebookDailyCalendar'
 
 interface NotebooksListSceneProps {
@@ -82,9 +88,18 @@ export function NotebooksListScene({
         value: string
     } | null>(null)
     const [notebooks, setNotebooks] = useState(() => listNotebooksForBrowser())
+    const [remoteStatus, setRemoteStatus] = useState<boolean | null>(() => isNotebookRemoteKnownAvailable())
     const [leavingIds, setLeavingIds] = useState<Set<string>>(() => new Set())
     const leavingIdsRef = useRef<Set<string>>(new Set())
     const { addToast } = useToast()
+
+    // List can mount outside notebook App (WindowRouter /notebooks); inject LemonTable CSS.
+    useEffect(() => {
+        ensureNotebookProductStyles()
+        return () => {
+            releaseNotebookProductStyles()
+        }
+    }, [])
 
     useEffect(() => {
         const timer = window.setTimeout(() => setSearchQuery(searchInput), 180)
@@ -92,6 +107,7 @@ export function NotebooksListScene({
     }, [searchInput])
 
     const reloadNotebooks = useCallback(() => {
+        setRemoteStatus(isNotebookRemoteKnownAvailable())
         const raw = getNotebooks()
         const live = listView === 'tasks' ? raw.map((nb) => toNotebookBrowserItem(nb, true)) : raw.map((nb) => toNotebookBrowserItem(nb))
         const liveIds = new Set(live.map((nb) => nb.id))
@@ -899,21 +915,44 @@ export function NotebooksListScene({
                                 pagination={{ pageSize: 25, hideOnSinglePage: true }}
                                 emptyState={
                                     emptyLibrary ? (
-                                        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-                                            <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
-                                            <p className="m-0 text-xs text-muted max-w-sm">
-                                                Start a page. Inside the editor, type{' '}
-                                                <span className="font-semibold">/</span> to insert a block.
-                                            </p>
-                                            <OSButton
-                                                variant="primary"
-                                                size="sm"
-                                                icon={<IconPlus />}
-                                                onClick={onCreateNew}
-                                            >
-                                                New notebook
-                                            </OSButton>
-                                        </div>
+                                        remoteStatus === null ? (
+                                            <div className="p-4 space-y-4 w-full">
+                                                <LemonSkeleton className="h-10 w-full" repeat={3} />
+                                            </div>
+                                        ) : remoteStatus === false ? (
+                                            <div className="p-4 w-full">
+                                                <LemonBanner
+                                                    type="error"
+                                                    action={{
+                                                        children: 'Retry',
+                                                        onClick: () => {
+                                                            resetNotebookPullThrottle()
+                                                            void pullNotebooksFromRemote({ force: true }).then(() => {
+                                                                reloadNotebooks()
+                                                            })
+                                                        }
+                                                    }}
+                                                >
+                                                    Could not connect to the notebook server. You are offline or there is a network error.
+                                                </LemonBanner>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                                                <p className="m-0 text-sm font-semibold text-primary">No notebooks yet</p>
+                                                <p className="m-0 text-xs text-muted max-w-sm">
+                                                    Start a page. Inside the editor, type{' '}
+                                                    <span className="font-semibold">/</span> to insert a block.
+                                                </p>
+                                                <OSButton
+                                                    variant="primary"
+                                                    size="sm"
+                                                    icon={<IconPlus />}
+                                                    onClick={onCreateNew}
+                                                >
+                                                    New notebook
+                                                </OSButton>
+                                            </div>
+                                        )
                                     ) : (
                                         <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
                                             <p className="m-0 text-sm font-medium text-primary">

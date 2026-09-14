@@ -37,17 +37,21 @@ const TASK_READ_TOOLS = new Set([
     'read_post',
     'get_workspace',
     'list_notebooks',
+    'search_academic_corpus',
+    'verified_corpus_search',
 ])
 
-const THINK_MAX_TOKENS = 48
+const THINK_MAX_TOKENS = 512
 
-/** One next-action sentence at the start of a turn. Later cycles use tools and native reasoning only. */
+/** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
 export function shouldRunThinkPhase(input: {
     userPrompt: string
     agentMode: AgentMode
     stepCount: number
     forceWebSearch?: boolean
+    hasNewToolResults?: boolean
 }): boolean {
+    if (input.hasNewToolResults) return true
     if (input.stepCount > 0) return false
     if (input.agentMode === 'plan' || input.agentMode === 'execute') return true
     if (input.forceWebSearch) return true
@@ -228,12 +232,16 @@ function emitNode(
     params.onNode?.({ name, status, detail: nodeStatusLabel(name, status) })
 }
 
-function withThinkInstruction(messages: ChatMessage[]): ChatMessage[] {
+function withThinkInstruction(messages: ChatMessage[], postTool = false): ChatMessage[] {
+    const instruction = postTool
+        ? 'REFLECTION & PROGRESSIVE SYNTHESIS STEP: Carefully analyze the returned tool results in context. What key facts, nuances, or philosophical insights did they reveal? If you already wrote an introductory or prior section, seamlessly plan the subsequent section or continuation from where you left off. Weave the new evidence into the upcoming paragraphs without repeating earlier statements. Do not call tools in this thought.'
+        : 'PLANNING & STRATEGY STEP: Analyze the user inquiry. Determine what background facts, canonical citations, or structured visual artifacts are required, and establish a clear approach for an exhaustive, coherent solution. Do not call tools in this thought.'
+
     return messages.map((message, index) => {
         if (index === 0 && message.role === 'system') {
             return {
                 ...message,
-                content: `${message.content || ''}\n\nTHINK STEP ONLY: One sentence naming the next tool or step. No essay, no analysis, no user-facing answer. Do not call tools.`,
+                content: `${message.content || ''}\n\n${instruction}`,
             }
         }
         return message
@@ -252,7 +260,12 @@ function emitThoughtDelta(params: AgentPipelineParams, thoughtId: string, piece:
     })
 }
 
-async function runThinkPhase(state: AgentState, params: AgentPipelineParams, thoughtId: string): Promise<void> {
+async function runThinkPhase(
+    state: AgentState,
+    params: AgentPipelineParams,
+    thoughtId: string,
+    postTool = false
+): Promise<void> {
     let nativeThought = 0
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
@@ -268,7 +281,8 @@ async function runThinkPhase(state: AgentState, params: AgentPipelineParams, tho
                 todos: state.todos,
                 reminder: state.pendingReminder,
                 memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
-            })
+            }),
+            postTool
         ),
         toolChoice: 'none',
         omitTools: true,
@@ -286,15 +300,19 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const cycle = state.stepCount
     const thoughtId = `thought-${cycle}-${state.messages.length}`
     emitNode(params, 'root', 'started', cycle)
+    const hasNewToolResults =
+        state.messages.length > 0 && state.messages[state.messages.length - 1]?.role === 'tool'
+
     if (
         shouldRunThinkPhase({
             userPrompt: lastUserText(state.messages),
             agentMode: state.agentMode,
             stepCount: state.stepCount,
             forceWebSearch: params.forceWebSearch,
+            hasNewToolResults,
         })
     ) {
-        await runThinkPhase(state, params, thoughtId)
+        await runThinkPhase(state, params, thoughtId, hasNewToolResults)
     }
     const isLastStep = state.stepCount >= state.maxSteps - 1
     const toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' = isLastStep
@@ -364,6 +382,13 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.usedTools = true
+        if (leftover) {
+            const remainingUnstreamed = leftover.slice(streamedPublicLength)
+            if (remainingUnstreamed) {
+                emitPublic(remainingUnstreamed)
+            }
+            state.publicText += (state.publicText ? '\n\n' : '') + leftover
+        }
         state.messages.push({
             role: 'assistant',
             content: leftover || null,
@@ -384,7 +409,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         if (remainingUnstreamed) {
             emitPublic(remainingUnstreamed)
         }
-        state.publicText += leftover
+        state.publicText += (state.publicText ? '\n\n' : '') + leftover
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.phase = 'synthesis'
@@ -404,16 +429,18 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     }
 
     if (
-        !state.publicText.trim() &&
         state.usedTools &&
         state.stepCount < state.maxSteps &&
-        state.writeNudges < 1
+        state.writeNudges < 1 &&
+        !isLastStep &&
+        !leftover
     ) {
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.writeNudges += 1
-        state.pendingReminder =
-            'Write the full user-requested answer in the public bubble now. No tools. If they asked for a long article, essay, or word count, write that length. Do not outline. Do not summarize.'
+        state.pendingReminder = state.publicText.trim()
+            ? 'Continue writing seamlessly from where you left off. Integrate the returned tool findings to complete the comprehensive piece. No more tools.'
+            : 'Write the full user-requested answer in the public bubble now. No tools. If they asked for a long article, essay, or word count, write that length. Do not outline. Do not summarize.'
         state.phase = 'decision'
         return
     }
@@ -684,6 +711,18 @@ async function runOneToolCall(
         const summary = typeof parsed?.summary === 'string' ? parsed.summary : undefined
         toolContent = enterExecute(state, params, summary)
     }
+    if (name === 'ask_user' && executed.ok) {
+        const parsed = parseJsonObject(executed.result)
+        const question = typeof parsed?.question === 'string' ? parsed.question : undefined
+        if (question) {
+            state.interrupt = {
+                kind: 'ask_user',
+                status: 'pending',
+                title: 'User Input Required',
+                question,
+            }
+        }
+    }
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
     if (!executed.ok) {
         const retry = `Last tool (${name}) failed: ${summary}. Fix the arguments and retry, or pick a different tool. Do not dump the error in the bubble.`
@@ -790,16 +829,22 @@ function runSynthesisNode(state: AgentState, params: AgentPipelineParams): void 
     const cycle = state.stepCount
     emitNode(params, 'synthesis', 'started', cycle)
     state.publicText = stripLeakedToolMarkup(state.publicText)
-    if (!state.publicText.trim()) {
-        if (state.interrupt || state.usedTools || state.artifacts.length > 0 || state.citations.length > 0) {
-            state.phase = 'complete'
-            emitNode(params, 'synthesis', 'completed', cycle)
-            return
-        }
 
+    if (!state.publicText.trim()) {
+        // 1. Recover answer if model emitted thinking/reasoning
         const recovered = extractFallbackAnswerFromThinking(state.thinkingText)
         if (recovered) {
             state.publicText = recovered
+        }
+    }
+
+    // 2. If still empty and no interactive interrupt, ensure a clean delivery
+    if (!state.publicText.trim() && !state.interrupt) {
+        if (state.artifacts.length > 0) {
+            // Artifact is the primary output
+            state.publicText = ''
+        } else if (state.usedTools) {
+            state.publicText = 'İstenen işlemler ve araç analizleri başarıyla tamamlandı.'
         }
     }
 

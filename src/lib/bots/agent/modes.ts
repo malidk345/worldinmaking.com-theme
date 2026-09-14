@@ -23,6 +23,9 @@ export const PLAN_TOOL_NAMES = [
     'read_notebook',
     'get_workspace',
     'search_site',
+    'search_academic_corpus',
+    'analyze_image',
+    'transcribe_audio',
     'list_notebooks',
     'read_post',
     'write_scratchpad',
@@ -31,6 +34,10 @@ export const PLAN_TOOL_NAMES = [
     'remember',
     'finalize_plan',
     'task',
+    'cross_examine_argument',
+    'verified_corpus_search',
+    'export_notebook',
+    'ask_user',
 ] as const
 
 export const MUTATING_TOOL_NAMES = [
@@ -45,6 +52,12 @@ export const MUTATING_TOOL_NAMES = [
     'set_system_appearance',
     'annotate_notebook',
     'publish_to_forum',
+    'generate_image',
+    'synthesize_speech',
+    'add_notebook_footnote',
+    'arrange_workspace_preset',
+    'generate_flashcards',
+    'create_concept_map',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {
@@ -70,7 +83,9 @@ export const PLAN_MODE_PROMPT = `
 <plan_mode>
 You are in plan mode. Mutating OS tools are locked (artifacts, windows, notebook edits, publish, appearance). Research tools and todo_write are available.
 
-You choose the next move. A greeting, a direct answer, or a long article can go in the public reply with zero tools. Use todo_write only when sequencing actually helps — never invent a plan for a one-step ask. Use research tools when you need facts. If you need a locked tool, call finalize_plan or switch_mode execute; the host continues in the same turn.
+You choose the next move. A greeting, a direct answer, or a brief reply can go in the public reply with zero tools and zero unneeded planning. Use todo_write only when sequencing actually helps — never invent a plan for a one-step ask.
+For deep, comprehensive, or multi-chapter research, construct a thorough multi-step plan covering the thematic sections, academic citations, and notebook creation.
+Use research tools when you need facts. If you need a locked tool, call finalize_plan or switch_mode execute; the host continues in the same turn.
 If you use todo_write, keep the same ids after the first plan. Exactly one item in_progress.
 </plan_mode>
 `.trim()
@@ -79,6 +94,8 @@ export const PLAN_TOOL_PROTOCOL = `
 PLAN MODE:
 - Mutating OS tools are locked. Research, todo_write, remember, task, finalize_plan, and switch_mode are available.
 - You choose: answer now, research, or plan. Do not call todo_write unless a sequence helps. Call finalize_plan only when you need mutating tools; the host continues in the same turn.
+- Micro requests (e.g. greetings): answer immediately in the public bubble with zero tools.
+- Comprehensive requests: build a thorough plan covering each thematic section and citation step before executing.
 
 `.trim()
 
@@ -88,11 +105,14 @@ export const PLAN_USER_PREFIX =
 export const EXECUTION_TRANSITION_PROMPT = `
 Plan mode is complete. You are now in execution mode.
 
-All tools are available. Follow the todo_write plan:
+All tools are available. Follow the todo_write plan with appropriate depth and stamina:
 - Mark the current step in_progress, do the work with the right tool, then mark it completed.
 - Do not skip live search or document reads the plan called for.
-- Do not stop to ask the user after each step. Continue until every todo is completed.
-- After the last todo is completed, write the full user-visible answer. If they asked for an article, essay, or a word count, write that length in the public bubble. Do not dump tool JSON or <tool_code>. Do not replace the piece with a one-line status.
+- Do not stop to ask the user after each step or prematurely quit after 2-3 trivial steps. Continue until every planned section and todo is completed.
+- For deep, comprehensive writing or multi-section research:
+  * Do not compress an exhaustive work into 3 short paragraphs.
+  * Use create_notebook and consecutive insert_notebook_block calls to write out each section with substantial depth, academic citations, and footnotes ([^1], [^2]).
+- After all todos and sections are completed, write the full user-visible executive summary and synthesis in the public bubble. If they asked for a long article, essay, or specific word count directly in the chat, write that full length. Do not dump tool JSON or <tool_code>. Do not replace the piece with a one-line status.
 `.trim()
 
 export const PLAN_TRANSITION_PROMPT = `

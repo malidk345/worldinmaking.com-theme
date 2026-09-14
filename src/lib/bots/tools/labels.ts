@@ -30,6 +30,19 @@ const LABELS: Record<string, [string, string, string]> = {
     remember: ['Saving memory', 'Saved memory', 'Could not save memory'],
     finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
+    generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
+    search_academic_corpus: ['Searching academic literature', 'Found academic papers', 'Academic search failed'],
+    analyze_image: ['Analyzing image', 'Analyzed image', 'Image analysis failed'],
+    transcribe_audio: ['Transcribing audio', 'Transcribed audio', 'Audio transcription failed'],
+    synthesize_speech: ['Synthesizing speech', 'Synthesized speech', 'Speech synthesis failed'],
+    add_notebook_footnote: ['Adding footnote', 'Added footnote', 'Could not add footnote'],
+    cross_examine_argument: ['Examining philosophical argument', 'Cross-examined argument', 'Could not examine argument'],
+    verified_corpus_search: ['Searching verified canonical corpus', 'Found verified canonical citations', 'Corpus search failed'],
+    arrange_workspace_preset: ['Arranging workspace layout', 'Arranged workspace layout', 'Could not arrange workspace'],
+    generate_flashcards: ['Generating flashcard deck', 'Created flashcard deck', 'Flashcard generation failed'],
+    export_notebook: ['Compiling notebook for export', 'Compiled notebook document', 'Notebook export failed'],
+    create_concept_map: ['Generating concept map', 'Created concept map', 'Concept map failed'],
+    ask_user: ['Asking you a question', 'Asked you a question', 'Failed to ask you a question'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
@@ -58,15 +71,25 @@ export function parseToolArgPreview(name: string, raw?: string): string {
     try {
         const args = JSON.parse(raw) as Record<string, unknown>
         if (!args || typeof args !== 'object' || Array.isArray(args)) return ''
-        if (name === 'web_search' || name === 'search_site') return pickArg(args, ['query', 'q', 'search'])
+        if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') return pickArg(args, ['query', 'q', 'search'])
+        if (name === 'verified_corpus_search') return pickArg(args, ['query', 'thinker', 'work'])
+        if (name === 'cross_examine_argument') return pickArg(args, ['argument', 'claim', 'thesis'])
         if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
+        if (name === 'analyze_image') return pickArg(args, ['question', 'prompt', 'image_url'])
+        if (name === 'transcribe_audio') return pickArg(args, ['audio_url', 'language'])
+        if (name === 'synthesize_speech') return pickArg(args, ['text'])
+        if (name === 'add_notebook_footnote') return pickArg(args, ['span_text', 'text', 'marker'])
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
+        if (name === 'arrange_workspace_preset') return pickArg(args, ['preset', 'layout'])
+        if (name === 'generate_flashcards' || name === 'create_concept_map') return pickArg(args, ['topic', 'title'])
+        if (name === 'export_notebook') return pickArg(args, ['format', 'notebook_id'])
         if (name === 'read_post') return pickArg(args, ['slug', 'id'])
         if (name === 'read_document') return pickArg(args, ['name', 'url', 'query'])
         if (name === 'read_notebook') return pickArg(args, ['notebook_id', 'notebookId', 'title'])
         if (name === 'create_artifact' || name === 'create_notebook' || name === 'publish_to_forum') {
             return pickArg(args, ['title', 'name'])
         }
+        if (name === 'ask_user') return pickArg(args, ['question'])
         if (name === 'task') return pickArg(args, ['goal', 'prompt'])
         if (name === 'remember') return pickArg(args, ['fact', 'memory'])
         if (name === 'write_scratchpad') return pickArg(args, ['title', 'content'])
@@ -82,7 +105,7 @@ export function toolActivityTitle(name: string, status: ToolRunStatus, args?: st
     const base = toolStatusLabel(name, status)
     const preview = parseToolArgPreview(name, args)
     if (!preview) return base
-    if (name === 'web_search' || name === 'search_site') {
+    if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') {
         if (status === 'running') return `Searching: ${preview}`
         if (status === 'error') return `Search failed: ${preview}`
         return `Searched: ${preview}`

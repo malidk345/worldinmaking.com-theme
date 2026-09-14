@@ -6,27 +6,9 @@ import {
   buildThinkingTimeline,
   type TimelineItem,
 } from '../../../lib/bots/agent/timeline'
-import dayjs from 'dayjs'
-import { IconBrain, IconWrench, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight } from '@posthog/icons'
+import { IconBrain, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight, IconArrowRight } from '@posthog/icons'
 import { Activity, ShimmeringContent, type ActivityStatus } from './activity/ActivityPrimitives'
 import { ThinkingBangDots } from './ThinkingBangDots'
-
-function philosopherSurname(name?: string): string {
-  if (!name) return 'AI'
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts[parts.length - 1] || name
-}
-
-function formatExactTime(ts?: string): string {
-  if (!ts) {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-  }
-  const trimmed = ts.trim()
-  if (/^\d{1,2}:\d{2}$/.test(trimmed)) return trimmed
-  const d = dayjs(trimmed)
-  if (d.isValid()) return d.format('HH:mm')
-  return trimmed
-}
 
 function toActivityStatus(status: TimelineItem['status']): ActivityStatus {
   if (status === 'running') return 'in_progress'
@@ -37,9 +19,21 @@ function toActivityStatus(status: TimelineItem['status']): ActivityStatus {
 const ICON = 'size-3.5'
 
 function toolIcon(name?: string) {
-  if (name === 'web_search' || name === 'search_site' || name === 'fetch_url') return <IconSearch className={ICON} />
-  if (name === 'read_document' || name === 'read_notebook' || name === 'read_post') return <IconNotebook className={ICON} />
-  return <IconWrench className={ICON} />
+  if (name === 'web_search' || name === 'search_site' || name === 'fetch_url' || name === 'academic_search' || name === 'verified_corpus_search') {
+    return <IconSearch className={ICON} />
+  }
+  if (
+    name === 'read_document' ||
+    name === 'read_notebook' ||
+    name === 'read_post' ||
+    name === 'insert_notebook_block' ||
+    name === 'rewrite_notebook_document' ||
+    name === 'export_notebook' ||
+    name === 'add_notebook_footnote'
+  ) {
+    return <IconNotebook className={ICON} />
+  }
+  return <IconArrowRight className={ICON} />
 }
 
 function ReasoningActivity({
@@ -202,59 +196,36 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   thinking,
   toolTrace,
   isLive = false,
-  model,
-  timestamp,
 }) => {
   const items = useMemo(
     () => buildThinkingTimeline(thinking?.steps || [], toolTrace).filter((item) => item.kind !== 'node'),
     [thinking?.steps, toolTrace]
   )
   const hasItems = items.length > 0
-  if (!model && !hasItems && !isLive) return null
+  if (!hasItems && !isLive) return null
 
-  const surname = philosopherSurname(model?.name)
-  const formattedTime = formatExactTime(timestamp)
   const lastReasoningId = [...items].reverse().find((item) => item.kind === 'reasoning')?.id
 
   return (
     <div className="wim-ask-thinking w-full max-w-full font-sans text-secondary space-y-1 mb-0">
-      {(model || isLive) && (
-        <div className="flex items-center gap-1.5 w-full min-w-0">
-          {model && (
-            <>
-              <div className="size-6 shrink-0 rounded-full overflow-hidden border border-primary bg-accent">
-                {model.avatarUrl ? (
-                  <img src={model.avatarUrl} alt={surname} className={`size-full ${model.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover object-top'}`} />
-                ) : (
-                  <span className={`flex size-full items-center justify-center text-[10px] font-bold text-white ${model.avatarBg || 'bg-[#1E3A8A]'}`}>
-                    {model.initials || surname.slice(0, 2)}
-                  </span>
-                )}
-              </div>
-              <strong className="font-semibold text-[13px] text-primary leading-none">{surname}</strong>
-              <span className="text-[11px] text-muted leading-none" suppressHydrationWarning>
-                {formattedTime}
-              </span>
-            </>
-          )}
-          {isLive && (
-            <span className="ml-auto shrink-0 flex items-center">
-              <ThinkingBangDots />
-            </span>
-          )}
+      {isLive && !hasItems && (
+        <div className="flex items-center gap-1.5 w-full min-w-0 py-0.5">
+          <ThinkingBangDots />
         </div>
       )}
 
-      <div className="flex flex-col gap-1 w-full min-w-0">
-        {items.map((item) => (
-          <TimelineRow
-            key={item.id}
-            item={item}
-            isLive={isLive}
-            durationSeconds={item.id === lastReasoningId ? thinking.durationSeconds : undefined}
-          />
-        ))}
-      </div>
+      {hasItems && (
+        <div className="flex flex-col gap-1 w-full min-w-0">
+          {items.map((item) => (
+            <TimelineRow
+              key={item.id}
+              item={item}
+              isLive={isLive}
+              durationSeconds={item.id === lastReasoningId ? thinking.durationSeconds : undefined}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -39,7 +39,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-xs font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-xs font-sans">
       <div className="w-full max-w-lg rounded-2xl border border-primary bg-primary text-primary p-6 shadow-2xl space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-primary pb-3">
@@ -59,7 +59,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
+            <label className="block text-xs font-semibold text-primary mb-1">
               Project name *
             </label>
             <input
@@ -68,12 +68,12 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Mobile app notes"
-              className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 focus:border-[#1E3A8A] focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-primary/20 bg-accent px-3 py-2 text-sm text-primary focus:border-primary focus:bg-white focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
+            <label className="block text-xs font-semibold text-primary mb-1">
               Description
             </label>
             <input
@@ -81,12 +81,12 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What this workspace is for..."
-              className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 focus:border-[#1E3A8A] focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-primary/20 bg-accent px-3 py-2 text-sm text-primary focus:border-primary focus:bg-white focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
+            <label className="block text-xs font-semibold text-primary mb-1">
               System prompt
             </label>
             <textarea
@@ -94,21 +94,21 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Instructions that apply to every chat in this project..."
-              className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 focus:border-[#1E3A8A] focus:bg-white focus:outline-none resize-none"
+              className="w-full rounded-xl border border-primary/20 bg-accent px-3 py-2 text-sm text-primary focus:border-primary focus:bg-white focus:outline-none resize-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-primary/10">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-xs font-medium text-stone-600 hover:bg-stone-100"
+              className="rounded-xl px-4 py-2 text-xs font-medium text-muted hover:bg-accent/50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-xl bg-[#1E3A8A] px-4 py-2 font-semibold text-white hover:bg-[#1e40af] shadow-2xs"
+              className="rounded-xl bg-primary px-4 py-2 font-semibold text-white hover:bg-accent shadow-2xs"
             >
               Create project
             </button>

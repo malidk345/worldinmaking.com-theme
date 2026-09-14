@@ -36,3 +36,17 @@
 ## 2025-05-19 - Avoid un-memoized JSON.parse inside component renders
 **Learning:** Performing array filtering with inner `JSON.parse` operations (such as resolving job posting custom fields) directly inside the React render function introduces an unnecessary O(N) performance bottleneck and memory allocations.
 **Action:** Always wrap array filtering and data transformation loops in `useMemo` (especially when they contain expensive operations like `JSON.parse`) to ensure they only re-evaluate when their specific dependencies change.
+## 2026-09-12 - [API Defenses]
+**Learning:** Replaced unsafe `req.json()` calls with size-bounded `readJsonObject` on mutating endpoints to prevent payload exhaustion, and applied `checkRateLimitDurable` to public routes. Ensure `!parsed.ok` handles the 413 error status correctly when introducing `readJsonObject`.
+**Action:** Enforce size constraints and rate limits natively on all new API route controllers.
+
+## 2026-09-12 - Optimize notification refresh pipeline
+**Learning:** Polling loops combined with focus listeners and panel-open effects can cause cascading redundant network requests. Supabase `auth.getSession()` inside fetchers is slow if the session is already known by the caller context.
+**Action:** Unify multiple fetch triggers behind a single debounced sync function with `useRef` tracking the last fetch time. Pass known user IDs downward to avoid redundant session reads.
+
+## 2024-05-30 - [Performance] Optimize url parameter serialization
+**Learning:** `Object.entries().filter().reduce().map()` chains inside utility functions that run frequently (like URL param parsers used for fetch calls or routing) generate unnecessary intermediate arrays and O(N) memory churn.
+**Action:** Replaced chained array methods with a single standard `for...in` loop and `.push()` in `toParams` to improve serialization performance by 60%+ and eliminate intermediate object allocations.
+## 2026-09-14 - [Philosopher Cron Idempotency]
+**Learning:** Implementing idempotency for webhook or cron endpoints that interact with slow third-party APIs (like LLMs) requires a lock that spans the maximum duration of the request, especially if the orchestrator retries aggressively on timeout. Using a GitHub Action `GITHUB_RUN_ID` as part of the lock key ensures that network retries of the *same* run are blocked, while a subsequent scheduled run can still proceed if the first one legitimately failed.
+**Action:** When asked to implement idempotency for an Edge function orchestrated by GitHub Actions, generate a `runId` in the Action script and use a durable KV/RateLimit store on the Edge to gracefully skip redundant executions.

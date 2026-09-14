@@ -1,15 +1,38 @@
 import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getDeviceOwnerKey } from './wim-identity'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { NOTEBOOK_IMAGE_MAX_BYTES, isNotebookImageFile } from './notebook-upload-shared'
+import { isStorageWorkerConfigured, uploadFile, getFileUrl } from './storage-worker'
 
 export { NOTEBOOK_IMAGE_MAX_BYTES, NOTEBOOK_IMAGE_TYPES, isNotebookImageFile, notebookImageExtension, collectClipboardImageFiles } from './notebook-upload-shared'
 
-export async function uploadNotebookImage(file: File): Promise<{ url: string; name: string }> {
+export async function uploadNotebookImage(file: File, notebookId?: string): Promise<{ url: string; name: string }> {
     if (!isNotebookImageFile(file)) {
         throw new Error('Use a PNG, JPEG, WebP, or GIF image.')
     }
     if (file.size > NOTEBOOK_IMAGE_MAX_BYTES) {
         throw new Error('Image is larger than 6 MB.')
+    }
+
+    if (isStorageWorkerConfigured()) {
+        try {
+            if (isSupabaseConfigured) {
+                const { data } = await supabase.auth.getSession()
+                if (data.session?.user?.id) {
+                    const meta = await uploadFile({
+                        file,
+                        category: 'notebook',
+                        notebookId: notebookId || null,
+                        filename: file.name,
+                    })
+                    return {
+                        url: getFileUrl(meta.storage_key),
+                        name: meta.filename || file.name,
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('Storage worker upload failed, falling back to notebook upload API:', err)
+        }
     }
 
     const ownerKey = getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)

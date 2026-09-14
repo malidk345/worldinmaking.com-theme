@@ -19,11 +19,12 @@ export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
 export type AgentMode = 'ask' | 'plan' | 'execute'
 
 export type HumanTurn = {
-  kind: 'plan_approval'
+  kind: 'plan_approval' | 'ask_user'
   title: string
-  status: 'pending' | 'approved' | 'revised'
+  status: 'pending' | 'approved' | 'revised' | 'answered'
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
+  question?: string
 }
 
 export type AgentCheckpoint = {
@@ -72,7 +73,7 @@ export interface ThinkingProcess {
   currentNode?: 'root' | 'tools' | 'synthesis'
 }
 
-export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
+export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics' | 'canvas' | 'model3d' | 'simulation'
 
 export type ArtifactOrigin = {
   top: number
@@ -106,7 +107,7 @@ export interface WebCitation {
 export interface FileAttachment {
   id: string
   name: string
-  type: 'image' | 'text' | 'pdf' | 'code'
+  type: 'image' | 'text' | 'pdf' | 'code' | 'audio'
   size: string
   url?: string
   content?: string
@@ -126,6 +127,7 @@ export interface OSActionCard {
     | 'set_system_appearance'
     | 'annotate_notebook'
     | 'publish_to_forum'
+    | 'add_notebook_footnote'
   title: string
   description: string
   payload: {
@@ -143,6 +145,8 @@ export interface OSActionCard {
       span_text?: string
       note?: string
       category?: string
+      marker?: string
+      text?: string
   }
   executed?: boolean
 }

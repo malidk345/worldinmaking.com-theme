@@ -67,6 +67,7 @@ export function NotebookInvitePanel({
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+    const [canShare, setCanShare] = useState(false)
 
     useEffect(() => {
         if (!isOpen) return
@@ -95,6 +96,12 @@ export function NotebookInvitePanel({
             cancelled = true
         }
     }, [isOpen, notebookId, signedIn])
+
+    useEffect(() => {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            setCanShare(true)
+        }
+    }, [])
 
     if (!isOpen) return null
 
@@ -158,6 +165,26 @@ export function NotebookInvitePanel({
         await reloadPeople()
     }
 
+    const shareInviteLink = async () => {
+        if (!canInvite) return
+        setBusy(true)
+        setError(null)
+        const result = await inviteNotebookPerson(notebookId, { link: true, role: inviteRole })
+        setBusy(false)
+        if (!result.ok || !result.url) {
+            setError(result.error || 'Could not create a link.')
+            return
+        }
+        try {
+            await navigator.share({ url: result.url })
+            await reloadPeople()
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') {
+                void copyInviteLink()
+            }
+        }
+    }
+
     if (!signedIn) {
         return (
             <div className="px-1 pb-1 space-y-2">
@@ -210,17 +237,36 @@ export function NotebookInvitePanel({
                 >
                     Invite
                 </OSButton>
-                <OSButton size="sm" width="full" hover="background" disabled={busy} onClick={() => void copyInviteLink()}>
-                    {copied ? (
-                        <span className="inline-flex items-center gap-1">
-                            <IconCheck className="size-4" /> Link copied
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1">
-                            <IconCopy className="size-4" /> Copy invite link
-                        </span>
-                    )}
-                </OSButton>
+                {canShare ? (
+                    <div className="flex gap-2">
+                        <OSButton size="sm" width="full" variant="primary" disabled={busy} onClick={() => void shareInviteLink()}>
+                            Share link
+                        </OSButton>
+                        <OSButton size="sm" width="full" hover="background" disabled={busy} onClick={() => void copyInviteLink()}>
+                            {copied ? (
+                                <span className="inline-flex items-center gap-1">
+                                    <IconCheck className="size-4" /> Copied
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1">
+                                    <IconCopy className="size-4" /> Copy
+                                </span>
+                            )}
+                        </OSButton>
+                    </div>
+                ) : (
+                    <OSButton size="sm" width="full" hover="background" disabled={busy} onClick={() => void copyInviteLink()}>
+                        {copied ? (
+                            <span className="inline-flex items-center gap-1">
+                                <IconCheck className="size-4" /> Link copied
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1">
+                                <IconCopy className="size-4" /> Copy invite link
+                            </span>
+                        )}
+                    </OSButton>
+                )}
             </div>
             {error ? <p className="m-0 text-[12px] text-red">{error}</p> : null}
             {people.length > 0 || invites.length > 0 ? (
@@ -296,6 +342,7 @@ export function NotebookPublishPanel({
     const [category, setCategory] = useState('notes')
     const [coverUrl, setCoverUrl] = useState('')
     const [copied, setCopied] = useState(false)
+    const [canShare, setCanShare] = useState(false)
 
     useEffect(() => {
         if (!isOpen) return
@@ -305,6 +352,12 @@ export function NotebookPublishPanel({
         setCoverUrl(meta?.coverUrl || '')
         setCopied(false)
     }, [isOpen, notebookId, notebook])
+
+    useEffect(() => {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            setCanShare(true)
+        }
+    }, [])
 
     if (!isOpen) return null
 
@@ -323,6 +376,30 @@ export function NotebookPublishPanel({
         })
     }
 
+    const copyPublicLink = async () => {
+        try {
+            await navigator.clipboard.writeText(publicUrl)
+            setCopied(true)
+            window.setTimeout(() => setCopied(false), 1500)
+            addToast({ description: 'Public link copied.' })
+        } catch {
+            addToast({ description: 'Could not copy. Try again.', error: true })
+        }
+    }
+
+    const sharePublicLink = async () => {
+        try {
+            await navigator.share({
+                title: notebook?.title || notebookTitle,
+                url: publicUrl,
+            })
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') {
+                void copyPublicLink()
+            }
+        }
+    }
+
     return (
         <div className="px-1 pb-1 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -332,31 +409,41 @@ export function NotebookPublishPanel({
                 {isPublished ? <NotebookTag>Live</NotebookTag> : <NotebookTag>Draft</NotebookTag>}
             </div>
             {isPublished ? (
-                <OSButton
-                    size="sm"
-                    width="full"
-                    hover="background"
-                    onClick={async () => {
-                        try {
-                            await navigator.clipboard.writeText(publicUrl)
-                            setCopied(true)
-                            window.setTimeout(() => setCopied(false), 1500)
-                            addToast({ description: 'Public link copied.' })
-                        } catch {
-                            addToast({ description: 'Could not copy. Try again.', error: true })
-                        }
-                    }}
-                >
-                    {copied ? (
-                        <span className="inline-flex items-center gap-1">
-                            <IconCheck className="size-4" /> Link copied
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1">
-                            <IconGlobe className="size-4" /> Copy public link
-                        </span>
-                    )}
-                </OSButton>
+                canShare ? (
+                    <div className="flex gap-2">
+                        <OSButton size="sm" width="full" variant="primary" onClick={() => void sharePublicLink()}>
+                            Share link
+                        </OSButton>
+                        <OSButton size="sm" width="full" hover="background" onClick={() => void copyPublicLink()}>
+                            {copied ? (
+                                <span className="inline-flex items-center gap-1">
+                                    <IconCheck className="size-4" /> Copied
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1">
+                                    <IconGlobe className="size-4" /> Copy
+                                </span>
+                            )}
+                        </OSButton>
+                    </div>
+                ) : (
+                    <OSButton
+                        size="sm"
+                        width="full"
+                        hover="background"
+                        onClick={() => void copyPublicLink()}
+                    >
+                        {copied ? (
+                            <span className="inline-flex items-center gap-1">
+                                <IconCheck className="size-4" /> Link copied
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1">
+                                <IconGlobe className="size-4" /> Copy public link
+                            </span>
+                        )}
+                    </OSButton>
+                )
             ) : null}
             <label className="block space-y-1">
                 <span className="text-[11px] font-semibold text-secondary">Subtitle</span>

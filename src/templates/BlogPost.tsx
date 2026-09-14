@@ -4,6 +4,7 @@ import { InlineCode } from 'components/InlineCode'
 import Link from 'components/Link'
 import { Contributor } from 'components/PostLayout/Contributors'
 import { SEO, type LanguageAlternate } from 'components/seo'
+import { buildArticleJsonLd, pageCanonical } from '../lib/seo'
 import { ZoomImage } from 'components/ZoomImage'
 import CloudinaryImage from 'components/CloudinaryImage'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -586,6 +587,15 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
                         ? (fields.slug || '').replace(/^\/blog\//, '').replace(/\/$/, '')
                         : undefined
                 }
+                structuredData={buildArticleJsonLd({
+                    title: seo?.metaTitle || title,
+                    description: seo?.metaDescription || excerpt,
+                    url: pageCanonical(pathname),
+                    image: featuredImage?.publicURL || featuredImage?.url || undefined,
+                    datePublished: date,
+                    author: Array.isArray(contributors) ? (typeof contributors[0] === 'string' ? contributors[0] : contributors[0]?.name) : typeof contributors === 'string' ? contributors : undefined,
+                    keywords: Array.isArray(tags) ? tags.map((t: any) => typeof t === 'string' ? t : t.label) : undefined,
+                })}
             />
 
             <ReaderView

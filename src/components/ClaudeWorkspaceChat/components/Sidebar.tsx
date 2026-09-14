@@ -61,27 +61,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
+                <nav aria-label="Chat history" className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
                     {chats.length === 0 ? (
-                        <div className="px-2 py-6 text-center text-xs text-muted">No chats yet</div>
+                        <div role="status" aria-live="polite" className="px-2 py-6 text-center text-xs text-muted">No chats yet</div>
                     ) : (
-                        chats.map((chat) => (
-                            <ChatItem
-                                key={chat.id}
-                                chat={chat}
-                                isActive={activeChatId === chat.id}
-                                onSelect={() => {
-                                    onSelectChat(chat.id)
-                                    if (window.innerWidth < 1024) onClose()
-                                }}
-                                onDelete={(e) => {
-                                    e.stopPropagation()
-                                    onDeleteChat(chat.id)
-                                }}
-                            />
-                        ))
+                        <ul className="space-y-0.5">
+                            {chats.map((chat) => (
+                                <li key={chat.id}>
+                                    <ChatItem
+                                        chat={chat}
+                                        isActive={activeChatId === chat.id}
+                                        onSelect={() => {
+                                            onSelectChat(chat.id)
+                                            if (window.innerWidth < 1024) onClose()
+                                        }}
+                                        onDelete={(e) => {
+                                            e.stopPropagation()
+                                            onDeleteChat(chat.id)
+                                        }}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
                     )}
-                </div>
+                </nav>
 
                 {/* Token Quota Meter */}
                 <SidebarUsageMeter />
@@ -154,14 +157,20 @@ const ChatItem: React.FC<ChatItemProps> = ({
 }) => {
     return (
         <div
-            onClick={onSelect}
-            className={`group relative flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-sans transition-all duration-150 ${
+            className={`group relative flex items-center justify-between rounded-md text-[13px] font-sans transition-all duration-150 ${
                 isActive
                     ? 'bg-accent border border-primary/40 text-primary font-semibold shadow-2xs'
                     : 'text-secondary border border-transparent hover:bg-accent/70 hover:text-primary'
             }`}
         >
-            <span className="truncate pr-7">{chat.title || 'New chat'}</span>
+            <button
+                type="button"
+                onClick={onSelect}
+                aria-current={isActive ? 'page' : undefined}
+                className="flex-1 truncate text-left px-2.5 py-1.5 cursor-pointer outline-none rounded-md focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+                <span className="truncate pr-7 block w-full">{chat.title || 'New chat'}</span>
+            </button>
             <div className="absolute right-1 flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                     onClick={onDelete}

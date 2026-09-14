@@ -15,6 +15,8 @@ const SkeletonRow = () => (
 
 type ResultListProps = {
     loading: boolean
+    error: boolean
+    retry: () => void
     query: string
     groups: ResultGroup[]
     activeFilter: string | null
@@ -28,6 +30,8 @@ type ResultListProps = {
 
 export default function ResultList({
     loading,
+    error,
+    retry,
     query,
     groups,
     activeFilter,
@@ -48,10 +52,28 @@ export default function ResultList({
         )
     }
 
+    if (error) {
+        return (
+            <div className="m-0 px-2.5 py-4 text-center">
+                <p className="mb-2 text-sm text-secondary">Search failed</p>
+                <button
+                    onClick={retry}
+                    className="rounded-md border border-primary bg-accent px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        )
+    }
+
     if (groups.length === 0) {
         return !query && activeFilter ? (
             <p className="m-0 px-2.5 py-4 text-center text-sm text-secondary">
                 Type to search {configForType(activeFilter).label.toLowerCase()}...
+            </p>
+        ) : query ? (
+            <p className="m-0 px-2.5 py-4 text-center text-sm text-secondary">
+                No results
             </p>
         ) : null
     }

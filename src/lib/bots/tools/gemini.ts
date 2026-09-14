@@ -210,7 +210,8 @@ export async function geminiToolCompletion(params: {
             baseBody.tools = [{ functionDeclarations: toGeminiFunctionDeclarations(params.tools || OPENAI_CHAT_TOOLS) }]
             baseBody.toolConfig = { functionCallingConfig }
         }
-        const thinkingConfig = { thinkingBudget: params.omitTools ? 48 : 96, includeThoughts: true }
+        const thinkingBudget = Math.min(512, params.maxTokens || 512)
+        const thinkingConfig = { thinkingBudget, includeThoughts: true }
         let res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -219,7 +220,7 @@ export async function geminiToolCompletion(params: {
                 ...baseBody,
                 generationConfig: {
                     temperature: 0.6,
-                    maxOutputTokens: params.maxTokens || (params.omitTools ? 48 : 8192),
+                    maxOutputTokens: params.maxTokens || (params.omitTools ? 512 : 8192),
                     thinkingConfig,
                 },
             }),

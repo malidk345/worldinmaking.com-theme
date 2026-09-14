@@ -3,7 +3,7 @@
  * `images.remotePatterns`. Anything else must render as a plain <img>.
  */
 export const NEXT_IMAGE_HOSTS =
-    /^(res\.cloudinary\.com|user-images\.githubusercontent\.com|raw\.githubusercontent\.com|(?:[\w-]+\.)?posthog\.com|(?:[\w-]+\.)?supabase\.co|(?:[\w-]+\.)?supabase\.in)$/i
+    /^(res\.cloudinary\.com|user-images\.githubusercontent\.com|raw\.githubusercontent\.com|(?:[\w-]+\.)?posthog\.com|(?:[\w-]+\.)?supabase\.co|(?:[\w-]+\.)?supabase\.in|(?:[\w-]+\.)+workers\.dev|(?:[\w-]+\.)*worldinmaking\.com)$/i
 
 export function canOptimizeRemoteImage(src: string): boolean {
     const value = (src || '').trim()

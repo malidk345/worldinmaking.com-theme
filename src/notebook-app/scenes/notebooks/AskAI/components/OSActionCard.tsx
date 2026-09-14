@@ -1,50 +1,64 @@
-import { LemonButton } from '~nb-lib/lemon-ui/index'
-import { IconSparkles, IconPlus, IconCheck } from '@posthog/icons'
+import React from 'react'
 import type { OSActionCard as OSActionCardType } from '../types'
 
 interface OSActionCardProps {
     action: OSActionCardType
     onExecute: () => void
+    isStreaming?: boolean
 }
 
 /**
- * Renders an executable OS action card below an AI reply.
- * Supports create_notebook, insert_notebook_block, create_forum_topic, open_window.
+ * Clean, minimal action card for notebook additions.
+ * Uses unified font, clean hierarchy, and only essential controls.
  */
-export function OSActionCard({ action, onExecute }: OSActionCardProps): JSX.Element {
+export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardProps): JSX.Element {
+    const content = action.payload?.content?.trim()
+    const isAnnotation = action.type === 'annotate_notebook'
+    const buttonLabel = isAnnotation ? 'Annotate' : 'Add to notebook'
+
+
     return (
-        <div className="mt-2.5 p-2.5 rounded-xl bg-surface-primary border border-[var(--color-border-primary)] shadow-2xs space-y-1.5">
+        <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary font-sans">
             <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                    <IconSparkles className="size-4 text-amber-500 shrink-0" />
-                    <div className="min-w-0">
-                        <span className="font-semibold text-xs text-primary block truncate">
-                            {action.title}
+                <p className="m-0 font-medium text-[13px] text-primary truncate">
+                    {action.title || buttonLabel}
+                </p>
+
+                <div className="shrink-0">
+                    {action.executed ? (
+                        <span className="text-[11.5px] text-muted font-medium">
+                            Added ✓
                         </span>
-                        <span className="text-[10px] text-muted block truncate">
-                            {action.description}
+                    ) : isStreaming ? (
+                        <span className="text-[11.5px] text-muted animate-pulse">
+                            Preparing…
                         </span>
-                    </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onExecute()
+                            }}
+                            className="rounded px-2.5 py-1 text-[12px] font-medium text-white bg-[#1E3A8A] hover:bg-[#1e40af] transition-colors cursor-pointer"
+                        >
+                            {buttonLabel}
+                        </button>
+                    )}
                 </div>
-                {action.executed ? (
-                    <span className="inline-flex items-center gap-1 shrink-0 text-[11px] font-medium text-emerald-700">
-                        <IconCheck className="size-3.5" />
-                        Done
-                    </span>
-                ) : (
-                    <LemonButton
-                        size="xsmall"
-                        type="primary"
-                        icon={<IconPlus />}
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onExecute()
-                        }}
-                    >
-                        Run
-                    </LemonButton>
-                )}
             </div>
+
+            {action.description && (
+                <p className="mt-1 mb-0 text-[12px] text-secondary leading-relaxed">
+                    {action.description}
+                </p>
+            )}
+
+            {content && (
+                <div className="mt-2 rounded border border-primary/20 bg-primary/60 p-2 text-[12px] leading-relaxed text-secondary whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+                    {content}
+                </div>
+            )}
         </div>
     )
 }

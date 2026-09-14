@@ -2,7 +2,11 @@ import React, { useState, useEffect, Component, useCallback, useRef, useMemo } f
 import type {
     MarkdownNotebookAskAIRequest,
     MarkdownNotebookUndoApi,
+    NotebookCollaborationConflict,
 } from './lib/components/MarkdownNotebook/notebookEditorModel'
+import { LemonBanner } from '../components/LemonUI/LemonBanner'
+import { LemonButton } from '../components/LemonUI/LemonButton'
+import { LemonModal } from '../components/LemonUI/LemonModal'
 import { planOpenNotebookRemoteApply, pullNotebookById } from './scenes/notebooks/notebookRemote'
 import { useNotebookPresence } from './scenes/notebooks/notebookPresence'
 import {
@@ -10,7 +14,12 @@ import {
     replaceInlineRangeInMarkdown,
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
-import { parseMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { parseMarkdownNotebook, serializeMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { upsertAnnotation } from './lib/components/MarkdownNotebook/annotations'
+import { applyRefOnNotebookSpan, resolveAutonomousPlacement, collectExistingRefSpans } from './lib/components/MarkdownNotebook/annotationPlacement'
+import { createNotebookRefId } from './lib/components/MarkdownNotebook/notebookEditorModel'
+import type { InlinePhilosopherNote } from './lib/components/MarkdownNotebook/types'
+import { MarkdownTextDiff } from './lib/components/MarkdownNotebook/MarkdownTextDiff'
 import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebook/freshlyInserted'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import {
@@ -181,7 +190,9 @@ export function App() {
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
   const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
-  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline'>('local')
+  const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local' | 'error' | 'offline' | 'conflict'>('local')
+  const [conflictDetails, setConflictDetails] = useState<{ conflicts: NotebookCollaborationConflict[] } | null>(null)
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
 
@@ -800,6 +811,7 @@ export function App() {
       setMarkdown(next)
       const label = mode === 'replace' ? 'Full document rewrite' : 'Inserted artifact'
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: label })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
 
       // Mark the newly inserted nodes to trigger smooth highlight glow
       try {
@@ -844,6 +856,7 @@ export function App() {
       const updated = { ...target, title: newTitle }
       setCurrentNotebook(updated)
       saveNotebook(updated, { snapshot: true, snapshotLabel: `Rename: ${newTitle}` })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
       if (appWindow) {
         appActions.setWindowTitle(appWindow, newTitle)
       }
@@ -871,15 +884,142 @@ export function App() {
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+    }
+
+
+    const handleAddAnnotation = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        notebookId?: string
+        spanText: string
+        note: string
+      }>
+      const spanText = String(customEvent.detail?.spanText || '').trim()
+      const note = String(customEvent.detail?.note || '').trim()
+      if (!spanText || !note) {
+        setCloudMessage({ type: 'error', text: 'span_text and note are required' })
+        appActions?.addToast({ type: 'error', message: 'Missing span or note content for annotation' })
+        return
+      }
+
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+
+      const current = markdownRef.current || target.content || ''
+      const document = parseMarkdownNotebook(current)
+      const used = collectExistingRefSpans(document.nodes)
+      const placement = resolveAutonomousPlacement(document.nodes, spanText, 'span', used)
+
+      if (placement.kind !== 'span') {
+        setCloudMessage({ type: 'error', text: 'Could not locate the exact phrase in the notebook' })
+        appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
+        return
+      }
+
+      const refId = createNotebookRefId()
+      const nextNodes = applyRefOnNotebookSpan(document.nodes, placement.span, refId)
+
+      const newNote: InlinePhilosopherNote = {
+        by: 'wimai',
+        name: 'WIM AI',
+        text: note,
+        kind: 'bot',
+        createdAt: new Date().toISOString(),
+      }
+
+      const nextAnnotations = upsertAnnotation(document.annotations, refId, [newNote], { scope: 'span' })
+      const nextDocument = { ...document, nodes: nextNodes, annotations: nextAnnotations }
+      const nextMarkdown = serializeMarkdownNotebook(nextDocument)
+
+      setCurrentNotebook(target)
+      setMarkdown(nextMarkdown)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: nextMarkdown }, { snapshot: true, snapshotLabel: 'Added annotation' })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+    }
+
+    const handleAddFootnote = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        text: string
+        marker?: string
+        spanText?: string
+        notebookId?: string
+      }>
+      const text = String(customEvent.detail?.text || '').trim()
+      if (!text) return
+      let target: StoredNotebook | null = notebookRef.current
+      if (customEvent.detail?.notebookId) {
+        const bound = getNotebook(customEvent.detail.notebookId)
+        if (bound) target = bound
+      }
+      if (!target) return
+      const current = markdownRef.current || target.content || ''
+      const spanText = String(customEvent.detail?.spanText || '').trim()
+
+      let marker = String(customEvent.detail?.marker || '').trim()
+      if (!marker) {
+        const matches = current.match(/\[\^([0-9]+)\]/g) || []
+        const existingNums = matches
+          .map((m) => parseInt(m.slice(2, -1), 10))
+          .filter((n) => !isNaN(n))
+        const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 1
+        marker = String(nextNum)
+      }
+
+      const footnoteAnchor = `[^${marker}]`
+      const footnoteDef = `[^${marker}]: ${text}`
+
+      let next = current
+      if (spanText && next.includes(spanText)) {
+        const spanIndex = next.indexOf(spanText)
+        const afterSpan = next.slice(spanIndex + spanText.length, spanIndex + spanText.length + footnoteAnchor.length)
+        if (afterSpan !== footnoteAnchor) {
+          next = next.slice(0, spanIndex + spanText.length) + footnoteAnchor + next.slice(spanIndex + spanText.length)
+        }
+      } else {
+        const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
+        if (selection && next.includes(selection)) {
+          const selIdx = next.indexOf(selection)
+          next = next.slice(0, selIdx + selection.length) + footnoteAnchor + next.slice(selIdx + selection.length)
+        } else {
+          const fnMatch = next.search(/\n\[\^[a-zA-Z0-9_-]+\]:/)
+          if (fnMatch !== -1) {
+            next = next.slice(0, fnMatch) + footnoteAnchor + next.slice(fnMatch)
+          } else {
+            next = next.trimEnd() ? `${next.trimEnd()}${footnoteAnchor}\n\n` : `${footnoteAnchor}\n\n`
+          }
+        }
+      }
+
+      const existingDefRegex = new RegExp(`^\\s*\\[\\^${marker}\\]:.*$`, 'm')
+      if (existingDefRegex.test(next)) {
+        next = next.replace(existingDefRegex, footnoteDef)
+      } else {
+        next = `${next.trimEnd()}\n\n${footnoteDef}\n`
+      }
+
+      setCurrentNotebook(target)
+      setMarkdown(next)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: `Added footnote [^${marker}]` })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
     window.addEventListener('wimNotebookInsertText', handleInsertText)
     window.addEventListener('wimNotebookSetTitle', handleSetTitle)
     window.addEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+    window.addEventListener('wimNotebookAddFootnote', handleAddFootnote)
+    window.addEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     return () => {
       window.removeEventListener('wimNotebookInsertText', handleInsertText)
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
       window.removeEventListener('wimNotebookReplaceSelection', handleReplaceSelection)
+      window.removeEventListener('wimNotebookAddFootnote', handleAddFootnote)
+      window.removeEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
     }
   }, [appWindow, appActions, openNotebookWindow])
 
@@ -939,6 +1079,34 @@ export function App() {
     const heading = val.match(/^\s*#\s+(.+?)\s*$/m)?.[1]?.trim()
     saveNotebook({ ...previous, content: val, ...(heading ? { title: heading } : {}) })
   }, [])
+
+  const handleConflict = useCallback((conflicts: NotebookCollaborationConflict[]) => {
+    if (conflicts.length > 0) {
+      setSyncStatus('conflict')
+      setConflictDetails({ conflicts })
+    }
+  }, [])
+
+  const resolveConflictKeepLocal = useCallback(() => {
+    setSyncStatus('edited')
+    setConflictDetails(null)
+    const current = notebookRef.current
+    if (current) {
+      saveNotebook({ ...current, content: markdownRef.current }, { snapshot: true, snapshotLabel: 'Kept local on conflict' })
+    }
+  }, [])
+
+  const resolveConflictTakeRemote = useCallback(() => {
+    setSyncStatus('saved')
+    const remoteMarkdownStr = conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown
+    setMarkdown(remoteMarkdownStr)
+    setMarkdownVersion((v) => v + 1)
+    setConflictDetails(null)
+    const current = notebookRef.current
+    if (current) {
+      saveNotebook({ ...current, content: remoteMarkdownStr }, { snapshot: true, snapshotLabel: 'Took remote on conflict' })
+    }
+  }, [conflictDetails, remoteMarkdown])
 
   useEffect(() => {
     setOutlineMarkdown(markdown)
@@ -1099,6 +1267,48 @@ export function App() {
                     You can read this notebook. Ask the owner for edit access if you need to write.
                   </div>
                 )}
+                {syncStatus === 'conflict' && (
+                  <div className={`mb-4 ${NOTEBOOK_PRODUCT_SCOPE_CLASS}`}>
+                    <LemonBanner
+                      type="warning"
+                      action={{
+                        children: 'Keep local',
+                        onClick: resolveConflictKeepLocal,
+                      }}
+                    >
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span>Two devices edited this note. Review the text, then choose which to keep.</span>
+                        <LemonButton size="small" type="secondary" onClick={resolveConflictTakeRemote}>
+                          Take remote
+                        </LemonButton>
+                        <LemonButton
+                          size="small"
+                          type="secondary"
+                          onClick={() => setIsReviewModalOpen(true)}
+                        >
+                          Review
+                        </LemonButton>
+                      </div>
+                    </LemonBanner>
+
+                    <LemonModal
+                      isOpen={isReviewModalOpen}
+                      onClose={() => setIsReviewModalOpen(false)}
+                      title="Review Remote Changes"
+                      footer={
+                        <div className="flex justify-end gap-2 w-full">
+                          <LemonButton type="secondary" onClick={() => setIsReviewModalOpen(false)}>Cancel</LemonButton>
+                          <LemonButton type="secondary" onClick={() => { setIsReviewModalOpen(false); resolveConflictKeepLocal(); }}>Keep local</LemonButton>
+                          <LemonButton type="primary" onClick={() => { setIsReviewModalOpen(false); resolveConflictTakeRemote(); }}>Take remote</LemonButton>
+                        </div>
+                      }
+                    >
+                      <div className="p-3 text-sm whitespace-pre-wrap font-mono overflow-y-auto max-h-[60vh] border border-primary bg-primary text-muted rounded">
+                        <MarkdownTextDiff before={markdown} after={conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown} />
+                      </div>
+                    </LemonModal>
+                  </div>
+                )}
                   <React.Suspense
                     fallback={
                       <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
@@ -1111,6 +1321,7 @@ export function App() {
                       remoteValue={remoteMarkdown}
                       remoteVersion={currentNotebook.version}
                       deferRemoteValue={syncStatus === 'edited'}
+                      onConflict={handleConflict}
                       remoteCarets={presence.carets}
                       onCaretChange={presence.publishCaret}
                       clientId={presence.clientId}

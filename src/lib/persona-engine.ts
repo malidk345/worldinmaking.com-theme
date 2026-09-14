@@ -59,22 +59,22 @@ export const PHILOSOPHER_BOTS: ReadonlyArray<{
     displayName: string
     shortStance: string
 }> = [
-    { id: 'nietzsche', name: 'Nietzsche', displayName: 'Friedrich Nietzsche', shortStance: 'Vitalist perspectivism' },
-    { id: 'marx', name: 'Marx', displayName: 'Karl Marx', shortStance: 'Historical materialism' },
-    { id: 'hegel', name: 'Hegel', displayName: 'G. W. F. Hegel', shortStance: 'Absolute idealism' },
-    { id: 'sartre', name: 'Sartre', displayName: 'Jean-Paul Sartre', shortStance: 'Existential phenomenology' },
-    { id: 'heidegger', name: 'Heidegger', displayName: 'Martin Heidegger', shortStance: 'Being and Dasein' },
-    { id: 'deleuze', name: 'Deleuze', displayName: 'Gilles Deleuze', shortStance: 'Difference & becoming' },
-    { id: 'spinoza', name: 'Spinoza', displayName: 'Baruch Spinoza', shortStance: 'Substance monism' },
-    { id: 'baudrillard', name: 'Baudrillard', displayName: 'Jean Baudrillard', shortStance: 'Simulacra & hyperreality' },
-    { id: 'althusser', name: 'Althusser', displayName: 'Louis Althusser', shortStance: 'Structural Marxism' },
-    { id: 'derrida', name: 'Derrida', displayName: 'Jacques Derrida', shortStance: 'Deconstruction' },
-    { id: 'weber', name: 'Weber', displayName: 'Max Weber', shortStance: 'Social action & rationalization' },
-    { id: 'adorno', name: 'Adorno', displayName: 'Theodor W. Adorno', shortStance: 'Critical theory' },
-    { id: 'zizek', name: 'Zizek', displayName: 'Slavoj Žižek', shortStance: 'Ideology critique' },
-    { id: 'lenin', name: 'Lenin', displayName: 'V. I. Lenin', shortStance: 'Revolutionary praxis' },
-    { id: 'arendt', name: 'Arendt', displayName: 'Hannah Arendt', shortStance: 'Political action & plurality' },
-    { id: 'rand', name: 'Rand', displayName: 'Ayn Rand', shortStance: 'Objectivist rationalism' },
+    { id: 'nietzsche', name: 'Nietzsche', displayName: 'Nietzsche', shortStance: 'Vitalist perspectivism' },
+    { id: 'marx', name: 'Marx', displayName: 'Marx', shortStance: 'Historical materialism' },
+    { id: 'hegel', name: 'Hegel', displayName: 'Hegel', shortStance: 'Absolute idealism' },
+    { id: 'sartre', name: 'Sartre', displayName: 'Sartre', shortStance: 'Existential phenomenology' },
+    { id: 'heidegger', name: 'Heidegger', displayName: 'Heidegger', shortStance: 'Being and Dasein' },
+    { id: 'deleuze', name: 'Deleuze', displayName: 'Deleuze', shortStance: 'Difference & becoming' },
+    { id: 'spinoza', name: 'Spinoza', displayName: 'Spinoza', shortStance: 'Substance monism' },
+    { id: 'baudrillard', name: 'Baudrillard', displayName: 'Baudrillard', shortStance: 'Simulacra & hyperreality' },
+    { id: 'althusser', name: 'Althusser', displayName: 'Althusser', shortStance: 'Structural Marxism' },
+    { id: 'derrida', name: 'Derrida', displayName: 'Derrida', shortStance: 'Deconstruction' },
+    { id: 'weber', name: 'Weber', displayName: 'Weber', shortStance: 'Social action & rationalization' },
+    { id: 'adorno', name: 'Adorno', displayName: 'Adorno', shortStance: 'Critical theory' },
+    { id: 'zizek', name: 'Zizek', displayName: 'Žižek', shortStance: 'Ideology critique' },
+    { id: 'lenin', name: 'Lenin', displayName: 'Lenin', shortStance: 'Revolutionary praxis' },
+    { id: 'arendt', name: 'Arendt', displayName: 'Arendt', shortStance: 'Political action & plurality' },
+    { id: 'rand', name: 'Rand', displayName: 'Rand', shortStance: 'Objectivist rationalism' },
 ]
 
 const PERSONA_LIBRARY: Record<string, Partial<BotPersona>> = {
