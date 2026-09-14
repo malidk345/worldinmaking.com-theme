@@ -107,11 +107,42 @@ describe('Roadmap AI Tools Execution', () => {
             const parsed = JSON.parse(res.result)
             expect(parsed.ok).toBe(true)
             expect(parsed.preset).toBe('deep_reading')
-            expect(parsed.layout).toBe('split')
+            expect(parsed.layout).toBe('tile')
             expect(parsed.left_path).toBe('/posts')
             expect(parsed.right_path).toBe('/notebooks')
             expect(res.action).toBeDefined()
             expect(res.action?.type).toBe('manage_windows')
+        })
+
+        it('applies studio workspace preset', async () => {
+            const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'studio' }) })
+            const parsed = JSON.parse(res.result)
+            expect(parsed.layout).toBe('tile')
+            expect(parsed.left_path).toBe('/notebooks')
+            expect(parsed.right_path).toBe('/workspace-chat')
+        })
+
+        it('applies minimal workspace preset', async () => {
+            const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'minimal' }) })
+            const parsed = JSON.parse(res.result)
+            expect(parsed.layout).toBe('focus')
+            expect(parsed.path).toBe('/notebooks')
+        })
+
+        it('applies split_dual workspace preset', async () => {
+            const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'split_dual' }) })
+            const parsed = JSON.parse(res.result)
+            expect(parsed.layout).toBe('tile')
+            expect(parsed.left_path).toBe('/notebooks')
+            expect(parsed.right_path).toBe('/posts')
+        })
+
+        it('applies research workspace preset', async () => {
+            const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'research' }) })
+            const parsed = JSON.parse(res.result)
+            expect(parsed.layout).toBe('tile')
+            expect(parsed.left_path).toBe('/community')
+            expect(parsed.right_path).toBe('/notebooks')
         })
 
         it('returns error when preset_name is missing', async () => {

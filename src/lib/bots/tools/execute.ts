@@ -856,28 +856,28 @@ function executeArrangeWorkspacePreset(
 
     switch (p) {
         case 'deep_reading':
-            action = 'split'
+            action = 'tile'
             leftPath = '/posts'
             rightPath = '/notebooks'
             break
         case 'studio':
-            action = 'split'
+            action = 'tile'
             leftPath = '/notebooks'
-            rightPath = '/workspace'
+            rightPath = '/workspace-chat'
             break
         case 'minimal':
             action = 'focus'
             focusPath = '/notebooks'
             break
         case 'split_dual':
-            action = 'split'
+            action = 'tile'
             leftPath = host?.path || '/notebooks'
             rightPath = '/posts'
             break
         case 'research':
         default:
             action = 'tile'
-            leftPath = '/search'
+            leftPath = '/community'
             rightPath = '/notebooks'
             break
     }
@@ -889,9 +889,9 @@ function executeArrangeWorkspacePreset(
             ok: true,
             preset: p,
             layout: action,
-            path: focusPath,
-            left_path: leftPath,
-            right_path: rightPath,
+            path: executed.action.payload?.path,
+            left_path: executed.action.payload?.left_path,
+            right_path: executed.action.payload?.right_path,
         }),
         action: {
             ...executed.action,
