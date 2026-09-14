@@ -107,7 +107,7 @@ describe('Roadmap AI Tools Execution', () => {
             const parsed = JSON.parse(res.result)
             expect(parsed.ok).toBe(true)
             expect(parsed.preset).toBe('deep_reading')
-            expect(parsed.layout).toBe('tile')
+            expect(parsed.layout).toBe('split')
             expect(parsed.left_path).toBe('/posts')
             expect(parsed.right_path).toBe('/notebooks')
             expect(res.action).toBeDefined()
@@ -117,7 +117,7 @@ describe('Roadmap AI Tools Execution', () => {
         it('applies studio workspace preset', async () => {
             const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'studio' }) })
             const parsed = JSON.parse(res.result)
-            expect(parsed.layout).toBe('tile')
+            expect(parsed.layout).toBe('split')
             expect(parsed.left_path).toBe('/notebooks')
             expect(parsed.right_path).toBe('/workspace-chat')
         })
@@ -132,7 +132,7 @@ describe('Roadmap AI Tools Execution', () => {
         it('applies split_dual workspace preset', async () => {
             const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'split_dual' }) })
             const parsed = JSON.parse(res.result)
-            expect(parsed.layout).toBe('tile')
+            expect(parsed.layout).toBe('split')
             expect(parsed.left_path).toBe('/notebooks')
             expect(parsed.right_path).toBe('/posts')
         })
@@ -141,7 +141,7 @@ describe('Roadmap AI Tools Execution', () => {
             const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'research' }) })
             const parsed = JSON.parse(res.result)
             expect(parsed.layout).toBe('tile')
-            expect(parsed.left_path).toBe('/community')
+            expect(parsed.left_path).toBe('/scratchpad')
             expect(parsed.right_path).toBe('/notebooks')
         })
 
@@ -153,6 +153,16 @@ describe('Roadmap AI Tools Execution', () => {
             })
             expect(res.ok).toBe(false)
             expect(res.result).toContain('preset_name is required')
+        })
+
+        it('returns error when preset is unknown', async () => {
+            const res = await executeToolCall({
+                id: 'call-7',
+                name: 'arrange_workspace_preset',
+                argumentsJson: JSON.stringify({ preset: 'unknown_preset_foo' }),
+            })
+            expect(res.ok).toBe(false)
+            expect(res.result).toContain('unknown preset')
         })
     })
 
