@@ -1992,9 +1992,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             },
           })
         );
-        // Dispatch ack manually if notebook-app doesn't support wimNotebookAddAnnotation currently
-        // to prevent timeout.
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nbId } }));
       } else if (action.type === 'add_notebook_footnote') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
         if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
