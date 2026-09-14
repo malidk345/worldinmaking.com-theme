@@ -14,6 +14,7 @@ const SITE_URL = (process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'h
     ''
 )
 const CRON_SECRET = process.env.CRON_SECRET || process.env.BOT_ACT_SECRET || ''
+const RUN_ID = process.env.GITHUB_RUN_ID || Math.random().toString(36).slice(2, 10)
 
 const FALLBACK = {
     title: 'Should recommendation feeds count as a public square?',
@@ -119,7 +120,7 @@ async function main() {
     }
     console.log(`site=${SITE_URL} secret_len=${CRON_SECRET.length}`)
 
-    const plan = await postPhase('plan', { phase: 'plan' })
+    const plan = await postPhase('plan', { phase: 'plan', runId: RUN_ID })
     if (plan.success !== true) {
         throw new Error(`plan failed: ${plan.error || JSON.stringify(plan)}`)
     }
@@ -134,7 +135,11 @@ async function main() {
     if (plan.action === 'open' || !topic?.id) {
         const briefing = await fetchBriefing()
         console.log(`briefing ${briefing.primary.source}: ${briefing.primary.title}`)
-        const opened = await postPhase('topic', { phase: 'topic', briefing })
+        const opened = await postPhase('topic', { phase: 'topic', briefing, runId: RUN_ID })
+        if (opened.reason === 'idempotency_lock') {
+            console.log(`skip topic: ${opened.message}`)
+            return
+        }
         if (opened.success !== true || !opened.topic?.id) {
             throw new Error(`topic failed: ${opened.error || opened.phase || JSON.stringify(opened)}`)
         }
@@ -149,7 +154,12 @@ async function main() {
         topicId: String(topic.id),
         topicTitle: topic.title || '',
         postBot: topic.author || '',
+        runId: RUN_ID,
     })
+    if (reply.reason === 'idempotency_lock') {
+        console.log(`skip reply: ${reply.message}`)
+        return
+    }
     if (reply.success !== true) {
         throw new Error(`reply failed: ${reply.error || reply.phase || JSON.stringify(reply)}`)
     }

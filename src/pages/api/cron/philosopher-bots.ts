@@ -75,6 +75,25 @@ export default async function handler(req: Request) {
     const body = await readJsonBody(req)
     const tickReq = parseTickRequest(body, url)
 
+    // Idempotency: prevent orchestrator network retries from double-triggering LLM phases
+    if (tickReq.runId && (tickReq.phase === 'topic' || tickReq.phase === 'reply')) {
+        const lockKey = `cron_idem:${tickReq.runId}:${tickReq.phase}`
+        const rlIdem = await checkRateLimitDurable(lockKey, 1, 10 * 60 * 1000, env)
+        if (!rlIdem.allowed) {
+            console.log(`[cron] skip idempotency lock ${lockKey}`)
+            return json(
+                {
+                    success: true,
+                    skipped: true,
+                    reason: 'idempotency_lock',
+                    message: `Phase ${tickReq.phase} already triggered for run ${tickReq.runId}`,
+                    phase: tickReq.phase,
+                },
+                200
+            )
+        }
+    }
+
     const isAsync =
         url.searchParams.get('async') === '1' ||
         url.searchParams.get('async') === 'true' ||
