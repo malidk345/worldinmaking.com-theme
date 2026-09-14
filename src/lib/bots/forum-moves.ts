@@ -66,7 +66,7 @@ export function instructionForForumMove(move: ForumMove): string {
 
 /** First line of a model opening must be a motion, not a lede. */
 export function clipForumTitle(raw: string): string {
-    let title = String(raw || '')
+    const title = String(raw || '')
         .replace(/^#+\s*/, '')
         .replace(/^["'`]+|["'`]+$/g, '')
         .replace(/\s+/g, ' ')

@@ -847,7 +847,7 @@ function executeVerifiedCorpusSearch(
     query: string,
     philosopher?: string,
     work?: string,
-    maxResults: number = 5
+    maxResults = 5
 ): Omit<ToolExecution, 'callId' | 'name'> {
     const searchRes = searchPhilosophicalCorpus(query, {
         thinker: philosopher,
@@ -1031,9 +1031,9 @@ function processFootnotes(rawContent: string, includeFootnotes: boolean): string
     const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g;
     const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/;
 
-    let lines = rawContent.split('\n');
-    let contentLines: string[] = [];
-    let defs: string[] = [];
+    const lines = rawContent.split('\n');
+    const contentLines: string[] = [];
+    const defs: string[] = [];
     let inDef = false;
     let currentDef: string[] = [];
 
@@ -1192,8 +1192,8 @@ function compileNotebookToText(title: string, rawContent: string): string {
 export function executeExportNotebook(
     format: string,
     notebookId?: string,
-    includeToc: boolean = true,
-    includeFootnotes: boolean = true,
+    includeToc = true,
+    includeFootnotes = true,
     host?: HostSnapshot
 ): { ok: boolean; result: string; artifact?: ArtifactDocument } {
     const requested = (notebookId || '').trim()
