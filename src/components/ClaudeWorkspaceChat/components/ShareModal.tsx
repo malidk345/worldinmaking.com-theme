@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chat } from '../types';
 import { X, Share2, Copy, Check, Download } from 'lucide-react';
 
@@ -20,6 +20,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onDisableShare,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      setCanShare(true);
+    }
+  }, []);
 
   if (!isOpen || !chat) return null;
 
@@ -31,6 +38,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({
+        title: chat.title,
+        url: shareUrl,
+      });
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        handleCopy();
+      }
+    }
   };
 
   const handleExportMarkdown = () => {
@@ -75,13 +95,31 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     value={shareUrl}
                     className="flex-1 rounded-xl border border-primary/20 bg-accent p-2.5 font-mono text-muted select-all"
                   />
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1 shrink-0 rounded-xl bg-primary px-3.5 py-2.5 font-semibold text-white hover:bg-accent"
-                  >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    <span>{copied ? 'Copied' : 'Copy'}</span>
-                  </button>
+                  {canShare ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={handleNativeShare}
+                        className="flex items-center gap-1 rounded-xl bg-primary px-3.5 py-2.5 font-semibold text-white hover:bg-primary/90"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        <span>Share</span>
+                      </button>
+                      <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-1 rounded-xl border border-primary/20 bg-accent px-3.5 py-2.5 font-semibold text-primary hover:bg-accent/80"
+                      >
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1 shrink-0 rounded-xl bg-primary px-3.5 py-2.5 font-semibold text-white hover:bg-accent"
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  )}
                 </div>
                 {onDisableShare && (
                   <button
