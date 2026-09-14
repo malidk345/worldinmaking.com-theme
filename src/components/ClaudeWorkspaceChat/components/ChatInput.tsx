@@ -497,7 +497,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       {activeModel?.avatarUrl ? (
                         <img src={activeModel.avatarUrl} alt={activeModel.name} className={`size-full ${activeModel.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                       ) : (
-                        <span className={`size-full flex items-center justify-center ${activeModel?.avatarBg || 'bg-[#1E3A8A]'}`}>
+                        <span className={`size-full flex items-center justify-center ${activeModel?.avatarBg || 'bg-accent text-primary'}`}>
                           {activeModel?.initials || activeModel?.name.slice(0, 2)}
                         </span>
                       )}
@@ -519,7 +519,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           {opt.avatarUrl ? (
                             <img src={opt.avatarUrl} alt={opt.name} className={`size-full ${opt.id === 'claude-3-7-sonnet' ? 'object-contain p-px' : 'object-cover'}`} />
                           ) : (
-                            <span className={`size-full flex items-center justify-center ${opt.avatarBg || 'bg-[#1E3A8A]'}`}>
+                            <span className={`size-full flex items-center justify-center ${opt.avatarBg || 'bg-accent text-primary'}`}>
                               {opt.initials || opt.name.slice(0, 2)}
                             </span>
                           )}
