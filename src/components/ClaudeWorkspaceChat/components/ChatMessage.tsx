@@ -96,67 +96,42 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
   };
 
   return (
-    <div className="my-2.5 rounded-xl border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-md">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-accent border-b border-primary/20 text-[11px] text-primary font-mono">
+    <div className="my-2.5 rounded border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-accent border-b border-primary/20 text-[12px] font-sans">
         <div className="flex items-center gap-2">
-          {isLive ? (
-            <span className="font-semibold text-primary flex items-center gap-1.5">
-              <span className="relative flex size-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
-              </span>
-              CANLI YAMA AKIŞI
-            </span>
-          ) : (
-            <span className="font-semibold text-primary flex items-center gap-1.5">
-              <span className="inline-block size-2 rounded-full bg-primary" />
-              WORKSTATION DIFF
-            </span>
-          )}
-          <span className="text-muted">|</span>
-          <span className="text-primary font-mono text-[10.5px]">+{addedLines.length}</span>
-          <span className="text-muted font-mono text-[10.5px]">-{removedLines.length}</span>
+          <span className="font-medium text-primary">
+            {isLive ? 'Patch stream' : 'Patch'}
+          </span>
+          <span className="text-muted text-[11px]">
+            +{addedLines.length} / -{removedLines.length}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={handleSplitScreen}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] text-primary hover:text-white bg-accent hover:bg-primary transition-colors cursor-pointer"
-            title="Notebook ile Yan Yana Aç (Split View)"
-          >
-            <Columns className="size-3" />
-            <span className="hidden sm:inline">Split View</span>
-          </button>
           {isLive ? (
-            <span
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10.5px] font-medium bg-primary/10 text-primary/70 border border-primary/20 select-none cursor-wait"
-              title="Yama satırları akıyor..."
-            >
-              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-              <span>Hazırlanıyor…</span>
+            <span className="text-[11px] text-muted animate-pulse select-none">
+              Preparing…
             </span>
           ) : (
             <button
               type="button"
               onClick={handleApplyToNotebook}
-              className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-medium transition-all duration-150 cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
                 applied
-                  ? 'bg-primary text-white font-semibold shadow-xs'
-                  : 'bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40 hover:scale-[1.02] active:scale-[0.98]'
+                  ? 'bg-primary text-white font-medium'
+                  : 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white'
               }`}
-              title="Değişikliği Canlı Notebook'a Uygula"
             >
               <Check className="size-3" />
-              <span>{applied ? 'Uygulandı ✓' : 'Dokümana Uygula'}</span>
+              <span>{applied ? 'Added ✓' : 'Add to notebook'}</span>
             </button>
           )}
           <button
             type="button"
             onClick={handleCopy}
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] transition-colors cursor-pointer ${
-              copied ? 'text-primary font-semibold bg-accent/40' : 'text-muted hover:text-primary'
+            className={`p-1 rounded text-muted hover:text-primary transition-colors cursor-pointer ${
+              copied ? 'text-primary font-medium' : ''
             }`}
-            title="Temiz Metni Kopyala"
+            title="Copy"
           >
             {copied ? <Check className="size-3 text-primary" /> : <Copy className="size-3" />}
           </button>
@@ -214,7 +189,7 @@ function ChatMessageCodeBlock({ language, code, isLive }: { language: string; co
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="my-1.5 rounded-xl border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-2xs">
+    <div className="my-1.5 rounded border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-2xs">
       <div className="flex items-center justify-between px-2.5 py-0.5 bg-accent border-b border-primary/20 text-[10.5px] text-muted font-mono">
         <span className="font-semibold text-primary">{language}</span>
         <button
@@ -262,7 +237,7 @@ function InquiryStatusCard({
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
-    <div role="status" aria-live="polite" className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+    <div role="status" aria-live="polite" className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
       <p className="m-0 font-medium">{title}</p>
       <p className="mt-1 mb-2 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
       {kind === 'quota' && onOpenByok ? (
@@ -299,7 +274,7 @@ function HumanTurnCard({
   const pending = turn.status === 'pending' && !disabled
   if (turn.kind === 'plan_approval') {
     return (
-      <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+      <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="m-0 font-medium">{turn.title}</p>
@@ -407,7 +382,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          <div className="relative w-fit max-w-[85%] rounded-2xl bg-primary/90 backdrop-blur-md border border-primary/60 px-3.5 py-1.5 text-primary text-[13.5px] sm:text-[14px] leading-normal font-sans shadow-2xs transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
+          <div className="relative w-fit max-w-[85%] rounded bg-primary/90 backdrop-blur-md border border-primary/60 px-3.5 py-1.5 text-primary text-[13.5px] sm:text-[14px] leading-normal font-sans shadow-2xs transition-transform duration-150 active:scale-[0.98] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.12)]">
             <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
 
@@ -511,12 +486,12 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           </div>
 
           {message.qualityGate === 'failed' && (
-            <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+            <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
               Quality check revised this reply
             </div>
           )}
           {message.qualityGate === 'skipped' && (
-            <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
+            <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2 text-[12.5px] text-muted">
               Quality check unavailable &mdash; reply shown ungated
             </div>
           )}
@@ -529,7 +504,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
-import { StylePresetId, FileAttachment, ModelId, ModelOption } from '../types';
+import { StylePresetId, FileAttachment, ModelId, ModelOption, AgentMode } from '../types';
 import {
   IconPlus,
   IconMicrophone,
@@ -19,7 +19,18 @@ import { useOptionalApp } from '../../../context/App';
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
 
-const SLASH_COMMANDS = [
+export type SlashCommandItem = {
+  id: string
+  label: string
+  hint: string
+  insert: string
+  mode?: AgentMode
+}
+
+const SLASH_COMMANDS: SlashCommandItem[] = [
+  { id: 'ask', label: '/ask', hint: 'Ask mode — conversational Q&A', insert: '', mode: 'ask' },
+  { id: 'plan', label: '/plan', hint: 'Plan mode — read-only research & outline', insert: '', mode: 'plan' },
+  { id: 'execute', label: '/execute', hint: 'Execute mode — tool execution & edits', insert: '', mode: 'execute' },
   { id: 'table', label: '/table', hint: 'Comparison table', insert: 'Make a clear comparison table of ' },
   { id: 'diagram', label: '/diagram', hint: 'Mermaid flowchart', insert: 'Draw a mermaid diagram of ' },
   { id: 'notebook', label: '/notebook', hint: 'Notebook draft', insert: 'Write a notebook-ready structured draft about ' },
@@ -28,7 +39,7 @@ const SLASH_COMMANDS = [
   { id: 'summarize', label: '/summarize', hint: 'Distill core points', insert: 'Summarize the core thesis and key points of ' },
   { id: 'simplify', label: '/simplify', hint: 'Plain intuitive explanation', insert: 'Explain in clear and intuitive language: ' },
   { id: 'chart', label: '/chart', hint: 'Interactive data chart', insert: 'Create an interactive chart visualizing ' },
-] as const
+]
 
 export const ASK_STARTERS = [
   { label: 'Edit this note', prompt: 'Edit the selected or bound note: ' },
@@ -41,8 +52,8 @@ interface ChatInputProps {
   onSendMessage: (prompt: string, attachments: FileAttachment[]) => void;
   onStopStreaming?: () => void;
   isStreaming: boolean;
-  selectedStylePreset: StylePresetId;
-  onChangeStylePreset: (preset: StylePresetId) => void;
+  selectedStylePreset?: StylePresetId;
+  onChangeStylePreset?: (preset: StylePresetId) => void;
   onScrollToBottom?: () => void;
   showScrollToBottom?: boolean;
   models?: any[];
@@ -56,6 +67,8 @@ interface ChatInputProps {
   onDismissNotebookContext?: () => void;
   pendingHumanTurn?: HumanTurn;
   onHumanRespond?: (action: 'run' | 'revise' | 'answer', payload?: string) => void;
+  agentMode?: AgentMode;
+  onAgentModeChange?: (mode: AgentMode) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -75,6 +88,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onDismissNotebookContext,
   pendingHumanTurn,
   onHumanRespond,
+  agentMode = 'ask',
+  onAgentModeChange,
 }) => {
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
@@ -151,8 +166,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     ? SLASH_COMMANDS.filter((command) => command.id.startsWith(slashQuery))
     : []
 
-  const applySlashCommand = (insert: string) => {
-    setPrompt(insert)
+  const applySlashCommand = (command: SlashCommandItem) => {
+    if (command.mode) {
+      onAgentModeChange?.(command.mode)
+      setPrompt('')
+    } else {
+      setPrompt(command.insert)
+    }
     setSlashIndex(0)
     requestAnimationFrame(() => textareaRef.current?.focus())
   }
@@ -171,7 +191,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       }
       if (e.key === 'Tab' || e.key === 'Enter') {
         e.preventDefault()
-        applySlashCommand(slashMatches[slashIndex]?.insert || slashMatches[0].insert)
+        const selected = slashMatches[slashIndex] || slashMatches[0]
+        if (selected) applySlashCommand(selected)
         return
       }
       if (e.key === 'Escape') {
@@ -317,12 +338,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-200 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] ${
+        className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.08)] ${
           isDragging
-            ? 'border-primary ring-2 ring-primary/40 shadow-md bg-accent'
+            ? 'border-[#1E3A8A] shadow-[0_0_12px_rgba(30,58,138,0.55),0_0_22px_rgba(30,58,138,0.28)] bg-accent'
             : prompt.trim().length > 0
-            ? 'border-primary ring-1 ring-primary/40 shadow-md focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-lg'
-            : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.5)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/35 focus-within:shadow-lg'
+            ? 'border-[#1E3A8A]/70 shadow-[0_0_8px_rgba(30,58,138,0.22)] hover:border-[#1E3A8A] hover:shadow-[0_0_8px_rgba(30,58,138,0.45),0_0_16px_rgba(30,58,138,0.22)] focus-within:border-[#1E3A8A] focus-within:shadow-[0_0_10px_rgba(30,58,138,0.5),0_0_20px_rgba(30,58,138,0.25)] dark:hover:shadow-[0_0_8px_rgba(59,130,246,0.35),0_0_18px_rgba(30,58,138,0.35)] dark:focus-within:shadow-[0_0_10px_rgba(59,130,246,0.45),0_0_22px_rgba(30,58,138,0.4)]'
+            : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:border-[#1E3A8A] hover:shadow-[0_0_8px_rgba(30,58,138,0.45),0_0_16px_rgba(30,58,138,0.22)] focus-within:border-[#1E3A8A] focus-within:shadow-[0_0_10px_rgba(30,58,138,0.5),0_0_20px_rgba(30,58,138,0.25)] dark:hover:shadow-[0_0_8px_rgba(59,130,246,0.35),0_0_18px_rgba(30,58,138,0.35)] dark:focus-within:shadow-[0_0_10px_rgba(59,130,246,0.45),0_0_22px_rgba(30,58,138,0.4)]'
         }`}
       >
         {/* Dropzone Drag Overlay */}
@@ -335,18 +356,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
 
         {slashMatches.length > 0 && (
-          <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded-md border border-primary bg-primary py-0.5 shadow-sm">
+          <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded border border-primary bg-primary py-0.5 shadow-md max-h-60 overflow-y-auto">
             {slashMatches.map((command, index) => (
               <button
                 key={command.id}
                 type="button"
-                onClick={() => applySlashCommand(command.insert)}
-                className={`flex w-full items-center justify-between px-2.5 py-1 text-left text-[12px] cursor-pointer ${
+                onClick={() => applySlashCommand(command)}
+                className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left text-[12px] cursor-pointer ${
                   index === slashIndex ? 'bg-accent' : 'hover:bg-accent'
                 }`}
               >
-                <span className="font-medium text-primary">{command.label}</span>
-                <span className="text-[11px] text-secondary">{command.hint}</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-medium text-primary">{command.label}</span>
+                  {command.mode && agentMode === command.mode && (
+                    <span className="px-1.5 py-0.5 rounded text-[9.5px] bg-[#1E3A8A] text-white font-semibold">
+                      active
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-secondary truncate ml-2">{command.hint}</span>
               </button>
             ))}
           </div>
@@ -421,7 +449,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
 
         {pendingHumanTurn ? (
-          <div className="mb-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+          <div className="mb-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="m-0 font-medium">{pendingHumanTurn.title}</p>
@@ -528,7 +556,36 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <IconPlus className={TOOLBAR_ICON} />
               </button>
               {plusOpen && (
-                <div className="absolute bottom-full left-0 z-40 mb-1.5 w-56 overflow-hidden rounded-md border border-primary bg-primary py-0.5 shadow-sm">
+                <div className="absolute bottom-full left-0 z-40 mb-1.5 w-64 overflow-hidden rounded border border-primary bg-primary py-1 shadow-md">
+                  {/* Mode Selector */}
+                  <div className="px-2.5 pt-1 pb-0.5 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Agent Mode</span>
+                    {agentMode === 'plan' && (
+                      <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-mono">read-only</span>
+                    )}
+                  </div>
+                  <div className="px-1.5 py-1 flex items-center gap-1 bg-accent/40 rounded mx-2 mb-1.5 border border-primary/30">
+                    {(['ask', 'plan', 'execute'] as AgentMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => {
+                          onAgentModeChange?.(mode)
+                          setPlusOpen(false)
+                        }}
+                        className={`flex-1 px-1.5 py-1 text-[11px] font-medium rounded capitalize transition-all cursor-pointer text-center ${
+                          agentMode === mode
+                            ? 'bg-[#1E3A8A] text-white shadow-2xs font-semibold'
+                            : 'text-muted hover:text-primary hover:bg-accent/70'
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="my-0.5 border-t border-primary/30" />
+
                   <button
                     type="button"
                     onClick={() => {
@@ -539,21 +596,35 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   >
                     Attach a file
                   </button>
-                  <div className="my-0.5 border-t border-primary/40" />
-                  {SLASH_COMMANDS.map((command) => (
-                    <button
-                      key={command.id}
-                      type="button"
-                      onClick={() => {
-                        setPlusOpen(false)
-                        applySlashCommand(command.insert)
-                      }}
-                      className="flex w-full items-center justify-between gap-2 px-2.5 py-1 text-left text-[12px] hover:bg-accent cursor-pointer"
-                    >
-                      <span className="font-medium text-primary">{command.label}</span>
-                      <span className="truncate text-[11px] text-secondary">{command.hint}</span>
-                    </button>
-                  ))}
+
+                  <div className="my-0.5 border-t border-primary/30" />
+
+                  <div className="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Commands
+                  </div>
+                  <div className="max-h-52 overflow-y-auto">
+                    {SLASH_COMMANDS.map((command) => (
+                      <button
+                        key={command.id}
+                        type="button"
+                        onClick={() => {
+                          setPlusOpen(false)
+                          applySlashCommand(command)
+                        }}
+                        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[12px] hover:bg-accent cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-medium text-primary">{command.label}</span>
+                          {command.mode && agentMode === command.mode && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#1E3A8A] text-white font-semibold">
+                              active
+                            </span>
+                          )}
+                        </div>
+                        <span className="truncate text-[11px] text-secondary">{command.hint}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -635,21 +706,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary shadow-2xs hover:bg-accent cursor-pointer transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1E3A8A] bg-[#1E3A8A] shadow-2xs hover:bg-[#1e40af] cursor-pointer transition-colors"
                 title="Stop generating"
                 aria-label="Stop generating"
               >
-                <div className="size-2.5 rounded-[2px] bg-black dark:bg-white shadow-xs" />
+                <div className="size-2.5 rounded-[2px] bg-white shadow-xs" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={(!prompt.trim() && attachments.length === 0) || quotaBlocksSend}
-                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs ${
+                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors ${
                    (prompt.trim() || attachments.length > 0) && !quotaBlocksSend
-                    ? 'bg-primary hover:bg-accent text-white cursor-pointer'
-                    : 'bg-accent/35 text-white/50 cursor-not-allowed'
+                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
+                    : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Send"
                 aria-label="Send message"

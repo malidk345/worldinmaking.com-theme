@@ -1566,8 +1566,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type);
-            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
+            const currentChat = chats.find((c) => c.id === targetChatId);
+            const mode = currentChat?.agentMode || 'ask';
+            const shouldAutoApply = mode === 'execute';
+            const applied = shouldAutoApply ? executeOSAction(assistantMessageId, parsed.action, targetChatId) : false;
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -2268,8 +2270,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
-          agentMode={activeChat?.agentMode}
-          onAgentModeChange={handleAgentModeChange}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -2356,6 +2356,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               draftNonce={composerDraftNonce}
               incomingAttachments={incomingAttachments}
               boundNotebookTitle={activeNotebookInfo?.title}
+              agentMode={activeChat?.agentMode || 'ask'}
+              onAgentModeChange={handleAgentModeChange}
 
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {

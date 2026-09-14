@@ -57,6 +57,73 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (UI Polish: Minimalist Unified-Font Redesign of 'Add to notebook' Card & Dual-Execution Fix)
+- **Scope:** Stripped out font inconsistencies (eliminated competing `font-mono` vs `font-sans` jumps) and visual clutter (removed "Split View" buttons, uppercase mono badges, multi-tier headers, expand/collapse line counters). Fixed the dual action execution bug where actions were simultaneously pasted into the notebook and rendered as an unapplied pending card; now aligned with `agentMode` (in `execute` mode the action applies directly without redundant pending cards, while in `ask`/`plan` modes it presents the review card without premature insertion).
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. Git push executed per explicit user command ("pushla").
+- **Changes Applied:**
+  1. `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`:
+     - Unified all text into single standard site font (`font-sans`).
+     - Removed redundant uppercase mono badge, "Split View" button, and nested preview headers.
+     - Kept only the essentials: clean title, single primary "Add to notebook" button (or "Added ✓" when applied), short description, and raw content preview.
+  2. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Cleaned `ChatMessageDiffBlock` to remove "Split View", shouting titles, and unified font to `font-sans` with site navy button.
+  3. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Resolved dual execution: in `execute` mode, `executeOSAction` auto-applies without leaving a confusing unexecuted card; in `ask`/`plan` mode, presents the card for user approval before modifying the notebook.
+
+### 2026-09-14 — Antigravity (UI Polish: Standardized Slash Menu and Message Border Radius to Site Header 'rounded')
+- **Scope:** Adjusted the border radius (`rounded`) of the slash command autocomplete popup, the `+` action dropdown popup, the user sent message bubbles, code/diff blocks, quality gate indicators, and artifact cards to strictly match the site header's classic OS design token (`rounded` / 4px).
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Changed the slash autocomplete menu container from `rounded-lg` to `rounded` matching the site header.
+     - Changed the `+` action dropdown container from `rounded-lg` to `rounded`.
+     - Changed inner mode segment container from `rounded-md` to `rounded`.
+  2. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Changed the sent user message bubble container from `rounded-2xl` to `rounded`.
+     - Standardized diff block, code block, quality gate notices, and artifact cards from `rounded-xl` / `rounded-2xl` to `rounded`.
+
+### 2026-09-14 — Antigravity (UI Polish: Moved Ask/Plan/Execute Mode Selector to ChatInput Slash Menu)
+- **Scope:** Cleaned up the chat header panel by removing the intrusive Ask/Plan/Execute segmented buttons and repositioned mode selection directly into the ChatInput slash command system (`/ask`, `/plan`, `/execute`) and the `+` action dropdown menu.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/Header.tsx`:
+     - Removed the segmented button group and mode lock text from the header bar, restoring clean window padding (`pr-24`) and unobstructed title display.
+  2. `src/components/ClaudeWorkspaceChat/index.tsx`:
+     - Disconnected mode props from `Header` and wired `agentMode` + `onAgentModeChange` into `ChatInput`.
+  3. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Added `/ask`, `/plan`, and `/execute` to `SLASH_COMMANDS` with active mode badges.
+     - Updated `applySlashCommand` and `handleKeyDown` to switch agent mode when selecting mode commands.
+     - Added a dedicated `Mode` segmented control and commands list inside the `+` popover dropdown menu.
+
+### 2026-09-14 — Antigravity (UI Polish: Rich Continuous Radial Navy #1E3A8A Aura on ChatInput)
+- **Scope:** Upgraded the navy blue (`#1E3A8A`) glow around WIM AI ChatInput container into a rich, luminous, and seamlessly blended ambient aura. Eliminated stepped/ringed bands by utilizing pure multi-radius radial shadows (`0 0 18px`, `0 0 36px`, `0 0 60px` / `0 0 20px`, `0 0 40px`, `0 0 70px`), preserving high visibility and depth with completely smooth Gaussian falloff on hover and focus.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Applied rich continuous radial navy shadows without stepped lines or harsh rings.
+     - Kept luminous visibility while achieving seamless background dispersion.
+
+### 2026-09-14 — Antigravity (UI Polish: Restored Site Navy Blue #1E3A8A Send Button in WIM AI)
+- **Scope:** Restored the brand navy blue (`bg-[#1E3A8A] hover:bg-[#1e40af]`) for the send and stop generation buttons in WIM AI ChatInput as requested, reverting the unintended generic theme override (`bg-primary`).
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. Zero browser/Playwright dependencies; no git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Restored `bg-[#1E3A8A] hover:bg-[#1e40af]` and disabled `bg-[#1E3A8A]/35 text-white/50` on the send button.
+     - Restored `border-[#1E3A8A] bg-[#1E3A8A] hover:bg-[#1e40af]` on the active generation stop button.
+- **Verification:**
+  1. `node scripts/typecheck-shell.mjs`: PASS (zero gated errors in core shell allowlist).
+  2. ZERO git push executed.
+
 ### 2026-09-14 — Antigravity (Fix Academic Search Tool: Crossref Integration, Canonical Corpus Fallback, Resilient Error Handling)
 - **Scope:** Diagnosed and fixed the failure in the academic search tool (`search_academic_corpus` / `academic_search`). Root cause: public OpenAlex and ArXiv endpoints frequently returned HTTP 429 (rate limits) for unauthenticated IP requests, and when 0 papers were returned, the search returned `ok: false`, causing `executeToolCall` to mark the tool as failed and display "Academic search failed" in the UI.
 - **Architectural Rules Kept:**
