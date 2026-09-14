@@ -1,4 +1,4 @@
-# WorldInMaking / posthog.com — Design & Style Guide
+# WorldInMaking / worldinmaking.com — Design & Style Guide
 
 **Location:** `STYLEGUIDE.md`  
 **Applies To:** Developers and AI models creating UI components, pages, or content for WorldInMaking.
