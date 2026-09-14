@@ -102,13 +102,13 @@ test.describe('Human SSE is plan_approval-only', () => {
         expect(JSON.stringify(turn)).not.toContain('ask_user')
     })
 
-    test('ResumeAction rejects answer; HumanTurnStatus has no answered', () => {
-        expect(parseResumeAction('answer')).toBeUndefined()
+    test('ResumeAction accepts answer; HumanTurnStatus has answered', () => {
+        expect(parseResumeAction('answer')).toBe('answer')
         expect(parseResumeAction('run')).toBe('run')
         expect(parseResumeAction('revise')).toBe('revise')
-        const statuses: HumanTurnStatus[] = ['pending', 'approved', 'revised']
-        expect(statuses).toEqual(['pending', 'approved', 'revised'])
-        expect(statuses.includes('answered' as HumanTurnStatus)).toBe(false)
+        const statuses: HumanTurnStatus[] = ['pending', 'approved', 'revised', 'answered']
+        expect(statuses).toEqual(['pending', 'approved', 'revised', 'answered'])
+        expect(statuses.includes('answered' as HumanTurnStatus)).toBe(true)
         const turn: HumanTurn = {
             kind: 'plan_approval',
             title: 'Approve plan',
@@ -117,14 +117,15 @@ test.describe('Human SSE is plan_approval-only', () => {
         expect(['pending', 'approved', 'revised']).toContain(turn.status)
     })
 
-    test('OPENAI_CHAT_TOOLS and mode toolkits still exclude ask_user', () => {
+    test('OPENAI_CHAT_TOOLS and mode toolkits include ask_user', () => {
         const catalog = OPENAI_CHAT_TOOLS.map((tool) => tool.function.name)
-        expect(catalog).not.toContain('ask_user')
+        expect(catalog).toContain('ask_user')
 
+        const allModeNames = new Set<string>()
         for (const mode of ['ask', 'plan', 'execute'] as const) {
-            const names = toolsForAgentMode(mode).map((tool) => tool.function.name)
-            expect(names).not.toContain('ask_user')
+            toolsForAgentMode(mode).forEach((tool) => allModeNames.add(tool.function.name))
         }
+        expect(allModeNames.has('ask_user')).toBe(true)
     })
 })
 
