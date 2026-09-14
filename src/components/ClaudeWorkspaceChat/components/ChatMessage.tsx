@@ -262,7 +262,7 @@ function InquiryStatusCard({
   const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
-    <div className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+    <div role="status" aria-live="polite" className="mt-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
       <p className="m-0 font-medium">{title}</p>
       <p className="mt-1 mb-2 text-secondary leading-relaxed">{body || 'The inquiry could not continue.'}</p>
       {kind === 'quota' && onOpenByok ? (
