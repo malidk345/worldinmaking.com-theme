@@ -49,4 +49,53 @@ test.describe('executeExportNotebook', () => {
         expect(result.artifact?.content).toContain('And another paragraph.')
         expect(result.artifact?.content).toContain('[^1]: First footnote.')
     })
+
+    test('should include TOC in HTML export when includeToc is true', () => {
+        const host: HostSnapshot = {
+            notebooks: [
+                {
+                    id: '123',
+                    title: 'Test Notebook',
+                    content: '# Introduction\n\nSome text.\n\n## Details\n\nMore text.',
+                    slug: 'test-notebook',
+                    version: 1,
+                    type: 'notebook',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ]
+        }
+
+        const result = executeExportNotebook('html', '123', true, false, host)
+        expect(result.ok).toBe(true)
+        expect(result.artifact?.content).toContain('<ul>')
+        expect(result.artifact?.content).toContain('<li><a href="#introduction">Introduction</a></li>')
+        expect(result.artifact?.content).toContain('  <li><a href="#details">Details</a></li>')
+        expect(result.artifact?.content).toContain('<h1 id="introduction">Introduction</h1>')
+        expect(result.artifact?.content).toContain('<h2 id="details">Details</h2>')
+    })
+
+    test('should exclude TOC in HTML export when includeToc is false', () => {
+        const host: HostSnapshot = {
+            notebooks: [
+                {
+                    id: '123',
+                    title: 'Test Notebook',
+                    content: '# Introduction\n\nSome text.\n\n## Details\n\nMore text.',
+                    slug: 'test-notebook',
+                    version: 1,
+                    type: 'notebook',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ]
+        }
+
+        const result = executeExportNotebook('html', '123', false, false, host)
+        expect(result.ok).toBe(true)
+        expect(result.artifact?.content).not.toContain('<ul>')
+        expect(result.artifact?.content).not.toContain('<li><a href="#introduction">Introduction</a></li>')
+        expect(result.artifact?.content).toContain('<h1 id="introduction">Introduction</h1>')
+        expect(result.artifact?.content).toContain('<h2 id="details">Details</h2>')
+    })
 })

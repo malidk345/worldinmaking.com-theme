@@ -179,6 +179,7 @@ export interface AgentPipelineParams {
     maxSteps?: number
     agentMode?: AgentMode
     checkpoint?: AgentCheckpoint
+    signal?: AbortSignal
 }
 
 export interface AgentPipelineResult {
@@ -624,6 +625,7 @@ async function runOneToolCall(
     params: AgentPipelineParams,
     preExecuted?: ToolExecution
 ): Promise<void> {
+    if (params.signal?.aborted) return
     const name = resolveToolName(call.name)
     const kind = name === 'todo_write' ? 'plan' : 'tool'
     const activityId = name === 'todo_write' ? PLAN_ACTIVITY_ID : `tool-${call.id}`
@@ -769,6 +771,7 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
 
     let index = 0
     while (index < calls.length && !state.interrupt) {
+        if (params.signal?.aborted) break
         if (PARALLEL_READ_TOOLS.has(resolveToolName(calls[index].name))) {
             let end = index + 1
             while (end < calls.length && PARALLEL_READ_TOOLS.has(resolveToolName(calls[end].name))) end += 1
@@ -884,6 +887,11 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
     }
 
     while (state.phase !== 'complete' && state.phase !== 'failed') {
+        if (params.signal?.aborted) {
+            state.error = 'client request aborted'
+            state.phase = 'failed'
+            break
+        }
         switch (state.phase) {
             case 'decision':
                 await runDecisionNode(state, params)

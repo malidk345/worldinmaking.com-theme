@@ -863,7 +863,7 @@ export function App() {
     }
 
     const handleReplaceSelection = (event: Event) => {
-      const customEvent = event as CustomEvent<{ text: string; notebookId?: string }>
+      const customEvent = event as CustomEvent<{ text: string; spanText?: string; notebookId?: string }>
       const text = String(customEvent.detail?.text || '').trim()
       if (!text) return
       let target: StoredNotebook | null = notebookRef.current
@@ -873,10 +873,14 @@ export function App() {
       }
       if (!target) return
       const current = markdownRef.current || target.content || ''
+      const spanText = String(customEvent.detail?.spanText || '').trim()
       const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
       let next = current
-      if (selection && current.includes(selection)) {
-        next = current.replace(selection, text)
+
+      const targetPhrase = spanText && current.includes(spanText) ? spanText : (selection && current.includes(selection) ? selection : '')
+
+      if (targetPhrase) {
+        next = current.replace(targetPhrase, text)
         setCurrentNotebook(target)
         setMarkdown(next)
         setMarkdownVersion((v) => v + 1)

@@ -18,9 +18,22 @@ import {
     notebookWindowPath,
     repairWindowPath,
     stripPathNoise,
+    windowPathMatches,
 } from '../src/lib/window-path'
 
 test.describe('window path', () => {
+    test('windowPathMatches correctly identifies path families', () => {
+        expect(windowPathMatches('/notebooks', '/notebooks/nb-1')).toBe(true)
+        expect(windowPathMatches('/notebooks/nb-1', '/notebooks')).toBe(true)
+        expect(windowPathMatches('/notebooks/nb-1', '/notebooks/nb-2')).toBe(true)
+        expect(windowPathMatches('/scratchpad', '/scratchpad/123')).toBe(true)
+        expect(windowPathMatches('/assistant', '/workspace-chat')).toBe(true)
+        expect(windowPathMatches('/workspace-chat', '/assistant')).toBe(true)
+        expect(windowPathMatches('/posts', '/blog')).toBe(false)
+        expect(windowPathMatches('/posts/hello', '/posts/hello')).toBe(true)
+        expect(windowPathMatches('/posts/hello', '/posts/world')).toBe(false)
+    })
+
     test('strips query and trailing slash', () => {
         expect(stripPathNoise('/posts/foo/?x=1#h')).toBe('/posts/foo')
         expect(isPlaceholderPath('/posts/[slug]')).toBe(true)

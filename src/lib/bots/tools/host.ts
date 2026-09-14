@@ -474,14 +474,15 @@ export function executeReplaceNotebookSelection(
     }
     const known = host?.notebooks?.find((item) => item.id === targetId)
     const title = known?.title || host?.notebookTitle || 'Notebook'
+    const span_text = clip(host.selection.trim(), 2_500)
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        result: JSON.stringify({ ok: true, notebookId: targetId, title, span_text }),
         action: {
             type: 'replace_notebook_selection',
             title: `Replace selection in ${title}`,
             description: 'Replace the active user selection with rewritten text',
-            payload: { notebookId: targetId, title, content: body },
+            payload: { notebookId: targetId, title, content: body, span_text },
         },
     }
 }

@@ -883,7 +883,7 @@ function executeVerifiedCorpusSearch(
     }
 }
 
-function executeArrangeWorkspacePreset(
+export function executeArrangeWorkspacePreset(
     presetName: string,
     host?: HostSnapshot
 ): { ok: boolean; result: string; action: HostOsAction } {
@@ -1146,16 +1146,37 @@ function compileNotebookToLatex(title: string, rawContent: string, includeToc = 
     ].filter(Boolean).join('\n')
 }
 
-function compileNotebookToHtml(title: string, rawContent: string, _includeToc = true): string {
+function compileNotebookToHtml(title: string, rawContent: string, includeToc = true): string {
+    const slugify = (text: string) => text.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')
+
     const escaped = rawContent
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
 
+    let tocHtml = ''
+    if (includeToc) {
+        const lines = escaped.split('\n')
+        const headings: Array<{ level: number; text: string; slug: string }> = []
+        for (const line of lines) {
+            const match = line.match(/^(#{1,3})\s+(.+?)\s*$/)
+            if (match) {
+                const level = match[1].length
+                const text = match[2].trim()
+                headings.push({ level, text, slug: slugify(text) })
+            }
+        }
+        if (headings.length > 0) {
+            tocHtml = '<ul>\n' + headings
+                .map((h) => `${'  '.repeat(Math.max(0, h.level - 1))}<li><a href="#${h.slug}">${h.text}</a></li>`)
+                .join('\n') + '\n</ul>\n<hr />\n'
+        }
+    }
+
     const formatted = escaped
-        .replace(/^### (.*$)/gim, '<h3 id="$1">$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2 id="$1">$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1 id="$1">$1</h1>')
+        .replace(/^### (.*$)/gim, (_, text) => `<h3 id="${slugify(text)}">${text}</h3>`)
+        .replace(/^## (.*$)/gim, (_, text) => `<h2 id="${slugify(text)}">${text}</h2>`)
+        .replace(/^# (.*$)/gim, (_, text) => `<h1 id="${slugify(text)}">${text}</h1>`)
         .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
         .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em>$1</em>')
@@ -1179,7 +1200,7 @@ function compileNotebookToHtml(title: string, rawContent: string, _includeToc = 
 </head>
 <body>
   <h1>${title}</h1>
-  <p>${formatted}</p>
+  ${tocHtml}<p>${formatted}</p>
 </body>
 </html>`
 }
