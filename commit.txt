@@ -1,3 +1,0 @@
-fix(site-ui): WindowRouter about paths and login token
-
-Replaced the hardcoded bg-slate-950/90 background in AuthWindow with the approved WINDOW_BG token from frostedSurfaces to adhere to the styleguide constraints. Also updated the routing logic in WindowRouter to map /manifesto, /about-wim, and /world-in-making directly to the AboutContent component so they no longer return null.

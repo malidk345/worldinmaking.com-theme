@@ -2055,6 +2055,19 @@ test.describe('notebook frontend helpers', () => {
         })
         expect(plan4.adopt).toBe(false)
     })
+
+    test('workspace chat does not auto-execute destructive notebook mutations', () => {
+        const fs = require('fs')
+        const path = require('path')
+        const chatCode = fs.readFileSync(
+            path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+            'utf8'
+        )
+
+        // Must explicitly check for destructive actions and skip execution on stream
+        expect(chatCode).toContain("const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type)")
+        expect(chatCode).toContain("const applied = isDestructive ? false : executeOSAction")
+    })
 })
 
 
