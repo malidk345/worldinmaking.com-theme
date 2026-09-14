@@ -57,6 +57,27 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (UI Polish: Removed Reaction & Speech Buttons, Standardized Philosophers to Surnames Only)
+- **Scope:** Cleaned up bottom action row under AI message bubbles by removing unnecessary thumbs up/down reaction buttons and speech synthesis (read aloud) controls. Standardized all philosopher personas across the workspace (model options, persona library, notebook roster, message badge) to display only their surnames (e.g. Nietzsche, Marx, Spinoza, Hegel, Sartre, Heidegger, Deleuze, Baudrillard, Althusser, Derrida, Weber, Adorno, Žižek, Lenin, Arendt, Rand).
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. All vitest suites pass; zero browser/Playwright dependencies; NO git push executed.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
+     - Removed `handleSpeak`, `isSpeaking`, `liked`, `ThumbsUp`, `ThumbsDown`, `Play`, `Square`, `detectSpeechLang`, `textForSpeech`, `pickVoice`.
+     - Preserved clean compact actions: philosopher badge, copy button, add to notebook, retry button, and source citations.
+     - Added surname trimming safeguard on message badge label (`usedModel.name.trim().split(/\s+/).filter(Boolean).pop()`).
+  2. `src/components/ClaudeWorkspaceChat/data/initialData.ts`:
+     - Updated all philosopher entries in `AVAILABLE_MODELS` to use surnames only (`Nietzsche`, `Marx`, `Hegel`, etc.) and single-letter initials.
+  3. `src/lib/persona-engine.ts`:
+     - Updated `PHILOSOPHER_BOTS` `displayName` to surnames only.
+  4. `src/notebook-app/lib/philosophers.ts`:
+     - Updated `PHILOSOPHER_BOTS` `displayName` to surnames only.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/interleaved-composition.test.ts src/lib/bots/tools/execute-roadmap-tools.test.ts`: PASS (19/19 tests).
+  2. `pnpm typecheck:shell`: PASS (zero gated shell errors).
+  3. Local commit created; ZERO git push executed.
+
 ### 2026-09-14 — Antigravity (Progressive Interleaved Multi-Turn Generation & Long-Form Continuation Engine)
 - **Scope:** Enabled models to write public text progressively across tool execution turns (interleaved composition) rather than staying silent until the final round. Text emitted before tools is now accumulated and streamed in real-time, allowing uninterrupted long-form composition and narrative continuity across multi-turn research/notebook workflows.
 - **Architectural Rules Kept:**
