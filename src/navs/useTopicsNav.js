@@ -1,14 +1,11 @@
 import { topicIcons } from 'components/Questions/TopicsTable'
 import React from 'react'
-import { useUser } from 'hooks/useUser'
-import { IconSparkles, IconClock } from '@posthog/icons'
+import { IconClock } from '@posthog/icons'
 
 const navSorted = ['Products', 'Data', 'Product OS', 'Self-hosting', 'Off-topic', 'Other']
 
 export default function useTopicsNav() {
     const { topicGroups } = {}
-
-    const { isModerator } = useUser()
 
     const nav = [{ name: 'Latest', url: '/questions', icon: <IconClock /> }];
     (topicGroups?.nodes || [])
@@ -26,10 +23,6 @@ export default function useTopicsNav() {
                 })
             })
         })
-
-    if (isModerator) {
-        nav.push({ name: 'PostHog AI', url: '/questions/topic/ai', icon: <IconSparkles /> })
-    }
 
     return nav
 }

@@ -212,6 +212,8 @@ const nextConfig = {
 
     async redirects() {
         return [
+            { source: '/questions/topic/max', destination: '/questions', permanent: true },
+            { source: '/questions/topic/ai', destination: '/questions', permanent: true },
             { source: '/desktop', destination: '/', permanent: true },
             { source: '/home', destination: '/', permanent: true },
             { source: '/blog', destination: '/posts', permanent: true },

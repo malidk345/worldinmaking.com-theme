@@ -39,7 +39,6 @@ import {
     IconWarning,
     IconMagicWand,
     IconLlmAnalytics,
-    IconSparkles,
     IconEndpoints,
 } from '@posthog/icons'
 
@@ -76,7 +75,6 @@ export const topicIcons = {
     kubernetes: DataWarehouse, // to be replaced or removed
     'ai observability': IconLlmAnalytics,
     'llm analytics': IconLlmAnalytics,
-    'posthog ai': IconSparkles,
     'migrating to posthog': DataManagement, // to be replaced or removed
     migration: IconUpload,
     more: IconEllipsis,
