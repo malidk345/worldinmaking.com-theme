@@ -15,6 +15,7 @@ import {
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
 import { parseMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
+import { MarkdownTextDiff } from './lib/components/MarkdownNotebook/MarkdownTextDiff'
 import { markNotebookNodeFreshlyInserted } from './lib/components/MarkdownNotebook/freshlyInserted'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import {
@@ -1238,7 +1239,7 @@ export function App() {
                       }
                     >
                       <div className="p-3 text-sm whitespace-pre-wrap font-mono overflow-y-auto max-h-[60vh] border border-primary bg-primary text-muted rounded">
-                        {conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown}
+                        <MarkdownTextDiff before={markdown} after={conflictDetails?.conflicts[0]?.remoteMarkdown || remoteMarkdown} />
                       </div>
                     </LemonModal>
                   </div>

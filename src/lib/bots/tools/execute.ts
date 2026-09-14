@@ -534,13 +534,19 @@ async function executeAcademicSearch(
             }
         }
 
-        const citations: AiCitation[] = result.papers.map((p, idx) => ({
-            id: idx + 1,
-            url: p.doi || p.pdfUrl || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`),
-            title: `${p.title} (${p.authors[0] || 'Unknown'}, ${p.year || 'n.d.'})`,
-            snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
-            source: p.venue || p.source,
-        }))
+        const citations: AiCitation[] = result.papers.map((p, idx) => {
+            let url = p.doi || p.pdfUrl || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`)
+            if (p.id.startsWith('canon-')) {
+                url = `https://scholar.google.com/scholar?q=${encodeURIComponent(p.title)}`
+            }
+            return {
+                id: idx + 1,
+                url,
+                title: `${p.title} (${p.authors[0] || 'Unknown'}, ${p.year || 'n.d.'})`,
+                snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
+                source: p.venue || p.source,
+            }
+        })
 
         return {
             ok: true,
@@ -852,7 +858,7 @@ function executeVerifiedCorpusSearch(
     const citations: AiCitation[] = searchRes.matches.map((r, i) => ({
         id: i + 1,
         title: `${r.thinker} — ${r.work}${r.section ? ` (${r.section})` : ''}`,
-        url: `corpus://${encodeURIComponent(r.thinker.toLowerCase())}/${encodeURIComponent(r.work.toLowerCase())}`,
+        url: `https://scholar.google.com/scholar?q=${encodeURIComponent(r.thinker + ' ' + r.work)}`,
         snippet: r.fragment,
     }))
 
