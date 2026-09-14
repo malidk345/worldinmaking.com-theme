@@ -244,6 +244,25 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'ask_user',
+            description:
+                'Ask the user a question to clarify ambiguous requirements, confirm destructive actions, or gather necessary input before proceeding. Execution pauses until the user replies.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    question: {
+                        type: 'string',
+                        description: 'The question to ask the user.',
+                    },
+                },
+                required: ['question'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'finalize_plan',
             description:
                 'Mark the plan ready and start execution. Call this in plan mode after todo_write. The host unlocks mutating tools and continues in the same turn. Do not wait for the user.',
@@ -999,6 +1018,7 @@ ${ARTIFACT_RECIPES.trimEnd()}
 - todo_write: create the plan once, then only update statuses with the SAME ids. Do not invent a second plan. Exactly one item in_progress. The host shows one locked plan in the thinking process.
 - switch_mode: YOU choose plan vs execute. The user has no plan toggle. Use plan when sequencing or research helps. Use execute when you need mutating tools.
 - finalize_plan: when you need mutating tools or the plan is ready, call this. The host continues in the same turn. Then do the work, including writing the requested piece.
+- ask_user: pause execution to ask the user a clarifying question before proceeding. Execution halts until they reply.
 - remember: store a durable user/workspace fact so later turns can use it.
 - task: a focused read-only research slice. Use for one sub-question, not the whole job.
 - DOCUMENT & RESEARCH DIRECTIVE:

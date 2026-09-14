@@ -54,6 +54,8 @@ interface ChatInputProps {
   incomingAttachments?: FileAttachment[];
   boundNotebookTitle?: string;
   onDismissNotebookContext?: () => void;
+  pendingHumanTurn?: HumanTurn;
+  onHumanRespond?: (action: 'run' | 'revise' | 'answer', payload?: string) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -71,12 +73,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   incomingAttachments,
   boundNotebookTitle,
   onDismissNotebookContext,
+  pendingHumanTurn,
+  onHumanRespond,
 }) => {
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [plusOpen, setPlusOpen] = useState(false);
   const plusRef = useRef<HTMLDivElement>(null);
+  const [humanTurnDraft, setHumanTurnDraft] = useState('');
 
   useEffect(() => {
     if (incomingAttachments && incomingAttachments.length > 0) {
@@ -414,6 +419,76 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </button>
           </div>
         )}
+
+        {pendingHumanTurn ? (
+          <div className="mb-2 rounded-xl border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="m-0 font-medium">{pendingHumanTurn.title}</p>
+              </div>
+              {pendingHumanTurn.kind === 'plan_approval' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHumanRespond?.('run');
+                    setHumanTurnDraft('');
+                  }}
+                  className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
+                >
+                  Run
+                </button>
+              ) : null}
+            </div>
+
+            {pendingHumanTurn.summary ? <p className="mt-1 mb-0 text-[12.5px] leading-relaxed text-secondary">{pendingHumanTurn.summary}</p> : null}
+            {pendingHumanTurn.question ? <p className="mt-1 mb-0 text-[12.5px] font-medium leading-relaxed text-primary">{pendingHumanTurn.question}</p> : null}
+
+            {pendingHumanTurn.plan && pendingHumanTurn.plan.length > 0 ? (
+              <ul className="mt-2 mb-0 pl-4 space-y-1 text-secondary">
+                {pendingHumanTurn.plan.map((item) => (
+                  <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : item.status === 'in_progress' ? 'font-medium text-primary' : ''}>
+                    {item.title}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                value={humanTurnDraft}
+                onChange={(event) => setHumanTurnDraft(event.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (pendingHumanTurn.kind === 'ask_user') {
+                       onHumanRespond?.('answer', humanTurnDraft);
+                    } else {
+                       onHumanRespond?.('revise', humanTurnDraft);
+                    }
+                    setHumanTurnDraft('');
+                  }
+                }}
+                placeholder={pendingHumanTurn.kind === 'ask_user' ? "Type your answer..." : "Revision note (optional)"}
+                className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingHumanTurn.kind === 'ask_user') {
+                     onHumanRespond?.('answer', humanTurnDraft);
+                  } else {
+                     onHumanRespond?.('revise', humanTurnDraft);
+                  }
+                  setHumanTurnDraft('');
+                }}
+                disabled={pendingHumanTurn.kind === 'ask_user' && !humanTurnDraft.trim()}
+                className="shrink-0 rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer disabled:opacity-50"
+              >
+                {pendingHumanTurn.kind === 'ask_user' ? 'Answer' : 'Revise'}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Textarea Placeholder: "Write a message..." */}
         <textarea

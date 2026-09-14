@@ -711,6 +711,18 @@ async function runOneToolCall(
         const summary = typeof parsed?.summary === 'string' ? parsed.summary : undefined
         toolContent = enterExecute(state, params, summary)
     }
+    if (name === 'ask_user' && executed.ok) {
+        const parsed = parseJsonObject(executed.result)
+        const question = typeof parsed?.question === 'string' ? parsed.question : undefined
+        if (question) {
+            state.interrupt = {
+                kind: 'ask_user',
+                status: 'pending',
+                title: 'User Input Required',
+                question,
+            }
+        }
+    }
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)
     if (!executed.ok) {
         const retry = `Last tool (${name}) failed: ${summary}. Fix the arguments and retry, or pick a different tool. Do not dump the error in the bubble.`

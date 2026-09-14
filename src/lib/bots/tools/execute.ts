@@ -174,6 +174,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     write_scratchpad: { note: 'content', text: 'content', body: 'content', markdown: 'content', ref: 'source', url: 'source', document: 'source' },
     todo_write: { plan: 'tasks', todo: 'tasks', items: 'tasks', list: 'tasks' },
     remember: { memory: 'fact', note: 'fact', text: 'fact', content: 'fact' },
+    ask_user: { q: 'question', query: 'question', prompt: 'question', text: 'question' },
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
@@ -1362,6 +1363,9 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     save_memory: 'remember',
     memorize: 'remember',
     ready_plan: 'finalize_plan',
+    ask: 'ask_user',
+    clarify: 'ask_user',
+    question_user: 'ask_user',
     submit_plan: 'finalize_plan',
     subagent: 'task',
     sub_task: 'task',
@@ -1692,6 +1696,15 @@ export async function executeToolCall(
             applyRememberedFact(host, fact, category)
             const result = JSON.stringify({ ok: true, remembered: true, fact, category })
             return { ...base, ok: true, result, summary: `Remembered: ${fact}` }
+        }
+        if (name === 'ask_user') {
+            const question = asText(args.question, 1000).trim()
+            if (!question) {
+                const result = JSON.stringify({ ok: false, error: 'ask_user requires a question' })
+                return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+            }
+            const result = JSON.stringify({ ok: true, question })
+            return { ...base, ok: true, result, summary: `Asked user: ${question}` }
         }
         if (name === 'finalize_plan') {
             const summary = asText(args.summary, 400).trim()

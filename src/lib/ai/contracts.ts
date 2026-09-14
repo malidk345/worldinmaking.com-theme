@@ -127,11 +127,12 @@ export type AiSseEvent =
     | {
           type: 'human'
           human: {
-              kind: 'plan_approval'
+              kind: 'plan_approval' | 'ask_user'
               title: string
-              status: 'pending' | 'approved' | 'revised'
+              status: 'pending' | 'approved' | 'revised' | 'answered'
               plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
               summary?: string
+              question?: string
           }
       }
     | {
