@@ -66,7 +66,7 @@ test.describe('window path', () => {
         expect(extractNotebookId('/notebooks/templates')).toBeNull()
         expect(canonicalWindowPath('/notebooks?id=nb-1')).toBe('/notebooks/nb-1')
         expect(notebookWindowPath('nb-1')).toBe('/notebooks/nb-1')
-        expect(isPathRoutedWindow('/notebooks/nb-1')).toBe(true)
+        expect(isPathRoutedWindow('/notebooks/nb-1')).toBe(false)
         expect(parseNotebookRoute('/notebooks', '', '?id=nb-1')).toEqual({
             page: 'editor',
             notebookId: 'nb-1',

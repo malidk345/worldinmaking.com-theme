@@ -1,0 +1,4 @@
+fix(site-ui): real NotebooksList in /notebooks window
+
+This replaces the skeleton for the /notebooks window with the real NotebooksListScene.
+It ensures the full notebook editor stays separated and is only loaded when necessary (e.g., when opening a specific notebook).
