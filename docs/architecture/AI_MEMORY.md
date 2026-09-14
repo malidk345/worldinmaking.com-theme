@@ -65,7 +65,7 @@
 - **Changes Applied:**
   1. `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`:
      - Removed `handleSpeak`, `isSpeaking`, `liked`, `ThumbsUp`, `ThumbsDown`, `Play`, `Square`, `detectSpeechLang`, `textForSpeech`, `pickVoice`.
-     - Preserved clean compact actions: philosopher badge, copy button, add to notebook, retry button, and source citations.
+     - Preserved clean compact actions: philosopher badge, copy button, retry button, add to notebook, and source citations.
      - Added surname trimming safeguard on message badge label (`usedModel.name.trim().split(/\s+/).filter(Boolean).pop()`).
   2. `src/components/ClaudeWorkspaceChat/data/initialData.ts`:
      - Updated all philosopher entries in `AVAILABLE_MODELS` to use surnames only (`Nietzsche`, `Marx`, `Hegel`, etc.) and single-letter initials.
