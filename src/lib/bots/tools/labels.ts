@@ -42,6 +42,7 @@ const LABELS: Record<string, [string, string, string]> = {
     generate_flashcards: ['Generating flashcard deck', 'Created flashcard deck', 'Flashcard generation failed'],
     export_notebook: ['Compiling notebook for export', 'Compiled notebook document', 'Notebook export failed'],
     create_concept_map: ['Generating concept map', 'Created concept map', 'Concept map failed'],
+    ask_user: ['Asking you a question', 'Asked you a question', 'Failed to ask you a question'],
 }
 
 export function toolStatusLabel(name: string, status: ToolRunStatus): string {
@@ -88,6 +89,7 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (name === 'create_artifact' || name === 'create_notebook' || name === 'publish_to_forum') {
             return pickArg(args, ['title', 'name'])
         }
+        if (name === 'ask_user') return pickArg(args, ['question'])
         if (name === 'task') return pickArg(args, ['goal', 'prompt'])
         if (name === 'remember') return pickArg(args, ['fact', 'memory'])
         if (name === 'write_scratchpad') return pickArg(args, ['title', 'content'])
