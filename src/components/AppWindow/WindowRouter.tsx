@@ -2,7 +2,7 @@
 
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
+import { NotebooksList } from 'components/Notebooks/NotebooksList'
 import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
 import { WINDOW_BG } from '../../constants/frostedSurfaces'
@@ -187,8 +187,8 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (isProfilePath(path)) {
         return <ProfileWrapper path={path} {...props} />
     }
-    if (/^\/notebooks/.test(path)) {
-        return <NotebooksListSkeleton />
+    if (path === '/notebooks') {
+        return <NotebooksList />
     }
     if (/^\/questions|^\/forum|^\/community/.test(path)) {
         // Only real thread slugs open the detail panel — not /questions, /topic/*, /subscriptions
