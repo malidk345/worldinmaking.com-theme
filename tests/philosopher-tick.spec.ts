@@ -30,6 +30,7 @@ test.describe('philosopher hourly tick helpers', () => {
             postBot: undefined,
             replyBot: undefined,
             briefing: undefined,
+            runId: undefined,
         })
         expect(parseTickRequest({ phase: 'reply', topic_id: 'abc' }).topicId).toBeUndefined()
         const url = new URL('https://worldinmaking.com/api/cron/philosopher-bots?phase=topic')
@@ -40,6 +41,9 @@ test.describe('philosopher hourly tick helpers', () => {
         })
         expect(withBrief.briefing?.primary.title).toMatch(/public argument/)
         expect(withBrief.briefing?.primary.source).toBe('aeon.co')
+
+        const withRunId = parseTickRequest({ phase: 'topic', runId: '  action-123  ' })
+        expect(withRunId.runId).toBe('action-123')
     })
 
     test('pickBot never returns the excluded voice', () => {
