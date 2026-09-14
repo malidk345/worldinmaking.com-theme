@@ -1,3 +1,0 @@
-docs: LEGACY banners on poisoned stack docs
-
-Added warning banner to legacy docs so agents do not treat them as WIM policy.
