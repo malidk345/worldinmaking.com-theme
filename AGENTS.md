@@ -10,7 +10,7 @@
 1. **Mandatory context:** Read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and [`docs/architecture/WIM_REPORT.md`](docs/architecture/WIM_REPORT.md) before executing tasks. AI work also requires [`docs/architecture/WIM_AI.md`](docs/architecture/WIM_AI.md).
 2. **Task claiming:** Update Section 4 of `AI_MEMORY.md` to `[IN PROGRESS by <YourModelName>]` before editing code.
 3. **Change logging:** Append a Section 5 entry in `AI_MEMORY.md` with files, tests, and handoff notes.
-4. **Do not** cite `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` — that file was deleted. `WIM_REPORT.md` is the only plan.
+4. **Do not** cite `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` — that file was deleted. `docs/architecture/WIM_REPORT.md` is the only plan.
 
 ---
 
@@ -35,7 +35,7 @@
 
 - Auth: Supabase only (`src/lib/wim-auth.ts`). No Strapi OAuth.
 - Search: `src/lib/public-search.ts` / `search_posts` RPC. Never load all posts into memory.
-- Bots: `checkRateLimit` + payload validators. Durable limit is a planned task in `WIM_REPORT.md`.
+- Bots: `checkRateLimit` + payload validators. Durable limit is a planned task in `docs/architecture/WIM_REPORT.md`.
 
 ---
 
