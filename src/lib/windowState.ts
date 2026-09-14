@@ -53,6 +53,21 @@ export const getWindowMode = (window: Pick<AppWindow, 'expanded' | 'snapped'>): 
 export const isMaximizedWindow = (window: Pick<AppWindow, 'expanded' | 'snapped'>): boolean =>
     getWindowMode(window) === 'maximized'
 
+export const buildSnapOverrides = (
+    snappedSide: AppWindow['snapped'],
+    prevWindow: Pick<AppWindow, 'size' | 'position'>,
+    snapRect: { size: { width: number; height: number }; position: { x: number; y: number } } | null
+): Partial<AppWindow> => {
+    if (!snapRect || !snappedSide || (snappedSide !== 'left' && snappedSide !== 'right')) return {}
+    return {
+        position: snapRect.position,
+        size: snapRect.size,
+        previousSize: prevWindow.size,
+        previousPosition: prevWindow.position,
+        ...windowModeFlags(snappedSide === 'left' ? 'snapped-left' : 'snapped-right'),
+    }
+}
+
 export const mergeWindowUpdate = (window: AppWindow, updates: WindowUpdate): AppWindow => {
     const nextPath = updates.path !== undefined ? updates.path : window.path
     return {
