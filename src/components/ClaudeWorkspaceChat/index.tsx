@@ -1562,11 +1562,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const currentChat = chats.find((c) => c.id === targetChatId);
-            const mode = currentChat?.agentMode || 'ask';
-            const shouldAutoApply = mode === 'execute';
-            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type);
-            const applied = isDestructive ? false : shouldAutoApply ? executeOSAction(assistantMessageId, parsed.action, targetChatId) : false;
+            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block', 'annotate_notebook', 'add_notebook_footnote'].includes(parsed.action.type);
+            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -1995,9 +1992,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             },
           })
         );
-        // Dispatch ack manually if notebook-app doesn't support wimNotebookAddAnnotation currently
-        // to prevent timeout.
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nbId } }));
       } else if (action.type === 'add_notebook_footnote') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
         if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
