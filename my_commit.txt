@@ -1,4 +1,0 @@
-docs: fix STYLEGUIDE/AGENTS WIM titles and links
-
-- Replaced posthog.com with worldinmaking.com in STYLEGUIDE.md
-- Replaced WIM_REPORT.md with docs/architecture/WIM_REPORT.md in AGENTS.md
