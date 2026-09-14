@@ -60,17 +60,6 @@ function ensureClosedCodeFences(markdown: string): string {
   return markdown;
 }
 
-function TactileWorkstationCursor({ isLive }: { isLive: boolean }) {
-  if (!isLive) return null;
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-block w-2 h-3.5 ml-1 -mb-0.5 rounded-[1.5px] bg-[#1E3A8A] dark:bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)] animate-pulse"
-      title="Akış devam ediyor"
-    />
-  );
-}
-
 function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -550,7 +539,12 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 >
                   {markdownText}
                 </ReactMarkdown>
-                <TactileWorkstationCursor isLive={isLiveAnswer} />
+                {isLiveAnswer && (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block w-1.5 h-3.5 ml-1 -mb-0.5 bg-primary/70 dark:bg-primary/90 animate-pulse rounded-xs"
+                  />
+                )}
               </>
             ) : null}
           </div>
