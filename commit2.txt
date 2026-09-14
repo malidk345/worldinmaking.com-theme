@@ -1,3 +1,3 @@
-Fix CI failure: handle WIM_SKIP_ENV_HARD_FAIL in supabase-admin.ts
+feat(notebook): visible sync conflict banner
 
-Modified `getSupabaseClient` to return a mock client when `WIM_SKIP_ENV_HARD_FAIL` is set to 1 and the real environment variables are missing. This matches the fallback behavior needed for CI smoke tests without real keys.
+Implements a user-visible sync conflict banner for Notebooks by using a `LemonBanner` directly above the `MarkdownNotebook` editor when a `syncStatus === 'conflict'` arises. This surfaces the keep local, take remote, and review options rather than silently wiping data.
