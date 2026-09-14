@@ -31,6 +31,9 @@ const nextConfig = {
             'recharts',
         ],
     },
+    // We intentionally bypass Next.js full-repo TS/ESLint build checks.
+    // The legacy Next.js / React surface contains historical type debt that is too noisy.
+    // CI relies on `pnpm typecheck:shell` as the real gate.
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
     images: {
