@@ -895,7 +895,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const editMessageId = pendingEditMessageIdRef.current
     pendingEditMessageIdRef.current = null
     const sourceChat = chats.find((c) => c.id === (targetChatId || '')) || activeChat
-    const turnAgentMode = options?.agentMode || 'ask'
+    const turnAgentMode = options?.agentMode || sourceChat?.agentMode || 'ask'
     let baseMessages = options?.historyOverride || sourceChat?.messages || []
     if (editMessageId) {
       const editIndex = baseMessages.findIndex((message) => message.id === editMessageId)
@@ -2034,6 +2034,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     });
   };
 
+  const handleAgentModeChange = useCallback((mode: AgentMode) => {
+    if (!activeChatId) return;
+    setChats((prev) => prev.map((c) => (c.id === activeChatId ? { ...c, agentMode: mode, updatedAt: new Date().toISOString() } : c)));
+  }, [activeChatId]);
+
   const handleMessageFeedback = (messageId: string, liked: boolean | null) => {
     if (!activeChatId) return;
     updateAssistantMessage(activeChatId, messageId, { liked });
@@ -2257,6 +2262,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
+          agentMode={activeChat?.agentMode}
+          onAgentModeChange={handleAgentModeChange}
         />
 
         {/* Chat Stream & Conversation Body */}
