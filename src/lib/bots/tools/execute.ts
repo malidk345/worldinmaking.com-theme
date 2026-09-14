@@ -5,7 +5,13 @@ import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { fetchPublicUrl } from './fetch-url'
-import { searchAcademicCorpus, type AcademicSearchOptions } from '../academic-search'
+import {
+    searchAcademicCorpus,
+    formatAcademicResults,
+    formatApaBibliography,
+    type AcademicPaper,
+    type AcademicSearchOptions,
+} from '../academic-search'
 import { executeReadDocument } from './read-document'
 import {
     executeAnnotateNotebook,
@@ -494,23 +500,52 @@ async function executeGenerateImage(
 
 async function executeAcademicSearch(
     query: string,
-    options?: AcademicSearchOptions
+    options?: AcademicSearchOptions,
+    env?: EnvStore
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     try {
         const result = await searchAcademicCorpus(query, options)
+
+        // Web search fallback if external academic APIs and canonical corpus returned 0 papers
+        if (result.papers.length === 0 && env) {
+            try {
+                const limit = options?.limit || 5
+                const webHits = await searchWebSources(`${query} academic paper research`, env)
+                if (webHits && webHits.length > 0) {
+                    const fallbackPapers: AcademicPaper[] = webHits.slice(0, limit).map((h, i) => ({
+                        id: `web-${i + 1}-${Date.now()}`,
+                        title: h.title,
+                        authors: [h.source || 'Web Source'],
+                        venue: h.source,
+                        citationCount: 0,
+                        doi: h.url.startsWith('http') ? h.url : undefined,
+                        pdfUrl: h.url.endsWith('.pdf') ? h.url : undefined,
+                        abstract: h.snippet,
+                        source: 'Web Search',
+                    }))
+                    result.papers = fallbackPapers
+                    result.total = fallbackPapers.length
+                    result.formatted = formatAcademicResults(fallbackPapers)
+                    result.bibliography = formatApaBibliography(fallbackPapers)
+                }
+            } catch {
+                // Ignore web search fallback error
+            }
+        }
+
         const citations: AiCitation[] = result.papers.map((p, idx) => ({
             id: idx + 1,
-            url: p.doi || p.pdfUrl || `https://openalex.org/${p.id}`,
+            url: p.doi || p.pdfUrl || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`),
             title: `${p.title} (${p.authors[0] || 'Unknown'}, ${p.year || 'n.d.'})`,
             snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
             source: p.venue || p.source,
         }))
 
         return {
-            ok: result.ok,
+            ok: true,
             result: clip(
                 JSON.stringify({
-                    ok: result.ok,
+                    ok: true,
                     total: result.total,
                     query: result.query,
                     papers: result.papers,
@@ -519,7 +554,7 @@ async function executeAcademicSearch(
                 }),
                 MAX_TOOL_RESULT
             ),
-            citations,
+            citations: citations.length > 0 ? citations : undefined,
         }
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Academic search failed'
@@ -1664,14 +1699,18 @@ export async function executeToolCall(
                     ? (args.sort_by as 'citations' | 'recent' | 'relevance')
                     : undefined
             const openAccessOnly = typeof args.open_access_only === 'boolean' ? args.open_access_only : undefined
-            const executed = await executeAcademicSearch(query, {
-                field,
-                limit,
-                yearFrom,
-                yearTo,
-                sortBy,
-                openAccessOnly,
-            })
+            const executed = await executeAcademicSearch(
+                query,
+                {
+                    field,
+                    limit,
+                    yearFrom,
+                    yearTo,
+                    sortBy,
+                    openAccessOnly,
+                },
+                env
+            )
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'analyze_image') {

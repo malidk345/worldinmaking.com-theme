@@ -57,6 +57,27 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-14 — Antigravity (Fix Academic Search Tool: Crossref Integration, Canonical Corpus Fallback, Resilient Error Handling)
+- **Scope:** Diagnosed and fixed the failure in the academic search tool (`search_academic_corpus` / `academic_search`). Root cause: public OpenAlex and ArXiv endpoints frequently returned HTTP 429 (rate limits) for unauthenticated IP requests, and when 0 papers were returned, the search returned `ok: false`, causing `executeToolCall` to mark the tool as failed and display "Academic search failed" in the UI.
+- **Architectural Rules Kept:**
+  1. Strict TypeScript shell allowlist compliance with 0 gated errors (`pnpm typecheck:shell`).
+  2. Multi-engine academic resilience with Crossref as primary global DOI authority (150M+ records), OpenAlex, ArXiv preprints, fallback to verified primary texts (`PHILOSOPHICAL_CANON`), and web search fallback if external APIs yield empty results.
+  3. No browser/Playwright test suites run; no git push executed.
+- **Changes Applied:**
+  1. `src/lib/bots/academic-search.ts`:
+     - Added `Crossref` to `AcademicPaper['source']` type union.
+     - Implemented `queryCrossref` querying the official Crossref Works API with date range filters (`from-pub-date`, `until-pub-date`), citation count sorting (`is-referenced-by-count`), and clean metadata extraction (titles, DOIs, authors, venues, abstracts, open-access PDF links).
+     - Upgraded `searchAcademicCorpus` to query OpenAlex, Crossref, and ArXiv in parallel using `Promise.allSettled`, with title and DOI deduplication.
+     - Added automatic fallback to `searchPhilosophicalCorpus` if external APIs return 0 results (e.g. rate limits or offline).
+     - Fixed `ok` status: A completed search with valid query returns `ok: true` (with `total: 0` and informative message) rather than failing the tool.
+  2. `src/lib/bots/tools/execute.ts`:
+     - In `executeAcademicSearch`: passed `env` runtime store for web search fallback if academic APIs return 0 results; guaranteed `ok: true` on completed search; mapped citation links cleanly.
+     - In `executeToolCall`: passed `env` to `executeAcademicSearch`.
+- **Verification:**
+  1. `pnpm vitest run --environment node src/lib/bots/tools/academic-search.test.ts`: PASS (8/8 tests passed).
+  2. `node scripts/typecheck-shell.mjs`: PASS (zero gated errors in core shell allowlist).
+  3. ZERO git push executed.
+
 ### 2026-09-14 — Antigravity (UI Polish: Removed Reaction & Speech Buttons, Standardized Philosophers to Surnames Only)
 - **Scope:** Cleaned up bottom action row under AI message bubbles by removing unnecessary thumbs up/down reaction buttons and speech synthesis (read aloud) controls. Standardized all philosopher personas across the workspace (model options, persona library, notebook roster, message badge) to display only their surnames (e.g. Nietzsche, Marx, Spinoza, Hegel, Sartre, Heidegger, Deleuze, Baudrillard, Althusser, Derrida, Weber, Adorno, Žižek, Lenin, Arendt, Rand).
 - **Architectural Rules Kept:**

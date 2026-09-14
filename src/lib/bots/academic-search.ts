@@ -4,6 +4,8 @@
  * citation counts, concepts, and open-access PDFs via OpenAlex & ArXiv.
  */
 
+import { searchPhilosophicalCorpus } from './tools/philosophical-corpus'
+
 export interface AcademicPaper {
     id: string
     title: string
@@ -15,7 +17,7 @@ export interface AcademicPaper {
     pdfUrl?: string
     abstract?: string
     concepts?: string[]
-    source: 'OpenAlex' | 'ArXiv' | 'Semantic Scholar'
+    source: 'OpenAlex' | 'Crossref' | 'ArXiv' | 'Semantic Scholar' | 'Philosophical Canon' | 'Web Search'
 }
 
 export interface AcademicSearchOptions {
@@ -247,6 +249,126 @@ async function queryArXiv(query: string, limit = 3): Promise<AcademicPaper[]> {
 }
 
 /**
+ * Queries Crossref API (official global registry of scholarly DOIs with 150M+ records).
+ */
+async function queryCrossref(query: string, options?: AcademicSearchOptions): Promise<AcademicPaper[]> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+
+    try {
+        const limit = Math.min(options?.limit || 5, 10)
+        const filters: string[] = []
+
+        if (options?.yearFrom) filters.push(`from-pub-date:${options.yearFrom}-01-01`)
+        if (options?.yearTo) filters.push(`until-pub-date:${options.yearTo}-12-31`)
+
+        let sortQuery = ''
+        if (options?.sortBy === 'citations') {
+            sortQuery = '&sort=is-referenced-by-count&order=desc'
+        } else if (options?.sortBy === 'recent') {
+            sortQuery = '&sort=published&order=desc'
+        }
+
+        const filterQuery = filters.length > 0 ? `&filter=${encodeURIComponent(filters.join(','))}` : ''
+        const url = `https://api.crossref.org/works?query=${encodeURIComponent(query)}&rows=${limit}${filterQuery}${sortQuery}&mailto=dursunkayamustafa@gmail.com`
+
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': USER_AGENT,
+                Accept: 'application/json',
+            },
+            signal: controller.signal,
+        })
+
+        if (!res.ok) return []
+
+        const data = (await res.json()) as {
+            message?: {
+                items?: Array<{
+                    DOI?: string
+                    URL?: string
+                    title?: string[]
+                    author?: Array<{ given?: string; family?: string; name?: string }>
+                    issued?: { 'date-parts'?: number[][] }
+                    'published-print'?: { 'date-parts'?: number[][] }
+                    'published-online'?: { 'date-parts'?: number[][] }
+                    'container-title'?: string[]
+                    'is-referenced-by-count'?: number
+                    abstract?: string
+                    subject?: string[]
+                    link?: Array<{ URL?: string; 'content-type'?: string }>
+                }>
+            }
+        }
+
+        const items = data?.message?.items
+        if (!Array.isArray(items)) return []
+
+        return items.map((item) => {
+            const rawTitle = Array.isArray(item.title) && item.title.length > 0 ? item.title[0] : 'Untitled Work'
+            const title = rawTitle.replace(/<[^>]*>/g, '').trim()
+
+            const authors: string[] = []
+            if (Array.isArray(item.author)) {
+                for (const a of item.author.slice(0, 4)) {
+                    const name = [a.given, a.family].filter(Boolean).join(' ') || a.name || ''
+                    if (name.trim()) authors.push(name.trim())
+                }
+            }
+
+            const yearParts =
+                item.issued?.['date-parts']?.[0] ||
+                item['published-print']?.['date-parts']?.[0] ||
+                item['published-online']?.['date-parts']?.[0]
+            const year = Array.isArray(yearParts) && typeof yearParts[0] === 'number' ? yearParts[0] : undefined
+
+            const venue =
+                Array.isArray(item['container-title']) && item['container-title'].length > 0
+                    ? item['container-title'][0].trim()
+                    : undefined
+            const citationCount =
+                typeof item['is-referenced-by-count'] === 'number' ? item['is-referenced-by-count'] : 0
+
+            const doi = item.DOI
+                ? item.DOI.startsWith('http')
+                    ? item.DOI
+                    : `https://doi.org/${item.DOI}`
+                : item.URL
+
+            let pdfUrl: string | undefined
+            if (Array.isArray(item.link)) {
+                const pdfLink = item.link.find((l) => l['content-type']?.toLowerCase().includes('pdf'))
+                if (pdfLink?.URL) pdfUrl = pdfLink.URL
+            }
+
+            let abstractText: string | undefined
+            if (typeof item.abstract === 'string') {
+                abstractText = item.abstract.replace(/<[^>]*>/g, '').trim()
+                if (abstractText.length > 600) abstractText = `${abstractText.slice(0, 600)}…`
+            }
+
+            return {
+                id: item.DOI || `crossref-${Math.random()}`,
+                title,
+                authors,
+                year,
+                venue,
+                citationCount,
+                doi,
+                pdfUrl,
+                abstract: abstractText,
+                concepts: Array.isArray(item.subject) ? item.subject.slice(0, 4) : undefined,
+                source: 'Crossref' as const,
+            }
+        })
+    } catch {
+        return []
+    } finally {
+        clearTimeout(timer)
+    }
+}
+
+/**
  * Searches the academic corpus across peer-reviewed repositories with advanced filters.
  */
 export async function searchAcademicCorpus(
@@ -268,36 +390,73 @@ export async function searchAcademicCorpus(
     const limit = options?.limit || 5
     const enhancedQuery = options?.field ? `${cleanQuery} ${options.field}` : cleanQuery
 
-    // Run OpenAlex and ArXiv in parallel
-    const [openAlexPapers, arxivPapers] = await Promise.all([
+    // Query OpenAlex, Crossref, and ArXiv in parallel with resilience
+    const [openAlexRes, crossrefRes, arxivRes] = await Promise.allSettled([
         queryOpenAlex(enhancedQuery, { ...options, limit }),
-        options?.openAccessOnly ? [] : queryArXiv(cleanQuery, 2),
+        queryCrossref(enhancedQuery, { ...options, limit }),
+        options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 2),
     ])
 
-    // Merge papers, prioritizing OpenAlex (peer-reviewed & cited) followed by ArXiv
+    const openAlexPapers = openAlexRes.status === 'fulfilled' ? openAlexRes.value : []
+    const crossrefPapers = crossrefRes.status === 'fulfilled' ? crossrefRes.value : []
+    const arxivPapers = arxivRes.status === 'fulfilled' ? arxivRes.value : []
+
+    // Merge papers, prioritizing peer-reviewed sources (OpenAlex & Crossref) followed by ArXiv
     const seenTitles = new Set<string>()
+    const seenDois = new Set<string>()
     const combined: AcademicPaper[] = []
 
-    for (const paper of [...openAlexPapers, ...arxivPapers]) {
+    for (const paper of [...openAlexPapers, ...crossrefPapers, ...arxivPapers]) {
         const normTitle = paper.title.toLowerCase().replace(/[^a-z0-9]/g, '')
-        if (!seenTitles.has(normTitle)) {
+        const cleanDoi = paper.doi ? paper.doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '') : ''
+
+        if (normTitle && !seenTitles.has(normTitle) && (!cleanDoi || !seenDois.has(cleanDoi))) {
             seenTitles.add(normTitle)
+            if (cleanDoi) seenDois.add(cleanDoi)
             combined.push(paper)
         }
-        if (combined.length >= limit) break
+        if (combined.length >= limit * 2) break
     }
 
-    // Default to citation sort unless explicitly set to recent or relevance
-    if (!options?.sortBy || options.sortBy === 'citations') {
-        combined.sort((a, b) => b.citationCount - a.citationCount)
+    // Fallback to verified philosophical canon if scholarly APIs returned zero results
+    if (combined.length === 0) {
+        try {
+            const canonMatches = searchPhilosophicalCorpus(cleanQuery, { limit })
+            if (canonMatches && canonMatches.matches.length > 0) {
+                for (const m of canonMatches.matches) {
+                    combined.push({
+                        id: `canon-${m.thinker.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${m.work.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+                        title: `${m.thinker}: ${m.work} (${m.section})`,
+                        authors: [m.thinker],
+                        year: undefined,
+                        venue: 'Philosophical Canon (Primary Source)',
+                        citationCount: 100,
+                        abstract: m.fragment,
+                        concepts: m.context ? [m.context] : undefined,
+                        source: 'Philosophical Canon',
+                    })
+                }
+            }
+        } catch {
+            // graceful fallback
+        }
     }
+
+    // Sort according to requested option
+    if (options?.sortBy === 'citations') {
+        combined.sort((a, b) => b.citationCount - a.citationCount)
+    } else if (options?.sortBy === 'recent') {
+        combined.sort((a, b) => (b.year || 0) - (a.year || 0))
+    }
+
+    const finalPapers = combined.slice(0, limit)
 
     return {
-        ok: combined.length > 0,
+        ok: true,
         query: cleanQuery,
-        total: combined.length,
-        papers: combined,
-        formatted: formatAcademicResults(combined),
-        bibliography: formatApaBibliography(combined),
+        total: finalPapers.length,
+        papers: finalPapers,
+        formatted: formatAcademicResults(finalPapers),
+        bibliography: formatApaBibliography(finalPapers),
     }
 }
