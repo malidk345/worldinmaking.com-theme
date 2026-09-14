@@ -9,6 +9,7 @@ import {
   IconImage,
   IconChevronDown,
   IconArrowRight,
+  IconNotebook,
 } from '@posthog/icons';
 import { readNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { parseDocumentFile } from '../../../lib/document-parser';
@@ -94,8 +95,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
-  const [plusOpen, setPlusOpen] = useState(false);
-  const plusRef = useRef<HTMLDivElement>(null);
   const [humanTurnDraft, setHumanTurnDraft] = useState('');
 
   useEffect(() => {
@@ -130,21 +129,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [draftNonce, draftPrompt])
 
-  useEffect(() => {
-    if (!plusOpen) return
-    const onPointer = (event: MouseEvent) => {
-      if (plusRef.current && !plusRef.current.contains(event.target as Node)) setPlusOpen(false)
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPlusOpen(false)
-    }
-    window.addEventListener('mousedown', onPointer)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onPointer)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [plusOpen])
 
   // Auto-resize textarea without collapsing the first line
   useEffect(() => {
@@ -432,16 +416,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Active Notebook Selection Badge */}
         {activeSelection && (
-          <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/70 border border-primary px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
+          <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/80 border border-primary/50 px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
             <div className="flex items-center gap-1.5 min-w-0 truncate">
-              <span className="shrink-0 font-medium text-primary">📌 Selection Context:</span>
-              <span className="truncate italic text-muted">"{activeSelection.slice(0, 75)}..."</span>
+              <IconNotebook className="size-3.5 shrink-0 text-[#1E3A8A] dark:text-blue-400" />
+              <span className="shrink-0 font-medium text-primary">Selection:</span>
+              <span className="truncate text-secondary">"{activeSelection.slice(0, 80)}"</span>
             </div>
             <button
               type="button"
               onClick={() => setActiveSelection('')}
-              className="text-muted hover:text-primary p-0.5 rounded transition-colors cursor-pointer"
-              title="Dismiss selection context"
+              className="text-muted hover:text-primary p-0.5 rounded transition-colors cursor-pointer shrink-0"
+              title="Dismiss selection"
             >
               <IconX className="size-3" />
             </button>
@@ -544,90 +529,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {/* Bottom Toolbar Row */}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           {/* Left Side: + Icon & Bot Selector */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 overflow-hidden">
-            <div ref={plusRef} className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setPlusOpen((open) => !open)}
-                className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
-                title="Add"
-                aria-expanded={plusOpen}
-              >
-                <IconPlus className={TOOLBAR_ICON} />
-              </button>
-              {plusOpen && (
-                <div className="absolute bottom-full left-0 z-40 mb-1.5 w-64 overflow-hidden rounded border border-primary bg-primary py-1 shadow-md">
-                  {/* Mode Selector */}
-                  <div className="px-2.5 pt-1 pb-0.5 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Agent Mode</span>
-                    {agentMode === 'plan' && (
-                      <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-mono">read-only</span>
-                    )}
-                  </div>
-                  <div className="px-1.5 py-1 flex items-center gap-1 bg-accent/40 rounded mx-2 mb-1.5 border border-primary/30">
-                    {(['ask', 'plan', 'execute'] as AgentMode[]).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => {
-                          onAgentModeChange?.(mode)
-                          setPlusOpen(false)
-                        }}
-                        className={`flex-1 px-1.5 py-1 text-[11px] font-medium rounded capitalize transition-all cursor-pointer text-center ${
-                          agentMode === mode
-                            ? 'bg-[#1E3A8A] text-white shadow-2xs font-semibold'
-                            : 'text-muted hover:text-primary hover:bg-accent/70'
-                        }`}
-                      >
-                        {mode}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="my-0.5 border-t border-primary/30" />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPlusOpen(false)
-                      fileInputRef.current?.click()
-                    }}
-                    className="flex w-full items-center px-2.5 py-1.5 text-left text-[12px] text-primary hover:bg-accent cursor-pointer"
-                  >
-                    Attach a file
-                  </button>
-
-                  <div className="my-0.5 border-t border-primary/30" />
-
-                  <div className="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    Commands
-                  </div>
-                  <div className="max-h-52 overflow-y-auto">
-                    {SLASH_COMMANDS.map((command) => (
-                      <button
-                        key={command.id}
-                        type="button"
-                        onClick={() => {
-                          setPlusOpen(false)
-                          applySlashCommand(command)
-                        }}
-                        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[12px] hover:bg-accent cursor-pointer"
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-medium text-primary">{command.label}</span>
-                          {command.mode && agentMode === command.mode && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#1E3A8A] text-white font-semibold">
-                              active
-                            </span>
-                          )}
-                        </div>
-                        <span className="truncate text-[11px] text-secondary">{command.hint}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
+              title="Attach a file"
+              aria-label="Attach a file"
+            >
+              <IconPlus className={TOOLBAR_ICON} />
+            </button>
             {/* Philosopher Bot Selector using Notebook LemonSelect */}
             <LemonSelect
               value={selectedModelId}

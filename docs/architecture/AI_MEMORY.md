@@ -52,10 +52,34 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
+- **Task:** None
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-14 — Antigravity (UI Cleanup: Restored WIM AI '+' Button as Direct File Attachment Trigger)
+- **Scope:** Completely removed the redundant popup dropdown menu from the `+` button in WIM AI (`ChatInput.tsx`). The modes and commands were already available in the slash command autocomplete menu (`/ask`, `/plan`, etc.), making the secondary popup menu unnecessary and intrusive. The `+` button has been restored solely to its intended single purpose: directly opening the file attachment dialog.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; changes kept locally.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Removed `plusOpen` and `plusRef` state, ref, and outside-click/escape listeners.
+     - Removed the entire popup menu JSX container (`Agent Mode`, commands list, duplicate actions).
+     - Restored the `+` button to a clean direct trigger calling `fileInputRef.current?.click()`.
+
+### 2026-09-14 — Antigravity (UI Polish: Site Icon for Notebook Selection Badge & Fixed ChatInput Plus Button)
+- **Scope:** Replaced the out-of-place pin emoji (`📌`) in the active notebook selection chip with the official site `<IconNotebook />` styled with site navy `#1E3A8A`. Fixed the WIM AI `+` button dropdown not triggering by eliminating `overflow-hidden` from the left toolbar container which was clipping the `bottom-full` popup, and adding event propagation stop on the toggle trigger.
+- **Architectural Rules Kept:**
+  1. Strict user directive adhered: zero tests executed as explicitly requested ("testleri çalıştırmanı yasaklıyorum").
+  2. No git push executed; waiting for explicit user request.
+- **Changes Applied:**
+  1. `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`:
+     - Imported `IconNotebook` from `@posthog/icons`.
+     - Replaced `📌 Selection Context:` with `<IconNotebook />` and clean label `Selection:`.
+     - Removed `overflow-hidden` on the bottom toolbar container that was clipping the plus popup dropdown.
+     - Added `e.stopPropagation()` on the plus button trigger to ensure clean toggle behavior.
 
 ### 2026-09-14 — Antigravity (UI Polish: Minimalist Unified-Font Redesign of 'Add to notebook' Card & Dual-Execution Fix)
 - **Scope:** Stripped out font inconsistencies (eliminated competing `font-mono` vs `font-sans` jumps) and visual clutter (removed "Split View" buttons, uppercase mono badges, multi-tier headers, expand/collapse line counters). Fixed the dual action execution bug where actions were simultaneously pasted into the notebook and rendered as an unapplied pending card; now aligned with `agentMode` (in `execute` mode the action applies directly without redundant pending cards, while in `ask`/`plan` modes it presents the review card without premature insertion).
