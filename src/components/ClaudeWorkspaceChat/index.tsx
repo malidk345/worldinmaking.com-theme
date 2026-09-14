@@ -1081,7 +1081,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       const attachmentContext = effectiveAttachments
         .map((attachment) => {
           if (attachment.type === 'image') {
-            return `[Image attachment: ${attachment.name}. Image bytes are not sent to the text model.]`;
+            return `[Image attachment: ${attachment.name}. URL: ${attachment.url || ''}. Image bytes are not sent to the text model.]`;
+          }
+          if (attachment.type === 'audio') {
+            return `[Audio attachment: ${attachment.name}. URL: ${attachment.url || ''}.]`;
           }
           return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 12000)}`;
         })

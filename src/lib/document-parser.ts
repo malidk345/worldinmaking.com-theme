@@ -1,7 +1,7 @@
 import { extractTextFromPdf } from './pdf-parser';
 
 export interface ParsedDocumentResult {
-  type: 'pdf' | 'csv' | 'json' | 'code' | 'text' | 'image';
+  type: 'pdf' | 'csv' | 'json' | 'code' | 'text' | 'image' | 'audio';
   content: string;
   preview: string;
   pageCount?: number;
@@ -35,6 +35,7 @@ export function formatCsvToMarkdown(csvText: string, maxRows = 60): string {
  */
 export async function parseDocumentFile(file: File): Promise<ParsedDocumentResult> {
   const isImage = file.type.startsWith('image/');
+  const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|webm)$/i.test(file.name);
   const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
   const isCsv = file.type === 'text/csv' || file.name.endsWith('.csv');
   const isJson = file.type === 'application/json' || file.name.endsWith('.json');
@@ -53,6 +54,14 @@ export async function parseDocumentFile(file: File): Promise<ParsedDocumentResul
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  if (isAudio) {
+    return {
+      type: 'audio',
+      content: '',
+      preview: '[Audio attachment]',
+    };
   }
 
   if (isPdf) {
