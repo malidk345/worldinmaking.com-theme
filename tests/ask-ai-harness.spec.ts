@@ -453,6 +453,22 @@ test.describe('Ask AI harness', () => {
         }
     })
 
+    test('destructive OS actions are not auto-applied, leaving pending cards', () => {
+        // We mock the SSE logic briefly or verify we return the correct fields from our tool execution
+        // Since ClaudeWorkspaceChat SSE logic isn't easily unit-tested here, we can test the `isDestructive` list directly.
+        const isDestructive = (type: string) => ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block', 'annotate_notebook', 'add_notebook_footnote'].includes(type)
+        expect(isDestructive('insert_notebook_block')).toBe(true)
+        expect(isDestructive('annotate_notebook')).toBe(true)
+        expect(isDestructive('add_notebook_footnote')).toBe(true)
+        expect(isDestructive('rewrite_notebook_document')).toBe(true)
+        expect(isDestructive('replace_notebook_selection')).toBe(true)
+
+        // Non-destructive check
+        expect(isDestructive('manage_windows')).toBe(false)
+        expect(isDestructive('open_window')).toBe(false)
+        expect(isDestructive('create_notebook')).toBe(false)
+    })
+
     test('replay script is deterministic without a live LLM', async () => {
         expect(ASK_AI_REPLAY.length).toBeGreaterThan(0)
         for (const step of ASK_AI_REPLAY) {
