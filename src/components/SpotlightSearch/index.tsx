@@ -71,7 +71,7 @@ function SpotlightSearchContent({
 
     const trimmedQuery = query.trim()
     const queryWordCount = trimmedQuery.split(/\s+/).filter(Boolean).length
-    const { hits, loading, error, retry } = useLocalSearch(query, activeFilter, open)
+    const { hits, loading } = useLocalSearch(query, activeFilter, open)
     const results = useMemo(
         () =>
             hits.map((hit) => ({
@@ -122,7 +122,7 @@ function SpotlightSearchContent({
 
     // 4+ word queries read like questions, and zero-result queries have nowhere
     // else to go — both offer Ask AI as the top result
-    const suggestAskAI = queryWordCount >= 4 || (queryWordCount > 0 && !loading && !error && !hasResults)
+    const suggestAskAI = queryWordCount >= 4 || (queryWordCount > 0 && !loading && !hasResults)
 
     // Flat list in rendered order (suggestion rows first), for keyboard
     // navigation: actions → ask AI → filter → results
@@ -462,8 +462,6 @@ function SpotlightSearchContent({
                                                                 />
                                                                 <ResultList
                                                                     loading={loading}
-                                                                    error={error}
-                                                                    retry={retry}
                                                                     query={query}
                                                                     groups={groups}
                                                                     activeFilter={activeFilter}

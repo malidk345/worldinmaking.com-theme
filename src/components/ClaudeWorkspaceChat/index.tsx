@@ -1566,10 +1566,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const currentChat = chats.find((c) => c.id === targetChatId);
-            const mode = currentChat?.agentMode || 'ask';
-            const shouldAutoApply = mode === 'execute';
-            const applied = shouldAutoApply ? executeOSAction(assistantMessageId, parsed.action, targetChatId) : false;
+            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block'].includes(parsed.action.type);
+            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -1970,11 +1968,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
+  const handleHumanRespond = (messageId: string, action: 'run' | 'revise', payload?: string) => {
     if (isStreaming || !activeChat) return
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
-    const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
+    const nextStatus = action === 'run' ? 'approved' : 'revised'
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: { ...message.humanTurn, status: nextStatus },
     })
@@ -1993,10 +1991,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     if (action === 'run') {
       void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
-      return
-    }
-    if (action === 'answer') {
-      void handleSendMessage(payload || 'Yes', [], { agentMode: 'execute' })
       return
     }
     void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
@@ -2270,6 +2264,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           activeChatTitle={activeChat?.title}
           boundNotebookTitle={notebookBind?.title}
+          agentMode={activeChat?.agentMode}
+          onAgentModeChange={handleAgentModeChange}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -2343,12 +2339,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
-                            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
-              pendingHumanTurn={activeChat?.messages.at(-1)?.humanTurn?.status === 'pending' ? activeChat.messages.at(-1)?.humanTurn : undefined}
-              onHumanRespond={(action, payload) => {
-                const pendingMsgId = activeChat?.messages.at(-1)?.id
-                if (pendingMsgId) handleHumanRespond(pendingMsgId, action, payload)
-              }}
+              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
               models={models}
               selectedModelId={selectedModelId}
               onSelectModel={handleSelectModel}
@@ -2356,8 +2347,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               draftNonce={composerDraftNonce}
               incomingAttachments={incomingAttachments}
               boundNotebookTitle={activeNotebookInfo?.title}
-              agentMode={activeChat?.agentMode || 'ask'}
-              onAgentModeChange={handleAgentModeChange}
 
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {

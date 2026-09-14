@@ -103,7 +103,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
     const interrupt = row.interrupt
     if (!interrupt || typeof interrupt !== 'object') return undefined
     const human = interrupt as HumanTurn
-    if (human.kind !== 'plan_approval' && human.kind !== 'ask_user') return undefined
+    if (human.kind !== 'plan_approval') return undefined
     const todos = Array.isArray(row.todos)
         ? row.todos
               .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
@@ -140,12 +140,11 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
         interrupt: {
             kind: human.kind,
             title: clip(human.title || 'Waiting', 80),
-            status: human.status === 'approved' || human.status === 'revised' || human.status === 'answered'
+            status: human.status === 'approved' || human.status === 'revised'
                 ? human.status
                 : 'pending',
             plan: human.plan,
             summary: human.summary ? clip(human.summary, 400) : undefined,
-            question: human.question ? clip(human.question, 1000) : undefined,
         },
     }
 }

@@ -19,41 +19,11 @@ import React from 'react'
 import { KeyboardInsetRoot } from '../hooks/useKeyboardInset'
 import SeoFromRoute from '../components/SeoFromRoute'
 import SeoDocument from '../components/SeoDocument'
-import { AppErrorBoundary } from '../components/AppErrorBoundary'
 import { installCancelledRouteSwallow, isCancelledRouteError } from '../lib/swallow-cancelled-route'
 import { initPostHog, trackPageView } from '../lib/wim-posthog'
 
 if (typeof window !== 'undefined') {
     installCancelledRouteSwallow()
-}
-
-
-function OfflineBanner() {
-    const [isOffline, setIsOffline] = React.useState(false)
-
-    React.useEffect(() => {
-        if (typeof navigator !== 'undefined') {
-            setIsOffline(!navigator.onLine)
-        }
-        const onOnline = () => setIsOffline(false)
-        const onOffline = () => setIsOffline(true)
-        window.addEventListener('online', onOnline)
-        window.addEventListener('offline', onOffline)
-        return () => {
-            window.removeEventListener('online', onOnline)
-            window.removeEventListener('offline', onOffline)
-        }
-    }, [])
-
-    if (!isOffline) return null
-
-    return (
-        <div className="pointer-events-none fixed left-0 right-0 top-0 z-[9999] flex justify-center">
-            <div className="pointer-events-auto w-full border-b border-primary bg-accent py-1 text-center text-xs text-primary shadow-sm">
-                Çevrimdışısın — bazı özellikler çalışmayabilir.
-            </div>
-        </div>
-    )
 }
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -129,42 +99,36 @@ export default function App({ Component, pageProps }: AppProps) {
 
     if ((Component as any).noLayout) {
         return (
-            <AppErrorBoundary>
-                <ToastProvider>
-                    <OfflineBanner />
-                    <KeyboardInsetRoot />
-                    <UserProvider>
-                        <ArchiveProvider>
-                            <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
-                            <Component {...pageProps} />
-                        </ArchiveProvider>
-                    </UserProvider>
-                </ToastProvider>
-            </AppErrorBoundary>
+            <ToastProvider>
+                <KeyboardInsetRoot />
+                <UserProvider>
+                    <ArchiveProvider>
+                        <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
+                        <Component {...pageProps} />
+                    </ArchiveProvider>
+                </UserProvider>
+            </ToastProvider>
         )
     }
 
     return (
-        <AppErrorBoundary>
-            <div
-                data-scheme="primary"
-                suppressHydrationWarning
-                className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
-            >
-                <OfflineBanner />
-                <KeyboardInsetRoot />
-                <ToastProvider>
-                    <UserProvider>
-                        <ArchiveProvider>
-                            <Provider element={<Component {...pageProps} />} location={location as any}>
-                                <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
-                                <SeoDocument pageProps={pageProps} isNotFound={isNotFound} />
-                                <Wrapper />
-                            </Provider>
-                        </ArchiveProvider>
-                    </UserProvider>
-                </ToastProvider>
-            </div>
-        </AppErrorBoundary>
+        <div
+            data-scheme="primary"
+            suppressHydrationWarning
+            className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
+        >
+            <KeyboardInsetRoot />
+            <ToastProvider>
+                <UserProvider>
+                    <ArchiveProvider>
+                        <Provider element={<Component {...pageProps} />} location={location as any}>
+                            <SeoFromRoute pageProps={pageProps} isNotFound={isNotFound} />
+                            <SeoDocument pageProps={pageProps} isNotFound={isNotFound} />
+                            <Wrapper />
+                        </Provider>
+                    </ArchiveProvider>
+                </UserProvider>
+            </ToastProvider>
+        </div>
     )
 }
