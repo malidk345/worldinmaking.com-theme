@@ -7,7 +7,33 @@ import {
     extractNotebookOutline,
     isNotebookTask,
     NOTEBOOK_AVAILABLE_INSTRUCTION,
+    rememberStickyNotebookSelection,
+    peekStickyNotebookSelection,
+    consumeStickyNotebookSelection,
 } from '../src/lib/notebook-chat-bind'
+
+
+test.describe('sticky notebook selection', () => {
+    test('remembers valid selection and clips it to 2500', () => {
+        const text = 'ab'.repeat(1500)
+        rememberStickyNotebookSelection(text)
+        const stored = peekStickyNotebookSelection()
+        expect(stored.length).toBe(2500)
+    })
+
+    test('ignores short selection less than 2 chars', () => {
+        consumeStickyNotebookSelection() // clear
+        rememberStickyNotebookSelection('a')
+        expect(peekStickyNotebookSelection()).toBe('')
+    })
+
+    test('consume clears the selection', () => {
+        rememberStickyNotebookSelection('target text')
+        expect(peekStickyNotebookSelection()).toBe('target text')
+        expect(consumeStickyNotebookSelection()).toBe('target text')
+        expect(peekStickyNotebookSelection()).toBe('')
+    })
+})
 
 test.describe('notebook chat bind context', () => {
     test('extracts a short outline from markdown headings', () => {

@@ -53,6 +53,40 @@ export function readNotebookSelection(): string {
     return text.slice(0, 2500)
 }
 
+const STICKY_SELECTION_KEY = 'wim_sticky_notebook_selection'
+let stickySelectionCache = ''
+
+export function rememberStickyNotebookSelection(text: string): void {
+    const trimmed = (text || '').trim()
+    if (trimmed.length < 2) return
+    const clipped = trimmed.slice(0, 2500)
+    stickySelectionCache = clipped
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(STICKY_SELECTION_KEY, clipped)
+    }
+}
+
+export function peekStickyNotebookSelection(): string {
+    if (stickySelectionCache) return stickySelectionCache
+    if (typeof sessionStorage !== 'undefined') {
+        const stored = sessionStorage.getItem(STICKY_SELECTION_KEY)
+        if (stored) {
+            stickySelectionCache = stored
+            return stored
+        }
+    }
+    return ''
+}
+
+export function consumeStickyNotebookSelection(): string {
+    const val = peekStickyNotebookSelection()
+    stickySelectionCache = ''
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(STICKY_SELECTION_KEY)
+    }
+    return val
+}
+
 /** How much of the notebook body we pack into chat context. */
 export const NOTEBOOK_BODY_BUDGET = 20000
 
