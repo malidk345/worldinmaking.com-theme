@@ -553,11 +553,17 @@ export function useNotebookFootnotes({
 
     const renderDocumentFootnotesSection = useCallback(() => {
         const docFootnotes = documentRef.current.footnotes
-        const footnoteEntries = Object.entries(docFootnotes || {})
-        if (!footnoteEntries.length) return null
+        if (!docFootnotes) return null
 
         const orderedFootnoteIds = collectFootnoteIdsFromNodes(documentRef.current.nodes)
-        const validEntries = footnoteEntries.filter(([fnId]) => orderedFootnoteIds.includes(fnId))
+        const validEntries: [string, string][] = []
+        for (const fnId in docFootnotes) {
+            if (Object.prototype.hasOwnProperty.call(docFootnotes, fnId)) {
+                if (orderedFootnoteIds.includes(fnId)) {
+                    validEntries.push([fnId, docFootnotes[fnId]])
+                }
+            }
+        }
         if (!validEntries.length) return null
 
         const sortedEntries = [...validEntries].sort(([aId], [bId]) => {

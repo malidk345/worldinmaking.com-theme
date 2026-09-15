@@ -118,9 +118,12 @@ export function pruneAnnotations(
 ): NotebookAnnotationMap | undefined {
     if (!annotations) return undefined
     const next: NotebookAnnotationMap = {}
-    for (const [id, annotation] of Object.entries(annotations)) {
-        if (annotation.notes.length && (refIds.has(id) || annotation.scope === 'piece')) {
-            next[id] = annotation
+    for (const id in annotations) {
+        if (Object.prototype.hasOwnProperty.call(annotations, id)) {
+            const annotation = annotations[id]
+            if (annotation.notes.length && (refIds.has(id) || annotation.scope === 'piece')) {
+                next[id] = annotation
+            }
         }
     }
     return Object.keys(next).length ? next : undefined
@@ -225,15 +228,18 @@ export function serializeAnnotationsSidecar(
     const pruned = refIds ? pruneAnnotations(annotations, refIds) : annotations
     if (!pruned || !Object.keys(pruned).length) return null
     const byId: Record<string, unknown> = {}
-    for (const [id, annotation] of Object.entries(pruned)) {
-        byId[id] =
-            annotation.scope === 'piece' || annotation.scope === 'block' || annotation.resolved
-                ? {
-                      notes: annotation.notes,
-                      ...(annotation.scope ? { scope: annotation.scope } : {}),
-                      ...(annotation.resolved ? { resolved: true } : {}),
-                  }
-                : annotation.notes
+    for (const id in pruned) {
+        if (Object.prototype.hasOwnProperty.call(pruned, id)) {
+            const annotation = pruned[id]
+            byId[id] =
+                annotation.scope === 'piece' || annotation.scope === 'block' || annotation.resolved
+                    ? {
+                          notes: annotation.notes,
+                          ...(annotation.scope ? { scope: annotation.scope } : {}),
+                          ...(annotation.resolved ? { resolved: true } : {}),
+                      }
+                    : annotation.notes
+        }
     }
     return `${ANNOTATIONS_SIDECAR_PREFIX}${JSON.stringify({ v: 1, byId })}${ANNOTATIONS_SIDECAR_SUFFIX}`
 }
@@ -349,18 +355,21 @@ function parseAnnotationPayload(value: unknown): NotebookAnnotationMap | undefin
     const byId = record.byId
     if (!byId || typeof byId !== 'object' || Array.isArray(byId)) return undefined
     const annotations: NotebookAnnotationMap = {}
-    for (const [id, raw] of Object.entries(byId as Record<string, unknown>)) {
-        const packed =
-            raw && typeof raw === 'object' && !Array.isArray(raw)
-                ? (raw as { notes?: unknown; scope?: unknown; resolved?: unknown })
-                : null
-        const notes = parseInlineNotes(packed ? packed.notes : raw)
-        if (id && notes.length) {
-            annotations[id] = {
-                id,
-                notes,
-                scope: packed?.scope === 'piece' || packed?.scope === 'block' ? packed.scope : undefined,
-                resolved: packed?.resolved === true,
+    for (const id in byId) {
+        if (Object.prototype.hasOwnProperty.call(byId, id)) {
+            const raw = (byId as Record<string, unknown>)[id]
+            const packed =
+                raw && typeof raw === 'object' && !Array.isArray(raw)
+                    ? (raw as { notes?: unknown; scope?: unknown; resolved?: unknown })
+                    : null
+            const notes = parseInlineNotes(packed ? packed.notes : raw)
+            if (id && notes.length) {
+                annotations[id] = {
+                    id,
+                    notes,
+                    scope: packed?.scope === 'piece' || packed?.scope === 'block' ? packed.scope : undefined,
+                    resolved: packed?.resolved === true,
+                }
             }
         }
     }

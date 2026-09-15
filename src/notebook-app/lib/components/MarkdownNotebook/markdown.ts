@@ -232,18 +232,23 @@ export function serializeMarkdownNotebook(document: NotebookDocument): string {
 
     let body = shouldPreserveTrailingEmptyParagraph ? serialized : serialized.trimEnd()
     if (hasFootnotes) {
-        const footnoteEntries = Object.entries(document.footnotes || {})
-        if (footnoteEntries.length) {
-            const footnoteLines = footnoteEntries
-                .map(([id, text]) => {
+        if (document.footnotes) {
+            const footnoteLinesArr: string[] = []
+            for (const id in document.footnotes) {
+                if (Object.prototype.hasOwnProperty.call(document.footnotes, id)) {
+                    const text = document.footnotes[id]
                     const lines = text.split('\n')
                     if (lines.length <= 1) {
-                        return `[^${id}]: ${text}`
+                        footnoteLinesArr.push(`[^${id}]: ${text}`)
+                    } else {
+                        footnoteLinesArr.push(`[^${id}]: ${lines[0]}\n${lines.slice(1).map((l) => `    ${l}`).join('\n')}`)
                     }
-                    return `[^${id}]: ${lines[0]}\n${lines.slice(1).map((l) => `    ${l}`).join('\n')}`
-                })
-                .join('\n')
-            body = body ? `${body}\n\n${footnoteLines}` : footnoteLines
+                }
+            }
+            if (footnoteLinesArr.length) {
+                const footnoteLines = footnoteLinesArr.join('\n')
+                body = body ? `${body}\n\n${footnoteLines}` : footnoteLines
+            }
         }
     }
     const sidecar = serializeAnnotationsSidecar(document.annotations, collectAnnotationKeepIds(document.nodes))
@@ -1540,14 +1545,22 @@ function getSerializableComponentProps(props: NotebookComponentProps): NotebookC
 }
 
 function getOrderedComponentPropEntries(props: NotebookComponentProps): [string, NotebookPropValue][] {
-    const entries = Object.entries(props)
     const orderedKeys = ['hideFilters', 'hideResults']
-    return [
-        ...orderedKeys.flatMap((key): [string, NotebookPropValue][] =>
-            Object.prototype.hasOwnProperty.call(props, key) ? [[key, props[key]]] : []
-        ),
-        ...entries.filter(([key]) => !orderedKeys.includes(key)),
-    ]
+    const result: [string, NotebookPropValue][] = []
+
+    for (const key of orderedKeys) {
+        if (Object.prototype.hasOwnProperty.call(props, key)) {
+            result.push([key, props[key]])
+        }
+    }
+
+    for (const key in props) {
+        if (Object.prototype.hasOwnProperty.call(props, key) && !orderedKeys.includes(key)) {
+            result.push([key, props[key]])
+        }
+    }
+
+    return result
 }
 
 function serializePropValue(value: NotebookPropValue): string {
