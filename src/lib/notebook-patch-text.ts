@@ -41,15 +41,22 @@ export function applyNotebookPatchText(current: string, input: NotebookPatchInpu
     const removed = (input.removed ?? '').trim()
 
     if (spanText) {
-        const idx = uniqueIndex(source, spanText)
-        if (idx !== null) {
+        const match = findUniqueMatch(source, spanText)
+        if (match.kind === 'unique') {
             return {
                 ok: true,
-                next: source.substring(0, idx) + added + source.substring(idx + spanText.length),
+                next: source.substring(0, match.index) + added + source.substring(match.index + spanText.length),
                 mode: 'span',
             }
         }
-        // Ambiguous or missing span — fall through to removed-block match
+        // Ambiguous sticky/selection must fail-closed — never apply removed elsewhere.
+        if (match.kind === 'ambiguous') {
+            return {
+                ok: false,
+                error: 'Selection matches more than once in the document. Patch failed.',
+            }
+        }
+        // Missing span (stale sticky) — fall through to removed-block match
     }
 
     if (removed) {

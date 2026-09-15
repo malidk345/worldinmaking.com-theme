@@ -50,6 +50,35 @@ test.describe('applyNotebookPatchText (Diff Apply)', () => {
         expect(result.ok).toBe(false)
     })
 
+
+    test('fails closed when spanText is ambiguous (no removed fall-through)', () => {
+        const current = 'alpha the beta the gamma'
+        const result = applyNotebookPatchText(current, {
+            removed: 'alpha the beta the gamma',
+            added: 'WRONG',
+            spanText: 'the',
+        })
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+            expect(result.error).toMatch(/more than once/i)
+        }
+        expect(current).toBe('alpha the beta the gamma')
+    })
+
+    test('falls through to removed when spanText is missing (stale sticky)', () => {
+        const current = 'Hello\nold paragraph\nWorld'
+        const result = applyNotebookPatchText(current, {
+            removed: 'old paragraph',
+            added: 'new paragraph',
+            spanText: 'not present anywhere',
+        })
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.mode).toBe('removed')
+            expect(result.next).toBe('Hello\nnew paragraph\nWorld')
+        }
+    })
+
     test('fails closed when neither span nor removed is usable', () => {
         const result = applyNotebookPatchText('doc', { added: 'stuff' })
         expect(result.ok).toBe(false)
