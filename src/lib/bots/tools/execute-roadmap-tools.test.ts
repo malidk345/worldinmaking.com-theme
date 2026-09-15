@@ -134,13 +134,29 @@ describe('Roadmap AI Tools Execution', () => {
             const parsed = JSON.parse(res.result)
             expect(parsed.layout).toBe('split')
             expect(parsed.left_path).toBe('/notebooks')
-            expect(parsed.right_path).toBe('/posts')
+            expect(parsed.right_path).toBe('/workspace-chat')
+        })
+
+        it('split_dual prefers first open notebook on the left', async () => {
+            const host: HostSnapshot = {
+                path: '/posts',
+                windows: [{ path: '/other' }, { path: '/notebooks/nb-open' }],
+            }
+            const res = await executeToolCall(
+                { id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'split_dual' }) },
+                undefined,
+                host
+            )
+            const parsed = JSON.parse(res.result)
+            expect(parsed.ok).toBe(true)
+            expect(parsed.left_path).toBe('/notebooks/nb-open')
+            expect(parsed.right_path).toBe('/workspace-chat')
         })
 
         it('applies research workspace preset', async () => {
             const res = await executeToolCall({ id: 'c', name: 'arrange_workspace_preset', argumentsJson: JSON.stringify({ preset: 'research' }) })
             const parsed = JSON.parse(res.result)
-            expect(parsed.layout).toBe('tile')
+            expect(parsed.layout).toBe('split')
             expect(parsed.left_path).toBe('/scratchpad')
             expect(parsed.right_path).toBe('/notebooks')
         })

@@ -34,10 +34,41 @@ describe('notebook AI bridge regressions', () => {
     describe('arrange_workspace_preset', () => {
         it('studio preset maps correctly to workspace-chat', () => {
             const result = executeArrangeWorkspacePreset('studio')
-            expect(result.action.type).toBe('manage_windows')
-            expect(result.action.payload.action).toBe('split')
-            expect(result.action.payload.left_path).toBe('/notebooks')
-            expect(result.action.payload.right_path).toBe('/workspace-chat')
+            expect(result.ok).toBe(true)
+            expect(result.action?.type).toBe('manage_windows')
+            expect(result.action?.payload.action).toBe('split')
+            expect(result.action?.payload.left_path).toBe('/notebooks')
+            expect(result.action?.payload.right_path).toBe('/workspace-chat')
+        })
+
+        it('split_dual right is /workspace-chat and prefers open notebook', () => {
+            const withNotebook = executeArrangeWorkspacePreset('split_dual', {
+                windows: [{ path: '/notebooks/nb-1' }],
+            } as any)
+            expect(withNotebook.ok).toBe(true)
+            expect(withNotebook.action?.payload.action).toBe('split')
+            expect(withNotebook.action?.payload.left_path).toBe('/notebooks/nb-1')
+            expect(withNotebook.action?.payload.right_path).toBe('/workspace-chat')
+
+            const fallback = executeArrangeWorkspacePreset('split_dual')
+            expect(fallback.ok).toBe(true)
+            expect(fallback.action?.payload.left_path).toBe('/notebooks')
+            expect(fallback.action?.payload.right_path).toBe('/workspace-chat')
+        })
+
+        it('research uses split (not tile) matching resolver', () => {
+            const result = executeArrangeWorkspacePreset('research')
+            expect(result.ok).toBe(true)
+            expect(result.action?.payload.action).toBe('split')
+            expect(result.action?.payload.left_path).toBe('/scratchpad')
+            expect(result.action?.payload.right_path).toBe('/notebooks')
+        })
+
+        it('unknown preset fails closed', () => {
+            const result = executeArrangeWorkspacePreset('not_a_real_preset')
+            expect(result.ok).toBe(false)
+            expect(result.result).toContain('unknown preset')
+            expect(result.action).toBeUndefined()
         })
     })
 
