@@ -35,6 +35,7 @@ export const PLAN_TOOL_NAMES = [
     'finalize_plan',
     'task',
     'cross_examine_argument',
+    'run_code_sandbox',
     'verified_corpus_search',
     'export_notebook',
     'ask_user',
