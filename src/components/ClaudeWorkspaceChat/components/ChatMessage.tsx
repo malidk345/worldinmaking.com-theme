@@ -140,6 +140,14 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
           )}
           <button
             type="button"
+            onClick={handleSplitScreen}
+            className="p-1 rounded text-muted hover:text-primary transition-colors cursor-pointer"
+            title="Split view"
+          >
+            <Columns className="size-3" />
+          </button>
+          <button
+            type="button"
             onClick={handleCopy}
             className={`p-1 rounded text-muted hover:text-primary transition-colors cursor-pointer ${
               copied ? 'text-primary font-medium' : ''

@@ -1355,7 +1355,26 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setVisitingRoomToken(readVisitingRoomToken() || null)
         const bump = () => setPinEpoch((n) => n + 1)
         window.addEventListener('wimDesktopPinnedChanged', bump)
-        return () => window.removeEventListener('wimDesktopPinnedChanged', bump)
+
+        const handleArrangeWorkspace = (e: Event) => {
+            const customEvent = e as CustomEvent
+            const preset = customEvent.detail?.preset
+
+            // Treat missing/unknown preset the same as split_dual for this event only
+            if (!preset || preset === 'split_dual') {
+                const openNotebook = windowsRef.current.find(w => w.path.startsWith('/notebooks/'))
+                const path = openNotebook ? openNotebook.path : '/notebooks'
+
+                latestActionsRef.current?.addWindow({ path, snapped: 'left' })
+                latestActionsRef.current?.addWindow({ path: '/workspace-chat', snapped: 'right' })
+            }
+        }
+        window.addEventListener('wimArrangeWorkspace', handleArrangeWorkspace)
+
+        return () => {
+            window.removeEventListener('wimDesktopPinnedChanged', bump)
+            window.removeEventListener('wimArrangeWorkspace', handleArrangeWorkspace)
+        }
     }, [])
 
     const injectDynamicChildren = useCallback((menu: Menu) => {

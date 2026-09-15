@@ -117,13 +117,13 @@ export function notebookWindowPath(id?: string | null, mark?: string | null): st
 }
 
 export function livePathname(): string | null {
-    if (typeof window === 'undefined') return null
-    const liveRaw = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    if (typeof window === 'undefined' || !window.location) return null
+    const liveRaw = `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}`
     const publicId = extractPublicNotebookId(liveRaw)
     if (publicId) return notebookPublicPath(publicId)
-    const notebookId = extractNotebookId(`${window.location.pathname}${window.location.search}`)
+    const notebookId = extractNotebookId(`${window.location.pathname || ''}${window.location.search || ''}`)
     if (notebookId) {
-        const mark = new URLSearchParams(window.location.search).get('mark')
+        const mark = new URLSearchParams(window.location.search || '').get('mark')
         return notebookWindowPath(notebookId, mark === 'mention' || mark === 'comment' ? mark : null)
     }
     const live = stripPathNoise(window.location.pathname)
