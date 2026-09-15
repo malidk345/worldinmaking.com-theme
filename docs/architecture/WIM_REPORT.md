@@ -1,7 +1,7 @@
 # WIM_REPORT — ajan iş emirleri
 
-Güncelleme: Latest audit @ main. Bitmiş kartlar bu dosyadan çıkarıldı — yeniden açma:
-A1–A5, A7–A8, A9 (Conflict banner Review), A10 (annotate listener), A11 (replace silent append), A13 (annotate premature ack), B1–B6, B7 (Playwright window-routes), B9 (ARTIFACT_RECIPES), B10 (LemonScope Ask AI), B11 (ask_user composer), B12 (Ask/Plan/Execute UI), B13 (export include_footnotes), B14 (arrange studio path), C1 (Build ignore), C2 (AboutPostHog rename), C5 (Docs banners), C7 (STYLEGUIDE/AGENTS titles), SSRF parity, apply-gate, span/diff, OS path+ack, a11y live regions, Anthropic BYOK, WindowRouter `/auth`, OSActionCard EN+tokens, philosopher avatar tokens, composer quota, BlogPost json-ld, Forum publish compose prefill, WIM_AI.md refresh, OS draft helpers, LemonTable notebooks list restore, OS action cards narrowed (#634), annotate ack (#636), bridge tests (#637), WIM_REPORT prior refresh (#638), App.tsx partial hook extract useShellNav+useAuthBridge (#640), snap on already-open windows (#641), stream abort tools (#642), path-family close/focus (#643), replace span_text through card (#644), export toc/footnotes.
+Güncelleme: Latest audit @ main after #666. Bitmiş kartlar bu dosyadan çıkarıldı — yeniden açma:
+A1–A13 (A6 useWindowRegistry #664; A12 Diff Split + wimArrangeWorkspace #651; A13 annotate premature ack), B1–B6, B7 (Playwright window-routes), B9 (ARTIFACT_RECIPES), B10 (LemonScope Ask AI), B11 (ask_user composer), B12 (Ask/Plan/Execute UI), B13 (export include_footnotes), B14 (arrange studio path), C1 (Build ignore), C2 (AboutPostHog rename), C5 (Docs banners), C7 (STYLEGUIDE/AGENTS titles), SSRF parity, apply-gate, span/diff, OS path+ack, a11y live regions, Anthropic BYOK, WindowRouter `/auth`, OSActionCard EN+tokens, philosopher avatar tokens, composer quota, BlogPost json-ld, Forum publish compose prefill, WIM_AI.md refresh, OS draft helpers, LemonTable notebooks list restore, OS action cards narrowed (#634), annotate ack (#636), bridge tests (#637), WIM_REPORT prior refresh (#638/#649), App.tsx partial hook extract useShellNav+useAuthBridge (#640), snap on already-open windows (#641), stream abort tools (#642), path-family close/focus (#643), replace span_text through card (#644), Diff Apply real patch/span (#645), arrange unknown fail (#646), addWindow snap regression (#648), Diff Apply sticky selection (#650), Diff Split button + arrange listener (#651), sticky consume only on success (#652), Notebook OS fail-closed nacks (#653), livePathname null-safe (#654), snapped world snapshots (#655), typecheck shell allowlist (#656), ask_user test CI (#657), LaTeX footnote conversion (#658), eslint shell gate (#659), OS arrange/diff pure extractors (#660), Playwright wiring specs (#661), fail-closed footnote/replace + LaTeX whitespace + shell gates (#663), useWindowRegistry extract (#664), notebook OS dispatch retry until listener mounts (#666), Diff Apply fail-closed UX on dispatch/ack timeout.
 
 Okuyan ajan: kilidi `AI_MEMORY.md` §4'e yaz, **tek kart** yap, `git add -A` yok, bitince §5 log.
 Okuma: bu dosya + `AGENTS.md` + `WIM_AI.md` (AI kartıysa) + `STYLEGUIDE.md` (UI kartıysa).
@@ -16,16 +16,7 @@ Jules PR kuralları: latest `main`; asla `commit.txt` / `commit2.txt` / `commit_
 
 ## A. GELİŞTİR — açık
 
-### A6 — App.tsx split (partial progress)
-**Dosya:** `src/context/App.tsx` (~2900+ satır).
-**Yap:** Sadece `useWindowRegistry` extract edilecek. (`useShellNav` ve `useAuthBridge` halihazırda `src/context/hooks/` altında mevcut, bunları kimseye baştan yazdırma) — davranış 0, export aynı.
-**Yapma:** WindowMode semantiğini bu PR'da değiştirme.
-**Bitti:** `pnpm typecheck:shell`; smoke; pencere aç/kapa.
-
-### A12 — Diff Split View dead wimArrangeWorkspace listener
-**Dosya:** `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` ve `src/context/App.tsx` veya ilgili yer.
-**Yap:** `wimArrangeWorkspace` dispatch ediliyor (`detail: { preset: 'split_dual' }`) ama dinleyeni yok. Listener'ı ekle.
-**Bitti:** Split view çalıştığında pencereler `split_dual` şeklinde düzenleniyor.
+(Tüm açık A kartları tamamlandı)
 
 ---
 
@@ -57,7 +48,7 @@ Jules PR kuralları: latest `main`; asla `commit.txt` / `commit2.txt` / `commit_
 
 ## Sıra
 
-A12 → A6(useWindowRegistry only) → E1 → E2.
+E1 → E2.
 
 ---
 
