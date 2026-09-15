@@ -878,7 +878,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       historyOverride?: Message[]
       agentMode?: AgentMode
       resume?: AgentCheckpoint
-      resumeAction?: 'run' | 'revise'
+      resumeAction?: 'run' | 'revise' | 'answer'
       resumePayload?: string
       continueMessageId?: string
     }
