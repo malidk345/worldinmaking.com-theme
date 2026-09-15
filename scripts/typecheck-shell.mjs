@@ -54,6 +54,9 @@ const ALLOWLIST_PREFIXES = [
     'src/lib/chat-store.ts',
     'src/lib/chat-remote.ts',
     'src/lib/bots/',
+    'src/lib/os/',
+    'src/lib/chat/diff-apply.ts',
+    'src/lib/world-snapshot.ts',
 ]
 
 /**

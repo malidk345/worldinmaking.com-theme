@@ -15,7 +15,7 @@ import {
     replaceNotebookAIResponseMarkdown,
 } from './lib/components/MarkdownNotebook/notebookAI'
 import { parseMarkdownNotebook, serializeMarkdownNotebook } from './lib/components/MarkdownNotebook/markdown'
-import { applyNotebookPatchText } from '../lib/notebook-patch-text'
+import { applyNotebookPatchText, findUniqueMatch } from '../lib/notebook-patch-text'
 import { upsertAnnotation } from './lib/components/MarkdownNotebook/annotations'
 import { applyRefOnNotebookSpan, resolveAutonomousPlacement, collectExistingRefSpans } from './lib/components/MarkdownNotebook/annotationPlacement'
 import { createNotebookRefId } from './lib/components/MarkdownNotebook/notebookEditorModel'
@@ -943,23 +943,37 @@ export function App() {
       const current = markdownRef.current || target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
       const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
-      let next = current
+      const targetPhrase = spanText || selection || ''
 
-      const targetPhrase = spanText && current.includes(spanText) ? spanText : (selection && current.includes(selection) ? selection : '')
-
-      if (targetPhrase) {
-        next = current.replace(targetPhrase, text)
-        setCurrentNotebook(target)
-        setMarkdown(next)
-        setMarkdownVersion((v) => v + 1)
-        saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
-      } else {
-        console.warn('handleReplaceSelection: No valid selection found in content, aborting replace.');
+      if (!targetPhrase) {
+        console.warn('handleReplaceSelection: No spanText or selection provided, aborting replace.')
         appActions?.addToast({ type: 'error', message: 'Target phrase not found in notebook' })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
-        // do not fallback to append
+        return
       }
+
+      // Diff Apply parity: exactly one unique match required (fail-closed).
+      const match = findUniqueMatch(current, targetPhrase)
+      if (match.kind === 'none') {
+        console.warn('handleReplaceSelection: No valid selection found in content, aborting replace.')
+        appActions?.addToast({ type: 'error', message: 'Target phrase not found in notebook' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
+        return
+      }
+      if (match.kind === 'ambiguous') {
+        console.warn('handleReplaceSelection: Ambiguous selection match, aborting replace.')
+        appActions?.addToast({ type: 'error', message: 'Target phrase matches more than once' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_ambiguous' } }))
+        return
+      }
+
+      const next =
+        current.substring(0, match.index) + text + current.substring(match.index + targetPhrase.length)
+      setCurrentNotebook(target)
+      setMarkdown(next)
+      setMarkdownVersion((v) => v + 1)
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
+      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
     }
 
 
@@ -1063,7 +1077,13 @@ export function App() {
       const footnoteDef = `[^${marker}]: ${text}`
 
       let next = current
-      if (spanText && next.includes(spanText)) {
+      if (spanText) {
+        // Fail-closed: never silently append when the requested span is missing.
+        if (!next.includes(spanText)) {
+          appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'span_not_found' } }))
+          return
+        }
         const spanIndex = next.indexOf(spanText)
         const afterSpan = next.slice(spanIndex + spanText.length, spanIndex + spanText.length + footnoteAnchor.length)
         if (afterSpan !== footnoteAnchor) {
@@ -1071,17 +1091,14 @@ export function App() {
         }
       } else {
         const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
-        if (selection && next.includes(selection)) {
-          const selIdx = next.indexOf(selection)
-          next = next.slice(0, selIdx + selection.length) + footnoteAnchor + next.slice(selIdx + selection.length)
-        } else {
-          const fnMatch = next.search(/\n\[\^[a-zA-Z0-9_-]+\]:/)
-          if (fnMatch !== -1) {
-            next = next.slice(0, fnMatch) + footnoteAnchor + next.slice(fnMatch)
-          } else {
-            next = next.trimEnd() ? `${next.trimEnd()}${footnoteAnchor}\n\n` : `${footnoteAnchor}\n\n`
-          }
+        if (!selection || !next.includes(selection)) {
+          // Fail-closed: no spanText and no usable selection — do not append to end.
+          appActions?.addToast({ type: 'error', message: 'No selection found for footnote' })
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
+          return
         }
+        const selIdx = next.indexOf(selection)
+        next = next.slice(0, selIdx + selection.length) + footnoteAnchor + next.slice(selIdx + selection.length)
       }
 
       const existingDefRegex = new RegExp(`^\\s*\\[\\^${marker}\\]:.*$`, 'm')

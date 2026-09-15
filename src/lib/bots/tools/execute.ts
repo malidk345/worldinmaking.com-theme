@@ -1191,7 +1191,10 @@ function compileNotebookToLatex(title: string, rawContent: string, includeToc = 
             const footnoteRegex = /\[\^([a-zA-Z0-9_-]+)\]/g
             processedLine = processedLine.replace(footnoteRegex, (match, id) => {
                 if (defs[id]) {
+                    // Collapse whitespace/newlines inside footnote body to spaces (valid LaTeX).
                     const safeBody = defs[id]
+                        .replace(/\s+/g, ' ')
+                        .trim()
                         .replace(/\\/g, '\\textbackslash ')
                         .replace(/([&%$#_{}])/g, '\\$1')
                         .replace(/~/g, '\\textasciitilde ')

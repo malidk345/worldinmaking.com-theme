@@ -92,7 +92,7 @@ test('should transform footnotes to \\footnote{} in LaTeX export when includeFoo
 
     const result = executeExportNotebook('latex', '123', false, true, host)
     expect(result.ok).toBe(true)
-    expect(result.artifact?.content).toContain('Hello world\\footnote{First footnote.}. This is a test\\footnote{Second footnote across\nmultiple lines?}.')
+    expect(result.artifact?.content).toContain('Hello world\\footnote{First footnote.}. This is a test\\footnote{Second footnote across multiple lines?}.')
     expect(result.artifact?.content).toContain('And another paragraph.')
     expect(result.artifact?.content).not.toContain('\\textasciicircum')
 })

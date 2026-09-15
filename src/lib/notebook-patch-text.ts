@@ -13,13 +13,25 @@ export type NotebookPatchResult =
     | { ok: true; next: string; mode: 'span' | 'removed' }
     | { ok: false; error: string }
 
-function uniqueIndex(haystack: string, needle: string): number | null {
-    if (!needle) return null
+export type UniqueMatchResult =
+    | { kind: 'unique'; index: number }
+    | { kind: 'none' }
+    | { kind: 'ambiguous' }
+
+/** Locate a unique occurrence of needle in haystack (Diff Apply parity). */
+export function findUniqueMatch(haystack: string, needle: string): UniqueMatchResult {
+    if (!needle) return { kind: 'none' }
     const first = haystack.indexOf(needle)
-    if (first === -1) return null
+    if (first === -1) return { kind: 'none' }
     const last = haystack.lastIndexOf(needle)
-    if (first !== last) return null
-    return first
+    if (first !== last) return { kind: 'ambiguous' }
+    return { kind: 'unique', index: first }
+}
+
+/** Index of a unique match, or null if missing/ambiguous. */
+export function uniqueIndex(haystack: string, needle: string): number | null {
+    const match = findUniqueMatch(haystack, needle)
+    return match.kind === 'unique' ? match.index : null
 }
 
 export function applyNotebookPatchText(current: string, input: NotebookPatchInput): NotebookPatchResult {
