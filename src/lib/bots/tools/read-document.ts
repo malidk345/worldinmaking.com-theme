@@ -73,7 +73,7 @@ function extractPdfTextFast(uint8: Uint8Array): string[] {
         while ((strMatch = strRegex.exec(block)) !== null) {
             const clean = strMatch[1]
                 .replace(/\\([0-9]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
-                .replace(/\\([nrtbf\(\)\\])/g, (_, esc) => {
+                .replace(/\\([nrtbf()\\])/g, (_, esc) => {
                     if (esc === 'n') return '\n'
                     if (esc === 'r') return '\r'
                     if (esc === 't') return '\t'

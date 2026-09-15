@@ -45,7 +45,8 @@ export async function fetchWithTransientRetry(
     const signal = options?.signal
 
     let attempt = 0
-    while (true) {
+    const attempting = true;
+    while (attempting) {
         if (signal?.aborted) {
             throw new Error('client request aborted')
         }
@@ -77,4 +78,5 @@ export async function fetchWithTransientRetry(
             await sleep(delay, signal)
         }
     }
+    throw new Error('Unreachable retry state')
 }

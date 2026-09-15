@@ -151,8 +151,8 @@ export const Context = createContext<WindowContextType>({
         // No-op default implementation
     },
     animating: false,
-    addWindow: () => {},
-    navigate: () => {},
+    addWindow: () => { /* no-op */ },
+    navigate: () => { /* no-op */ },
 })
 
 export const Provider = ({

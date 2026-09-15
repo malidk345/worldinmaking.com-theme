@@ -54,8 +54,8 @@ export function extractSearchQuery(text: string): string {
     let query = text.trim()
     query = query.replace(/^(lütfen|lutfen|please)\s+/i, '')
     query = query.replace(/^(can you|could you|would you)(\s+please)?\s+/i, '')
-    query = query.replace(/^(internette\s+)?(araştır|arastir|arama yap|ara)\s*[:\-]?\s*/i, '')
-    query = query.replace(/^(search(\s+the\s+web)?(\s+for)?|look\s+up|google)\s*[:\-]?\s*/i, '')
+    query = query.replace(/^(internette\s+)?(araştır|arastir|arama yap|ara)\s*[:-]?\s*/i, '')
+    query = query.replace(/^(search(\s+the\s+web)?(\s+for)?|look\s+up|google)\s*[:-]?\s*/i, '')
     return (query.trim() || text.trim()).slice(0, 500)
 }
 

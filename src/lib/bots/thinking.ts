@@ -97,7 +97,7 @@ const MODEL_ID_RE = /\b(qwen\/[\w.-]+|groq\/[\w.-]+|gemini-[\w.-]+|gpt-oss[\w.-]
 
 /** Keep only the clause. Drop model ids, "as Marx", leftover markup. */
 export function cleanStageText(text: string): string {
-    let value = String(text || '')
+    const value = String(text || '')
         .replace(/<\/?[^>]+>/g, ' ')
         .replace(MODEL_ID_RE, ' ')
         .replace(/^\s*(as|you are|speaking as|writing as)\s+[a-z][a-z .'-]{1,40}\s*[:—,-]\s*/i, '')
@@ -193,7 +193,7 @@ function stagesFromBlock(inner: string): ThinkingStage[] {
     if (!raw) return []
 
     // 1. Check for bracketed cognitive tags like [GÜÇ-OKUMASI], [GENEALOJİ], [FİZYOLOJİ], etc.
-    const bracketRegex = /(?:^|\n|\s*)\[([A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+)\]\s*[:—\-]?\s*([\s\S]*?)(?=(?:\n\s*\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-_ /]+\]|$))/g
+    const bracketRegex = /(?:^|\n|\s*)\[([A-ZÇĞİÖŞÜa-zçğıöşü0-9-_ /]+)\]\s*[:—-]?\s*([\s\S]*?)(?=(?:\n\s*\[[A-ZÇĞİÖŞÜa-zçğıöşü0-9-_ /]+\]|$))/g
     const bracketMatches = Array.from(raw.matchAll(bracketRegex))
     if (bracketMatches.length >= 1) {
         const stages: ThinkingStage[] = []
@@ -263,7 +263,7 @@ export function parseThinkingAndReply(
     const d = depthForTask(taskType, depth)
     const text = rawText || ''
     
-    let stages: ThinkingStage[] = []
+    const stages: ThinkingStage[] = []
     let reply = text
 
     // Route every known wrapper through the same parser. The stream demux uses

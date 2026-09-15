@@ -275,7 +275,7 @@ export function fitGroqRequest(options: {
         }
     }
 
-    let messages = shrinkMessagesForTpm(rawMessages, Math.min(wanted, 768))
+    const messages = shrinkMessagesForTpm(rawMessages, Math.min(wanted, 768))
     const promptTokens = estimateMessagesTokens(messages)
     const room = GROQ_TPM_LIMIT - GROQ_TPM_SAFETY - promptTokens
     const maxTokens = Math.max(MIN_GROQ_COMPLETION_TOKENS, Math.min(wanted, room))

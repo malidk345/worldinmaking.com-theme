@@ -473,7 +473,7 @@ async function executeGenerateImage(
             height?: number
         }
         const fullUrl = `${workerUrl}${data.url.startsWith('/') ? '' : '/'}${data.url}`
-        const safeAlt = prompt.slice(0, 48).replace(/[\[\]"]/g, '').trim()
+        const safeAlt = prompt.slice(0, 48).replace(/[[\]"]/g, '').trim()
 
         return {
             ok: true,
@@ -806,7 +806,7 @@ async function executeSynthesizeSpeech(
 
         const data = (await res.json()) as { ok: boolean; storage_key: string; url: string; content_type?: string }
         const fullUrl = `${workerUrl}${data.url.startsWith('/') ? '' : '/'}${data.url}`
-        const safeSnippet = text.slice(0, 48).replace(/[\[\]"]/g, '').trim()
+        const safeSnippet = text.slice(0, 48).replace(/[[\]"]/g, '').trim()
 
         return {
             ok: true,
@@ -847,7 +847,7 @@ function executeVerifiedCorpusSearch(
     query: string,
     philosopher?: string,
     work?: string,
-    maxResults: number = 5
+    maxResults = 5
 ): Omit<ToolExecution, 'callId' | 'name'> {
     const searchRes = searchPhilosophicalCorpus(query, {
         thinker: philosopher,
@@ -1035,9 +1035,9 @@ function processFootnotes(rawContent: string, includeFootnotes: boolean): string
     const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g;
     const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/;
 
-    let lines = rawContent.split('\n');
-    let contentLines: string[] = [];
-    let defs: string[] = [];
+    const lines = rawContent.split('\n');
+    const contentLines: string[] = [];
+    const defs: string[] = [];
     let inDef = false;
     let currentDef: string[] = [];
 
@@ -1105,12 +1105,12 @@ function compileNotebookToMarkdown(title: string, rawContent: string, includeToc
 
 function compileNotebookToLatex(title: string, rawContent: string, includeToc = true, includeFootnotes = true): string {
     let content = rawContent
-    let defs: Record<string, string> = {}
+    const defs: Record<string, string> = {}
 
     if (includeFootnotes) {
         const defRegex = /^\[\^([a-zA-Z0-9_-]+)\]:\s*(.*)/
-        let lines = content.split('\n')
-        let contentLines: string[] = []
+        const lines = content.split('\n')
+        const contentLines: string[] = []
         let inDef = false
         let currentDefId: string | null = null
         let currentDefLines: string[] = []
@@ -1146,8 +1146,8 @@ function compileNotebookToLatex(title: string, rawContent: string, includeToc = 
     } else {
         const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g
         const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/
-        let lines = content.split('\n')
-        let contentLines: string[] = []
+        const lines = content.split('\n')
+        const contentLines: string[] = []
         let inDef = false
         for (const line of lines) {
             if (defRegex.test(line)) {
@@ -1282,7 +1282,7 @@ function compileNotebookToHtml(title: string, rawContent: string, includeToc = t
         .replace(/^### (.*$)/gim, (_, text) => `<h3 id="${slugify(text)}">${text}</h3>`)
         .replace(/^## (.*$)/gim, (_, text) => `<h2 id="${slugify(text)}">${text}</h2>`)
         .replace(/^# (.*$)/gim, (_, text) => `<h1 id="${slugify(text)}">${text}</h1>`)
-        .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
         .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em>$1</em>')
         .replace(/`([^`]+)`/gim, '<code>$1</code>')
@@ -1318,8 +1318,8 @@ function compileNotebookToText(title: string, rawContent: string): string {
 export function executeExportNotebook(
     format: string,
     notebookId?: string,
-    includeToc: boolean = true,
-    includeFootnotes: boolean = true,
+    includeToc = true,
+    includeFootnotes = true,
     host?: HostSnapshot
 ): { ok: boolean; result: string; artifact?: ArtifactDocument } {
     const requested = (notebookId || '').trim()

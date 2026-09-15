@@ -260,7 +260,8 @@ export async function geminiToolCompletion(params: {
         let lastThoughtSignature = ''
 
         try {
-            while (true) {
+            const reading = true;
+            while (reading) {
                 const { done, value } = await reader.read()
                 if (done) break
                 buffer += decoder.decode(value, { stream: true })

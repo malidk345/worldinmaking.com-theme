@@ -104,7 +104,7 @@ function sliceAround(text: string, center: number, max: number): string {
     if (text.length <= max) return text
     const half = Math.floor(max / 2)
     let start = Math.max(0, center - half)
-    let end = Math.min(text.length, start + max)
+    const end = Math.min(text.length, start + max)
     start = Math.max(0, end - max)
     return text.slice(start, end)
 }

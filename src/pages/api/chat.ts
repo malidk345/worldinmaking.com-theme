@@ -153,7 +153,7 @@ export default async function handler(req: Request) {
     if (body.checkpoint !== undefined && !checkpoint) return jsonError('checkpoint is invalid', 400)
     if (checkpoint && !resumeAction) return jsonError('resumeAction is required with checkpoint', 400)
 
-    let history: GatewayMessage[] = []
+    const history: GatewayMessage[] = []
     if (body.messages !== undefined) {
         if (!Array.isArray(body.messages)) return jsonError('messages must be an array', 400)
         if (body.messages.length > 30) return jsonError('messages too long (max 30)', 400)
@@ -398,7 +398,7 @@ export default async function handler(req: Request) {
             }
 
             try {
-                let webSearchContext = ''
+                const webSearchContext = ''
                 let citations: AiCitation[] = []
                 const enableTools = true
                 // Tools own search. Heuristic pre-search is the no-tools fallback only.
