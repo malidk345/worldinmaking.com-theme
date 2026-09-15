@@ -109,6 +109,11 @@ export function isAssistantWindowPath(path?: string | null): boolean {
     return p === '/assistant' || p.startsWith('/assistant/')
 }
 
+export function isStudyWindowPath(path?: string | null): boolean {
+    const p = stripPathNoise(path)
+    return p === '/study' || p.startsWith('/study/')
+}
+
 export function notebookWindowPath(id?: string | null, mark?: string | null): string {
     const clean = String(id || '').trim()
     if (!clean) return '/notebooks'
@@ -195,6 +200,7 @@ export function isPathRoutedWindow(path: string): boolean {
         /^\/scratchpad(\/|$)/.test(p) ||
         /^\/trash(\/|$)/.test(p) ||
         /^\/pricing(\/|$)/.test(p) ||
+        /^\/study(\/|$)/.test(p) ||
         p === '/notebooks' ||
         /^\/notebooks\//.test(p) ||
         /^\/(posts|blog)(\/|$)/.test(p) ||
@@ -237,6 +243,9 @@ export function windowPathMatches(windowPath: string, targetPath: string): boole
     }
     if (w === '/scratchpad' || w.startsWith('/scratchpad/')) {
         if (t === '/scratchpad' || t.startsWith('/scratchpad/')) return true
+    }
+    if (w === '/study' || w.startsWith('/study/')) {
+        if (t === '/study' || t.startsWith('/study/')) return true
     }
     return false
 }

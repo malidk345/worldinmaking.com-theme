@@ -19,6 +19,7 @@ import {
     isNotebookWindowPath,
     isPathRoutedWindow,
     isScratchpadWindowPath,
+    isStudyWindowPath,
     isTrashWindowPath,
 } from '../../lib/window-path'
 
@@ -28,6 +29,7 @@ const routeFallback = () => <div className="h-full min-h-0 flex-1" aria-hidden /
 
 const IdeasHub = dynamic(() => import('components/Ideas'), { loading: routeFallback })
 const ProfileWrapper = dynamic(() => import('components/Profile'), { loading: routeFallback })
+const FlashcardStudyWindow = dynamic(() => import('../Study/FlashcardStudyWindow'), { loading: routeFallback })
 const Inbox = dynamic(() => import('components/Inbox'), { loading: routeFallback })
 const PostEditorWindow = dynamic(() => import('../Community/PostEditorWindow'), { loading: routeFallback })
 const BlogPost = dynamic(() => import('../../templates/BlogPost'), { loading: routeFallback })
@@ -145,6 +147,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     if (path === '/assistant' || path.startsWith('/assistant/')) {
         return <AssistantWindow />
+    }
+
+    if (isStudyWindowPath(path)) {
+        return <FlashcardStudyWindow />
     }
 
     if (path === '/admin' || path === '/community/admin') {
@@ -273,6 +279,7 @@ const WindowRouter = (props: WindowRouterProps) => {
         isScratchpadWindowPath(path) ||
         isTrashWindowPath(path) ||
         isAssistantWindowPath(path) ||
+        isStudyWindowPath(path) ||
         isProfilePath(path)
     // Forum / Ask AI / blog / notebooks: fill the window so chrome (sidebar pin,
     // settings, mobile FAB) stays on the pane. Content scrolls inside.
@@ -282,7 +289,7 @@ const WindowRouter = (props: WindowRouterProps) => {
             className={
                 fillHeight
                     ? `text-primary h-full min-h-0 flex flex-col overflow-hidden${
-                          isScratchpadWindowPath(path) || isTrashWindowPath(path) || isAssistantWindowPath(path) ? ' bg-primary' : ''
+                          isScratchpadWindowPath(path) || isTrashWindowPath(path) || isAssistantWindowPath(path) || isStudyWindowPath(path) ? ' bg-primary' : ''
                       }`
                     : 'text-primary min-h-full h-auto flex flex-col'
             }
