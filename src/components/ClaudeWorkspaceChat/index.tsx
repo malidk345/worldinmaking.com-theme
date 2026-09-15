@@ -2089,13 +2089,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (isStreaming || !activeChat) return
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
-    const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
     const trimmed = (payload || '').trim()
+    // ask_user: never continue on empty/whitespace — old path fell back to "Yes"
+    if (action === 'answer' && !trimmed) return
+    const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
     updateAssistantMessage(activeChat.id, messageId, {
       humanTurn: {
         ...message.humanTurn,
         status: nextStatus,
-        ...(action === 'answer' && trimmed ? { answer: trimmed.slice(0, 2000) } : {}),
+        ...(action === 'answer' ? { answer: trimmed.slice(0, 2000) } : {}),
         ...(action === 'revise' && trimmed ? { revisionNote: trimmed.slice(0, 800) } : {}),
       },
     })
@@ -2108,7 +2110,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         agentMode: nextMode,
         resume: message.checkpoint,
         resumeAction: action,
-        resumePayload: payload,
+        resumePayload: action === 'answer' ? trimmed : payload,
       })
       return
     }
@@ -2117,10 +2119,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return
     }
     if (action === 'answer') {
-      void handleSendMessage(payload || 'Yes', [], { agentMode: 'execute' })
+      void handleSendMessage(trimmed, [], { agentMode: 'execute' })
       return
     }
-    void handleSendMessage(payload ? `Revise the plan: ${payload}` : 'Revise the plan.', [], { agentMode: 'plan' })
+    void handleSendMessage(trimmed ? `Revise the plan: ${trimmed}` : 'Revise the plan.', [], { agentMode: 'plan' })
   }
 
   const handleDeleteChat = (id: string) => {

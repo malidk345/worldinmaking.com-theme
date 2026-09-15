@@ -58,6 +58,13 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-15 — Grok Bot / Chief of Staff (ask_user empty Enter no longer auto-Yes)
+- **Scope:** Composer ask_user Enter ignored empty/whitespace (parity with disabled Answer). `handleHumanRespond` rejects empty answers and no longer falls back to literal `"Yes"`.
+- **Files:** `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/ai-public-surface.spec.ts`, `WIM_REPORT.md`
+- **Verify:** `pnpm typecheck:shell` PASS; `playwright test tests/ai-public-surface.spec.ts` 16 passed.
+- **Handoff:** Squash-merge when CI typecheck green.
+
+
 ### 2026-09-14 — Antigravity (UI Cleanup: Restored WIM AI '+' Button as Direct File Attachment Trigger)
 - **Scope:** Completely removed the redundant popup dropdown menu from the `+` button in WIM AI (`ChatInput.tsx`). The modes and commands were already available in the slash command autocomplete menu (`/ask`, `/plan`, etc.), making the secondary popup menu unnecessary and intrusive. The `+` button has been restored solely to its intended single purpose: directly opening the file attachment dialog.
 - **Architectural Rules Kept:**
