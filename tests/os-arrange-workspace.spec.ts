@@ -80,3 +80,55 @@ test.describe('wimArrangeWorkspace listener wiring', () => {
         expect(src).not.toContain('resolveSplitDualPaths(windowsRef.current)');
     });
 });
+
+test.describe('executeArrangeWorkspacePreset uses resolver', () => {
+    test('execute.ts imports resolveWorkspacePresetLayout (single source of truth)', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { resolve } = await import('node:path');
+        const src = readFileSync(resolve('src/lib/bots/tools/execute.ts'), 'utf8');
+        expect(src).toContain("import { resolveWorkspacePresetLayout } from '../../os/arrange-workspace'");
+        expect(src).toContain('resolveWorkspacePresetLayout(p, windows)');
+        // Old hard-coded split_dual right=/posts and research tile must be gone
+        expect(src).not.toMatch(/case 'split_dual':[\s\S]*?rightPath = '\/posts'/);
+        expect(src).not.toMatch(/case 'research':[\s\S]*?action = 'tile'/);
+    });
+
+    test('split_dual right is /workspace-chat; prefers open notebook; unknown fails closed', () => {
+        const withNb = resolveWorkspacePresetLayout('split_dual', [{ path: '/notebooks/nb-x' }]);
+        expect(withNb).toEqual({
+            kind: 'split',
+            left: '/notebooks/nb-x',
+            right: '/workspace-chat',
+        });
+        expect(withNb!.right).not.toBe('/posts');
+
+        const fallback = resolveWorkspacePresetLayout('split_dual', []);
+        expect(fallback).toEqual({
+            kind: 'split',
+            left: '/notebooks',
+            right: '/workspace-chat',
+        });
+
+        expect(resolveWorkspacePresetLayout('research')).toEqual({
+            kind: 'split',
+            left: '/scratchpad',
+            right: '/notebooks',
+        });
+
+        expect(resolveWorkspacePresetLayout('zzz_unknown')).toBeNull();
+    });
+
+    test('known presets match resolver contract used by execute', () => {
+        const presets = ['deep_reading', 'studio', 'minimal', 'split_dual', 'research'] as const;
+        for (const preset of presets) {
+            const layout = resolveWorkspacePresetLayout(preset, []);
+            expect(layout).not.toBeNull();
+            if (layout!.kind === 'split') {
+                expect(typeof layout!.left).toBe('string');
+                expect(typeof layout!.right).toBe('string');
+            } else {
+                expect(typeof layout!.path).toBe('string');
+            }
+        }
+    });
+});

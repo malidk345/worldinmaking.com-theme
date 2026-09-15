@@ -41,6 +41,7 @@ import { searchPhilosophicalCorpus } from './philosophical-corpus'
 import { crossExamineArgument } from './argument-cross-examination'
 import type { CanvasSpec } from '../../ai/visual-artifacts'
 import { repairAndParseJsonObject } from './json-repair'
+import { resolveWorkspacePresetLayout } from '../../os/arrange-workspace'
 
 const MAX_TITLE = 80
 const MAX_ARTIFACT_BODY = 120_000
@@ -887,59 +888,56 @@ export function executeArrangeWorkspacePreset(
     presetName: string,
     host?: HostSnapshot
 ): { ok: boolean; result: string; action?: HostOsAction } {
-    const p = presetName.toLowerCase().trim()
-    let action = 'tile'
-    let leftPath: string | undefined
-    let rightPath: string | undefined
-    let focusPath: string | undefined
+    const p = String(presetName || '')
+        .toLowerCase()
+        .trim()
 
-    switch (p) {
-        case 'deep_reading':
-            action = 'split'
-            leftPath = '/posts'
-            rightPath = '/notebooks'
-            break
-        case 'studio':
-            action = 'split'
-            leftPath = '/notebooks'
-            rightPath = '/workspace-chat'
-            break
-        case 'minimal':
-            action = 'focus'
-            focusPath = '/notebooks'
-            break
-        case 'split_dual':
-            action = 'split'
-            leftPath = host?.path || '/notebooks'
-            rightPath = '/posts'
-            break
-        case 'research':
-            action = 'tile'
-            leftPath = '/scratchpad'
-            rightPath = '/notebooks'
-            break
-        default:
-            return {
-                ok: false,
-                result: JSON.stringify({ ok: false, error: 'unknown preset' }),
-            }
+    const fromHost = (host?.windows || [])
+        .map((w) => (typeof w?.path === 'string' && w.path ? { path: w.path } : null))
+        .filter((w): w is { path: string } => !!w)
+    const windows: { path: string }[] =
+        fromHost.length > 0 ? fromHost : host?.path ? [{ path: host.path }] : []
+
+    const layout = resolveWorkspacePresetLayout(p, windows)
+    if (!layout) {
+        return {
+            ok: false,
+            result: JSON.stringify({ ok: false, error: 'unknown preset' }),
+        }
     }
 
-    const executed = executeManageWindows(host, action, focusPath, leftPath, rightPath)
+    if (layout.kind === 'split') {
+        const executed = executeManageWindows(host, 'split', undefined, layout.left, layout.right)
+        return {
+            ok: true,
+            result: JSON.stringify({
+                ok: true,
+                preset: p,
+                layout: 'split',
+                left_path: layout.left,
+                right_path: layout.right,
+            }),
+            action: {
+                ...executed.action,
+                title: `Workspace preset: ${p.replace(/_/g, ' ')}`,
+                description: `Applied ${p} workspace preset (split)`,
+            },
+        }
+    }
+
+    const executed = executeManageWindows(host, 'focus', layout.path)
     return {
         ok: true,
         result: JSON.stringify({
             ok: true,
             preset: p,
-            layout: action,
-            path: focusPath,
-            left_path: leftPath,
-            right_path: rightPath,
+            layout: 'focus',
+            path: layout.path,
         }),
         action: {
             ...executed.action,
             title: `Workspace preset: ${p.replace(/_/g, ' ')}`,
-            description: `Applied ${p} workspace preset (${action})`,
+            description: `Applied ${p} workspace preset (focus)`,
         },
     }
 }
