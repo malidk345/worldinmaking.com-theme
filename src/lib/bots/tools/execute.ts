@@ -1105,12 +1105,12 @@ function compileNotebookToMarkdown(title: string, rawContent: string, includeToc
 
 function compileNotebookToLatex(title: string, rawContent: string, includeToc = true, includeFootnotes = true): string {
     let content = rawContent
-    let defs: Record<string, string> = {}
+    const defs: Record<string, string> = {}
 
     if (includeFootnotes) {
         const defRegex = /^\[\^([a-zA-Z0-9_-]+)\]:\s*(.*)/
-        let lines = content.split('\n')
-        let contentLines: string[] = []
+        const lines = content.split('\n')
+        const contentLines: string[] = []
         let inDef = false
         let currentDefId: string | null = null
         let currentDefLines: string[] = []
@@ -1146,8 +1146,8 @@ function compileNotebookToLatex(title: string, rawContent: string, includeToc = 
     } else {
         const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g
         const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/
-        let lines = content.split('\n')
-        let contentLines: string[] = []
+        const lines = content.split('\n')
+        const contentLines: string[] = []
         let inDef = false
         for (const line of lines) {
             if (defRegex.test(line)) {
