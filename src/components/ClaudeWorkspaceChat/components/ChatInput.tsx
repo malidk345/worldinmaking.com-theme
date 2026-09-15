@@ -486,15 +486,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 value={humanTurnDraft}
                 onChange={(event) => setHumanTurnDraft(event.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (pendingHumanTurn.kind === 'ask_user') {
-                       onHumanRespond?.('answer', humanTurnDraft);
-                    } else {
-                       onHumanRespond?.('revise', humanTurnDraft);
-                    }
-                    setHumanTurnDraft('');
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  const trimmed = humanTurnDraft.trim()
+                  // ask_user: mirror disabled Answer button — never submit empty/whitespace
+                  // (empty used to reach handleHumanRespond and fall back to "Yes")
+                  if (pendingHumanTurn.kind === 'ask_user') {
+                    if (!trimmed) return
+                    onHumanRespond?.('answer', trimmed)
+                  } else {
+                    onHumanRespond?.('revise', trimmed || undefined)
                   }
+                  setHumanTurnDraft('')
                 }}
                 placeholder={pendingHumanTurn.kind === 'ask_user' ? "Type your answer..." : "Revision note (optional)"}
                 className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
@@ -502,12 +505,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  const trimmed = humanTurnDraft.trim()
                   if (pendingHumanTurn.kind === 'ask_user') {
-                     onHumanRespond?.('answer', humanTurnDraft);
+                    if (!trimmed) return
+                    onHumanRespond?.('answer', trimmed)
                   } else {
-                     onHumanRespond?.('revise', humanTurnDraft);
+                    onHumanRespond?.('revise', trimmed || undefined)
                   }
-                  setHumanTurnDraft('');
+                  setHumanTurnDraft('')
                 }}
                 disabled={pendingHumanTurn.kind === 'ask_user' && !humanTurnDraft.trim()}
                 className="shrink-0 rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer disabled:opacity-50"
