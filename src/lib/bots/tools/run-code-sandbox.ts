@@ -1,4 +1,4 @@
-import vm from 'vm';
+import * as vm from 'vm';
 
 export async function executeCodeSandbox(args: Record<string, unknown>): Promise<{ ok: boolean; result: string; title?: string }> {
     const code = typeof args.code === 'string' ? args.code : '';

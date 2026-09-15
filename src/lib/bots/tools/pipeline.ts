@@ -39,6 +39,7 @@ const TASK_READ_TOOLS = new Set([
     'list_notebooks',
     'search_academic_corpus',
     'verified_corpus_search',
+    'run_code_sandbox',
 ])
 
 const THINK_MAX_TOKENS = 512
@@ -594,6 +595,7 @@ const PARALLEL_READ_TOOLS = new Set([
     'get_workspace',
     'search_site',
     'list_notebooks',
+    'run_code_sandbox',
 ])
 
 function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {
