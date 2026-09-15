@@ -86,17 +86,52 @@ function isRetryableSearchStatus(status: number): boolean {
 let tavilyCursor = 0
 let braveCursor = 0
 
+
+/** Timeout plus optional client Stop — either abort cancels the fetch. */
+export function searchFetchSignal(timeoutMs: number, external?: AbortSignal): AbortSignal {
+    const timeout = AbortSignal.timeout(timeoutMs)
+    if (!external) return timeout
+    if (typeof AbortSignal.any === 'function') {
+        return AbortSignal.any([timeout, external])
+    }
+    const controller = new AbortController()
+    const onAbort = () => {
+        if (!controller.signal.aborted) controller.abort()
+    }
+    if (timeout.aborted || external.aborted) {
+        controller.abort()
+        return controller.signal
+    }
+    timeout.addEventListener('abort', onAbort, { once: true })
+    external.addEventListener('abort', onAbort, { once: true })
+    return controller.signal
+}
+
+function assertSearchNotAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+    }
+}
+
+/** True only when the *client* Stop signal fired — not provider timeouts. */
+function isClientSearchAbort(signal: AbortSignal | undefined, _err?: unknown): boolean {
+    return Boolean(signal?.aborted)
+}
+
 type SearchAttempt = { hits: SearchResultItem[]; retryable: boolean }
 
 async function searchWithKeyFailover(
     keys: string[],
-    search: (apiKey: string) => Promise<SearchAttempt>
+    search: (apiKey: string) => Promise<SearchAttempt>,
+    signal?: AbortSignal
 ): Promise<SearchResultItem[]> {
     for (const apiKey of keys) {
+        assertSearchNotAborted(signal)
         try {
             const attempt = await search(apiKey)
             if (attempt.hits.length > 0) return attempt.hits
-        } catch {
+        } catch (err) {
+            if (isClientSearchAbort(signal, err)) throw err
             /* next key */
         }
     }
@@ -128,13 +163,15 @@ function recencyWindow(days = 14): { start_date: string; end_date: string } {
     }
 }
 
-async function searchTavily(query: string, apiKey: string): Promise<SearchAttempt> {
+async function searchTavily(query: string, apiKey: string, signal?: AbortSignal): Promise<SearchAttempt> {
+    assertSearchNotAborted(signal)
     const news = isNewsQuery(query)
     const topics: Array<'news' | 'general'> = news ? ['news', 'general'] : ['general']
     const window = recencyWindow(news ? 14 : 30)
     let retryable = false
     try {
         for (const topic of topics) {
+            assertSearchNotAborted(signal)
             const payload: Record<string, unknown> = {
                 api_key: apiKey,
                 query,
@@ -152,7 +189,7 @@ async function searchTavily(query: string, apiKey: string): Promise<SearchAttemp
                     Authorization: `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(12_000),
+                signal: searchFetchSignal(12_000, signal),
             })
             if (!res.ok) {
                 retryable = retryable || isRetryableSearchStatus(res.status)
@@ -167,7 +204,7 @@ async function searchTavily(query: string, apiKey: string): Promise<SearchAttemp
                             Authorization: `Bearer ${apiKey}`,
                         },
                         body: JSON.stringify(payload),
-                        signal: AbortSignal.timeout(12_000),
+                        signal: searchFetchSignal(12_000, signal),
                     })
                     if (retry.ok) {
                         const retried = (await retry.json()) as {
@@ -186,19 +223,21 @@ async function searchTavily(query: string, apiKey: string): Promise<SearchAttemp
             if (hits.length > 0) return { hits, retryable: false }
         }
         return { hits: [], retryable }
-    } catch {
+    } catch (err) {
+        if (isClientSearchAbort(signal, err)) throw err
         return { hits: [], retryable: true }
     }
 }
 
-async function searchBrave(query: string, apiKey: string): Promise<SearchAttempt> {
+async function searchBrave(query: string, apiKey: string, signal?: AbortSignal): Promise<SearchAttempt> {
+    assertSearchNotAborted(signal)
     try {
         const res = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`, {
             headers: {
                 Accept: 'application/json',
                 'X-Subscription-Token': apiKey,
             },
-            signal: AbortSignal.timeout(5000),
+            signal: searchFetchSignal(5000, signal),
         })
         if (!res.ok) return { hits: [], retryable: isRetryableSearchStatus(res.status) }
         const data = (await res.json()) as { web?: { results?: Array<{ title?: string; url?: string; description?: string }> } }
@@ -214,21 +253,24 @@ async function searchBrave(query: string, apiKey: string): Promise<SearchAttempt
             }
         }
         return { hits, retryable: false }
-    } catch {
+    } catch (err) {
+        if (isClientSearchAbort(signal, err)) throw err
         return { hits: [], retryable: true }
     }
 }
 
-async function searchWikipedia(query: string): Promise<SearchResultItem[]> {
+async function searchWikipedia(query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
+    assertSearchNotAborted(signal)
     const title = query.trim().replace(/\s+/g, '_')
     if (!title) return []
     const hits: SearchResultItem[] = []
     for (const lang of ['tr', 'en']) {
+        assertSearchNotAborted(signal)
         try {
             const wikiUrl = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
             const wikiRes = await fetch(wikiUrl, {
                 headers: { 'User-Agent': 'WorldInMakingOS/1.0' },
-                signal: AbortSignal.timeout(3000),
+                signal: searchFetchSignal(3000, signal),
             })
             if (!wikiRes.ok) continue
             const wikiData = (await wikiRes.json()) as {
@@ -245,19 +287,21 @@ async function searchWikipedia(query: string): Promise<SearchResultItem[]> {
                 })
                 break
             }
-        } catch {
+        } catch (err) {
+            if (isClientSearchAbort(signal, err)) throw err
             /* next language */
         }
     }
     return hits
 }
 
-async function searchDuckDuckGoInstant(query: string): Promise<SearchResultItem[]> {
+async function searchDuckDuckGoInstant(query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
+    assertSearchNotAborted(signal)
     const hits: SearchResultItem[] = []
     const ddgApiUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`
     const res = await fetch(ddgApiUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        signal: AbortSignal.timeout(4000),
+        signal: searchFetchSignal(4000, signal),
     })
     if (!res.ok) return hits
     const data = (await res.json()) as {
@@ -290,7 +334,8 @@ async function searchDuckDuckGoInstant(query: string): Promise<SearchResultItem[
     return hits
 }
 
-async function searchDuckDuckGoLite(query: string): Promise<SearchResultItem[]> {
+async function searchDuckDuckGoLite(query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
+    assertSearchNotAborted(signal)
     const hits: SearchResultItem[] = []
     const res = await fetch('https://lite.duckduckgo.com/lite/', {
         method: 'POST',
@@ -300,7 +345,7 @@ async function searchDuckDuckGoLite(query: string): Promise<SearchResultItem[]> 
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
         body: new URLSearchParams({ q: query }),
-        signal: AbortSignal.timeout(5000),
+        signal: searchFetchSignal(5000, signal),
     })
     if (!res.ok) return hits
     const html = (await res.text()).slice(0, 500_000)
@@ -333,9 +378,14 @@ async function searchDuckDuckGoLite(query: string): Promise<SearchResultItem[]> 
 /**
  * Multi-tier web search. Returns structured hits for citations + LLM context.
  */
-export async function searchWebSources(query: string, envStore?: EnvStore): Promise<SearchResultItem[]> {
+export async function searchWebSources(
+    query: string,
+    envStore?: EnvStore,
+    signal?: AbortSignal
+): Promise<SearchResultItem[]> {
     const cleanQuery = query.trim()
     if (!cleanQuery) return []
+    assertSearchNotAborted(signal)
 
     const env = envStore ?? getRuntimeEnv()
     const tavilyKeys = collectApiKeys(
@@ -353,15 +403,17 @@ export async function searchWebSources(query: string, envStore?: EnvStore): Prom
     const results: SearchResultItem[] = []
 
     if (tavilyKeys.length > 0) {
+        assertSearchNotAborted(signal)
         const rotated = rotateKeys(tavilyKeys, tavilyCursor++)
-        for (const hit of await searchWithKeyFailover(rotated, (apiKey) => searchTavily(cleanQuery, apiKey))) {
+        for (const hit of await searchWithKeyFailover(rotated, (apiKey) => searchTavily(cleanQuery, apiKey, signal), signal)) {
             pushUnique(results, hit)
         }
     }
 
     if (results.length < 4 && braveKeys.length > 0) {
+        assertSearchNotAborted(signal)
         const rotated = rotateKeys(braveKeys, braveCursor++)
-        for (const hit of await searchWithKeyFailover(rotated, (apiKey) => searchBrave(cleanQuery, apiKey))) {
+        for (const hit of await searchWithKeyFailover(rotated, (apiKey) => searchBrave(cleanQuery, apiKey, signal), signal)) {
             pushUnique(results, hit)
         }
     }
@@ -370,28 +422,35 @@ export async function searchWebSources(query: string, envStore?: EnvStore): Prom
 
     if (results.length < 3 && looksLikeEntityQuery(cleanQuery)) {
         try {
-            for (const hit of await searchWikipedia(cleanQuery)) pushUnique(results, hit)
-        } catch {
+            assertSearchNotAborted(signal)
+            for (const hit of await searchWikipedia(cleanQuery, signal)) pushUnique(results, hit)
+        } catch (err) {
+            if (isClientSearchAbort(signal, err)) throw err
             /* next provider */
         }
     }
 
     if (results.length < 4) {
         try {
-            for (const hit of await searchDuckDuckGoInstant(cleanQuery)) pushUnique(results, hit)
-        } catch {
+            assertSearchNotAborted(signal)
+            for (const hit of await searchDuckDuckGoInstant(cleanQuery, signal)) pushUnique(results, hit)
+        } catch (err) {
+            if (isClientSearchAbort(signal, err)) throw err
             /* next provider */
         }
     }
 
     if (results.length < 3) {
         try {
-            for (const hit of await searchDuckDuckGoLite(cleanQuery)) pushUnique(results, hit)
-        } catch {
+            assertSearchNotAborted(signal)
+            for (const hit of await searchDuckDuckGoLite(cleanQuery, signal)) pushUnique(results, hit)
+        } catch (err) {
+            if (isClientSearchAbort(signal, err)) throw err
             /* final fallback */
         }
     }
 
+    assertSearchNotAborted(signal)
     return results.slice(0, 6)
 }
 

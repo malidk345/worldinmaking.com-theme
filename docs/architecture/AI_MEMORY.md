@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-15 — Grok Bot / Chief of Staff (web_search Stop aborts in-flight fetches)
+- **Scope:** Thread client `AbortSignal` from `executeToolCall` → `executeWebSearch` → `searchWebSources` (and academic web fallback). Provider fetches use `searchFetchSignal(timeout, client)` so Stop cancels network instead of waiting on timeout-only signals. Fail-closed with `client request aborted`.
+- **Files:** `src/lib/bots/web-search.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/web-search.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm exec vitest run src/lib/bots/web-search.abort.test.ts`
+- **Handoff:** Squash-merge when CI typecheck green.
+
 ### 2026-09-15 — Grok Bot / Chief of Staff (ask_user empty Enter no longer auto-Yes)
 - **Scope:** Composer ask_user Enter ignored empty/whitespace (parity with disabled Answer). `handleHumanRespond` rejects empty answers and no longer falls back to literal `"Yes"`.
 - **Files:** `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/ai-public-surface.spec.ts`, `WIM_REPORT.md`

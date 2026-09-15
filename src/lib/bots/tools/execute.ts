@@ -384,30 +384,48 @@ async function executeCreateArtifact(
 
 async function executeWebSearch(
     args: Record<string, unknown>,
-    env?: EnvStore
+    env?: EnvStore,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     const query = asText(args.query, MAX_SEARCH_QUERY).trim()
     if (query.length < 2) {
         return { ok: false, result: JSON.stringify({ ok: false, error: 'query required' }) }
     }
-    const hits = await searchWebSources(query, env)
-    const citations: AiCitation[] = hits.slice(0, 6).map((item, index) => ({
-        id: index + 1,
-        title: item.title,
-        url: item.url,
-        snippet: item.snippet.slice(0, 280),
-        source: item.source,
-    }))
-    const formatted = formatSearchResults(hits.slice(0, 6))
-    return {
-        ok: true,
-        result: clip(
-            formatted
-                ? `UNTRUSTED web results for "${query}":\n${formatted}`
-                : `No web results for "${query}".`,
-            MAX_TOOL_RESULT
-        ),
-        citations,
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+    try {
+        const hits = await searchWebSources(query, env, signal)
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        const citations: AiCitation[] = hits.slice(0, 6).map((item, index) => ({
+            id: index + 1,
+            title: item.title,
+            url: item.url,
+            snippet: item.snippet.slice(0, 280),
+            source: item.source,
+        }))
+        const formatted = formatSearchResults(hits.slice(0, 6))
+        return {
+            ok: true,
+            result: clip(
+                formatted
+                    ? `UNTRUSTED web results for "${query}":\n${formatted}`
+                    : `No web results for "${query}".`,
+                MAX_TOOL_RESULT
+            ),
+            citations,
+        }
+    } catch (err) {
+        // Fail-closed on Stop: never surface empty "no results" after client abort.
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        throw err
     }
 }
 
@@ -503,16 +521,20 @@ async function executeGenerateImage(
 async function executeAcademicSearch(
     query: string,
     options?: AcademicSearchOptions,
-    env?: EnvStore
+    env?: EnvStore,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     try {
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         const result = await searchAcademicCorpus(query, options)
 
         // Web search fallback if external academic APIs and canonical corpus returned 0 papers
         if (result.papers.length === 0 && env) {
             try {
                 const limit = options?.limit || 5
-                const webHits = await searchWebSources(`${query} academic paper research`, env)
+                const webHits = await searchWebSources(`${query} academic paper research`, env, signal)
                 if (webHits && webHits.length > 0) {
                     const fallbackPapers: AcademicPaper[] = webHits.slice(0, limit).map((h, i) => ({
                         id: `web-${i + 1}-${Date.now()}`,
@@ -530,8 +552,17 @@ async function executeAcademicSearch(
                     result.formatted = formatAcademicResults(fallbackPapers)
                     result.bibliography = formatApaBibliography(fallbackPapers)
                 }
-            } catch {
-                // Ignore web search fallback error
+            } catch (err) {
+                if (
+                    signal?.aborted ||
+                    (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+                ) {
+                    return {
+                        ok: false,
+                        result: JSON.stringify({ ok: false, error: 'client request aborted' }),
+                    }
+                }
+                // Ignore non-abort web search fallback errors
             }
         }
 
@@ -1653,7 +1684,7 @@ export async function executeToolCall(
             return { ...base, ...executed, summary: executed.artifact?.title || toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'web_search') {
-            const executed = await executeWebSearch(args, env)
+            const executed = await executeWebSearch(args, env, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'fetch_url') {
@@ -1941,7 +1972,8 @@ export async function executeToolCall(
                     sortBy,
                     openAccessOnly,
                 },
-                env
+                env,
+                signal
             )
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
