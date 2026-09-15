@@ -7,7 +7,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
-import { readNotebookChatBind, peekStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -90,6 +90,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
       const detail = (e as CustomEvent<{ ok?: boolean }>).detail;
       window.removeEventListener('wimNotebookPatchAck', onAck);
       if (detail?.ok) {
+        consumeStickyNotebookSelection();
         setApplied(true);
         setTimeout(() => setApplied(false), 3000);
       }
