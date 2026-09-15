@@ -208,32 +208,48 @@ export async function searchSupabasePosts(
     }
 }
 
-export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePost | null> {
+export async function fetchSupabasePostBySlug(
+    slug: string,
+    signal?: AbortSignal
+): Promise<SupabasePost | null> {
     const clean = normalizePostSlug(slug)
     if (!clean) return null
+    if (signal?.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+    }
+    const fetchOpts = signal ? { signal } : undefined
     try {
         // Exact slug match first
         let data = await fetchWithCache(
-            restPostsUrl(`slug=eq.${encodeURIComponent(clean)}&select=*&limit=1`)
+            restPostsUrl(`slug=eq.${encodeURIComponent(clean)}&select=*&limit=1`),
+            fetchOpts
         )
         if (Array.isArray(data) && data.length > 0) return data[0]
 
         // Some rows may store full path as slug
         for (const candidate of [`/posts/${clean}`, `/blog/${clean}`, clean]) {
             data = await fetchWithCache(
-                restPostsUrl(`slug=eq.${encodeURIComponent(candidate)}&select=*&limit=1`)
+                restPostsUrl(`slug=eq.${encodeURIComponent(candidate)}&select=*&limit=1`),
+                fetchOpts
             )
             if (Array.isArray(data) && data.length > 0) return data[0]
         }
 
         // ilike fallback (partial)
         data = await fetchWithCache(
-            restPostsUrl(`slug=ilike.*${encodeURIComponent(clean)}*&select=*&limit=1`)
+            restPostsUrl(`slug=ilike.*${encodeURIComponent(clean)}*&select=*&limit=1`),
+            fetchOpts
         )
         if (Array.isArray(data) && data.length > 0) return data[0]
 
         return null
     } catch (e) {
+        if (
+            signal?.aborted ||
+            (e instanceof Error && e.name === 'AbortError')
+        ) {
+            throw e instanceof Error ? e : new DOMException('The operation was aborted.', 'AbortError')
+        }
         console.error('[supabaseBlog] fetchSupabasePostBySlug', e)
         return null
     }

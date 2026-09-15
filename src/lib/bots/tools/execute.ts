@@ -1854,7 +1854,7 @@ export async function executeToolCall(
             }
         }
         if (name === 'read_post') {
-            const executed = await executeReadPost(asText(args.slug, 180))
+            const executed = await executeReadPost(asText(args.slug, 180), signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'list_notebooks') {
