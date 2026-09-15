@@ -141,7 +141,8 @@ export async function readJsonObject(req: Request, maxBytes: number): Promise<Js
             const reader = req.body.getReader()
             const decoder = new TextDecoder()
             let bytesRead = 0
-            while (true) {
+            const reading = true;
+            while (reading) {
                 const { value, done } = await reader.read()
                 if (done) break
                 bytesRead += value.byteLength

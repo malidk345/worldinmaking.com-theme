@@ -685,7 +685,7 @@ async function runOneToolCall(
                         : `Plan complete (${completedCount}/${state.todos.length})`,
                 }
             }
-        } catch {}
+        } catch { /* no-op */ }
     }
 
     if (name === 'task' && executed.ok) {

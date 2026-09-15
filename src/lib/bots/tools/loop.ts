@@ -91,10 +91,10 @@ const GEMINI_TIMEOUT_MS = 45_000
 const MAX_TOKENS = 8_192
 
 function linkAbortSignal(controller: AbortController, external?: AbortSignal): () => void {
-    if (!external) return () => {}
+    if (!external) return () => { /* no-op */ }
     if (external.aborted) {
         controller.abort()
-        return () => {}
+        return () => { /* no-op */ }
     }
     const onAbort = () => controller.abort()
     external.addEventListener('abort', onAbort, { once: true })
@@ -225,7 +225,8 @@ async function openaiCompletion(params: {
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
         try {
-            while (true) {
+            const iterating = true;
+    while (iterating) {
                 const { done, value } = await reader.read()
                 if (done) break
                 buffer += decoder.decode(value, { stream: true })
@@ -341,7 +342,8 @@ async function groqCompletion(params: {
         const buckets = new Map<number, { id: string; name: string; arguments: string }>()
 
         try {
-            while (true) {
+            const iterating = true;
+    while (iterating) {
                 const { done, value } = await reader.read()
                 if (done) break
                 buffer += decoder.decode(value, { stream: true })

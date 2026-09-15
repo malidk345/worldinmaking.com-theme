@@ -241,7 +241,7 @@ export async function createForumTopic(params: {
 
     // Derive title from first line or truncated reply
     const lines = llm.reply.split('\n').map((l) => l.trim()).filter(Boolean)
-    let rawTitle = lines[0]?.replace(/^#+\s*/, '').replace(/\*\*/g, '') || params.question
+    const rawTitle = lines[0]?.replace(/^#+\s*/, '').replace(/\*\*/g, '') || params.question
     const rawContent = lines.length > 1 ? lines.slice(1).join('\n\n').trim() || llm.reply : llm.reply
 
     const validation = validateForumTopicPayload({

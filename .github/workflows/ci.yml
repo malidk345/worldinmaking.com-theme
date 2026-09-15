@@ -33,6 +33,9 @@ jobs:
       - name: Typecheck core shell allowlist
         run: pnpm typecheck:shell
 
+      - name: Lint core shell allowlist
+        run: pnpm lint:shell --quiet
+
   smoke:
     name: Playwright smoke
     runs-on: ubuntu-latest

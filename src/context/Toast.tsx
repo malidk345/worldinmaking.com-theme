@@ -53,7 +53,7 @@ export const useToast = (): {
         return {
             toasts: [],
             addToast: () => 0,
-            removeToast: () => {},
+            removeToast: () => { /* no-op */ },
         }
     }
     return toast
