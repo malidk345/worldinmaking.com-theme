@@ -31,6 +31,7 @@ const LABELS: Record<string, [string, string, string]> = {
     finalize_plan: ['Starting the plan', 'Started the plan', 'Could not start the plan'],
     task: ['Running subtask', 'Finished subtask', 'Subtask failed'],
     generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
+    run_code_sandbox: ['Running code sandbox', 'Ran code sandbox', 'Code sandbox failed'],
     search_academic_corpus: ['Searching academic literature', 'Found academic papers', 'Academic search failed'],
     analyze_image: ['Analyzing image', 'Analyzed image', 'Image analysis failed'],
     transcribe_audio: ['Transcribing audio', 'Transcribed audio', 'Audio transcription failed'],
@@ -78,6 +79,7 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
         if (name === 'analyze_image') return pickArg(args, ['question', 'prompt', 'image_url'])
         if (name === 'transcribe_audio') return pickArg(args, ['audio_url', 'language'])
+        if (name === 'run_code_sandbox') return pickArg(args, ['title', 'code', 'language'])
         if (name === 'synthesize_speech') return pickArg(args, ['text'])
         if (name === 'add_notebook_footnote') return pickArg(args, ['span_text', 'text', 'marker'])
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
