@@ -5,6 +5,7 @@
  */
 
 import { searchPhilosophicalCorpus } from './tools/philosophical-corpus'
+import { searchFetchSignal } from './web-search'
 
 export interface AcademicPaper {
     id: string
@@ -41,6 +42,18 @@ export interface AcademicSearchResult {
 
 const SEARCH_TIMEOUT_MS = 12_000
 const USER_AGENT = 'WorldInMaking/1.0 (https://worldinmaking.com; mailto:dursunkayamustafa@gmail.com)'
+
+
+function assertAcademicNotAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+    }
+}
+
+/** True when the *client* Stop signal fired — not provider timeouts alone. */
+function isClientAcademicAbort(signal: AbortSignal | undefined, err?: unknown): boolean {
+    return Boolean(signal?.aborted) || (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+}
 
 /** Reconstruct abstract text from OpenAlex inverted index */
 export function reconstructAbstract(invertedIndex?: Record<string, number[]> | null, maxChars = 600): string {
@@ -103,9 +116,12 @@ export function formatApaBibliography(papers: AcademicPaper[]): string {
 /**
  * Queries OpenAlex for academic papers with filters and sorting.
  */
-async function queryOpenAlex(query: string, options?: AcademicSearchOptions): Promise<AcademicPaper[]> {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+async function queryOpenAlex(
+    query: string,
+    options?: AcademicSearchOptions,
+    signal?: AbortSignal
+): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
 
     try {
         const limit = Math.min(options?.limit || 5, 10)
@@ -130,7 +146,7 @@ async function queryOpenAlex(query: string, options?: AcademicSearchOptions): Pr
                 'User-Agent': USER_AGENT,
                 Accept: 'application/json',
             },
-            signal: controller.signal,
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
         })
 
         if (!res.ok) return []
@@ -177,25 +193,25 @@ async function queryOpenAlex(query: string, options?: AcademicSearchOptions): Pr
                 source: 'OpenAlex',
             }
         })
-    } catch {
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
         return []
-    } finally {
-        clearTimeout(timer)
     }
 }
 
 /**
  * Queries ArXiv API (supplementary engine for AI, physics, formal epistemology).
  */
-async function queryArXiv(query: string, limit = 3): Promise<AcademicPaper[]> {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+async function queryArXiv(query: string, limit = 3, signal?: AbortSignal): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
 
     try {
         const url = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(query)}&start=0&max_results=${Math.min(limit, 5)}`
         const res = await fetch(url, {
             headers: { 'User-Agent': USER_AGENT },
-            signal: controller.signal,
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
         })
 
         if (!res.ok) return []
@@ -241,19 +257,23 @@ async function queryArXiv(query: string, limit = 3): Promise<AcademicPaper[]> {
         }
 
         return papers
-    } catch {
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
         return []
-    } finally {
-        clearTimeout(timer)
     }
 }
 
 /**
  * Queries Crossref API (official global registry of scholarly DOIs with 150M+ records).
  */
-async function queryCrossref(query: string, options?: AcademicSearchOptions): Promise<AcademicPaper[]> {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+async function queryCrossref(
+    query: string,
+    options?: AcademicSearchOptions,
+    signal?: AbortSignal
+): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
 
     try {
         const limit = Math.min(options?.limit || 5, 10)
@@ -277,7 +297,7 @@ async function queryCrossref(query: string, options?: AcademicSearchOptions): Pr
                 'User-Agent': USER_AGENT,
                 Accept: 'application/json',
             },
-            signal: controller.signal,
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
         })
 
         if (!res.ok) return []
@@ -361,10 +381,11 @@ async function queryCrossref(query: string, options?: AcademicSearchOptions): Pr
                 source: 'Crossref' as const,
             }
         })
-    } catch {
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
         return []
-    } finally {
-        clearTimeout(timer)
     }
 }
 
@@ -373,7 +394,8 @@ async function queryCrossref(query: string, options?: AcademicSearchOptions): Pr
  */
 export async function searchAcademicCorpus(
     query: string,
-    options?: AcademicSearchOptions
+    options?: AcademicSearchOptions,
+    signal?: AbortSignal
 ): Promise<AcademicSearchResult> {
     const cleanQuery = query.trim()
     if (!cleanQuery) {
@@ -387,15 +409,20 @@ export async function searchAcademicCorpus(
         }
     }
 
+    assertAcademicNotAborted(signal)
+
     const limit = options?.limit || 5
     const enhancedQuery = options?.field ? `${cleanQuery} ${options.field}` : cleanQuery
 
     // Query OpenAlex, Crossref, and ArXiv in parallel with resilience
     const [openAlexRes, crossrefRes, arxivRes] = await Promise.allSettled([
-        queryOpenAlex(enhancedQuery, { ...options, limit }),
-        queryCrossref(enhancedQuery, { ...options, limit }),
-        options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 2),
+        queryOpenAlex(enhancedQuery, { ...options, limit }, signal),
+        queryCrossref(enhancedQuery, { ...options, limit }, signal),
+        options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 2, signal),
     ])
+
+    // Fail closed on client Stop — do not return partial papers as a successful hit.
+    assertAcademicNotAborted(signal)
 
     const openAlexPapers = openAlexRes.status === 'fulfilled' ? openAlexRes.value : []
     const crossrefPapers = crossrefRes.status === 'fulfilled' ? crossrefRes.value : []
@@ -417,6 +444,8 @@ export async function searchAcademicCorpus(
         }
         if (combined.length >= limit * 2) break
     }
+
+    assertAcademicNotAborted(signal)
 
     // Fallback to verified philosophical canon if scholarly APIs returned zero results
     if (combined.length === 0) {
@@ -450,6 +479,8 @@ export async function searchAcademicCorpus(
     }
 
     const finalPapers = combined.slice(0, limit)
+
+    assertAcademicNotAborted(signal)
 
     return {
         ok: true,
