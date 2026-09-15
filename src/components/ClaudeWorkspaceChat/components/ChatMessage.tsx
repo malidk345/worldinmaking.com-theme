@@ -8,7 +8,7 @@ import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
-import { resolveDiffApplySpanText } from '../../../lib/chat/diff-apply';
+import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
 import { useApp } from '../../../context/App';
@@ -57,7 +57,7 @@ function ensureClosedCodeFences(markdown: string): string {
 
 function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
-  const [applied, setApplied] = useState(false);
+  const [applyStatus, setApplyStatus] = useState<DiffApplyUiStatus>('idle');
   const app = useApp();
 
   const lines = code.split('\n');
@@ -84,6 +84,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
 
   const handleApplyToNotebook = () => {
     if (typeof window === 'undefined') return;
+    if (applyStatus !== 'idle') return;
 
     // Prefer live selection; fall back to sticky (click may clear DOM selection)
     const live = window.getSelection()?.toString().trim() || '';
@@ -92,17 +93,27 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     const notebookId = readNotebookChatBind()?.notebookId;
     const notebookPath = notebookId ? notebookWindowPath(notebookId) : '/notebooks';
 
+    let settled = false;
+    let ackTimer = 0;
+
+    const settle = (status: 'applied' | 'failed') => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('wimNotebookPatchAck', onAck);
+      if (ackTimer) window.clearTimeout(ackTimer);
+      // Sticky selection is consumed ONLY on successful patch (#652)
+      if (status === 'applied') consumeStickyNotebookSelection();
+      setApplyStatus(status);
+      window.setTimeout(() => setApplyStatus('idle'), 3000);
+    };
+
     const onAck = (e: Event) => {
       const detail = (e as CustomEvent<{ ok?: boolean }>).detail;
-      window.removeEventListener('wimNotebookPatchAck', onAck);
-      if (detail?.ok) {
-        consumeStickyNotebookSelection();
-        setApplied(true);
-        setTimeout(() => setApplied(false), 3000);
-      }
+      settle(detail?.ok ? 'applied' : 'failed');
     };
     window.addEventListener('wimNotebookPatchAck', onAck);
-    window.setTimeout(() => window.removeEventListener('wimNotebookPatchAck', onAck), 4000);
+    // Cover dispatch wait (~1.5s) + patch apply; fail-closed if no ack
+    ackTimer = window.setTimeout(() => settle('failed'), 4000);
 
     void dispatchNotebookOsEvent(
       'wimNotebookPatchText',
@@ -122,7 +133,10 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
           }
         },
       }
-    );
+    ).then((ok) => {
+      // #666 retry may still time out — surface fail instead of silent hang
+      if (!ok) settle('failed');
+    });
   };
 
   const handleSplitScreen = () => {
@@ -155,13 +169,13 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
               type="button"
               onClick={handleApplyToNotebook}
               className={`flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                applied
+                applyStatus === 'applied'
                   ? 'bg-primary text-white font-medium'
                   : 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white'
               }`}
             >
               <Check className="size-3" />
-              <span>{applied ? 'Applied ✓' : 'Apply to document'}</span>
+              <span>{diffApplyButtonLabel(applyStatus)}</span>
             </button>
           )}
           <button
