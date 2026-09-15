@@ -9,6 +9,9 @@ import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { resolveDiffApplySpanText } from '../../../lib/chat/diff-apply';
+import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
+import { notebookWindowPath } from '../../../lib/window-path';
+import { useApp } from '../../../context/App';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -55,6 +58,7 @@ function ensureClosedCodeFences(markdown: string): string {
 function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [applied, setApplied] = useState(false);
+  const app = useApp();
 
   const lines = code.split('\n');
   const addedLines = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++'));
@@ -86,6 +90,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     const sticky = peekStickyNotebookSelection() || null;
     const spanText = resolveDiffApplySpanText(live, sticky);
     const notebookId = readNotebookChatBind()?.notebookId;
+    const notebookPath = notebookId ? notebookWindowPath(notebookId) : '/notebooks';
 
     const onAck = (e: Event) => {
       const detail = (e as CustomEvent<{ ok?: boolean }>).detail;
@@ -99,15 +104,24 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     window.addEventListener('wimNotebookPatchAck', onAck);
     window.setTimeout(() => window.removeEventListener('wimNotebookPatchAck', onAck), 4000);
 
-    window.dispatchEvent(
-      new CustomEvent('wimNotebookPatchText', {
-        detail: {
-          notebookId,
-          removed: removedBlockText,
-          added: cleanContentToApply,
-          spanText: spanText || undefined,
+    void dispatchNotebookOsEvent(
+      'wimNotebookPatchText',
+      {
+        notebookId,
+        removed: removedBlockText,
+        added: cleanContentToApply,
+        spanText: spanText || undefined,
+      },
+      {
+        notebookId,
+        path: notebookPath,
+        open: () => {
+          // If no bound notebook is open yet, open it first so PatchText listeners can mount
+          if (!isNotebookOsListenerAlive() && app?.addWindow) {
+            app.addWindow({ path: notebookPath });
+          }
         },
-      })
+      }
     );
   };
 
