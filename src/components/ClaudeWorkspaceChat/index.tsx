@@ -38,6 +38,7 @@ import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { useUser } from '../../hooks/useUser';
 import { isUserPro } from '../../lib/wim-billing';
+import { findMatchingWindow } from '../../lib/os/window-finder';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import { ScratchpadStore } from '../../lib/scratchpad-store';
@@ -1949,13 +1950,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } else if (act === 'snap_right' && action.payload.path && app?.addWindow) {
           app.addWindow({ path: action.payload.path, snapped: 'right' });
         } else if (act === 'close' && action.payload.path && app?.closeWindow) {
-          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
+          const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
           if (target) app.closeWindow(target);
         } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
-          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
+          const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
           if (target) app.updateWindow(target, { minimized: true });
         } else if (act === 'focus' && action.payload.path) {
-          const target = appWindows.find((w) => windowPathMatches(w.path, action.payload.path!));
+          const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
           if (target && app?.bringToFront) {
             if (target.minimized && app?.updateWindow) {
               app.updateWindow(target, { minimized: false });

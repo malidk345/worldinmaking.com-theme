@@ -23,6 +23,7 @@ import usePostHog from '../hooks/usePostHog'
 import { mergeWindowUpdate, windowModeFlags, buildSnapOverrides, type WindowUpdate } from 'lib/windowState'
 import { installSqueakFetchGuard } from 'lib/squeak'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
+import { resolveSplitDualPaths } from 'lib/os/arrange-workspace'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
 import {
     applyWallpaperBrowserChrome,
@@ -1371,11 +1372,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
             // Treat missing/unknown preset the same as split_dual for this event only
             if (!preset || preset === 'split_dual') {
-                const openNotebook = windowsRef.current.find(w => w.path.startsWith('/notebooks/'))
-                const path = openNotebook ? openNotebook.path : '/notebooks'
-
-                latestActionsRef.current?.addWindow({ path, snapped: 'left' })
-                latestActionsRef.current?.addWindow({ path: '/workspace-chat', snapped: 'right' })
+                const paths = resolveSplitDualPaths(windowsRef.current)
+                latestActionsRef.current?.addWindow({ path: paths.left, snapped: 'left' })
+                latestActionsRef.current?.addWindow({ path: paths.right, snapped: 'right' })
             }
         }
         window.addEventListener('wimArrangeWorkspace', handleArrangeWorkspace)

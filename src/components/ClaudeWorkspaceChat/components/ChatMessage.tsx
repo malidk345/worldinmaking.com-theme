@@ -8,6 +8,7 @@ import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { resolveDiffApplySpanText } from '../../../lib/chat/diff-apply';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -82,8 +83,8 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
 
     // Prefer live selection; fall back to sticky (click may clear DOM selection)
     const live = window.getSelection()?.toString().trim() || '';
-    const sticky = peekStickyNotebookSelection();
-    const spanText = (live.length >= 2 ? live : sticky) || '';
+    const sticky = peekStickyNotebookSelection() || null;
+    const spanText = resolveDiffApplySpanText(live, sticky);
     const notebookId = readNotebookChatBind()?.notebookId;
 
     const onAck = (e: Event) => {
