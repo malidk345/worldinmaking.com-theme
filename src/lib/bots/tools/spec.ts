@@ -33,6 +33,34 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'run_code_sandbox',
+            description:
+                'Safe in-memory execution sandbox to calculate and verify formal logic (syllogisms, truth tables, propositional calculus) and mathematical paradoxes without hallucinations. Pure calculation/expression evaluator.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    language: {
+                        type: 'string',
+                        enum: ['javascript', 'math', 'logic'],
+                        description: 'The language to evaluate.',
+                    },
+                    code: {
+                        type: 'string',
+                        description: 'The code or expression to evaluate.',
+                    },
+                    title: {
+                        type: 'string',
+                        description: 'Optional title of the snippet.',
+                    },
+                },
+                required: ['language', 'code'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'create_artifact',
             description:
                 'Create an interactive on-screen artifact: infinite hand-drawn vector canvas/mindmap (canvas), 360° interactive 3D scene & model with arbitrary objects/architecture/primitives and inspector (model3d), parametric simulation with live sliders (simulation), PostHog analytics dashboard (posthog-analytics), React UI, chart, table, markdown document, HTML, or SVG. Use this for rich visual models, diagrams, 3D architecture, and live interactive designs instead of raw code dumps.',

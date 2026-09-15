@@ -12,6 +12,7 @@ import {
     type AcademicPaper,
     type AcademicSearchOptions,
 } from '../academic-search'
+import { executeCodeSandbox } from './run-code-sandbox'
 import { executeReadDocument } from './read-document'
 import {
     executeAnnotateNotebook,
@@ -1757,6 +1758,10 @@ export async function executeToolCall(
             }
             const result = JSON.stringify({ ok: true, mode: next })
             return { ...base, ok: true, result, summary: next === 'plan' ? 'Entered plan mode' : 'Entered execution mode' }
+        }
+        if (name === 'run_code_sandbox') {
+            const executed = await executeCodeSandbox(args)
+            return { ...base, ...executed, summary: executed.title || toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'create_artifact') {
             const executed = await executeCreateArtifact(args, host)
