@@ -925,13 +925,21 @@ export function App() {
     const handleReplaceSelection = (event: Event) => {
       const customEvent = event as CustomEvent<{ text: string; spanText?: string; notebookId?: string }>
       const text = String(customEvent.detail?.text || '').trim()
-      if (!text) return
+      if (!text) {
+        appActions?.addToast({ type: 'error', message: 'Missing replacement text' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        return
+      }
       let target: StoredNotebook | null = notebookRef.current
       if (customEvent.detail?.notebookId) {
         const bound = getNotebook(customEvent.detail.notebookId)
         if (bound) target = bound
       }
-      if (!target) return
+      if (!target) {
+        appActions?.addToast({ type: 'error', message: 'No notebook found' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        return
+      }
       const current = markdownRef.current || target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
       const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
@@ -948,6 +956,8 @@ export function App() {
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
       } else {
         console.warn('handleReplaceSelection: No valid selection found in content, aborting replace.');
+        appActions?.addToast({ type: 'error', message: 'Target phrase not found in notebook' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
         // do not fallback to append
       }
     }
@@ -964,6 +974,7 @@ export function App() {
       if (!spanText || !note) {
         setCloudMessage({ type: 'error', text: 'span_text and note are required' })
         appActions?.addToast({ type: 'error', message: 'Missing span or note content for annotation' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'missing_args' } }))
         return
       }
 
@@ -972,7 +983,11 @@ export function App() {
         const bound = getNotebook(customEvent.detail.notebookId)
         if (bound) target = bound
       }
-      if (!target) return
+      if (!target) {
+        appActions?.addToast({ type: 'error', message: 'No notebook found' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        return
+      }
 
       const current = markdownRef.current || target.content || ''
       const document = parseMarkdownNotebook(current)
@@ -982,6 +997,7 @@ export function App() {
       if (placement.kind !== 'span') {
         setCloudMessage({ type: 'error', text: 'Could not locate the exact phrase in the notebook' })
         appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'span_not_found' } }))
         return
       }
 
@@ -1015,13 +1031,21 @@ export function App() {
         notebookId?: string
       }>
       const text = String(customEvent.detail?.text || '').trim()
-      if (!text) return
+      if (!text) {
+        appActions?.addToast({ type: 'error', message: 'Missing footnote text' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        return
+      }
       let target: StoredNotebook | null = notebookRef.current
       if (customEvent.detail?.notebookId) {
         const bound = getNotebook(customEvent.detail.notebookId)
         if (bound) target = bound
       }
-      if (!target) return
+      if (!target) {
+        appActions?.addToast({ type: 'error', message: 'No notebook found' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        return
+      }
       const current = markdownRef.current || target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
 
