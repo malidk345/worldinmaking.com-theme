@@ -61,19 +61,27 @@ export function rememberStickyNotebookSelection(text: string): void {
     if (trimmed.length < 2) return
     const clipped = trimmed.slice(0, 2500)
     stickySelectionCache = clipped
-    if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(STICKY_SELECTION_KEY, clipped)
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem(STICKY_SELECTION_KEY, clipped)
+        }
+    } catch {
+        // quota / private mode — in-memory cache still works this session
     }
 }
 
 export function peekStickyNotebookSelection(): string {
     if (stickySelectionCache) return stickySelectionCache
-    if (typeof sessionStorage !== 'undefined') {
-        const stored = sessionStorage.getItem(STICKY_SELECTION_KEY)
-        if (stored) {
-            stickySelectionCache = stored
-            return stored
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const stored = sessionStorage.getItem(STICKY_SELECTION_KEY)
+            if (stored && stored.trim().length >= 2) {
+                stickySelectionCache = stored
+                return stored
+            }
         }
+    } catch {
+        // ignore storage access errors
     }
     return ''
 }
@@ -81,8 +89,12 @@ export function peekStickyNotebookSelection(): string {
 export function consumeStickyNotebookSelection(): string {
     const val = peekStickyNotebookSelection()
     stickySelectionCache = ''
-    if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem(STICKY_SELECTION_KEY)
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.removeItem(STICKY_SELECTION_KEY)
+        }
+    } catch {
+        // ignore storage access errors
     }
     return val
 }

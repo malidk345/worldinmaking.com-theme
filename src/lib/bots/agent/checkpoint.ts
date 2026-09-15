@@ -146,6 +146,8 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
             plan: human.plan,
             summary: human.summary ? clip(human.summary, 400) : undefined,
             question: human.question ? clip(human.question, 1000) : undefined,
+            answer: human.answer ? clip(human.answer, 2000) : undefined,
+            revisionNote: human.revisionNote ? clip(human.revisionNote, 800) : undefined,
         },
     }
 }

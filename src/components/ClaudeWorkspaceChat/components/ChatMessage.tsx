@@ -350,7 +350,11 @@ function HumanTurnCard({
             </button>
           ) : (
             <span className="text-[11px] text-muted">
-              {turn.status === 'approved' ? 'Running' : turn.status === 'revised' ? 'Revising' : null}
+              {turn.status === 'approved'
+                ? 'Running'
+                : turn.status === 'revised'
+                  ? 'Revised'
+                  : null}
             </span>
           )}
         </div>
@@ -380,6 +384,10 @@ function HumanTurnCard({
               Revise
             </button>
           </div>
+        ) : turn.revisionNote ? (
+          <p className="m-0 mt-2 text-[12px] leading-relaxed text-secondary">
+            Revision: {turn.revisionNote}
+          </p>
         ) : null}
       </div>
     )
@@ -412,11 +420,16 @@ function HumanTurnCard({
               Answer
             </button>
           </div>
-        ) : (
-          <span className="text-[11px] text-muted block mt-2">
-            {turn.status === 'answered' ? 'Answered' : null}
-          </span>
-        )}
+        ) : turn.status === 'answered' ? (
+          <div className="mt-2 space-y-1">
+            <span className="text-[11px] text-muted block">Answered</span>
+            {turn.answer ? (
+              <p className="m-0 text-[12.5px] leading-relaxed text-secondary whitespace-pre-wrap">
+                {turn.answer}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     )
   }

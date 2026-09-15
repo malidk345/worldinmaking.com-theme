@@ -25,6 +25,10 @@ export type HumanTurn = {
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
   question?: string
+  /** Persisted ask_user answer for history rendering. */
+  answer?: string
+  /** Persisted plan revise note for history rendering. */
+  revisionNote?: string
 }
 
 export type AgentCheckpoint = {

@@ -354,6 +354,14 @@ test.describe('Ask AI harness', () => {
         expect(isBlockedFetchUrl('https://example.com/x')).toBeNull()
     })
 
+    test('fetchPublicUrl returns client request aborted when signal is already aborted', async () => {
+        const controller = new AbortController()
+        controller.abort()
+        const result = await fetchPublicUrl('https://example.com/x', controller.signal)
+        expect(result.ok).toBe(false)
+        if (!result.ok) expect(result.error).toBe('client request aborted')
+    })
+
     test('fetch_url DoH private answers and post-fetch rebound drop the body', async () => {
         const original = globalThis.fetch
         let dnsHits = 0

@@ -133,6 +133,8 @@ export type AiSseEvent =
               plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
               summary?: string
               question?: string
+              answer?: string
+              revisionNote?: string
           }
       }
     | {
