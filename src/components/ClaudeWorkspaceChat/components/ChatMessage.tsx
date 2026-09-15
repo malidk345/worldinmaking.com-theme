@@ -7,7 +7,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
-import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { readNotebookChatBind, readNotebookSelection, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
@@ -86,8 +86,9 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     if (typeof window === 'undefined') return;
     if (applyStatus !== 'idle') return;
 
-    // Prefer live selection; fall back to sticky (click may clear DOM selection)
-    const live = window.getSelection()?.toString().trim() || '';
+    // Prefer live notebook selection; fall back to sticky (click may clear DOM selection).
+    // Must be notebook-scoped — raw window.getSelection can steal chat/UI text over sticky (#650 leftover).
+    const live = readNotebookSelection();
     const sticky = peekStickyNotebookSelection() || null;
     const spanText = resolveDiffApplySpanText(live, sticky);
     const notebookId = readNotebookChatBind()?.notebookId;

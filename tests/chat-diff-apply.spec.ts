@@ -40,5 +40,8 @@ test.describe('Diff Apply fail-closed wiring', () => {
     expect(src).toContain('diffApplyButtonLabel(applyStatus)');
     // Sticky consumed only on success (#652)
     expect(src).toContain("if (status === 'applied') consumeStickyNotebookSelection()");
+    // Live span must be notebook-scoped so chat/UI selection cannot override sticky
+    expect(src).toContain('readNotebookSelection()');
+    expect(src).not.toContain("window.getSelection()?.toString().trim()");
   });
 });
