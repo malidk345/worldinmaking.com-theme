@@ -33,6 +33,12 @@ test.describe('sticky notebook selection', () => {
         expect(consumeStickyNotebookSelection()).toBe('target text')
         expect(peekStickyNotebookSelection()).toBe('')
     })
+
+    test('peek leaves the selection intact for fail path', () => {
+        rememberStickyNotebookSelection('fail text')
+        expect(peekStickyNotebookSelection()).toBe('fail text')
+        expect(peekStickyNotebookSelection()).toBe('fail text') // Should still be there
+    })
 })
 
 test.describe('notebook chat bind context', () => {

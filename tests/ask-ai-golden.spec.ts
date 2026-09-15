@@ -57,7 +57,6 @@ test.describe('Ask AI golden tours', () => {
             'lock_mutate',
             'finalize',
             'execute_create',
-            'unknown_ask_user',
             'open_passwd',
             'fetch_localhost',
         ])

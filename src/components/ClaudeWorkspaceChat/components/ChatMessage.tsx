@@ -7,7 +7,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
-import { readNotebookChatBind, peekStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { readNotebookChatBind, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -90,6 +90,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
       const detail = (e as CustomEvent<{ ok?: boolean }>).detail;
       window.removeEventListener('wimNotebookPatchAck', onAck);
       if (detail?.ok) {
+        consumeStickyNotebookSelection();
         setApplied(true);
         setTimeout(() => setApplied(false), 3000);
       }
@@ -351,6 +352,42 @@ function HumanTurnCard({
             </button>
           </div>
         ) : null}
+      </div>
+    )
+  }
+
+  if (turn.kind === 'ask_user') {
+    return (
+      <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
+        <p className="m-0 font-medium">{turn.title || 'Question'}</p>
+        {turn.question ? <p className="m-0 mt-1 text-[12.5px] leading-relaxed text-secondary">{turn.question}</p> : null}
+        {pending ? (
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Your answer..."
+              className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && draft.trim()) {
+                  onRespond('answer', draft.trim())
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => onRespond('answer', draft.trim())}
+              disabled={!draft.trim()}
+              className="shrink-0 rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent disabled:opacity-50 cursor-pointer"
+            >
+              Answer
+            </button>
+          </div>
+        ) : (
+          <span className="text-[11px] text-muted block mt-2">
+            {turn.status === 'answered' ? 'Answered' : null}
+          </span>
+        )}
       </div>
     )
   }
