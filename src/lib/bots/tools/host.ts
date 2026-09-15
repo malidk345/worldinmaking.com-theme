@@ -283,7 +283,10 @@ export async function executeOpenPath(rawPath: string): Promise<{
     }
 }
 
-async function searchCommunityTopics(query: string): Promise<string[]> {
+async function searchCommunityTopics(query: string, signal?: AbortSignal): Promise<string[]> {
+    if (signal?.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+    }
     try {
         const encoded = encodeURIComponent(`*${query}*`)
         const url = `${SUPABASE_URL}/rest/v1/community_posts?or=(title.ilike.${encoded},content.ilike.${encoded})&title=not.ilike.comment_*&select=id,title,created_at&order=created_at.desc&limit=6`
@@ -292,29 +295,59 @@ async function searchCommunityTopics(query: string): Promise<string[]> {
                 apikey: SUPABASE_ANON_KEY,
                 Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
+            signal,
         })
         if (!res.ok) return []
         const rows = (await res.json()) as Array<{ id?: string; title?: string }>
         if (!Array.isArray(rows)) return []
         return rows.map((row) => `- ${row.title || 'Untitled'} (/community?id=${row.id})`)
-    } catch {
+    } catch (err) {
+        if (
+            signal?.aborted ||
+            (err instanceof Error && err.name === 'AbortError')
+        ) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
         return []
     }
 }
 
-export async function executeSearchSite(query: string): Promise<{ ok: boolean; result: string }> {
+export async function executeSearchSite(
+    query: string,
+    signal?: AbortSignal
+): Promise<{ ok: boolean; result: string }> {
     const q = clip(query.trim(), 200)
     if (q.length < 2) return { ok: false, result: JSON.stringify({ ok: false, error: 'query required' }) }
-    const posts = await searchSupabasePosts(q)
-    const postLines = posts.slice(0, 8).map((post, index) => {
-        return `${index + 1}. ${post.title || 'Untitled'}\n   /posts/${post.slug}\n   ${String(post.excerpt || '').slice(0, 180)}`
-    })
-    const forumLines = await searchCommunityTopics(q)
-    const parts = [
-        postLines.length ? `Posts:\n${postLines.join('\n\n')}` : 'No posts matched.',
-        forumLines.length ? `Forum:\n${forumLines.join('\n')}` : 'No forum threads matched.',
-    ]
-    return { ok: true, result: clip(`Site search for "${q}":\n${parts.join('\n\n')}`, 4_000) }
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+    try {
+        const posts = await searchSupabasePosts(q, signal)
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        const postLines = posts.slice(0, 8).map((post, index) => {
+            return `${index + 1}. ${post.title || 'Untitled'}\n   /posts/${post.slug}\n   ${String(post.excerpt || '').slice(0, 180)}`
+        })
+        const forumLines = await searchCommunityTopics(q, signal)
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        const parts = [
+            postLines.length ? `Posts:\n${postLines.join('\n\n')}` : 'No posts matched.',
+            forumLines.length ? `Forum:\n${forumLines.join('\n')}` : 'No forum threads matched.',
+        ]
+        return { ok: true, result: clip(`Site search for "${q}":\n${parts.join('\n\n')}`, 4_000) }
+    } catch (err) {
+        // Fail-closed on Stop: never surface empty "no posts matched" after client abort.
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        throw err
+    }
 }
 
 export async function executeReadPost(slug: string): Promise<{ ok: boolean; result: string }> {

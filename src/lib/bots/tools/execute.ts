@@ -1842,7 +1842,7 @@ export async function executeToolCall(
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'search_site') {
-            const executed = await executeSearchSite(asText(args.query, MAX_SEARCH_QUERY))
+            const executed = await executeSearchSite(asText(args.query, MAX_SEARCH_QUERY), signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'open_path') {

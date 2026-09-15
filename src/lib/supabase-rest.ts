@@ -44,6 +44,13 @@ export async function fetchWithCache(url: string, options?: RequestInit): Promis
         }
         return result
     } catch (err) {
+        // Never swallow client Stop / AbortError as empty results.
+        if (
+            (err instanceof Error && err.name === 'AbortError') ||
+            options?.signal?.aborted
+        ) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
         console.error('[fetchWithCache] Request failed:', url, err)
         return cached?.data ?? []
     }

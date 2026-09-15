@@ -145,9 +145,15 @@ export async function fetchSupabasePosts(options?: {
  * Ranked full-text search via `public.search_posts` RPC (migration 20260807_posts_fts).
  * Falls back to ILIKE if the RPC is missing or errors (pre-migration projects).
  */
-export async function searchSupabasePosts(query: string): Promise<SupabasePost[]> {
+export async function searchSupabasePosts(
+    query: string,
+    signal?: AbortSignal
+): Promise<SupabasePost[]> {
     const cleanQuery = query.trim()
     if (!cleanQuery || cleanQuery.length < 2) return []
+    if (signal?.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+    }
 
     // Prefer Postgres FTS (tsvector + websearch_to_tsquery + ts_rank_cd)
     try {
@@ -160,6 +166,7 @@ export async function searchSupabasePosts(query: string): Promise<SupabasePost[]
                 Prefer: 'return=representation',
             },
             body: JSON.stringify({ q: cleanQuery, lim: 40 }),
+            signal,
         })
         if (rpcRes.ok) {
             const data = await rpcRes.json()
@@ -172,6 +179,12 @@ export async function searchSupabasePosts(query: string): Promise<SupabasePost[]
             console.warn('[supabaseBlog] search_posts RPC', rpcRes.status, errText.slice(0, 200))
         }
     } catch (e) {
+        if (
+            signal?.aborted ||
+            (e instanceof Error && e.name === 'AbortError')
+        ) {
+            throw e instanceof Error ? e : new DOMException('The operation was aborted.', 'AbortError')
+        }
         console.warn('[supabaseBlog] search_posts RPC failed, using ILIKE fallback', e)
     }
 
@@ -181,9 +194,15 @@ export async function searchSupabasePosts(query: string): Promise<SupabasePost[]
         const url = restPostsUrl(
             `published=eq.true&or=(title.ilike.${encoded},excerpt.ilike.${encoded},content.ilike.${encoded})&select=${LIST_SELECT}&order=created_at.desc&limit=40`
         )
-        const data = await fetchWithCache(url)
+        const data = await fetchWithCache(url, signal ? { signal } : undefined)
         return Array.isArray(data) ? data : []
     } catch (e) {
+        if (
+            signal?.aborted ||
+            (e instanceof Error && e.name === 'AbortError')
+        ) {
+            throw e instanceof Error ? e : new DOMException('The operation was aborted.', 'AbortError')
+        }
         console.error('[supabaseBlog] searchSupabasePosts', e)
         return []
     }
