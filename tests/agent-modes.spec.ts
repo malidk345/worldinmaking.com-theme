@@ -633,7 +633,7 @@ test.describe('Think skip and Groq-first', () => {
 
 test.describe('Graph checkpoint resume', () => {
     test('resume instructions switch mode instead of starting a new user turn', () => {
-        expect(parseResumeAction('answer')).toBeUndefined()
+        expect(parseResumeAction('answer')).toBe('answer')
         expect(parseResumeAction('run')).toBe('run')
         expect(parseResumeAction('revise')).toBe('revise')
         expect(modeAfterResume('run', 'plan')).toBe('execute')
