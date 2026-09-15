@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-15 — Grok Bot / Chief of Staff (read_post Stop aborts in-flight fetches)
+- **Scope:** Thread client `AbortSignal` into `executeReadPost` / `fetchSupabasePostBySlug` (via `fetchWithCache`) so Stop cancels in-flight post-by-slug Supabase fetches. Fail-closed with `client request aborted` (same pattern as #675/#677/#678/#679/#680); AbortError is never mapped to "post not found".
+- **Files:** `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/supabaseBlog.ts`, `src/lib/bots/tools/read-post.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm exec vitest run --environment node src/lib/bots/tools/read-post.abort.test.ts`
+- **Handoff:** Squash-merge when CI typecheck green.
+
 ### 2026-09-15 — Grok Bot / Chief of Staff (search_site Stop aborts in-flight fetches)
 - **Scope:** Thread client `AbortSignal` into `executeSearchSite` / `searchCommunityTopics` / `searchSupabasePosts` (RPC + ILIKE via `fetchWithCache`) so Stop cancels in-flight site search (posts + community topics). Fail-closed with `client request aborted` (same pattern as #675/#677/#678/#679). `fetchWithCache` rethrows AbortError instead of returning empty.
 - **Files:** `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/supabaseBlog.ts`, `src/lib/supabase-rest.ts`, `src/lib/bots/tools/search-site.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`

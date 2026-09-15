@@ -350,12 +350,32 @@ export async function executeSearchSite(
     }
 }
 
-export async function executeReadPost(slug: string): Promise<{ ok: boolean; result: string }> {
-    const post = await fetchSupabasePostBySlug(clip(slug, 180))
-    if (!post) return { ok: false, result: JSON.stringify({ ok: false, error: 'post not found' }) }
-    return {
-        ok: true,
-        result: clip(`# ${post.title}\n/posts/${post.slug}\n\n${post.excerpt || ''}\n\n${String(post.content || '').slice(0, 2500)}`, 4_000),
+export async function executeReadPost(
+    slug: string,
+    signal?: AbortSignal
+): Promise<{ ok: boolean; result: string }> {
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+    try {
+        const post = await fetchSupabasePostBySlug(clip(slug, 180), signal)
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        if (!post) return { ok: false, result: JSON.stringify({ ok: false, error: 'post not found' }) }
+        return {
+            ok: true,
+            result: clip(`# ${post.title}\n/posts/${post.slug}\n\n${post.excerpt || ''}\n\n${String(post.content || '').slice(0, 2500)}`, 4_000),
+        }
+    } catch (err) {
+        // Fail-closed on Stop: never map AbortError to "post not found".
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
+        throw err
     }
 }
 
