@@ -1853,7 +1853,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     if (isNotebookAction) {
       const handleAck = (e: Event) => {
-        const customEvent = e as CustomEvent<{ notebookId?: string }>;
+        const customEvent = e as CustomEvent<{ notebookId?: string; ok?: boolean; error?: string }>;
         const targetId =
           action.type === 'create_notebook'
             ? customEvent.detail?.notebookId
@@ -1862,7 +1862,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         // If it's create_notebook, we grab the new ID from the ack if possible, or just accept the ack.
         // For others, we only ack if the ID matches or if we didn't specify one.
         if (!targetId || !customEvent.detail?.notebookId || customEvent.detail.notebookId === targetId) {
-          updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
+          if (customEvent.detail?.ok === false) {
+            updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: false } });
+            executedActionsRef.current.delete(key);
+          } else {
+            updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
+          }
           window.removeEventListener('wimNotebookAck', handleAck);
           if (timeout) clearTimeout(timeout);
         }
