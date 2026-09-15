@@ -50,3 +50,6 @@
 ## 2026-09-14 - [Philosopher Cron Idempotency]
 **Learning:** Implementing idempotency for webhook or cron endpoints that interact with slow third-party APIs (like LLMs) requires a lock that spans the maximum duration of the request, especially if the orchestrator retries aggressively on timeout. Using a GitHub Action `GITHUB_RUN_ID` as part of the lock key ensures that network retries of the *same* run are blocked, while a subsequent scheduled run can still proceed if the first one legitimately failed.
 **Action:** When asked to implement idempotency for an Edge function orchestrated by GitHub Actions, generate a `runId` in the Action script and use a durable KV/RateLimit store on the Edge to gracefully skip redundant executions.
+## 2026-09-14 - Optimize Object.keys().some() allocation in loops
+**Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
+**Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
