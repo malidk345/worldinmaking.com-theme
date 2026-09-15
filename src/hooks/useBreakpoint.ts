@@ -18,9 +18,14 @@ type Breakpoints = {
 }
 
 function getBreakpoints(width: number): Breakpoints {
-    return Object.fromEntries(
-        Object.entries(BREAKPOINTS).map(([key, minWidth]) => [key, width >= minWidth])
-    ) as Breakpoints
+    return {
+        xs: width >= BREAKPOINTS.xs,
+        sm: width >= BREAKPOINTS.sm,
+        md: width >= BREAKPOINTS.md,
+        lg: width >= BREAKPOINTS.lg,
+        xl: width >= BREAKPOINTS.xl,
+        xxl: width >= BREAKPOINTS.xxl,
+    }
 }
 
 export function useBreakpoint(): Breakpoints {
