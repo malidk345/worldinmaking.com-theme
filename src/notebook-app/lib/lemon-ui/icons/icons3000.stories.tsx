@@ -23,9 +23,12 @@ const meta: Meta = {
 }
 export default meta
 
-const posthogIcons = Object.entries(packageIcons)
-    .filter(([key]) => key !== 'BaseIcon')
-    .map(([key, Icon]) => ({ name: key, icon: Icon }))
+const posthogIcons: { name: string; icon: any }[] = []
+for (const key in packageIcons) {
+    if (Object.prototype.hasOwnProperty.call(packageIcons, key) && key !== 'BaseIcon') {
+        posthogIcons.push({ name: key, icon: (packageIcons as any)[key] })
+    }
+}
 
 const IconTemplate = ({ icons }: { icons: { name: string; icon: any }[] }): JSX.Element => {
     const onClick = (name: string): void => {
@@ -58,19 +61,26 @@ const GroupBase = ({ group }: { group: Record<string, IconCollection> }): JSX.El
     return (
         <LemonCollapse
             multiple
-            panels={Object.entries(group).map(([key, icons]) => {
-                return {
-                    key,
-                    header: key,
-                    content: (
-                        <IconTemplate
-                            icons={icons.map((icon) => {
-                                return { name: icon, icon: packageIcons[icon] }
-                            })}
-                        />
-                    ),
+            panels={(() => {
+                const panels = []
+                for (const key in group) {
+                    if (Object.prototype.hasOwnProperty.call(group, key)) {
+                        const icons = group[key]
+                        panels.push({
+                            key,
+                            header: key,
+                            content: (
+                                <IconTemplate
+                                    icons={icons.map((icon) => {
+                                        return { name: icon, icon: (packageIcons as any)[icon] }
+                                    })}
+                                />
+                            ),
+                        })
+                    }
                 }
-            })}
+                return panels
+            })()}
         />
     )
 }
