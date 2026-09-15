@@ -26,7 +26,7 @@ test.describe('findMatchingWindow', () => {
         expect(result).toBeUndefined();
     });
 
-    test('returns the first matching window if multiple exist', () => {
+    test('returns the first matching window if multiple exist for a family target', () => {
         const windows = [
             { path: '/notebooks/nb-2' },
             { path: '/notebooks/nb-1' }
@@ -35,5 +35,27 @@ test.describe('findMatchingWindow', () => {
         const result = findMatchingWindow(windows, '/notebooks', windowPathMatches);
         expect(result).toBeDefined();
         expect(result?.path).toBe('/notebooks/nb-2');
+    });
+
+    test('prefers exact notebook path over an earlier family sibling', () => {
+        const windows = [
+            { path: '/notebooks/nb-2' },
+            { path: '/notebooks/nb-1' },
+            { path: '/workspace-chat' },
+        ];
+
+        const result = findMatchingWindow(windows, '/notebooks/nb-1', windowPathMatches);
+        expect(result).toBeDefined();
+        expect(result?.path).toBe('/notebooks/nb-1');
+    });
+
+    test('prefers exact path when query/noise differs only by trailing slash', () => {
+        const windows = [
+            { path: '/scratchpad/note-a' },
+            { path: '/scratchpad/note-b' },
+        ];
+
+        const result = findMatchingWindow(windows, '/scratchpad/note-b/', windowPathMatches);
+        expect(result?.path).toBe('/scratchpad/note-b');
     });
 });
