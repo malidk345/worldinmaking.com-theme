@@ -33,6 +33,23 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
     {
         type: 'function',
         function: {
+            name: 'daily_reflection_prompt',
+            description: 'Generate structured evening review / daily reflection prompts based on philosophical themes.',
+            parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    theme: { type: 'string', enum: ['stoic', 'socratic', 'existentialist', 'nietzschean', 'mindfulness'], description: 'Philosophical theme for the reflection.' },
+                    focus_topic: { type: 'string', description: 'Optional specific topic or focus.' },
+                    save_to_notebook: { type: 'boolean', description: 'If true, saves the prompt to a notebook.' },
+                    notebook_id: { type: 'string', description: 'Optional notebook id to save to.' }
+                }
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'create_artifact',
             description:
                 'Create an interactive on-screen artifact: infinite hand-drawn vector canvas/mindmap (canvas), 360° interactive 3D scene & model with arbitrary objects/architecture/primitives and inspector (model3d), parametric simulation with live sliders (simulation), PostHog analytics dashboard (posthog-analytics), React UI, chart, table, markdown document, HTML, or SVG. Use this for rich visual models, diagrams, 3D architecture, and live interactive designs instead of raw code dumps.',
@@ -1000,6 +1017,7 @@ ${ARTIFACT_RECIPES.trimEnd()}
 - verified_corpus_search: look up exact aphorisms, propositions, and canonical text fragments (Nietzsche, Spinoza, Kant, Schopenhauer, Marcus Aurelius, Plato, Aristotle, Camus, Kierkegaard) with authentic book/section citations to avoid quote hallucinations.
 - arrange_workspace_preset: desktop OS workspace preset automation. Instantly arranges windows into curated layouts: deep_reading (Reader left, Notebook right), studio (Chat left, Scratchpad/Artifact right), minimal (Focused notebook), split_dual (Tiled windows), research (Search left, Notebook right).
 - generate_flashcards: generate active recall study decks (front, back, hint, tags). Set save_to_notebook=true to append the study table directly to a notebook.
+- daily_reflection_prompt: generate structured evening review or daily reflection prompts based on philosophical themes. Set save_to_notebook=true to save it to a notebook.
 - export_notebook: compile a user notebook into complete, publication-ready formatted document (markdown, LaTeX, HTML, text) with automatic Table of Contents and footnotes.
 - create_concept_map: construct and visualize an interactive idea network / knowledge graph artifact (type="canvas") with labeled concepts (nodes) and directed relationships (edges).
 - Notebook Tools (Full Authority):

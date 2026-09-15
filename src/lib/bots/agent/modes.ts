@@ -58,6 +58,7 @@ export const MUTATING_TOOL_NAMES = [
     'arrange_workspace_preset',
     'generate_flashcards',
     'create_concept_map',
+    'daily_reflection_prompt',
 ] as const
 
 export function parseAgentMode(value: unknown): AgentMode {

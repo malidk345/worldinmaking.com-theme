@@ -1052,6 +1052,69 @@ export function executeArrangeWorkspacePreset(
     }
 }
 
+function executeDailyReflectionPrompt(
+    theme?: string,
+    focusTopic?: string,
+    saveToNotebook?: boolean,
+    notebookId?: string,
+    host?: HostSnapshot
+): { ok: boolean; result: string; action?: HostOsAction } {
+    const selectedTheme = theme ? theme.toLowerCase() : 'stoic'
+    const title = `Daily Reflection (${selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1)})`
+
+    let quote = "The unexamined life is not worth living."
+    if (selectedTheme === 'stoic') quote = "Waste no more time arguing what a good man should be. Be one. - Marcus Aurelius"
+    if (selectedTheme === 'existentialist') quote = "Man is condemned to be free. - Jean-Paul Sartre"
+    if (selectedTheme === 'nietzschean') quote = "He who has a why to live for can bear almost any how. - Friedrich Nietzsche"
+    if (selectedTheme === 'mindfulness') quote = "Smile, breathe and go slowly. - Thich Nhat Hanh"
+
+    let promptText = "What did I do well today? What could I improve?"
+    if (selectedTheme === 'stoic') promptText = "What did I do today that was within my control? What did I let upset me that was outside my control?"
+    if (selectedTheme === 'existentialist') promptText = "Did I live authentically today? Where did I act in bad faith?"
+    if (selectedTheme === 'nietzschean') promptText = "Did I overcome myself today? Did I say yes to life?"
+    if (selectedTheme === 'socratic') promptText = "What assumptions did I hold today that I failed to examine?"
+
+    const markdown = [
+        `# 🧘 ${title}`,
+        '',
+        `> *"${quote}"*`,
+        '',
+        `**Focus**: ${focusTopic || 'General Reflection'}`,
+        '',
+        '### Reflection Prompts',
+        promptText
+    ].join('\n')
+
+    let action: HostOsAction | undefined
+    if (saveToNotebook) {
+        const targetId = notebookId || host?.notebookId || host?.notebooks?.[0]?.id
+        if (targetId) {
+            action = {
+                type: 'insert_notebook_block',
+                title: 'Appended daily reflection prompt to notebook',
+                description: 'Appended reflection prompt to notebook',
+                payload: { notebookId: targetId, content: `\n\n${markdown}\n` },
+            }
+        } else {
+            action = {
+                type: 'create_notebook',
+                title: `Create notebook: ${title}`,
+                description: 'Created reflection notebook',
+                payload: { title, content: markdown },
+            }
+        }
+    }
+
+    return {
+        ok: true,
+        result: clip(
+            JSON.stringify({ ok: true, theme: selectedTheme, focus_topic: focusTopic, saved_to_notebook: Boolean(saveToNotebook), notebook_markdown: markdown }),
+            MAX_TOOL_RESULT
+        ),
+        action
+    }
+}
+
 function executeGenerateFlashcards(
     rawCards: unknown,
     deckTitle?: string,
@@ -1710,6 +1773,8 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     flashcards: 'generate_flashcards',
     study_flashcards: 'generate_flashcards',
     make_flashcards: 'generate_flashcards',
+    daily_reflection: 'daily_reflection_prompt',
+    reflection_prompt: 'daily_reflection_prompt',
     compile_notebook: 'export_notebook',
     export_notes: 'export_notebook',
     download_notebook: 'export_notebook',
@@ -2120,6 +2185,18 @@ export async function executeToolCall(
             if (!executed.ok) {
                 return { ...base, ok: false, result: executed.result, summary: toolResultSummary(name, false, executed.result) }
             }
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || toolResultSummary(name, executed.ok, executed.result),
+            }
+        }
+        if (name === 'daily_reflection_prompt') {
+            const theme = asText(args.theme, 50).trim() || undefined
+            const focusTopic = asText(args.focus_topic || args.topic || args.focus, 100).trim() || undefined
+            const saveToNotebook = typeof args.save_to_notebook === 'boolean' ? args.save_to_notebook : undefined
+            const notebookId = asText(args.notebook_id || args.notebookId, 80).trim() || undefined
+            const executed = executeDailyReflectionPrompt(theme, focusTopic, saveToNotebook, notebookId, host)
             return {
                 ...base,
                 ...executed,
