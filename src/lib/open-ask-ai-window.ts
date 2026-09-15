@@ -29,7 +29,6 @@ export function findNotebookWindow(windows: AppWindow[]): AppWindow | undefined 
 }
 
 type OpenAskAiArgs = {
-    notebookId?: string
     notebookTitle?: string
     windows: AppWindow[]
     isMobile?: boolean
@@ -40,7 +39,6 @@ type OpenAskAiArgs = {
 
 /** Open Ask AI as a real window. On desktop, snap it right and the notebook left. */
 export function openAskAiWindow({
-    notebookId,
     notebookTitle,
     windows,
     isMobile,
