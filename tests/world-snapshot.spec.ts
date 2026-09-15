@@ -42,6 +42,59 @@ test.describe('world snapshot parse', () => {
         expect(parsed?.pinnedItems).toEqual([{ label: 'Notes', url: '/notebooks', notebookId: 'n1' }])
     })
 
+    test('retains snapped properties from windows if present', () => {
+        const parsed = parseWorldSnapshot({
+            v: 1,
+            wallpaper: 'cobalt',
+            windows: [
+                {
+                    path: '/a',
+                    position: { x: 10, y: 20 },
+                    size: { width: 40, height: 50 },
+                    zIndex: 2,
+                    snapped: 'left',
+                },
+                {
+                    path: '/b',
+                    position: { x: 10, y: 20 },
+                    size: { width: 40, height: 50 },
+                    zIndex: 3,
+                    snapped: 'right',
+                },
+                {
+                    path: '/c',
+                    position: { x: 10, y: 20 },
+                    size: { width: 40, height: 50 },
+                    zIndex: 4,
+                    snapped: 'up', // Invalid snapped value
+                },
+            ],
+        })
+        expect(parsed?.windows).toEqual([
+            {
+                path: '/a',
+                position: { x: 10, y: 20 },
+                size: { width: 40, height: 50 },
+                zIndex: 2,
+                snapped: 'left',
+            },
+            {
+                path: '/b',
+                position: { x: 10, y: 20 },
+                size: { width: 40, height: 50 },
+                zIndex: 3,
+                snapped: 'right',
+            },
+            {
+                path: '/c',
+                position: { x: 10, y: 20 },
+                size: { width: 40, height: 50 },
+                zIndex: 4,
+            },
+        ])
+        expect(parsed?.pinnedItems).toEqual([])
+    })
+
     test('drops unsafe window paths and clamps percents', () => {
         const parsed = parseWorldSnapshot({
             wallpaper: 'cobalt',

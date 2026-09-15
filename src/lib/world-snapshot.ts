@@ -5,6 +5,7 @@ export type WorldWindow = {
     position: { x: number; y: number }
     size: { width: number; height: number }
     zIndex: number
+    snapped?: 'left' | 'right' | false
 }
 
 export type WorldSnapshot = {
@@ -51,6 +52,8 @@ export function parseWorldSnapshot(raw: unknown): WorldSnapshot | null {
         if (!isSafePath(win.path)) continue
         const position = (win.position || {}) as Record<string, unknown>
         const size = (win.size || {}) as Record<string, unknown>
+        const rawSnapped = win.snapped
+        const snapped = rawSnapped === 'left' || rawSnapped === 'right' ? rawSnapped : false
         windows.push({
             path: win.path,
             position: { x: clampPct(num(position.x)), y: clampPct(num(position.y)) },
@@ -59,6 +62,7 @@ export function parseWorldSnapshot(raw: unknown): WorldSnapshot | null {
                 height: clampPct(num(size.height, 50)),
             },
             zIndex: Math.max(0, Math.floor(num(win.zIndex))),
+            ...(snapped ? { snapped } : {}),
         })
     }
     const pinnedItems = parsePinnedItems(row.pinnedItems)

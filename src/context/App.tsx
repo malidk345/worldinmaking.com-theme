@@ -1207,6 +1207,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     height: (win.size.height / innerHeight) * 100,
                 },
                 zIndex: win.zIndex,
+                snapped: win.snapped,
             }))
 
         if (savedWindows.length === 0) return undefined
@@ -1250,6 +1251,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     height: (win.size.height / innerHeight) * 100,
                 },
                 zIndex: win.zIndex,
+                snapped: win.snapped,
             }))
         return {
             v: 1,
@@ -1312,7 +1314,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                         y: (win.position.y / 100) * (innerHeight - taskbarHeight),
                     }
                     const label = win.path.split('/').filter(Boolean).pop() || 'Window'
-                    return {
+                    const baseWin = {
                         key: `${win.path}#${i}`,
                         path: win.path,
                         title: label,
@@ -1331,10 +1333,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                         minimized: false,
                         windowed: true,
                         expanded: isMobileClient,
-                        snapped: false as const,
+                        snapped: isMobileClient ? false : (win.snapped || false),
                         fromHistory: false,
                         props: { path: win.path },
+                    } as AppWindow
+
+                    if (!isMobileClient && (win.snapped === 'left' || win.snapped === 'right')) {
+                        const snapRect = getSnapDimensions(win.snapped)
+                        Object.assign(baseWin, buildSnapOverrides(win.snapped, baseWin, snapRect))
                     }
+
+                    return baseWin
                 })
             )
         },
