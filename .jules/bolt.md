@@ -50,3 +50,7 @@
 ## 2026-09-14 - [Philosopher Cron Idempotency]
 **Learning:** Implementing idempotency for webhook or cron endpoints that interact with slow third-party APIs (like LLMs) requires a lock that spans the maximum duration of the request, especially if the orchestrator retries aggressively on timeout. Using a GitHub Action `GITHUB_RUN_ID` as part of the lock key ensures that network retries of the *same* run are blocked, while a subsequent scheduled run can still proceed if the first one legitimately failed.
 **Action:** When asked to implement idempotency for an Edge function orchestrated by GitHub Actions, generate a `runId` in the Action script and use a durable KV/RateLimit store on the Edge to gracefully skip redundant executions.
+
+## 2025-05-19 - Avoid array chaining in high-frequency events (resize)
+**Learning:** Using `Object.entries().map(...)` combined with `Object.fromEntries()` inside high-frequency event listeners (like window resize) causes significant GC churn and CPU overhead (approx ~80x slower than static property lookup).
+**Action:** When evaluating breakpoints or mapping static config objects that run on high-frequency events like resize, avoid dynamic object-to-array-to-object chains. Instead, use direct static object initialization since the keys are known at compile time.
