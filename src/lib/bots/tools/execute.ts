@@ -1103,8 +1103,70 @@ function compileNotebookToMarkdown(title: string, rawContent: string, includeToc
     return `# ${title}\n\n${toc}${rawContent}`
 }
 
-function compileNotebookToLatex(title: string, rawContent: string, includeToc = true): string {
-    const lines = rawContent.split('\n')
+function compileNotebookToLatex(title: string, rawContent: string, includeToc = true, includeFootnotes = true): string {
+    let content = rawContent
+    let defs: Record<string, string> = {}
+
+    if (includeFootnotes) {
+        const defRegex = /^\[\^([a-zA-Z0-9_-]+)\]:\s*(.*)/
+        let lines = content.split('\n')
+        let contentLines: string[] = []
+        let inDef = false
+        let currentDefId: string | null = null
+        let currentDefLines: string[] = []
+
+        for (const line of lines) {
+            const match = line.match(defRegex)
+            if (match) {
+                if (inDef && currentDefId) {
+                    defs[currentDefId] = currentDefLines.join('\n')
+                }
+                inDef = true
+                currentDefId = match[1]
+                currentDefLines = [match[2]]
+                continue
+            }
+            if (inDef) {
+                if (line.trim() === '') {
+                    inDef = false
+                    defs[currentDefId!] = currentDefLines.join('\n')
+                    currentDefId = null
+                    contentLines.push(line)
+                } else {
+                    currentDefLines.push(line)
+                }
+                continue
+            }
+            contentLines.push(line)
+        }
+        if (inDef && currentDefId) {
+            defs[currentDefId] = currentDefLines.join('\n')
+        }
+        content = contentLines.join('\n')
+    } else {
+        const inlineFootnoteRegex = /\[\^[a-zA-Z0-9_-]+\]/g
+        const defRegex = /^\[\^[a-zA-Z0-9_-]+\]:/
+        let lines = content.split('\n')
+        let contentLines: string[] = []
+        let inDef = false
+        for (const line of lines) {
+            if (defRegex.test(line)) {
+                inDef = true
+                continue
+            }
+            if (inDef) {
+                if (line.trim() === '') {
+                    inDef = false
+                    contentLines.push(line)
+                }
+                continue
+            }
+            contentLines.push(line)
+        }
+        content = contentLines.join('\n').replace(inlineFootnoteRegex, '')
+    }
+
+    const lines = content.split('\n')
     const convertedLines = lines.map((line) => {
         if (/^####\s+(.+)$/.test(line)) {
             const h = line.replace(/^####\s+/, '').replace(/([&%$_{}])/g, '\\$1')
@@ -1122,11 +1184,50 @@ function compileNotebookToLatex(title: string, rawContent: string, includeToc = 
             const h = line.replace(/^#\s+/, '').replace(/([&%$_{}])/g, '\\$1')
             return `\\section{${h}}`
         }
-        return line
+
+        let processedLine = line
+
+        if (includeFootnotes) {
+            const footnoteRegex = /\[\^([a-zA-Z0-9_-]+)\]/g
+            processedLine = processedLine.replace(footnoteRegex, (match, id) => {
+                if (defs[id]) {
+                    const safeBody = defs[id]
+                        .replace(/\\/g, '\\textbackslash ')
+                        .replace(/([&%$#_{}])/g, '\\$1')
+                        .replace(/~/g, '\\textasciitilde ')
+                        .replace(/\^/g, '\\textasciicircum ')
+                    return `\\footnote{${safeBody}}`
+                }
+                return match
+            })
+        }
+
+        // Escape special chars *after* we extract and convert footnotes,
+        // to avoid breaking [^my_note] -> [^my\_note] or \footnote{...} getting double escaped.
+        // But wait, if we escape later, we will escape the `\footnote{...}` itself!
+        // So we must temporarily hide the `\footnote{...}` blocks.
+        const hiddenFootnotes: string[] = []
+        if (includeFootnotes) {
+            // we just inserted `\footnote{...}`. Let's replace them with a placeholder
+            processedLine = processedLine.replace(/\\footnote\{([\s\S]*?)\}/g, (match) => {
+                hiddenFootnotes.push(match)
+                return `__WIM_FOOTNOTE_${hiddenFootnotes.length - 1}__`
+            })
+        }
+
+        processedLine = processedLine
             .replace(/\\/g, '\\textbackslash ')
             .replace(/([&%$#_{}])/g, '\\$1')
             .replace(/~/g, '\\textasciitilde ')
             .replace(/\^/g, '\\textasciicircum ')
+
+        if (includeFootnotes) {
+            hiddenFootnotes.forEach((footnote, i) => {
+                processedLine = processedLine.replace(`\\_\\_WIM\\_FOOTNOTE\\_${i}\\_\\_`, footnote)
+            })
+        }
+
+        return processedLine
     })
 
     const body = convertedLines.join('\n')
@@ -1237,7 +1338,7 @@ export function executeExportNotebook(
     switch (fmt) {
         case 'latex':
         case 'tex':
-            compiled = compileNotebookToLatex(title, content, includeToc)
+            compiled = compileNotebookToLatex(title, rawContent, includeToc, includeFootnotes)
             lang = 'latex'
             artType = 'markdown'
             break
