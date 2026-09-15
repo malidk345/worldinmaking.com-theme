@@ -7,7 +7,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
-import { readNotebookChatBind } from '../../../lib/notebook-chat-bind';
+import { readNotebookChatBind, peekStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -80,8 +80,10 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
   const handleApplyToNotebook = () => {
     if (typeof window === 'undefined') return;
 
-    // Capture selection immediately (click may clear DOM selection)
-    const spanText = window.getSelection()?.toString().trim() || '';
+    // Prefer live selection; fall back to sticky (click may clear DOM selection)
+    const live = window.getSelection()?.toString().trim() || '';
+    const sticky = peekStickyNotebookSelection();
+    const spanText = (live.length >= 2 ? live : sticky) || '';
     const notebookId = readNotebookChatBind()?.notebookId;
 
     const onAck = (e: Event) => {

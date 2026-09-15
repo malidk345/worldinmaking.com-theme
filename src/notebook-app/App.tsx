@@ -77,7 +77,7 @@ import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
 import { isNotebookWindowPath, notebookWindowPath } from '../lib/window-path'
 import { canWriteNotebook } from '../lib/notebook-sharing'
-import { bindNotebookChat } from '../lib/notebook-chat-bind'
+import { bindNotebookChat, readNotebookSelection, rememberStickyNotebookSelection } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
 
 const MarkdownNotebook = React.lazy(() =>
@@ -183,6 +183,19 @@ export function App() {
       delete document.documentElement.dataset.notebookHostTheme
     }
   }, [hostTheme])
+
+  useEffect(() => {
+    const handleDocumentSelectionChange = () => {
+      const text = readNotebookSelection()
+      if (text && text.length >= 2) {
+        rememberStickyNotebookSelection(text)
+      }
+    }
+    document.addEventListener('selectionchange', handleDocumentSelectionChange)
+    return () => {
+      document.removeEventListener('selectionchange', handleDocumentSelectionChange)
+    }
+  }, [])
 
   // Editor state
   const [currentNotebook, setCurrentNotebook] = useState<StoredNotebook | null>(null)
