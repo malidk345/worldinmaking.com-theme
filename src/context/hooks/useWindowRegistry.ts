@@ -11,7 +11,7 @@ import qs from 'qs'
 import { AppWindow } from '../Window'
 import { mergeWindowUpdate, windowModeFlags, buildSnapOverrides, type WindowUpdate } from 'lib/windowState'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
-import { resolveSplitDualPaths } from 'lib/os/arrange-workspace'
+import { resolveWorkspacePresetLayout } from 'lib/os/arrange-workspace'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
 import {
     canonicalWindowPath,
@@ -231,14 +231,17 @@ export function useWindowRegistry({
     useEffect(() => {
         const handleArrangeWorkspace = (e: Event) => {
             const customEvent = e as CustomEvent
-            const preset = customEvent.detail?.preset
-
-            // Treat missing/unknown preset the same as split_dual for this event only
-            if (!preset || preset === 'split_dual') {
-                const paths = resolveSplitDualPaths(windowsRef.current)
-                addWindowRef.current?.({ path: paths.left, snapped: 'left' })
-                addWindowRef.current?.({ path: paths.right, snapped: 'right' })
+            // Diff Split historically omitted detail; default to split_dual.
+            // Unknown presets fail closed (no silent mis-tile).
+            const preset = customEvent.detail?.preset || 'split_dual'
+            const layout = resolveWorkspacePresetLayout(preset, windowsRef.current)
+            if (!layout) return
+            if (layout.kind === 'split') {
+                addWindowRef.current?.({ path: layout.left, snapped: 'left' })
+                addWindowRef.current?.({ path: layout.right, snapped: 'right' })
+                return
             }
+            addWindowRef.current?.({ path: layout.path })
         }
         window.addEventListener('wimArrangeWorkspace', handleArrangeWorkspace)
         return () => {

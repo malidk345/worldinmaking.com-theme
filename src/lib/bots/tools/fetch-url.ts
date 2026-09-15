@@ -130,9 +130,13 @@ function stripMarkup(value: string): string {
         .trim()
 }
 
-export async function fetchPublicUrl(rawUrl: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+export async function fetchPublicUrl(
+    rawUrl: string,
+    signal?: AbortSignal
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
     const blocked = isBlockedFetchUrl(rawUrl)
     if (blocked) return { ok: false, error: blocked }
+    if (signal?.aborted) return { ok: false, error: 'client request aborted' }
     let parsed: URL
     try {
         parsed = new URL(rawUrl)
@@ -142,6 +146,8 @@ export async function fetchPublicUrl(rawUrl: string): Promise<{ ok: true; text: 
     const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    const onExternalAbort = () => controller.abort()
+    signal?.addEventListener('abort', onExternalAbort)
     try {
         const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)
         if (!ipv4Literal && !host.includes(':')) {
@@ -166,9 +172,13 @@ export async function fetchPublicUrl(rawUrl: string): Promise<{ ok: true; text: 
         if (!text) return { ok: false, error: 'page had no readable text' }
         return { ok: true, text }
     } catch (error) {
+        if (signal?.aborted) {
+            return { ok: false, error: 'client request aborted' }
+        }
         const message = error instanceof Error ? error.message : 'fetch failed'
         return { ok: false, error: message.slice(0, 180) }
     } finally {
         clearTimeout(timer)
+        signal?.removeEventListener('abort', onExternalAbort)
     }
 }

@@ -2090,8 +2090,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const message = activeChat.messages.find((item) => item.id === messageId)
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
     const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
+    const trimmed = (payload || '').trim()
     updateAssistantMessage(activeChat.id, messageId, {
-      humanTurn: { ...message.humanTurn, status: nextStatus },
+      humanTurn: {
+        ...message.humanTurn,
+        status: nextStatus,
+        ...(action === 'answer' && trimmed ? { answer: trimmed.slice(0, 2000) } : {}),
+        ...(action === 'revise' && trimmed ? { revisionNote: trimmed.slice(0, 800) } : {}),
+      },
     })
     const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (activeChat.agentMode || 'ask')
     setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { resolveSplitDualPaths } from '../src/lib/os/arrange-workspace';
+import { resolveSplitDualPaths, resolveWorkspacePresetLayout } from '../src/lib/os/arrange-workspace';
 
 test.describe('resolveSplitDualPaths', () => {
     test('returns first open notebook path for left and /workspace-chat for right', () => {
@@ -27,5 +27,56 @@ test.describe('resolveSplitDualPaths', () => {
         const result = resolveSplitDualPaths([]);
         expect(result.left).toBe('/notebooks');
         expect(result.right).toBe('/workspace-chat');
+    });
+});
+
+test.describe('resolveWorkspacePresetLayout', () => {
+    test('maps deep_reading / studio / research / minimal', () => {
+        expect(resolveWorkspacePresetLayout('deep_reading')).toEqual({
+            kind: 'split',
+            left: '/posts',
+            right: '/notebooks',
+        });
+        expect(resolveWorkspacePresetLayout('studio')).toEqual({
+            kind: 'split',
+            left: '/notebooks',
+            right: '/workspace-chat',
+        });
+        expect(resolveWorkspacePresetLayout('research')).toEqual({
+            kind: 'split',
+            left: '/scratchpad',
+            right: '/notebooks',
+        });
+        expect(resolveWorkspacePresetLayout('minimal')).toEqual({
+            kind: 'focus',
+            path: '/notebooks',
+        });
+    });
+
+    test('split_dual uses open notebook when present', () => {
+        const layout = resolveWorkspacePresetLayout('split_dual', [{ path: '/notebooks/nb-9' }]);
+        expect(layout).toEqual({
+            kind: 'split',
+            left: '/notebooks/nb-9',
+            right: '/workspace-chat',
+        });
+    });
+
+    test('unknown and empty presets fail closed (null)', () => {
+        expect(resolveWorkspacePresetLayout('')).toBeNull();
+        expect(resolveWorkspacePresetLayout(undefined)).toBeNull();
+        expect(resolveWorkspacePresetLayout('not_a_real_preset')).toBeNull();
+    });
+});
+
+test.describe('wimArrangeWorkspace listener wiring', () => {
+    test('useWindowRegistry resolves all known presets via resolveWorkspacePresetLayout', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { resolve } = await import('node:path');
+        const src = readFileSync(resolve('src/context/hooks/useWindowRegistry.ts'), 'utf8');
+        expect(src).toContain("import { resolveWorkspacePresetLayout } from 'lib/os/arrange-workspace'");
+        expect(src).toContain("const preset = customEvent.detail?.preset || 'split_dual'");
+        expect(src).toContain('resolveWorkspacePresetLayout(preset, windowsRef.current)');
+        expect(src).not.toContain('resolveSplitDualPaths(windowsRef.current)');
     });
 });

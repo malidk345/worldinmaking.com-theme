@@ -540,7 +540,7 @@ async function runTaskSubagent(
                 toolName: nestedName,
                 arguments: nested.argumentsJson.slice(0, 800),
             })
-            const nestedExec = await executeToolCall(nested, params.env, params.host, 'ask')
+            const nestedExec = await executeToolCall(nested, params.env, params.host, 'ask', params.signal)
             if (nestedName === 'web_search') state.usedWebSearch = true
             if (nestedExec.citations?.length) state.citations.push(...nestedExec.citations)
             params.onTool?.({
@@ -631,7 +631,7 @@ async function runOneToolCall(
     const activityId = name === 'todo_write' ? PLAN_ACTIVITY_ID : `tool-${call.id}`
     if (!preExecuted) emitToolRunning(call, params)
 
-    let executed = preExecuted || (await executeToolCall(call, params.env, params.host, state.agentMode))
+    let executed = preExecuted || (await executeToolCall(call, params.env, params.host, state.agentMode, params.signal))
 
     if (executed.artifact) {
         state.artifacts.push(executed.artifact)
@@ -780,7 +780,7 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
             const rows = await Promise.all(
                 batch.map(async (call) => ({
                     call,
-                    executed: await executeToolCall(call, params.env, params.host, state.agentMode),
+                    executed: await executeToolCall(call, params.env, params.host, state.agentMode, params.signal),
                 }))
             )
             for (const row of rows) {

@@ -117,6 +117,18 @@ test.describe('Human SSE includes plan_approval and ask_user', () => {
         expect(statuses).toContain(turn.status)
     })
 
+    test('answered ask_user turn can carry answer text for history', () => {
+        const turn: HumanTurn = {
+            kind: 'ask_user',
+            title: 'Need info',
+            status: 'answered',
+            question: 'Which notebook?',
+            answer: 'Use the draft notebook',
+        }
+        expect(turn.answer).toBe('Use the draft notebook')
+        expect(JSON.stringify(turn)).toContain('Use the draft notebook')
+    })
+
     test('OPENAI_CHAT_TOOLS and mode toolkits CONTAIN ask_user', () => {
         const catalog = OPENAI_CHAT_TOOLS.map((tool) => tool.function.name)
         expect(catalog).toContain('ask_user')
@@ -268,3 +280,17 @@ test.describe('done.corrected honesty', () => {
     })
 })
 
+
+test.describe('HumanTurnCard answer history wiring', () => {
+    test('ChatMessage persists and renders ask_user answer / revise note', async () => {
+        const { readFileSync } = await import('node:fs')
+        const { resolve } = await import('node:path')
+        const card = readFileSync(resolve('src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx'), 'utf8')
+        const index = readFileSync(resolve('src/components/ClaudeWorkspaceChat/index.tsx'), 'utf8')
+        expect(index).toContain("action === 'answer' && trimmed ? { answer: trimmed.slice(0, 2000) }")
+        expect(index).toContain("action === 'revise' && trimmed ? { revisionNote: trimmed.slice(0, 800) }")
+        expect(card).toContain('turn.answer')
+        expect(card).toContain('turn.revisionNote')
+        expect(card).toContain("turn.status === 'answered'")
+    })
+})

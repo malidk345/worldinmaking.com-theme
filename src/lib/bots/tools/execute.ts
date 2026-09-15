@@ -1620,10 +1620,15 @@ export async function executeToolCall(
     call: ToolCall,
     env?: EnvStore,
     host?: HostSnapshot,
-    mode: AgentMode = 'ask'
+    mode: AgentMode = 'ask',
+    signal?: AbortSignal
 ): Promise<ToolExecution> {
     const name = resolveToolName(call.name)
     const base = { callId: call.id, name }
+    if (signal?.aborted) {
+        const result = JSON.stringify({ ok: false, error: 'client request aborted' })
+        return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
+    }
     if (!ALLOWED_TOOL_NAMES.has(name)) {
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unknown tool: ${call.name}` }) }
     }
@@ -1655,7 +1660,7 @@ export async function executeToolCall(
         }
         if (name === 'fetch_url') {
             const url = asText(args.url, 2_000).trim()
-            const fetched = await fetchPublicUrl(url)
+            const fetched = await fetchPublicUrl(url, signal)
             if (!fetched.ok) {
                 const result = JSON.stringify({ ok: false, error: fetched.error })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
