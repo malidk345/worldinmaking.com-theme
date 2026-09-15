@@ -117,7 +117,7 @@ export function notebookWindowPath(id?: string | null, mark?: string | null): st
 }
 
 export function livePathname(): string | null {
-    if (typeof window === 'undefined') return null
+    if (typeof window === 'undefined' || !window.location) return null
     const liveRaw = `${window.location.pathname}${window.location.search}${window.location.hash}`
     const publicId = extractPublicNotebookId(liveRaw)
     if (publicId) return notebookPublicPath(publicId)

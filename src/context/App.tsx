@@ -20,7 +20,7 @@ import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
-import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
+import { mergeWindowUpdate, windowModeFlags, buildSnapOverrides, type WindowUpdate } from 'lib/windowState'
 import { installSqueakFetchGuard } from 'lib/squeak'
 import { findAskAiWindow, findNotebookWindow, windowSlot } from 'lib/open-ask-ai-window'
 import { snapLayout } from 'components/AppWindow/SnapAssistOverlay'
@@ -1877,16 +1877,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const snapRect =
                 !isMobileClient && snappedSide ? getSnapDimensions(snappedSide) : null
 
-            const applySnapOverrides = (w: AppWindow) => {
-                if (!snapRect || !snappedSide) return {}
-                return {
-                    position: snapRect.position,
-                    size: snapRect.size,
-                    previousSize: w.size,
-                    previousPosition: w.position,
-                    ...windowModeFlags(snappedSide === 'left' ? 'snapped-left' : 'snapped-right'),
-                }
-            }
+            const applySnapOverrides = (w: AppWindow) => buildSnapOverrides(snappedSide, w, snapRect)
 
             if (isAssistantWindowPath(path)) {
                 const existingAssistant = prev.find((w) => isAssistantWindowPath(w.path))
