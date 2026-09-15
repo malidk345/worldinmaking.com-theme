@@ -20,7 +20,7 @@ import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { themeOptions } from '../hooks/useTheme'
 import usePostHog from '../hooks/usePostHog'
-import { buildSnapOverrides, type WindowUpdate } from 'lib/windowState'
+import { type WindowUpdate } from 'lib/windowState'
 import { installSqueakFetchGuard } from 'lib/squeak'
 import {
     applyWallpaperBrowserChrome,
@@ -31,15 +31,12 @@ import {
     resolveKeptWallpaper,
 } from '../lib/wallpaperChrome'
 import { getSessionAccessToken } from 'lib/wim-auth'
-import { useWorldAccountSync } from '../hooks/useWorldAccountSync'
 import { createWorldRoom } from '../lib/world-account'
 import {
     exitVisitingRoom,
-    isVisitingRoom,
-    readPinnedItems,
     readVisitingRoomToken,
-    type WorldSnapshot,
 } from '../lib/world-snapshot'
+import { useWorldSnapshot } from './hooks/useWorldSnapshot'
 
 const Start = dynamic(() => import('components/Start'), { ssr: false })
 
@@ -1117,132 +1114,18 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         return ''
     }, [location, isSSR, visitingRoomToken, lastRoomURL])
 
-    const collectSnapshot = useCallback((): WorldSnapshot => {
-        const innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1280
-        const innerHeight = typeof window !== 'undefined' ? window.innerHeight : 800
-        const heightBudget = Math.max(1, innerHeight - taskbarHeight)
-        const savedWindows = [...windows]
-            .filter((win) => !win.minimized && win.path.startsWith('/'))
-            .sort((a, b) => a.zIndex - b.zIndex)
-            .slice(0, 12)
-            .map((win) => ({
-                path: win.path.slice(0, 200),
-                position: {
-                    x: (win.position.x / innerWidth) * 100,
-                    y: (win.position.y / heightBudget) * 100,
-                },
-                size: {
-                    width: (win.size.width / innerWidth) * 100,
-                    height: (win.size.height / innerHeight) * 100,
-                },
-                zIndex: win.zIndex,
-                snapped: win.snapped,
-            }))
-        return {
-            v: 1,
-            wallpaper: resolveKeptWallpaper(siteSettings.wallpaper),
-            colorMode: siteSettings.colorMode,
-            reduceTransparency: !!siteSettings.reduceTransparency,
-            clickBehavior: siteSettings.clickBehavior === 'single' ? 'single' : 'double',
-            windows: savedWindows,
-            pinnedItems: readPinnedItems(),
-        }
-    }, [windows, siteSettings, taskbarHeight])
-
-    const applySnapshot = useCallback(
-        (snapshot: WorldSnapshot, opts?: { reopenWindows?: boolean }) => {
-            const visiting = isVisitingRoom()
-            const next: SiteSettings = {
-                ...siteSettings,
-                wallpaper: snapshot.wallpaper,
-                colorMode: snapshot.colorMode,
-                reduceTransparency: !!snapshot.reduceTransparency,
-                clickBehavior: snapshot.clickBehavior,
-            }
-            setSiteSettings(next)
-            if (!visiting) {
-                try {
-                    localStorage.setItem('siteSettings', JSON.stringify(next))
-                } catch {
-                    /* ignore */
-                }
-            }
-            if (snapshot.colorMode === 'dark' || snapshot.colorMode === 'light') {
-                try {
-                    window.__setPreferredTheme?.(snapshot.colorMode)
-                } catch {
-                    /* ignore */
-                }
-            }
-            if (visiting) {
-                setVisitingRoomToken(readVisitingRoomToken() || null)
-            }
-            if (!opts?.reopenWindows || snapshot.windows.length === 0) return
-
-            const innerWidth = window.innerWidth
-            const innerHeight = window.innerHeight
-            const isMobileClient =
-                innerWidth < 768 ||
-                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            const bounds = constraintsRef.current?.getBoundingClientRect()
-            const fullW = bounds ? bounds.width : innerWidth - 16
-            const fullH = bounds ? bounds.height : innerHeight - taskbarHeight - 16
-            layoutRestoredRef.current = true
-            setWindows(
-                snapshot.windows.map((win, i) => {
-                    const size = {
-                        width: (win.size.width / 100) * innerWidth,
-                        height: (win.size.height / 100) * innerHeight,
-                    }
-                    const position = {
-                        x: (win.position.x / 100) * innerWidth,
-                        y: (win.position.y / 100) * (innerHeight - taskbarHeight),
-                    }
-                    const label = win.path.split('/').filter(Boolean).pop() || 'Window'
-                    const baseWin = {
-                        key: `${win.path}#${i}`,
-                        path: win.path,
-                        title: label,
-                        meta: { title: label },
-                        size: isMobileClient ? { width: fullW, height: fullH } : size,
-                        position: isMobileClient ? { x: 0, y: 0 } : position,
-                        previousSize: size,
-                        previousPosition: position,
-                        sizeConstraints: {
-                            min: { width: 280, height: 180 },
-                            max: { width: fullW, height: fullH },
-                        },
-                        fixedSize: false,
-                        element: null,
-                        zIndex: win.zIndex || i + 1,
-                        minimized: false,
-                        windowed: true,
-                        expanded: isMobileClient,
-                        snapped: isMobileClient ? false : (win.snapped || false),
-                        fromHistory: false,
-                        props: { path: win.path },
-                    } as AppWindow
-
-                    if (!isMobileClient && (win.snapped === 'left' || win.snapped === 'right')) {
-                        const snapRect = getSnapDimensions(win.snapped)
-                        Object.assign(baseWin, buildSnapOverrides(win.snapped, baseWin, snapRect))
-                    }
-
-                    return baseWin
-                })
-            )
-        },
-        [siteSettings, taskbarHeight]
-    )
-
-    const worldEpoch = `${siteSettings.wallpaper}|${siteSettings.colorMode}|${
-        siteSettings.reduceTransparency ? '1' : '0'
-    }|${siteSettings.clickBehavior || 'double'}|${desktopParams || ''}|${pinEpoch}`
-
-    useWorldAccountSync({
-        worldEpoch,
-        collectSnapshot,
-        applySnapshot,
+    const { collectSnapshot } = useWorldSnapshot({
+        windows,
+        setWindows,
+        siteSettings,
+        setSiteSettings,
+        taskbarHeight,
+        constraintsRef,
+        layoutRestoredRef,
+        getSnapDimensions,
+        setVisitingRoomToken,
+        desktopParams,
+        pinEpoch,
     })
 
     useEffect(() => {

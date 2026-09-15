@@ -158,3 +158,136 @@ export const PENDING_ROOM_KEY = 'wim_pending_room'
 export const HOME_WORLD_KEY = 'wim_home_world'
 export const WORLD_UPDATED_AT_KEY = 'wim_world_updated_at'
 export const PINNED_APPS_KEY = 'wim_os_desktop_pinned_items'
+
+/** Minimal live-window shape needed to collect a world snapshot. */
+export type SnapshotSourceWindow = {
+    minimized?: boolean
+    path: string
+    position: { x: number; y: number }
+    size: { width: number; height: number }
+    zIndex: number
+    snapped?: 'left' | 'right' | false
+}
+
+export type SnapshotViewport = {
+    innerWidth: number
+    innerHeight: number
+    taskbarHeight: number
+}
+
+export type SnapRect = {
+    size: { width: number; height: number }
+    position: { x: number; y: number }
+}
+
+/** Percent-normalized windows for persistence (same rules as App collectSnapshot). */
+export function collectWorldWindows(
+    windows: SnapshotSourceWindow[],
+    viewport: SnapshotViewport
+): WorldWindow[] {
+    const { innerWidth, innerHeight, taskbarHeight } = viewport
+    const heightBudget = Math.max(1, innerHeight - taskbarHeight)
+    return [...windows]
+        .filter((win) => !win.minimized && win.path.startsWith('/'))
+        .sort((a, b) => a.zIndex - b.zIndex)
+        .slice(0, MAX_WINDOWS)
+        .map((win) => ({
+            path: win.path.slice(0, MAX_PATH),
+            position: {
+                x: (win.position.x / innerWidth) * 100,
+                y: (win.position.y / heightBudget) * 100,
+            },
+            size: {
+                width: (win.size.width / innerWidth) * 100,
+                height: (win.size.height / innerHeight) * 100,
+            },
+            zIndex: win.zIndex,
+            snapped: win.snapped,
+        }))
+}
+
+export function buildWorldSnapshot(input: {
+    wallpaper: string
+    colorMode: ColorMode
+    reduceTransparency?: boolean
+    clickBehavior?: 'single' | 'double'
+    windows: WorldWindow[]
+    pinnedItems?: unknown[]
+}): WorldSnapshot {
+    return {
+        v: 1,
+        wallpaper: resolveKeptWallpaper(input.wallpaper),
+        colorMode: input.colorMode,
+        reduceTransparency: !!input.reduceTransparency,
+        clickBehavior: input.clickBehavior === 'single' ? 'single' : 'double',
+        windows: input.windows,
+        pinnedItems: input.pinnedItems,
+    }
+}
+
+/**
+ * Rebuild desktop AppWindow fields from a persisted WorldWindow.
+ * Snap geometry is applied via `applySnapOverrides` (typically buildSnapOverrides)
+ * so restore stays consistent with live snap updates.
+ */
+export function restoreAppWindowFromWorld(
+    win: WorldWindow,
+    index: number,
+    opts: {
+        innerWidth: number
+        innerHeight: number
+        taskbarHeight: number
+        fullW: number
+        fullH: number
+        isMobileClient: boolean
+        applySnapOverrides: (
+            snappedSide: 'left' | 'right' | false,
+            prevWindow: { size: { width: number; height: number }; position: { x: number; y: number } },
+            snapRect: SnapRect | null
+        ) => Record<string, unknown>
+        getSnapRect: (side: 'left' | 'right') => SnapRect | null
+    }
+): Record<string, unknown> {
+    const size = {
+        width: (win.size.width / 100) * opts.innerWidth,
+        height: (win.size.height / 100) * opts.innerHeight,
+    }
+    const position = {
+        x: (win.position.x / 100) * opts.innerWidth,
+        y: (win.position.y / 100) * (opts.innerHeight - opts.taskbarHeight),
+    }
+    const label = win.path.split('/').filter(Boolean).pop() || 'Window'
+    const baseWin: Record<string, unknown> = {
+        key: `${win.path}#${index}`,
+        path: win.path,
+        title: label,
+        meta: { title: label },
+        size: opts.isMobileClient ? { width: opts.fullW, height: opts.fullH } : size,
+        position: opts.isMobileClient ? { x: 0, y: 0 } : position,
+        previousSize: size,
+        previousPosition: position,
+        sizeConstraints: {
+            min: { width: 280, height: 180 },
+            max: { width: opts.fullW, height: opts.fullH },
+        },
+        fixedSize: false,
+        element: null,
+        zIndex: win.zIndex || index + 1,
+        minimized: false,
+        windowed: true,
+        expanded: opts.isMobileClient,
+        snapped: opts.isMobileClient ? false : win.snapped || false,
+        fromHistory: false,
+        props: { path: win.path },
+    }
+
+    if (!opts.isMobileClient && (win.snapped === 'left' || win.snapped === 'right')) {
+        const snapRect = opts.getSnapRect(win.snapped)
+        Object.assign(
+            baseWin,
+            opts.applySnapOverrides(win.snapped, baseWin as { size: typeof size; position: typeof position }, snapRect)
+        )
+    }
+
+    return baseWin
+}
