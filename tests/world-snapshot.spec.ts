@@ -7,7 +7,14 @@ import {
     SITE_APPEARANCE_DEFAULTS_VERSION,
 } from '../src/lib/wallpaperChrome'
 import { isCancelledRouteError } from '../src/lib/swallow-cancelled-route'
-import { createRoomToken, parseWorldSnapshot } from '../src/lib/world-snapshot'
+import {
+    buildWorldSnapshot,
+    collectWorldWindows,
+    createRoomToken,
+    parseWorldSnapshot,
+    restoreAppWindowFromWorld,
+} from '../src/lib/world-snapshot'
+import { buildSnapOverrides } from '../src/lib/windowState'
 
 test.describe('world snapshot parse', () => {
     test('accepts a valid v1 snapshot and remaps retired wallpapers', () => {
@@ -177,3 +184,116 @@ test.describe('world snapshot parse', () => {
         expect(createRoomToken()).not.toBe(token)
     })
 })
+
+test.describe('world snapshot collect/restore helpers', () => {
+    test('collectWorldWindows percent-normalizes and keeps snapped', () => {
+        const windows = collectWorldWindows(
+            [
+                {
+                    path: '/notebooks/abc',
+                    minimized: false,
+                    position: { x: 128, y: 80 },
+                    size: { width: 640, height: 400 },
+                    zIndex: 2,
+                    snapped: 'left',
+                },
+                {
+                    path: '/minimized',
+                    minimized: true,
+                    position: { x: 0, y: 0 },
+                    size: { width: 100, height: 100 },
+                    zIndex: 1,
+                },
+                {
+                    path: 'relative',
+                    minimized: false,
+                    position: { x: 0, y: 0 },
+                    size: { width: 100, height: 100 },
+                    zIndex: 3,
+                },
+            ],
+            { innerWidth: 1280, innerHeight: 800, taskbarHeight: 40 }
+        )
+        expect(windows).toHaveLength(1)
+        expect(windows[0]).toEqual({
+            path: '/notebooks/abc',
+            position: { x: 10, y: 80 / 760 * 100 },
+            size: { width: 50, height: 50 },
+            zIndex: 2,
+            snapped: 'left',
+        })
+    })
+
+    test('buildWorldSnapshot remaps wallpaper and defaults clickBehavior', () => {
+        const snap = buildWorldSnapshot({
+            wallpaper: 'keyboard-garden',
+            colorMode: 'dark',
+            windows: [],
+            pinnedItems: [],
+        })
+        expect(snap.v).toBe(1)
+        expect(snap.wallpaper).toBe('keyboard-mint')
+        expect(snap.clickBehavior).toBe('double')
+        expect(snap.reduceTransparency).toBe(false)
+    })
+
+    test('restoreAppWindowFromWorld applies buildSnapOverrides for left snap', () => {
+        const restored = restoreAppWindowFromWorld(
+            {
+                path: '/a',
+                position: { x: 0, y: 0 },
+                size: { width: 50, height: 50 },
+                zIndex: 2,
+                snapped: 'left',
+            },
+            0,
+            {
+                innerWidth: 1000,
+                innerHeight: 800,
+                taskbarHeight: 40,
+                fullW: 984,
+                fullH: 744,
+                isMobileClient: false,
+                applySnapOverrides: buildSnapOverrides,
+                getSnapRect: (side) =>
+                    side === 'left'
+                        ? { size: { width: 492, height: 744 }, position: { x: 0, y: 0 } }
+                        : { size: { width: 492, height: 744 }, position: { x: 492, y: 0 } },
+            }
+        )
+        expect(restored.snapped).toBe('left')
+        expect(restored.size).toEqual({ width: 492, height: 744 })
+        expect(restored.position).toEqual({ x: 0, y: 0 })
+        expect(restored.previousSize).toEqual({ width: 500, height: 400 })
+        expect(restored.windowed).toBe(false)
+        expect(restored.expanded).toBe(false)
+    })
+
+    test('restoreAppWindowFromWorld skips snap overrides on mobile', () => {
+        const restored = restoreAppWindowFromWorld(
+            {
+                path: '/a',
+                position: { x: 10, y: 10 },
+                size: { width: 40, height: 40 },
+                zIndex: 1,
+                snapped: 'right',
+            },
+            1,
+            {
+                innerWidth: 390,
+                innerHeight: 844,
+                taskbarHeight: 40,
+                fullW: 374,
+                fullH: 788,
+                isMobileClient: true,
+                applySnapOverrides: buildSnapOverrides,
+                getSnapRect: () => ({ size: { width: 100, height: 100 }, position: { x: 9, y: 9 } }),
+            }
+        )
+        expect(restored.snapped).toBe(false)
+        expect(restored.expanded).toBe(true)
+        expect(restored.size).toEqual({ width: 374, height: 788 })
+        expect(restored.position).toEqual({ x: 0, y: 0 })
+    })
+})
+
