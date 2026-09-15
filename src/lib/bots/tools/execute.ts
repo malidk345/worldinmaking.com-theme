@@ -433,7 +433,8 @@ async function executeGenerateImage(
     prompt: string,
     options?: { aspect_ratio?: string; style?: string },
     env?: EnvStore,
-    _host?: HostSnapshot
+    _host?: HostSnapshot,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     const workerUrl = (
         process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
@@ -458,6 +459,10 @@ async function executeGenerateImage(
         }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+
     try {
         const payload: Record<string, any> = { prompt }
         if (options?.aspect_ratio) payload.aspect_ratio = options.aspect_ratio
@@ -470,7 +475,12 @@ async function executeGenerateImage(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
+            signal,
         })
+
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
 
         if (!res.ok) {
             const err = (await res.json().catch(() => ({}))) as { error?: string }
@@ -508,6 +518,12 @@ async function executeGenerateImage(
             }),
         }
     } catch (err: any) {
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         return {
             ok: false,
             result: JSON.stringify({
@@ -617,7 +633,8 @@ async function executeAnalyzeImage(
     imageUrl: string,
     question?: string,
     env?: EnvStore,
-    _host?: HostSnapshot
+    _host?: HostSnapshot,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     const workerUrl = (
         process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
@@ -639,6 +656,10 @@ async function executeAnalyzeImage(
         }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+
     const blocked = isBlockedFetchUrl(imageUrl)
     if (blocked) {
         return { ok: false, result: JSON.stringify({ ok: false, error: blocked }) }
@@ -656,6 +677,9 @@ async function executeAnalyzeImage(
         if (resolved) return { ok: false, result: JSON.stringify({ ok: false, error: resolved }) }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
     try {
         const res = await fetch(`${workerUrl}/vision`, {
             method: 'POST',
@@ -667,7 +691,12 @@ async function executeAnalyzeImage(
                 image_url: imageUrl,
                 prompt: question || 'Analyze this image in detail. Describe its visual elements, style, text, handwriting, concepts, and key information.',
             }),
+            signal,
         })
+
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
 
         if (!res.ok) {
             const err = (await res.json().catch(() => ({}))) as { error?: string }
@@ -694,6 +723,12 @@ async function executeAnalyzeImage(
             ),
         }
     } catch (err: any) {
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         return {
             ok: false,
             result: JSON.stringify({
@@ -708,7 +743,8 @@ async function executeTranscribeAudio(
     audioUrl: string,
     language?: string,
     env?: EnvStore,
-    _host?: HostSnapshot
+    _host?: HostSnapshot,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     const workerUrl = (
         process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
@@ -730,6 +766,10 @@ async function executeTranscribeAudio(
         }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+
     const blocked = isBlockedFetchUrl(audioUrl)
     if (blocked) {
         return { ok: false, result: JSON.stringify({ ok: false, error: blocked }) }
@@ -747,6 +787,9 @@ async function executeTranscribeAudio(
         if (resolved) return { ok: false, result: JSON.stringify({ ok: false, error: resolved }) }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
     try {
         const res = await fetch(`${workerUrl}/transcribe`, {
             method: 'POST',
@@ -758,7 +801,12 @@ async function executeTranscribeAudio(
                 audio_url: audioUrl,
                 language,
             }),
+            signal,
         })
+
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
 
         if (!res.ok) {
             const err = (await res.json().catch(() => ({}))) as { error?: string }
@@ -785,6 +833,12 @@ async function executeTranscribeAudio(
             ),
         }
     } catch (err: any) {
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         return {
             ok: false,
             result: JSON.stringify({
@@ -799,7 +853,8 @@ async function executeSynthesizeSpeech(
     text: string,
     language?: string,
     env?: EnvStore,
-    _host?: HostSnapshot
+    _host?: HostSnapshot,
+    signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
     const workerUrl = (
         process.env.NEXT_PUBLIC_STORAGE_WORKER_URL ||
@@ -821,6 +876,10 @@ async function executeSynthesizeSpeech(
         }
     }
 
+    if (signal?.aborted) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+    }
+
     try {
         const res = await fetch(`${workerUrl}/speech`, {
             method: 'POST',
@@ -832,7 +891,12 @@ async function executeSynthesizeSpeech(
                 text,
                 lang: language || 'tr',
             }),
+            signal,
         })
+
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
 
         if (!res.ok) {
             const err = (await res.json().catch(() => ({}))) as { error?: string }
@@ -862,6 +926,12 @@ async function executeSynthesizeSpeech(
             }),
         }
     } catch (err: any) {
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         return {
             ok: false,
             result: JSON.stringify({
@@ -1953,7 +2023,7 @@ export async function executeToolCall(
             }
             const aspect_ratio = asText(args.aspect_ratio, 10).trim() || undefined
             const style = asText(args.style, 30).trim() || undefined
-            const executed = await executeGenerateImage(prompt, { aspect_ratio, style }, env, host)
+            const executed = await executeGenerateImage(prompt, { aspect_ratio, style }, env, host, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'search_academic_corpus') {
@@ -1993,7 +2063,7 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const question = asText(args.question || args.prompt, 1_000).trim() || undefined
-            const executed = await executeAnalyzeImage(imageUrl, question, env, host)
+            const executed = await executeAnalyzeImage(imageUrl, question, env, host, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'transcribe_audio') {
@@ -2003,7 +2073,7 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const language = asText(args.language || args.lang, 10).trim() || undefined
-            const executed = await executeTranscribeAudio(audioUrl, language, env, host)
+            const executed = await executeTranscribeAudio(audioUrl, language, env, host, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'synthesize_speech') {
@@ -2013,7 +2083,7 @@ export async function executeToolCall(
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
             const language = asText(args.language || args.lang, 10).trim() || undefined
-            const executed = await executeSynthesizeSpeech(text, language, env, host)
+            const executed = await executeSynthesizeSpeech(text, language, env, host, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'cross_examine_argument') {

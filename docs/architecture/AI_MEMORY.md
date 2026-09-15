@@ -58,6 +58,13 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-15 — Grok Bot / Chief of Staff (multimodal Worker Stop aborts in-flight fetches)
+- **Scope:** Thread client `AbortSignal` from `executeToolCall` into `executeGenerateImage` / `executeAnalyzeImage` / `executeTranscribeAudio` / `executeSynthesizeSpeech` so Stop cancels Cloudflare Worker `/image|/vision|/transcribe|/speech` fetches. Fail-closed with `client request aborted` (same pattern as #675 web_search / #677 academic).
+- **Files:** `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/execute-multimodal.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm exec vitest run --environment node src/lib/bots/tools/execute-multimodal.abort.test.ts`
+- **Handoff:** Squash-merge when CI typecheck green.
+
+
 ### 2026-09-15 — Grok Bot / Chief of Staff (academic corpus Stop aborts provider fetches)
 - **Scope:** Thread client `AbortSignal` into `searchAcademicCorpus` / OpenAlex / Crossref / arXiv via `searchFetchSignal` (same pattern as #675 web_search). `executeAcademicSearch` passes `signal` and fail-closes with `client request aborted` instead of partial empty papers.
 - **Files:** `src/lib/bots/academic-search.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/academic-search.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
