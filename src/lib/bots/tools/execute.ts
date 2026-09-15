@@ -528,7 +528,10 @@ async function executeAcademicSearch(
         if (signal?.aborted) {
             return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
         }
-        const result = await searchAcademicCorpus(query, options)
+        const result = await searchAcademicCorpus(query, options, signal)
+        if (signal?.aborted) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
 
         // Web search fallback if external academic APIs and canonical corpus returned 0 papers
         if (result.papers.length === 0 && env) {
@@ -596,6 +599,12 @@ async function executeAcademicSearch(
             citations: citations.length > 0 ? citations : undefined,
         }
     } catch (err: unknown) {
+        if (
+            signal?.aborted ||
+            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
+        ) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        }
         const message = err instanceof Error ? err.message : 'Academic search failed'
         return {
             ok: false,
