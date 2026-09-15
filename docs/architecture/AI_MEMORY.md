@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-15 — Grok Bot / Chief of Staff (read_document Stop aborts in-flight fetches)
+- **Scope:** Thread client `AbortSignal` from `executeToolCall` into `executeReadDocument` so Stop cancels in-flight document fetches (timeout controller linked to client signal). Fail-closed with `client request aborted` (same pattern as #675 web_search / #677 academic / #678 multimodal).
+- **Files:** `src/lib/bots/tools/read-document.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/read-document.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm exec vitest run --environment node src/lib/bots/tools/read-document.abort.test.ts`
+- **Handoff:** Squash-merge when CI typecheck green.
+
 ### 2026-09-15 — Grok Bot / Chief of Staff (multimodal Worker Stop aborts in-flight fetches)
 - **Scope:** Thread client `AbortSignal` from `executeToolCall` into `executeGenerateImage` / `executeAnalyzeImage` / `executeTranscribeAudio` / `executeSynthesizeSpeech` so Stop cancels Cloudflare Worker `/image|/vision|/transcribe|/speech` fetches. Fail-closed with `client request aborted` (same pattern as #675 web_search / #677 academic).
 - **Files:** `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/execute-multimodal.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`

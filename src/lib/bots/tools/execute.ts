@@ -1784,7 +1784,8 @@ export async function executeToolCall(
                     page: typeof args.page === 'number' ? args.page : undefined,
                     query: asText(args.query, 120).trim(),
                 },
-                host
+                host,
+                signal
             )
             if (!executed.ok) {
                 const result = JSON.stringify({ ok: false, error: executed.error })

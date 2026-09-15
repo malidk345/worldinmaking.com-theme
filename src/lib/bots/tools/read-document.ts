@@ -110,8 +110,11 @@ function extractPdfTextFast(uint8: Uint8Array): string[] {
 
 export async function executeReadDocument(
     args: ReadDocumentArgs,
-    host?: HostSnapshot
+    host?: HostSnapshot,
+    signal?: AbortSignal
 ): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+    if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+
     const rawUrl = (args.url || '').trim()
     const docName = (args.name || '').trim()
     const targetPage = typeof args.page === 'number' && args.page > 0 ? Math.floor(args.page) : undefined
@@ -213,8 +216,12 @@ export async function executeReadDocument(
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    const onExternalAbort = () => controller.abort()
+    signal?.addEventListener('abort', onExternalAbort)
 
     try {
+        if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+
         const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
         if (!ipv4Literal && !parsedHost.includes(':')) {
             const resolved = await assertPublicHostname(parsedHost, controller.signal)
@@ -308,9 +315,13 @@ export async function executeReadDocument(
             text: `[Document Content for ${rawUrl}]\n${trimmed}`,
         }
     } catch (error) {
+        if (signal?.aborted) {
+            return { ok: false, error: 'client request aborted' }
+        }
         const message = error instanceof Error ? error.message : 'read document failed'
         return { ok: false, error: message.slice(0, 180) }
     } finally {
         clearTimeout(timer)
+        signal?.removeEventListener('abort', onExternalAbort)
     }
 }
