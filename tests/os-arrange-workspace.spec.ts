@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { test, expect } from '@playwright/test';
 import { resolveSplitDualPaths } from '../src/lib/os/arrange-workspace';
 
-describe('resolveSplitDualPaths', () => {
-    it('returns first open notebook path for left and /workspace-chat for right', () => {
+test.describe('resolveSplitDualPaths', () => {
+    test('returns first open notebook path for left and /workspace-chat for right', () => {
         const windows = [
             { path: '/other' },
             { path: '/notebooks/nb-1' },
@@ -13,7 +13,7 @@ describe('resolveSplitDualPaths', () => {
         expect(result.right).toBe('/workspace-chat');
     });
 
-    it('falls back to /notebooks if no notebook is open', () => {
+    test('falls back to /notebooks if no notebook is open', () => {
         const windows = [
             { path: '/other' },
             { path: '/workspace-chat' }
@@ -23,7 +23,7 @@ describe('resolveSplitDualPaths', () => {
         expect(result.right).toBe('/workspace-chat');
     });
 
-    it('handles empty windows array', () => {
+    test('handles empty windows array', () => {
         const result = resolveSplitDualPaths([]);
         expect(result.left).toBe('/notebooks');
         expect(result.right).toBe('/workspace-chat');
