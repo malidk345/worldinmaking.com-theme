@@ -97,8 +97,10 @@ export default function Categories({ setSelectedCategories, selectedCategories, 
                         className="absolute grid gap-y-2 right-0 bg-accent p-2 border border-input rounded mt-1"
                     >
                         {categories.map((category) => {
-                            const active = Object.keys(selectedCategories).some(
-                                (selectedCategory) => selectedCategory === category.attributes.label
+                            // Bolt: Optimized fast lookup by avoiding Object.keys().some() allocation
+                            const active = Object.prototype.hasOwnProperty.call(
+                                selectedCategories,
+                                category.attributes.label
                             )
                             const tags = category.attributes.post_tags?.data
                             return (
