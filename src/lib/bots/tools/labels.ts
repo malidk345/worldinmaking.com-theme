@@ -39,6 +39,7 @@ const LABELS: Record<string, [string, string, string]> = {
     cross_examine_argument: ['Examining philosophical argument', 'Cross-examined argument', 'Could not examine argument'],
     verified_corpus_search: ['Searching verified canonical corpus', 'Found verified canonical citations', 'Corpus search failed'],
     arrange_workspace_preset: ['Arranging workspace layout', 'Arranged workspace layout', 'Could not arrange workspace'],
+    daily_reflection_prompt: ['Generating daily reflection', 'Generated daily reflection', 'Daily reflection failed'],
     generate_flashcards: ['Generating flashcard deck', 'Created flashcard deck', 'Flashcard generation failed'],
     export_notebook: ['Compiling notebook for export', 'Compiled notebook document', 'Notebook export failed'],
     create_concept_map: ['Generating concept map', 'Created concept map', 'Concept map failed'],
@@ -82,6 +83,7 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (name === 'open_path') return pickArg(args, ['path', 'app', 'route'])
         if (name === 'arrange_workspace_preset') return pickArg(args, ['preset', 'layout'])
         if (name === 'generate_flashcards' || name === 'create_concept_map') return pickArg(args, ['topic', 'title'])
+        if (name === 'daily_reflection_prompt') return pickArg(args, ['theme', 'focus_topic'])
         if (name === 'export_notebook') return pickArg(args, ['format', 'notebook_id'])
         if (name === 'read_post') return pickArg(args, ['slug', 'id'])
         if (name === 'read_document') return pickArg(args, ['name', 'url', 'query'])
