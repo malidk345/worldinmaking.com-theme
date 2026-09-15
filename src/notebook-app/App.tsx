@@ -1121,6 +1121,8 @@ export function App() {
     window.addEventListener('wimNotebookPatchText', handlePatchText)
     window.addEventListener('wimNotebookAddFootnote', handleAddFootnote)
     window.addEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
+    // Signal readiness so OS dispatch can retry until listeners are mounted
+    ;(window as any).__wimNotebookOsListenerCount = ((window as any).__wimNotebookOsListenerCount || 0) + 1
     return () => {
       window.removeEventListener('wimNotebookInsertText', handleInsertText)
       window.removeEventListener('wimNotebookSetTitle', handleSetTitle)
@@ -1128,6 +1130,8 @@ export function App() {
       window.removeEventListener('wimNotebookPatchText', handlePatchText)
       window.removeEventListener('wimNotebookAddFootnote', handleAddFootnote)
       window.removeEventListener('wimNotebookAddAnnotation', handleAddAnnotation)
+      const n = ((window as any).__wimNotebookOsListenerCount || 1) - 1
+      ;(window as any).__wimNotebookOsListenerCount = n > 0 ? n : 0
     }
   }, [appWindow, appActions, openNotebookWindow, addToast])
 

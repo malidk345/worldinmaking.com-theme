@@ -74,6 +74,7 @@ import { LemonScope } from '../LemonScope';
 import { writeForumDraft } from 'lib/wim-os-action-drafts';
 import { findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../lib/window-path';
+import { dispatchNotebookOsEvent } from '../../lib/notebook-os-dispatch';
 import {
   adoptGuestChatsIntoAccount,
   chatAuthHeaders,
@@ -222,24 +223,30 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const insertIntoNotebook = (content: string, notebookId?: string) => {
     const text = String(content || '').trim()
-    if (!text) return
+    if (!text) return Promise.resolve(false)
     const targetNbId = notebookId || notebookBind?.notebookId;
-    if (app?.addWindow) {
-      app.addWindow({
-        title: 'Notebooks',
-        icon: 'DocumentTextIcon',
-        component: 'NotebookApp',
-        path: targetNbId ? notebookWindowPath(targetNbId) : '/notebooks',
-      })
-    }
-    window.dispatchEvent(
-      new CustomEvent('wimNotebookInsertText', {
-        detail: {
-          text,
-          mode: 'append',
-          notebookId: targetNbId,
+    const notebookPath = targetNbId ? notebookWindowPath(targetNbId) : '/notebooks'
+    return dispatchNotebookOsEvent(
+      'wimNotebookInsertText',
+      {
+        text,
+        mode: 'append',
+        notebookId: targetNbId,
+      },
+      {
+        notebookId: targetNbId,
+        path: notebookPath,
+        open: () => {
+          if (app?.addWindow) {
+            app.addWindow({
+              title: 'Notebooks',
+              icon: 'DocumentTextIcon',
+              component: 'NotebookApp',
+              path: notebookPath,
+            })
+          }
         },
-      })
+      }
     )
   }
 
@@ -1852,8 +1859,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       'add_notebook_footnote',
     ].includes(action.type);
 
+    let handleAck: ((e: Event) => void) | undefined
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const failClosedNotebookMount = () => {
+      if (handleAck) window.removeEventListener('wimNotebookAck', handleAck)
+      if (timeout) clearTimeout(timeout)
+      updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: false } })
+      executedActionsRef.current.delete(key)
+    }
+
     if (isNotebookAction) {
-      const handleAck = (e: Event) => {
+      handleAck = (e: Event) => {
         const customEvent = e as CustomEvent<{ notebookId?: string; ok?: boolean; error?: string }>;
         const targetId =
           action.type === 'create_notebook'
@@ -1869,13 +1885,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           } else {
             updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
           }
-          window.removeEventListener('wimNotebookAck', handleAck);
+          if (handleAck) window.removeEventListener('wimNotebookAck', handleAck);
           if (timeout) clearTimeout(timeout);
         }
       };
       window.addEventListener('wimNotebookAck', handleAck);
-      var timeout = setTimeout(() => {
-        window.removeEventListener('wimNotebookAck', handleAck);
+      timeout = setTimeout(() => {
+        if (handleAck) window.removeEventListener('wimNotebookAck', handleAck);
         // Fail the card after a reasonable wait
         updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: false } });
         executedActionsRef.current.delete(key);
@@ -1889,42 +1905,68 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
-        insertIntoNotebook(action.payload.content || '', action.payload.notebookId);
+        void Promise.resolve(insertIntoNotebook(action.payload.content || '', action.payload.notebookId)).then((ok) => {
+          if (ok === false) failClosedNotebookMount();
+        });
       } else if (action.type === 'rewrite_notebook_document') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
-        window.dispatchEvent(
-          new CustomEvent('wimNotebookInsertText', {
-            detail: {
-              text: action.payload.content || '',
-              mode: 'replace',
-              notebookId: nbId,
+        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        void dispatchNotebookOsEvent(
+          'wimNotebookInsertText',
+          {
+            text: action.payload.content || '',
+            mode: 'replace',
+            notebookId: nbId,
+          },
+          {
+            notebookId: nbId,
+            path: notebookPath,
+            open: () => {
+              if (app?.addWindow) app.addWindow({ path: notebookPath });
             },
-          })
-        );
+          }
+        ).then((ok) => {
+          if (!ok) failClosedNotebookMount();
+        });
       } else if (action.type === 'replace_notebook_selection') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
-        window.dispatchEvent(
-          new CustomEvent('wimNotebookReplaceSelection', {
-            detail: {
-              text: action.payload.content || '',
-              spanText: action.payload.span_text || '',
-              notebookId: nbId,
+        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        void dispatchNotebookOsEvent(
+          'wimNotebookReplaceSelection',
+          {
+            text: action.payload.content || '',
+            spanText: action.payload.span_text || '',
+            notebookId: nbId,
+          },
+          {
+            notebookId: nbId,
+            path: notebookPath,
+            open: () => {
+              if (app?.addWindow) app.addWindow({ path: notebookPath });
             },
-          })
-        );
+          }
+        ).then((ok) => {
+          if (!ok) failClosedNotebookMount();
+        });
       } else if (action.type === 'update_notebook_title') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
-        window.dispatchEvent(
-          new CustomEvent('wimNotebookSetTitle', {
-            detail: {
-              title: action.payload.title || '',
-              notebookId: nbId,
+        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        void dispatchNotebookOsEvent(
+          'wimNotebookSetTitle',
+          {
+            title: action.payload.title || '',
+            notebookId: nbId,
+          },
+          {
+            notebookId: nbId,
+            path: notebookPath,
+            open: () => {
+              if (app?.addWindow) app.addWindow({ path: notebookPath });
             },
-          })
-        );
+          }
+        ).then((ok) => {
+          if (!ok) failClosedNotebookMount();
+        });
       } else if (action.type === 'create_forum_topic' || action.type === 'publish_to_forum') {
         const detail = {
           title: action.payload.title || '',
@@ -1987,29 +2029,45 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       } else if (action.type === 'annotate_notebook') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
-        window.dispatchEvent(
-          new CustomEvent('wimNotebookAddAnnotation', {
-            detail: {
-              notebookId: nbId,
-              spanText: action.payload.span_text || '',
-              note: action.payload.note || '',
+        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        void dispatchNotebookOsEvent(
+          'wimNotebookAddAnnotation',
+          {
+            notebookId: nbId,
+            spanText: action.payload.span_text || '',
+            note: action.payload.note || '',
+          },
+          {
+            notebookId: nbId,
+            path: notebookPath,
+            open: () => {
+              if (app?.addWindow) app.addWindow({ path: notebookPath });
             },
-          })
-        );
+          }
+        ).then((ok) => {
+          if (!ok) failClosedNotebookMount();
+        });
       } else if (action.type === 'add_notebook_footnote') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        if (app?.addWindow) app.addWindow({ path: nbId ? notebookWindowPath(nbId) : '/notebooks' });
-        window.dispatchEvent(
-          new CustomEvent('wimNotebookAddFootnote', {
-            detail: {
-              notebookId: nbId,
-              marker: action.payload.marker,
-              text: action.payload.text || action.payload.content || '',
-              spanText: action.payload.span_text,
+        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        void dispatchNotebookOsEvent(
+          'wimNotebookAddFootnote',
+          {
+            notebookId: nbId,
+            marker: action.payload.marker,
+            text: action.payload.text || action.payload.content || '',
+            spanText: action.payload.span_text,
+          },
+          {
+            notebookId: nbId,
+            path: notebookPath,
+            open: () => {
+              if (app?.addWindow) app.addWindow({ path: notebookPath });
             },
-          })
-        );
+          }
+        ).then((ok) => {
+          if (!ok) failClosedNotebookMount();
+        });
       } else if (action.type === 'open_window') {
         if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
       }

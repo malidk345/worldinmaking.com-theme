@@ -43,6 +43,7 @@ const ALLOWLIST_PREFIXES = [
     'src/lib/window-path.ts',
     'src/lib/notebook-chat-bind.ts',
     'src/lib/notebook-patch-text.ts',
+    'src/lib/notebook-os-dispatch.ts',
     'src/lib/wim-os-action-drafts.ts',
     'src/lib/open-ask-ai-window.ts',
     'src/components/Auth/',
