@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { test, expect } from '@playwright/test';
 import { findMatchingWindow } from '../src/lib/os/window-finder';
 import { windowPathMatches } from '../src/lib/window-path';
 
-describe('findMatchingWindow', () => {
-    it('returns the window matching the target path via windowPathMatches', () => {
+test.describe('findMatchingWindow', () => {
+    test('returns the window matching the target path via windowPathMatches', () => {
         const windows = [
             { path: '/other' },
             { path: '/notebooks/nb-1' },
@@ -16,7 +16,7 @@ describe('findMatchingWindow', () => {
         expect(result?.path).toBe('/notebooks/nb-1');
     });
 
-    it('returns undefined if no matching window is found', () => {
+    test('returns undefined if no matching window is found', () => {
         const windows = [
             { path: '/other' },
             { path: '/workspace-chat' }
@@ -26,7 +26,7 @@ describe('findMatchingWindow', () => {
         expect(result).toBeUndefined();
     });
 
-    it('returns the first matching window if multiple exist', () => {
+    test('returns the first matching window if multiple exist', () => {
         const windows = [
             { path: '/notebooks/nb-2' },
             { path: '/notebooks/nb-1' }
