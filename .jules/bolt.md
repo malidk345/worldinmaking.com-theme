@@ -53,3 +53,7 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+
+## 2024-05-30 - [Performance Issue in textSimilarity Jaccard Implementation]
+**Learning:** The text similarity calculation in Markdown notebooks used an inefficient approach to compute Jaccard similarity: `[...setA].filter(x => setB.has(x)).length` and `new Set([...setA, ...setB]).size`. This creates intermediate arrays, does O(n) filtering twice (for spread and filter), and does unnecessary work to construct a whole new union set just to get its size. In JS, set intersection and union cardinality should always be computed using manual loops `for (const word of setA) { if (setB.has(word)) intersection++ }` and `union = setA.size + setB.size - intersection` which reduces operations by an order of magnitude and avoids GC allocations.
+**Action:** When working with Sets in JavaScript, avoid using the spread operator (`...`) combined with array methods (`.filter()`, `.length`) to perform intersection/union/difference math. Instead, compute intersection manually in a loop to get memory footprint and CPU overhead significantly reduced.

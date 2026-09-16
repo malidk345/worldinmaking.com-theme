@@ -206,8 +206,14 @@ export function textSimilarity(left: string, right: string): number {
 
     const leftWords = new Set(normalizedLeft.split(' '))
     const rightWords = new Set(normalizedRight.split(' '))
-    const intersection = [...leftWords].filter((word) => rightWords.has(word)).length
-    const union = new Set([...leftWords, ...rightWords]).size
+
+    let intersection = 0
+    for (const word of leftWords) {
+        if (rightWords.has(word)) {
+            intersection++
+        }
+    }
+    const union = leftWords.size + rightWords.size - intersection
     return union === 0 ? 0 : intersection / union
 }
 
