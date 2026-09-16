@@ -86,8 +86,8 @@ export const PLAN_MODE_PROMPT = `
 You are in plan mode. Mutating OS tools are locked (artifacts, windows, notebook edits, publish, appearance). Research tools and todo_write are available.
 
 You choose the next move. A greeting, a direct answer, or a brief reply can go in the public reply with zero tools and zero unneeded planning. Use todo_write only when sequencing actually helps — never invent a plan for a one-step ask.
-For deep, comprehensive, or multi-chapter research, construct a thorough multi-step plan covering the thematic sections, academic citations, and notebook creation.
-Use research tools when you need facts. If you need a locked tool, call finalize_plan or switch_mode execute; the host continues in the same turn.
+For a long essay, article, or word-count request, todo_write must follow this spine unless the user named other sections: research → outline → opening → body → closing → footnotes → short chat summary. Later execute turns write one major notebook section at a time.
+Use research tools when you need facts. When the plan is ready, call finalize_plan — the host shows it to the user and waits for Run. switch_mode execute skips approval and continues in the same turn.
 If you use todo_write, keep the same ids after the first plan. Exactly one item in_progress.
 </plan_mode>
 `.trim()
@@ -95,14 +95,14 @@ If you use todo_write, keep the same ids after the first plan. Exactly one item 
 export const PLAN_TOOL_PROTOCOL = `
 PLAN MODE:
 - Mutating OS tools are locked. Research, todo_write, remember, task, finalize_plan, and switch_mode are available.
-- You choose: answer now, research, or plan. Do not call todo_write unless a sequence helps. Call finalize_plan only when you need mutating tools; the host continues in the same turn.
+- You choose: answer now, research, or plan. Do not call todo_write unless a sequence helps. Call finalize_plan when the plan is ready; the host waits for the user to Run. Use switch_mode execute only to skip approval.
 - Micro requests (e.g. greetings): answer immediately in the public bubble with zero tools.
-- Comprehensive requests: build a thorough plan covering each thematic section and citation step before executing.
+- Comprehensive / long-form requests: todo_write the spine research → outline → opening → body → closing → footnotes → chat summary, then finalize_plan.
 
 `.trim()
 
 export const PLAN_USER_PREFIX =
-    '[Plan mode is ON. Mutating OS tools are locked. Research and write as needed. When the user-facing piece is ready, write it.]'
+    '[Plan mode is ON. Mutating OS tools are locked. Research and write as needed. When the plan is ready, call finalize_plan so the user can Run it.]'
 
 export const EXECUTION_TRANSITION_PROMPT = `
 Plan mode is complete. You are now in execution mode.
@@ -113,12 +113,13 @@ All tools are available. Follow the todo_write plan with appropriate depth and s
 - Do not stop to ask the user after each step or prematurely quit after 2-3 trivial steps. Continue until every planned section and todo is completed.
 - For deep, comprehensive writing or multi-section research:
   * Do not compress an exhaustive work into 3 short paragraphs.
-  * Use create_notebook and consecutive insert_notebook_block calls to write out each section with substantial depth, academic citations, and footnotes ([^1], [^2]).
-- After all todos and sections are completed, write the full user-visible executive summary and synthesis in the public bubble. If they asked for a long article, essay, or specific word count directly in the chat, write that full length. Do not dump tool JSON or <tool_code>. Do not replace the piece with a one-line status.
+  * Use create_notebook and insert_notebook_block. Complete at most one major section this turn, mark that todo completed, leave the rest pending, then stop. The user will send Next section.
+  * Footnotes as [^1], [^2] in the notebook, not only in the bubble.
+- When every todo is completed, write a short executive summary in the public bubble. Do not dump tool JSON or <tool_code>. Do not replace the notebook piece with a one-line status.
 `.trim()
 
 export const PLAN_TRANSITION_PROMPT = `
-You are back in plan mode. Mutating OS tools are locked. Research, update the plan, or write the public answer as the task needs. Call finalize_plan when you need mutating tools.
+You are back in plan mode. Mutating OS tools are locked. Research, update the plan, or write the public answer as the task needs. Call finalize_plan when the plan is ready for the user to Run.
 `.trim()
 
 export function modeSystemPrompt(mode: AgentMode): string {

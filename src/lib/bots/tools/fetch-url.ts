@@ -149,24 +149,52 @@ export async function fetchPublicUrl(
     const onExternalAbort = () => controller.abort()
     signal?.addEventListener('abort', onExternalAbort)
     try {
-        const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)
-        if (!ipv4Literal && !host.includes(':')) {
-            const resolved = await assertPublicHostname(host, controller.signal)
-            if (resolved) return { ok: false, error: resolved }
+        let currentUrl = rawUrl
+        let res: Response | null = null
+        let lastHost = host
+        let isLastIpv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)
+
+        for (let hop = 0; hop < 4; hop++) {
+            if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+            const blockedHop = isBlockedFetchUrl(currentUrl)
+            if (blockedHop) return { ok: false, error: blockedHop }
+            let hopParsed: URL
+            try {
+                hopParsed = new URL(currentUrl)
+            } catch {
+                return { ok: false, error: 'url is invalid' }
+            }
+            const hopHost = hopParsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+            const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hopHost)
+            if (!ipv4Literal && !hopHost.includes(':')) {
+                const resolved = await assertPublicHostname(hopHost, controller.signal)
+                if (resolved) return { ok: false, error: resolved }
+            }
+            lastHost = hopHost
+            isLastIpv4Literal = ipv4Literal
+            const hopRes = await fetch(currentUrl, {
+                method: 'GET',
+                redirect: 'manual',
+                signal: controller.signal,
+                headers: { 'User-Agent': 'WorldInMaking-AskAI/1.0', Accept: 'text/html,text/plain,application/json' },
+            })
+            if (hopRes.status >= 300 && hopRes.status < 400) {
+                const location = hopRes.headers.get('location')
+                if (!location) return { ok: false, error: `fetch failed (${hopRes.status})` }
+                currentUrl = new URL(location, currentUrl).href
+                continue
+            }
+            res = hopRes
+            break
         }
-        const res = await fetch(rawUrl, {
-            method: 'GET',
-            redirect: 'error',
-            signal: controller.signal,
-            headers: { 'User-Agent': 'WorldInMaking-AskAI/1.0', Accept: 'text/html,text/plain,application/json' },
-        })
+        if (!res) return { ok: false, error: 'too many redirects' }
         if (!res.ok) return { ok: false, error: `fetch failed (${res.status})` }
         const buf = new Uint8Array(await res.arrayBuffer())
         const slice = buf.byteLength > MAX_BYTES ? buf.slice(0, MAX_BYTES) : buf
         const decoded = new TextDecoder('utf-8', { fatal: false }).decode(slice)
         const text = stripMarkup(decoded).slice(0, MAX_RESULT)
-        if (!ipv4Literal && !host.includes(':')) {
-            const rebound = await assertPublicHostname(host, controller.signal)
+        if (!isLastIpv4Literal && !lastHost.includes(':')) {
+            const rebound = await assertPublicHostname(lastHost, controller.signal)
             if (rebound) return { ok: false, error: rebound }
         }
         if (!text) return { ok: false, error: 'page had no readable text' }

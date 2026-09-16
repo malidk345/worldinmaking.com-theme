@@ -822,23 +822,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
 
   useEffect(() => {
-    if (!isStreaming) return;
-    let frame = 0;
-    const tick = () => {
-      pinChatToBottom();
-      frame = window.requestAnimationFrame(tick);
-    };
-    frame = window.requestAnimationFrame(tick);
-    const viewport = window.visualViewport;
-    const onViewport = () => pinChatToBottom();
-    viewport?.addEventListener('resize', onViewport);
-    viewport?.addEventListener('scroll', onViewport);
+    if (!isStreaming) return
+    const viewport = window.visualViewport
+    const onViewport = () => pinChatToBottom()
+    viewport?.addEventListener('resize', onViewport)
+    viewport?.addEventListener('scroll', onViewport)
     return () => {
-      window.cancelAnimationFrame(frame);
-      viewport?.removeEventListener('resize', onViewport);
-      viewport?.removeEventListener('scroll', onViewport);
-    };
-  }, [isStreaming, pinChatToBottom]);
+      viewport?.removeEventListener('resize', onViewport)
+      viewport?.removeEventListener('scroll', onViewport)
+    }
+  }, [isStreaming, pinChatToBottom])
 
   // Scroll chat to bottom when switching chats
   useEffect(() => {
@@ -894,6 +887,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   ) => {
     if (!promptText.trim() && attachments.length === 0 && !options?.resume) return;
+
+    if (!options?.resume && !options?.skipUserAppend) {
+      const pendingAsk = (chats.find((c) => c.id === (activeChatId || '')) || activeChat)?.messages.at(-1)
+      if (
+        pendingAsk?.humanTurn?.kind === 'ask_user' &&
+        pendingAsk.humanTurn.status === 'pending' &&
+        promptText.trim()
+      ) {
+        handleHumanRespond(pendingAsk.id, 'answer', promptText.trim())
+        return
+      }
+    }
 
     let targetChatId = activeChatId;
     const editMessageId = pendingEditMessageIdRef.current
@@ -1404,6 +1409,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 /* ignore */
               }
             }
+            if (parsed.tool.name === 'todo_write' && parsed.tool.status === 'done') {
+              try {
+                const row = JSON.parse(parsed.tool.result || '{}') as { tasks?: Chat['activePlan'] }
+                if (Array.isArray(row.tasks) && row.tasks.length) {
+                  setChats((prev) =>
+                    prev.map((chat) => (chat.id === targetChatId ? { ...chat, activePlan: row.tasks } : chat))
+                  )
+                }
+              } catch {
+                /* ignore */
+              }
+            }
             if (parsed.tool.name === 'remember' && parsed.tool.status === 'done') {
               try {
                 const parsedResult = JSON.parse(parsed.tool.result || '{}') as { fact?: string; category?: string }
@@ -1572,6 +1589,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             updateAssistantMessage(targetChatId, assistantMessageId, {
               humanTurn: streamedHumanTurn,
             })
+            if (streamedHumanTurn.plan && streamedHumanTurn.plan.length) {
+              setChats((prev) =>
+                prev.map((chat) =>
+                  chat.id === targetChatId ? { ...chat, activePlan: streamedHumanTurn!.plan } : chat
+                )
+              )
+            }
           }
 
           if (parsed.type === 'checkpoint') {
@@ -2473,9 +2497,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
                   onOpenByok={() => setSidebarOpen(true)}
                   typewriterSpeed={settings.typewriterSpeed}
-                  onContinue={() => {
-                    void handleSendMessage('Continue.', [])
-                  }}
+                  onContinue={
+                    (activeChat?.agentMode || 'ask') === 'execute' &&
+                    (activeChat.activePlan || []).some(
+                      (item) => item.status === 'in_progress' || item.status === 'pending'
+                    )
+                      ? undefined
+                      : () => {
+                          void handleSendMessage('Continue.', [])
+                        }
+                  }
                 />
               ))}
               <div ref={chatBottomRef} className="h-px w-full" />
@@ -2486,7 +2517,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Floating Input Dock with smooth fade allowing messages to flow underneath */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-2.5 [padding-bottom:calc(0.65rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))] will-change-[padding-bottom]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-1 [padding-bottom:calc(0.2rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))] will-change-[padding-bottom]"
         >
           <div className="pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4">
             <ChatInput
@@ -2512,6 +2543,26 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               agentMode={activeChat?.agentMode || 'ask'}
               onAgentModeChange={handleAgentModeChange}
               lockShakeNonce={lockShakeNonce}
+              nextSectionTitle={
+                !isStreaming &&
+                (activeChat?.agentMode || 'ask') === 'execute' &&
+                activeChat?.messages.at(-1)?.role === 'assistant' &&
+                activeChat.messages.at(-1)?.isTypingDone
+                  ? (activeChat.activePlan || []).find((item) => item.status === 'in_progress')?.title ||
+                    (activeChat.activePlan || []).find((item) => item.status === 'pending')?.title
+                  : undefined
+              }
+              onNextSection={() => {
+                const step =
+                  (activeChat?.activePlan || []).find((item) => item.status === 'in_progress') ||
+                  (activeChat?.activePlan || []).find((item) => item.status === 'pending')
+                if (!step) return
+                void handleSendMessage(
+                  `Continue with the next plan step: "${step.title}". Write that section into the notebook. Do not skip ahead.`,
+                  [],
+                  { agentMode: 'execute' }
+                )
+              }}
 
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {

@@ -274,7 +274,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'ask_user',
             description:
-                'Ask the user a question to clarify ambiguous requirements, confirm destructive actions, or gather necessary input before proceeding. Execution pauses until the user replies.',
+                'Ask the user a question to clarify ambiguous requirements, confirm destructive actions, or gather necessary input before proceeding. Execution pauses until the user replies. Prefer 2–5 short choices when the answer is a decision; the host always offers free text and skip.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -282,6 +282,11 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     question: {
                         type: 'string',
                         description: 'The question to ask the user.',
+                    },
+                    choices: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Optional short answer options (2–5). Do not include a skip option.',
                     },
                 },
                 required: ['question'],
@@ -293,7 +298,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'finalize_plan',
             description:
-                'Mark the plan ready and start execution. Call this in plan mode after todo_write. The host unlocks mutating tools and continues in the same turn. Do not wait for the user.',
+                'Mark the plan ready and show it to the user. Call this in plan mode after todo_write. Execution pauses until they Run. Use switch_mode execute only to skip approval.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -1047,8 +1052,8 @@ ${ARTIFACT_RECIPES.trimEnd()}
 - write_scratchpad: save a quote or fact only when the user asked to keep it, or when extracting from a document they asked you to read. Use type='citation' for quotes, type='concept' for thesis/definitions, type='source' for chapter/document overviews. Do not volunteer scratchpad contents in the public reply.
 - todo_write: create the plan once, then only update statuses with the SAME ids. Do not invent a second plan. Exactly one item in_progress. The host shows one locked plan in the thinking process.
 - switch_mode: YOU choose plan vs execute. The user has no plan toggle. Use plan when sequencing or research helps. Use execute when you need mutating tools.
-- finalize_plan: when you need mutating tools or the plan is ready, call this. The host continues in the same turn. Then do the work, including writing the requested piece.
-- ask_user: pause execution to ask the user a clarifying question before proceeding. Execution halts until they reply.
+- finalize_plan: when the plan is ready, call this. The host shows it and waits for Run. Then mutating tools unlock. Use switch_mode execute only to skip approval.
+- ask_user: pause execution to ask the user a clarifying question before proceeding. Execution halts until they reply. Pass choices when the answer is a small set of decisions.
 - remember: store a durable user/workspace fact so later turns can use it.
 - task: a focused read-only research slice. Use for one sub-question, not the whole job.
 - DOCUMENT & RESEARCH DIRECTIVE:

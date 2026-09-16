@@ -2048,13 +2048,23 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: 'ask_user requires a question' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const result = JSON.stringify({ ok: true, question })
+            const choices = Array.isArray(args.choices)
+                ? args.choices
+                      .map((item) => asText(item, 120).trim())
+                      .filter(Boolean)
+                      .slice(0, 6)
+                : []
+            const result = JSON.stringify({
+                ok: true,
+                question,
+                ...(choices.length ? { choices } : {}),
+            })
             return { ...base, ok: true, result, summary: `Asked user: ${question}` }
         }
         if (name === 'finalize_plan') {
             const summary = asText(args.summary, 400).trim()
-            const result = JSON.stringify({ ok: true, mode: 'execute', summary: summary || undefined })
-            return { ...base, ok: true, result, summary: summary || 'Started the plan' }
+            const result = JSON.stringify({ ok: true, awaiting: 'plan_approval', summary: summary || undefined })
+            return { ...base, ok: true, result, summary: summary || 'Plan ready for approval' }
         }
         if (name === 'task') {
             const goal = asText(args.goal, 2_000).trim()

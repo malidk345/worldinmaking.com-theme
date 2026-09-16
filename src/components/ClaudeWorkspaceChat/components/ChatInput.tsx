@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
-import { StylePresetId, FileAttachment, ModelId, ModelOption, AgentMode } from '../types';
+import { StylePresetId, FileAttachment, ModelId, ModelOption, AgentMode, HumanTurn } from '../types';
 import {
   IconPlus,
   IconMicrophone,
@@ -26,6 +26,8 @@ const PLACEHOLDERS = [
   'Research a claim...',
   'Draft into your notebook...',
 ]
+const ASK_FREE_CHOICE = "Explain what you'd like instead."
+const ASK_SKIP_ANSWER = 'The user skipped this question. Continue with your best judgment.'
 
 export type SlashCommandItem = {
   id: string
@@ -96,6 +98,8 @@ interface ChatInputProps {
   agentMode?: AgentMode;
   onAgentModeChange?: (mode: AgentMode) => void;
   lockShakeNonce?: number;
+  nextSectionTitle?: string;
+  onNextSection?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -118,11 +122,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   agentMode = 'ask',
   onAgentModeChange,
   lockShakeNonce = 0,
+  nextSectionTitle,
+  onNextSection,
 }) => {
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
-  const [humanTurnDraft, setHumanTurnDraft] = useState('');
+
 
   useEffect(() => {
     if (incomingAttachments && incomingAttachments.length > 0) {
@@ -138,6 +144,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [linkChips, setLinkChips] = useState<Array<{ id: string; url: string }>>([]);
   const [composerFocused, setComposerFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [askChoice, setAskChoice] = useState<string | 'free' | null>(null);
   const wasStreamingRef = useRef(false);
   const { quota } = useTokenQuota();
 
@@ -146,13 +153,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    const checkSel = () => {
-      const sel = readNotebookSelection();
-      setActiveSelection(sel);
-    };
-    checkSel();
-    const interval = setInterval(checkSel, 1500);
-    return () => clearInterval(interval);
+    const checkSel = () => setActiveSelection(readNotebookSelection())
+    checkSel()
+    let timer = 0
+    const onSel = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(checkSel, 80)
+    }
+    document.addEventListener('selectionchange', onSel)
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('selectionchange', onSel)
+    }
   }, []);
 
   useEffect(() => {
@@ -195,10 +207,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setSlashIndex(0)
   }, [prompt]);
 
+  const awaitingAsk = Boolean(pendingHumanTurn && pendingHumanTurn.kind === 'ask_user')
+  const awaitingPlan = Boolean(pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval')
+  const awaitingHuman = awaitingAsk || awaitingPlan
+
   const slashQuery = prompt.startsWith('/') ? prompt.slice(1).split(/\s/)[0].toLowerCase() : ''
-  const slashMatches = prompt.startsWith('/') && !prompt.includes(' ')
-    ? SLASH_COMMANDS.filter((command) => command.id.startsWith(slashQuery))
-    : []
+  const slashMatches =
+    !awaitingHuman && prompt.startsWith('/') && !prompt.includes(' ')
+      ? SLASH_COMMANDS.filter((command) => command.id.startsWith(slashQuery))
+      : []
 
   const applySlashCommand = (command: SlashCommandItem) => {
     if (command.mode) {
@@ -242,12 +259,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   useEffect(() => {
-    if (prompt.trim() || composerFocused) return
+    if (awaitingAsk && !(pendingHumanTurn?.choices || []).length) {
+      requestAnimationFrame(() => textareaRef.current?.focus())
+    }
+    if (awaitingHuman) {
+      setAskChoice(null)
+      if (isRecording) {
+        try {
+          recognitionRef.current?.stop()
+        } catch {
+          /* ignore */
+        }
+        setIsRecording(false)
+      }
+    } else {
+      setPlaceholderIndex(0)
+    }
+  }, [awaitingHuman])
+
+  useEffect(() => {
+    if (prompt.trim() || composerFocused || awaitingHuman) return
     const timer = window.setInterval(() => {
       setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length)
     }, 4000)
     return () => window.clearInterval(timer)
-  }, [prompt, composerFocused])
+  }, [prompt, composerFocused, awaitingHuman])
 
   // Fail closed until quota is known (null = cold-start / still loading).
   const quotaBlocksSend = quota?.allowed !== true;
@@ -255,6 +291,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const handleSubmit = () => {
     const links = linkChips.map((chip) => chip.url).join('\n')
     const body = [links, prompt.trim()].filter(Boolean).join('\n\n')
+    if (pendingHumanTurn && pendingHumanTurn.kind === 'ask_user') {
+      const picked = askChoice && askChoice !== 'free' ? askChoice : body
+      if (!picked || isStreaming || quotaBlocksSend) return
+      onHumanRespond?.('answer', picked)
+      setPrompt('')
+      setAttachments([])
+      setLinkChips([])
+      if (textareaRef.current) textareaRef.current.style.height = '24px'
+      return
+    }
+    if (pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval') {
+      if (isStreaming || quotaBlocksSend) return
+      onHumanRespond?.('revise', body || undefined)
+      setPrompt('')
+      setAttachments([])
+      setLinkChips([])
+      if (textareaRef.current) textareaRef.current.style.height = '24px'
+      return
+    }
     if ((!body && attachments.length === 0) || isStreaming || quotaBlocksSend) return;
     onSendMessage(body, attachments);
     setPrompt('');
@@ -346,6 +401,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const toggleSpeechRecognition = () => {
+    if (awaitingHuman) return
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -386,9 +442,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
+    <div className="relative w-full pointer-events-none">
+      {nextSectionTitle && onNextSection && !awaitingHuman && !isStreaming ? (
+        <div className="pointer-events-auto mb-2">
+          <button
+            type="button"
+            onClick={onNextSection}
+            className="w-full rounded-2xl border border-primary/50 bg-primary/95 px-3 py-2 text-left text-[13px] text-primary shadow-sm hover:bg-accent cursor-pointer"
+          >
+            <span className="block text-[11px] font-medium text-muted">Next section</span>
+            <span className="block truncate font-semibold">{nextSectionTitle}</span>
+          </button>
+        </div>
+      ) : null}
       {/* Overlay so the button never pushes the composer */}
-      {showScrollToBottom && slashMatches.length === 0 && (
+      {showScrollToBottom && slashMatches.length === 0 && !(nextSectionTitle && !awaitingHuman) && (
         <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)]">
           <button
             type="button"
@@ -409,6 +477,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.08)] ${
+          awaitingAsk || awaitingPlan ? 'px-4 py-3' : ''
+        } ${
           modeShake ? '[animation:wim-composer-shake_420ms_ease-in-out]' : ''
         } ${justReady ? '[animation:wim-composer-ready_480ms_ease-out]' : ''} ${
           agentMode === 'plan' ? 'ring-1 ring-inset ring-primary/50' : agentMode === 'execute' ? 'ring-1 ring-inset ring-accent' : ''
@@ -429,6 +499,162 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
+        {awaitingPlan ? (
+          <div className="wim-ask-form font-sans text-primary">
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-primary/40 pb-2">
+              <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
+                Plan
+              </span>
+            </div>
+            <p className="m-0 mb-3 text-[16px] font-semibold leading-snug">
+              {pendingHumanTurn?.summary || pendingHumanTurn?.title || 'Ready to run'}
+            </p>
+            {pendingHumanTurn?.plan && pendingHumanTurn.plan.length > 0 ? (
+              <ul className="m-0 mb-3 list-none space-y-2 p-0">
+                {pendingHumanTurn.plan.map((item, index) => (
+                  <li key={item.id} className="flex items-start gap-2.5 text-[13.5px] leading-snug">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-primary/50 text-[11px] text-muted">
+                      {index + 1}
+                    </span>
+                    <span className={item.status === 'completed' ? 'text-muted line-through' : 'font-medium text-primary'}>
+                      {item.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <textarea
+              data-composer
+              aria-label="Revision note"
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit()
+                }
+              }}
+              placeholder="Revision note (optional)"
+              rows={2}
+              className="mb-3 w-full resize-none overflow-y-auto rounded border border-primary/40 bg-primary px-2 py-1.5 text-[13.5px] text-primary placeholder:text-muted focus:outline-none focus:border-[#1E3A8A] min-h-[48px] max-h-[140px] leading-relaxed"
+            />
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onHumanRespond?.('run')
+                  setPrompt('')
+                }}
+                disabled={isStreaming || quotaBlocksSend}
+                className="rounded-md border border-[#1E3A8A] bg-[#1E3A8A] px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-[#1e40af] cursor-pointer disabled:opacity-50"
+              >
+                Run plan
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isStreaming || quotaBlocksSend}
+                className="rounded-md border border-primary/50 bg-primary px-2.5 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer disabled:opacity-50"
+              >
+                Revise
+              </button>
+            </div>
+          </div>
+        ) : awaitingAsk ? (
+          <div className="wim-ask-form font-sans text-primary">
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-primary/40 pb-2">
+              <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
+                Question
+              </span>
+              <button
+                type="button"
+                onClick={() => onHumanRespond?.('answer', ASK_SKIP_ANSWER)}
+                className="p-0.5 text-muted hover:text-primary cursor-pointer"
+                title="Skip question"
+                aria-label="Skip question"
+              >
+                <IconX className="size-4" />
+              </button>
+            </div>
+            <p className="m-0 mb-3 text-[16px] font-semibold leading-snug">
+              {pendingHumanTurn?.question || pendingHumanTurn?.title}
+            </p>
+            {(pendingHumanTurn?.choices || []).length > 0 ? (
+              <div className="mb-2">
+                {(pendingHumanTurn?.choices || []).map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    className="wim-ask-option"
+                    onClick={() => {
+                      setAskChoice(choice)
+                      onHumanRespond?.('answer', choice)
+                    }}
+                  >
+                    <span className="wim-ask-radio" data-on={askChoice === choice ? 'true' : 'false'} />
+                    <span className="text-[13.5px] font-medium leading-snug">{choice}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="wim-ask-option"
+                  onClick={() => {
+                    setAskChoice('free')
+                    requestAnimationFrame(() => textareaRef.current?.focus())
+                  }}
+                >
+                  <span className="wim-ask-radio" data-on={askChoice === 'free' ? 'true' : 'false'} />
+                  <span className="text-[13.5px] font-medium leading-snug">{ASK_FREE_CHOICE}</span>
+                </button>
+              </div>
+            ) : null}
+            {!(pendingHumanTurn?.choices || []).length || askChoice === 'free' ? (
+              <textarea
+                data-composer
+                aria-label="Your answer"
+                ref={textareaRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit()
+                  }
+                }}
+                placeholder="Type your answer..."
+                rows={2}
+                className="mb-3 w-full resize-none overflow-y-auto rounded border border-primary/40 bg-primary px-2 py-1.5 text-[13.5px] text-primary placeholder:text-muted focus:outline-none focus:border-[#1E3A8A] min-h-[48px] max-h-[140px] leading-relaxed"
+              />
+            ) : null}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onHumanRespond?.('answer', ASK_SKIP_ANSWER)}
+                className="rounded-md border border-primary/50 bg-primary px-2.5 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
+              >
+                Skip question
+              </button>
+              {(!(pendingHumanTurn?.choices || []).length || askChoice === 'free') && !isStreaming ? (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!prompt.trim() || quotaBlocksSend}
+                  className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-transform duration-150 ${
+                    prompt.trim() && !quotaBlocksSend
+                      ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
+                      : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
+                  }`}
+                  title="Answer"
+                  aria-label="Answer"
+                >
+                  <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <>
         {slashMatches.length > 0 && (
           <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded border border-primary bg-primary py-0.5 shadow-md max-h-60 overflow-y-auto">
             {slashMatches.map((command, index) => (
@@ -486,7 +712,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 {att.type === 'image' && att.url ? (
                   <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
                 ) : att.type === 'image' ? (
-                  <IconImage className={`${CHIP_ICON} text-amber-700`} />
+                  <IconImage className={`${CHIP_ICON} text-secondary`} />
                 ) : (
                   <IconDocument className={`${CHIP_ICON} text-secondary`} />
                 )}
@@ -529,78 +755,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {pendingHumanTurn ? (
-          <div className="mb-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="m-0 font-medium">{pendingHumanTurn.title}</p>
-              </div>
-              {pendingHumanTurn.kind === 'plan_approval' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onHumanRespond?.('run');
-                    setHumanTurnDraft('');
-                  }}
-                  className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-accent cursor-pointer"
-                >
-                  Run
-                </button>
-              ) : null}
-            </div>
-
-            {pendingHumanTurn.summary ? <p className="mt-1 mb-0 text-[12.5px] leading-relaxed text-secondary">{pendingHumanTurn.summary}</p> : null}
-            {pendingHumanTurn.question ? <p className="mt-1 mb-0 text-[12.5px] font-medium leading-relaxed text-primary">{pendingHumanTurn.question}</p> : null}
-
-            {pendingHumanTurn.plan && pendingHumanTurn.plan.length > 0 ? (
-              <ul className="mt-2 mb-0 pl-4 space-y-1 text-secondary">
-                {pendingHumanTurn.plan.map((item) => (
-                  <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : item.status === 'in_progress' ? 'font-medium text-primary' : ''}>
-                    {item.title}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                value={humanTurnDraft}
-                onChange={(event) => setHumanTurnDraft(event.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter') return
-                  e.preventDefault()
-                  const trimmed = humanTurnDraft.trim()
-                  // ask_user: mirror disabled Answer button — never submit empty/whitespace
-                  // (empty used to reach handleHumanRespond and fall back to "Yes")
-                  if (pendingHumanTurn.kind === 'ask_user') {
-                    if (!trimmed) return
-                    onHumanRespond?.('answer', trimmed)
-                  } else {
-                    onHumanRespond?.('revise', trimmed || undefined)
-                  }
-                  setHumanTurnDraft('')
-                }}
-                placeholder={pendingHumanTurn.kind === 'ask_user' ? "Type your answer..." : "Revision note (optional)"}
-                className="min-w-0 flex-1 rounded-md border border-primary/40 bg-primary px-2 py-1 text-[12px] text-primary outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const trimmed = humanTurnDraft.trim()
-                  if (pendingHumanTurn.kind === 'ask_user') {
-                    if (!trimmed) return
-                    onHumanRespond?.('answer', trimmed)
-                  } else {
-                    onHumanRespond?.('revise', trimmed || undefined)
-                  }
-                  setHumanTurnDraft('')
-                }}
-                disabled={pendingHumanTurn.kind === 'ask_user' && !humanTurnDraft.trim()}
-                className="shrink-0 rounded-md border border-primary/50 px-2.5 py-1 text-[12px] text-secondary hover:text-primary cursor-pointer disabled:opacity-50"
-              >
-                {pendingHumanTurn.kind === 'ask_user' ? 'Answer' : 'Revise'}
-              </button>
-            </div>
+        {agentMode === 'plan' ? (
+          <div className="mb-2 flex items-center border-b border-primary/40 pb-2">
+            <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
+              Plan
+            </span>
           </div>
         ) : null}
 
@@ -636,7 +795,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onPaste={handlePaste}
           onFocus={() => setComposerFocused(true)}
           onBlur={() => setComposerFocused(false)}
-          placeholder={PLACEHOLDERS[placeholderIndex]}
+          placeholder={
+            awaitingAsk
+              ? 'Type your answer...'
+              : awaitingPlan
+                ? 'Revision note (optional)'
+                : PLACEHOLDERS[placeholderIndex]
+          }
           rows={1}
           className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-relaxed font-sans"
         />
@@ -728,11 +893,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <button
               type="button"
               onClick={toggleSpeechRecognition}
-              className={`flex items-center gap-1 p-1 text-primary hover:text-primary transition-transform duration-150 focus:outline-none cursor-pointer active:scale-95 ${
+              disabled={awaitingHuman}
+              className={`flex items-center gap-1 p-1 text-primary hover:text-primary transition-transform duration-150 focus:outline-none cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
                 isRecording ? 'text-accent' : ''
               }`}
-              title={isRecording ? 'Stop voice input' : 'Voice input'}
-              aria-label={isRecording ? 'Stop voice input' : 'Voice input'}
+              title={awaitingHuman ? 'Voice input paused' : isRecording ? 'Stop voice input' : 'Voice input'}
+              aria-label={awaitingHuman ? 'Voice input paused' : isRecording ? 'Stop voice input' : 'Voice input'}
             >
               {isRecording ? (
                 <span className="wim-mic-wave" aria-hidden>
@@ -761,20 +927,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={(!prompt.trim() && attachments.length === 0 && linkChips.length === 0) || quotaBlocksSend}
+                disabled={
+                  quotaBlocksSend ||
+                  (!awaitingPlan && !prompt.trim() && attachments.length === 0 && linkChips.length === 0)
+                }
                 className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors transition-transform duration-150 ${
-                   (prompt.trim() || attachments.length > 0 || linkChips.length > 0) && !quotaBlocksSend
+                   (awaitingPlan || prompt.trim() || attachments.length > 0 || linkChips.length > 0) && !quotaBlocksSend
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
-                title="Send"
-                aria-label="Send message"
+                title={awaitingAsk ? 'Answer' : awaitingPlan ? 'Revise' : 'Send'}
+                aria-label={awaitingAsk ? 'Answer' : awaitingPlan ? 'Revise' : 'Send message'}
               >
                 <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
               </button>
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {quota && !quota.unavailable && quota.limitTokens > 0 ? (
@@ -813,11 +984,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </span>
           )}
         </div>
-      ) : (
-        <p className="mt-1.5 h-4 text-center text-[10px] leading-4 text-muted font-sans pointer-events-auto">
-          WIMBot can make mistakes. please double-check responses.
-        </p>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -20,6 +20,8 @@ export type HumanTurn = {
     plan?: HumanPlanItem[]
     summary?: string
     question?: string
+    /** Optional short choices for the host form. The composer always offers free text. */
+    choices?: string[]
     /** User's answer text when status is 'answered' (ask_user history). */
     answer?: string
     /** Optional revision note when status is 'revised' (plan_approval history). */

@@ -354,6 +354,43 @@ test.describe('Ask AI harness', () => {
         expect(isBlockedFetchUrl('https://example.com/x')).toBeNull()
     })
 
+    test('fetchPublicUrl follows a public redirect and refuses a hop to a private host', async () => {
+        const original = globalThis.fetch
+        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = String(input)
+            if (url.includes('dns-query')) {
+                const typeA = url.includes('type=A') && !url.includes('type=AAAA')
+                return new Response(
+                    JSON.stringify({
+                        Status: 0,
+                        Answer: typeA ? [{ type: 1, data: '1.1.1.1' }] : [],
+                    }),
+                    { status: 200, headers: { 'Content-Type': 'application/dns-json' } }
+                )
+            }
+            if (url === 'https://example.com/go' && init?.redirect === 'manual') {
+                return new Response(null, { status: 302, headers: { location: 'https://example.com/ok' } })
+            }
+            if (url === 'https://example.com/ok') {
+                return new Response('<p>hello world</p>', { status: 200 })
+            }
+            if (url === 'https://example.com/evil' && init?.redirect === 'manual') {
+                return new Response(null, { status: 302, headers: { location: 'http://127.0.0.1/secret' } })
+            }
+            throw new Error(`unexpected fetch ${url}`)
+        }) as typeof fetch
+        try {
+            const ok = await fetchPublicUrl('https://example.com/go')
+            expect(ok.ok).toBe(true)
+            if (ok.ok) expect(ok.text).toContain('hello world')
+            const blocked = await fetchPublicUrl('https://example.com/evil')
+            expect(blocked.ok).toBe(false)
+            if (!blocked.ok) expect(blocked.error).toBe('url is not allowed')
+        } finally {
+            globalThis.fetch = original
+        }
+    })
+
     test('fetchPublicUrl returns client request aborted when signal is already aborted', async () => {
         const controller = new AbortController()
         controller.abort()

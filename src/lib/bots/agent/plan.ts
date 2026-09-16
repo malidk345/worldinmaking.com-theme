@@ -6,6 +6,32 @@ export type PlanTodo = {
     status: PlanStatus
 }
 
+const LONG_FORM_RE =
+    /(\d{3,5}\s*(kelime|word|words)|uzun\s+(yaz[ıi]|deneme|makale|essay)|long[- ]form|multi[- ]section|üç\s*bin|uc\s*bin|3000|write (a |an )?(long |detailed |full )?(article|essay|paper|chapter)|kapsaml[ıi]\s+yaz)/i
+
+export function isLongFormWriting(prompt: string): boolean {
+    return LONG_FORM_RE.test(String(prompt || ''))
+}
+
+/** Host spine for long essays: research → outline → sections → notes → summary. */
+export function longFormWritingPlan(): PlanTodo[] {
+    return normalizePlan([
+        { id: 'lf_research', title: 'Research sources and key claims', status: 'in_progress' },
+        { id: 'lf_outline', title: 'Outline sections', status: 'pending' },
+        { id: 'lf_open', title: 'Write the opening into the notebook', status: 'pending' },
+        { id: 'lf_body', title: 'Write the body sections into the notebook', status: 'pending' },
+        { id: 'lf_close', title: 'Write the closing into the notebook', status: 'pending' },
+        { id: 'lf_notes', title: 'Add footnotes and citations', status: 'pending' },
+        { id: 'lf_summary', title: 'Write a short chat summary', status: 'pending' },
+    ])
+}
+
+export function seedLongFormPlan(incoming: PlanTodo[], userPrompt: string): PlanTodo[] {
+    if (!isLongFormWriting(userPrompt)) return incoming
+    if (incoming.length >= 5) return incoming
+    return longFormWritingPlan()
+}
+
 const RANK: Record<PlanStatus, number> = { pending: 0, in_progress: 1, completed: 2 }
 
 function keyOf(todo: PlanTodo): string {

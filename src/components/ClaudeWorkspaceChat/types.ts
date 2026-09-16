@@ -25,6 +25,7 @@ export type HumanTurn = {
   plan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   summary?: string
   question?: string
+  choices?: string[]
   /** Persisted ask_user answer for history rendering. */
   answer?: string
   /** Persisted plan revise note for history rendering. */
@@ -217,6 +218,7 @@ export interface Chat {
   thinkingBudget: ThinkingBudget
   webSearchEnabled: boolean
   agentMode?: AgentMode
+  activePlan?: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
   systemPrompt?: string
   shareToken?: string
   isShared?: boolean

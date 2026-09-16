@@ -3549,6 +3549,49 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     60% { transform: translateX(-2px); }
     80% { transform: translateX(2px); }
 }
+@keyframes wim-ask-form-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+.wim-ask-form {
+    animation: wim-ask-form-in 280ms ease-out;
+}
+.wim-ask-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 2px;
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    color: inherit;
+}
+.wim-ask-option:hover .wim-ask-radio {
+    border-color: #1E3A8A;
+}
+.wim-ask-radio {
+    margin-top: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid color-mix(in srgb, var(--text-muted, #888) 70%, transparent);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+}
+.wim-ask-radio[data-on='true'] {
+    border-color: #1E3A8A;
+}
+.wim-ask-radio[data-on='true']::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #1E3A8A;
+}
+
 @keyframes wim-msg-in {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: none; }

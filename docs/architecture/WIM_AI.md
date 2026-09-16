@@ -24,7 +24,7 @@ Canonical map of WorldInMaking AI as implemented in malidk345/worldinmaking.com-
 
 Wire format: OpenAI Chat Completions functions (`src/lib/bots/tools/spec.ts`). Groq native, Gemini adapter. Loop families in loop.ts: groq, gemini, nvidia, openai, anthropic. Tool budget ~45s vs gateway ~28s.
 
-fetch_url (`tools/fetch-url.ts`): http(s) only, no redirects, 8s, 200KB, blocks localhost / private IPv4 / metadata / .internal. IPv6 hostnames refused. `posthog-analytics` is a live artifact kind; do not rename as cleanup.
+fetch_url (`tools/fetch-url.ts`): http(s) only, up to 3 redirects with hop-by-hop SSRF (same policy as `read_document`), 8s, 200KB, blocks localhost / private IPv4 / metadata / .internal. IPv6 hostnames refused. `posthog-analytics` is a live artifact kind; do not rename as cleanup.
 
 ## Security and BYOK
 Keys live in the browser (`localStorage` `wim_byok_vault_v1` in `src/lib/byok-vault.ts`). They are not stored server-side. They do transit to the Cloudflare edge via the chat request body (`body.byok`) for that request. `/api/byok/verify` is a 1-2 token probe, not persisted. Vault providers are groq, gemini, openai, and anthropic. Anthropic is included in TOOL_FAMILY_ORDER.

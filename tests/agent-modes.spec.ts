@@ -14,7 +14,7 @@ import {
     processItemToThinkingStep,
 } from '../src/lib/bots/agent/activity'
 import { buildThinkingTimeline, shouldShowLiveThinkingIndicator } from '../src/lib/bots/agent/timeline'
-import { mergePlan, normalizePlan, withHostContext } from '../src/lib/bots/agent/plan'
+import { isLongFormWriting, mergePlan, normalizePlan, seedLongFormPlan, withHostContext } from '../src/lib/bots/agent/plan'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
 import { runAgentNodePipeline, shouldRunThinkPhase } from '../src/lib/bots/tools/pipeline'
 import { TOOL_FAMILY_ORDER } from '../src/lib/bots/tools/loop'
@@ -349,6 +349,42 @@ test.describe('Thinking timeline', () => {
     })
 })
 
+test.describe('Long-form writing spine', () => {
+    test('detects word-count and essay asks', () => {
+        expect(isLongFormWriting('3000 kelimelik bir yazı yaz')).toBe(true)
+        expect(isLongFormWriting('write a long essay about labor')).toBe(true)
+        expect(isLongFormWriting('hi')).toBe(false)
+    })
+
+    test('seeds the research-outline-sections spine when the first plan is thin', () => {
+        const seeded = seedLongFormPlan(
+            [{ id: 't1', title: 'Write it', status: 'in_progress' }],
+            'üç bin kelimelik bir makale yaz'
+        )
+        expect(seeded.map((todo) => todo.id)).toEqual([
+            'lf_research',
+            'lf_outline',
+            'lf_open',
+            'lf_body',
+            'lf_close',
+            'lf_notes',
+            'lf_summary',
+        ])
+        expect(seeded.filter((todo) => todo.status === 'in_progress')).toHaveLength(1)
+    })
+
+    test('keeps a detailed model plan', () => {
+        const incoming = [
+            { id: 'a', title: 'One', status: 'in_progress' as const },
+            { id: 'b', title: 'Two', status: 'pending' as const },
+            { id: 'c', title: 'Three', status: 'pending' as const },
+            { id: 'd', title: 'Four', status: 'pending' as const },
+            { id: 'e', title: 'Five', status: 'pending' as const },
+        ]
+        expect(seedLongFormPlan(incoming, 'write a long essay').map((todo) => todo.id)).toEqual(['a', 'b', 'c', 'd', 'e'])
+    })
+})
+
 test.describe('Locked plan board', () => {
     test('mergePlan keeps the original steps and only advances status', () => {
         const first = normalizePlan([
@@ -643,29 +679,29 @@ test.describe('Graph checkpoint resume', () => {
         expect(resumeUserMessage('revise')).toContain('revise the plan')
     })
 
-    test('finalize_plan starts execute in the same turn without waiting', async () => {
-        let started = false
-        const modes: string[] = []
+    test('finalize_plan pauses for plan_approval instead of executing immediately', async () => {
         const result = await runAgentNodePipeline({
             complete: async ({ omitTools }) => {
                 if (omitTools) return { ok: true as const, content: '', toolCalls: [] }
-                if (!started) {
-                    started = true
-                    return {
-                        ok: true as const,
-                        content: '',
-                        toolCalls: [
-                            {
-                                id: 'c1',
-                                name: 'finalize_plan',
-                                argumentsJson: JSON.stringify({ summary: 'Search, then write.' }),
-                            },
-                        ],
-                    }
+                return {
+                    ok: true as const,
+                    content: '',
+                    toolCalls: [
+                        {
+                            id: 'c1',
+                            name: 'todo_write',
+                            argumentsJson: JSON.stringify({
+                                tasks: [{ id: 't1', title: 'Search', status: 'in_progress' }],
+                            }),
+                        },
+                        {
+                            id: 'c2',
+                            name: 'finalize_plan',
+                            argumentsJson: JSON.stringify({ summary: 'Search, then write.' }),
+                        },
+                    ],
                 }
-                return { ok: true as const, content: 'Executed the plan.', toolCalls: [] }
             },
-            onMode: (mode) => modes.push(mode),
             baseMessages: [
                 { role: 'system', content: 'sys' },
                 { role: 'user', content: 'plan a research pass' },
@@ -674,12 +710,12 @@ test.describe('Graph checkpoint resume', () => {
             agentMode: 'plan',
             maxSteps: 4,
         })
-        expect(result.status).toBe('done')
-        expect(result.interrupt).toBeUndefined()
-        expect(result.checkpoint).toBeUndefined()
-        expect(result.agentMode).toBe('execute')
-        expect(modes).toContain('execute')
-        expect(result.text).toContain('Executed the plan.')
+        expect(result.status).toBe('awaiting_human')
+        expect(result.interrupt?.kind).toBe('plan_approval')
+        expect(result.interrupt?.summary).toContain('Search')
+        expect(result.interrupt?.plan?.map((item) => item.title)).toEqual(['Search'])
+        expect(result.checkpoint).toBeTruthy()
+        expect(result.agentMode).toBe('plan')
     })
 
     test('switch_mode execute from plan does not wait for a human', async () => {

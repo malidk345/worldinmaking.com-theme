@@ -12,7 +12,7 @@ import type { ArtifactDocument } from '../../artifacts/kinds'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
 import { snapshotCheckpoint, type AgentCheckpoint } from '../agent/checkpoint'
 import type { HumanTurn } from '../agent/human'
-import { memoriesForHostContext, mergePlan, PLAN_ACTIVITY_ID, withHostContext, type PlanTodo } from '../agent/plan'
+import { memoriesForHostContext, mergePlan, PLAN_ACTIVITY_ID, seedLongFormPlan, withHostContext, type PlanTodo } from '../agent/plan'
 import {
     EXECUTION_TRANSITION_PROMPT,
     modeTransitionPrompt,
@@ -425,7 +425,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         state.pendingReminder =
             state.todos.length === 0
                 ? 'Plan mode is on. Use todo_write or research tools if they help, or write the user-facing piece now.'
-                : 'Continue as needed: research, finalize_plan if you need mutating tools, or write the user-facing piece now.'
+                : 'Continue as needed: research, then finalize_plan so the user can Run, or write the public answer now.'
         state.phase = 'decision'
         return
     }
@@ -667,7 +667,15 @@ async function runOneToolCall(
         try {
             const parsed = JSON.parse(executed.result)
             if (Array.isArray(parsed.tasks)) {
-                state.todos = mergePlan(state.todos as PlanTodo[], parsed.tasks as PlanTodo[])
+                const userPrompt = [...state.messages]
+                    .reverse()
+                    .find((message) => message.role === 'user' && typeof message.content === 'string')
+                const incoming = parsed.tasks as PlanTodo[]
+                const seeded =
+                    state.todos.length === 0
+                        ? seedLongFormPlan(incoming, String(userPrompt?.content || ''))
+                        : incoming
+                state.todos = mergePlan(state.todos as PlanTodo[], seeded)
                 const current = state.todos.find((todo) => todo.status === 'in_progress')
                 const completedCount = state.todos.filter((todo) => todo.status === 'completed').length
                 executed = {
@@ -712,19 +720,48 @@ async function runOneToolCall(
     }
     if (name === 'finalize_plan' && executed.ok) {
         const parsed = parseJsonObject(executed.result)
-        const summary = typeof parsed?.summary === 'string' ? parsed.summary : undefined
-        toolContent = enterExecute(state, params, summary)
+        const summary =
+            typeof parsed?.summary === 'string' && parsed.summary.trim()
+                ? parsed.summary.trim()
+                : undefined
+        const plan = state.todos.map((todo) => ({
+            id: todo.id,
+            title: todo.title,
+            status: todo.status,
+        }))
+        state.interrupt = {
+            kind: 'plan_approval',
+            status: 'pending',
+            title: 'Plan',
+            summary: summary || (plan.length ? plan.map((item) => item.title).join(' → ') : 'Ready to run'),
+            ...(plan.length ? { plan } : {}),
+        }
+        if (!state.publicText.trim()) state.publicText = state.interrupt.summary || 'Plan ready.'
+        toolContent = JSON.stringify({
+            ok: true,
+            awaiting: 'plan_approval',
+            summary: state.interrupt.summary,
+            tasks: plan,
+        })
     }
     if (name === 'ask_user' && executed.ok) {
         const parsed = parseJsonObject(executed.result)
-        const question = typeof parsed?.question === 'string' ? parsed.question : undefined
+        const question = typeof parsed?.question === 'string' ? parsed.question.trim() : ''
         if (question) {
+            const choices = Array.isArray(parsed?.choices)
+                ? parsed.choices
+                      .map((item: unknown) => (typeof item === 'string' ? item.trim() : ''))
+                      .filter(Boolean)
+                      .slice(0, 6)
+                : []
             state.interrupt = {
                 kind: 'ask_user',
                 status: 'pending',
-                title: 'User Input Required',
+                title: 'Question',
                 question,
+                ...(choices.length ? { choices } : {}),
             }
+            if (!state.publicText.trim()) state.publicText = question
         }
     }
     const summary = executed.summary || toolResultSummary(name, executed.ok, executed.result)

@@ -106,12 +106,6 @@ export const apps: AppItem[] = [
         source: 'desktop',
     },
     {
-        label: 'Flashcards',
-        Icon: <AppIcon name="notebook" />,
-        url: '/study',
-        source: 'desktop',
-    },
-    {
         label: 'Archive',
         Icon: <AppIcon name="archive" />,
         url: '/archive',

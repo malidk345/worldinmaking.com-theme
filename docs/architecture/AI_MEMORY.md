@@ -58,6 +58,36 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (Chat flow/perf: scroll loop, padding, Continue vs Next)
+- **Scope:** Dropped per-frame scroll while streaming (layout effect on tokens remains). Composer no longer double-pads. Scroll-to-bottom hides when Next section is up. Stopped Continue hides when a plan Next section exists. Notebook selection uses selectionchange instead of 1.5s poll. Stock amber icon color removed.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `ChatInput.tsx`, `ChatMessage.tsx`
+- **Verify:** typecheck not re-run this slice (small UI).
+- **Handoff:** Report remaining mismatches in chat.
+
+### 2026-09-17 — Grok 4.6 (Long-form spine + Next section)
+- **Scope:** Long essay/word-count asks seed a locked plan: research → outline → opening → body → closing → footnotes → chat summary. Execute is instructed to finish one major notebook section per turn. Composer shows **Next section** for the current open todo (execute mode, after the turn).
+- **Files:** `src/lib/bots/agent/plan.ts`, `modes.ts`, `pipeline.ts`, `ClaudeWorkspaceChat/types.ts`, `index.tsx`, `ChatInput.tsx`, `tests/agent-modes.spec.ts`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** `/plan` then a 3000-word ask → Run → Next section between chapters. No second orchestrator.
+
+### 2026-09-17 — Grok 4.6 (Plan mode: finalize_plan waits for Run)
+- **Scope:** `finalize_plan` now interrupts with `plan_approval` (todos + summary). Composer morphs into the Plan card (steps, Run plan, Revise). `switch_mode execute` still skips approval. Plan mode shows a Plan tab on the live composer.
+- **Files:** `pipeline.ts`, `modes.ts`, `spec.ts`, `execute.ts`, `ChatInput.tsx`, `tests/agent-modes.spec.ts`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** `/plan` then a multi-step ask should end in the Plan card, not silent execute.
+
+### 2026-09-17 — Grok 4.6 (Architecture audit: fetch_url hop-SSRF parity)
+- **Scope:** `fetch_url` now follows up to 3 redirects with the same hop-by-hop public-host check as `read_document`. Private hop fail-closed.
+- **Files:** `src/lib/bots/tools/fetch-url.ts`, `tests/ask-ai-harness.spec.ts`, `docs/architecture/WIM_AI.md`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Vectorize, durable remember, worker deploy still deferred.
+
+### 2026-09-17 — Grok 4.6 (ask_user: composer Send resumes the interrupt)
+- **Scope:** Pending `ask_user` used a tiny Answer field while the main Send started a new turn, so the question looked broken. Main composer/Send now answers the interrupt. Thread card shows the form again. Empty ask_user bubble gets the question text.
+- **Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `ChatMessage.tsx`, `index.tsx`, `src/lib/bots/tools/pipeline.ts`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Empty Enter still does not send Yes.
+
 ### 2026-09-17 — Grok 4.6 (LLM micro-UX + ask_user question in thread)
 - **Scope:** First-token skeleton; message fade-in; scroll-to-bottom pulses while streaming if scrolled away (follow already existed); done tools collapse to “N tools · open”; citation favicon chips with title + link; follow-up chips; Continue on stopped; URL paste → chip; cycling placeholder. Code copy already had Copied ✓. Send button color untouched. ask_user: pipeline interrupt + composer answer still work; pending question now also renders in the thread (form stays in composer so empty Enter cannot send Yes).
 - **Files:** ChatInput.tsx, ChatMessage.tsx, ThinkingBlock.tsx, ClaudeWorkspaceChat/index.tsx, global.css

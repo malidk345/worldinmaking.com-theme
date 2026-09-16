@@ -390,15 +390,13 @@ function HumanTurnCard({
   turn,
   disabled,
   onRespond,
-  hideForm,
 }: {
   turn: HumanTurn
   disabled?: boolean
   onRespond: (action: 'run' | 'revise' | 'answer', payload?: string) => void
-  hideForm?: boolean
 }) {
   const [draft, setDraft] = useState('')
-  const pending = turn.status === 'pending' && !disabled && !hideForm
+  const pending = turn.status === 'pending' && !disabled
   if (turn.kind === 'plan_approval') {
     return (
       <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
@@ -549,7 +547,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   {att.type === 'image' && att.url ? (
                     <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
                   ) : att.type === 'image' ? (
-                    <IconImage className="size-3.5 shrink-0 text-amber-700" />
+                    <IconImage className="size-3.5 shrink-0 text-secondary" />
                   ) : (
                     <IconDocument className="size-3.5 shrink-0 text-secondary" />
                   )}
@@ -768,11 +766,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {message.humanTurn ? (
+          {message.humanTurn && message.humanTurn.status !== 'pending' ? (
             <HumanTurnCard
               turn={message.humanTurn}
               disabled={!!message.isStreaming}
-              hideForm={message.humanTurn.status === 'pending'}
               onRespond={(action, payload) => onHumanRespond?.(message.id, action, payload)}
             />
           ) : null}
