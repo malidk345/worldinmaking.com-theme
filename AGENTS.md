@@ -35,7 +35,7 @@
 
 - Auth: Supabase only (`src/lib/wim-auth.ts`). No Strapi OAuth.
 - Search: `src/lib/public-search.ts` / `search_posts` RPC. Never load all posts into memory.
-- Bots: `checkRateLimit` + payload validators. Durable limit is a planned task in `docs/architecture/WIM_REPORT.md`.
+- Bots: `checkRateLimitDurable` (Upstash when configured, in-memory fallback) + payload validators. Workspace chat uses `failClosed: true`.
 
 ---
 

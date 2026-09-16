@@ -124,7 +124,9 @@ export default async function handler(req: Request) {
                 if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
                 // Tag with auth_user_id when JWT-authenticated
                 const tagged = auth.userId ? { ...notebook, auth_user_id: auth.userId } : notebook
-                const saved = await upsertNotebook(tagged, ownerKey, auth.userId, extraOwnerKeys)
+                const saved = await upsertNotebook(tagged, ownerKey, auth.userId, extraOwnerKeys, {
+                    restore: body.restore === true,
+                })
 
                 if (Array.isArray(body.history_entries)) {
                     try {

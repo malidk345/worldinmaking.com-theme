@@ -58,6 +58,9 @@ const ALLOWLIST_PREFIXES = [
     'src/lib/os/',
     'src/lib/chat/diff-apply.ts',
     'src/lib/world-snapshot.ts',
+    'src/lib/study-sm2.ts',
+    'src/lib/study-deck-store.ts',
+    'src/components/Study/',
 ]
 
 /**

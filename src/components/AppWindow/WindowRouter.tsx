@@ -91,9 +91,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     const path: string = canonicalWindowPath(rawPath)
     const props = { ...(item.props || {}), path }
 
-    // Path-first for posts/questions: F5 passes the Next.js page as `item.element`,
-    // which renders an empty shell until router.query hydrates. In-app addWindow
-    // already uses path. Always resolve those routes from path.
+    // Path is the only resolver for known OS routes. F5 often passes the Next.js
+    // page as `item.element` (empty shell until router.query hydrates). Custom
+    // element content is only for unmapped paths (artifact previews).
     const preferPath = isPathRoutedWindow(path)
 
     if (!preferPath) {
@@ -150,7 +150,7 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
 
     if (isStudyWindowPath(path)) {
-        return <FlashcardStudyWindow />
+        return <FlashcardStudyWindow path={path} />
     }
 
     if (path === '/admin' || path === '/community/admin') {

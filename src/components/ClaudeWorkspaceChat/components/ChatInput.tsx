@@ -20,6 +20,12 @@ import { uploadFile, getFileUrl } from '../../../lib/storage-worker';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
+const PLACEHOLDERS = [
+  'Write a message...',
+  'Ask a philosopher...',
+  'Research a claim...',
+  'Draft into your notebook...',
+]
 
 export type SlashCommandItem = {
   id: string
@@ -44,10 +50,28 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
 ]
 
 export const ASK_STARTERS = [
-  { label: 'Edit this note', prompt: 'Edit the selected or bound note: ' },
-  { label: 'Write to notebook', prompt: 'Write this into the bound notebook: ' },
-  { label: 'Research this', prompt: 'Research this with live sources: ' },
-  { label: 'Explain briefly', prompt: 'Explain this simply and briefly: ' },
+  {
+    label: 'Edit this note',
+    prompt: 'Edit the selected or bound note: ',
+    preview: 'Rewrites the selected or bound notebook passage.',
+    mutating: true,
+  },
+  {
+    label: 'Write to notebook',
+    prompt: 'Write this into the bound notebook: ',
+    preview: 'Drafts into the bound notebook.',
+    mutating: true,
+  },
+  {
+    label: 'Research this',
+    prompt: 'Research this with live sources: ',
+    preview: 'Looks up live sources, then answers.',
+  },
+  {
+    label: 'Explain briefly',
+    prompt: 'Explain this simply and briefly: ',
+    preview: 'Short plain-language explanation.',
+  },
 ] as const
 
 interface ChatInputProps {
@@ -71,6 +95,7 @@ interface ChatInputProps {
   onHumanRespond?: (action: 'run' | 'revise' | 'answer', payload?: string) => void;
   agentMode?: AgentMode;
   onAgentModeChange?: (mode: AgentMode) => void;
+  lockShakeNonce?: number;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -92,6 +117,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onHumanRespond,
   agentMode = 'ask',
   onAgentModeChange,
+  lockShakeNonce = 0,
 }) => {
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
@@ -107,6 +133,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeSelection, setActiveSelection] = useState('');
+  const [justReady, setJustReady] = useState(false);
+  const [modeShake, setModeShake] = useState(false);
+  const [linkChips, setLinkChips] = useState<Array<{ id: string; url: string }>>([]);
+  const [composerFocused, setComposerFocused] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const wasStreamingRef = useRef(false);
   const { quota } = useTokenQuota();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -129,6 +161,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       textareaRef.current?.focus()
     }
   }, [draftNonce, draftPrompt])
+
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) {
+      setJustReady(true)
+      const timer = window.setTimeout(() => setJustReady(false), 480)
+      wasStreamingRef.current = false
+      return () => window.clearTimeout(timer)
+    }
+    wasStreamingRef.current = isStreaming
+  }, [isStreaming])
+
+  useEffect(() => {
+    if (!lockShakeNonce) return
+    setModeShake(true)
+    const timer = window.setTimeout(() => setModeShake(false), 420)
+    return () => window.clearTimeout(timer)
+  }, [lockShakeNonce])
 
 
   // Auto-resize textarea without collapsing the first line
@@ -192,14 +241,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (prompt.trim() || composerFocused) return
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length)
+    }, 4000)
+    return () => window.clearInterval(timer)
+  }, [prompt, composerFocused])
+
   // Fail closed until quota is known (null = cold-start / still loading).
   const quotaBlocksSend = quota?.allowed !== true;
 
   const handleSubmit = () => {
-    if ((!prompt.trim() && attachments.length === 0) || isStreaming || quotaBlocksSend) return;
-    onSendMessage(prompt.trim(), attachments);
+    const links = linkChips.map((chip) => chip.url).join('\n')
+    const body = [links, prompt.trim()].filter(Boolean).join('\n\n')
+    if ((!body && attachments.length === 0) || isStreaming || quotaBlocksSend) return;
+    onSendMessage(body, attachments);
     setPrompt('');
     setAttachments([]);
+    setLinkChips([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = '24px';
     }
@@ -273,6 +333,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       e.preventDefault();
       processFiles(e.clipboardData.files);
+      return
+    }
+    const text = (e.clipboardData.getData('text') || '').trim()
+    if (/^https?:\/\/\S+$/i.test(text)) {
+      e.preventDefault()
+      setLinkChips((prev) => {
+        if (prev.some((chip) => chip.url === text)) return prev
+        return [...prev, { id: `link-${Date.now()}`, url: text }]
+      })
     }
   };
 
@@ -324,7 +393,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <button
             type="button"
             onClick={onScrollToBottom}
-            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/90 backdrop-blur-md border border-primary/50 shadow-sm text-secondary hover:bg-accent cursor-pointer transition-transform active:scale-95"
+            className={`pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/90 backdrop-blur-md border border-primary/50 shadow-sm text-secondary hover:bg-accent cursor-pointer transition-transform active:scale-95 ${
+              isStreaming ? 'animate-pulse' : ''
+            }`}
             title="Scroll to bottom"
           >
             <IconChevronDown className={TOOLBAR_ICON} />
@@ -338,6 +409,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.08)] ${
+          modeShake ? '[animation:wim-composer-shake_420ms_ease-in-out]' : ''
+        } ${justReady ? '[animation:wim-composer-ready_480ms_ease-out]' : ''} ${
+          agentMode === 'plan' ? 'ring-1 ring-inset ring-primary/50' : agentMode === 'execute' ? 'ring-1 ring-inset ring-accent' : ''
+        } ${
           isDragging
             ? 'border-[#1E3A8A] shadow-[0_0_12px_rgba(30,58,138,0.55),0_0_22px_rgba(30,58,138,0.28)] bg-accent'
             : prompt.trim().length > 0
@@ -385,7 +460,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <div className="flex items-center gap-1.5 min-w-0 truncate">
               <IconDocument className="size-3.5 shrink-0 text-primary" />
               <span className="truncate font-medium text-primary">{boundNotebookTitle}</span>
-              <span className="shrink-0 text-muted">· bound</span>
+              <span className="shrink-0 text-muted">· bound notebook</span>
             </div>
             {onDismissNotebookContext && (
               <button
@@ -434,7 +509,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-accent/80 border border-primary/50 px-2 py-0.5 text-[11px] text-secondary font-sans animate-fadeIn">
             <div className="flex items-center gap-1.5 min-w-0 truncate">
               <IconNotebook className="size-3.5 shrink-0 text-[#1E3A8A] dark:text-blue-400" />
-              <span className="shrink-0 font-medium text-primary">Selection:</span>
+              <span className="shrink-0 font-medium text-primary">
+                {boundNotebookTitle ? boundNotebookTitle : 'Selection'}
+              </span>
+              <span className="shrink-0 text-muted">
+                · {Math.max(1, activeSelection.split(/\n/).filter((line) => line.trim()).length)} line
+                {activeSelection.split(/\n/).filter((line) => line.trim()).length === 1 ? '' : 's'}
+              </span>
               <span className="truncate text-secondary">"{activeSelection.slice(0, 80)}"</span>
             </div>
             <button
@@ -524,6 +605,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         ) : null}
 
         {/* Textarea Placeholder: "Write a message..." */}
+        {linkChips.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {linkChips.map((chip) => (
+              <div
+                key={chip.id}
+                className="flex max-w-full items-center gap-1.5 rounded-md border border-primary bg-accent px-1.5 py-0.5 text-[11px] text-secondary"
+              >
+                <span className="truncate">{chip.url.replace(/^https?:\/\//, '')}</span>
+                <button
+                  type="button"
+                  onClick={() => setLinkChips((prev) => prev.filter((item) => item.id !== chip.id))}
+                  className="text-muted hover:text-primary cursor-pointer p-0.5"
+                  title="Remove link"
+                >
+                  <IconX className={CHIP_ICON} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <textarea
           data-composer
           aria-label="Message composer"
@@ -532,7 +634,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder="Write a message..."
+          onFocus={() => setComposerFocused(true)}
+          onBlur={() => setComposerFocused(false)}
+          placeholder={PLACEHOLDERS[placeholderIndex]}
           rows={1}
           className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-relaxed font-sans"
         />
@@ -624,12 +728,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <button
               type="button"
               onClick={toggleSpeechRecognition}
-              className={`p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer ${
-                isRecording ? 'text-primary animate-pulse' : ''
+              className={`flex items-center gap-1 p-1 text-primary hover:text-primary transition-transform duration-150 focus:outline-none cursor-pointer active:scale-95 ${
+                isRecording ? 'text-accent' : ''
               }`}
-              title="Voice Input"
+              title={isRecording ? 'Stop voice input' : 'Voice input'}
+              aria-label={isRecording ? 'Stop voice input' : 'Voice input'}
             >
-              <IconMicrophone className={TOOLBAR_ICON} />
+              {isRecording ? (
+                <span className="wim-mic-wave" aria-hidden>
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              ) : (
+                <IconMicrophone className={TOOLBAR_ICON} />
+              )}
             </button>
 
             {/* Send / Stop Action Button */}
@@ -637,7 +751,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1E3A8A] bg-[#1E3A8A] shadow-2xs hover:bg-[#1e40af] cursor-pointer transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1E3A8A] bg-[#1E3A8A] shadow-2xs hover:bg-[#1e40af] cursor-pointer transition-colors transition-transform duration-150 active:scale-95"
                 title="Stop generating"
                 aria-label="Stop generating"
               >
@@ -647,10 +761,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={(!prompt.trim() && attachments.length === 0) || quotaBlocksSend}
-                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors ${
-                   (prompt.trim() || attachments.length > 0) && !quotaBlocksSend
-                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer'
+                disabled={(!prompt.trim() && attachments.length === 0 && linkChips.length === 0) || quotaBlocksSend}
+                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors transition-transform duration-150 ${
+                   (prompt.trim() || attachments.length > 0 || linkChips.length > 0) && !quotaBlocksSend
+                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Send"
@@ -662,6 +776,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
       </div>
+
+      {quota && !quota.unavailable && quota.limitTokens > 0 ? (
+        <div
+          className="mt-1.5 h-0.5 w-full overflow-hidden rounded bg-primary/20"
+          role="meter"
+          aria-label="Daily token budget"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.min(100, Math.round(quota.percentage))}
+        >
+          <div
+            className={`h-full bg-accent transition-all duration-300 ${quota.percentage >= 80 ? 'animate-pulse' : ''}`}
+            style={{ width: `${Math.min(100, Math.max(0, quota.percentage))}%` }}
+          />
+        </div>
+      ) : null}
 
       {quotaBlocksSend ? (
         <div role="status" aria-live="polite" className="mt-1.5 h-4 text-center text-[11px] leading-4 font-sans pointer-events-auto">

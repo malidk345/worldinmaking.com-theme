@@ -43,6 +43,7 @@ import { crossExamineArgument } from './argument-cross-examination'
 import type { CanvasSpec } from '../../ai/visual-artifacts'
 import { repairAndParseJsonObject } from './json-repair'
 import { resolveWorkspacePresetLayout } from '../../os/arrange-workspace'
+import { defaultSm2Schedule } from '../../study-sm2'
 
 const MAX_TITLE = 80
 const MAX_ARTIFACT_BODY = 120_000
@@ -1060,15 +1061,35 @@ function executeGenerateFlashcards(
     notebookId?: string,
     host?: HostSnapshot
 ): { ok: boolean; result: string; action?: HostOsAction } {
-    let cards: Array<{ front: string; back: string; hint?: string; tags?: string[] }> = []
+    const now = new Date()
+    const schedule = defaultSm2Schedule(now)
+    let cards: Array<{
+        id: string
+        front: string
+        back: string
+        hint?: string
+        tags?: string[]
+        easiness: number
+        intervalDays: number
+        repetitions: number
+        dueAt: string
+    }> = []
     if (Array.isArray(rawCards)) {
         cards = rawCards
             .filter((c) => c && typeof c === 'object')
-            .map((c: any) => ({
+            .map((c: any, index: number) => ({
+                id:
+                    typeof c.id === 'string' && c.id.trim()
+                        ? String(c.id).trim()
+                        : `card-${index + 1}-${Math.random().toString(36).slice(2, 6)}`,
                 front: String(c.front || c.question || c.q || '').trim(),
                 back: String(c.back || c.answer || c.a || '').trim(),
                 hint: c.hint ? String(c.hint).trim() : undefined,
-                tags: Array.isArray(c.tags) ? c.tags.map((t: any) => String(t).trim()) : undefined,
+                tags: Array.isArray(c.tags) ? c.tags.map((t: any) => String(t).trim()).filter(Boolean) : undefined,
+                easiness: schedule.easiness,
+                intervalDays: schedule.intervalDays,
+                repetitions: schedule.repetitions,
+                dueAt: schedule.dueAt,
             }))
             .filter((c) => c.front.length > 0 && c.back.length > 0)
     }
@@ -1084,6 +1105,7 @@ function executeGenerateFlashcards(
     }
 
     const title = (deckTitle || 'Study Flashcards').trim()
+    const deckId = `deck-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
     const markdownDeck = [
         `# 🗂️ ${title}`,
@@ -1121,6 +1143,15 @@ function executeGenerateFlashcards(
                 },
             }
         }
+    } else {
+        action = {
+            type: 'open_window',
+            title: `Study: ${title}`,
+            description: `Open ${cards.length} flashcards in Study`,
+            payload: {
+                path: `/study?deck=${encodeURIComponent(deckId)}`,
+            },
+        }
     }
 
     return {
@@ -1128,6 +1159,7 @@ function executeGenerateFlashcards(
         result: clip(
             JSON.stringify({
                 ok: true,
+                deck_id: deckId,
                 deck_title: title,
                 total_cards: cards.length,
                 flashcards: cards,
@@ -1772,7 +1804,7 @@ export async function executeToolCall(
             return { ...base, ok: true, result, summary: next === 'plan' ? 'Entered plan mode' : 'Entered execution mode' }
         }
         if (name === 'run_code_sandbox') {
-            const executed = await executeCodeSandbox(args)
+            const executed = await executeCodeSandbox(args, env, signal)
             return { ...base, ...executed, summary: executed.title || toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'create_artifact') {

@@ -209,9 +209,13 @@ describe('Roadmap AI Tools Execution', () => {
             const parsed = JSON.parse(res.result)
             expect(parsed.ok).toBe(true)
             expect(parsed.total_cards).toBe(2)
+            expect(parsed.deck_id).toMatch(/^deck-/)
             expect(parsed.deck_title).toBe('Epistemology Core Concepts')
+            expect(parsed.flashcards[0].dueAt).toBeTruthy()
             expect(parsed.notebook_markdown).toContain('What is the Cartesian Cogito?')
             expect(parsed.notebook_markdown).toContain('Reveal Answer')
+            expect(res.action?.type).toBe('open_window')
+            expect(res.action?.payload.path).toContain('/study?deck=')
         })
 
         it('generates notebook action when save_to_notebook is true', async () => {

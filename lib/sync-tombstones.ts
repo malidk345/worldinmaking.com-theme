@@ -82,3 +82,21 @@ export async function listSyncTombstoneIds(
     }
     return ((data as { item_id: string }[] | null) || []).map((row) => row.item_id)
 }
+
+/** Owner restore from trash: drop the ledger row so upsert can recreate the notebook. */
+export async function clearSyncTombstoneForOwner(
+    kind: SyncTombstoneKind,
+    itemId: string,
+    ownerKey: string,
+    userId?: string | null
+): Promise<boolean> {
+    if (!itemId || !ownerKey) return false
+    let query = supabaseAdmin.from('wim_sync_tombstones').delete({ count: 'exact' }).eq('kind', kind).eq('item_id', itemId)
+    query = applyOwnerScope(query, ownerKey, userId || undefined)
+    const { error, count } = await query
+    if (error) {
+        if (isMissingRelation(error)) return false
+        throw error
+    }
+    return (count ?? 0) > 0
+}

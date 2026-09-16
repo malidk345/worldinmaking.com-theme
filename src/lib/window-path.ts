@@ -1,5 +1,7 @@
 /** OS window paths: never keep Next.js `[slug]` placeholders, always prefer the live URL. */
 
+import { LEGAL_PATHS } from './legal-paths'
+
 const NOTEBOOK_RESERVED = new Set(['templates', 'canvas', 'n', 'notebook', 'invite'])
 
 export function isPlaceholderPath(path: string): boolean {
@@ -194,7 +196,28 @@ export function isPathRoutedWindow(path: string): boolean {
     const p = canonicalWindowPath(path)
     return (
         p === '/home' ||
+        p === '/' ||
+        p === '/desktop' ||
         p === '/account' ||
+        p === '/about' ||
+        p === '/archive' ||
+        p === '/contact' ||
+        p === '/admin' ||
+        p === '/community/admin' ||
+        p === '/display-options' ||
+        p === '/bookmarks' ||
+        p === '/community/notifications' ||
+        p === '/notifications' ||
+        p === '/manifesto' ||
+        p === '/about-wim' ||
+        p === '/world-in-making' ||
+        /^\/auth(\/|$)/.test(p) ||
+        /^\/login/.test(p) ||
+        /^\/signup/.test(p) ||
+        /^\/tape-player/.test(p) ||
+        /^\/mixtapes/.test(p) ||
+        /^\/ideas/.test(p) ||
+        /^\/blueprints/.test(p) ||
         /^\/workspace-chat(\/|$)/.test(p) ||
         /^\/assistant(\/|$)/.test(p) ||
         /^\/scratchpad(\/|$)/.test(p) ||
@@ -207,7 +230,11 @@ export function isPathRoutedWindow(path: string): boolean {
         /^\/(questions|forum)(\/|$)/.test(p) ||
         (p.startsWith('/community') &&
             !p.startsWith('/community/profiles') &&
-            !p.startsWith('/community/achievements'))
+            !p.startsWith('/community/achievements')) ||
+        p.startsWith('/community/profiles') ||
+        p.startsWith('/community/achievements') ||
+        p.startsWith('/profile') ||
+        (LEGAL_PATHS as readonly string[]).includes(p)
     )
 }
 

@@ -2,6 +2,7 @@ import { uuid } from '../../lib/utils/dom'
 import {
     deleteNotebookRemote,
     isNotebookRemoteKnownAvailable,
+    filterRevokedSharedNotebooks,
     mergeNotebookLists,
     notebookChromeSyncFromRemoteResult,
     pickNewerNotebook,
@@ -228,7 +229,16 @@ function mergeRemoteIntoLocal(
     options: { pushMissing?: boolean } = {}
 ): void {
     for (const id of remote.deletedIds) rememberDeletedNotebookId(id)
-    const local = readLocalNotebooks()
+    const remoteIds = new Set(
+        remote.notebooks.flatMap((nb) => [nb.id, nb.short_id].filter((value): value is string => Boolean(value)))
+    )
+    const { kept: stillShared, revoked } = filterRevokedSharedNotebooks(readLocalNotebooks(), remoteIds)
+    for (const notebook of revoked) {
+        TrashStore.addNotebook(notebook, getNotebookHistory(notebook.id))
+        unpinNotebookFromDesktop(notebook.id)
+        if (notebook.short_id) unpinNotebookFromDesktop(notebook.short_id)
+    }
+    const local = stillShared
     const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
     const merged = withCanonicalTemplates(mergeNotebookLists(local, remote.notebooks, deletedIds))
     writeAll(merged)
@@ -275,27 +285,6 @@ function ensureRemoteHydrate(): void {
                 // Table missing or offline: still try to push local when API becomes ready later
                 schedulePushAll()
                 emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
-                return
-            }
-            for (const id of remote.deletedIds) rememberDeletedNotebookId(id)
-            const local = readLocalNotebooks()
-            const deletedIds = [...readLocalDeletedNotebookIds(), ...remote.deletedIds]
-            if (!remote.notebooks.length) {
-                const kept = withCanonicalTemplates(mergeNotebookLists(local, [], deletedIds))
-                if (kept.length !== local.length) writeAll(kept)
-                const fresh = kept.filter(
-                    (nb) =>
-                        canPushNotebook(nb) &&
-                        !deletedIds.includes(nb.id) &&
-                        !deletedIds.includes(nb.short_id)
-                )
-                if (fresh.length) {
-                    const history: Record<string, NotebookVersion[]> = {}
-                    for (const nb of fresh) history[nb.id] = getNotebookHistory(nb.id)
-                    queueRemote(pushAllNotebooksToRemote(fresh, history), { report: false })
-                }
-                emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
-                emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
                 return
             }
             mergeRemoteIntoLocal(remote, { pushMissing: true })
@@ -722,6 +711,8 @@ export async function getNotebookWithContent(id: string): Promise<StoredNotebook
 
 /** Merge a remote/shared notebook into local storage without bumping version. */
 export function rememberRemoteNotebook(notebook: StoredNotebook): StoredNotebook {
+    forgetDeletedNotebookId(notebook.id)
+    if (notebook.short_id) forgetDeletedNotebookId(notebook.short_id)
     const notebooks = getNotebooks()
     const index = notebooks.findIndex((n) => n.id === notebook.id || n.short_id === notebook.short_id)
     if (index >= 0) {
@@ -929,6 +920,12 @@ export function unpinNotebookFromDesktop(id: string): void {
 
 export function deleteNotebook(id: string): void {
     const target = getNotebook(id)
+    const shared = Boolean(target?.access_role && target.access_role !== 'owner')
+    if (shared && target) {
+        TrashStore.addNotebook(target, getNotebookHistory(target.id))
+        void leaveSharedNotebook(id)
+        return
+    }
     if (target) {
         TrashStore.addNotebook(target, getNotebookHistory(target.id))
         rememberDeletedNotebookId(target.id)
@@ -959,7 +956,10 @@ export function restoreNotebookFromTrash(id: string): StoredNotebook | undefined
     writeAll(notebooks)
     if (item.history.length) writeNotebookHistory(item.notebook.id, item.history)
     TrashStore.remove(id)
-    schedulePushNotebook(item.notebook)
+    const shared = Boolean(item.notebook.access_role && item.notebook.access_role !== 'owner')
+    if (!shared) {
+        queueRemote(pushNotebookToRemote(item.notebook, item.history, { restore: true }))
+    }
     return item.notebook
 }
 

@@ -182,7 +182,8 @@ export const SITE_APPS: Array<{ name: string; path: string; aliases: string[] }>
     { name: 'Contact', path: '/contact', aliases: ['iletişim', 'contact'] },
     { name: 'Admin', path: '/admin', aliases: ['dashboard', 'moderation'] },
     { name: 'Profile', path: '/profile', aliases: ['hesap', 'account'] },
-    { name: 'Study', path: '/pricing', aliases: ['pro', 'upgrade', 'pricing', 'study', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
+    { name: 'Plans', path: '/pricing', aliases: ['pro', 'upgrade', 'pricing', 'fiyatlar', 'planlar', 'subscription', 'membership'] },
+    { name: 'Flashcards', path: '/study', aliases: ['flashcards', 'study deck', 'srs', 'study session'] },
     { name: 'Account', path: '/account', aliases: ['account', 'hesap', 'membership', 'cancel', 'delete'] },
     { name: 'Scratchpad', path: '/scratchpad', aliases: ['scratchpad', 'karalama defteri', 'working memory', 'memory', 'notes-draft', 'draft'] },
 ]

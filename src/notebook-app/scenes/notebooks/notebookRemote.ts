@@ -252,7 +252,8 @@ function chromeFailure(remoteAvailable: boolean | null): {
 
 export async function pushNotebookToRemote(
     notebook: StoredNotebook,
-    historyEntries?: NotebookVersion[]
+    historyEntries?: NotebookVersion[],
+    options?: { restore?: boolean }
 ): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean; gone?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
     if (notebook.contentOmitted) return { ok: true }
@@ -266,6 +267,7 @@ export async function pushNotebookToRemote(
                 owner_key: ownerKey,
                 notebook,
                 history_entries: historyEntries,
+                restore: Boolean(options?.restore),
             }),
         })
         if (res.status === 503) {
@@ -277,7 +279,7 @@ export async function pushNotebookToRemote(
             return { ok: false, conflict: true, notebook: remote || undefined }
         }
         if (res.status === 410) {
-            rememberDeletedNotebookId(notebook.id)
+            if (!options?.restore) rememberDeletedNotebookId(notebook.id)
             return { ok: false, gone: true }
         }
         if (res.status === 403) return { ok: false, forbidden: true }
@@ -508,6 +510,30 @@ export function startNotebookPolling(onTick: () => void, intervalMs = 20000): ()
     }
 }
 
+/** Shared copies the user does not own. Owner delete / unshare must drop these on pull. */
+export function isSharedNotebookRole(role?: string | null): boolean {
+    return Boolean(role && role !== 'owner')
+}
+
+export function filterRevokedSharedNotebooks<
+    T extends { id: string; short_id?: string; access_role?: string }
+>(local: T[], remoteIds: Set<string>): { kept: T[]; revoked: T[] } {
+    const kept: T[] = []
+    const revoked: T[] = []
+    for (const notebook of local) {
+        if (!isSharedNotebookRole(notebook.access_role)) {
+            kept.push(notebook)
+            continue
+        }
+        if (remoteIds.has(notebook.id) || (notebook.short_id && remoteIds.has(notebook.short_id))) {
+            kept.push(notebook)
+            continue
+        }
+        revoked.push(notebook)
+    }
+    return { kept, revoked }
+}
+
 /** Last-write-wins merge by updatedAt (ISO strings). Local id wins on equal timestamps. */
 export function pickNewerNotebook(local: StoredNotebook, remote: StoredNotebook): StoredNotebook {
     const localVersion = Number(local.version || 0)
@@ -551,6 +577,28 @@ export function mergeNotebookLists(
             continue
         }
         map.set(nb.id, pickNewerNotebook(existing, nb))
+    }
+
+    const byShort = new Map<string, string>()
+    for (const nb of Array.from(map.values())) {
+        const sid = String(nb.short_id || '').trim()
+        if (!sid) continue
+        const otherId = byShort.get(sid)
+        if (!otherId) {
+            byShort.set(sid, nb.id)
+            continue
+        }
+        if (otherId === nb.id) continue
+        const other = map.get(otherId)
+        if (!other) {
+            byShort.set(sid, nb.id)
+            continue
+        }
+        const winner = pickNewerNotebook(other, nb)
+        const loserId = winner.id === other.id ? nb.id : other.id
+        map.delete(loserId)
+        map.set(winner.id, winner)
+        byShort.set(sid, winner.id)
     }
 
     return Array.from(map.values()).sort(

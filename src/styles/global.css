@@ -3520,6 +3520,63 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     animation-delay: 0.44s;
 }
 
+.wim-mic-wave {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
+    width: 14px;
+}
+.wim-mic-wave span {
+    display: block;
+    width: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    animation: wim-mic-bar 0.9s ease-in-out infinite;
+}
+.wim-mic-wave span:nth-child(1) { height: 4px; animation-delay: 0s; }
+.wim-mic-wave span:nth-child(2) { height: 10px; animation-delay: 0.12s; }
+.wim-mic-wave span:nth-child(3) { height: 6px; animation-delay: 0.24s; }
+.wim-mic-wave span:nth-child(4) { height: 11px; animation-delay: 0.08s; }
+@keyframes wim-mic-bar {
+    0%, 100% { transform: scaleY(0.45); opacity: 0.7; }
+    50% { transform: scaleY(1); opacity: 1; }
+}
+@keyframes wim-composer-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+}
+@keyframes wim-msg-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+.wim-reply-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0 8px;
+}
+.wim-reply-skeleton span {
+    display: block;
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--text-muted, #888) 18%, transparent), color-mix(in srgb, var(--text-muted, #888) 32%, transparent), color-mix(in srgb, var(--text-muted, #888) 18%, transparent));
+    background-size: 200% 100%;
+    animation: wim-thought-shimmer 1.4s linear infinite;
+}
+.wim-reply-skeleton span:nth-child(1) { width: 88%; }
+.wim-reply-skeleton span:nth-child(2) { width: 72%; }
+.wim-reply-skeleton span:nth-child(3) { width: 54%; }
+
+@keyframes wim-composer-ready {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent, #1d4ed8) 0%, transparent); }
+    35% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1d4ed8) 35%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+
 @keyframes wim-think-dot {
     0%,
     70%,

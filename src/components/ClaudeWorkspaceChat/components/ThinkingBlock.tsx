@@ -61,7 +61,13 @@ function ReasoningActivity({
   )
 }
 
-function ToolActivity({ item }: { item: TimelineItem }) {
+function ToolActivity({
+  item,
+  onActivate,
+}: {
+  item: TimelineItem
+  onActivate?: (toolName: string, status: TimelineItem['status']) => void
+}) {
   const live = item.status === 'running'
   const status = live ? 'running' : item.status === 'error' ? 'error' : 'done'
   const labeled = item.toolName ? toolActivityTitle(item.toolName, status, item.args) : ''
@@ -74,15 +80,40 @@ function ToolActivity({ item }: { item: TimelineItem }) {
   const details = extra ? (
       <p className="m-0 text-[11.5px] leading-[1.4] tracking-tight text-muted">{extra}</p>
     ) : null
+  const clickable = Boolean(onActivate && item.toolName && !live)
   return (
-    <Activity
-      id={item.id}
-      title={title}
-      status={toActivityStatus(item.status)}
-      icon={toolIcon(item.toolName)}
-      animate={live}
-      details={details}
-    />
+    <div
+      className={clickable ? 'cursor-pointer rounded-sm hover:bg-accent/60' : undefined}
+      onClick={
+        clickable
+          ? (event) => {
+              event.stopPropagation()
+              onActivate?.(item.toolName || '', item.status)
+            }
+          : undefined
+      }
+      onKeyDown={
+        clickable
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onActivate?.(item.toolName || '', item.status)
+              }
+            }
+          : undefined
+      }
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+    >
+      <Activity
+        id={item.id}
+        title={title}
+        status={toActivityStatus(item.status)}
+        icon={toolIcon(item.toolName)}
+        animate={live}
+        details={details}
+      />
+    </div>
   )
 }
 
@@ -173,14 +204,16 @@ function TimelineRow({
   item,
   isLive,
   durationSeconds,
+  onToolActivate,
 }: {
   item: TimelineItem
   isLive: boolean
   durationSeconds?: number
+  onToolActivate?: (toolName: string, status: TimelineItem['status']) => void
 }) {
   if (item.kind === 'node') return null
   if (item.kind === 'plan') return <PlanningActivity item={item} isLive={isLive} />
-  if (item.kind === 'tool') return <ToolActivity item={item} />
+  if (item.kind === 'tool') return <ToolActivity item={item} onActivate={onToolActivate} />
   return <ReasoningActivity item={item} isLive={isLive} durationSeconds={durationSeconds} />
 }
 
@@ -190,21 +223,30 @@ interface ThinkingBlockProps {
   isLive?: boolean
   model?: ModelOption
   timestamp?: string
+  onToolActivate?: (toolName: string, status: TimelineItem['status']) => void
 }
 
 const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   thinking,
   toolTrace,
   isLive = false,
+  onToolActivate,
 }) => {
   const items = useMemo(
     () => buildThinkingTimeline(thinking?.steps || [], toolTrace).filter((item) => item.kind !== 'node'),
     [thinking?.steps, toolTrace]
   )
+  const [toolsOpen, setToolsOpen] = useState(isLive)
+  React.useEffect(() => {
+    if (isLive) setToolsOpen(true)
+  }, [isLive])
   const hasItems = items.length > 0
-  if (!hasItems && !isLive) return null
-
   const lastReasoningId = [...items].reverse().find((item) => item.kind === 'reasoning')?.id
+  const toolItems = items.filter((item) => item.kind === 'tool')
+  const restItems = items.filter((item) => item.kind !== 'tool')
+  const collapseTools = !isLive && toolItems.length > 1
+  const visible = collapseTools && !toolsOpen ? restItems : items
+  if (!hasItems && !isLive) return null
 
   return (
     <div className="wim-ask-thinking w-full max-w-full font-sans text-secondary space-y-1 mb-0">
@@ -216,12 +258,22 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
 
       {hasItems && (
         <div className="flex flex-col gap-1 w-full min-w-0">
-          {items.map((item) => (
+          {collapseTools ? (
+            <button
+              type="button"
+              onClick={() => setToolsOpen((open) => !open)}
+              className="flex w-fit items-center gap-1 rounded-sm px-0.5 text-left text-[12px] text-secondary hover:text-primary cursor-pointer"
+            >
+              {toolItems.length} tools · {toolsOpen ? 'hide' : 'open'}
+            </button>
+          ) : null}
+          {visible.map((item) => (
             <TimelineRow
               key={item.id}
               item={item}
               isLive={isLive}
               durationSeconds={item.id === lastReasoningId ? thinking.durationSeconds : undefined}
+              onToolActivate={onToolActivate}
             />
           ))}
         </div>

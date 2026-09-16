@@ -60,6 +60,7 @@ import {
     getNotebook,
     getNotebookHistory,
     getOrCreateDailyNotebook,
+    rememberRemoteNotebook,
     restoreNotebookFromTrash,
     restoreNotebookVersion,
     unpinNotebookFromDesktop,
@@ -1356,6 +1357,20 @@ test.describe('notebook frontend helpers', () => {
         expect(restored?.content).toBe('trash-body')
         expect(getNotebook(notebook.id)?.title).toBe('Bin me')
         deleteNotebook(notebook.id)
+        emptyNotebookTrash()
+    })
+
+    test('joining a shared notebook unhides a locally tombstoned id', () => {
+        if (typeof localStorage === 'undefined') return
+        const notebook = createNotebook('Shared later', 'body')
+        deleteNotebook(notebook.id)
+        expect(getNotebook(notebook.id)).toBeUndefined()
+        rememberRemoteNotebook({
+            ...notebook,
+            access_role: 'editor',
+            content: 'body',
+        })
+        expect(getNotebook(notebook.id)?.title).toBe('Shared later')
         emptyNotebookTrash()
     })
 

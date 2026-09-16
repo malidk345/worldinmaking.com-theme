@@ -4,9 +4,9 @@
  */
 import { supabaseAdmin } from './supabase-admin'
 import { getCollaboratorRole, listCollaboratorRoles } from './notebook-collaborators'
+import { clearSyncTombstoneForOwner, hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
 import { canWriteNotebook, type NotebookAccessRole } from '../src/lib/notebook-sharing'
 import { notifyNotebookComments, notifyNotebookMentions } from './notebook-mentions'
-import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from './sync-tombstones'
 
 export type NotebookPublishMeta = {
     publicTitle?: string
@@ -425,11 +425,12 @@ export async function upsertNotebook(
     nb: StoredNotebookDTO,
     ownerKey: string,
     userId?: string,
-    extraOwnerKeys: string[] = []
+    extraOwnerKeys: string[] = [],
+    opts?: { restore?: boolean }
 ): Promise<StoredNotebookDTO> {
     const { data: existing, error: findErr } = await supabaseAdmin
         .from('wim_notebooks')
-        .select('id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template, content')
+        .select('id, short_id, owner_key, auth_user_id, version, deleted_at, is_published, publish, pinned, is_template, content')
         .or(`id.eq.${nb.id},short_id.eq.${nb.id}`)
         .limit(1)
         .maybeSingle()
@@ -456,15 +457,16 @@ export async function upsertNotebook(
         if (role === 'owner' && userId) {
             nb.auth_user_id = current.auth_user_id || userId
         }
-        if (current.deleted_at) {
-            const err = new Error('Notebook was deleted') as Error & { status?: number }
-            err.status = 410
-            throw err
-        }
-        if (await hasSyncTombstone('notebook', nb.id)) {
-            const err = new Error('Notebook was deleted') as Error & { status?: number }
-            err.status = 410
-            throw err
+        if (current.deleted_at || (await hasSyncTombstone('notebook', nb.id))) {
+            if (!opts?.restore || role !== 'owner') {
+                const err = new Error('Notebook was deleted') as Error & { status?: number }
+                err.status = 410
+                throw err
+            }
+            await clearSyncTombstoneForOwner('notebook', current.id, persistOwnerKey, userId)
+            if (current.short_id && current.short_id !== current.id) {
+                await clearSyncTombstoneForOwner('notebook', current.short_id, persistOwnerKey, userId)
+            }
         }
 
         const currentDbVersion = Number(current.version || 1)
@@ -494,10 +496,22 @@ export async function upsertNotebook(
             nb.isTemplate = current.is_template ?? nb.isTemplate
         }
     } else {
-        if (await hasSyncTombstone('notebook', nb.id)) {
-            const err = new Error('Notebook was deleted') as Error & { status?: number }
-            err.status = 410
-            throw err
+        if (await hasSyncTombstone('notebook', nb.id) || (nb.short_id && (await hasSyncTombstone('notebook', nb.short_id)))) {
+            if (!opts?.restore) {
+                const err = new Error('Notebook was deleted') as Error & { status?: number }
+                err.status = 410
+                throw err
+            }
+            const clearedId = await clearSyncTombstoneForOwner('notebook', nb.id, ownerKey, userId)
+            const clearedShort =
+                nb.short_id && nb.short_id !== nb.id
+                    ? await clearSyncTombstoneForOwner('notebook', nb.short_id, ownerKey, userId)
+                    : false
+            if (!clearedId && !clearedShort) {
+                const err = new Error('Notebook was deleted') as Error & { status?: number }
+                err.status = 410
+                throw err
+            }
         }
         nb.version = Math.max(1, Number(nb.version || 1))
     }
@@ -724,6 +738,21 @@ async function purgeNotebookData(notebookId: string, _ownerKey?: string): Promis
         .delete()
         .eq('notebook_id', notebookId)
         .catch((e) => console.error('[purgeNotebookData] history delete error', e))
+    await supabaseAdmin
+        .from('wim_notebook_collaborators')
+        .delete()
+        .eq('notebook_id', notebookId)
+        .catch((e) => console.error('[purgeNotebookData] collaborators delete error', e))
+    await supabaseAdmin
+        .from('wim_notebook_invites')
+        .delete()
+        .eq('notebook_id', notebookId)
+        .catch((e) => console.error('[purgeNotebookData] invites delete error', e))
+    await supabaseAdmin
+        .from('wim_notebook_notifications')
+        .delete()
+        .eq('notebook_id', notebookId)
+        .catch((e) => console.error('[purgeNotebookData] notifications delete error', e))
 }
 
 export async function listHistory(notebookId: string): Promise<NotebookVersionDTO[]> {

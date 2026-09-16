@@ -42,7 +42,7 @@
   3. **Desktop OS & Workspace Automation:**
      - `arrange_workspace_preset`: Contextual workspace layouts (deep_reading, studio, minimal, split_dual, research) (Completed).
      - `export_notebook`: Compiling notebook into standalone publication-ready documents (markdown with TOC, LaTeX article, styled HTML5, text) (Completed).
-     - `run_code_sandbox`: Lightweight calculation and visualization sandbox (Planned).
+     - `run_code_sandbox`: Isolated QuickJS calculation sandbox on storage Worker `POST /eval` (Completed — Edge client, no Node `vm`).
   4. **Interactive Notebook & Learning Tools:**
      - `create_concept_map`: Visualizing idea networks and philosophical concept relationships via interactive vector canvas artifacts with auto-grid layout (Completed).
      - `generate_flashcards`: Automatic active recall / spaced repetition study decks with optional notebook block saving (Completed).
@@ -57,6 +57,49 @@
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-17 — Grok 4.6 (LLM micro-UX + ask_user question in thread)
+- **Scope:** First-token skeleton; message fade-in; scroll-to-bottom pulses while streaming if scrolled away (follow already existed); done tools collapse to “N tools · open”; citation favicon chips with title + link; follow-up chips; Continue on stopped; URL paste → chip; cycling placeholder. Code copy already had Copied ✓. Send button color untouched. ask_user: pipeline interrupt + composer answer still work; pending question now also renders in the thread (form stays in composer so empty Enter cannot send Yes).
+- **Files:** ChatInput.tsx, ChatMessage.tsx, ThinkingBlock.tsx, ClaudeWorkspaceChat/index.tsx, global.css
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Follow-ups are local suggestions, not a second model call.
+
+### 2026-09-17 — Grok 4.6 (WIM AI composer + message UX micro-interactions)
+- **Scope:** Send/Stop press scale + ready pulse; empty-chat chip hover preview; Plan mutating-starter shake; mode ring; quota meter; mic waveform; bound notebook + selection line count; tool rows clickable to sources/artifact; assistant actions hover-only on desktop; thinking/reply layers; artifact card press. Philosopher chip untouched.
+- **Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `ChatMessage.tsx`, `ThinkingBlock.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/styles/global.css`
+- **Verify:** `pnpm typecheck:shell` PASS. Playwright not run.
+- **Handoff:** Window chrome unchanged.
+
+### 2026-09-17 — Grok 4.6 (Owner unshare/delete drops the other device's shared copy)
+- **Scope:** Successful remote pull now removes local editor/viewer notebooks that are no longer in the server list (owner deleted or kicked the collaborator) and puts them in Trash. Owner delete also purges collaborator/invite/notification rows so the other account is not left attached.
+- **Files:** `src/notebook-app/scenes/notebooks/notebookRemote.ts`, `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `lib/notebooks-repo.ts`, `tests/account-sync.spec.ts`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Other device updates on next live pull (~20s) or window focus.
+
+### 2026-09-16 — Grok 4.6 (Notebook trash restore + shared delete/join)
+- **Scope:** Restore from trash now sends `restore: true` and clears the owner's tombstone so the notebook can live on the server again (410 no longer re-hides it). Shared notebooks are left, not owner-deleted. Invite/pull `rememberRemoteNotebook` unhides a locally tombstoned id.
+- **Files:** `lib/sync-tombstones.ts`, `lib/notebooks-repo.ts`, `src/pages/api/notebooks/index.ts`, `src/pages/api/notebooks/[id].ts`, `src/notebook-app/scenes/notebooks/notebookRemote.ts`, `src/notebook-app/scenes/notebooks/notebookStorage.ts`, `tests/notebook-frontend.spec.ts`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Owner delete → trash → Restore should round-trip. Shared list still uses Leave.
+
+### 2026-09-16 — Grok 4.6 (Existing architecture: chat docs, path-first windows, notebook short_id merge)
+- **Scope:** Chat quota docs now match `checkRateLimitDurable` fail-closed. WindowRouter treats all known OS routes as path-first (F5 empty Next shell skipped). Notebook list merge collapses duplicate `short_id` rows. Live schema dump: 49 tables, notebook/chat/tombstone RLS on.
+- **Files:** `docs/architecture/WIM_AI.md`, `AGENTS.md`, `src/lib/window-path.ts`, `src/components/AppWindow/WindowRouter.tsx`, `src/notebook-app/scenes/notebooks/notebookRemote.ts`, `tests/window-path.spec.ts`, `tests/account-sync.spec.ts`, `docs/architecture/SUPABASE_LIVE_SCHEMA.md`
+- **Verify:** `pnpm typecheck:shell` PASS. Live dump via Management API (token not stored in repo).
+- **Handoff:** PAT was used only in-process for schema dump; rotate when you want. Feature cards (remember sync, Vectorize, daily reflection) still deferred.
+
+### 2026-09-16 — Grok 4.6 (PR2: SM-2 study decks wired to generate_flashcards)
+- **Scope:** Replaced MOCK_DECK with SuperMemo-2 decks. `generate_flashcards` returns `deck_id` + SM-2 fields and emits `open_window` `/study?deck=`. Client persists via `StudyDeckStore`. Study window grades 1–4 update due dates. Desktop Flashcards icon at `/study`; membership Study icon stays on `/pricing`. SITE_APPS: Plans=`/pricing`, Flashcards=`/study`.
+- **Files:** `src/lib/study-sm2.ts`, `src/lib/study-sm2.test.ts`, `src/lib/study-deck-store.ts`, `src/components/Study/FlashcardStudyWindow.tsx`, `src/lib/bots/tools/execute.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/components/AppWindow/WindowRouter.tsx`, `src/lib/bots/tools/host.ts`, `src/components/Desktop/desktopApps.tsx`, `src/context/hooks/useWindowRegistry.ts`, `src/lib/bots/tools/execute-roadmap-tools.test.ts`, `tests/study-window.spec.ts`, `scripts/typecheck-shell.mjs`, `tsconfig.shell.json`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell` PASS; `pnpm exec vitest run --environment node src/lib/study-sm2.test.ts` 4 passed; generate_flashcards cases in execute-roadmap-tools.test.ts passed. Playwright spec updated (not run).
+- **Handoff:** Next plan cards PR3 durable scratchpad sync, PR4 fetch/OA, PR5 daily_reflection, PR6 corpus, PR7 Vectorize, PR8 docs.
+
+### 2026-09-16 — Grok 4.6 (PR1: Edge-safe run_code_sandbox via Worker QuickJS)
+- **Scope:** Removed Node `vm` from the chat Edge bundle. `executeCodeSandbox` is now a thin Worker client (`POST /eval`, AbortSignal, fail-closed). Storage worker runs QuickJS WASM (empty realm, 200ms interrupt, 8MB memory, 64KB in/out, no host APIs).
+- **Files (app):** `src/lib/bots/tools/run-code-sandbox.ts`, `src/lib/bots/tools/run-code-sandbox.test.ts`, `src/lib/bots/tools/run-code-sandbox.abort.test.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Files (worker sibling `worldinmaking-storage-full`):** `src/sandbox-eval.ts`, `src/index.ts` (`POST /eval|/code`), `package.json` (`quickjs-emscripten-core`, `@jitl/quickjs-singlefile-browser-release-sync`)
+- **Verify:** `pnpm typecheck:shell` PASS; `pnpm exec vitest run --environment node src/lib/bots/tools/run-code-sandbox.test.ts src/lib/bots/tools/run-code-sandbox.abort.test.ts` 6 passed; worker `wrangler deploy --dry-run` compiled (gzip ~281 KiB).
+- **Handoff:** Deploy storage worker (`npx wrangler deploy` in `worldinmaking-storage-full`) before production sandbox works. No git push. Next plan card: PR2 SM-2 study decks.
 
 ### 2026-09-16 — Antigravity (Multi-Provider Academic Corpus, Shadow Archive Resolvers, PDF Document Ingestion & Natural Voice Player)
 - **Scope:** 

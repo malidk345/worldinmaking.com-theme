@@ -83,7 +83,9 @@ export default async function handler(req: Request) {
 
             const notebook = (body.notebook || { ...body, id }) as StoredNotebookDTO
             notebook.id = notebook.id || id
-            const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId, extraOwnerKeys)
+            const saved = await upsertNotebook(notebook, auth.ownerKey, auth.userId, extraOwnerKeys, {
+                restore: body.restore === true,
+            })
 
             if (Array.isArray(body.history_entries)) {
                 try {

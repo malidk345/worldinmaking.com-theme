@@ -37,6 +37,7 @@ interface ChatMessageProps {
   onAddToNotebook?: (message: Message) => void;
   onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
+  onContinue?: (messageId: string) => void;
 }
 
 function formatExactTime(ts?: string): string {
@@ -389,13 +390,15 @@ function HumanTurnCard({
   turn,
   disabled,
   onRespond,
+  hideForm,
 }: {
   turn: HumanTurn
   disabled?: boolean
   onRespond: (action: 'run' | 'revise' | 'answer', payload?: string) => void
+  hideForm?: boolean
 }) {
   const [draft, setDraft] = useState('')
-  const pending = turn.status === 'pending' && !disabled
+  const pending = turn.status === 'pending' && !disabled && !hideForm
   if (turn.kind === 'plan_approval') {
     return (
       <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">
@@ -513,6 +516,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   onAddToNotebook,
   onOpenByok,
   typewriterSpeed = 'smooth',
+  onContinue,
 }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -582,7 +586,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         </div>
       ) : (
         /* ASSISTANT MESSAGE: philosopher header with thinking on the same row, full-width reply */
-        <div className="space-y-1.5 text-primary">
+        <div className="group/assistant space-y-1.5 text-primary [animation:wim-msg-in_220ms_ease-out]">
           <div className="w-full min-w-0">
             <ThinkingBlock
               model={
@@ -601,6 +605,25 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               }
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
+              onToolActivate={(toolName) => {
+                if (
+                  (toolName === 'web_search' ||
+                    toolName === 'search_site' ||
+                    toolName === 'search_academic_corpus' ||
+                    toolName === 'academic_search') &&
+                  message.citations?.length
+                ) {
+                  onOpenSources?.(message.citations)
+                }
+                if (
+                  (toolName === 'generate_image' ||
+                    toolName === 'generate_chart' ||
+                    toolName === 'create_artifact') &&
+                  message.artifacts?.[0]
+                ) {
+                  onOpenArtifact?.(message.artifacts[0])
+                }
+              }}
             />
           </div>
 
@@ -609,6 +632,13 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           <div
             className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-primary break-words [overflow-wrap:anywhere]"
           >
+            {isLiveAnswer && !displayedText ? (
+              <div className="wim-reply-skeleton" aria-hidden>
+                <span />
+                <span />
+                <span />
+              </div>
+            ) : null}
             {message.errorKind ? (
               <InquiryStatusCard
                 kind={message.errorKind}
@@ -718,7 +748,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   key={art.id}
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
-                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.985] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer"
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.96] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer origin-left"
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">
@@ -738,10 +768,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {message.humanTurn && message.humanTurn.status !== 'pending' ? (
+          {message.humanTurn ? (
             <HumanTurnCard
               turn={message.humanTurn}
               disabled={!!message.isStreaming}
+              hideForm={message.humanTurn.status === 'pending'}
               onRespond={(action, payload) => onHumanRespond?.(message.id, action, payload)}
             />
           ) : null}
@@ -756,11 +787,22 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
           {message.stopped ? (
-            <p className="m-0 pt-1 text-[12px] text-muted">Stopped</p>
+            <div className="flex items-center gap-2 pt-1">
+              <p className="m-0 text-[12px] text-muted">Stopped</p>
+              {onContinue ? (
+                <button
+                  type="button"
+                  onClick={() => onContinue(message.id)}
+                  className="rounded-md border border-primary/50 px-2 py-0.5 text-[12px] text-secondary hover:text-primary cursor-pointer"
+                >
+                  Continue
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           {!isLiveAnswer && (message.isTypingDone || message.stopped) && message.errorKind !== 'quota' && (
-            <div className="pt-1 flex items-center gap-1 text-muted font-sans">
+            <div className="pt-1 flex items-center gap-1 text-muted font-sans opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover/assistant:opacity-100 md:focus-within:opacity-100">
               {usedModel && (
                 <div className="flex items-center gap-1.5 py-0.5 px-1.5 rounded-md bg-accent/40 border border-primary/15 text-[11px] text-muted select-none">
                   <div className="size-3.5 shrink-0 rounded-full overflow-hidden border border-primary/20 bg-accent">
@@ -854,6 +896,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               )}
             </div>
           )}
+
           </div>
         </div>
       )}

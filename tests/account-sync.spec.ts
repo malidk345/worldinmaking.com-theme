@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { mergeChats, mergeMessages } from '../src/lib/chat-merge'
-import { mergeNotebookLists } from '../src/notebook-app/scenes/notebooks/notebookRemote'
+import { filterRevokedSharedNotebooks, mergeNotebookLists } from '../src/notebook-app/scenes/notebooks/notebookRemote'
 import { isSafeOwnerKey } from '../src/lib/account-claim'
 import { adoptDeviceCacheToAccount } from '../src/lib/adopt-device-cache'
 import { formatDisplayName } from '../src/lib/display-name'
@@ -48,6 +48,46 @@ test.describe('account sync merge', () => {
         expect(afterDeletePull.map((nb) => nb.id)).toEqual(['n1'])
         const afterEmptyPull = mergeNotebookLists(afterDeletePull as any, [], ['n2'])
         expect(afterEmptyPull.map((nb) => nb.id)).toEqual(['n1'])
+    })
+
+    test('notebook merge collapses the same short_id to one row', () => {
+        const local = [
+            {
+                id: 'uuid-local',
+                short_id: 'abc12',
+                title: 'Local copy',
+                content: 'keep this',
+                createdAt: '',
+                updatedAt: '2026-09-16T12:00:00.000Z',
+                version: 3,
+            },
+        ]
+        const remote = [
+            {
+                id: 'uuid-remote',
+                short_id: 'abc12',
+                title: 'Older remote id',
+                content: 'stale',
+                createdAt: '',
+                updatedAt: '2026-09-16T11:00:00.000Z',
+                version: 1,
+            },
+        ]
+        const merged = mergeNotebookLists(local as any, remote as any, [])
+        expect(merged).toHaveLength(1)
+        expect(merged[0].id).toBe('uuid-local')
+        expect(merged[0].content).toBe('keep this')
+    })
+
+    test('revoked shared notebooks drop on the other device, owned drafts stay', () => {
+        const local = [
+            { id: 'mine', short_id: 'mine', title: 'Mine', access_role: 'owner' },
+            { id: 'shared', short_id: 'sh', title: 'Theirs', access_role: 'editor' },
+            { id: 'view', short_id: 'vw', title: 'Read', access_role: 'viewer' },
+        ]
+        const { kept, revoked } = filterRevokedSharedNotebooks(local as any, new Set(['mine']))
+        expect(kept.map((nb) => nb.id)).toEqual(['mine'])
+        expect(revoked.map((nb) => nb.id).sort()).toEqual(['shared', 'view'])
     })
 
     test('messages from both devices are kept', () => {

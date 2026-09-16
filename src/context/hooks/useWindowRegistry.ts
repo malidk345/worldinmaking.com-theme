@@ -804,6 +804,8 @@ export function useWindowRegistry({
                     ? 'WIM AI'
                     : path === '/pricing'
                     ? 'Study'
+                    : path === '/study' || path.startsWith('/study/') || path.startsWith('/study?')
+                    ? 'Flashcards'
                     : path === '/account'
                     ? 'Account'
                     : path === '/terms'

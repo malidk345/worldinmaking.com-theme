@@ -60,6 +60,13 @@ test.describe('window path', () => {
         expect(isPathRoutedWindow('/pricing')).toBe(true)
         expect(isPathRoutedWindow('/home')).toBe(true)
         expect(isPathRoutedWindow('/account')).toBe(true)
+        expect(isPathRoutedWindow('/about')).toBe(true)
+        expect(isPathRoutedWindow('/archive')).toBe(true)
+        expect(isPathRoutedWindow('/contact')).toBe(true)
+        expect(isPathRoutedWindow('/auth')).toBe(true)
+        expect(isPathRoutedWindow('/display-options')).toBe(true)
+        expect(isPathRoutedWindow('/terms')).toBe(true)
+        expect(isPathRoutedWindow('/community/profiles/ada')).toBe(true)
     })
 
     test('home window path is the guest landing, not other apps', () => {

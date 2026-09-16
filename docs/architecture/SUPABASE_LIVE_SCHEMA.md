@@ -285,6 +285,25 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `ALL` Admin or service can modify debates
   - `SELECT` Anyone can view debates
 
+## file_metadata
+
+- RLS: on
+- Columns:
+  - `file_id` uuid not null
+  - `owner_id` uuid not null
+  - `notebook_id` text
+  - `filename` text not null
+  - `mime_type` text not null
+  - `size` bigint not null
+  - `storage_key` text not null
+  - `category` text not null
+  - `created_at` timestamp with time zone not null
+- Policies:
+  - `DELETE` file_metadata_delete_own
+  - `INSERT` file_metadata_insert_own
+  - `SELECT` file_metadata_select_own
+  - `UPDATE` file_metadata_update_own
+
 ## forum_mentions
 
 - RLS: on
@@ -341,17 +360,10 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `post_id` text not null
   - `created_at` timestamp with time zone not null
 - Policies:
-  - `ALL` post_likes_all
-  - `DELETE` Users can unlike posts
-  - `DELETE` post_likes_delete_own
-  - `DELETE` Üyeler beğenisini geri alabilir
-  - `INSERT` Users can like posts
-  - `INSERT` post_likes_insert_own
-  - `INSERT` Üyeler beğeni atabilir
-  - `SELECT` Herkes beğenileri görebilir
-  - `SELECT` Likes are public
+  - `DELETE` post_likes_delete_own_v2
+  - `INSERT` post_likes_insert_own_v2
   - `SELECT` post_likes_public_read
-  - `SELECT` post_likes_select_own
+  - `SELECT` post_likes_public_read_v3
 
 ## post_votes
 
@@ -367,20 +379,11 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `post_slug` text not null
   - `vote` integer not null
 - Policies:
-  - `ALL` manage_own_post_votes
-  - `ALL` post_votes_all
-  - `DELETE` manage_own_post_votes_delete
-  - `DELETE` post_votes_delete_own
-  - `DELETE` Üyeler oyunu silebilir
-  - `INSERT` manage_own_post_votes_insert
-  - `INSERT` post_votes_insert_own
-  - `INSERT` Üyeler oy kullanabilir
-  - `SELECT` Herkes oyları görebilir
-  - `SELECT` manage_own_post_votes_read
-  - `SELECT` post_votes_select_public
-  - `UPDATE` manage_own_post_votes_update
-  - `UPDATE` post_votes_update_own
-  - `UPDATE` Üyeler oyunu güncelleyebilir
+  - `DELETE` post_votes_delete_own_v2
+  - `INSERT` post_votes_insert_own_v2
+  - `SELECT` post_votes_public_read_v3
+  - `SELECT` post_votes_select_public_v2
+  - `UPDATE` post_votes_update_own_v2
 
 ## posts
 
@@ -463,6 +466,7 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `first_name` text
   - `last_name` text
   - `contact_email` text
+  - `avatar_key` text
 - Policies:
   - `INSERT` profiles_insert_own
   - `SELECT` profiles_public_read
@@ -486,6 +490,23 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
 - Policies:
   - `ALL` Service role can manage all subscriptions
   - `SELECT` Users can view own subscription
+
+## user_assistant
+
+- RLS: on
+- Columns:
+  - `user_id` uuid not null
+  - `philosopher_id` text
+  - `notices` jsonb not null
+  - `answers` jsonb not null
+  - `memory` jsonb not null
+  - `cadence` jsonb not null
+  - `watch_meta` jsonb not null
+  - `updated_at` timestamp with time zone not null
+- Policies:
+  - `INSERT` user_assistant_insert_own
+  - `SELECT` user_assistant_select_own
+  - `UPDATE` user_assistant_update_own
 
 ## user_notifications
 
@@ -514,19 +535,9 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `post_title` text
   - `saved_at` timestamp with time zone not null
 - Policies:
-  - `ALL` saved_posts_owner
-  - `ALL` user_saved_posts_all
   - `DELETE` Users can unsave posts
-  - `DELETE` saved_posts_owner_delete
-  - `DELETE` user_saved_posts_delete_own
   - `INSERT` Users can save posts
-  - `INSERT` saved_posts_owner_insert
-  - `INSERT` user_saved_posts_insert_own
   - `SELECT` Users can view own saved posts
-  - `SELECT` saved_posts_owner_read
-  - `SELECT` user_saved_posts_select_own
-  - `UPDATE` saved_posts_owner_update
-  - `UPDATE` user_saved_posts_update_own
 
 ## user_thread_subscriptions
 
@@ -552,24 +563,6 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `SELECT` user_worlds_select_own
   - `UPDATE` user_worlds_update_own
 
-## user_assistant
-
-- RLS: on
-- Source: `supabase/migrations/20260911_user_assistant.sql`
-- Columns:
-  - `user_id` uuid not null (pk, auth.users)
-  - `philosopher_id` text
-  - `notices` jsonb not null
-  - `answers` jsonb not null
-  - `memory` jsonb not null
-  - `cadence` jsonb not null
-  - `watch_meta` jsonb not null
-  - `updated_at` timestamptz not null
-- Policies:
-  - `SELECT` user_assistant_select_own
-  - `INSERT` user_assistant_insert_own
-  - `UPDATE` user_assistant_update_own
-
 ## wim_applications
 
 - RLS: on
@@ -594,6 +587,7 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `error` text
   - `created_at` timestamp with time zone not null
   - `updated_at` timestamp with time zone not null
+  - `idempotency_key` text
 - Policies: none
 
 ## wim_chat_messages
@@ -713,6 +707,22 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
 - Policies:
   - `SELECT` wim_notebook_invites_select
 
+## wim_notebook_notifications
+
+- RLS: on
+- Columns:
+  - `id` uuid not null
+  - `user_id` uuid not null
+  - `notebook_id` text not null
+  - `kind` text not null
+  - `actor_id` uuid
+  - `excerpt` text not null
+  - `created_at` timestamp with time zone not null
+  - `dismissed_at` timestamp with time zone
+- Policies:
+  - `SELECT` wim_notebook_notifications_select
+  - `UPDATE` wim_notebook_notifications_update
+
 ## wim_notebooks
 
 - RLS: on
@@ -733,6 +743,8 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `last_modified_by` jsonb
   - `auth_user_id` uuid
   - `deleted_at` timestamp with time zone
+  - `organize` jsonb
+  - `preview` text not null
 - Policies:
   - `DELETE` wim_notebooks_auth_delete
   - `DELETE` wim_notebooks_owner_delete

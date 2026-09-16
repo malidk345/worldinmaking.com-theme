@@ -42,6 +42,7 @@ import { findMatchingWindow } from '../../lib/os/window-finder';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import { ScratchpadStore } from '../../lib/scratchpad-store';
+import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
   type NotebookChatBind,
@@ -433,6 +434,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const executedActionsRef = useRef(new Set<string>());
   const [composerDraft, setComposerDraft] = useState('');
   const [composerDraftNonce, setComposerDraftNonce] = useState(0);
+  const [lockShakeNonce, setLockShakeNonce] = useState(0);
   const [isWindowDragging, setIsWindowDragging] = useState(false);
   const [incomingAttachments, setIncomingAttachments] = useState<FileAttachment[]>([]);
   const dragCounterRef = useRef(0);
@@ -1383,6 +1385,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                     tags: args.tags,
                   });
                 }
+              } catch {
+                /* ignore */
+              }
+            }
+            if (
+              (parsed.tool.name === 'generate_flashcards' ||
+                parsed.tool.name === 'create_flashcards' ||
+                parsed.tool.name === 'flashcards' ||
+                parsed.tool.name === 'study_flashcards' ||
+                parsed.tool.name === 'make_flashcards') &&
+              parsed.tool.status === 'done'
+            ) {
+              try {
+                const parsedResult = JSON.parse(parsed.tool.result || '{}') as Record<string, unknown>
+                StudyDeckStore.upsertFromToolResult(parsedResult)
               } catch {
                 /* ignore */
               }
@@ -2410,13 +2427,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   <button
                     key={starter.label}
                     type="button"
+                    title={starter.preview}
                     onClick={() => {
+                      const mutating = 'mutating' in starter && starter.mutating
+                      if (mutating && (activeChat?.agentMode || 'ask') === 'plan') {
+                        setLockShakeNonce((n) => n + 1)
+                      }
                       setComposerDraft(starter.prompt)
                       setComposerDraftNonce((n) => n + 1)
                     }}
-                    className="rounded-full border border-primary/50 bg-primary/80 px-3 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
+                    className="group/starter relative rounded-full border border-primary/50 bg-primary/80 px-3 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
                   >
-                    {starter.label}
+                    {starter.label === 'Write to notebook' && notebookBind?.title
+                      ? `Write to ${notebookBind.title}`
+                      : starter.label}
+                    <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 hidden w-max max-w-[220px] -translate-x-1/2 rounded border border-primary bg-primary px-2 py-1 text-[11px] leading-snug text-secondary shadow-sm group-hover/starter:block">
+                      {starter.preview}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -2446,6 +2473,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
                   onOpenByok={() => setSidebarOpen(true)}
                   typewriterSpeed={settings.typewriterSpeed}
+                  onContinue={() => {
+                    void handleSendMessage('Continue.', [])
+                  }}
                 />
               ))}
               <div ref={chatBottomRef} className="h-px w-full" />
@@ -2481,6 +2511,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               boundNotebookTitle={activeNotebookInfo?.title}
               agentMode={activeChat?.agentMode || 'ask'}
               onAgentModeChange={handleAgentModeChange}
+              lockShakeNonce={lockShakeNonce}
 
               onDismissNotebookContext={() => {
                 if (activeNotebookInfo?.id) {
