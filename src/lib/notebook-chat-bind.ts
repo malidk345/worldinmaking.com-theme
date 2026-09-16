@@ -145,14 +145,17 @@ export function isNotebookTask(prompt: string): boolean {
     const doc =
         /(notebook|defter|belge|doküman|dokuman|\bdocument\b|bu not|this note|bu metin|this text|this paragraph|bu paragraf|bu pasaj|this passage|seçili|secili|\bselection\b|outline|içindekiler)/i
     const edit =
-        /(rewrite|edit|insert|append|replace|revise|düzelt|duzelt|değiştir|degistir|ekle\b|kısalt|kisalt|genişlet|genislet|yazmaya devam|continue writing|özetle|ozetle|summarize)/i
+        /(rewrite|edit|insert|append|replace|revise|düzelt|duzelt|değiştir|degistir|ekle\b|kısalt|kisalt|genişlet|genislet|yazmaya devam|continue writing|özetle|ozetle|summarize|seslendir|sesli oku|sesli not|voice|narrate|speak|read aloud|dinlet)/i
     const here = /(burayı|burayi|şunu|sunu|\bhere\b|\bthis\b|seçili|secili)/i
+    if (/(seslendir|sesli oku|sesli not|seslendirir misin|\bvoice note\b|\bread aloud\b|\bnarrate\b)/i.test(text)) {
+        return true
+    }
     if (askOnly.test(text) && !edit.test(text) && !/\b(notebook|defter|bu metin|this text|seçili|secili)\b/i.test(text)) {
         return false
     }
     if (doc.test(text) && edit.test(text)) return true
     if (here.test(text) && edit.test(text)) return true
-    if (/^(edit|rewrite|revise|düzelt|duzelt|kısalt|kisalt|genişlet|genislet|özetle|ozetle)\b/i.test(text) && text.length < 220) {
+    if (/^(edit|rewrite|revise|düzelt|duzelt|kısalt|kisalt|genişlet|genislet|özetle|ozetle|seslendir)\b/i.test(text) && text.length < 220) {
         return true
     }
     return false
@@ -162,6 +165,7 @@ export const NOTEBOOK_AVAILABLE_INSTRUCTION = `
 A notebook is bound in this OS. That is optional background, not the current task.
 - Answer the Query / Prompt first. Do not summarize, quote, or steer toward the notebook or scratchpad unless the query is about them.
 - Use notebook tools only if the query asks to read, edit, append, or save to the notebook.
+- If the user asks to narrate, read aloud, or voice the note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"), call synthesize_speech with the notebook content.
 `.trim()
 
 /** Short pointer for ordinary chat so a bound notebook does not become the subject. */
@@ -188,5 +192,6 @@ You have full agentic authority to edit, restructure, and rewrite the bound note
 - Append/add notes: Call insert_notebook_block.
 - Rename/title: Call update_notebook_title.
 - Interactive UI/diagrams: If they ask to make an interactive screen, flowchart, or chart, emit create_artifact.
+- Voice narration: If the user asks to speak, narrate, or voice the note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"), call synthesize_speech with the notebook content.
 - Do not dump the entire markdown content into the chat bubble after calling a notebook tool — the host updates the notebook live with time-travel snapshots.
 `.trim()

@@ -58,6 +58,23 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-16 — Antigravity (Multi-Provider Academic Corpus, Shadow Archive Resolvers, PDF Document Ingestion & Natural Voice Player)
+- **Scope:** 
+  1. Expanded `search_academic_corpus` across global repositories (PubMed / PMC via NCBI E-Utilities, OpenAlex, Crossref, arXiv, Semantic Scholar with soft rate-limit handling, and Unpaywall automatic OA PDF resolution).
+  2. Added direct Open Access PDF links and alternative archive resolvers (Sci-Hub, Anna's Archive, Google Scholar, Unpaywall) on all scholarly results.
+  3. Upgraded `read_document` (`executeReadDocument`) to safely follow up to 4 HTTP redirects (e.g. arXiv `/pdf/...` redirects) while enforcing strict SSRF host validation and Cloudflare DoH public IP checks on each hop.
+  4. Updated tool instructions and aliases (`read_paper`, `read_article`, `find_paper`, `search_academic`, `query_academic`) directing the AI to inspect and read full paper PDFs whenever requested.
+  5. Refined `RetroVoiceNotePlayer` and TTS synthesis: natural Turkish voices (Tolga, Emel, Google TTS) configured as default, notebook content bound cleanly (`getNotebook(notebookId)`) avoiding chatbot pleasantries in voice notes, sleek full-width single-row scrub bar, and strictly 100% English UI labels.
+- **Files:** `src/lib/bots/academic-search.ts`, `src/lib/bots/tools/read-document.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/spec.ts`, `src/components/AudioPlayer/RetroVoiceNotePlayer.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `.gitignore`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell` (0 errors), `pnpm lint:shell` (0 errors).
+- **Handoff:** Ready for push. Committed and pushed to origin/main per user instruction.
+
+### 2026-09-16 — Gemini 3.8 Flash (Single-Row Long Scrubber Audio Note Player)
+- **Scope:** Streamlined `RetroVoiceNotePlayer` into a single, uncluttered horizontal row (`flex items-center`). Moved the scrub bar into the same row as controls, stretching it to full available width (`flex-1`) with a sleek playhead thumb indicator and hover expand. Removed extra visual clutter (headphones icon, redundant copy/mute buttons) keeping only essential controls: play/pause, title, full-length scrubber, time, speed pill (1x), notebook, and download. Uses 100% native `@posthog/icons`, `rounded` radius, and `border-primary/40`.
+- **Files:** `src/components/AudioPlayer/RetroVoiceNotePlayer.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell` (0 errors)
+- **Handoff:** Ready for user inspection on local dev server.
+
 ### 2026-09-15 — Grok Bot / Chief of Staff (read_post Stop aborts in-flight fetches)
 - **Scope:** Thread client `AbortSignal` into `executeReadPost` / `fetchSupabasePostBySlug` (via `fetchWithCache`) so Stop cancels in-flight post-by-slug Supabase fetches. Fail-closed with `client request aborted` (same pattern as #675/#677/#678/#679/#680); AbortError is never mapped to "post not found".
 - **Files:** `src/lib/bots/tools/host.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/supabaseBlog.ts`, `src/lib/bots/tools/read-post.abort.test.ts`, `WIM_REPORT.md`, `AI_MEMORY.md`
@@ -1850,11 +1867,37 @@
 - **Pass/Fail:** PASS
 
 
-### $(date +%Y-%m-%d) — Jules (Ask AI Quality Gate Presentation)
-- **Scope:** Changed Ask AI to display soft `qualityGate` outcomes as compact footnotes inside the chat bubble instead of mapping them to hard blocking error cards.
+### $(date +%Y-%m-%d) — Antigravity (Speech synthesis "notu seslendir" trigger & audio player playback fallback)
+- **Scope:** Fixed AI note voice narration triggering ("notu seslendir", "sesli oku", "voice note") and added seamless browser Web Speech API fallback.
+- **Root Cause:**
+  1. `isNotebookTask` did not match "seslendir" or speech verbs, causing `chat.ts` to clip notebook text from the context (`Notebook body omitted`).
+  2. `spec.ts` lacked Turkish trigger instructions and notebook binding guidance for `synthesize_speech`.
+  3. `modes.ts` excluded `synthesize_speech` from `PLAN_TOOL_NAMES`.
+  4. `execute.ts` lacked Turkish aliases (`seslendir`, `sesli_not`, `sesli_oku`, `read_aloud`) and didn't auto-fallback to reading bound notebook text if `text` was omitted.
+  5. `RetroVoiceNotePlayer` lacked Web Speech API fallback in case HTML5 audio playback encountered network or codec blocks.
 - **Files Modified:**
-  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx` (presentation logic added)
-  - `tests/chat-merge.spec.ts` (added test for state preservation over merge)
-- **Commands run:** `pnpm typecheck:shell`, `pnpm vitest run tests/chat-merge.spec.ts --environment node`
+  - `src/lib/notebook-chat-bind.ts`
+  - `src/lib/bots/agent/modes.ts`
+  - `src/lib/bots/tools/spec.ts`
+  - `src/lib/bots/tools/execute.ts`
+  - `src/components/AudioPlayer/RetroVoiceNotePlayer.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Commands run:** `pnpm typecheck:shell` (0 shell errors), `pnpm lint:shell` (0 errors)
 - **Pass/Fail:** PASS
-- **Handoff:** Next unfinished task from plan.
+- **Handoff:** Dev server is running locally on `http://localhost:3000`. User can test "notu seslendir" in chat with any open notebook.
+
+### $(date +%Y-%m-%d) — Antigravity (Notebook text priority & Natural Neural Voice Engine)
+- **Scope:** Fixed AI voicing chat commentary instead of notebook body, upgraded speech engine with studio-quality natural neural voice, and strictly enforced English UI strings across the entire player and chat components.
+- **Root Cause:**
+  1. Gemini passed its own conversational greeting ("Tabii ki, işte notunuzun...") into `synthesize_speech({ text })` instead of the notebook text.
+  2. `ChatMessage.tsx` passed `fullText={displayedText}` (`message.content`), causing the voice player to read the bot's chat bubble.
+  3. Cloudflare MeloTTS is a robotic English-based model without native Turkish phoneme support.
+- **Fixes Applied:**
+  1. `spec.ts`: Strict directive that `text` in `synthesize_speech` must only contain raw notebook body, never pleasantries or bot commentary.
+  2. `execute.ts`: Bound notebook content (`host.selection` / `host.notebooks`) takes precedence whenever text contains bot filler, and markdown syntax is stripped before TTS.
+  3. `ChatMessage.tsx`: Retrieves active notebook content via `getNotebook(notebookId)` and passes `notebookText`. Replaced fallback label `'Sesli Not'` with `'Voice Note'`.
+  4. `RetroVoiceNotePlayer.tsx`: Default mode set to **Natural** voice selecting high-definition Turkish neural voices (Tolga, Emel, Google), with a 1-click mode toggle between `Natural` and `Audio`. All frontend UI labels, buttons, tooltips, and attributes strictly in English (`Play`, `Pause`, `Natural`, `Audio`, `Click to seek`, `Add to notebook`, `Download audio`, `Playback speed`).
+- **Commands run:** `pnpm typecheck:shell` (0 shell errors), `pnpm lint:shell` (0 errors)
+- **Pass/Fail:** PASS
+- **Handoff:** Dev server active on `http://localhost:3000`.

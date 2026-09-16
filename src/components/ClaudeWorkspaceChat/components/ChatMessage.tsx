@@ -8,6 +8,7 @@ import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import { readNotebookChatBind, readNotebookSelection, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
+import { getNotebook } from '../../../notebook-app/scenes/notebooks/notebookStorage';
 import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
@@ -17,6 +18,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { RetroVoiceNotePlayer } from '../../AudioPlayer';
 
 dayjs.extend(relativeTime);
 
@@ -44,6 +46,66 @@ function formatExactTime(ts?: string): string {
   const d = dayjs(trimmed);
   if (d.isValid()) return d.format('HH:mm');
   return trimmed;
+}
+
+function isAudioLink(href?: string, text?: string): boolean {
+  if (!href || typeof href !== 'string') return false;
+  const cleanHref = href.toLowerCase().split('?')[0];
+  if (
+    cleanHref.endsWith('.mp3') ||
+    cleanHref.endsWith('.wav') ||
+    cleanHref.endsWith('.ogg') ||
+    cleanHref.endsWith('.m4a') ||
+    cleanHref.endsWith('.aac') ||
+    cleanHref.endsWith('.webm') ||
+    cleanHref.endsWith('.flac') ||
+    cleanHref.includes('/speech/') ||
+    cleanHref.includes('/speech') ||
+    cleanHref.includes('/audio/')
+  ) {
+    return true;
+  }
+  if (
+    text &&
+    (text.includes('🔊') ||
+      /dinle:/i.test(text) ||
+      /sesli not/i.test(text) ||
+      /voice memo/i.test(text) ||
+      /voice note/i.test(text))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function normalizeAudioMarkdown(text: string): string {
+  if (!text) return text;
+
+  // 1. If <audio ...> tag is present and the same URL is already present in a markdown link, strip the <audio> tag
+  let cleaned = text.replace(/<audio[^>]*src=["']([^"']+)["'][^>]*>(?:<\/audio>)?/gi, (_match, url) => {
+    const trimmedUrl = url.trim();
+    const escapedUrl = trimmedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const alreadyLinked = new RegExp(`\\]\\(\\s*${escapedUrl}\\s*\\)`).test(text);
+    if (alreadyLinked) {
+      return '';
+    }
+    return `[🔊 Voice Note](${trimmedUrl})`;
+  });
+
+  // 2. Deduplicate duplicate audio links with the exact same URL in the same message
+  const seenAudioUrls = new Set<string>();
+  cleaned = cleaned.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (fullMatch, label, href) => {
+    const cleanHref = href.trim();
+    if (isAudioLink(cleanHref, label)) {
+      if (seenAudioUrls.has(cleanHref)) {
+        return '';
+      }
+      seenAudioUrls.add(cleanHref);
+    }
+    return fullMatch;
+  });
+
+  return cleaned;
 }
 
 function ensureClosedCodeFences(markdown: string): string {
@@ -458,7 +520,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const displayedText = message.content;
   const isLiveAnswer = !isUser && !!message.isStreaming;
   const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
-  const markdownText = isLiveAnswer ? ensureClosedCodeFences(displayedText) : displayedText;
+  const textToProcess = normalizeAudioMarkdown(displayedText);
+  const markdownText = isLiveAnswer ? ensureClosedCodeFences(textToProcess) : textToProcess;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -562,6 +625,46 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     p: ({ children }: any) => (
                       <p className="mb-1.5 last:mb-0 leading-[1.42] break-words">{children}</p>
                     ),
+                    a({ href, children, ...props }: any) {
+                      const hrefStr = typeof href === 'string' ? href : '';
+                      const textContent = React.Children.toArray(children)
+                        .map((c: any) => (typeof c === 'string' ? c : ''))
+                        .join('');
+                      if (isAudioLink(hrefStr, textContent)) {
+                        const boundBind = typeof window !== 'undefined' ? readNotebookChatBind() : null;
+                        const boundNb = boundBind?.notebookId ? getNotebook(boundBind.notebookId) : null;
+                        const notebookContentToRead = boundNb?.content || readNotebookSelection() || '';
+
+                        return (
+                          <RetroVoiceNotePlayer
+                            src={hrefStr}
+                            title={textContent}
+                            notebookText={notebookContentToRead}
+                            onAddToNotebook={
+                              onAddToNotebook
+                                ? () => {
+                                    onAddToNotebook({
+                                      ...message,
+                                      content: `[🔊 ${textContent || 'Voice Note'}](${hrefStr})`,
+                                    });
+                                  }
+                                : undefined
+                            }
+                          />
+                        );
+                      }
+                      return (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-primary underline hover:opacity-80"
+                          {...props}
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
                     code({ node, inline, className, children, ...props }: any) {
                       const match = /language-(\w+)/.exec(className || '');
                       const codeContent = String(children).replace(/\n$/, '');

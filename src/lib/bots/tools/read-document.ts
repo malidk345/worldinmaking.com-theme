@@ -202,18 +202,7 @@ export async function executeReadDocument(
         }
     }
 
-    // 2. Fetch and parse remote URL
-    const blocked = isBlockedFetchUrl(rawUrl)
-    if (blocked) return { ok: false, error: blocked }
-
-    let parsed: URL
-    try {
-        parsed = new URL(rawUrl)
-    } catch {
-        return { ok: false, error: 'url is invalid' }
-    }
-    const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
-
+    // 2. Fetch and parse remote URL (following up to 3 redirects securely)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
     const onExternalAbort = () => controller.abort()
@@ -222,35 +211,74 @@ export async function executeReadDocument(
     try {
         if (signal?.aborted) return { ok: false, error: 'client request aborted' }
 
-        const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
-        if (!ipv4Literal && !parsedHost.includes(':')) {
-            const resolved = await assertPublicHostname(parsedHost, controller.signal)
-            if (resolved) return { ok: false, error: resolved }
+        let currentUrl = rawUrl
+        let res: Response | null = null
+        let lastHost = ''
+        let isLastIpv4Literal = false
+
+        for (let hop = 0; hop < 4; hop++) {
+            if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+
+            const blocked = isBlockedFetchUrl(currentUrl)
+            if (blocked) return { ok: false, error: blocked }
+
+            let parsed: URL
+            try {
+                parsed = new URL(currentUrl)
+            } catch {
+                return { ok: false, error: 'url is invalid' }
+            }
+            const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+            const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
+
+            if (!ipv4Literal && !parsedHost.includes(':')) {
+                const resolved = await assertPublicHostname(parsedHost, controller.signal)
+                if (resolved) return { ok: false, error: resolved }
+            }
+
+            lastHost = parsedHost
+            isLastIpv4Literal = ipv4Literal
+
+            const hopRes = await fetch(currentUrl, {
+                method: 'GET',
+                redirect: 'manual',
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'WorldInMaking-DocumentReader/1.0',
+                    Accept: 'application/pdf,text/csv,application/json,text/plain,text/markdown,text/html,*/*',
+                },
+            })
+
+            if (hopRes.status >= 300 && hopRes.status < 400) {
+                const location = hopRes.headers.get('location')
+                if (!location) {
+                    return { ok: false, error: `document fetch failed (${hopRes.status})` }
+                }
+                currentUrl = new URL(location, currentUrl).href
+                continue
+            }
+
+            res = hopRes
+            break
         }
 
-        const res = await fetch(rawUrl, {
-            method: 'GET',
-            redirect: 'error',
-            signal: controller.signal,
-            headers: {
-                'User-Agent': 'WorldInMaking-DocumentReader/1.0',
-                Accept: 'application/pdf,text/csv,application/json,text/plain,text/markdown,text/html,*/*',
-            },
-        })
+        if (!res) {
+            return { ok: false, error: 'too many redirects' }
+        }
 
         if (!res.ok) {
             return { ok: false, error: `document fetch failed (${res.status})` }
         }
 
-        if (!ipv4Literal && !parsedHost.includes(':')) {
-            const rebound = await assertPublicHostname(parsedHost, controller.signal)
+        if (!isLastIpv4Literal && !lastHost.includes(':')) {
+            const rebound = await assertPublicHostname(lastHost, controller.signal)
             if (rebound) return { ok: false, error: rebound }
         }
 
         const contentType = (res.headers.get('content-type') || '').toLowerCase()
-        const isPdf = rawUrl.toLowerCase().endsWith('.pdf') || contentType.includes('application/pdf')
-        const isCsv = rawUrl.toLowerCase().endsWith('.csv') || contentType.includes('text/csv')
-        const isJson = rawUrl.toLowerCase().endsWith('.json') || contentType.includes('application/json')
+        const isPdf = currentUrl.toLowerCase().endsWith('.pdf') || contentType.includes('application/pdf')
+        const isCsv = currentUrl.toLowerCase().endsWith('.csv') || contentType.includes('text/csv')
+        const isJson = currentUrl.toLowerCase().endsWith('.json') || contentType.includes('application/json')
 
         const arrayBuffer = await res.arrayBuffer()
         const buf = new Uint8Array(arrayBuffer)

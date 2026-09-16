@@ -26,6 +26,7 @@ export const PLAN_TOOL_NAMES = [
     'search_academic_corpus',
     'analyze_image',
     'transcribe_audio',
+    'synthesize_speech',
     'list_notebooks',
     'read_post',
     'write_scratchpad',

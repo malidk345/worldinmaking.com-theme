@@ -18,7 +18,7 @@ export interface AcademicPaper {
     pdfUrl?: string
     abstract?: string
     concepts?: string[]
-    source: 'OpenAlex' | 'Crossref' | 'ArXiv' | 'Semantic Scholar' | 'Philosophical Canon' | 'Web Search'
+    source: 'OpenAlex' | 'Crossref' | 'ArXiv' | 'Semantic Scholar' | 'PMC / PubMed' | 'Europe PMC' | 'Philosophical Canon' | 'Web Search'
 }
 
 export interface AcademicSearchOptions {
@@ -71,7 +71,7 @@ export function reconstructAbstract(invertedIndex?: Record<string, number[]> | n
     return full.length > maxChars ? `${full.slice(0, maxChars)}…` : full
 }
 
-/** Formats academic results into high-impact Markdown */
+/** Formats academic results into high-impact Markdown with direct PDF links and shadow archive resolvers */
 export function formatAcademicResults(papers: AcademicPaper[]): string {
     if (!papers || papers.length === 0) return 'No academic papers found matching the query.'
 
@@ -88,8 +88,21 @@ export function formatAcademicResults(papers: AcademicPaper[]): string {
                 item += `\n   - **DOI:** ${p.doi}`
             }
             if (p.pdfUrl) {
-                item += `\n   - **Open Access PDF:** ${p.pdfUrl}`
+                item += `\n   - **Open Access PDF:** [📄 Read / Download PDF](${p.pdfUrl})`
             }
+
+            // Build alternative archive & open scholarly repository access links
+            const cleanDoi = p.doi ? p.doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim() : ''
+            const archiveLinks: string[] = []
+            if (cleanDoi) {
+                archiveLinks.push(`[Sci-Hub](https://sci-hub.se/${cleanDoi})`)
+                archiveLinks.push(`[Unpaywall](https://unpaywall.org/${cleanDoi})`)
+            }
+            archiveLinks.push(`[Anna's Archive](https://annas-archive.org/search?q=${encodeURIComponent(p.doi || p.title)})`)
+            archiveLinks.push(`[Google Scholar](https://scholar.google.com/scholar?q=${encodeURIComponent(p.title)})`)
+
+            item += `\n   - **Alternative Archives:** ${archiveLinks.join(' · ')}`
+
             if (p.abstract) {
                 item += `\n   - **Abstract:** ${p.abstract}`
             }
@@ -110,7 +123,7 @@ export function formatApaBibliography(papers: AcademicPaper[]): string {
         return `${authors} ${year}. ${p.title}. ${venue}${doi}`
     })
 
-    return `### References / Kaynakça\n\n${lines.join('\n\n')}`
+    return `### References\n\n${lines.join('\n\n')}`
 }
 
 /**
@@ -390,6 +403,209 @@ async function queryCrossref(
 }
 
 /**
+ * Queries NCBI PubMed Central (PMC) via official E-Utilities API for peer-reviewed biomedical and scientific literature.
+ */
+async function queryNcbiPmc(
+    query: string,
+    limit = 3,
+    signal?: AbortSignal
+): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
+
+    try {
+        const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pmc&term=${encodeURIComponent(query)}&retmode=json&retmax=${Math.min(limit, 5)}`
+        const searchRes = await fetch(searchUrl, {
+            headers: { 'User-Agent': USER_AGENT },
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
+        })
+
+        if (!searchRes.ok) return []
+
+        const searchData = (await searchRes.json()) as {
+            esearchresult?: { idlist?: string[] }
+        }
+        const idList = searchData?.esearchresult?.idlist
+        if (!Array.isArray(idList) || idList.length === 0) return []
+
+        assertAcademicNotAborted(signal)
+
+        const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&id=${idList.join(',')}&retmode=json`
+        const summaryRes = await fetch(summaryUrl, {
+            headers: { 'User-Agent': USER_AGENT },
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
+        })
+
+        if (!summaryRes.ok) return []
+
+        const summaryData = (await summaryRes.json()) as {
+            result?: Record<string, any>
+        }
+        if (!summaryData?.result) return []
+
+        const papers: AcademicPaper[] = []
+
+        for (const uid of idList) {
+            const item = summaryData.result[uid]
+            if (!item || !item.title) continue
+
+            const cleanTitle = String(item.title).replace(/<[^>]*>/g, '').trim()
+            const authors: string[] = []
+            if (Array.isArray(item.authors)) {
+                for (const a of item.authors.slice(0, 4)) {
+                    if (a?.name) authors.push(String(a.name).trim())
+                }
+            }
+
+            let year: number | undefined
+            if (item.pubdate) {
+                const yearMatch = String(item.pubdate).match(/\b(19|20)\d{2}\b/)
+                if (yearMatch) year = parseInt(yearMatch[0], 10)
+            }
+
+            let doi: string | undefined
+            if (Array.isArray(item.articleids)) {
+                const doiEntry = item.articleids.find((aid: any) => aid?.idtype === 'doi')
+                if (doiEntry?.value) {
+                    doi = String(doiEntry.value).startsWith('http')
+                        ? String(doiEntry.value)
+                        : `https://doi.org/${doiEntry.value}`
+                }
+            }
+
+            // PMC articles are open-access full-text repository articles with downloadable PDF
+            const pdfUrl = `https://pmc.ncbi.nlm.nih.gov/articles/PMC${uid}/pdf/`
+
+            papers.push({
+                id: `pmc-${uid}`,
+                title: cleanTitle,
+                authors,
+                year,
+                venue: item.source ? String(item.source).trim() : 'PubMed Central',
+                citationCount: 0,
+                doi,
+                pdfUrl,
+                source: 'PMC / PubMed' as const,
+            })
+        }
+
+        return papers
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
+        return []
+    }
+}
+
+/**
+ * Queries Semantic Scholar Academic Graph API with graceful rate-limit handling.
+ */
+async function querySemanticScholar(
+    query: string,
+    limit = 3,
+    signal?: AbortSignal
+): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
+
+    try {
+        const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${Math.min(limit, 5)}&fields=title,authors,year,venue,citationCount,externalIds,openAccessPdf,abstract`
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': USER_AGENT,
+                Accept: 'application/json',
+            },
+            signal: searchFetchSignal(6_000, signal),
+        })
+
+        if (!res.ok) return []
+
+        const data = (await res.json()) as {
+            data?: Array<{
+                paperId: string
+                title?: string
+                year?: number
+                venue?: string
+                citationCount?: number
+                authors?: Array<{ name?: string }>
+                externalIds?: { DOI?: string; ArXiv?: string }
+                openAccessPdf?: { url?: string }
+                abstract?: string
+            }>
+        }
+
+        if (!Array.isArray(data?.data)) return []
+
+        return data.data.map((p) => {
+            const authors = (p.authors || [])
+                .map((a) => a.name?.trim())
+                .filter((n): n is string => Boolean(n))
+                .slice(0, 4)
+
+            const doi = p.externalIds?.DOI ? `https://doi.org/${p.externalIds.DOI}` : undefined
+            const pdfUrl =
+                p.openAccessPdf?.url ||
+                (p.externalIds?.ArXiv ? `https://arxiv.org/pdf/${p.externalIds.ArXiv}.pdf` : undefined)
+
+            let abstractText: string | undefined
+            if (typeof p.abstract === 'string') {
+                abstractText = p.abstract.trim()
+                if (abstractText.length > 500) abstractText = `${abstractText.slice(0, 500)}…`
+            }
+
+            return {
+                id: p.paperId || `s2-${Math.random()}`,
+                title: p.title?.trim() || 'Untitled Paper',
+                authors,
+                year: p.year,
+                venue: p.venue?.trim(),
+                citationCount: p.citationCount || 0,
+                doi,
+                pdfUrl,
+                abstract: abstractText,
+                source: 'Semantic Scholar' as const,
+            }
+        })
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
+        return []
+    }
+}
+
+/**
+ * Fast resolution of Open Access PDF via Unpaywall for papers with a DOI but no direct PDF.
+ */
+async function resolveOaPdfViaUnpaywall(doi: string, signal?: AbortSignal): Promise<string | undefined> {
+    assertAcademicNotAborted(signal)
+
+    const cleanDoi = doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim()
+    if (!cleanDoi) return undefined
+
+    try {
+        const url = `https://api.unpaywall.org/v2/${encodeURIComponent(cleanDoi)}?email=dursunkayamustafa@gmail.com`
+        const res = await fetch(url, {
+            headers: { 'User-Agent': USER_AGENT },
+            signal: searchFetchSignal(4_000, signal),
+        })
+
+        if (!res.ok) return undefined
+
+        const data = (await res.json()) as {
+            is_oa?: boolean
+            best_oa_location?: { url_for_pdf?: string; url?: string }
+        }
+
+        if (data?.is_oa && data.best_oa_location) {
+            return data.best_oa_location.url_for_pdf || data.best_oa_location.url || undefined
+        }
+        return undefined
+    } catch {
+        return undefined
+    }
+}
+
+/**
  * Searches the academic corpus across peer-reviewed repositories with advanced filters.
  */
 export async function searchAcademicCorpus(
@@ -414,11 +630,13 @@ export async function searchAcademicCorpus(
     const limit = options?.limit || 5
     const enhancedQuery = options?.field ? `${cleanQuery} ${options.field}` : cleanQuery
 
-    // Query OpenAlex, Crossref, and ArXiv in parallel with resilience
-    const [openAlexRes, crossrefRes, arxivRes] = await Promise.allSettled([
+    // Query OpenAlex, Crossref, ArXiv, PMC/PubMed, and Semantic Scholar concurrently with resilience
+    const [openAlexRes, crossrefRes, arxivRes, ncbiRes, s2Res] = await Promise.allSettled([
         queryOpenAlex(enhancedQuery, { ...options, limit }, signal),
         queryCrossref(enhancedQuery, { ...options, limit }, signal),
         options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 2, signal),
+        queryNcbiPmc(cleanQuery, 2, signal),
+        querySemanticScholar(cleanQuery, 2, signal),
     ])
 
     // Fail closed on client Stop — do not return partial papers as a successful hit.
@@ -427,13 +645,15 @@ export async function searchAcademicCorpus(
     const openAlexPapers = openAlexRes.status === 'fulfilled' ? openAlexRes.value : []
     const crossrefPapers = crossrefRes.status === 'fulfilled' ? crossrefRes.value : []
     const arxivPapers = arxivRes.status === 'fulfilled' ? arxivRes.value : []
+    const ncbiPapers = ncbiRes.status === 'fulfilled' ? ncbiRes.value : []
+    const s2Papers = s2Res.status === 'fulfilled' ? s2Res.value : []
 
-    // Merge papers, prioritizing peer-reviewed sources (OpenAlex & Crossref) followed by ArXiv
+    // Merge papers, prioritizing peer-reviewed sources
     const seenTitles = new Set<string>()
     const seenDois = new Set<string>()
     const combined: AcademicPaper[] = []
 
-    for (const paper of [...openAlexPapers, ...crossrefPapers, ...arxivPapers]) {
+    for (const paper of [...openAlexPapers, ...crossrefPapers, ...ncbiPapers, ...arxivPapers, ...s2Papers]) {
         const normTitle = paper.title.toLowerCase().replace(/[^a-z0-9]/g, '')
         const cleanDoi = paper.doi ? paper.doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '') : ''
 
@@ -443,6 +663,23 @@ export async function searchAcademicCorpus(
             combined.push(paper)
         }
         if (combined.length >= limit * 2) break
+    }
+
+    assertAcademicNotAborted(signal)
+
+    // For top candidate papers lacking a direct pdfUrl, attempt OA PDF resolution via Unpaywall
+    const missingPdf = combined.filter((p) => !p.pdfUrl && p.doi).slice(0, 3)
+    if (missingPdf.length > 0) {
+        await Promise.allSettled(
+            missingPdf.map(async (p) => {
+                if (p.doi) {
+                    const resolvedPdf = await resolveOaPdfViaUnpaywall(p.doi, signal)
+                    if (resolvedPdf) {
+                        p.pdfUrl = resolvedPdf
+                    }
+                }
+            })
+        )
     }
 
     assertAcademicNotAborted(signal)

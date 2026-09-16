@@ -58,3 +58,5 @@ scratch/
 # Heavy local demo captures — do not grow the git pack
 demo-video/out/
 demo-video/public/recordings/*.webm
+
+.jules/

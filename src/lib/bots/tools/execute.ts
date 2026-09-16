@@ -1636,6 +1636,8 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     set_notebook_title: 'update_notebook_title',
     artifact: 'create_artifact',
     read_pdf: 'read_document',
+    read_paper: 'read_document',
+    read_article: 'read_document',
     read_file: 'read_document',
     parse_document: 'read_document',
     view_document: 'read_document',
@@ -1668,6 +1670,9 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     academic_search: 'search_academic_corpus',
     search_papers: 'search_academic_corpus',
     find_papers: 'search_academic_corpus',
+    find_paper: 'search_academic_corpus',
+    search_academic: 'search_academic_corpus',
+    query_academic: 'search_academic_corpus',
     search_philosophy_papers: 'search_academic_corpus',
     scholarly_search: 'search_academic_corpus',
     inspect_visual: 'analyze_image',
@@ -1685,6 +1690,13 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     text_to_speech: 'synthesize_speech',
     tts: 'synthesize_speech',
     narrate: 'synthesize_speech',
+    read_aloud: 'synthesize_speech',
+    seslendir: 'synthesize_speech',
+    sesli_not: 'synthesize_speech',
+    sesli_oku: 'synthesize_speech',
+    voice_note: 'synthesize_speech',
+    voice: 'synthesize_speech',
+    speech: 'synthesize_speech',
     add_footnote: 'add_notebook_footnote',
     insert_footnote: 'add_notebook_footnote',
     insert_notebook_footnote: 'add_notebook_footnote',
@@ -2083,13 +2095,51 @@ export async function executeToolCall(
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'synthesize_speech') {
-            const text = asText(args.text || args.content || args.prompt, 2_000).trim()
+            let text = asText(
+                args.text || args.content || args.prompt || args.note || args.speech || args.narration || args.message || args.input,
+                2_000
+            ).trim()
+
+            let boundNotebookText = ''
+            if (host) {
+                if (host.selection && host.selection.trim().length > 5) {
+                    boundNotebookText = host.selection.trim()
+                } else if (host.notebookId || host.notebookTitle) {
+                    const targetId = host.notebookId || host.notebookTitle || ''
+                    const notebook = executeReadNotebook(host, targetId)
+                    if (notebook.ok && notebook.result) {
+                        boundNotebookText = notebook.result.replace(/^#[^\n]+\n+/, '').trim()
+                    }
+                } else if (host.notebooks && host.notebooks.length > 0) {
+                    const first = host.notebooks[0]
+                    boundNotebookText = (first.content || first.title || '').trim()
+                }
+            }
+
+            // If text is empty, OR if text contains conversational filler and bound notebook text is available, use notebook
+            const isBotFiller = /^(tabii|elbette|merhaba|işte|iste|notunuz|defteriniz|burada|seslendiriyorum|hazırladığım|hazirladigim|sesli not:)/i.test(text)
+            if (boundNotebookText && (!text || isBotFiller)) {
+                text = boundNotebookText
+            }
+
             if (!text) {
                 const result = JSON.stringify({ ok: false, error: 'text is required for synthesize_speech' })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
+
+            // Clean markdown syntax before speech synthesis so it doesn't pronounce symbols
+            const cleanSpeechText = text
+                .replace(/```[\s\S]*?```/g, '')
+                .replace(/^#+\s+/gm, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/[*_~`>]/g, '')
+                .replace(/<[^>]+>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, 1500)
+
             const language = asText(args.language || args.lang, 10).trim() || undefined
-            const executed = await executeSynthesizeSpeech(text, language, env, host, signal)
+            const executed = await executeSynthesizeSpeech(cleanSpeechText || text, language, env, host, signal)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         if (name === 'cross_examine_argument') {

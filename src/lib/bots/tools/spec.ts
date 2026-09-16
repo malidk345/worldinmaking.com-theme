@@ -683,7 +683,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'search_academic_corpus',
             description:
-                'Search peer-reviewed academic literature, philosophical journals, citations, and open-access papers across OpenAlex and arXiv. Use this whenever the user asks about scholarly research, academic philosophy, paper citations, scientific theories, or authors of philosophical papers.',
+                'Search peer-reviewed academic literature, philosophical journals, citations, and open-access papers across OpenAlex, Crossref, PubMed / PMC, arXiv, and Semantic Scholar. Returns direct PDF links and alternative archive resolvers (Sci-Hub, Anna\'s Archive). Use this whenever the user asks about scholarly research, academic philosophy, paper citations, scientific theories, or authors of philosophical papers.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -769,7 +769,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'synthesize_speech',
             description:
-                'Synthesize realistic speech / audio narration from text using Cloudflare Workers AI Text-to-Speech (MeloTTS / Deepgram Aura) and save the resulting audio in Cloudflare R2 storage. Use this when the user asks you to speak, narrate, read aloud, or create an audio version of a quote or philosophical text.',
+                'Synthesize realistic speech / audio narration from text and save to R2 storage. Call this whenever the user asks to speak, narrate, read aloud, or voice a note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"). CRITICAL NOTEBOOK RULE: When the user asks to voice or narrate a note, the `text` parameter MUST BE the exact raw text body of the notebook (or selection). NEVER pass your own chat responses, greetings, or conversational remarks ("Tabii ki...", "İşte notunuz...") into `text`. Pass only the actual text to be voiced aloud.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -1008,10 +1008,11 @@ TOOL USE:
 - You decide which tools to call through the OpenAI/Gemini tool channel. The host will not guess your plan. Call zero or more tools, then answer.
 - Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, search_academic_corpus, analyze_image, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
 - A plan is optional. Use todo_write only when sequencing helps. Never invent a plan for a one-step ask.
+- read_document: Read and inspect public PDFs, papers, articles, CSV, JSON, or workspace documents. Call this whenever you need to read the full contents or extract the thesis of a research paper (using pdfUrl from search_academic_corpus) or any uploaded document.
 - analyze_image: Vision and OCR analysis of pictures, diagrams, and photos via Llama 3.2 Vision. Call this whenever the user shares an image URL or asks to inspect visual material.
 - transcribe_audio: Transcribe speech/audio to text via Whisper Large V3 Turbo. Call this when the user shares an audio URL or voice note.
-- synthesize_speech: Text-to-speech audio narration saved in R2 via MeloTTS. Call this when the user asks you to speak or narrate.
-- search_academic_corpus: Search peer-reviewed academic literature, journals, citations, and DOIs (OpenAlex + arXiv). Call this when investigating scholarly philosophy, formal debates, papers, or peer-reviewed studies. Always cite authors, year, journal venue, and DOI/PDF link in your answer. You can also format these as an APA bibliography and use insert_notebook_block to add a References section to the notebook.
+- synthesize_speech: Text-to-speech audio narration saved in R2 via MeloTTS. Call this whenever the user asks to speak, narrate, read aloud, or voice a note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"). When voicing a note, pass ONLY the actual notebook body text into the text parameter, NEVER your own conversational words or pleasantries. Always call this tool and embed the returned audio link so the audio player renders.
+- search_academic_corpus: Search peer-reviewed academic literature, journals, citations, and DOIs across OpenAlex, Crossref, PubMed/PMC, arXiv, and Semantic Scholar. Returns direct Open Access PDF links and alternative archive resolvers (Sci-Hub, Anna's Archive, Google Scholar). Call this when investigating scholarly philosophy, formal debates, papers, or peer-reviewed studies. Always cite authors, year, journal venue, and direct PDF / DOI link in your answer. If the paper has an open-access PDF or if the user asks to read, analyze, summarize, or extract the thesis of any found paper, immediately call read_document with the paper's pdfUrl to inspect its contents. You can also format these as an APA bibliography and use insert_notebook_block to add a References section to the notebook.
 - generate_image: Generate real visual imagery with Cloudflare FLUX.1 and save to R2. Supports aspect_ratio (e.g. '16:9' for wallpapers, '9:16' for portrait) and style (e.g. 'oil_painting', 'vintage_etching', 'cinematic', 'renaissance'). After the tool returns, embed the image in markdown as ![description](url) in your reply.
 - create_artifact is the only way to put an interactive visual canvas, 3D model, parametric simulation, analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble.
 ${ARTIFACT_RECIPES.trimEnd()}
