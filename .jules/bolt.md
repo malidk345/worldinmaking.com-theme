@@ -53,3 +53,7 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+
+## 2024-05-24 - [Avoid Unnecessary Re-renders on Resize]
+**Learning:** Returning a new object reference from a window resize listener state update triggers React to re-render all dependent components on every single resize tick, even if the underlying boolean values for breakpoints haven't changed.
+**Action:** Use an equality check function to compare previous and next breakpoint states, and only return the new object reference if they actually differ.
