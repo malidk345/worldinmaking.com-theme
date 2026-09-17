@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Antigravity (Always visible assistant output action icons)
+- **Scope:** In `ChatMessage.tsx`, removed `md:opacity-0 md:group-hover/assistant:opacity-100 md:focus-within:opacity-100` from the action icons row (copy, retry, add to notebook, citations, model badge). They are now permanently visible on desktop just like mobile, without requiring hover.
+- **Files:** `ChatMessage.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core shell allowlist).
+- **Handoff:** Changes kept local; dev server running.
+
 ### 2026-09-17 — Antigravity (LLM light-sweep shimmering live status text next to pause eyes)
 - **Scope:** Added `LiveStatusShimmer` and `getLiveStatusLabel` to `ThinkingBlock.tsx`. Renders next to `PixelPause` when `isLive` with dynamic statuses (`Reasoning...`, `Searching...`, `Reading...`, `Writing notebook...`, `Creating artifact...`, `Planning...`). Uses high-contrast 90deg gradient text shimmer (`wim-thought-shimmer 2.2s`) and gentle entry animation (`wim-activity-fade-in 180ms`). Thinking stream below kept untouched.
 - **Files:** `ThinkingBlock.tsx`

@@ -830,7 +830,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           ) : null}
 
           {!isLiveAnswer && (message.isTypingDone || message.stopped) && message.errorKind !== 'quota' && (
-            <div className="pt-1 flex items-center gap-1 text-muted font-sans opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover/assistant:opacity-100 md:focus-within:opacity-100">
+            <div className="pt-1 flex items-center gap-1 text-muted font-sans">
               {usedModel && (
                 <div className="flex items-center gap-1.5 py-0.5 px-1.5 rounded-md bg-accent/40 border border-primary/15 text-[11px] text-muted select-none">
                   <div className="size-3.5 shrink-0 rounded-full overflow-hidden border border-primary/20 bg-accent">
