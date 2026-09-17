@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (/pricing experimental-edge)
+- **Scope:** Next 14 Pages Router rejects `runtime = 'edge'` on pages (`experimental-edge` required). `/pricing` GSSP stays for Lemon fail-closed.
+- **Files:** `src/pages/pricing.tsx`
+- **Verify:** CF rebuild after push.
+
 ### 2026-09-17 — Grok 4.6 (Edge runtime on /pricing)
 - **Scope:** Remote WIM-B3-3 added `getServerSideProps` to `/pricing`, which next-on-pages rejects unless the page is Edge. Export `runtime = 'edge'` so Lemon fail-closed checkout still runs on CF Pages.
 - **Files:** `src/pages/pricing.tsx`
