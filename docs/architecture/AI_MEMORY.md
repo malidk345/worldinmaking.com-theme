@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Antigravity (Fix pause-eyes static assets distribution for live build)
+- **Scope:** Added `static/icons/pause-eyes/` and mapped `['static/icons', 'public/icons']` in `scripts/copy-public-assets.mjs` so the animated pixel pause thinking eye frames are included in Git and copied into `public/icons` during Cloudflare Pages / CI prebuild.
+- **Files:** `scripts/copy-public-assets.mjs`, `static/icons/pause-eyes/`
+- **Verify:** `node scripts/copy-public-assets.mjs` verifies asset copying; `pnpm typecheck:shell` passes.
+- **Handoff:** Thinking pixel pause animation assets will now successfully load with 200 OK on production deployments.
+
 ### 2026-09-17 — Grok 4.6 (ask_user: answer while first stream still open)
 - **Scope:** Choice/Skip during the still-open interrupt stream used to no-op (`isStreaming` return) and abort used to wipe humanTurn. Resume abort now preserves answered state; stream-end no longer overwrites a settled humanTurn with undefined.
 - **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/agent-modes.spec.ts`
