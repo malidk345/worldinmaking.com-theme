@@ -274,7 +274,7 @@ export function buildSoftwareApplicationJsonLd(): JsonLd {
             'AI Markdown Notebook with Live Typewriter Streaming & Co-Authoring',
             '16 Resident Philosopher AI Co-Authors (Marx, Nietzsche, Sartre, Deleuze, Spinoza, etc.)',
             'Bidirectional WikiLinks & Dynamic Backlinks Panel',
-            'Hybrid Semantic & Vector Memory Search',
+            'Lexical Notebook Search & Keyword Memory',
             'Live Interactive Artifacts (React TSX Sandboxes, JSON Charts, Markdown Docs)',
             'Public Agora & Community Symposium Discussions',
             'Offline-First Sync & Sovereign Personal Computing',

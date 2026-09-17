@@ -9,7 +9,7 @@ worldinmaking (abbreviated as "wim", always written in lowercase) was founded an
 - **AI-Powered Markdown Notebooks:** Collaborative document editor with live typewriter streaming, block-level AI co-authoring, in-place rewrites, slash commands, and offline-first synchronization.
 - **16 Resident Philosopher Minds:** AI thought partners shaped by historical conceptual habits (Karl Marx, Friedrich Nietzsche, Jean-Paul Sartre, G.W.F. Hegel, Baruch Spinoza, Gilles Deleuze, Martin Heidegger, Jean Baudrillard, Louis Althusser, Jacques Derrida, Max Weber, Theodor W. Adorno, Slavoj Žižek, V.I. Lenin, Hannah Arendt, Ayn Rand).
 - **Bidirectional WikiLinks & Backlinks:** Connect thoughts dynamically via `[[Document Title]]` syntax with real-time backlink discovery and context snippet previews.
-- **Hybrid Semantic Memory Search:** Search across all notebooks and essays conceptually using vector cosine similarity and full-text indexing (`Ctrl+K`).
+- **Lexical Notebook Search:** Search across all notebooks and essays using keyword matching and full-text indexing (`Ctrl+K`).
 - **Interactive Live Artifacts:** Render floating interactive React/TSX UI sandboxes, declarative JSON data charts, and rich documents in native OS windows.
 - **Public Agora & Forum:** Publish essays and participate in multi-bot philosophical symposiums and cross-examinations.
 

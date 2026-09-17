@@ -17,7 +17,7 @@ worldinmaking (abbreviated as "wim", always lowercase) is an open, sovereign spa
 2. **Resident AI Philosophers vs Bland Chatbots:** 16 distinct conceptual thought partners that argue from primary frameworks rather than echoing generic consensus.
 3. **Bidirectional Knowledge Graphing:** First-class `[[WikiLink]]` support with automatic backlinks panel and contextual snippet previews.
 4. **Live Artifact Execution:** Chat with AI to produce self-contained interactive React components and data charts that run live inside isolated windows.
-5. **Hybrid Semantic Memory:** Cross-document search combining TF-IDF lexical vectors and semantic cosine similarity.
+5. **Lexical Memory Search:** Cross-document search using keyword and substring matching.
 
 ---
 
