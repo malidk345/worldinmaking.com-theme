@@ -36,7 +36,7 @@ export default async function handler(req: Request) {
 
     if (error) {
         if (/schema cache|does not exist|relation/i.test(error.message || '')) {
-            return json({ error: 'Rooms table not ready', code: 'MIGRATION_REQUIRED' }, 503)
+            return json({ error: 'This workspace is still rolling out notebook sync (migration required)', code: 'MIGRATION_REQUIRED' }, 503)
         }
         return json({ error: 'Lookup failed' }, 500)
     }

@@ -539,11 +539,21 @@ export function pickNewerNotebook(local: StoredNotebook, remote: StoredNotebook)
     const localVersion = Number(local.version || 0)
     const remoteVersion = Number(remote.version || 0)
     const remoteSlim = remote.contentOmitted === true
-    if (remoteVersion < localVersion) return local
+    if (remoteVersion < localVersion) {
+        if (local.contentOmitted && !remoteSlim) {
+            return { ...local, content: remote.content, contentOmitted: false, preview: local.preview || remote.preview }
+        }
+        return local
+    }
     if (remoteVersion === localVersion) {
         const localTs = Date.parse(local.updatedAt || '') || 0
         const remoteTs = Date.parse(remote.updatedAt || '') || 0
-        if (remoteTs <= localTs) return local
+        if (remoteTs <= localTs) {
+            if (local.contentOmitted && !remoteSlim) {
+                return { ...local, content: remote.content, contentOmitted: false, preview: local.preview || remote.preview }
+            }
+            return local
+        }
     }
     if (remoteSlim) {
         const keep = local.content || ''

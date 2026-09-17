@@ -161,7 +161,7 @@ export default async function handler(req: Request) {
         if (message.includes('wim_notebooks') || message.includes('schema cache') || err?.code === 'PGRST205') {
             return json(
                 {
-                    error: 'Notebooks table not ready',
+                    error: 'This workspace is still rolling out notebook sync (migration required)',
                     code: 'MIGRATION_REQUIRED',
                     hint: 'Run supabase/migrations/20260806_wim_notebooks.sql',
                 },
