@@ -53,3 +53,10 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2024-03-24 - [Passive event listeners for performance]
+**Learning:** Adding `{ passive: true }` to `resize` and `scroll` event listeners is a simple yet highly effective way to prevent UI thread blocking in React applications, allowing the browser to handle visual updates smoothly without waiting for JavaScript execution.
+**Action:** Always verify if high-frequency event listeners (like resize/scroll/touch) actually need to call `preventDefault()`. If they don't, append `{ passive: true }` to the `addEventListener` call.
+
+## 2024-03-24 - [Shallow equality check for bailing out of re-renders]
+**Learning:** Functional state updates in React (`setState(prev => ...)`) can be used to manually shallow-compare next states against previous states. Returning the exact same `prev` reference tells React to bail out of the render cycle entirely.
+**Action:** Use functional state updates with manual object property comparison (e.g. `prev.xs === next.xs`) inside high-frequency hooks like `useBreakpoint` or `useWindowSize` to avoid unnecessary expensive re-renders across the component tree.
