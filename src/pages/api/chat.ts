@@ -31,16 +31,9 @@ import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoint'
 import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
-import { isUserPro } from '../../lib/wim-billing'
+import { isUserPro, CHAT_LIMITS } from '../../lib/wim-billing'
 import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 
-const GUEST_HOURLY_LIMIT = 30
-const AUTH_HOURLY_LIMIT = 100
-const PRO_HOURLY_LIMIT = 300
-
-const GUEST_DAILY_LIMIT = 100
-const AUTH_DAILY_LIMIT = 300
-const PRO_DAILY_LIMIT = 1000
 const MAX_BODY_BYTES = 1024 * 1024
 
 const MAX_PROMPT_LENGTH = 8000
@@ -277,17 +270,17 @@ export default async function handler(req: Request) {
     const hourlyLimit = isDevEnv
         ? 5000
         : isPro
-        ? PRO_HOURLY_LIMIT
+        ? CHAT_LIMITS.pro.hourly
         : user
-        ? AUTH_HOURLY_LIMIT
-        : GUEST_HOURLY_LIMIT
+        ? CHAT_LIMITS.free.hourly
+        : CHAT_LIMITS.guest.hourly
     const dailyLimit = isDevEnv
         ? 20000
         : isPro
-        ? PRO_DAILY_LIMIT
+        ? CHAT_LIMITS.pro.daily
         : user
-        ? AUTH_DAILY_LIMIT
-        : GUEST_DAILY_LIMIT
+        ? CHAT_LIMITS.free.daily
+        : CHAT_LIMITS.guest.daily
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     if (!isDevEnv) {
