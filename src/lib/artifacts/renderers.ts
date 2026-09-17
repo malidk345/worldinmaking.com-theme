@@ -1,6 +1,6 @@
 import type { ArtifactKind } from './kinds'
 
-export type ArtifactPreview = 'sandbox' | 'mermaid' | 'chart' | 'html' | 'markdown' | 'code'
+export type ArtifactPreview = 'sandbox' | 'mermaid' | 'chart' | 'html' | 'markdown' | 'code' | 'canvas' | 'model3d'
 
 export type ArtifactRenderer = {
     kind: ArtifactKind
@@ -21,6 +21,9 @@ export const ARTIFACT_RENDERERS: Record<ArtifactKind, ArtifactRenderer> = {
     markdown: { kind: 'markdown', label: 'document', notebookFence: null, preview: 'markdown', autoOpen: false },
     json: { kind: 'json', label: 'JSON', notebookFence: 'json', preview: 'code', autoOpen: false },
     code: { kind: 'code', label: 'code', notebookFence: 'code', preview: 'code', autoOpen: false },
+    canvas: { kind: 'canvas', label: 'canvas', notebookFence: 'canvas', preview: 'canvas', autoOpen: true },
+    model3d: { kind: 'model3d', label: '3D scene', notebookFence: 'model3d', preview: 'model3d', autoOpen: true },
+    simulation: { kind: 'simulation', label: 'simulation', notebookFence: 'simulation', preview: 'chart', autoOpen: true },
 }
 
 export function getRenderer(kind: ArtifactKind): ArtifactRenderer {

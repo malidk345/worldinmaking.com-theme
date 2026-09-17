@@ -3483,6 +3483,111 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     overflow-anchor: auto;
 }
 
+/* Editorial tokens 1:1 with blog `.article-content` / `.prose` — font-size stays on the chat wrapper. */
+.wim-ask-reply.markdown.prose {
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.wim-ask-reply.markdown.prose p,
+.wim-ask-reply.markdown.prose li {
+    line-height: 1.5;
+    color: rgb(var(--text-primary));
+}
+
+.wim-ask-reply.markdown.prose p {
+    margin-top: 0.7em;
+    margin-bottom: 0.7em;
+}
+
+.wim-ask-reply.markdown.prose p:first-child {
+    margin-top: 0;
+}
+
+.wim-ask-reply.markdown.prose p:last-child {
+    margin-bottom: 0;
+}
+
+.wim-ask-reply.markdown.prose h1,
+.wim-ask-reply.markdown.prose h2,
+.wim-ask-reply.markdown.prose h3,
+.wim-ask-reply.markdown.prose h4,
+.wim-ask-reply.markdown.prose h5,
+.wim-ask-reply.markdown.prose h6 {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: rgb(var(--text-primary));
+}
+
+.wim-ask-reply.markdown.prose strong {
+    font-weight: 700;
+}
+
+.wim-ask-reply.markdown.prose a {
+    font-weight: 600;
+    color: rgb(var(--text-primary));
+}
+
+.wim-ask-reply.markdown.prose blockquote:not(.quote) {
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: 6px;
+    background: rgb(var(--accent));
+    border: 1px solid rgb(var(--border));
+    font-style: normal;
+    letter-spacing: initial;
+    color: rgb(var(--text-primary));
+}
+
+.wim-ask-reply.markdown.prose blockquote p {
+    margin: 0;
+}
+
+.wim-ask-reply.markdown.prose hr {
+    border-color: rgb(var(--border));
+}
+
+.wim-ask-reply.markdown.prose table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.wim-ask-reply.markdown.prose thead {
+    background: rgb(var(--accent));
+    text-align: left;
+}
+
+.wim-ask-reply.markdown.prose th,
+.wim-ask-reply.markdown.prose td {
+    vertical-align: top;
+    border-bottom: 1px solid rgb(var(--border));
+}
+
+.wim-ask-reply.markdown.prose :not(pre) > code {
+    font-family: 'Source Code Pro', Menlo, Consolas, monaco, monospace;
+    font-weight: 500;
+    border: 1px solid rgb(var(--border));
+    background: rgb(var(--accent));
+    border-radius: 4px;
+    padding: 0.125rem 0.25rem;
+}
+
+.wim-ask-reply.markdown.prose .footnotes {
+    border-top: 1px solid rgb(var(--input-border));
+    padding-top: 0.75rem;
+    margin-top: 1rem;
+    color: rgb(var(--text-secondary));
+}
+
+.wim-ask-reply.markdown.prose .footnotes hr {
+    display: none;
+}
+
+.wim-ask-reply.markdown.prose sup a {
+    font-weight: 600;
+    text-decoration: none;
+}
+
 .wim-think-dots {
     display: inline-flex;
     align-items: center;

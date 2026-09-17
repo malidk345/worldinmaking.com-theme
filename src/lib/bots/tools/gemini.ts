@@ -156,6 +156,26 @@ export function openaiMessagesToGeminiContents(messages: OpenAiChatMessage[]): G
     return contents
 }
 
+/** Native Gemini thinking on host THINK would consume the whole 512-token cap. */
+export function geminiToolGenerationConfig(params: { omitTools?: boolean; maxTokens?: number }) {
+    const maxOutputTokens = params.maxTokens || (params.omitTools ? 512 : 8192)
+    if (params.omitTools) {
+        return {
+            temperature: 0.6,
+            maxOutputTokens,
+            thinkingConfig: { thinkingBudget: 0, includeThoughts: false },
+        }
+    }
+    return {
+        temperature: 0.6,
+        maxOutputTokens,
+        thinkingConfig: {
+            thinkingBudget: Math.min(512, maxOutputTokens),
+            includeThoughts: true,
+        },
+    }
+}
+
 function appendModelPart(parts: GeminiPart[], next: GeminiPart): void {
     const last = parts[parts.length - 1]
     if ('text' in next && last && 'text' in last && Boolean(last.thought) === Boolean(next.thought) && !next.thoughtSignature) {
@@ -210,19 +230,17 @@ export async function geminiToolCompletion(params: {
             baseBody.tools = [{ functionDeclarations: toGeminiFunctionDeclarations(params.tools || OPENAI_CHAT_TOOLS) }]
             baseBody.toolConfig = { functionCallingConfig }
         }
-        const thinkingBudget = Math.min(512, params.maxTokens || 512)
-        const thinkingConfig = { thinkingBudget, includeThoughts: true }
+        const generationConfig = geminiToolGenerationConfig({
+            omitTools: params.omitTools,
+            maxTokens: params.maxTokens,
+        })
         let res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
                 ...baseBody,
-                generationConfig: {
-                    temperature: 0.6,
-                    maxOutputTokens: params.maxTokens || (params.omitTools ? 512 : 8192),
-                    thinkingConfig,
-                },
+                generationConfig,
             }),
         })
         if (!res.ok) {
@@ -240,7 +258,7 @@ export async function geminiToolCompletion(params: {
                 signal: controller.signal,
                 body: JSON.stringify({
                     ...baseBody,
-                    generationConfig: { temperature: 0.6, maxOutputTokens: params.maxTokens || 4096 },
+                    generationConfig: { temperature: 0.6, maxOutputTokens: generationConfig.maxOutputTokens },
                 }),
             })
             if (!res.ok) {

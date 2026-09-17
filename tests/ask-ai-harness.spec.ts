@@ -72,8 +72,8 @@ test.describe('Ask AI harness', () => {
     test('operator prompt is Ask AI, not a philosopher identity', () => {
         const prompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
         expect(prompt).toContain('WorldInMaking Ask AI')
-        expect(prompt).toContain('QUESTION FIRST')
-        expect(prompt).toContain('optional background')
+        expect(prompt).toContain('WORKSPACE')
+        expect(prompt).toContain('in the room')
         expect(prompt).not.toContain('You ARE the assigned philosopher')
         expect(prompt).not.toContain('living, self-aware contemporary mind')
     })

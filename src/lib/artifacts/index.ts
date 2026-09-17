@@ -1,5 +1,6 @@
 export { classifyIntent, isAdminNavigationRequest } from './intent'
 export { contractForIntent } from './contracts'
+export { artifactWindowKey, artifactWindowPath, draftArtifactFromToolEvent, isArtifactBuildTool } from './draft'
 export { finalizeArtifactTurn, mergeProducedArtifacts } from './finalize'
 export { artifactPlaceholder, ARTIFACT_RENDERERS, getRenderer } from './renderers'
 export type { ArtifactDocument, ArtifactIntent, ArtifactKind, ArtifactTurn } from './kinds'

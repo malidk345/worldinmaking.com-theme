@@ -1,8 +1,9 @@
+import { isPdfWithoutText, PDF_NO_TEXT, slicePdfByPage } from '../../pdf-pages'
 import { isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import type { HostSnapshot } from './host'
 
 const MAX_BYTES = 500_000
-const MAX_DOC_CHARS = 6_000
+const MAX_DOC_CHARS = 12_000
 
 
 function applyKeywordFilter(content: string, filterQuery: string, label: string): { ok: true; content: string } | { ok: false; error: string } {
@@ -23,6 +24,25 @@ function applyKeywordFilter(content: string, filterQuery: string, label: string)
         }
     }
     return { ok: true, content: matched.join('\n\n') }
+}
+
+function readLocalDocument(
+    content: string,
+    label: string,
+    targetPage?: number,
+    filterQuery?: string
+): { ok: true; text: string } | { ok: false; error: string } {
+    if (isPdfWithoutText(content)) {
+        return { ok: false, error: PDF_NO_TEXT }
+    }
+    const sliced = slicePdfByPage(content, targetPage)
+    if (sliced.error) return { ok: false, error: sliced.error }
+    const filtered = applyKeywordFilter(sliced.text, filterQuery || '', label)
+    if (!filtered.ok) return filtered
+    const head = targetPage
+        ? `[${label} — page ${targetPage} of ${sliced.pageCount}]`
+        : `[${label}${sliced.pageCount > 1 ? ` — ${sliced.pageCount} pages` : ''}]`
+    return { ok: true, text: `${head}\n${filtered.content.slice(0, MAX_DOC_CHARS)}` }
 }
 
 const FETCH_TIMEOUT_MS = 10_000
@@ -121,6 +141,18 @@ export async function executeReadDocument(
     const filterQuery = (args.query || '').trim().toLowerCase()
 
     if (!rawUrl && !docName) {
+        const implicit =
+            host?.attachments?.[0] ||
+            host?.scratchpad?.documents?.find((doc) => doc.content) ||
+            host?.scratchpad?.documents?.[0]
+        if (implicit?.content) {
+            return readLocalDocument(
+                implicit.content,
+                `Document: ${implicit.name}`,
+                targetPage,
+                filterQuery
+            )
+        }
         return { ok: false, error: 'url or document name is required' }
     }
 
@@ -159,35 +191,28 @@ export async function executeReadDocument(
                     docName.toLowerCase().includes(doc.name.toLowerCase())
             )
             if (matchedScratchDoc) {
-                const filtered = applyKeywordFilter(
-                    (matchedScratchDoc as any).content || '',
-                    filterQuery,
-                    `scratchpad document "${matchedScratchDoc.name}"`
+                return readLocalDocument(
+                    matchedScratchDoc.content || '',
+                    `Scratchpad Document: ${matchedScratchDoc.name}`,
+                    targetPage,
+                    filterQuery
                 )
-                if (!filtered.ok) return filtered
-                return {
-                    ok: true,
-                    text: `[Scratchpad Document: ${matchedScratchDoc.name}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
-                }
             }
         }
         if (host.attachments?.length) {
-            const matchedAtt = host.attachments.find(
-                (att) =>
-                    att.name.toLowerCase().includes(docName.toLowerCase()) ||
-                    docName.toLowerCase().includes(att.name.toLowerCase())
-            )
+            const matchedAtt =
+                host.attachments.find(
+                    (att) =>
+                        att.name.toLowerCase().includes(docName.toLowerCase()) ||
+                        docName.toLowerCase().includes(att.name.toLowerCase())
+                ) || (host.attachments.length === 1 ? host.attachments[0] : undefined)
             if (matchedAtt) {
-                const filtered = applyKeywordFilter(
+                return readLocalDocument(
                     matchedAtt.content || '',
-                    filterQuery,
-                    `attachment "${matchedAtt.name}"`
+                    `Attached Document: ${matchedAtt.name}`,
+                    targetPage,
+                    filterQuery
                 )
-                if (!filtered.ok) return filtered
-                return {
-                    ok: true,
-                    text: `[Attached Document: ${matchedAtt.name}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
-                }
             }
         }
         if (host.artifactId && (host.artifactId.toLowerCase().includes(docName.toLowerCase()) || docName === 'current')) {
@@ -295,13 +320,13 @@ export async function executeReadDocument(
                 const pageIndex = targetPage - 1
                 if (pageIndex < 0 || pageIndex >= pages.length) {
                     return {
-                        ok: true,
-                        text: `[PDF Document: ${rawUrl} - Total Pages: ${pages.length}]\nPage ${targetPage} is out of range. Showing Page 1:\n${pages[0]}`,
+                        ok: false,
+                        error: `Page ${targetPage} is out of range (${pages.length} page${pages.length === 1 ? '' : 's'} in this extract).`,
                     }
                 }
                 return {
                     ok: true,
-                    text: `[PDF Document: ${rawUrl} - Page ${targetPage} of ${pages.length}]\n${pages[pageIndex].slice(0, MAX_DOC_CHARS)}`,
+                    text: `[PDF Document: ${rawUrl} — page ${targetPage} of ${pages.length}]\n${pages[pageIndex].slice(0, MAX_DOC_CHARS)}`,
                 }
             }
             extracted = pages.map((p, idx) => `[Page ${idx + 1}]\n${p}`).join('\n\n')
@@ -326,8 +351,8 @@ export async function executeReadDocument(
             }
         }
 
-        if (!extracted.trim()) {
-            return { ok: false, error: 'document contained no readable text' }
+        if (!extracted.trim() || isPdfWithoutText(extracted)) {
+            return { ok: false, error: isPdf ? PDF_NO_TEXT : 'document contained no readable text' }
         }
 
         // Apply keyword filter if requested (fail closed — do not return whole doc as a "match")

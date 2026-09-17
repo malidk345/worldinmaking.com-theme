@@ -31,21 +31,6 @@ import rehypeSanitize from 'rehype-sanitize'
 
 type ScratchpadTab = 'all' | 'citations' | 'concepts' | 'sources' | 'notes' | 'documents' | 'tasks' | 'memories'
 
-const NAVY = '#1D4ED8'
-const chipStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '2px 6px',
-    border: `1px solid ${NAVY}`,
-    borderRadius: 4,
-    background: 'rgba(29, 78, 216, 0.1)',
-    color: NAVY,
-    fontSize: 12,
-    fontWeight: 400,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
-}
-
 const fieldClass =
     'w-full rounded-sm border border-primary bg-primary px-2 py-1.5 text-sm text-primary placeholder:text-muted'
 
@@ -58,7 +43,11 @@ const TYPE_LABEL: Record<ScratchpadNodeType, string> = {
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-    return <span style={chipStyle}>{children}</span>
+    return (
+        <span className="inline-flex items-center whitespace-nowrap rounded border border-navy bg-navy/10 px-1.5 py-0.5 text-[11px] leading-none text-navy">
+            {children}
+        </span>
+    )
 }
 
 function nodeMatchesTab(node: ScratchpadNode, tab: ScratchpadTab): boolean {
@@ -259,8 +248,8 @@ export function ScratchpadWindow() {
     return (
         <div data-scheme="primary" className="@container bg-primary text-primary h-full flex flex-col min-h-0 font-sans">
             <SEO title="Scratchpad" description="Working memory and knowledge context on WorldInMaking." />
-            <div className="flex items-center gap-1 min-w-0 px-2 py-2 border-b border-primary bg-primary flex-shrink-0">
-                <div className="w-[min(16rem,50vw)] shrink-0">
+            <div className="flex flex-wrap items-center gap-1 min-w-0 px-2 py-2 border-b border-primary bg-primary flex-shrink-0">
+                <div className="min-w-0 flex-1 basis-40">
                     <OSInput
                         label="Search scratchpad"
                         showLabel={false}
@@ -388,6 +377,11 @@ export function ScratchpadWindow() {
                                         <div className="flex items-center gap-1.5 min-w-0">
                                             <IconDocument className="size-4 text-muted shrink-0" />
                                             <span className="text-sm font-semibold truncate">{inspectedDoc.name}</span>
+                                            {inspectedDoc.pageCount ? (
+                                                <span className="text-xs text-muted">
+                                                    {inspectedDoc.pageCount} page{inspectedDoc.pageCount === 1 ? '' : 's'}
+                                                </span>
+                                            ) : null}
                                             {inspectedDoc.size ? (
                                                 <span className="text-xs text-muted">({inspectedDoc.size})</span>
                                             ) : null}
@@ -442,7 +436,12 @@ export function ScratchpadWindow() {
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-medium truncate m-0">{doc.name}</p>
                                                         <span className="text-xs text-muted">
-                                                            {doc.size ? `${doc.size} · ` : ''}Added {doc.uploadedAt}
+                                                            {doc.pageCount
+                                                                ? `${doc.pageCount} page${doc.pageCount === 1 ? '' : 's'}`
+                                                                : ''}
+                                                            {doc.pageCount && doc.size ? ' · ' : ''}
+                                                            {doc.size ? `${doc.size} · ` : ''}
+                                                            Added {doc.uploadedAt}
                                                         </span>
                                                     </div>
                                                 </div>

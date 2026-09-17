@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { executeToolCall } from './execute'
-import { formatApaBibliography, reconstructAbstract, searchAcademicCorpus } from '../academic-search'
+import {
+    formatApaBibliography,
+    rankAcademicPapers,
+    reconstructAbstract,
+    scoreAcademicPaper,
+    searchAcademicCorpus,
+    type AcademicPaper,
+} from '../academic-search'
 
 describe('search_academic_corpus tool & academic-search', () => {
     const originalFetch = globalThis.fetch
@@ -143,6 +150,37 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(requestedUrl).toContain('publication_year%3A%3C2025')
             expect(requestedUrl).toContain('is_oa%3Atrue')
             expect(requestedUrl).toContain('sort=cited_by_count:desc')
+        })
+    })
+
+    describe('relevance ranking', () => {
+        const ryle: AcademicPaper = {
+            id: '1',
+            title: 'The Concept of Mind',
+            authors: ['Gilbert Ryle'],
+            year: 1949,
+            venue: 'Hutchinson',
+            citationCount: 100,
+            source: 'OpenAlex',
+        }
+        const unrelated: AcademicPaper = {
+            id: '2',
+            title: 'Soil moisture in the Andes',
+            authors: ['Jane Soil'],
+            year: 2024,
+            citationCount: 9000,
+            source: 'Crossref',
+        }
+
+        it('scores a title/author hit above a high-cite mismatch', () => {
+            expect(scoreAcademicPaper('Ryle category mistake mind', ryle)).toBeGreaterThan(
+                scoreAcademicPaper('Ryle category mistake mind', unrelated)
+            )
+        })
+
+        it('ranks the matching paper first under relevance', () => {
+            const ranked = rankAcademicPapers('Ryle Concept of Mind', [unrelated, ryle], 'relevance')
+            expect(ranked[0].id).toBe('1')
         })
     })
 

@@ -19,6 +19,7 @@ export interface AcademicPaper {
     abstract?: string
     concepts?: string[]
     source: 'OpenAlex' | 'Crossref' | 'ArXiv' | 'Semantic Scholar' | 'PMC / PubMed' | 'Europe PMC' | 'Philosophical Canon' | 'Web Search'
+    score?: number
 }
 
 export interface AcademicSearchOptions {
@@ -83,12 +84,14 @@ export function formatAcademicResults(papers: AcademicPaper[]): string {
             const citeStr = p.citationCount > 0 ? ` [Cited by ${p.citationCount}]` : ''
             const conceptStr = p.concepts && p.concepts.length > 0 ? `\n   - **Topics:** ${p.concepts.join(', ')}` : ''
 
-            let item = `${idx + 1}. **${p.title}**${yearStr}\n   - **Authors:** ${authorStr}${venueStr}${citeStr}${conceptStr}`
+            const sourceStr = p.source ? `\n   - **Source:** ${p.source}` : ''
+            let item = `${idx + 1}. **${p.title}**${yearStr}\n   - **Authors:** ${authorStr}${venueStr}${citeStr}${conceptStr}${sourceStr}`
             if (p.doi) {
                 item += `\n   - **DOI:** ${p.doi}`
             }
             if (p.pdfUrl) {
-                item += `\n   - **Open Access PDF:** [📄 Read / Download PDF](${p.pdfUrl})`
+                const pdfLabel = /\.pdf(\?|$)/i.test(p.pdfUrl) ? 'Open Access PDF' : 'Open Access full text'
+                item += `\n   - **${pdfLabel}:** [Read / Download](${p.pdfUrl})`
             }
 
             // Build alternative archive & open scholarly repository access links
@@ -126,6 +129,67 @@ export function formatApaBibliography(papers: AcademicPaper[]): string {
     return `### References\n\n${lines.join('\n\n')}`
 }
 
+const STOP_WORDS = new Set([
+    'the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'over', 'under',
+    'bir', 've', 'ile', 'icin', 'için', 'olan', 'nedir', 'nasil', 'nasıl',
+])
+
+export function tokenizeAcademicQuery(query: string): string[] {
+    return String(query || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9çğıöşüÇĞİÖŞÜ\s-]/g, ' ')
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter((token) => token.length > 2 && !STOP_WORDS.has(token))
+}
+
+export function scoreAcademicPaper(query: string, paper: AcademicPaper): number {
+    const tokens = tokenizeAcademicQuery(query)
+    const title = (paper.title || '').toLowerCase()
+    const abstract = (paper.abstract || '').toLowerCase()
+    const authors = (paper.authors || []).join(' ').toLowerCase()
+    const concepts = (paper.concepts || []).join(' ').toLowerCase()
+    let score = 0
+    for (const token of tokens) {
+        if (title.includes(token)) score += 8
+        if (title.split(/[^a-z0-9çğıöşü]+/i).includes(token)) score += 6
+        if (authors.includes(token)) score += 10
+        if (concepts.includes(token)) score += 3
+        if (abstract.includes(token)) score += 2
+    }
+    score += Math.log10((paper.citationCount || 0) + 1) * 4
+    if (paper.pdfUrl) score += /\.pdf(\?|$)/i.test(paper.pdfUrl) ? 6 : 3
+    if (paper.doi) score += 2
+    if (paper.abstract) score += 1
+    if (paper.source === 'Web Search') score -= 10
+    if (paper.source === 'Philosophical Canon') score += 1
+    if (paper.source === 'OpenAlex' || paper.source === 'Crossref' || paper.source === 'Europe PMC') score += 2
+    const year = paper.year || 0
+    if (year >= 2018) score += 1
+    if (year >= 2022) score += 1
+    return score
+}
+
+export function rankAcademicPapers(
+    query: string,
+    papers: AcademicPaper[],
+    sortBy: AcademicSearchOptions['sortBy'] = 'relevance'
+): AcademicPaper[] {
+    const scored = papers.map((paper) => ({ ...paper, score: scoreAcademicPaper(query, paper) }))
+    scored.sort((a, b) => {
+        if (sortBy === 'citations' && b.citationCount !== a.citationCount) return b.citationCount - a.citationCount
+        if (sortBy === 'recent' && (b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0)
+        return (b.score || 0) - (a.score || 0)
+    })
+    return scored
+}
+
+function pickOaPdfUrl(...candidates: Array<string | undefined>): string | undefined {
+    const urls = candidates.filter((url): url is string => typeof url === 'string' && url.startsWith('http'))
+    const pdf = urls.find((url) => /\.pdf(\?|$)/i.test(url) || /arxiv\.org\/pdf|pmc\.ncbi|europepmc\.org\/articles/i.test(url))
+    return pdf || urls[0]
+}
+
 /**
  * Queries OpenAlex for academic papers with filters and sorting.
  */
@@ -151,7 +215,9 @@ async function queryOpenAlex(
             sortQuery = '&sort=publication_date:desc'
         }
 
-        const filterQuery = filters.length > 0 ? `&filter=${encodeURIComponent(filters.join(','))}` : ''
+        const typeFilter = 'type:article|book|book-chapter'
+        const allFilters = filters.length > 0 ? `${filters.join(',')},${typeFilter}` : typeFilter
+        const filterQuery = `&filter=${encodeURIComponent(allFilters)}`
         const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${limit}${filterQuery}${sortQuery}&mailto=dursunkayamustafa@gmail.com`
 
         const res = await fetch(url, {
@@ -171,7 +237,8 @@ async function queryOpenAlex(
                 publication_year?: number
                 doi?: string
                 cited_by_count?: number
-                primary_location?: { source?: { display_name?: string } }
+                primary_location?: { source?: { display_name?: string }; pdf_url?: string; landing_page_url?: string }
+                best_oa_location?: { pdf_url?: string; landing_page_url?: string }
                 authorships?: Array<{ author?: { display_name?: string } }>
                 open_access?: { oa_url?: string }
                 abstract_inverted_index?: Record<string, number[]>
@@ -200,7 +267,12 @@ async function queryOpenAlex(
                 venue: r.primary_location?.source?.display_name?.trim(),
                 citationCount: r.cited_by_count || 0,
                 doi: r.doi || undefined,
-                pdfUrl: r.open_access?.oa_url || undefined,
+                pdfUrl: pickOaPdfUrl(
+                    r.best_oa_location?.pdf_url,
+                    r.primary_location?.pdf_url,
+                    r.open_access?.oa_url,
+                    r.best_oa_location?.landing_page_url
+                ),
                 abstract: reconstructAbstract(r.abstract_inverted_index),
                 concepts: concepts.length > 0 ? concepts : undefined,
                 source: 'OpenAlex',
@@ -498,6 +570,75 @@ async function queryNcbiPmc(
 }
 
 /**
+ * Europe PMC — OA biomedical + some humanities full text.
+ */
+async function queryEuropePmc(query: string, limit = 3, signal?: AbortSignal): Promise<AcademicPaper[]> {
+    assertAcademicNotAborted(signal)
+    try {
+        const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&format=json&pageSize=${Math.min(limit, 5)}&resultType=core`
+        const res = await fetch(url, {
+            headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+            signal: searchFetchSignal(SEARCH_TIMEOUT_MS, signal),
+        })
+        if (!res.ok) return []
+        const data = (await res.json()) as {
+            resultList?: {
+                result?: Array<{
+                    id?: string
+                    title?: string
+                    authorString?: string
+                    journalTitle?: string
+                    pubYear?: string
+                    doi?: string
+                    pmcid?: string
+                    citedByCount?: number
+                    abstractText?: string
+                    isOpenAccess?: string
+                }>
+            }
+        }
+        const rows = data?.resultList?.result
+        if (!Array.isArray(rows)) return []
+        return rows.slice(0, limit).map((row) => {
+            const pmcid = row.pmcid ? String(row.pmcid).replace(/^PMC/i, '') : ''
+            const doi = row.doi
+                ? row.doi.startsWith('http')
+                    ? row.doi
+                    : `https://doi.org/${row.doi}`
+                : undefined
+            const pdfUrl = pmcid
+                ? `https://europepmc.org/articles/PMC${pmcid}?pdf=render`
+                : undefined
+            const authors = String(row.authorString || '')
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean)
+                .slice(0, 4)
+            const year = row.pubYear ? parseInt(row.pubYear, 10) : undefined
+            let abstractText = typeof row.abstractText === 'string' ? row.abstractText.replace(/<[^>]*>/g, '').trim() : ''
+            if (abstractText.length > 600) abstractText = `${abstractText.slice(0, 600)}…`
+            return {
+                id: row.id || `epmc-${pmcid || row.doi || Math.random()}`,
+                title: String(row.title || 'Untitled').replace(/<[^>]*>/g, '').trim(),
+                authors,
+                year: Number.isFinite(year) ? year : undefined,
+                venue: row.journalTitle?.trim(),
+                citationCount: typeof row.citedByCount === 'number' ? row.citedByCount : 0,
+                doi,
+                pdfUrl,
+                abstract: abstractText || undefined,
+                source: 'Europe PMC' as const,
+            }
+        })
+    } catch (err) {
+        if (isClientAcademicAbort(signal, err)) {
+            throw err instanceof Error ? err : new DOMException('The operation was aborted.', 'AbortError')
+        }
+        return []
+    }
+}
+
+/**
  * Queries Semantic Scholar Academic Graph API with graceful rate-limit handling.
  */
 async function querySemanticScholar(
@@ -628,15 +769,16 @@ export async function searchAcademicCorpus(
     assertAcademicNotAborted(signal)
 
     const limit = options?.limit || 5
-    const enhancedQuery = options?.field ? `${cleanQuery} ${options.field}` : cleanQuery
+    const sortBy = options?.sortBy || 'relevance'
+    const enhancedQuery = options?.field ? `${cleanQuery} ${options.field}`.replace(/\s+/g, ' ').trim() : cleanQuery
 
-    // Query OpenAlex, Crossref, ArXiv, PMC/PubMed, and Semantic Scholar concurrently with resilience
-    const [openAlexRes, crossrefRes, arxivRes, ncbiRes, s2Res] = await Promise.allSettled([
-        queryOpenAlex(enhancedQuery, { ...options, limit }, signal),
-        queryCrossref(enhancedQuery, { ...options, limit }, signal),
-        options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 2, signal),
+    const [openAlexRes, crossrefRes, arxivRes, ncbiRes, s2Res, epmcRes] = await Promise.allSettled([
+        queryOpenAlex(enhancedQuery, { ...options, limit, sortBy }, signal),
+        queryCrossref(enhancedQuery, { ...options, limit, sortBy }, signal),
+        options?.openAccessOnly ? Promise.resolve([]) : queryArXiv(cleanQuery, 3, signal),
         queryNcbiPmc(cleanQuery, 2, signal),
-        querySemanticScholar(cleanQuery, 2, signal),
+        querySemanticScholar(cleanQuery, 3, signal),
+        queryEuropePmc(enhancedQuery, 2, signal),
     ])
 
     // Fail closed on client Stop — do not return partial papers as a successful hit.
@@ -647,13 +789,13 @@ export async function searchAcademicCorpus(
     const arxivPapers = arxivRes.status === 'fulfilled' ? arxivRes.value : []
     const ncbiPapers = ncbiRes.status === 'fulfilled' ? ncbiRes.value : []
     const s2Papers = s2Res.status === 'fulfilled' ? s2Res.value : []
+    const epmcPapers = epmcRes.status === 'fulfilled' ? epmcRes.value : []
 
-    // Merge papers, prioritizing peer-reviewed sources
     const seenTitles = new Set<string>()
     const seenDois = new Set<string>()
     const combined: AcademicPaper[] = []
 
-    for (const paper of [...openAlexPapers, ...crossrefPapers, ...ncbiPapers, ...arxivPapers, ...s2Papers]) {
+    for (const paper of [...openAlexPapers, ...crossrefPapers, ...ncbiPapers, ...epmcPapers, ...arxivPapers, ...s2Papers]) {
         const normTitle = paper.title.toLowerCase().replace(/[^a-z0-9]/g, '')
         const cleanDoi = paper.doi ? paper.doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '') : ''
 
@@ -662,7 +804,6 @@ export async function searchAcademicCorpus(
             if (cleanDoi) seenDois.add(cleanDoi)
             combined.push(paper)
         }
-        if (combined.length >= limit * 2) break
     }
 
     assertAcademicNotAborted(signal)
@@ -708,14 +849,8 @@ export async function searchAcademicCorpus(
         }
     }
 
-    // Sort according to requested option
-    if (options?.sortBy === 'citations') {
-        combined.sort((a, b) => b.citationCount - a.citationCount)
-    } else if (options?.sortBy === 'recent') {
-        combined.sort((a, b) => (b.year || 0) - (a.year || 0))
-    }
-
-    const finalPapers = combined.slice(0, limit)
+    const ranked = rankAcademicPapers(cleanQuery, combined, sortBy)
+    const finalPapers = ranked.slice(0, limit)
 
     assertAcademicNotAborted(signal)
 

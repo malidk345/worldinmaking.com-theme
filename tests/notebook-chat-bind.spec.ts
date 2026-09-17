@@ -78,10 +78,9 @@ test.describe('notebook chat bind context', () => {
         const clipped = clipNotebookBackground(full)
         expect(clipped).toContain('Labor notes')
         expect(clipped).toContain('Outline:')
-        expect(clipped).not.toContain('surplus value')
-        expect(clipped).toContain('not the current task')
-        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).toContain('optional background')
-        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).toContain('Answer the Query / Prompt first')
+        expect(clipped).toContain('surplus value')
+        expect(clipped).not.toContain('not the current task')
+        expect(NOTEBOOK_AVAILABLE_INSTRUCTION).toContain('bound')
         expect(NOTEBOOK_AVAILABLE_INSTRUCTION).not.toContain('Do not only dump notes')
     })
 

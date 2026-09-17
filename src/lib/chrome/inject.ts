@@ -49,4 +49,8 @@ VISUAL CHROME — WorldInMaking host tokens only (same names as the OS):
 - Surface: bg-primary. Ink: text-primary. Muted: text-muted / text-secondary. Actions: bg-navy text-white (#1D4ED8). Strokes: border-primary. Radius: rounded (6px).
 - Import Card, Button, Badge, Tabs, Input, Table from @wim/ui. Borders, not drop shadows.
 - Do not use shadcn names (bg-background, text-foreground, bg-primary as a brand fill, text-primary-foreground). Do not use slate-*, zinc-*, violet-*, indigo-*, Inter, or gradient mesh kits.
+DENSITY — screens are OS windows, not landing pages:
+- Fill min-h-full. Use a top bar or left rail, then a working body. Never a lone centered hero card, three feature tiles, or "Welcome to X".
+- Ship a usable tool: ≥4 labeled controls or data rows, sample data, hover/disabled/empty states. No placeholder comments, no lorem, no 50-line toys.
+- Prefer type="react" for WIM-native screens (@wim/ui). Use type="html" only when you need Canvas, WebGL, or Three.js.
 `.trim()

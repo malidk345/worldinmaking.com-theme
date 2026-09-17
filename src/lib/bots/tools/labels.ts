@@ -6,7 +6,8 @@ export type ToolRunStatus = 'running' | 'done' | 'error'
 
 const LABELS: Record<string, [string, string, string]> = {
     web_search: ['Searching the web', 'Searched the web', 'Web search failed'],
-    create_artifact: ['Creating artifact', 'Created artifact', 'Artifact failed'],
+    create_artifact: ['Building artifact', 'Created artifact', 'Could not build artifact'],
+    create_concept_map: ['Building concept map', 'Created concept map', 'Could not build concept map'],
     fetch_url: ['Fetching page', 'Fetched page', 'Page fetch failed'],
     get_workspace: ['Looking at the OS', 'Looked at the OS', 'Workspace lookup failed'],
     search_site: ['Searching the site', 'Searched the site', 'Site search failed'],
@@ -42,7 +43,6 @@ const LABELS: Record<string, [string, string, string]> = {
     arrange_workspace_preset: ['Arranging workspace layout', 'Arranged workspace layout', 'Could not arrange workspace'],
     generate_flashcards: ['Generating flashcard deck', 'Created flashcard deck', 'Flashcard generation failed'],
     export_notebook: ['Compiling notebook for export', 'Compiled notebook document', 'Notebook export failed'],
-    create_concept_map: ['Generating concept map', 'Created concept map', 'Concept map failed'],
     ask_user: ['Asking you a question', 'Asked you a question', 'Failed to ask you a question'],
 }
 
@@ -116,6 +116,11 @@ export function toolActivityTitle(name: string, status: ToolRunStatus, args?: st
         if (status === 'running') return `Fetching ${preview}`
         if (status === 'error') return `Failed ${preview}`
         return `Fetched ${preview}`
+    }
+    if (name === 'create_artifact' || name === 'create_concept_map') {
+        if (status === 'running') return `Building ${preview}`
+        if (status === 'error') return `Could not build ${preview}`
+        return `Created ${preview}`
     }
     return `${base}: ${preview}`
 }

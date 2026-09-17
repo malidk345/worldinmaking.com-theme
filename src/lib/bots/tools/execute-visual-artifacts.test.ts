@@ -149,4 +149,66 @@ describe('Interactive Visual Artifacts (Canvas, 3D Models, Parametric Simulation
 
         expect(parseSimulationSpec('not a json')).toBeNull()
     })
+
+    it('rejects invalid canvas JSON instead of opening an empty preview', async () => {
+        const result = await executeToolCall({
+            id: 'call-bad-canvas',
+            name: 'create_artifact',
+            argumentsJson: JSON.stringify({
+                type: 'canvas',
+                title: 'Broken map',
+                content: '{ not json',
+            }),
+        })
+        expect(result.ok).toBe(false)
+        expect(result.artifact).toBeUndefined()
+    })
+
+    it('auto-grids canvas nodes that omit x/y', async () => {
+        const result = await executeToolCall({
+            id: 'call-grid-canvas',
+            name: 'create_artifact',
+            argumentsJson: JSON.stringify({
+                type: 'canvas',
+                title: 'Ungridded',
+                content: JSON.stringify({
+                    title: 'Ungridded',
+                    nodes: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }],
+                    edges: [{ from: 'a', to: 'b' }],
+                }),
+            }),
+        })
+        expect(result.ok).toBe(true)
+        const parsed = parseCanvasSpec(result.artifact?.content)
+        expect(parsed?.nodes[0].x).toBe(100)
+        expect(parsed?.nodes[1].x).toBeGreaterThan(parsed!.nodes[0].x)
+        expect(parsed?.nodes[2].y).toBeGreaterThanOrEqual(parsed!.nodes[0].y)
+    })
+
+    it('reuses the open artifact id and bumps version on the same title', async () => {
+        const result = await executeToolCall(
+            {
+                id: 'call-rev-1',
+                name: 'create_artifact',
+                argumentsJson: JSON.stringify({
+                    type: 'canvas',
+                    title: 'Kant Map',
+                    content: JSON.stringify({
+                        nodes: [{ id: '1', label: 'Kant', x: 10, y: 10 }],
+                        edges: [],
+                    }),
+                }),
+            },
+            undefined,
+            {
+                artifactId: 'art-open-1',
+                artifactTitle: 'Kant Map',
+                artifactType: 'canvas',
+                artifactVersion: 2,
+            }
+        )
+        expect(result.ok).toBe(true)
+        expect(result.artifact?.id).toBe('art-open-1')
+        expect(result.artifact?.version).toBe(3)
+    })
 })

@@ -93,7 +93,7 @@ No greeting, no philosophy, no explanation, no markdown outside the tag. Code on
 - Do not send them to Admin or /admin.
 - export default function ScreenName() { ... }. ${WIM_UI_CHROME_PROMPT}
 - Import Card, Button, Badge, Tabs, Input, Table, Alert, Dialog, Sheet, Avatar, Switch, Checkbox, DropdownMenu from @wim/ui or @/components/ui/*. lucide-react and recharts are allowed.
-- Invent labeled sample data if none was given.
+- Invent labeled sample data if none was given. Build a dense working screen, not a marketing landing page.
 - Declare every const/let ABOVE return. Never put JS statements inside JSX.
 - Keep each className="..." on one line. Close every tag with > or /> on that same opening tag.
 - Finish the file. Close every string, brace, paren, and </antArtifact>.

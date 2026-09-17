@@ -4,6 +4,7 @@ import {
     extractArtifactsFromContent,
     isPromptLikeTitle,
     stripExtractedArtifactMarkup,
+    visibleStreamingReply,
 } from '../src/components/ClaudeWorkspaceChat/utils/extractArtifacts'
 
 test.describe('workspace artifact extraction', () => {
@@ -153,6 +154,23 @@ test.describe('workspace artifact extraction', () => {
         expect(artifacts[0].content).toContain('flowchart TD')
         expect(artifacts[0].content).not.toContain('```')
         expect(stripExtractedArtifactMarkup(content)).not.toContain('flowchart TD')
+    })
+
+    test('streaming screen source stays out of the chat bubble', () => {
+        const streamed = [
+            'A desk for the reading list.',
+            '',
+            '```tsx',
+            'export default function ReadingDesk() {',
+            '  return <div className="p-6">Panel</div>',
+        ].join('\n')
+        expect(visibleStreamingReply(streamed)).toBe('A desk for the reading list.')
+        expect(visibleStreamingReply(streamed)).not.toContain('export default')
+        expect(visibleStreamingReply(streamed)).not.toContain('className=')
+
+        const unfenced = 'export default function Toy() {\n  return <div className="p-4">Hi</div>\n}'
+        expect(visibleStreamingReply(unfenced)).toBe('')
+        expect(stripExtractedArtifactMarkup(unfenced)).toBe('')
     })
 
     test('promotes a mermaid antArtifact even when wrapped as markdown', () => {

@@ -15,7 +15,29 @@ import { notebookWindowPath } from '../../../lib/window-path';
 import { useApp } from '../../../context/App';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+
+const askAiMarkdownSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'section', 'sup', 'sub'],
+  attributes: {
+    ...defaultSchema.attributes,
+    section: ['className', 'class', 'dataFootnotes', 'data-footnotes'],
+    li: [...((defaultSchema.attributes as { li?: string[] })?.li || []), 'id'],
+    a: [
+      ...((defaultSchema.attributes as { a?: string[] })?.a || []),
+      'href',
+      'dataFootnoteRef',
+      'data-footnote-ref',
+      'dataFootnoteBackref',
+      'data-footnote-backref',
+      'ariaDescribedBy',
+      'aria-describedby',
+      'ariaLabel',
+      'aria-label',
+    ],
+  },
+}
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { RetroVoiceNotePlayer } from '../../AudioPlayer';
@@ -346,6 +368,8 @@ function ChatMessageCodeBlock({ language, code, isLive }: { language: string; co
 
 function artifactCardMeta(art: Artifact): string {
   const kind = getRenderer(art.type).label.replace(/^\w/, (c) => c.toUpperCase());
+  if (art.pending) return `Building ${kind}…`
+  if (art.error) return `Could not build ${kind}`
   return art.version > 1 ? `${kind} · v${art.version}` : kind;
 }
 
@@ -540,21 +564,25 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         <div className="flex flex-col items-end group">
           {/* Attached Files / Context Chips */}
           {message.attachments && message.attachments.length > 0 && (
-            <div className="flex flex-wrap justify-end gap-1.5 mb-1.5 max-w-[85%]">
+            <div className="mb-1.5 flex max-w-[85%] flex-wrap justify-end gap-2">
               {message.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center gap-1.5 rounded-md border border-primary/50 bg-accent/80 px-2 py-1 text-[11px] text-secondary font-sans shadow-2xs"
+                  className="flex items-center gap-2 rounded border border-primary bg-accent px-2 py-1.5 font-sans text-[11px] text-secondary"
                 >
                   {att.type === 'image' && att.url ? (
-                    <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
+                    <img
+                      src={att.url}
+                      alt={att.name}
+                      className="h-12 w-12 shrink-0 rounded border border-primary/40 object-cover"
+                    />
                   ) : att.type === 'image' ? (
-                    <IconImage className="size-3.5 shrink-0 text-secondary" />
+                    <IconImage className="size-4 shrink-0 text-secondary" />
                   ) : (
-                    <IconDocument className="size-3.5 shrink-0 text-secondary" />
+                    <IconDocument className="size-4 shrink-0 text-secondary" />
                   )}
                   <span className="max-w-[160px] truncate font-medium text-primary">{att.name}</span>
-                  {att.size && <span className="text-[9.5px] text-muted font-mono">{att.size}</span>}
+                  {att.size && <span className="font-mono text-[9.5px] text-muted">{att.size}</span>}
                 </div>
               ))}
             </div>
@@ -629,11 +657,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           </div>
 
           <div className="wim-ask-reply space-y-1">
-          {/* Response Text with Ultra-Compact High-Density Typography */}
           <div
-            className="font-sans text-[13px] sm:text-[13.5px] leading-[1.42] text-primary markdown prose dark:prose-invert prose-sm max-w-none [&_p]:mt-0 [&_p]:leading-[1.42] [&_p]:mb-1.5 last:[&_p]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_li]:leading-[1.42] [&_h1]:text-[14.5px] [&_h1]:font-semibold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-[13.5px] [&_h2]:font-semibold [&_h2]:mt-1.5 [&_h2]:mb-0.5 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-2.5 [&_blockquote]:my-1 [&_blockquote]:text-secondary [&_blockquote]:italic [&_blockquote]:leading-[1.42] [&_table]:my-1 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-primary/20 [&_th]:bg-accent/50 [&_th]:px-2 [&_th]:py-0.5 [&_th]:text-left [&_th]:text-[11.5px] [&_td]:border [&_td]:border-primary/20 [&_td]:px-2 [&_td]:py-0.5 [&_td]:text-[11.5px] [&_td]:leading-[1.4] [&_a]:font-semibold [&_a]:text-primary break-words [overflow-wrap:anywhere]"
+            className="wim-ask-reply font-sans text-[13px] sm:text-[13.5px] text-primary markdown prose dark:prose-invert prose-sm max-w-none break-words [overflow-wrap:anywhere] [&_table]:text-inherit"
           >
-            {isLiveAnswer && !displayedText ? (
+            {isLiveAnswer && !displayedText && !(message.artifacts && message.artifacts.length > 0) ? (
               <div className="wim-reply-skeleton" aria-hidden>
                 <span />
                 <span />
@@ -651,10 +678,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               <>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSanitize]}
+                  rehypePlugins={[[rehypeSanitize, askAiMarkdownSchema]]}
                   components={{
                     p: ({ children }: any) => (
-                      <p className="mb-1.5 last:mb-0 leading-[1.42] break-words">{children}</p>
+                      <p className="break-words">{children}</p>
                     ),
                     a({ href, children, ...props }: any) {
                       const hrefStr = typeof href === 'string' ? href : '';
@@ -711,7 +738,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                         );
                       }
                       return (
-                        <code className="bg-accent text-primary border border-primary/20 px-1 py-0.2 rounded text-[11.5px] font-mono" {...props}>
+                        <code className="font-code font-medium text-primary border border-primary bg-accent rounded-sm px-1 py-0.5" {...props}>
                           {children}
                         </code>
                       );
@@ -750,6 +777,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   type="button"
                   onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
                   className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded border border-primary/70 bg-primary/80 backdrop-blur-md px-4 py-3 text-left transition-all duration-200 hover:bg-accent hover:border-primary hover:-translate-y-0.5 hover:shadow-md active:scale-[0.96] active:translate-y-0 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer origin-left"
+                  aria-busy={art.pending ? true : undefined}
                 >
                   <div className="min-w-0 pr-16">
                     <div className="truncate text-[14px] font-medium leading-tight text-primary">

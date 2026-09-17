@@ -25,9 +25,11 @@ export type HostSnapshot = {
     artifactId?: string
     artifactTitle?: string
     artifactType?: string
+    artifactVersion?: number
+    artifacts?: Array<{ id: string; title: string; type?: string; version?: number }>
     attachments?: Array<{ name: string; content: string }>
     scratchpad?: {
-        documents?: Array<{ name: string; size?: string; type?: string }>
+        documents?: Array<{ name: string; size?: string; type?: string; content?: string; pageCount?: number }>
         nodes?: Array<{ type: string; title?: string; content: string; source?: string }>
         tasks?: Array<{ title: string; status: string }>
         memories?: Array<{ fact: string; category?: string }>
@@ -81,6 +83,27 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
     const artifactId = typeof snap.artifactId === 'string' ? snap.artifactId.slice(0, 80) : undefined
     const artifactTitle = typeof snap.artifactTitle === 'string' ? snap.artifactTitle.slice(0, 120) : undefined
     const artifactType = typeof snap.artifactType === 'string' ? snap.artifactType.slice(0, 40) : undefined
+    const artifactVersion =
+        typeof snap.artifactVersion === 'number' && Number.isFinite(snap.artifactVersion)
+            ? Math.max(1, Math.floor(snap.artifactVersion))
+            : undefined
+    const artifacts: NonNullable<HostSnapshot['artifacts']> = []
+    if (Array.isArray(snap.artifacts)) {
+        for (const row of snap.artifacts.slice(0, 16)) {
+            if (!row || typeof row !== 'object') continue
+            const item = row as { id?: unknown; title?: unknown; type?: unknown; version?: unknown }
+            if (typeof item.id !== 'string' || typeof item.title !== 'string') continue
+            artifacts.push({
+                id: item.id.slice(0, 80),
+                title: item.title.slice(0, 120),
+                type: typeof item.type === 'string' ? item.type.slice(0, 40) : undefined,
+                version:
+                    typeof item.version === 'number' && Number.isFinite(item.version)
+                        ? Math.max(1, Math.floor(item.version))
+                        : undefined,
+            })
+        }
+    }
     const notebooks: NonNullable<HostSnapshot['notebooks']> = []
     if (Array.isArray(snap.notebooks)) {
         for (const notebook of snap.notebooks.slice(0, 20)) {
@@ -124,10 +147,15 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
         const s = snap.scratchpad as Record<string, unknown>
         scratchpad = {
             documents: Array.isArray(s.documents)
-                ? s.documents.map((d: any) => ({
-                      name: String(d.name || 'Document'),
+                ? s.documents.slice(0, 8).map((d: any) => ({
+                      name: String(d.name || 'Document').slice(0, 200),
                       size: typeof d.size === 'string' ? d.size : undefined,
                       type: typeof d.type === 'string' ? d.type : undefined,
+                      pageCount:
+                          typeof d.pageCount === 'number' && Number.isFinite(d.pageCount)
+                              ? Math.max(0, Math.floor(d.pageCount))
+                              : undefined,
+                      content: typeof d.content === 'string' ? d.content.slice(0, 400_000) : undefined,
                   }))
                 : undefined,
             nodes: Array.isArray(s.nodes)
@@ -156,8 +184,75 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
                 : undefined,
         }
     }
-    if (!path && !notebookId && !notebooks.length && !windows.length && !selection && !artifactId && !user && !scratchpad) return undefined
-    return { path, user, notebookId, notebookTitle, selection, windows, notebooks, artifactId, artifactTitle, artifactType, scratchpad }
+    const attachments: NonNullable<HostSnapshot['attachments']> = []
+    if (Array.isArray(snap.attachments)) {
+        for (const row of snap.attachments.slice(0, 6)) {
+            if (!row || typeof row !== 'object') continue
+            const item = row as { name?: unknown; content?: unknown }
+            if (typeof item.name !== 'string' || typeof item.content !== 'string') continue
+            attachments.push({
+                name: item.name.slice(0, 200),
+                content: item.content.slice(0, 400_000),
+            })
+        }
+    }
+    if (
+        !path &&
+        !notebookId &&
+        !notebooks.length &&
+        !windows.length &&
+        !selection &&
+        !artifactId &&
+        !user &&
+        !scratchpad &&
+        !artifacts.length &&
+        !attachments.length
+    ) {
+        return undefined
+    }
+    return {
+        path,
+        user,
+        notebookId,
+        notebookTitle,
+        selection,
+        windows,
+        notebooks,
+        artifactId,
+        artifactTitle,
+        artifactType,
+        artifactVersion,
+        artifacts,
+        attachments: attachments.length ? attachments : undefined,
+        scratchpad,
+    }
+}
+
+function normArtifactTitle(title: string): string {
+    return title.toLowerCase().trim().replace(/[\s\-_]+/g, '')
+}
+
+/** Same title (or the open artifact) is a revision, not a second card. */
+export function resolveHostArtifact(
+    host: HostSnapshot | undefined,
+    title: string,
+    type?: string
+): { id: string; version: number } | undefined {
+    if (!host) return undefined
+    const want = normArtifactTitle(title)
+    if (!want) return undefined
+    if (host.artifactId && host.artifactTitle && normArtifactTitle(host.artifactTitle) === want) {
+        if (!type || !host.artifactType || host.artifactType === type) {
+            return { id: host.artifactId, version: (host.artifactVersion || 1) + 1 }
+        }
+    }
+    const found = (host.artifacts || []).find((item) => {
+        if (normArtifactTitle(item.title) !== want) return false
+        if (type && item.type && item.type !== type) return false
+        return true
+    })
+    if (!found) return undefined
+    return { id: found.id, version: (found.version || 1) + 1 }
 }
 
 /** Same-turn memory path: remember writes here so withHostContext and get_workspace see it. */

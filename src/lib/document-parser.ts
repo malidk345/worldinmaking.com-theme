@@ -1,4 +1,5 @@
 import { extractTextFromPdf } from './pdf-parser';
+import { PDF_NO_TEXT } from './pdf-pages';
 
 export interface ParsedDocumentResult {
   type: 'pdf' | 'csv' | 'json' | 'code' | 'text' | 'image' | 'audio';
@@ -65,11 +66,16 @@ export async function parseDocumentFile(file: File): Promise<ParsedDocumentResul
   }
 
   if (isPdf) {
-    const pdfText = await extractTextFromPdf(file);
+    const extracted = await extractTextFromPdf(file);
+    const content = extracted.hasText ? extracted.text : PDF_NO_TEXT;
+    const truncated = extracted.truncated
+      ? `\n\n[Extracted ${extracted.extractedPages} of ${extracted.pageCount} pages.]`
+      : '';
     return {
       type: 'pdf',
-      content: pdfText,
-      preview: pdfText.slice(0, 200),
+      content: extracted.hasText ? `${content}${truncated}` : PDF_NO_TEXT,
+      preview: extracted.hasText ? content.slice(0, 200) : PDF_NO_TEXT,
+      pageCount: extracted.pageCount,
     };
   }
 

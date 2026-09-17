@@ -162,27 +162,18 @@ export function isNotebookTask(prompt: string): boolean {
 }
 
 export const NOTEBOOK_AVAILABLE_INSTRUCTION = `
-A notebook is bound in this OS. That is optional background, not the current task.
-- Answer the Query / Prompt first. Do not summarize, quote, or steer toward the notebook or scratchpad unless the query is about them.
-- Use notebook tools only if the query asks to read, edit, append, or save to the notebook.
+A notebook is bound in this OS. You can see its title, outline, and a body excerpt.
+- Use it when it helps the Query. Call read_notebook if you need more than the excerpt.
+- Do not change the subject to the notebook if the Query is about something else.
 - If the user asks to narrate, read aloud, or voice the note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"), call synthesize_speech with the notebook content.
 `.trim()
 
-/** Short pointer for ordinary chat so a bound notebook does not become the subject. */
-export function clipNotebookBackground(context: string, max = 1200): string {
+/** Keep title, outline, and a body excerpt so the model can notice the bound notebook. */
+export function clipNotebookBackground(context: string, max = 6000): string {
     const text = String(context || '').trim()
     if (!text) return ''
-    const title = text.match(/Bound notebook title:[^\n]+/)?.[0] || ''
-    const outline = text.match(/Outline:\n(?:[^\n]+\n?){0,12}/)?.[0]?.trim() || ''
-    const pointer = [
-        title,
-        outline,
-        '(Notebook body omitted — not the current task. Call read_notebook only if the Query needs it.)',
-    ]
-        .filter(Boolean)
-        .join('\n\n')
-    if (pointer.length <= max) return pointer
-    return `${pointer.slice(0, max - 1)}…`
+    if (text.length <= max) return text
+    return `${text.slice(0, max - 1)}…`
 }
 
 export const NOTEBOOK_EDITOR_INSTRUCTION = `

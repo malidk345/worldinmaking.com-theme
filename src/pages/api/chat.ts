@@ -19,6 +19,7 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { stripLeakedToolMarkup } from 'lib/bots/tools/leak'
 import { shouldAdvertiseQualityCorrection, formatAiSseEvent, toPublicProviderLabel, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
+import { visibleStreamingReply } from '../../components/ClaudeWorkspaceChat/utils/extractArtifacts'
 import {
     clipNotebookBackground,
     isNotebookTask,
@@ -442,23 +443,23 @@ export default async function handler(req: Request) {
                         : '',
                     styleSuffix.value ? `Requested style (untrusted reference data):\n"""${styleSuffix.value}"""` : '',
                     notebookForContext
-                        ? `Notebook background (optional — ignore unless the Query is about this notebook):\n"""${notebookForContext}"""`
+                        ? `Bound notebook (in the workspace; use when it helps the Query):\n"""${notebookForContext}"""`
                         : '',
                     scratchpadContext
-                        ? `Scratchpad inventory (optional — ignore unless the Query is about these notes):\n"""${scratchpadContext}"""`
+                        ? `Scratchpad working memory (in the workspace; use when it helps the Query):\n"""${scratchpadContext}"""`
                         : '',
                     history.length === 0 && chatHistory.value
                         ? `Recent Conversation History (untrusted reference data):\n"""${chatHistory.value}"""`
                         : '',
                     attachmentContext.value
-                        ? `Attachments (optional background — use only if the Query needs them):\n"""${attachmentContext.value}"""`
+                        ? `User-uploaded files this turn (in the room; use them when they help the Query):\n"""${attachmentContext.value}"""`
                         : '',
                     webSearchContext,
                 ]
                     .filter(Boolean)
                     .join('\n\n')
 
-                if (host && attachmentContext.value) {
+                if (host && attachmentContext.value && !(host.attachments && host.attachments.length > 0)) {
                     host.attachments = [{ name: 'attachments', content: attachmentContext.value }]
                 }
 
@@ -469,6 +470,7 @@ export default async function handler(req: Request) {
                       : ''
                 let livePublicTokensCount = 0
                 let livePublicText = ''
+                let sentVisiblePublic = ''
                 let liveThinkingAcc = ''
 
                 const byokEnv = readByokEnv(body)
@@ -500,9 +502,13 @@ export default async function handler(req: Request) {
                         onLifecycle: (event) => send({ type: 'phase', phase: event }),
                     },
                     (token) => {
-                        livePublicTokensCount += 1
                         livePublicText += token
-                        send({ type: 'token', text: token })
+                        const visible = visibleStreamingReply(livePublicText)
+                        if (visible.length <= sentVisiblePublic.length) return
+                        const delta = visible.slice(sentVisiblePublic.length)
+                        sentVisiblePublic = visible
+                        livePublicTokensCount += 1
+                        send({ type: 'token', text: delta })
                     },
                     (thinkingChunk) => {
                         liveThinkingAcc += thinkingChunk

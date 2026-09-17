@@ -42,6 +42,7 @@ import { findMatchingWindow } from '../../lib/os/window-finder';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import { ScratchpadStore } from '../../lib/scratchpad-store';
+import { pdfPromptExcerpt } from '../../lib/pdf-pages';
 import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
@@ -53,8 +54,10 @@ import {
 import { IconDocument } from '@posthog/icons';
 import { messageToNotebookMarkdown } from '../../lib/notebook-artifact-block';
 import { finalizeArtifactTurn } from '../../lib/artifacts';
+import { dedupeArtifacts, visibleStreamingReply } from './utils/extractArtifacts';
+import { artifactWindowKey, artifactWindowPath, draftArtifactFromToolEvent, isArtifactBuildTool } from '../../lib/artifacts/draft';
 import type { OSActionCard as OSActionCardType } from './types';
-import { dedupeArtifacts } from './utils/extractArtifacts';
+
 import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, toPublicProviderLabel, type AiArtifact } from 'lib/ai/contracts';
 import { scrubSecretMaterial } from 'lib/ai/scrub';
@@ -376,9 +379,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     // Launch artifact exclusively as a native OS Desktop AppWindow
     if (app?.addWindow) {
       app.addWindow({
-        key: `artifact-${art.id || encodeURIComponent(art.title)}`,
+        key: artifactWindowKey(art),
         title: `${art.title || 'Component'}`,
-        path: `/artifact/${art.id || encodeURIComponent(art.title)}`,
+        path: artifactWindowPath(art),
         size: {
           width: 860,
           height: 600,
@@ -1093,22 +1096,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             .reverse()
             .find((m) => m.role === 'user' && m.attachments && m.attachments.length > 0)?.attachments || [];
 
-      if (effectiveAttachments.length > 0) {
-        app.addWindow({ path: '/scratchpad', title: 'Scratchpad' });
-      }
-
       const attachmentContext = effectiveAttachments
         .map((attachment) => {
           if (attachment.type === 'image') {
-            return `[Image attachment: ${attachment.name}. URL: ${attachment.url || ''}. Image bytes are not sent to the text model.]`;
+            return `User uploaded image this turn: ${attachment.name}. URL: ${attachment.url || ''}. Call analyze_image if you need to look at it.`;
           }
           if (attachment.type === 'audio') {
-            return `[Audio attachment: ${attachment.name}. URL: ${attachment.url || ''}.]`;
+            return `User uploaded audio this turn: ${attachment.name}. URL: ${attachment.url || ''}.`;
           }
-          return `[${attachment.name}]\n${(attachment.content || attachment.contentPreview || '').slice(0, 12000)}`;
+          if (attachment.type === 'pdf' || attachment.name.toLowerCase().endsWith('.pdf')) {
+            return pdfPromptExcerpt(attachment.name, attachment.content || attachment.contentPreview || '')
+          }
+          const body = (attachment.content || attachment.contentPreview || '').slice(0, 4000)
+          return `User uploaded document this turn: ${attachment.name}\n${body || '(no extractable text — say so if you cannot read it)'}`;
         })
         .join('\n\n')
-        .slice(0, 16000);
+        .slice(0, 12000);
       const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
 
       const conversationHistory: Array<Record<string, unknown>> = []
@@ -1210,8 +1213,39 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             artifactId: activeArtifact?.id,
             artifactTitle: activeArtifact?.title,
             artifactType: activeArtifact?.type,
+            artifactVersion: activeArtifact?.version,
+            artifacts: (activeChat?.messages || [])
+              .flatMap((message) => message.artifacts || [])
+              .slice(-12)
+              .map((item) => ({
+                id: item.id,
+                title: item.title,
+                type: item.type,
+                version: item.version,
+              })),
+            attachments: effectiveAttachments
+              .filter((item) => item.type !== 'image' && item.type !== 'audio' && (item.content || item.contentPreview))
+              .slice(0, 4)
+              .map((item) => ({
+                name: item.name,
+                content: (item.content || item.contentPreview || '').slice(0, 350_000),
+              })),
             scratchpad: {
-              documents: ScratchpadStore.getState().documents.map((d) => ({ name: d.name, size: d.size ? String(d.size) : undefined, type: d.type })),
+              documents: (() => {
+                let budget = 350_000
+                return ScratchpadStore.getState().documents.slice(0, 8).map((d) => {
+                  const raw = d.content || ''
+                  const take = raw.slice(0, budget)
+                  budget = Math.max(0, budget - take.length)
+                  return {
+                    name: d.name,
+                    size: d.size ? String(d.size) : undefined,
+                    type: d.type,
+                    pageCount: d.pageCount,
+                    content: take || undefined,
+                  }
+                })
+              })(),
               nodes: ScratchpadStore.getState().nodes.map((n) => ({ type: n.type, title: n.title, content: n.content, source: n.source })),
               tasks: ScratchpadStore.getState().tasks.map((t) => ({ title: t.title, status: t.status })),
               memories: ScratchpadStore.getState().memories.map((m) => ({ fact: m.fact, category: m.category })),
@@ -1384,7 +1418,39 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               toolTrace: streamedToolTrace,
             });
 
-            // Reactively sync into WorldInMaking OS Scratchpad Store & Auto-open Scratchpad Window
+            if (isArtifactBuildTool(parsed.tool.name) && parsed.tool.status === 'running') {
+              const draft = draftArtifactFromToolEvent(parsed.tool)
+              if (draft) {
+                const existingPending = streamedArtifacts.find(
+                  (item) => item.pending && (item.toolCallId === draft.toolCallId || item.id === draft.id)
+                )
+                const existing = [
+                  ...((activeChat?.messages || []).flatMap((message) => message.artifacts || [])),
+                  ...streamedArtifacts,
+                ]
+                const { activeArtifact: next } = processArtifactRevision(existing, draft, {
+                  preferId: existingPending?.id,
+                })
+                const merged = { ...next, pending: true, toolCallId: draft.toolCallId }
+                streamedArtifacts = [merged, ...streamedArtifacts.filter((item) => item.id !== merged.id)]
+                openArtifact(merged)
+                updateAssistantMessage(targetChatId, assistantMessageId, {
+                  artifacts: streamedArtifacts,
+                })
+              }
+            }
+            if (isArtifactBuildTool(parsed.tool.name) && parsed.tool.status === 'error') {
+              streamedArtifacts = streamedArtifacts.map((item) =>
+                item.pending
+                  ? { ...item, pending: false, error: String(parsed.tool.detail || 'Could not build artifact') }
+                  : item
+              )
+              const failed = streamedArtifacts.find((item) => item.error)
+              if (failed) openArtifact(failed)
+              updateAssistantMessage(targetChatId, assistantMessageId, { artifacts: streamedArtifacts })
+            }
+
+            // Sync tool notes into Scratchpad store. Do not auto-open the window.
             if (
               parsed.tool.name === 'write_scratchpad' ||
               parsed.tool.name === 'scratchpad' ||
@@ -1631,7 +1697,32 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'artifacts') {
-            appendStreamedArtifacts(parsed.artifacts);
+            for (const incoming of parsed.artifacts || []) {
+              const next = toWorkspaceArtifact(incoming)
+              const pendingByType =
+                streamedArtifacts.find((item) => item.pending && item.type === next.type) ||
+                streamedArtifacts.find((item) => item.pending)
+              const pendingList = streamedArtifacts.filter((item) => item.pending)
+              const pendingMatch = pendingByType || (pendingList.length === 1 ? pendingList[0] : undefined)
+              const existing = [
+                ...((activeChat?.messages || []).flatMap((message) => message.artifacts || [])),
+                ...streamedArtifacts,
+              ]
+              const { activeArtifact: revised } = processArtifactRevision(
+                existing,
+                { ...next, toolCallId: pendingMatch?.toolCallId },
+                { preferId: pendingMatch?.id }
+              )
+              streamedArtifacts = [
+                { ...revised, pending: false, error: undefined, toolCallId: pendingMatch?.toolCallId || revised.toolCallId },
+                ...streamedArtifacts.filter((item) => item.id !== revised.id && !(item.pending && item.id === pendingMatch?.id)),
+              ]
+              openArtifact({
+                ...revised,
+                pending: false,
+                toolCallId: pendingMatch?.toolCallId || revised.toolCallId,
+              })
+            }
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: sanitizePublicAssistantText(accumulatedContent),
               artifacts: streamedArtifacts,
@@ -1684,7 +1775,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             if (now - lastTokenFlushTime > 24 || accumulatedContent.length < 40) {
               lastTokenFlushTime = now;
               updateAssistantMessage(targetChatId, assistantMessageId, {
-                content: sanitizePublicAssistantText(accumulatedContent),
+                content: visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent)),
                 thinkingProcess: { ...currentThinkingProcess },
               });
             }
@@ -1739,7 +1830,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             }
             const publicProvider = toPublicProviderLabel(parsed.provider);
             updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: sanitizePublicAssistantText(accumulatedContent),
+              content: visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent)),
               artifacts: streamedArtifacts,
               citations: streamedCitations,
               thinkingProcess: { ...currentThinkingProcess },
@@ -1812,7 +1903,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
       if (isAbortError(err)) {
-        const stoppedText = sanitizePublicAssistantText(accumulatedContent)
+        const stoppedText = visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent))
         const resumeAbort = resumeAbortRef.current
         resumeAbortRef.current = false
         updateAssistantMessage(targetChatId, assistantMessageId, {
@@ -1832,7 +1923,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
-        const displayContent = sanitizePublicAssistantText(accumulatedContent);
+        const displayContent = visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent));
         const scrubbedError = scrubSecretMaterial(String(err?.message || '')).replace(/\s+/g, ' ').trim();
         const errKind = ((err as any).kind || streamErrorKind) as Message["errorKind"] | undefined;
         // Prefer product-safe inquiry copy over raw fetch/network dumps; keep no-content special-case.
@@ -2415,7 +2506,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   return (
     <LemonScope fill>
-    <div className="relative flex h-full min-h-0 w-full min-w-0 bg-primary text-primary font-sans overflow-hidden antialiased">
+    <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-sans overflow-hidden antialiased">
       {/* Left Collapsible Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -2444,7 +2535,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         onDragLeave={handleWindowDragLeave}
         onDragOver={handleWindowDragOver}
         onDrop={handleWindowDrop}
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-primary text-primary"
+        className="relative flex min-h-0 min-w-0 flex-1 flex-col text-primary"
       >
         {/* Full Window Drag & Drop Overlay */}
         {isWindowDragging && (
@@ -2460,14 +2551,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Top Header Bar */}
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          activeChatTitle={activeChat?.title}
-          boundNotebookTitle={notebookBind?.title}
+          onOpenScratchpad={() => app.addWindow({ path: '/scratchpad', title: 'Scratchpad' })}
         />
 
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">

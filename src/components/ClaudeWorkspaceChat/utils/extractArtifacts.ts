@@ -102,13 +102,42 @@ function extractGfmTables(content: string): string[] {
   return tables
 }
 
+const SCREEN_SOURCE_START =
+  /(?:^|\n)[ \t]*(?:```(?:tsx|jsx|react|html|javascript|js|typescript|ts)\b|<(?:antArtifact|artifact)\b|export\s+default\s+(?:function|[A-Z])|import\s+React\b|import\s+\{[^}]+\}\s+from\s+['"]@wim\/ui['"]|<!DOCTYPE\s+html|<html[\s>])/i
+
+function looksLikeHtmlSource(text: string): boolean {
+  const body = String(text || '').trim()
+  if (body.length < 80) return false
+  return /<!DOCTYPE\s+html|<html[\s>]/i.test(body)
+}
+
+/** Leading chat prose vs screen/source dump that belongs in the artifact window. */
+export function splitPublicAndScreenSource(text: string): { prose: string; hasScreenSource: boolean } {
+  const raw = String(text || '')
+  const match = SCREEN_SOURCE_START.exec(raw)
+  if (match && typeof match.index === 'number' && match.index >= 0) {
+    return { prose: raw.slice(0, match.index).trim(), hasScreenSource: true }
+  }
+  if (looksLikeReactSource(raw) && raw.length > 120) {
+    return { prose: '', hasScreenSource: true }
+  }
+  if (looksLikeHtmlSource(raw)) {
+    return { prose: '', hasScreenSource: true }
+  }
+  return { prose: raw.trim(), hasScreenSource: false }
+}
+
+export function visibleStreamingReply(text: string): string {
+  return splitPublicAndScreenSource(text).prose
+}
+
 export function stripExtractedArtifactMarkup(text: string): string {
-  return String(text || '')
+  const stripped = String(text || '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
     .replace(/<(?:antArtifact|artifact)\b[\s\S]*$/gi, '')
     .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*?```/gi, '')
     .replace(/```[a-z0-9_-]*[^\n]*\n[\s\S]*$/gi, '')
-    .trim()
+  return splitPublicAndScreenSource(stripped).prose
 }
 
 export function extractArtifactsFromContent(content: string, userPrompt: string): Artifact[] {

@@ -99,6 +99,9 @@ export interface Artifact {
   description?: string
   version: number
   createdAt: string
+  pending?: boolean
+  error?: string
+  toolCallId?: string
 }
 
 export interface WebCitation {

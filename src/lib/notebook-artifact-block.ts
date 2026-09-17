@@ -165,6 +165,18 @@ export function isNotebookSvgFence(language?: string): boolean {
     return /^(svg)$/i.test(language || '')
 }
 
+export function isNotebookCanvasFence(language?: string): boolean {
+    return /^(canvas|mindmap|whiteboard)$/i.test(language || '')
+}
+
+export function isNotebookModel3dFence(language?: string): boolean {
+    return /^(model3d|3d)$/i.test(language || '')
+}
+
+export function isNotebookSimulationFence(language?: string): boolean {
+    return /^(simulation|sim|parametric)$/i.test(language || '')
+}
+
 export function chartSpecFromFence(text: string): ChartSpec | null {
     return parseChartSpec(text)
 }

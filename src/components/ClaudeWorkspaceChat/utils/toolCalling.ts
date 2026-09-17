@@ -37,34 +37,49 @@ export interface SSESearchEvent {
 /**
  * Creates or increments an Artifact version when a document revision is requested.
  */
+function normTitle(title: string): string {
+  return (title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '')
+}
+
 export function processArtifactRevision(
   existingArtifacts: Artifact[],
-  newArtData: Omit<Artifact, 'id' | 'version' | 'createdAt'> & { id?: string },
+  newArtData: Omit<Artifact, 'id' | 'version' | 'createdAt'> & { id?: string; toolCallId?: string; pending?: boolean },
   opts?: { preferId?: string }
 ): { artifacts: Artifact[]; activeArtifact: Artifact } {
   const now = new Date().toISOString();
-  const normalizedNewTitle = (newArtData.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
+  const normalizedNewTitle = normTitle(newArtData.title || '');
 
   const matchingIndex = existingArtifacts.findIndex((a) => {
+    if (newArtData.toolCallId && a.toolCallId && a.toolCallId === newArtData.toolCallId) return true
+    if (!newArtData.pending && a.pending && newArtData.toolCallId && a.toolCallId === newArtData.toolCallId) return true
     if (opts?.preferId && a.id === opts.preferId) return true
     if (newArtData.id && a.id === newArtData.id) return true
     if (newArtData.identifier && a.identifier && newArtData.identifier === a.identifier) return true
-    const normalizedExistingTitle = (a.title || '').toLowerCase().trim().replace(/[\s\-_]+/g, '');
+    if (a.pending && existingArtifacts.filter((item) => item.pending).length === 1 && !newArtData.pending) {
+      if (!normalizedNewTitle || !a.title || a.title === 'Untitled') return true
+      const existingTitle = normTitle(a.title)
+      return existingTitle === normalizedNewTitle || existingTitle.includes(normalizedNewTitle) || normalizedNewTitle.includes(existingTitle)
+    }
+    const normalizedExistingTitle = normTitle(a.title || '');
     return (
       normalizedExistingTitle === normalizedNewTitle ||
-      normalizedExistingTitle.includes(normalizedNewTitle) ||
-      normalizedNewTitle.includes(normalizedExistingTitle)
+      (normalizedExistingTitle.length > 2 && normalizedNewTitle.length > 2 && (
+        normalizedExistingTitle.includes(normalizedNewTitle) ||
+        normalizedNewTitle.includes(normalizedExistingTitle)
+      ))
     );
   });
 
   if (matchingIndex >= 0) {
     const previous = existingArtifacts[matchingIndex];
-    const newVersion = (previous.version || 1) + 1;
+    const newVersion = previous.pending ? Math.max(1, previous.version || 1) : (previous.version || 1) + 1;
     const updatedArtifact: Artifact = {
       ...newArtData,
       id: previous.id,
       version: newVersion,
       createdAt: now,
+      pending: Boolean(newArtData.pending),
+      toolCallId: newArtData.toolCallId || previous.toolCallId,
     };
     const updatedList = [...existingArtifacts];
     updatedList[matchingIndex] = updatedArtifact;
@@ -72,9 +87,10 @@ export function processArtifactRevision(
   } else {
     const newArtifact: Artifact = {
       ...newArtData,
-      id: `art-${Date.now()}-${existingArtifacts.length + 1}`,
+      id: newArtData.id || `art-${Date.now()}-${existingArtifacts.length + 1}`,
       version: 1,
       createdAt: now,
+      toolCallId: newArtData.toolCallId,
     };
     return {
       artifacts: [newArtifact, ...existingArtifacts],

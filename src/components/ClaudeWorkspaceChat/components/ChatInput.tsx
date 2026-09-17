@@ -127,6 +127,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const app = useOptionalApp();
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [pendingUploads, setPendingUploads] = useState<Array<{ id: string; name: string; kind: 'image' | 'pdf' | 'file' }>>([]);
 
 
   useEffect(() => {
@@ -345,6 +346,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       const sizeStr = file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         : `${(file.size / 1024).toFixed(1)} KB`;
+      const kind: 'image' | 'pdf' | 'file' = file.type.startsWith('image/')
+        ? 'image'
+        : file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+          ? 'pdf'
+          : 'file'
+      setPendingUploads((prev) => [...prev, { id, name: file.name, kind }])
 
       try {
         const parsed = await parseDocumentFile(file);
@@ -357,17 +364,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 uploadedUrl = getFileUrl(meta.storage_key);
             } catch (uploadErr) {
                 console.error('[ChatInput] Upload failed for', file.name, uploadErr);
-                // Clear tool errors on upload failure
-                return;
             }
         }
 
-        // Automatically save document into OS Working Memory Scratchpad
         ScratchpadStore.addDocument({
           name: file.name,
           content: parsed.content,
           type: parsed.type,
           size: sizeStr,
+          pageCount: parsed.pageCount,
           preview: parsed.preview,
         });
 
@@ -385,6 +390,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         ]);
       } catch (err) {
         console.error('[ChatInput] Document parsing failed:', err);
+      } finally {
+        setPendingUploads((prev) => prev.filter((item) => item.id !== id))
       }
     });
   };
@@ -606,25 +613,53 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
 
         {/* Attachment Previews */}
-        {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-1.5 pb-1.5 border-b border-primary">
+        {(pendingUploads.length > 0 || attachments.length > 0) && (
+          <div className="mb-1.5 flex flex-wrap gap-2 border-b border-primary pb-2">
+            {pendingUploads.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 rounded border border-primary bg-accent px-2 py-1.5"
+                role="status"
+                aria-live="polite"
+              >
+                <div
+                  className={`shrink-0 animate-pulse rounded border border-primary/40 bg-primary ${
+                    item.kind === 'image' ? 'h-12 w-12' : 'h-8 w-8'
+                  }`}
+                />
+                <div className="min-w-0">
+                  <div className="max-w-[140px] truncate text-[11px] font-medium text-primary">{item.name}</div>
+                  <div className="text-[10px] text-muted">Loading…</div>
+                </div>
+              </div>
+            ))}
             {attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-1.5 rounded-md border border-primary bg-accent px-1.5 py-0.5 text-[11px] text-secondary"
+                className="flex items-center gap-2 rounded border border-primary bg-accent px-2 py-1.5"
               >
                 {att.type === 'image' && att.url ? (
-                  <img src={att.url} alt={att.name} className="size-4 rounded object-cover border border-primary/30 shrink-0" />
+                  <img
+                    src={att.url}
+                    alt={att.name}
+                    className="h-12 w-12 shrink-0 rounded border border-primary/40 object-cover"
+                  />
                 ) : att.type === 'image' ? (
-                  <IconImage className={`${CHIP_ICON} text-secondary`} />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-primary/40 bg-primary">
+                    <IconImage className="size-5 text-secondary" />
+                  </div>
                 ) : (
-                  <IconDocument className={`${CHIP_ICON} text-secondary`} />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/40 bg-primary">
+                    <IconDocument className="size-4 text-secondary" />
+                  </div>
                 )}
-                <span className="max-w-[130px] truncate font-medium">{att.name}</span>
-                <span className="text-[9.5px] text-muted font-mono">{att.size}</span>
+                <div className="min-w-0">
+                  <div className="max-w-[140px] truncate text-[11px] font-medium text-primary">{att.name}</div>
+                  <div className="font-mono text-[10px] text-muted">{att.size}</div>
+                </div>
                 <button
                   onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                  className="text-muted hover:text-secondary cursor-pointer p-0.5"
+                  className="p-0.5 text-muted hover:text-primary cursor-pointer"
                   title="Remove attachment"
                 >
                   <IconX className={CHIP_ICON} />

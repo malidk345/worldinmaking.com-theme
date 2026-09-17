@@ -20,6 +20,56 @@ export const ARTIFACT_TOOL_TYPES = [
 ] as const
 export type ArtifactToolType = (typeof ARTIFACT_TOOL_TYPES)[number]
 
+export const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
+    diagram: 'mermaid',
+    flowchart: 'mermaid',
+    flow: 'mermaid',
+    graph: 'posthog-analytics',
+    tsx: 'react',
+    jsx: 'react',
+    component: 'react',
+    ui: 'react',
+    screen: 'react',
+    md: 'markdown',
+    doc: 'markdown',
+    document: 'markdown',
+    note: 'markdown',
+    csv: 'table',
+    spreadsheet: 'table',
+    analytics: 'posthog-analytics',
+    dashboard: 'posthog-analytics',
+    posthog: 'posthog-analytics',
+    'posthog-dashboard': 'posthog-analytics',
+    kpi: 'posthog-analytics',
+    metrics: 'posthog-analytics',
+    funnel: 'posthog-analytics',
+    canvas: 'canvas',
+    mindmap: 'canvas',
+    concept_map: 'canvas',
+    idea_map: 'canvas',
+    flow_diagram: 'canvas',
+    whiteboard: 'canvas',
+    sketch: 'canvas',
+    model3d: 'model3d',
+    '3d': 'model3d',
+    '3d_model': 'model3d',
+    model: 'model3d',
+    scene: 'model3d',
+    mesh: 'model3d',
+    simulation: 'simulation',
+    sim: 'simulation',
+    calculator: 'simulation',
+    parametric: 'simulation',
+    interactive_model: 'simulation',
+}
+
+export function resolveArtifactToolType(raw?: string): ArtifactToolType | null {
+    const key = String(raw || '').trim().toLowerCase()
+    if (!key) return null
+    const aliased = ARTIFACT_TYPE_ALIASES[key] || key
+    return (ARTIFACT_TOOL_TYPES as readonly string[]).includes(aliased) ? (aliased as ArtifactToolType) : null
+}
+
 export type OpenAiToolSpec = {
     type: 'function'
     function: {
@@ -80,7 +130,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     content: {
                         type: 'string',
                         description:
-                            'Body only: canvas JSON (nodes and edges), model3d JSON (objects array with arbitrary 3D primitives [box, cylinder, cone, pyramid, wedge/prism, sphere, torus, plane] with position, rotation, size, color, materials, or preset and theme), simulation JSON (variables, outputs, chart), PostHog analytics JSON, mermaid source, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
+                            'Body only. React/HTML screens: complete production UI using host tokens (bg-primary, text-primary, bg-navy, border-primary), a full-frame layout, labeled sample data, no toy skeletons. Canvas JSON (nodes/edges), model3d JSON (primitives + position/size/color), simulation JSON (variables, outputs, chart), analytics JSON, mermaid, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
                     },
                 },
                 required: ['type', 'title', 'content'],
@@ -130,7 +180,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'read_document',
             description:
-                'Read and analyze a document, PDF, CSV, JSON, Markdown, or text file from a public URL or from the active workspace. Optional query uses keyword/substring filtering only (not embedding or vector RAG). If query matches nothing, the tool fails closed — do not invent citations.',
+                'Read a PDF or workspace document. For an uploaded PDF, pass name as the filename (or omit name to use the latest upload) and page for a real page slice, or query for a lexical passage. Scanned PDFs have no OCR — if the tool says no extractable text, say so. Empty query match fails closed; do not invent citations.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -145,7 +195,8 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     },
                     page: {
                         type: 'number',
-                        description: 'Specific page number (1-indexed) to read for multi-page documents like PDFs.',
+                        description:
+                            '1-indexed PDF page from the uploaded file ([Page N] markers). Use with name= the filename. Out of range fails closed.',
                     },
                     query: {
                         type: 'string',
@@ -688,14 +739,15 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'search_academic_corpus',
             description:
-                'Search peer-reviewed academic literature, philosophical journals, citations, and open-access papers across OpenAlex, Crossref, PubMed / PMC, arXiv, and Semantic Scholar. Returns direct PDF links and alternative archive resolvers (Sci-Hub, Anna\'s Archive). Use this whenever the user asks about scholarly research, academic philosophy, paper citations, scientific theories, or authors of philosophical papers.',
+                'Search peer-reviewed literature across OpenAlex, Crossref, PubMed/PMC, Europe PMC, arXiv, and Semantic Scholar. Results are ranked by query match, citations, and open PDF. Returns DOI, OA PDF when available, and archive resolvers. Use for scholarly philosophy, papers, theories, and citations. If a PDF is returned and the user wants the argument, follow with read_document.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
                     query: {
                         type: 'string',
-                        description: 'Academic search query (e.g. "Spinoza substance monism attribute", "Chalmers hard problem consciousness", "Integrated Information Theory Tononi").',
+                        description:
+                            'Scholarly search string in the language of the literature (usually English): authors, concepts, work titles. Example: "Spinoza substance monism attribute". If the user wrote Turkish, translate the research terms here. Do not paste the raw chat message.',
                     },
                     field: {
                         type: 'string',
@@ -708,7 +760,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     sort_by: {
                         type: 'string',
                         enum: ['citations', 'recent', 'relevance'],
-                        description: 'Sort order: citations (most cited foundational papers, default), recent (latest research), relevance.',
+                        description: 'Sort order: relevance (default — query match + citations + OA PDF), citations (most cited), recent (latest).',
                     },
                     open_access_only: {
                         type: 'boolean',
@@ -995,7 +1047,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
 ]
 
 export const ARTIFACT_RECIPES = `
-  * For fully customized, unconstrained interactive web applications, architectural CAD tools, playable mini-games, dynamic physics engines, custom calculators, or domain-specific tools: call create_artifact with type="html" (or type="react"). Inside HTML, you have full unconstrained generative freedom: Tailwind CSS, Three.js + OrbitControls, Lucide icons, Chart.js, HTML5 Canvas, and WebGL are pre-injected! Build whatever interactive sliders, floorplan drawings, custom 3D scenes, or computational controls the user's specific domain needs without being held back by rigid schemas.
+  * For interactive screens, studio tools, calculators, editors, or domain apps: call create_artifact with type="react" (preferred) or type="html". Match WorldInMaking OS chrome: bg-primary paper, text-primary ink, bg-navy actions, border-primary strokes, rounded 6px, no drop shadows, no Inter, no gradient mesh, no shadcn bg-background. Fill the window (min-h-full) with a top bar or sidebar and a working body — never a 50-line toy, never a lone hero card. Include labeled sample data and at least four real controls or rows. HTML may use Tailwind, Three.js + OrbitControls, Lucide, Chart.js, Canvas, and WebGL (pre-injected). Completeness over novelty.
   * For mind maps, concept maps, or architectural flows: call create_artifact with type="canvas" and structured JSON {"title":"...","nodes":[{"id":"1","label":"...","description":"...","x":100,"y":80,"color":"amber"}],"edges":[{"from":"1","to":"2","label":"..."}]}.
   * For 3D interactive models and scenes (architecture, houses, rooms, furniture, mechanisms, vehicles, or scientific structures): call create_artifact with type="model3d" and structured JSON {"title":"...","description":"...","grid":true,"ground":{"show":true,"color":"#166534"},"objects":[{"name":"Walls","type":"box","size":[8,4,6],"position":[0,2,0],"color":"#f8fafc"},{"name":"Roof","type":"wedge"|"prism"|"pyramid"|"cone","size":[8.5,2.5,6.5],"position":[0,5.25,0],"color":"#dc2626"},{"name":"Door","type":"box","size":[1.4,2.2,0.1],"position":[0,1.1,3.05],"color":"#78350f"},{"name":"Windows","type":"box","size":[1.2,1.2,0.1],"position":[-2,2,3.05],"color":"#38bdf8","opacity":0.7,"transparent":true}]}. Supported primitives: box, cube, sphere, cylinder, cone, pyramid, wedge/prism (gable roofs/ramps), plane, torus, capsule, custom_mesh (vertices/faces). Also supports loading external GLTF/GLB models via url: "https://.../model.glb". For mathematical/atomic presets, preset="polyhedra"|"orbital_system"|"dna_helix"|"torus_knot" is also supported.
   * For parametric simulations with interactive sliders and live dynamic curves: call create_artifact with type="simulation" and structured JSON {"title":"...","variables":[{"id":"x","label":"...","min":0,"max":100,"default":50}],"outputs":[{"id":"y","label":"...","formula":"x * 1.5"}],"chart":{"type":"area"}}.
@@ -1013,11 +1065,11 @@ TOOL USE:
 - You decide which tools to call through the OpenAI/Gemini tool channel. The host will not guess your plan. Call zero or more tools, then answer.
 - Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads (web_search, search_academic_corpus, analyze_image, fetch_url, read_document, read_notebook, get_workspace, search_site) may run together in one round.
 - A plan is optional. Use todo_write only when sequencing helps. Never invent a plan for a one-step ask.
-- read_document: Read and inspect public PDFs, papers, articles, CSV, JSON, or workspace documents. Call this whenever you need to read the full contents or extract the thesis of a research paper (using pdfUrl from search_academic_corpus) or any uploaded document.
+- read_document: Read an uploaded PDF or workspace file. Pass name= the filename and page= for a real page (from [Page N]). query= is lexical only. Scanned PDFs have no OCR. If the extract has no text, say so.
 - analyze_image: Vision and OCR analysis of pictures, diagrams, and photos via Llama 3.2 Vision. Call this whenever the user shares an image URL or asks to inspect visual material.
 - transcribe_audio: Transcribe speech/audio to text via Whisper Large V3 Turbo. Call this when the user shares an audio URL or voice note.
 - synthesize_speech: Text-to-speech audio narration saved in R2 via MeloTTS. Call this whenever the user asks to speak, narrate, read aloud, or voice a note ("notu seslendir", "seslendir", "sesli oku", "sesli not", "read aloud", "voice note"). When voicing a note, pass ONLY the actual notebook body text into the text parameter, NEVER your own conversational words or pleasantries. Always call this tool and embed the returned audio link so the audio player renders.
-- search_academic_corpus: Search peer-reviewed academic literature, journals, citations, and DOIs across OpenAlex, Crossref, PubMed/PMC, arXiv, and Semantic Scholar. Returns direct Open Access PDF links and alternative archive resolvers (Sci-Hub, Anna's Archive, Google Scholar). Call this when investigating scholarly philosophy, formal debates, papers, or peer-reviewed studies. Always cite authors, year, journal venue, and direct PDF / DOI link in your answer. If the paper has an open-access PDF or if the user asks to read, analyze, summarize, or extract the thesis of any found paper, immediately call read_document with the paper's pdfUrl to inspect its contents. You can also format these as an APA bibliography and use insert_notebook_block to add a References section to the notebook.
+- search_academic_corpus: Search peer-reviewed literature (OpenAlex, Crossref, PubMed/PMC, Europe PMC, arXiv, Semantic Scholar). Ranked by match + citations + OA PDF. Pass query in the language of the literature (usually English: author + concept + work). Keep the public reply in the user's language. Cite authors, year, venue, DOI/PDF. If pdfUrl exists and the user wants the argument, call read_document.
 - generate_image: Generate real visual imagery with Cloudflare FLUX.1 and save to R2. Supports aspect_ratio (e.g. '16:9' for wallpapers, '9:16' for portrait) and style (e.g. 'oil_painting', 'vintage_etching', 'cinematic', 'renaissance'). After the tool returns, embed the image in markdown as ![description](url) in your reply.
 - create_artifact is the only way to put an interactive visual canvas, 3D model, parametric simulation, analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble.
 ${ARTIFACT_RECIPES.trimEnd()}
@@ -1057,7 +1109,7 @@ ${ARTIFACT_RECIPES.trimEnd()}
 - remember: store a durable user/workspace fact so later turns can use it.
 - task: a focused read-only research slice. Use for one sub-question, not the whole job.
 - DOCUMENT & RESEARCH DIRECTIVE:
-  * Answer the Query / Prompt. Notebook, scratchpad, and OS snapshot are optional background — use those tools only when the query needs them.
+  * The Query is the task. Attachments, bound notebook, and scratchpad are in the room — notice them. Use tools when they help. Do not ignore a file uploaded this turn.
   * Notebook/document retrieval is lexical (host snapshot + keyword/substring tools). There is no embedding/vector RAG. If a tool says not found, say so — do not invent notebook citations.
   * Attached documents and live facts: read or search first. A writing request: write the piece in the public bubble, using tools if they help.
   * write_scratchpad only when the user asked to save notes, or when extracting from a document they asked you to read.

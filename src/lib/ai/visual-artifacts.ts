@@ -79,6 +79,32 @@ export function parseCanvasSpec(content: string | unknown): CanvasSpec | null {
     return null
 }
 
+const CANVAS_GRID = { colsMin: 3, gapX: 260, gapY: 160, startX: 100, startY: 100 }
+
+/** Fill missing (or all-stacked) coordinates so a map is readable. */
+export function layoutCanvasNodes<T extends { x?: number; y?: number }>(nodes: T[]): Array<T & { x: number; y: number }> {
+    if (!nodes.length) return []
+    const stacked =
+        nodes.length > 1 &&
+        nodes.every((node) => (Number(node.x) || 0) === (Number(nodes[0].x) || 0) && (Number(node.y) || 0) === (Number(nodes[0].y) || 0))
+    const cols = Math.max(CANVAS_GRID.colsMin, Math.ceil(Math.sqrt(nodes.length)) || CANVAS_GRID.colsMin)
+    return nodes.map((node, index) => {
+        const hasPoint = typeof node.x === 'number' && typeof node.y === 'number'
+        if (hasPoint && !stacked) return { ...node, x: node.x as number, y: node.y as number }
+        const col = index % cols
+        const row = Math.floor(index / cols)
+        return {
+            ...node,
+            x: CANVAS_GRID.startX + col * CANVAS_GRID.gapX,
+            y: CANVAS_GRID.startY + row * CANVAS_GRID.gapY,
+        }
+    })
+}
+
+export function withCanvasLayout(spec: CanvasSpec): CanvasSpec {
+    return { ...spec, nodes: layoutCanvasNodes(spec.nodes) }
+}
+
 // --- 2. 3D Model & Arbitrary Scene Schema ---
 
 export type Model3DPrimitiveType =
@@ -180,69 +206,76 @@ function normalizeObject(rawObj: any): Model3DObjectSpec | null {
     }
 }
 
-export function parseModel3DSpec(content: string | unknown): Model3DSpec {
-    const buildSpec = (raw: any): Model3DSpec => {
-        const rawObjects = Array.isArray(raw.objects) ? raw.objects : (Array.isArray(raw.scene) ? raw.scene : (Array.isArray(raw.elements) ? raw.elements : undefined))
-        const objects = rawObjects ? (rawObjects.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[]) : undefined
-        const url = typeof raw.url === 'string' ? raw.url : (typeof raw.modelUrl === 'string' ? raw.modelUrl : (typeof raw.src === 'string' ? raw.src : undefined))
-
-        return {
-            title: raw.title || (objects && objects.length > 0 ? '3D Scene' : '3D Viewport'),
-            description: raw.description,
-            url,
-            modelUrl: url,
-            preset: raw.preset || (objects && objects.length > 0 ? 'custom' : 'polyhedra'),
-            theme: raw.theme || 'studio',
-            wireframe: raw.wireframe === true,
-            autoRotate: raw.autoRotate !== false,
-            grid: raw.grid !== false,
-            ground: raw.ground && typeof raw.ground === 'object' ? {
-                show: raw.ground.show !== false,
-                color: typeof raw.ground.color === 'string' ? raw.ground.color : undefined,
-                size: typeof raw.ground.size === 'number' ? raw.ground.size : undefined,
-            } : undefined,
-            camera: raw.camera && typeof raw.camera === 'object' ? {
-                position: Array.isArray(raw.camera.position) ? [Number(raw.camera.position[0]) || 0, Number(raw.camera.position[1]) || 0, Number(raw.camera.position[2]) || 8] : undefined,
-                target: Array.isArray(raw.camera.target) ? [Number(raw.camera.target[0]) || 0, Number(raw.camera.target[1]) || 0, Number(raw.camera.target[2]) || 0] : undefined,
-                fov: typeof raw.camera.fov === 'number' ? raw.camera.fov : undefined,
-            } : undefined,
-            objects,
-            nodes: Array.isArray(raw.nodes) ? raw.nodes : [],
-        }
-    }
-
-    if (typeof content === 'object' && content !== null) {
-        return buildSpec(content)
-    }
-
-    const text = String(content || '').trim()
-    try {
-        const parsed = JSON.parse(text)
-        if (parsed && typeof parsed === 'object') {
-            return buildSpec(parsed)
-        }
-    } catch {
-        const match = text.match(/\{[\s\S]*("objects"|"preset"|"scene")[\s\S]*\}/)
-        if (match) {
-            try {
-                const parsed = JSON.parse(match[0])
-                if (parsed && typeof parsed === 'object') {
-                    return buildSpec(parsed)
-                }
-            } catch {
-                /* ignore */
-            }
-        }
-    }
+function buildModel3DSpec(raw: any): Model3DSpec {
+    const rawObjects = Array.isArray(raw.objects) ? raw.objects : (Array.isArray(raw.scene) ? raw.scene : (Array.isArray(raw.elements) ? raw.elements : undefined))
+    const objects = rawObjects ? (rawObjects.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[]) : undefined
+    const url = typeof raw.url === 'string' ? raw.url : (typeof raw.modelUrl === 'string' ? raw.modelUrl : (typeof raw.src === 'string' ? raw.src : undefined))
 
     return {
-        title: '3D Scene',
-        preset: 'polyhedra',
-        theme: 'gold',
-        wireframe: false,
-        autoRotate: true,
-        grid: true,
+        title: raw.title || (objects && objects.length > 0 ? '3D Scene' : '3D Viewport'),
+        description: raw.description,
+        url,
+        modelUrl: url,
+        preset: raw.preset || (objects && objects.length > 0 ? 'custom' : 'polyhedra'),
+        theme: raw.theme || 'studio',
+        wireframe: raw.wireframe === true,
+        autoRotate: raw.autoRotate !== false,
+        grid: raw.grid !== false,
+        ground: raw.ground && typeof raw.ground === 'object' ? {
+            show: raw.ground.show !== false,
+            color: typeof raw.ground.color === 'string' ? raw.ground.color : undefined,
+            size: typeof raw.ground.size === 'number' ? raw.ground.size : undefined,
+        } : undefined,
+        camera: raw.camera && typeof raw.camera === 'object' ? {
+            position: Array.isArray(raw.camera.position) ? [Number(raw.camera.position[0]) || 0, Number(raw.camera.position[1]) || 0, Number(raw.camera.position[2]) || 8] : undefined,
+            target: Array.isArray(raw.camera.target) ? [Number(raw.camera.target[0]) || 0, Number(raw.camera.target[1]) || 0, Number(raw.camera.target[2]) || 0] : undefined,
+            fov: typeof raw.camera.fov === 'number' ? raw.camera.fov : undefined,
+        } : undefined,
+        objects,
+        nodes: Array.isArray(raw.nodes) ? raw.nodes : [],
     }
+}
+
+function parseModel3DRaw(content: string | unknown): unknown | null {
+    if (typeof content === 'object' && content !== null) return content
+    const text = String(content || '').trim()
+    if (!text) return null
+    try {
+        const parsed = JSON.parse(text)
+        return parsed && typeof parsed === 'object' ? parsed : null
+    } catch {
+        const match = text.match(/\{[\s\S]*("objects"|"preset"|"scene"|"url"|"modelUrl")[\s\S]*\}/)
+        if (!match) return null
+        try {
+            const parsed = JSON.parse(match[0])
+            return parsed && typeof parsed === 'object' ? parsed : null
+        } catch {
+            return null
+        }
+    }
+}
+
+export function parseModel3DSpecStrict(content: string | unknown): Model3DSpec | null {
+    const raw = parseModel3DRaw(content)
+    if (!raw || typeof raw !== 'object') return null
+    const row = raw as Record<string, unknown>
+    const spec = buildModel3DSpec(row)
+    const hasPreset = typeof row.preset === 'string' && row.preset.trim().length > 0
+    if (!spec.url && !(spec.objects && spec.objects.length > 0) && !hasPreset) return null
+    return spec
+}
+
+export function parseModel3DSpec(content: string | unknown): Model3DSpec {
+    return (
+        parseModel3DSpecStrict(content) || {
+            title: '3D Scene',
+            preset: 'polyhedra',
+            theme: 'gold',
+            wireframe: false,
+            autoRotate: true,
+            grid: true,
+        }
+    )
 }
 
 // --- 3. Parametric Simulation Schema ---

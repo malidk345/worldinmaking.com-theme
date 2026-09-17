@@ -16,7 +16,14 @@ import {
 import { buildThinkingTimeline, shouldShowLiveThinkingIndicator } from '../src/lib/bots/agent/timeline'
 import { isLongFormWriting, mergePlan, normalizePlan, seedLongFormPlan, withHostContext } from '../src/lib/bots/agent/plan'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
-import { runAgentNodePipeline, shouldRunThinkPhase } from '../src/lib/bots/tools/pipeline'
+import {
+    runAgentNodePipeline,
+    shouldRunThinkPhase,
+    THINK_MAX_TOKENS,
+    THINK_PLAN_INSTRUCTION,
+    THINK_REFLECT_INSTRUCTION,
+} from '../src/lib/bots/tools/pipeline'
+import { geminiToolGenerationConfig } from '../src/lib/bots/tools/gemini'
 import { TOOL_FAMILY_ORDER } from '../src/lib/bots/tools/loop'
 import {
     modeAfterResume,
@@ -471,6 +478,22 @@ test.describe('Think skip and Groq-first', () => {
         expect(
             shouldRunThinkPhase({ userPrompt: 'plan a research pass', agentMode: 'plan', stepCount: 1 })
         ).toBe(false)
+    })
+
+    test('host THINK is a short routing note; Gemini native thought stays on ACT', () => {
+        expect(THINK_MAX_TOKENS).toBe(512)
+        expect(THINK_PLAN_INSTRUCTION.toLowerCase()).toContain('few short sentences')
+        expect(THINK_PLAN_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
+        expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).toContain('few short sentences')
+        expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
+
+        const think = geminiToolGenerationConfig({ omitTools: true, maxTokens: THINK_MAX_TOKENS })
+        expect(think.maxOutputTokens).toBe(512)
+        expect(think.thinkingConfig.thinkingBudget).toBe(0)
+
+        const act = geminiToolGenerationConfig({ omitTools: false })
+        expect(act.maxOutputTokens).toBe(8192)
+        expect(act.thinkingConfig.thinkingBudget).toBe(512)
     })
 
     test('think phase still emits a thought row', async () => {

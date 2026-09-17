@@ -42,7 +42,15 @@ const TASK_READ_TOOLS = new Set([
     'run_code_sandbox',
 ])
 
-const THINK_MAX_TOKENS = 512
+/** Cap for the host THINK round. gpt-oss native CoT still counts against this. */
+export const THINK_MAX_TOKENS = 512
+
+/** Host THINK is a routing note, not the public answer. Native CoT already happens on ACT. */
+export const THINK_PLAN_INSTRUCTION =
+    'PLANNING STEP: In a few short sentences, say whether you need tools, which ones, and in what order. Do not write the public answer. Do not call tools in this thought.'
+
+export const THINK_REFLECT_INSTRUCTION =
+    'REFLECTION STEP: In a few short sentences, note what the tool results change about the next action. Do not repeat the results. Do not write the public answer. Do not call tools in this thought.'
 
 /** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
 export function shouldRunThinkPhase(input: {
@@ -235,9 +243,7 @@ function emitNode(
 }
 
 function withThinkInstruction(messages: ChatMessage[], postTool = false): ChatMessage[] {
-    const instruction = postTool
-        ? 'REFLECTION & PROGRESSIVE SYNTHESIS STEP: Carefully analyze the returned tool results in context. What key facts, nuances, or philosophical insights did they reveal? If you already wrote an introductory or prior section, seamlessly plan the subsequent section or continuation from where you left off. Weave the new evidence into the upcoming paragraphs without repeating earlier statements. Do not call tools in this thought.'
-        : 'PLANNING & STRATEGY STEP: Analyze the user inquiry. Determine what background facts, canonical citations, or structured visual artifacts are required, and establish a clear approach for an exhaustive, coherent solution. Do not call tools in this thought.'
+    const instruction = postTool ? THINK_REFLECT_INSTRUCTION : THINK_PLAN_INSTRUCTION
 
     return messages.map((message, index) => {
         if (index === 0 && message.role === 'system') {

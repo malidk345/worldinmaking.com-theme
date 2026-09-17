@@ -32,15 +32,16 @@ import {
     executeUpdateNotebookTitle,
     executeAddNotebookFootnote,
     applyRememberedFact,
+    resolveHostArtifact,
     type HostOsAction,
     type HostSnapshot,
 } from './host'
 import { isToolAllowedInMode, parseAgentMode, type AgentMode } from '../agent/modes'
 import { toolResultSummary } from './labels'
-import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, type ArtifactToolType } from './spec'
+import { ALLOWED_TOOL_NAMES, ARTIFACT_TOOL_TYPES, ARTIFACT_TYPE_ALIASES, type ArtifactToolType } from './spec'
 import { searchPhilosophicalCorpus } from './philosophical-corpus'
 import { crossExamineArgument } from './argument-cross-examination'
-import type { CanvasSpec } from '../../ai/visual-artifacts'
+import { layoutCanvasNodes, parseCanvasSpec, withCanvasLayout, type CanvasSpec } from '../../ai/visual-artifacts'
 import { repairAndParseJsonObject } from './json-repair'
 import { resolveWorkspacePresetLayout } from '../../os/arrange-workspace'
 import { defaultSm2Schedule } from '../../study-sm2'
@@ -236,49 +237,6 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     },
 }
 
-const ARTIFACT_TYPE_ALIASES: Record<string, ArtifactToolType> = {
-    diagram: 'mermaid',
-    flowchart: 'mermaid',
-    flow: 'mermaid',
-    graph: 'posthog-analytics',
-    tsx: 'react',
-    jsx: 'react',
-    component: 'react',
-    ui: 'react',
-    screen: 'react',
-    md: 'markdown',
-    doc: 'markdown',
-    document: 'markdown',
-    note: 'markdown',
-    csv: 'table',
-    spreadsheet: 'table',
-    analytics: 'posthog-analytics',
-    dashboard: 'posthog-analytics',
-    posthog: 'posthog-analytics',
-    'posthog-dashboard': 'posthog-analytics',
-    kpi: 'posthog-analytics',
-    metrics: 'posthog-analytics',
-    funnel: 'posthog-analytics',
-    canvas: 'canvas',
-    mindmap: 'canvas',
-    concept_map: 'canvas',
-    idea_map: 'canvas',
-    flow_diagram: 'canvas',
-    whiteboard: 'canvas',
-    sketch: 'canvas',
-    model3d: 'model3d',
-    '3d': 'model3d',
-    '3d_model': 'model3d',
-    model: 'model3d',
-    scene: 'model3d',
-    mesh: 'model3d',
-    simulation: 'simulation',
-    sim: 'simulation',
-    calculator: 'simulation',
-    parametric: 'simulation',
-    interactive_model: 'simulation',
-}
-
 /** Resilient argument parser repairing LLM syntax quirks, quotes, truncated brackets, and fences. */
 function parseArgs(raw: string): Record<string, unknown> {
     return repairAndParseJsonObject(raw) || {}
@@ -348,15 +306,25 @@ async function executeCreateArtifact(
         return { ok: false, result: JSON.stringify({ ok: false, error: invalid }) }
     }
 
+    let body = content
+    if (type === 'canvas') {
+        const spec = parseCanvasSpec(content)
+        if (!spec || spec.nodes.length === 0) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: 'content must be canvas JSON with at least one node' }) }
+        }
+        body = JSON.stringify(withCanvasLayout({ ...spec, title: spec.title || title }), null, 2)
+    }
+
+    const prior = resolveHostArtifact(host, title, type)
     const artifact: ArtifactDocument = {
-        id: host?.artifactId || `art-tool-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        identifier: host?.artifactId || `${type}-1`,
+        id: prior?.id || host?.artifactId || `art-tool-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        identifier: prior?.id || host?.artifactId || `${type}-1`,
         title,
         type: type as ArtifactKind,
         language: languageFor(type as ArtifactKind),
-        content,
+        content: body,
         description: type === 'react' ? 'Sandbox screen' : type === 'mermaid' ? 'Diagram' : 'Generated artifact',
-        version: 1,
+        version: prior?.version || 1,
         createdAt: new Date().toISOString(),
     }
 
@@ -1539,7 +1507,8 @@ function executeCreateConceptMap(
     title: string,
     nodesRaw: unknown,
     edgesRaw: unknown,
-    description?: string
+    description?: string,
+    host?: HostSnapshot
 ): { ok: boolean; result: string; artifact?: ArtifactDocument } {
     const mapTitle = (title || 'Concept Map').trim()
     let nodesList: any[] = []
@@ -1561,37 +1530,29 @@ function executeCreateConceptMap(
         }
     }
 
-    const COLS = Math.ceil(Math.sqrt(nodesList.length)) || 3
-    const GAP_X = 260
-    const GAP_Y = 160
-    const START_X = 100
-    const START_Y = 100
+    const formattedNodes = layoutCanvasNodes(
+        nodesList.map((n, idx) => {
+            const id = String(n.id || `node-${idx + 1}`).trim()
+            const label = String(n.label || n.title || n.name || id).trim()
+            const color = typeof n.color === 'string' ? n.color : undefined
+            const icon = typeof n.icon === 'string' ? n.icon : undefined
+            const nodeType = typeof n.type === 'string' ? n.type : 'concept'
+            const tags = Array.isArray(n.tags) ? n.tags.map((t: any) => String(t).trim()) : undefined
+            const desc = typeof n.description === 'string' ? n.description.trim() : undefined
 
-    const formattedNodes = nodesList.map((n, idx) => {
-        const row = Math.floor(idx / COLS)
-        const col = idx % COLS
-        const id = String(n.id || `node-${idx + 1}`).trim()
-        const label = String(n.label || n.title || n.name || id).trim()
-        const x = typeof n.x === 'number' ? n.x : START_X + col * GAP_X
-        const y = typeof n.y === 'number' ? n.y : START_Y + row * GAP_Y
-        const color = typeof n.color === 'string' ? n.color : undefined
-        const icon = typeof n.icon === 'string' ? n.icon : undefined
-        const nodeType = typeof n.type === 'string' ? n.type : 'concept'
-        const tags = Array.isArray(n.tags) ? n.tags.map((t: any) => String(t).trim()) : undefined
-        const desc = typeof n.description === 'string' ? n.description.trim() : undefined
-
-        return {
-            id,
-            label,
-            description: desc,
-            x,
-            y,
-            color,
-            icon,
-            type: nodeType,
-            tags,
-        }
-    })
+            return {
+                id,
+                label,
+                description: desc,
+                x: typeof n.x === 'number' ? n.x : undefined,
+                y: typeof n.y === 'number' ? n.y : undefined,
+                color,
+                icon,
+                type: nodeType,
+                tags,
+            }
+        })
+    )
 
     const formattedEdges = edgesList
         .map((e) => {
@@ -1619,15 +1580,16 @@ function executeCreateConceptMap(
     }
 
     const artifactContent = JSON.stringify(canvasSpec, null, 2)
+    const prior = resolveHostArtifact(host, mapTitle, 'canvas')
     const artifact: ArtifactDocument = {
-        id: `art-canvas-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        identifier: `canvas-${Date.now()}`,
+        id: prior?.id || `art-canvas-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        identifier: prior?.id || `canvas-${Date.now()}`,
         title: mapTitle,
         type: 'canvas',
         language: 'json',
         content: artifactContent,
         description: description || `Visual concept map: ${mapTitle}`,
-        version: 1,
+        version: prior?.version || 1,
         createdAt: new Date().toISOString(),
     }
 
@@ -2099,7 +2061,7 @@ export async function executeToolCall(
             const sortBy =
                 typeof args.sort_by === 'string' && ['citations', 'recent', 'relevance'].includes(args.sort_by)
                     ? (args.sort_by as 'citations' | 'recent' | 'relevance')
-                    : undefined
+                    : 'relevance'
             const openAccessOnly = typeof args.open_access_only === 'boolean' ? args.open_access_only : undefined
             const executed = await executeAcademicSearch(
                 query,
@@ -2248,7 +2210,7 @@ export async function executeToolCall(
             const nodes = args.nodes || args.elements || args.concepts
             const edges = args.edges || args.connections || args.relations
             const description = asText(args.description, 300).trim() || undefined
-            const executed = executeCreateConceptMap(title, nodes, edges, description)
+            const executed = executeCreateConceptMap(title, nodes, edges, description, host)
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
         }
         return { ...base, ok: false, result: JSON.stringify({ ok: false, error: `unhandled tool: ${name}` }) }

@@ -58,6 +58,89 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (Ask AI header: icons only, then rebase/push)
+- **Scope:** Removed chat title from the floating Ask AI header. Origin/main is 11 commits ahead; overlap is chat.ts (CHAT_LIMITS) and index.tsx (philosopher avatars) — rebase expected to be clean.
+- **Files:** `Header.tsx`, `ClaudeWorkspaceChat/index.tsx`
+- **Verify:** fetch origin. Playwright not run.
+
+### 2026-09-17 — Grok 4.6 (Floating header, window-top fade)
+- **Scope:** Header is absolute, no fill, no wash — icons float. Chat body stays `bg-primary`. Top-only mask fade on the pane (blog ReaderView) so window glass shows at the crown.
+- **Files:** `Header.tsx`, `ClaudeWorkspaceChat/index.tsx`
+- **Verify:** Playwright not run.
+- **Handoff:** Reload. No header slab; fade is on the window top.
+
+### 2026-09-17 — Grok 4.6 (Header light wash, no bar)
+- **Scope:** Restored Ask AI `bg-primary` body. Removed the glass/mask bar. Lighting is a white wash on the header itself (`from-white/35 to-transparent`), not a second rectangle. Icons unchanged.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `Header.tsx`
+- **Verify:** Playwright not run.
+- **Handoff:** Reload — header should look like the same paper with light on it, not a cut-out strip.
+
+### 2026-09-17 — Grok 4.6 (Ask AI top light only)
+- **Scope:** Restored paper `bg-primary` on the chat body. Removed the full-pane mask. Header strip is transparent with a top-only `from-transparent to-primary` fade so window glass shows at the crown, then the old paper. Icons unchanged.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `Header.tsx`
+- **Verify:** Playwright not run.
+- **Handoff:** Reload and check the top edge only — body should be the old fill.
+
+### 2026-09-17 — Grok 4.6 (Ask AI header: glass + blog fade)
+- **Scope:** Removed opaque `bg-primary` behind the Ask AI header/workspace so window glass shows through. Applied the same ReaderView mask fade as blog posts. Header icons unchanged.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `Header.tsx`
+- **Verify:** Playwright not run. Reload local and compare Ask AI vs a blog window top edge.
+- **Handoff:** Sidebar when open still uses `bg-primary` so the list stays readable.
+
+### 2026-09-17 — Grok 4.6 (Ask AI reply tokens = blog editorial)
+- **Scope:** Chat bubble kept 13/13.5px. Headings, quotes, tables, inline code, links, line-height now use blog article tokens (bold, 1.5 leading, accent quote box, font-code pills, border-primary tables). GFM footnotes allowed through sanitize.
+- **Files:** `src/styles/global.css`, `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+- **Verify:** `pnpm typecheck:shell` not required for CSS; Playwright not run.
+- **Handoff:** Reload local and compare a quoted + footnoted reply to a blog post (size will still be smaller).
+
+### 2026-09-17 — Grok 4.6 (PDF real pages + honest scans)
+- **Scope:** Extract cap 30→200 with `[Page N]`. `read_document` page/query works on uploaded/scratchpad PDFs (content now on the host snapshot). Scanned PDFs return no-text, not a fake extract. Chat prompt gets page-1 excerpt + tool hint, not a 12k dump. Scratchpad document cards show page count.
+- **Files:** `src/lib/pdf-pages.ts`, `pdf-parser.ts`, `document-parser.ts`, `read-document.ts`, `host.ts`, `chat.ts`, `ClaudeWorkspaceChat/index.tsx`, `ChatInput.tsx`, `ScratchpadWindow/index.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS. vitest pdf-pages + read-document PASS (6). Playwright not run.
+- **Handoff:** URL-fetched PDFs on Edge still use a coarse extractor (not pdf.js). OCR still absent.
+
+### 2026-09-17 — Grok 4.6 (Workspace awareness + upload/scratchpad UX)
+- **Scope:** Dropped QUESTION FIRST / "ignore attachments unless". Bound notebook excerpt stays in context. Uploads: loading pulse, WIM chips, image fallback to data URL (no silent drop). Scratchpad no longer auto-opens; icon next to chat-history toggle. Scratchpad chips/toolbar use host tokens and wrap on small screens.
+- **Files:** `ask-ai.ts`, `notebook-chat-bind.ts`, `chat.ts`, `spec.ts`, `ChatInput.tsx`, `ChatMessage.tsx`, `Header.tsx`, `ClaudeWorkspaceChat/index.tsx`, `ScratchpadWindow/index.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS. Playwright not run.
+- **Handoff:** Reload local. Attach a PDF/image without the scratchpad window popping. Header notebook icon opens it.
+
+### 2026-09-17 — Grok 4.6 (Screen source stays out of the chat bubble)
+- **Scope:** Model used to stream TSX/HTML into the bubble, then capture it as an artifact after `done`. SSE now only forwards leading prose; unfenced `export default` dumps are stripped. Pending artifact card replaces the reply skeleton.
+- **Files:** `extractArtifacts.ts`, `src/pages/api/chat.ts`, `co-author.ts`, `ClaudeWorkspaceChat/index.tsx`, `ChatMessage.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS. vitest `extractArtifacts.bubble.test.ts` PASS (3). Playwright not run.
+- **Handoff:** Reload local and ask for a screen — code should appear only in the artifact window.
+
+### 2026-09-17 — Grok 4.6 (Academic query is the model's job)
+- **Scope:** Removed the hardcoded Turkish→English term map. OpenAlex already wants a scholarly query; Ask AI writes that in the tool `query` (usually English author/concept/work) and keeps the public reply in the user's language.
+- **Files:** `src/lib/bots/academic-search.ts`, `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/academic-search.test.ts`
+- **Verify:** not run this slice (small delete). Ranking tests still in the file.
+- **Handoff:** Do not re-add a glossary. If Turkish searches miss, fix the tool description, not a word list.
+
+### 2026-09-17 — Grok 4.6 (Academic ranking + denser WIM screens)
+- **Scope:** Academic search now ranks by query match, citations, and OA PDF; OpenAlex prefers real PDF URLs; Europe PMC added; Turkish philosophy terms expand. Screen artifacts: chrome+density is in the tool-loop recipe (was only in an unused UI contract), so HTML/React should fill the OS window with host tokens instead of 50-line landing toys.
+- **Files:** `src/lib/bots/academic-search.ts`, `src/lib/bots/tools/{spec,execute,academic-search.test}.ts`, `src/lib/chrome/inject.ts`, `src/lib/ai/design-request.ts`, `docs/architecture/WIM_AI.md`
+- **Verify:** `pnpm typecheck:shell` PASS. vitest academic-search + abort PASS (13), including live OpenAlex.
+- **Handoff:** remember already persists to Scratchpad localStorage; quota tightening and HTML heal skipped (not the quality gap). Reload local and ask for a screen + a paper search.
+
+### 2026-09-17 — Grok 4.6 (One artifact window per tool call)
+- **Scope:** Pending Building defaulted to `html` ("screen") when tool args were still streaming, then the real model3d/sim opened a second OS window. Draft now waits for a real type, window key is `artifact-tool-{callId}`, and the finished payload replaces the pending card in that same window.
+- **Files:** `src/lib/artifacts/draft.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `utils/toolCalling.ts`, `ArtifactBuildingPreview.tsx`, tests
+- **Verify:** `pnpm typecheck:shell` PASS. vitest draft + revision + visual artifact tests PASS (11). Playwright not run.
+- **Handoff:** Reload local, generate one 3D scene — a single window should go Building → preview.
+
+### 2026-09-17 — Grok 4.6 (Artifact quality + building UX)
+- **Scope:** Canvas/3d/sim `create_artifact` is fail-closed. Canvas nodes without x/y (or stacked at 0,0) get the concept-map auto-grid. Same title reuses host id and bumps version. HTML preview sandbox is `allow-scripts` only (no same-origin). Quality-gate outage keeps the streamed reply (`skipped`). While `create_artifact` / `create_concept_map` runs, the OS artifact window opens with a Building preview; notebook fences for canvas/3d/sim render live.
+- **Files:** `src/lib/ai/visual-artifacts.ts`, `src/lib/artifacts/validate-source.ts`, `src/lib/artifacts/draft.ts`, `src/lib/artifacts/renderers.ts`, `src/lib/bots/tools/{execute,host,spec,labels}.ts`, `src/lib/bots/orchestrate.ts`, `src/components/ClaudeWorkspaceChat/**`, `src/notebook-app/lib/components/MarkdownNotebook/NotebookWimBlocks.tsx`, `src/lib/notebook-artifact-block.ts`, `docs/architecture/WIM_AI.md`
+- **Verify:** `pnpm typecheck:shell` PASS. `pnpm exec vitest run src/lib/bots/tools/execute-visual-artifacts.test.ts src/lib/bots/tools/pipeline.test.ts --environment node` PASS (11). Playwright not run.
+- **Handoff:** Building window uses pending id until the real payload arrives (title match). Chrome styles untouched.
+
+### 2026-09-17 — Grok 4.6 (Ask AI first-thought tokens)
+- **Scope:** Host THINK was prompting an "exhaustive" essay and Gemini spent `thinkingBudget=512` inside `maxOutputTokens=512`, so the first thought round produced only native CoT. THINK prompt is now a few-sentence routing note. Gemini THINK disables native thinking (`thinkingBudget: 0`). ACT `max_tokens` 8192 and gpt-oss `reasoning_effort: low` unchanged.
+- **Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/gemini.ts`, `src/lib/bots/tools/pipeline.test.ts`, `tests/agent-modes.spec.ts`, `docs/architecture/WIM_AI.md`
+- **Verify:** `pnpm typecheck:shell` PASS. `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node` PASS (3). Playwright not run.
+- **Handoff:** First thought is still a full extra round (input cost). Do not lower ACT 8192 — long-form + HTML artifacts need it.
+
 ### 2026-09-17 — Antigravity (Bundle pause-eyes icons via Webpack imports + prepages:build)
 - **Scope:** Directly imported `pause-eyes` PNG frames via Webpack/Next.js asset pipeline in `ThinkingBangDots.tsx` using `importedSrc` (matching `AppIcon.tsx`), eliminating 404s from uncopied public folders or CDN route mismatches. Also added `prepages:build` hook to `package.json` so Cloudflare Pages `pnpm pages:build` triggers `prebuild` assets copy.
 - **Files:** `src/components/ClaudeWorkspaceChat/components/ThinkingBangDots.tsx`, `package.json`

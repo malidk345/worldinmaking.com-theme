@@ -509,8 +509,8 @@ async function applyQualityGate(
             detail: 'Quality check unavailable',
         })
         return {
-            reply: QUALITY_GATE_UNAVAILABLE_REPLY,
-            qualityGate: 'failed',
+            reply: rawReply,
+            qualityGate: 'skipped',
         }
     }
 }

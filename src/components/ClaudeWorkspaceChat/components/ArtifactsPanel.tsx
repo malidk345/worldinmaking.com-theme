@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { ReactPreviewIframe } from '../sandbox/ReactPreviewIframe';
 import { parsePostHogAnalyticsSpec } from '../../../lib/ai/chart-artifacts';
+import { ArtifactBuildingPreview } from './ArtifactBuildingPreview';
 
 const BADGE_LABELS = new Set([
   'YENİ',
@@ -55,6 +56,21 @@ const PostHogAnalyticsDashboard = dynamic(
 
 const MermaidPreview = dynamic(
   () => import('../../MermaidPreview').then((module) => module.MermaidPreview),
+  { ssr: false }
+);
+
+const CanvasArtifactRenderer = dynamic(
+  () => import('./CanvasArtifactRenderer').then((module) => module.CanvasArtifactRenderer),
+  { ssr: false }
+);
+
+const Model3DArtifactRenderer = dynamic(
+  () => import('./Model3DArtifactRenderer').then((module) => module.Model3DArtifactRenderer),
+  { ssr: false }
+);
+
+const SimulationArtifactRenderer = dynamic(
+  () => import('./SimulationArtifactRenderer').then((module) => module.SimulationArtifactRenderer),
   { ssr: false }
 );
 
@@ -396,6 +412,22 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
         {activeTab === 'code' ? (
           <div className="h-full w-full overflow-auto bg-[#fafafa] p-3 sm:p-5 font-mono text-[12px] sm:text-[12.5px] leading-relaxed text-[#2a2a2a]">
             <pre className="max-w-full whitespace-pre-wrap break-words">{artifact.content}</pre>
+          </div>
+        ) : artifact.pending || artifact.error ? (
+          <div className="h-full w-full min-h-[280px] bg-primary">
+            <ArtifactBuildingPreview type={artifact.type} title={artifact.title} error={artifact.error} />
+          </div>
+        ) : activeTab === 'preview' && artifact.type === 'canvas' ? (
+          <div className="h-full w-full min-h-[280px] bg-primary">
+            <CanvasArtifactRenderer content={artifact.content} />
+          </div>
+        ) : activeTab === 'preview' && artifact.type === 'model3d' ? (
+          <div className="h-full w-full min-h-[280px] bg-primary">
+            <Model3DArtifactRenderer content={artifact.content} />
+          </div>
+        ) : activeTab === 'preview' && artifact.type === 'simulation' ? (
+          <div className="h-full w-full min-h-[280px] overflow-auto bg-primary">
+            <SimulationArtifactRenderer content={artifact.content} />
           </div>
         ) : activeTab === 'preview' && (artifact.type === 'posthog-analytics' || (artifact.content && (artifact.content.includes('"metrics"') || artifact.content.includes('"graph"') || artifact.content.includes('"table"') || artifact.content.includes('"funnel"')))) ? (
           <div className="h-full w-full min-w-0 overflow-auto p-3 sm:p-5 bg-primary">

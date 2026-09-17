@@ -14,6 +14,7 @@ import type { TaskType } from '../../../lib/persona-engine'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 
 import { finalizeArtifactTurn } from '../../../lib/artifacts'
+import { visibleStreamingReply } from '../../../components/ClaudeWorkspaceChat/utils/extractArtifacts'
 import { stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
 import { stripLeakedToolMarkup } from '../../../lib/bots/tools/leak'
@@ -166,6 +167,7 @@ export default async function handler(req: Request) {
 
                 let livePublicTokensCount = 0
                 let livePublicText = ''
+                let sentVisiblePublic = ''
 
                 const result = await streamBotTurn({
                     question: `User contribution:\n"""${nodeContent}"""`,
@@ -193,9 +195,13 @@ export default async function handler(req: Request) {
                         }))
                     },
                 }, (token) => {
-                    livePublicTokensCount += 1
                     livePublicText += token
-                    send({ type: 'token', text: token });
+                    const visible = visibleStreamingReply(livePublicText)
+                    if (visible.length <= sentVisiblePublic.length) return
+                    const delta = visible.slice(sentVisiblePublic.length)
+                    sentVisiblePublic = visible
+                    livePublicTokensCount += 1
+                    send({ type: 'token', text: delta });
                 }, (thinkingToken) => {
                     currentThinkingDetail += thinkingToken;
                     send({

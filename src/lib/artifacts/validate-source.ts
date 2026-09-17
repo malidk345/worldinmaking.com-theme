@@ -1,3 +1,4 @@
+import { parseCanvasSpec, parseModel3DSpecStrict, parseSimulationSpec } from '../ai/visual-artifacts'
 import type { ArtifactKind } from './kinds'
 
 const MERMAID_HINT =
@@ -9,6 +10,24 @@ export function artifactContentError(type: ArtifactKind | string, content: strin
     if (type === 'react') return reactArtifactError(body)
     if (type === 'mermaid' && !MERMAID_HINT.test(body)) {
         return 'content must be mermaid source (flowchart, sequence, or similar)'
+    }
+    if (type === 'canvas') {
+        const spec = parseCanvasSpec(body)
+        if (!spec || spec.nodes.length === 0) return 'content must be canvas JSON with at least one node'
+        return null
+    }
+    if (type === 'model3d') {
+        if (!parseModel3DSpecStrict(body)) {
+            return 'content must be 3D scene JSON (objects, model URL, or preset)'
+        }
+        return null
+    }
+    if (type === 'simulation') {
+        const spec = parseSimulationSpec(body)
+        if (!spec || !spec.variables?.length || !spec.outputs?.length) {
+            return 'content must be simulation JSON with variables and outputs'
+        }
+        return null
     }
     return null
 }

@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
 import { LocalPreviewIframe } from '../sandbox/LocalPreviewIframe'
+import { ArtifactBuildingPreview } from './ArtifactBuildingPreview'
 
 import { parsePostHogAnalyticsSpec } from '../../../lib/ai/chart-artifacts'
 
@@ -151,7 +152,9 @@ export function ArtifactWindowContent({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-primary">
         {activeTab === 'preview' ? (
           <div className="absolute inset-0 min-h-0 w-full">
-            {isCanvas ? (
+            {artifact.pending || artifact.error ? (
+              <ArtifactBuildingPreview type={artifact.type} title={artifact.title} error={artifact.error} />
+            ) : isCanvas ? (
               <div className="h-full min-h-0 w-full">
                 <CanvasArtifactRenderer content={artifact.content} />
               </div>
@@ -189,7 +192,8 @@ export function ArtifactWindowContent({
                 title={artifact.title}
                 srcDoc={getIframeSrcDoc()}
                 className="absolute inset-0 h-full w-full border-0 bg-white"
-                sandbox="allow-scripts allow-same-origin"
+                sandbox="allow-scripts"
+                referrerPolicy="no-referrer"
               />
             ) : artifact.type === 'markdown' || artifact.type === 'table' ? (
               <div className="h-full overflow-auto p-6">
