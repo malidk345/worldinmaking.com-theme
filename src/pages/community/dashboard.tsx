@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useEffect } from 'react'
 import { useUser } from 'hooks/useUser'
 import CommunityLayout, { SectionTitle } from 'components/Community/Layout'
