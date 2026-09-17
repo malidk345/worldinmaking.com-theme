@@ -55,8 +55,8 @@ export function NotebookFindBar({
                 ref={inputRef}
                 type="search"
                 value={query}
-                placeholder="Find in this notebook..."
-                aria-label="Find in this notebook"
+                placeholder="Find in notebook"
+                aria-label="Find in notebook"
                 className="MarkdownNotebook__find-input"
                 onChange={(event) => onQueryChange(event.target.value)}
                 onKeyDown={(event) => {

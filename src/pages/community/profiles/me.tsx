@@ -29,7 +29,7 @@ export default function MyProfilePage() {
 
     return (
         <div data-scheme="secondary" className="h-full bg-primary text-primary">
-            <SEO title="My profile - WorldInMaking" noindex />
+            <SEO title="My profile - PostHog" noindex />
             <ScrollArea className="min-h-0 h-full">
                 <div data-scheme="primary" className="mx-auto max-w-md px-4 py-16 text-center">
                     <h1 className="text-2xl font-bold mb-2">View your profile</h1>

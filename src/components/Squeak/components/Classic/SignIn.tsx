@@ -40,7 +40,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
             } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
                 errors.email = 'Invalid email address'
             } else if (isPostHogEmail(values.email)) {
-                errors.email = 'WIM employees sign in with WIM above.'
+                errors.email = 'PostHog employees sign in with PostHog above.'
             }
             // The password field is hidden for @posthog.com (OAuth-only) emails, so
             // don't require it — otherwise the form is permanently invalid for them.
@@ -61,7 +61,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
                 setErrorMessage(errorMessages[user?.error] || user?.error)
             } else {
                 addToast({
-                    title: 'Successfully signed in to WorldInMaking.com',
+                    title: 'Successfully signed in to PostHog.com',
                     description: (
                         <Link to="https://app.posthog.com" className="text-red dark:text-yellow font-semibold">
                             Looking for the app?
@@ -78,7 +78,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
 
     useEffect(() => {
         if (appWindow) {
-            setWindowTitle(appWindow, 'Log on to WorldInMaking.com')
+            setWindowTitle(appWindow, 'Log on to PostHog.com')
         }
     }, [])
 
@@ -110,14 +110,14 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
                     </div>
                     <div data-scheme="primary" className="flex-1">
                         <h3 className="text-base font-semibold leading-tight mb-2">The hedgehogs missed you</h3>
-                        <PostHogButton label="Sign in with WIM" className="mt-3 mb-2" />
+                        <PostHogButton label="Sign in with PostHog" className="mt-3 mb-2" />
                         <div className="flex items-center gap-2 text-xs text-muted my-2">
                             <span className="flex-1 border-t border-border" />
                             or
                             <span className="flex-1 border-t border-border" />
                         </div>
                         <p className="text-xs text-red dark:text-orange mb-2">
-                            The email and password below are separate from your WIM app account.{' '}
+                            The email and password below are separate from your PostHog app account.{' '}
                             <Link
                                 to="https://app.posthog.com"
                                 external
