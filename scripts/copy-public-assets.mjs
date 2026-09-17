@@ -6,6 +6,7 @@ const pairs = [
     ['static/brand', 'public/brand'],
     ['static/images/wallpapers', 'public/images/wallpapers'],
     ['static/images/thinking', 'public/images/thinking'],
+    ['static/icons', 'public/icons'],
     ['static/robots.txt', 'public/robots.txt'],
     ['static/llms.txt', 'public/llms.txt'],
     ['static/llms-full.txt', 'public/llms-full.txt'],
