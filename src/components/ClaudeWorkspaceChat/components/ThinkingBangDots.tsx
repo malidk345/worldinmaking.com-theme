@@ -1,11 +1,25 @@
 import React, { useEffect, useState } from 'react'
+import lookIcon from '../../../images/icons/pause-eyes/look.png'
+import leftIcon from '../../../images/icons/pause-eyes/left.png'
+import rightIcon from '../../../images/icons/pause-eyes/right.png'
+import upIcon from '../../../images/icons/pause-eyes/up.png'
+import blinkIcon from '../../../images/icons/pause-eyes/blink.png'
+
+const importedSrc = (mod: unknown): string => {
+    if (typeof mod === 'string') return mod
+    if (mod && typeof mod === 'object' && 'src' in mod) {
+        const src = (mod as { src?: unknown }).src
+        if (typeof src === 'string') return src
+    }
+    return ''
+}
 
 const FRAMES = [
-    '/icons/pause-eyes/look.png',
-    '/icons/pause-eyes/left.png',
-    '/icons/pause-eyes/right.png',
-    '/icons/pause-eyes/up.png',
-    '/icons/pause-eyes/blink.png',
+    importedSrc(lookIcon) || '/icons/pause-eyes/look.png',
+    importedSrc(leftIcon) || '/icons/pause-eyes/left.png',
+    importedSrc(rightIcon) || '/icons/pause-eyes/right.png',
+    importedSrc(upIcon) || '/icons/pause-eyes/up.png',
+    importedSrc(blinkIcon) || '/icons/pause-eyes/blink.png',
 ]
 
 const SEQUENCE = [0, 0, 1, 1, 0, 2, 2, 0, 4, 0, 3, 0]

@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Antigravity (Bundle pause-eyes icons via Webpack imports + prepages:build)
+- **Scope:** Directly imported `pause-eyes` PNG frames via Webpack/Next.js asset pipeline in `ThinkingBangDots.tsx` using `importedSrc` (matching `AppIcon.tsx`), eliminating 404s from uncopied public folders or CDN route mismatches. Also added `prepages:build` hook to `package.json` so Cloudflare Pages `pnpm pages:build` triggers `prebuild` assets copy.
+- **Files:** `src/components/ClaudeWorkspaceChat/components/ThinkingBangDots.tsx`, `package.json`
+- **Verify:** `pnpm typecheck:shell` PASS.
+- **Handoff:** Frames are bundled as hashed Webpack static assets (`_next/static/media/...`), ensuring immediate cache-busted loading in live production.
+
 ### 2026-09-17 — Antigravity (Fix pause-eyes static assets distribution for live build)
 - **Scope:** Added `static/icons/pause-eyes/` and mapped `['static/icons', 'public/icons']` in `scripts/copy-public-assets.mjs` so the animated pixel pause thinking eye frames are included in Git and copied into `public/icons` during Cloudflare Pages / CI prebuild.
 - **Files:** `scripts/copy-public-assets.mjs`, `static/icons/pause-eyes/`
