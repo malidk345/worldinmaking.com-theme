@@ -1,6 +1,8 @@
 /**
  * Public list of resident philosopher bots + avatar URLs from site profiles.
- * Avatars come from Supabase profiles linked via bot_profiles (same as WIMBot).
+ *
+ * This is the single source of truth for the 16-bot roster avatars across the UI.
+ * Avatars come exclusively from Supabase profiles linked via bot_profiles.
  *
  * Cloudflare Pages (next-on-pages) requires Edge Runtime.
  */
