@@ -110,6 +110,32 @@ test.describe('worldinmaking seo', () => {
         expect(html).toMatch(/name="robots"[^>]*content="noindex, nofollow"/)
     })
 
+    test('/pricing and /contact are indexable with correct seo and ssr', async ({ request }) => {
+        for (const path of ['/pricing', '/contact']) {
+            const res = await request.get(path)
+            expect(res.status()).toBe(200)
+            const html = await res.text()
+
+            // Should not have noindex
+            expect(html).not.toMatch(/name="robots"[^>]*content="[^"]*noindex[^"]*"/)
+
+            // Should have canonical
+            expect(html).toContain(`rel="canonical" href="https://worldinmaking.com${path}"`)
+
+            const title = titleOf(html).toLowerCase()
+            expect(title).toContain('worldinmaking')
+
+            if (path === '/pricing') {
+                expect(title).toContain('study')
+                expect(html).toContain('the desk is already yours') // Verify SSR of pricing window
+                expect(html).toMatch(/name="description"[^>]*content="[^"]*extra heat for WIM AI/i)
+            } else if (path === '/contact') {
+                expect(title).toContain('contact')
+                expect(html).toMatch(/name="description"[^>]*content="[^"]*get in touch/i)
+            }
+        }
+    })
+
     test('robots.txt is plain text and points at the wim sitemap', async ({ request }) => {
         const res = await request.get('/robots.txt')
         expect(res.status()).toBe(200)
