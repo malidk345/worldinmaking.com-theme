@@ -186,6 +186,12 @@ export default function SeoFromRoute({
     if (path === '/profile') {
         return <SEO title="profile" noindex />
     }
+    if (path === '/pricing') {
+        return <SEO title="study" description="the desk is already yours. study is extra heat for WIM AI, notebook memory, and longer days of inquiry." />
+    }
+    if (path === '/contact') {
+        return <SEO title="contact" description="get in touch with the worldinmaking team." />
+    }
 
     return <SEO title="worldinmaking" description={SITE.defaultDescription} noindex />
 }
