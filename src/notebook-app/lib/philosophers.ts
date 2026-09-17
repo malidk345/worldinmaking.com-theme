@@ -1,9 +1,10 @@
 /**
  * Client-side catalog of WorldInMaking philosopher bots.
- * Keep roster in sync with lib/persona-engine.ts.
+ * Keep roster in sync with lib/persona-engine.ts (the active 16-bot roster).
  *
- * Avatars come from live site profiles (Supabase) via /api/philosopher-bots —
- * not hard-coded external portraits.
+ * This is the single source of truth for the bot roster on the client.
+ * Avatars exclusively come from live site profiles via /api/philosopher-bots —
+ * external orphan assets are no longer referenced.
  */
 
 export type PhilosopherBot = {

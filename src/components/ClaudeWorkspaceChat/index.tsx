@@ -303,27 +303,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   // Fetch live philosopher bot profiles from Supabase via /api/philosopher-bots
   useEffect(() => {
-    fetch('/api/philosopher-bots')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.bots && Array.isArray(data.bots) && data.bots.length > 0) {
+    import('../../notebook-app/lib/philosophers').then(({ fetchPhilosopherRosterWithAvatars }) => {
+      fetchPhilosopherRosterWithAvatars()
+        .then((roster) => {
           setModels((prevModels) => {
-            const botMap = new Map<string, { id: string; username: string; avatar_url: string }>();
-            data.bots.forEach((b: any) => {
-              if (b?.username) botMap.set(b.username.toLowerCase(), b);
-              if (b?.id) botMap.set(b.id.toLowerCase(), b);
-            });
             return prevModels.map((m) => {
-              const liveBot = botMap.get(m.name.toLowerCase()) || botMap.get(m.id.toLowerCase());
-              if (liveBot && liveBot.avatar_url) {
-                return { ...m, avatarUrl: liveBot.avatar_url };
+              if (m.id === 'claude-3-7-sonnet') return m;
+              const liveBot = roster.find((bot) => bot.id === m.id);
+              if (liveBot && liveBot.avatarUrl) {
+                return { ...m, avatarUrl: liveBot.avatarUrl };
               }
               return m;
             });
           });
-        }
-      })
-      .catch(() => { /* ignore */ });
+        })
+        .catch(() => { /* ignore */ });
+    }).catch(() => { /* ignore */ });
   }, []);
 
 

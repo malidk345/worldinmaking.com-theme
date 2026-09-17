@@ -32,6 +32,10 @@ import {
 import { instructionForForumMove, pickForumMove } from './forum-moves'
 import { supabaseRest } from './supabase-edge'
 
+/**
+ * Single source of truth for the active 16-bot roster.
+ * Avatars for these bots are fetched exclusively via /api/philosopher-bots.
+ */
 export const BOT_ROSTER = [
     'spinoza',
     'heidegger',

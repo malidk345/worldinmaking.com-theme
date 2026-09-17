@@ -7,7 +7,6 @@ export function isUsableAvatarUrl(url?: string | null): boolean {
     if (!url) return false
     const value = url.trim()
     if (!value) return false
-    if (value.includes('/images/portraits/mustafa-pixel')) return false
     return (
         value.startsWith('http://') ||
         value.startsWith('https://') ||
