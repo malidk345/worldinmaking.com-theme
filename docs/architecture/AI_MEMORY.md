@@ -52,11 +52,29 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None
+- **Task:** None.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-17 — Antigravity (Model3D viewport controls — compact toolbar & site-fitting rounded corners)
+- **Scope:** In `Model3DArtifactRenderer.tsx`, removed the redundant floating title header bar that was occupying top-left viewport space. Refactored the top-right camera and viewport control toolbar (Rotate, Wireframe, Grid, ISO, FRONT, TOP, Reset) into a compact, site-consistent design: reduced height to `h-6`/`size-6`, padding to `p-0.5`/`gap-0.5`, font to `text-[9px] font-mono font-semibold tracking-wide`, and aligned all border radii to `rounded-sm` matching the WorldInMaking desktop and notebook aesthetic. Also aligned hover tooltip and selected object card corners to `rounded-sm`.
+- **Files:** `Model3DArtifactRenderer.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core shell allowlist).
+- **Handoff:** Changes kept local; dev server running.
+
+### 2026-09-17 — Antigravity (Unbox screen artifacts in notebook — clean borderless layout)
+- **Scope:** In `NotebookWimBlocks.tsx`, removed the heavy inner card wrapper (`border border-primary bg-primary`) and expanded screen artifact preview height from cramped 380px to `min-h-[460px] h-[540px]`. Screens now render seamlessly on the page like native embeds without double-boxed perimeter borders or squished viewports.
+- **Files:** `NotebookWimBlocks.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core shell allowlist).
+- **Handoff:** Changes kept local; dev server running.
+
+### 2026-09-17 — Antigravity (Delete action for notebook artifact screen & live blocks)
+- **Scope:** In `NotebookWimBlocks.tsx` and `NotebookMermaidBlock.tsx`, added `mode` and `deleteNode` props. In edit mode, on hover or focus, a compact top-right toolbar displays the block type label and an `OSButton` delete/trash button (`IconTrash`) matching the notebook design system. Also allows Backspace/Delete keyboard deletion when the block container is focused. Updated `renderNode.tsx` to pass `mode` and `deleteNode`.
+- **Files:** `NotebookWimBlocks.tsx`, `NotebookMermaidBlock.tsx`, `renderNode.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core shell allowlist).
+- **Handoff:** Changes kept local; dev server running.
 
 ### 2026-09-17 — Antigravity (Always visible assistant output action icons)
 - **Scope:** In `ChatMessage.tsx`, removed `md:opacity-0 md:group-hover/assistant:opacity-100 md:focus-within:opacity-100` from the action icons row (copy, retry, add to notebook, citations, model badge). They are now permanently visible on desktop just like mobile, without requiring hover.

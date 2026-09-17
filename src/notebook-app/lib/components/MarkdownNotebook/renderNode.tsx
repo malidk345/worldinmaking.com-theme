@@ -258,10 +258,10 @@ export function renderNode({
     if (node.type === 'code') {
         // Render live preview blocks (charts, react/html UI, mermaid, svg) in all notebook modes
         if (isNotebookLiveCodeBlock(node)) {
-            return <NotebookWimCodeBlock node={node} setBlockRef={setBlockRef} />
+            return <NotebookWimCodeBlock node={node} setBlockRef={setBlockRef} mode={mode} deleteNode={deleteNode} />
         }
         if (isMermaidCodeBlock(node)) {
-            return <NotebookMermaidBlock node={node} setBlockRef={setBlockRef} />
+            return <NotebookMermaidBlock node={node} setBlockRef={setBlockRef} mode={mode} deleteNode={deleteNode} />
         }
 
         return (

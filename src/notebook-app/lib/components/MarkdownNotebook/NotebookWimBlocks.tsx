@@ -14,8 +14,10 @@ import {
     isNotebookSimulationFence,
     isNotebookSvgFence,
 } from '../../../../lib/notebook-artifact-block'
+import { IconTrash } from '@posthog/icons'
+import OSButton from 'components/OSButton'
 import { parseCanvasSpec, parseModel3DSpecStrict, parseSimulationSpec } from '../../../../lib/ai/visual-artifacts'
-import { NotebookCodeBlockNode } from './types'
+import { NotebookCodeBlockNode, NotebookMode } from './types'
 
 const ChartArtifactRenderer = dynamic(
     () =>
@@ -90,9 +92,13 @@ export function isNotebookLiveCodeBlock(node: NotebookCodeBlockNode): boolean {
 export function NotebookWimCodeBlock({
     node,
     setBlockRef,
+    mode = 'view',
+    deleteNode,
 }: {
     node: NotebookCodeBlockNode
     setBlockRef: (element: HTMLElement | null) => void
+    mode?: NotebookMode
+    deleteNode?: () => void
 }): JSX.Element {
     const language = (node.language || '').toLowerCase().trim()
     const text = (node.text || '').trim()
@@ -107,13 +113,43 @@ export function NotebookWimCodeBlock({
     const isModel3d = isNotebookModel3dFence(language) || Boolean(parseModel3DSpecStrict(text))
     const isSimulation = isNotebookSimulationFence(language) || Boolean(parseSimulationSpec(text))
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (mode === 'edit' && (event.key === 'Backspace' || event.key === 'Delete')) {
+            event.preventDefault()
+            event.stopPropagation()
+            deleteNode?.()
+        }
+    }
+
     return (
         <div
-            className="MarkdownNotebook__wim-block my-3 overflow-hidden rounded-xl bg-transparent"
+            className="MarkdownNotebook__wim-block group/wim-block relative my-3 overflow-hidden rounded-xl bg-transparent focus:outline-none"
             ref={setBlockRef}
             contentEditable={false}
             data-markdown-notebook-node-id={node.id}
+            tabIndex={mode === 'edit' ? 0 : undefined}
+            onKeyDown={handleKeyDown}
         >
+            {mode === 'edit' && deleteNode ? (
+                <div
+                    className="absolute top-2 right-2 z-30 flex items-center gap-1 rounded-md bg-primary/90 px-1.5 py-0.5 shadow-sm border border-primary/40 backdrop-blur-md opacity-0 group-hover/wim-block:opacity-100 focus-within:opacity-100 transition-opacity duration-150"
+                    contentEditable={false}
+                >
+                    <span className="text-[10px] font-mono text-muted uppercase px-1 py-0.5 select-none tracking-wider">
+                        {language || 'artifact'}
+                    </span>
+                    <OSButton
+                        size="xs"
+                        icon={<IconTrash />}
+                        tooltip="Delete block"
+                        aria-label="Delete block"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            deleteNode()
+                        }}
+                    />
+                </div>
+            ) : null}
             {postHogSpec ? (
                 <div data-testid="notebook-posthog-analytics-block" className="py-2">
                     <PostHogAnalyticsDashboard spec={postHogSpec} />
@@ -145,7 +181,7 @@ export function NotebookWimCodeBlock({
                 />
             ) : isReact ? (
                 <div
-                    className="relative h-[380px] w-full overflow-hidden rounded-xl border border-primary bg-primary"
+                    className="relative min-h-[460px] h-[540px] w-full overflow-hidden rounded-lg"
                     data-testid="notebook-ui-block"
                 >
                     <ReactPreviewIframe
@@ -156,13 +192,13 @@ export function NotebookWimCodeBlock({
                 </div>
             ) : isHtml ? (
                 <div
-                    className="relative h-[380px] w-full overflow-hidden rounded-xl border border-primary bg-primary"
+                    className="relative min-h-[460px] h-[540px] w-full overflow-hidden rounded-lg"
                     data-testid="notebook-ui-block"
                 >
                     <iframe
                         title="Preview"
                         srcDoc={wrapHtmlArtifactDocument(node.text)}
-                        className="absolute inset-0 h-full w-full border-none bg-primary"
+                        className="absolute inset-0 h-full w-full border-none bg-transparent"
                         sandbox="allow-scripts"
                     />
                 </div>
