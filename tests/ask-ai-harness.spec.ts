@@ -266,7 +266,7 @@ test.describe('Ask AI harness', () => {
         expect(parseHostSnapshot(null)).toBeUndefined()
     })
 
-    test('finalize_plan is allowed in plan mode and does not wait for the user', async () => {
+    test('finalize_plan is allowed in plan mode and sets awaiting plan_approval', async () => {
         const ready = await executeToolCall(
             {
                 id: 'f1',
@@ -278,8 +278,8 @@ test.describe('Ask AI harness', () => {
             'plan'
         )
         expect(ready.ok).toBe(true)
-        expect(ready.result).not.toContain('awaiting')
-        expect(ready.result).not.toContain('plan_approval')
+        expect(ready.result).toContain('awaiting')
+        expect(ready.result).toContain('plan_approval')
     })
 
     test('ask_user checkpoint replays properly', () => {
@@ -543,7 +543,7 @@ test.describe('Ask AI harness', () => {
             'plan'
         )
         expect(finalized.ok).toBe(true)
-        expect(JSON.parse(finalized.result)).toMatchObject({ ok: true, mode: 'execute' })
+        expect(JSON.parse(finalized.result)).toMatchObject({ ok: true, awaiting: 'plan_approval' })
     })
 
 })

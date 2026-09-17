@@ -307,9 +307,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = () => {
     const links = linkChips.map((chip) => chip.url).join('\n')
-    const body = [links, prompt.trim()].filter(Boolean).join('\n\n')
+    const trimmed = prompt.trim()
+    const body = [links, trimmed].filter(Boolean).join('\n\n')
     if (pendingHumanTurn && pendingHumanTurn.kind === 'ask_user') {
       const picked = askChoice && askChoice !== 'free' ? askChoice : body
+      if (!trimmed && picked === body) return
       if (!picked || isStreaming) return
       setHumanDismissed(true)
       onHumanRespond?.('answer', picked)

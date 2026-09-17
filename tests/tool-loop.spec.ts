@@ -165,8 +165,8 @@ I will summarize after the host returns.`
             argumentsJson: JSON.stringify({ summary: 'Search, then write.' }),
         })
         expect(finalized.ok).toBe(true)
-        expect(JSON.parse(finalized.result).mode).toBe('execute')
-        expect(JSON.parse(finalized.result).awaiting).toBeUndefined()
+        expect(JSON.parse(finalized.result).awaiting).toBe('plan_approval')
+        expect(JSON.parse(finalized.result).summary).toBe('Search, then write.')
 
         const tasked = await executeToolCall({
             id: 'task-1',
