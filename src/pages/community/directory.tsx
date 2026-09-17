@@ -62,7 +62,7 @@ function AccessDenied({ user }: { user: unknown }) {
 
     return (
         <>
-            <SEO title="Community directory – PostHog" description="Moderator community profile directory" />
+            <SEO title="Community directory – WorldInMaking" description="Moderator community profile directory" />
             <ReaderView
                 title="Community directory"
                 leftSidebar={<TreeMenu items={internalToolsNav} />}
@@ -198,7 +198,7 @@ export default function CommunityDirectory(): JSX.Element {
     if (userValidating) {
         return (
             <>
-                <SEO title="Community directory – PostHog" description="Moderator community profile directory" />
+                <SEO title="Community directory – WorldInMaking" description="Moderator community profile directory" />
                 <Editor title="Community directory" slug="/community/directory" maxWidth="100%">
                     <div className="flex items-center justify-center py-12">
                         <IconSpinner className="size-8 animate-spin opacity-50" />
@@ -222,7 +222,7 @@ export default function CommunityDirectory(): JSX.Element {
 
     return (
         <>
-            <SEO title="Community directory – PostHog" description="Moderator community profile directory" />
+            <SEO title="Community directory – WorldInMaking" description="Moderator community profile directory" />
             <Editor
                 maxWidth="100%"
                 title="Community directory"
