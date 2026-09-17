@@ -9,7 +9,7 @@ interface PostHogButtonProps {
 }
 
 /** WIM: PostHog OAuth via Squeak is disabled. Button is a no-op with toast. */
-const PostHogButton: React.FC<PostHogButtonProps> = ({ label = 'Sign in with PostHog', className = '' }) => {
+const PostHogButton: React.FC<PostHogButtonProps> = ({ label = 'Sign in with WIM', className = '' }) => {
     const { addToast } = useToast()
 
     const handleClick = () => {
