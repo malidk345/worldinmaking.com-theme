@@ -268,6 +268,71 @@ function TimelineRow({
   return <ReasoningActivity item={item} isLive={isLive} durationSeconds={durationSeconds} />
 }
 
+function getLiveStatusLabel(items: TimelineItem[]): string {
+  const liveTool = [...items].reverse().find((item) => item.kind === 'tool' && item.status === 'running')
+  if (liveTool) {
+    const name = (liveTool.toolName || '').toLowerCase()
+    if (
+      name === 'web_search' ||
+      name === 'search_site' ||
+      name === 'academic_search' ||
+      name === 'verified_corpus_search' ||
+      name === 'fetch_url'
+    ) {
+      return 'Searching...'
+    }
+    if (
+      name === 'read_document' ||
+      name === 'read_notebook' ||
+      name === 'read_post' ||
+      name === 'add_notebook_footnote'
+    ) {
+      return 'Reading...'
+    }
+    if (
+      name === 'create_artifact' ||
+      name === 'create_concept_map' ||
+      name === 'run_code_sandbox'
+    ) {
+      return 'Creating artifact...'
+    }
+    if (
+      name === 'insert_notebook_block' ||
+      name === 'rewrite_notebook_document' ||
+      name === 'export_notebook'
+    ) {
+      return 'Writing notebook...'
+    }
+    return 'Working...'
+  }
+  const livePlan = [...items].reverse().find((item) => item.kind === 'plan' && item.status === 'running')
+  if (livePlan) {
+    return 'Planning...'
+  }
+  return 'Reasoning...'
+}
+
+function LiveStatusShimmer({ text }: { text: string }) {
+  return (
+    <span
+      key={text}
+      className="inline-block text-[12px] font-medium tracking-tight select-none pointer-events-none"
+      style={{
+        backgroundImage:
+          'linear-gradient(90deg, rgb(var(--text-muted) / 0.4) 0%, rgb(var(--text-muted) / 0.4) 35%, rgb(var(--text-primary)) 50%, rgb(var(--text-muted) / 0.4) 65%, rgb(var(--text-muted) / 0.4) 100%)',
+        backgroundSize: '200% 100%',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        color: 'transparent',
+        animation: 'wim-activity-fade-in 180ms cubic-bezier(0.215, 0.61, 0.355, 1) both, wim-thought-shimmer 2.2s linear infinite',
+      }}
+    >
+      {text}
+    </span>
+  )
+}
+
 interface ThinkingBlockProps {
   thinking: ThinkingProcess
   toolTrace?: ToolTrace[]
@@ -301,6 +366,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   const visible = collapseTools && !toolsOpen ? restItems : items
   const liveTool = [...items].reverse().find((item) => item.kind === 'tool' && item.status === 'running')
   const faceMood = pauseMoodFromTool(liveTool?.toolName, liveTool?.status)
+  const statusLabel = getLiveStatusLabel(items)
   if (!hasItems && !isLive) return null
 
   return (
@@ -308,6 +374,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
       {isLive ? (
         <div className="flex items-center gap-1.5 w-full min-w-0 py-0.5">
           <PixelPause live mood={faceMood} onStop={onStop} />
+          <LiveStatusShimmer text={statusLabel} />
         </div>
       ) : null}
 
