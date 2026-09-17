@@ -22,13 +22,20 @@ export type SubscriptionRecord = {
     updatedAt: string
 }
 
+// marketing copy and enforcement must stay in sync
+export const CHAT_LIMITS = {
+    guest: { hourly: 30, daily: 100 },
+    free: { hourly: 100, daily: 300 },
+    pro: { hourly: 300, daily: 1000 },
+} as const
+
 export const BILLING_PLANS = {
     free: {
         id: 'free',
         name: 'desk',
         priceMonthlyUsd: 0,
-        hourlyChatLimit: 15,
-        dailyChatLimit: 30,
+        hourlyChatLimit: CHAT_LIMITS.free.hourly,
+        dailyChatLimit: CHAT_LIMITS.free.daily,
         features: [
             'the OS: notebooks, forum, WIM AI in a window',
             'standard daily inquiry budget',
@@ -41,8 +48,8 @@ export const BILLING_PLANS = {
         name: 'study',
         priceMonthlyUsd: 9.99,
         priceYearlyUsd: 99.99,
-        hourlyChatLimit: 60,
-        dailyChatLimit: 300,
+        hourlyChatLimit: CHAT_LIMITS.pro.hourly,
+        dailyChatLimit: CHAT_LIMITS.pro.daily,
         features: [
             'deeper models when a question needs to sit',
             'a larger daily inquiry budget',
@@ -134,6 +141,9 @@ export async function verifyLemonSqueezySignature(
     }
 }
 
+/**
+ * Note: live Lemon Squeezy API keys/secrets are managed by Ops (E2) and should not be included in PRs.
+ */
 export function getLemonSqueezyConfig(env?: EnvStore) {
     const store = env ?? getRuntimeEnv()
     return {

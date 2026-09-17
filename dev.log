@@ -1,0 +1,188 @@
+
+> worldinmaking.com@1.0.0 predev /app
+> node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles
+
+
+> worldinmaking.com@1.0.0 build:notebook-styles /app
+> node scripts/generate-scoped-quill-shim.js && node scripts/generate-style-bundle.js && node scripts/compile-notebook-css.js && node scripts/compile-notebook-product-css.js
+
+Quill shim stubbed.
+Successfully generated master bundle.scss wrapped inside .notebook-app-scope.
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+7 │   @import 'vars.scss';
+  │           ^^^^^^^^^^^
+  ╵
+    src/notebook-app/styles/bundle.scss 7:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+8 │   @import 'mixins.scss';
+  │           ^^^^^^^^^^^^^
+  ╵
+    src/notebook-app/styles/bundle.scss 8:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+9 │   @import 'fonts.scss';
+  │           ^^^^^^^^^^^^
+  ╵
+    src/notebook-app/styles/bundle.scss 9:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+10 │   @import 'base.scss';
+   │           ^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/bundle.scss 10:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+11 │   @import 'global.scss';
+   │           ^^^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/bundle.scss 11:11  root stylesheet
+
+WARNING: 36 repetitive deprecation warnings omitted.
+Run in verbose mode to see all warnings.
+
+Successfully compiled bundle.scss to bundleCss.ts (length: 450093 )
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+42 │   @import 'vars.scss';
+   │           ^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/product-bundle.scss 42:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+43 │   @import 'mixins.scss';
+   │           ^^^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/product-bundle.scss 43:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+44 │   @import '../lib/lemon-ui/LemonButton/LemonButton.scss';
+   │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/product-bundle.scss 44:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+45 │   @import '../lib/lemon-ui/LemonTable/LemonTable.scss';
+   │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/product-bundle.scss 45:11  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+46 │   @import '../lib/lemon-ui/PaginationControl/PaginationControl.scss';
+   │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/notebook-app/styles/product-bundle.scss 46:11  root stylesheet
+
+WARNING: 11 repetitive deprecation warnings omitted.
+Run in verbose mode to see all warnings.
+
+Successfully compiled product-bundle.scss to productBundleCss.ts (length: 225070 )
+
+> worldinmaking.com@1.0.0 dev /app
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 6.7s
+ ○ Compiling / ...
+
+warn - The `min-*` and `max-*` variants are not supported with a `screens` configuration containing objects.
+ ✓ Compiled / in 54.6s (9672 modules)
+ ✓ Compiled in 37.4s (9672 modules)
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET / 200 in 94982ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET / 200 in 56ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET / 200 in 62ms
+ ○ Compiling /posts/[slug] ...
+ ✓ Compiled /posts/[slug] in 10.1s (9680 modules)
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /posts/this-slug-does-not-exist-wim 200 in 10768ms
+ GET /posts 200 in 10949ms
+ ○ Compiling /[...slug] ...
+ ✓ Compiled /[...slug] in 4.2s (9771 modules)
+[supabaseBlog] fetchSupabasePostsPage [TypeError: Failed to parse URL from /rest/v1/posts?select=id,title,slug,excerpt,category,created_at,image_url,author,author_avatar,tags&order=created_at.desc&limit=40&offset=0]
+ GET /sitemap.xml 200 in 4293ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /mcp 200 in 4712ms
+ ○ Compiling /about ...
+ ✓ Compiled /about in 4.2s (9688 modules)
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /about 200 in 4807ms
+ GET /customers 200 in 4774ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /101 200 in 71ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 17.5s (9692 modules)
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /login 200 in 18442ms
+ GET /sparks-joy 200 in 18369ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /posthug 200 in 44ms
+ ○ Compiling /pricing ...
+ ✓ Compiled /pricing in 2.7s (9696 modules)
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /pricing 200 in 3395ms
+ GET /photobooth 200 in 3363ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /start 200 in 41ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /wizard 200 in 38ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /paint 200 in 37ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /hogwatch 200 in 39ms
+Warning: viewport meta tags should not be used in _document.js's <Head>. https://nextjs.org/docs/messages/no-document-viewport-meta
+ GET /handbook 200 in 43ms
+ ○ Compiling /api/seo/rss ...
+ ✓ Compiled /api/seo/rss in 697ms (87 modules)
+[supabaseBlog] fetchSupabasePostsPage [TypeError: Failed to parse URL from /rest/v1/posts?select=id,title,slug,excerpt,category,created_at,image_url,author,author_avatar,tags&order=created_at.desc&limit=40&offset=0]
+ GET /feed.xml 200 in 819ms
+[supabaseBlog] fetchSupabasePostsPage [TypeError: Failed to parse URL from /rest/v1/posts?select=id,title,slug,excerpt,category,created_at,image_url,author,author_avatar,tags&order=created_at.desc&limit=40&offset=0]
+ GET /sitemap.xml 200 in 91ms

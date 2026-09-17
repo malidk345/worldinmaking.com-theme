@@ -62,12 +62,12 @@ export default function SearchInput({
                         ? 'Filter by category...'
                         : activeConfig
                         ? `Search ${activeConfig.label.toLowerCase()}...`
-                        : 'Search worldinmaking.com...'
+                        : 'Search global site (worldinmaking.com)...'
                 }
                 spellCheck={false}
                 autoComplete="off"
                 role="combobox"
-                aria-label="Search worldinmaking.com"
+                aria-label="Search global site (worldinmaking.com)"
                 aria-autocomplete="list"
                 aria-expanded={Boolean(value || activeFilter || filterMenuOpen)}
                 aria-controls={controlsId}

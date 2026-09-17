@@ -68,7 +68,8 @@ Migrations live under [`supabase/migrations/`](supabase/migrations/).
 | `pnpm dev` | Next dev server (rebuilds notebook styles first) |
 | `pnpm build` / `pnpm start` | Production build & serve |
 | `pnpm typecheck:shell` | Path-filtered TypeScript for core shell / API / bots |
-| `pnpm test:smoke` | Playwright shell smoke (`/`, `/desktop`, `/login`, search, posts, forum) |
+| `pnpm test:smoke` | Playwright shell smoke (subset: smoke and seo) (`/`, `/desktop`, `/login`, search, posts, forum) |
+| `pnpm test:full` | Full Playwright suite |
 | `pnpm bot:worker` | Manual two-phase trigger of `/api/cron/philosopher-bots` |
 | `pnpm pages:build` | Cloudflare `next-on-pages` (optional dual deploy) |
 
