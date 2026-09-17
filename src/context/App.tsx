@@ -1345,6 +1345,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
             // Cmd+K (Mac) or Ctrl+K (Windows/Linux) for search
             if (e.key === 'k' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                // Cmd+K ownership: If Ask AI SearchModal is open, let it handle the shortcut.
+                if (document.getElementById('workspace-search-modal')) {
+                    return
+                }
                 e.preventDefault()
                 openSearch()
             }
