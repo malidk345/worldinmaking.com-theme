@@ -2393,11 +2393,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         handleNewChat()
         return
       }
-      if (meta && event.key.toLowerCase() === 'k') {
-        event.preventDefault()
-        setSearchModalOpen((open) => !open)
-        return
-      }
       if (meta && event.shiftKey && event.key.toLowerCase() === 'o') {
         event.preventDefault()
         handleNewChat()

@@ -19,6 +19,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+K ownership: When SearchModal is open, only close the modal (do not open global CommandPalette)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         if (isOpen) onClose();
@@ -53,7 +54,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-primary/30 backdrop-blur-xs font-sans">
+    <div id="workspace-search-modal" className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-primary/30 backdrop-blur-xs font-sans">
       <div className="w-full max-w-xl rounded-2xl border border-primary bg-primary text-primary shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         {/* Search Header */}
         <div className="flex items-center gap-3 border-b border-primary px-4 py-3 bg-primary">
