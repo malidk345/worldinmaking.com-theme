@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (ask_user: answer while first stream still open)
+- **Scope:** Choice/Skip during the still-open interrupt stream used to no-op (`isStreaming` return) and abort used to wipe humanTurn. Resume abort now preserves answered state; stream-end no longer overwrites a settled humanTurn with undefined.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/agent-modes.spec.ts`
+- **Verify:** pipeline test added; typecheck not blocking.
+- **Handoff:** Click a chip as soon as it appears — banner should vanish and the turn should continue.
+
+### 2026-09-17 — Grok 4.6 (ask_user back in WIM composer)
+- **Scope:** Dropped the PostHog-style replacement card. Question/plan sit as compact banners inside the same glass composer. Choices are chips. Skip/Run are toolbar text. Answering no longer blocked by quota-not-loaded. Pending interrupt is found by scanning messages, not only the last row.
+- **Files:** `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`
+- **Verify:** local hot reload.
+- **Handoff:** Same send button, same box. Question appears above the textarea.
+
 ### 2026-09-17 — Grok 4.6 (Chat flow/perf: scroll loop, padding, Continue vs Next)
 - **Scope:** Dropped per-frame scroll while streaming (layout effect on tokens remains). Composer no longer double-pads. Scroll-to-bottom hides when Next section is up. Stopped Continue hides when a plan Next section exists. Notebook selection uses selectionchange instead of 1.5s poll. Stock amber icon color removed.
 - **Files:** `ClaudeWorkspaceChat/index.tsx`, `ChatInput.tsx`, `ChatMessage.tsx`

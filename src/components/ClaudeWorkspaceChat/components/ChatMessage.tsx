@@ -38,6 +38,7 @@ interface ChatMessageProps {
   onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
   onContinue?: (messageId: string) => void;
+  onStop?: () => void;
 }
 
 function formatExactTime(ts?: string): string {
@@ -515,6 +516,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   onOpenByok,
   typewriterSpeed = 'smooth',
   onContinue,
+  onStop,
 }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -584,7 +586,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         </div>
       ) : (
         /* ASSISTANT MESSAGE: philosopher header with thinking on the same row, full-width reply */
-        <div className="group/assistant space-y-1.5 text-primary [animation:wim-msg-in_220ms_ease-out]">
+        <div className="group/assistant relative space-y-1.5 text-primary [animation:wim-msg-in_220ms_ease-out]">
           <div className="w-full min-w-0">
             <ThinkingBlock
               model={
@@ -603,6 +605,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               }
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
+              onStop={message.isStreaming ? onStop : undefined}
               onToolActivate={(toolName) => {
                 if (
                   (toolName === 'web_search' ||

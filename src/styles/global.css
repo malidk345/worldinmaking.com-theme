@@ -3520,6 +3520,33 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
     animation-delay: 0.44s;
 }
 
+.wim-pixel-pause-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    line-height: 0;
+}
+.wim-pixel-pause-btn:hover .wim-pixel-pause-face {
+    filter: brightness(1.08);
+}
+.wim-pixel-pause {
+    display: inline-flex;
+    line-height: 0;
+}
+.wim-pixel-pause-face {
+    display: block;
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+}
+
 .wim-mic-wave {
     display: inline-flex;
     align-items: flex-end;
@@ -3680,4 +3707,5 @@ html.warehouse-wizard-hint-dismissed .warehouse-wizard-hint {
         box-shadow: none;
         transform: none;
     }
+
 }

@@ -425,6 +425,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const resumeAbortRef = useRef(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
@@ -889,12 +890,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!promptText.trim() && attachments.length === 0 && !options?.resume) return;
 
     if (!options?.resume && !options?.skipUserAppend) {
-      const pendingAsk = (chats.find((c) => c.id === (activeChatId || '')) || activeChat)?.messages.at(-1)
-      if (
-        pendingAsk?.humanTurn?.kind === 'ask_user' &&
-        pendingAsk.humanTurn.status === 'pending' &&
-        promptText.trim()
-      ) {
+      const pendingAsk = [...((chats.find((c) => c.id === (activeChatId || '')) || activeChat)?.messages || [])]
+        .reverse()
+        .find((item) => item.humanTurn?.kind === 'ask_user' && item.humanTurn.status === 'pending')
+      if (pendingAsk && promptText.trim()) {
         handleHumanRespond(pendingAsk.id, 'answer', promptText.trim())
         return
       }
@@ -954,6 +953,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           isStreaming: true,
           isTypingDone: false,
           stopped: false,
+          humanTurn:
+            options?.resume && continued.humanTurn
+              ? {
+                  ...continued.humanTurn,
+                  status:
+                    options.resumeAction === 'run'
+                      ? 'approved'
+                      : options.resumeAction === 'answer'
+                        ? 'answered'
+                        : options.resumeAction === 'revise'
+                          ? 'revised'
+                          : continued.humanTurn.status,
+                  ...(options.resumeAction === 'answer' && options.resumePayload
+                    ? { answer: String(options.resumePayload).slice(0, 2000) }
+                    : {}),
+                }
+              : continued.humanTurn,
         }
       : {
           id: assistantMessageId,
@@ -1791,9 +1807,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           isStreaming: false,
           isTypingDone: true,
           osAction: streamedAction,
-          humanTurn: streamedHumanTurn,
-          checkpoint: streamedCheckpoint,
           provider: streamedProvider,
+          ...(streamedHumanTurn ? { humanTurn: streamedHumanTurn } : {}),
+          ...(streamedCheckpoint ? { checkpoint: streamedCheckpoint } : {}),
           ...(streamedQualityGate ? { qualityGate: streamedQualityGate } : {}),
         });
       }
@@ -1802,13 +1818,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     } catch (err: any) {
       if (isAbortError(err)) {
         const stoppedText = sanitizePublicAssistantText(accumulatedContent)
+        const resumeAbort = resumeAbortRef.current
+        resumeAbortRef.current = false
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: stoppedText,
           thinkingProcess: { ...currentThinkingProcess },
           toolTrace: streamedToolTrace.length > 0 ? streamedToolTrace : undefined,
           isStreaming: false,
           isTypingDone: true,
-          stopped: true,
+          stopped: !resumeAbort && !streamedHumanTurn,
+          ...(resumeAbort
+            ? {}
+            : {
+                ...(streamedHumanTurn ? { humanTurn: streamedHumanTurn } : {}),
+                ...(streamedCheckpoint ? { checkpoint: streamedCheckpoint } : {}),
+              }),
         })
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
@@ -2127,14 +2151,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
   const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
-    if (isStreaming || !activeChat) return
-    const message = activeChat.messages.find((item) => item.id === messageId)
+    if (isStreaming) {
+      resumeAbortRef.current = true
+      abortActiveStream()
+      setIsStreaming(false)
+      setStreamStatus(null)
+    }
+    const chat = chats.find((item) => item.id === (activeChatId || '')) || activeChat
+    if (!chat) return
+    const message =
+      chat.messages.find((item) => item.id === messageId && item.humanTurn?.status === 'pending') ||
+      [...chat.messages].reverse().find((item) => item.humanTurn?.status === 'pending')
     if (!message?.humanTurn || message.humanTurn.status !== 'pending') return
     const trimmed = (payload || '').trim()
     // ask_user: never continue on empty/whitespace — old path fell back to "Yes"
     if (action === 'answer' && !trimmed) return
     const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
-    updateAssistantMessage(activeChat.id, messageId, {
+    updateAssistantMessage(chat.id, message.id, {
       humanTurn: {
         ...message.humanTurn,
         status: nextStatus,
@@ -2142,12 +2175,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         ...(action === 'revise' && trimmed ? { revisionNote: trimmed.slice(0, 800) } : {}),
       },
     })
-    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (activeChat.agentMode || 'ask')
-    setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, agentMode: nextMode } : chat)))
+    const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (chat.agentMode || 'ask')
+    setChats((prev) => prev.map((row) => (row.id === chat.id ? { ...row, agentMode: nextMode } : row)))
     if (message.checkpoint) {
       void handleSendMessage('', [], {
         skipUserAppend: true,
-        continueMessageId: messageId,
+        continueMessageId: message.id,
         agentMode: nextMode,
         resume: message.checkpoint,
         resumeAction: action,
@@ -2156,11 +2189,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return
     }
     if (action === 'run') {
-      void handleSendMessage('Run the plan.', [], { agentMode: 'execute' })
+      void handleSendMessage('Run the plan.', [], { agentMode: 'execute', skipUserAppend: false })
       return
     }
     if (action === 'answer') {
-      void handleSendMessage(trimmed, [], { agentMode: 'execute' })
+      void handleSendMessage(trimmed, [], { agentMode: chat.agentMode || 'ask' })
       return
     }
     void handleSendMessage(trimmed ? `Revise the plan: ${trimmed}` : 'Revise the plan.', [], { agentMode: 'plan' })
@@ -2497,6 +2530,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
                   onOpenByok={() => setSidebarOpen(true)}
                   typewriterSpeed={settings.typewriterSpeed}
+                  onStop={handleStopStreaming}
                   onContinue={
                     (activeChat?.agentMode || 'ask') === 'execute' &&
                     (activeChat.activePlan || []).some(
@@ -2528,10 +2562,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
                             showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
-              pendingHumanTurn={activeChat?.messages.at(-1)?.humanTurn?.status === 'pending' ? activeChat.messages.at(-1)?.humanTurn : undefined}
+              pendingHumanTurn={
+                [...(activeChat?.messages || [])].reverse().find((item) => item.humanTurn?.status === 'pending')
+                  ?.humanTurn
+              }
               onHumanRespond={(action, payload) => {
-                const pendingMsgId = activeChat?.messages.at(-1)?.id
-                if (pendingMsgId) handleHumanRespond(pendingMsgId, action, payload)
+                const pending = [...(activeChat?.messages || [])]
+                  .reverse()
+                  .find((item) => item.humanTurn?.status === 'pending')
+                if (pending) handleHumanRespond(pending.id, action, payload)
               }}
               models={models}
               selectedModelId={selectedModelId}

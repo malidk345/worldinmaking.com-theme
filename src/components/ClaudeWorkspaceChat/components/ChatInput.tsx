@@ -26,7 +26,6 @@ const PLACEHOLDERS = [
   'Research a claim...',
   'Draft into your notebook...',
 ]
-const ASK_FREE_CHOICE = "Explain what you'd like instead."
 const ASK_SKIP_ANSWER = 'The user skipped this question. Continue with your best judgment.'
 
 export type SlashCommandItem = {
@@ -145,6 +144,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [composerFocused, setComposerFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [askChoice, setAskChoice] = useState<string | 'free' | null>(null);
+  const [humanDismissed, setHumanDismissed] = useState(false);
   const wasStreamingRef = useRef(false);
   const { quota } = useTokenQuota();
 
@@ -207,9 +207,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setSlashIndex(0)
   }, [prompt]);
 
-  const awaitingAsk = Boolean(pendingHumanTurn && pendingHumanTurn.kind === 'ask_user')
-  const awaitingPlan = Boolean(pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval')
+  const awaitingAsk = Boolean(
+    pendingHumanTurn && pendingHumanTurn.kind === 'ask_user' && pendingHumanTurn.status === 'pending' && !humanDismissed
+  )
+  const awaitingPlan = Boolean(
+    pendingHumanTurn &&
+      pendingHumanTurn.kind === 'plan_approval' &&
+      pendingHumanTurn.status === 'pending' &&
+      !humanDismissed
+  )
   const awaitingHuman = awaitingAsk || awaitingPlan
+
+  const pendingKey = pendingHumanTurn
+    ? `${pendingHumanTurn.kind}:${pendingHumanTurn.question || pendingHumanTurn.summary || pendingHumanTurn.title}`
+    : ''
+  const prevPendingKey = useRef('')
+  useEffect(() => {
+    if (pendingKey && pendingKey !== prevPendingKey.current) setHumanDismissed(false)
+    if (!pendingKey) setHumanDismissed(false)
+    prevPendingKey.current = pendingKey
+  }, [pendingKey])
 
   const slashQuery = prompt.startsWith('/') ? prompt.slice(1).split(/\s/)[0].toLowerCase() : ''
   const slashMatches =
@@ -293,7 +310,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const body = [links, prompt.trim()].filter(Boolean).join('\n\n')
     if (pendingHumanTurn && pendingHumanTurn.kind === 'ask_user') {
       const picked = askChoice && askChoice !== 'free' ? askChoice : body
-      if (!picked || isStreaming || quotaBlocksSend) return
+      if (!picked || isStreaming) return
+      setHumanDismissed(true)
       onHumanRespond?.('answer', picked)
       setPrompt('')
       setAttachments([])
@@ -302,7 +320,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return
     }
     if (pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval') {
-      if (isStreaming || quotaBlocksSend) return
+      if (isStreaming) return
+      setHumanDismissed(true)
       onHumanRespond?.('revise', body || undefined)
       setPrompt('')
       setAttachments([])
@@ -477,8 +496,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.08)] ${
-          awaitingAsk || awaitingPlan ? 'px-4 py-3' : ''
-        } ${
+
           modeShake ? '[animation:wim-composer-shake_420ms_ease-in-out]' : ''
         } ${justReady ? '[animation:wim-composer-ready_480ms_ease-out]' : ''} ${
           agentMode === 'plan' ? 'ring-1 ring-inset ring-primary/50' : agentMode === 'execute' ? 'ring-1 ring-inset ring-accent' : ''
@@ -499,162 +517,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {awaitingPlan ? (
-          <div className="wim-ask-form font-sans text-primary">
-            <div className="mb-3 flex items-center justify-between gap-2 border-b border-primary/40 pb-2">
-              <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
-                Plan
-              </span>
-            </div>
-            <p className="m-0 mb-3 text-[16px] font-semibold leading-snug">
-              {pendingHumanTurn?.summary || pendingHumanTurn?.title || 'Ready to run'}
-            </p>
-            {pendingHumanTurn?.plan && pendingHumanTurn.plan.length > 0 ? (
-              <ul className="m-0 mb-3 list-none space-y-2 p-0">
-                {pendingHumanTurn.plan.map((item, index) => (
-                  <li key={item.id} className="flex items-start gap-2.5 text-[13.5px] leading-snug">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-primary/50 text-[11px] text-muted">
-                      {index + 1}
-                    </span>
-                    <span className={item.status === 'completed' ? 'text-muted line-through' : 'font-medium text-primary'}>
-                      {item.title}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <textarea
-              data-composer
-              aria-label="Revision note"
-              ref={textareaRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit()
-                }
-              }}
-              placeholder="Revision note (optional)"
-              rows={2}
-              className="mb-3 w-full resize-none overflow-y-auto rounded border border-primary/40 bg-primary px-2 py-1.5 text-[13.5px] text-primary placeholder:text-muted focus:outline-none focus:border-[#1E3A8A] min-h-[48px] max-h-[140px] leading-relaxed"
-            />
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onHumanRespond?.('run')
-                  setPrompt('')
-                }}
-                disabled={isStreaming || quotaBlocksSend}
-                className="rounded-md border border-[#1E3A8A] bg-[#1E3A8A] px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-[#1e40af] cursor-pointer disabled:opacity-50"
-              >
-                Run plan
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isStreaming || quotaBlocksSend}
-                className="rounded-md border border-primary/50 bg-primary px-2.5 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer disabled:opacity-50"
-              >
-                Revise
-              </button>
-            </div>
-          </div>
-        ) : awaitingAsk ? (
-          <div className="wim-ask-form font-sans text-primary">
-            <div className="mb-3 flex items-center justify-between gap-2 border-b border-primary/40 pb-2">
-              <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
-                Question
-              </span>
-              <button
-                type="button"
-                onClick={() => onHumanRespond?.('answer', ASK_SKIP_ANSWER)}
-                className="p-0.5 text-muted hover:text-primary cursor-pointer"
-                title="Skip question"
-                aria-label="Skip question"
-              >
-                <IconX className="size-4" />
-              </button>
-            </div>
-            <p className="m-0 mb-3 text-[16px] font-semibold leading-snug">
-              {pendingHumanTurn?.question || pendingHumanTurn?.title}
-            </p>
-            {(pendingHumanTurn?.choices || []).length > 0 ? (
-              <div className="mb-2">
-                {(pendingHumanTurn?.choices || []).map((choice) => (
-                  <button
-                    key={choice}
-                    type="button"
-                    className="wim-ask-option"
-                    onClick={() => {
-                      setAskChoice(choice)
-                      onHumanRespond?.('answer', choice)
-                    }}
-                  >
-                    <span className="wim-ask-radio" data-on={askChoice === choice ? 'true' : 'false'} />
-                    <span className="text-[13.5px] font-medium leading-snug">{choice}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="wim-ask-option"
-                  onClick={() => {
-                    setAskChoice('free')
-                    requestAnimationFrame(() => textareaRef.current?.focus())
-                  }}
-                >
-                  <span className="wim-ask-radio" data-on={askChoice === 'free' ? 'true' : 'false'} />
-                  <span className="text-[13.5px] font-medium leading-snug">{ASK_FREE_CHOICE}</span>
-                </button>
-              </div>
-            ) : null}
-            {!(pendingHumanTurn?.choices || []).length || askChoice === 'free' ? (
-              <textarea
-                data-composer
-                aria-label="Your answer"
-                ref={textareaRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSubmit()
-                  }
-                }}
-                placeholder="Type your answer..."
-                rows={2}
-                className="mb-3 w-full resize-none overflow-y-auto rounded border border-primary/40 bg-primary px-2 py-1.5 text-[13.5px] text-primary placeholder:text-muted focus:outline-none focus:border-[#1E3A8A] min-h-[48px] max-h-[140px] leading-relaxed"
-              />
-            ) : null}
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onHumanRespond?.('answer', ASK_SKIP_ANSWER)}
-                className="rounded-md border border-primary/50 bg-primary px-2.5 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
-              >
-                Skip question
-              </button>
-              {(!(pendingHumanTurn?.choices || []).length || askChoice === 'free') && !isStreaming ? (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!prompt.trim() || quotaBlocksSend}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-transform duration-150 ${
-                    prompt.trim() && !quotaBlocksSend
-                      ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
-                      : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
-                  }`}
-                  title="Answer"
-                  aria-label="Answer"
-                >
-                  <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <>
         {slashMatches.length > 0 && (
           <div className="absolute inset-x-0 bottom-full z-20 mb-1.5 overflow-hidden rounded border border-primary bg-primary py-0.5 shadow-md max-h-60 overflow-y-auto">
             {slashMatches.map((command, index) => (
@@ -679,6 +541,48 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ))}
           </div>
         )}
+
+        {awaitingAsk ? (
+          <div className="mb-1.5 animate-fadeIn font-sans">
+            <p className="m-0 text-[12.5px] font-medium leading-snug text-primary">
+              {pendingHumanTurn?.question || pendingHumanTurn?.title}
+            </p>
+            {(pendingHumanTurn?.choices || []).length > 0 ? (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {(pendingHumanTurn?.choices || []).map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    onClick={() => {
+                      setHumanDismissed(true)
+                      onHumanRespond?.('answer', choice)
+                    }}
+                    className="rounded-full border border-primary/50 bg-accent/80 px-2.5 py-0.5 text-[12px] text-primary hover:bg-accent cursor-pointer"
+                  >
+                    {choice}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {awaitingPlan ? (
+          <div className="mb-1.5 animate-fadeIn font-sans">
+            <p className="m-0 text-[12.5px] font-medium leading-snug text-primary">
+              {pendingHumanTurn?.summary || pendingHumanTurn?.title || 'Ready to run'}
+            </p>
+            {pendingHumanTurn?.plan && pendingHumanTurn.plan.length > 0 ? (
+              <ol className="m-0 mt-1.5 list-decimal space-y-0.5 pl-4 text-[12px] text-secondary">
+                {pendingHumanTurn.plan.map((item) => (
+                  <li key={item.id} className={item.status === 'completed' ? 'line-through text-muted' : ''}>
+                    {item.title}
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Bound Notebook Context Badge */}
         {boundNotebookTitle && (
@@ -754,14 +658,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </button>
           </div>
         )}
-
-        {agentMode === 'plan' ? (
-          <div className="mb-2 flex items-center border-b border-primary/40 pb-2">
-            <span className="text-[13px] font-semibold tracking-tight border-b-2 border-[#1E3A8A] pb-2 -mb-2">
-              Plan
-            </span>
-          </div>
-        ) : null}
 
         {/* Textarea Placeholder: "Write a message..." */}
         {linkChips.length > 0 && (
@@ -911,6 +807,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <IconMicrophone className={TOOLBAR_ICON} />
               )}
             </button>
+            {awaitingAsk ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setHumanDismissed(true)
+                  onHumanRespond?.('answer', ASK_SKIP_ANSWER)
+                }}
+                className="px-1.5 text-[11px] text-muted hover:text-primary cursor-pointer"
+              >
+                Skip
+              </button>
+            ) : null}
+            {awaitingPlan ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setHumanDismissed(true)
+                  onHumanRespond?.('run')
+                  setPrompt('')
+                }}
+                className="px-1.5 text-[12px] font-medium text-primary hover:opacity-80 cursor-pointer"
+              >
+                Run
+              </button>
+            ) : null}
 
             {/* Send / Stop Action Button */}
             {isStreaming ? (
@@ -928,11 +849,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={
-                  quotaBlocksSend ||
+                  isStreaming ||
+                  (!awaitingHuman && quotaBlocksSend) ||
                   (!awaitingPlan && !prompt.trim() && attachments.length === 0 && linkChips.length === 0)
                 }
                 className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors transition-transform duration-150 ${
-                   (awaitingPlan || prompt.trim() || attachments.length > 0 || linkChips.length > 0) && !quotaBlocksSend
+                   (awaitingPlan || prompt.trim() || attachments.length > 0 || linkChips.length > 0) &&
+                   (awaitingHuman || !quotaBlocksSend)
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
@@ -944,8 +867,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             )}
           </div>
         </div>
-          </>
-        )}
       </div>
 
       {quota && !quota.unavailable && quota.limitTokens > 0 ? (

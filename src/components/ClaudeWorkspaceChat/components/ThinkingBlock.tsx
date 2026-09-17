@@ -8,7 +8,7 @@ import {
 } from '../../../lib/bots/agent/timeline'
 import { IconBrain, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight, IconArrowRight } from '@posthog/icons'
 import { Activity, ShimmeringContent, type ActivityStatus } from './activity/ActivityPrimitives'
-import { ThinkingBangDots } from './ThinkingBangDots'
+import { PixelPause } from './ThinkingBangDots'
 
 function toActivityStatus(status: TimelineItem['status']): ActivityStatus {
   if (status === 'running') return 'in_progress'
@@ -224,6 +224,7 @@ interface ThinkingBlockProps {
   model?: ModelOption
   timestamp?: string
   onToolActivate?: (toolName: string, status: TimelineItem['status']) => void
+  onStop?: () => void
 }
 
 const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
@@ -231,6 +232,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   toolTrace,
   isLive = false,
   onToolActivate,
+  onStop,
 }) => {
   const items = useMemo(
     () => buildThinkingTimeline(thinking?.steps || [], toolTrace).filter((item) => item.kind !== 'node'),
@@ -250,11 +252,11 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
 
   return (
     <div className="wim-ask-thinking w-full max-w-full font-sans text-secondary space-y-1 mb-0">
-      {isLive && !hasItems && (
+      {isLive ? (
         <div className="flex items-center gap-1.5 w-full min-w-0 py-0.5">
-          <ThinkingBangDots />
+          <PixelPause live onStop={onStop} />
         </div>
-      )}
+      ) : null}
 
       {hasItems && (
         <div className="flex flex-col gap-1 w-full min-w-0">

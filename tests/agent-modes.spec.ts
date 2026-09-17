@@ -679,6 +679,43 @@ test.describe('Graph checkpoint resume', () => {
         expect(resumeUserMessage('revise')).toContain('revise the plan')
     })
 
+    test('ask_user pauses the loop with question, choices, and a checkpoint', async () => {
+        const humans: Array<{ kind?: string; question?: string }> = []
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools }) => {
+                if (omitTools) return { ok: true as const, content: '', toolCalls: [] }
+                return {
+                    ok: true as const,
+                    content: '',
+                    toolCalls: [
+                        {
+                            id: 'c1',
+                            name: 'ask_user',
+                            argumentsJson: JSON.stringify({
+                                question: 'Which century?',
+                                choices: ['19th', '20th'],
+                            }),
+                        },
+                    ],
+                }
+            },
+            onHuman: (turn) => humans.push(turn),
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'Write about labor' },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            maxSteps: 3,
+        })
+        expect(result.status).toBe('awaiting_human')
+        expect(result.interrupt?.kind).toBe('ask_user')
+        expect(result.interrupt?.question).toBe('Which century?')
+        expect(result.interrupt?.choices).toEqual(['19th', '20th'])
+        expect(result.checkpoint?.interrupt.kind).toBe('ask_user')
+        expect(humans[0]?.kind).toBe('ask_user')
+    })
+
     test('finalize_plan pauses for plan_approval instead of executing immediately', async () => {
         const result = await runAgentNodePipeline({
             complete: async ({ omitTools }) => {
