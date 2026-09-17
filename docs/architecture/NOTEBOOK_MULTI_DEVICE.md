@@ -12,10 +12,9 @@ Not Yjs. Do not rewrite the editor for these checks.
 5. Concurrent edit on the same paragraph: merge or local-keep + visible conflict, never silent wipe of both.
 6. Delete on A: B must not resurrect the row after its next sync (tombstone).
 7. Guest device key, then login: `claimDeviceAccount` moves `wim_notebooks.owner_key` to the user id; list shows guest notes.
-8. [x] Compacted list row (`contentOmitted`) must not PUT an empty body over a full remote body.
+8. Compacted list row (`contentOmitted`) must not PUT an empty body over a full remote body.
 9. History restore uses remote history when local body was list-compacted.
 10. Mention / comment notification opens `/notebooks/:id?mark=mention|comment` and `useNotebookMarkFocus` scrolls to the mark.
-11. [x] Improve user-visible handling when invite/collaborator APIs return MIGRATION_REQUIRED / schema missing.
 
 ## Auth / secrets
 

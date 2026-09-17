@@ -67,7 +67,7 @@ export default async function handler(req: Request) {
         if (/schema cache|does not exist|relation/i.test(error.message || '')) {
             return json(
                 {
-                    error: 'This workspace is still rolling out notebook sync (migration required)',
+                    error: 'Rooms table not ready',
                     code: 'MIGRATION_REQUIRED',
                     hint: 'Run supabase/migrations/20260822_user_worlds_and_rooms.sql',
                 },

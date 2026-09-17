@@ -11,7 +11,7 @@ import { IconCheck, IconSpinner } from '@posthog/icons'
 
 const COMPARISON: Array<{ label: string; desk: string; study: string }> = [
     { label: 'WIM AI models', desk: 'fast, everyday', study: 'deeper when it has to think' },
-    { label: 'daily inquiry budget', desk: `${BILLING_PLANS.free.dailyChatLimit} / day`, study: `${BILLING_PLANS.pro.dailyChatLimit} / day` },
+    { label: 'daily inquiry budget', desk: 'standard', study: 'expanded' },
     { label: 'philosopher panel', desk: '—', study: 'several voices at once' },
     { label: 'memory across notebooks', desk: 'session', study: 'persistent' },
     { label: 'artifacts (charts, mermaid, sandboxes)', desk: 'yes', study: 'more, faster' },
@@ -21,7 +21,7 @@ function money(n: number) {
     return `$${n.toFixed(2)}`
 }
 
-export default function PricingWindow({ checkoutAvailable = true }: { checkoutAvailable?: boolean }) {
+export default function PricingWindow() {
     const { user, getJwt } = useUser()
     const { addToast } = useToast()
     const { openSignIn } = useAppActions()
@@ -179,10 +179,6 @@ export default function PricingWindow({ checkoutAvailable = true }: { checkoutAv
                                 {isStudy ? (
                                     <OSButton size="md" asLink to="/account">
                                         Manage membership
-                                    </OSButton>
-                                ) : !checkoutAvailable ? (
-                                    <OSButton size="md" disabled>
-                                        checkout unavailable
                                     </OSButton>
                                 ) : (
                                     <OSButton size="md" variant="primary" onClick={handleUpgrade} disabled={loading}>

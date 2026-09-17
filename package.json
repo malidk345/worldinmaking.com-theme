@@ -21,7 +21,6 @@
     "build:notebook-styles": "node scripts/generate-scoped-quill-shim.js && node scripts/generate-style-bundle.js && node scripts/compile-notebook-css.js && node scripts/compile-notebook-product-css.js",
     "predev": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
     "prebuild": "node scripts/copy-public-assets.mjs && pnpm run build:notebook-styles",
-    "prepages:build": "pnpm run prebuild",
     "pages:build": "next-on-pages",
     "start": "next start",
     "bot:worker": "node scripts/bot-worker.js",

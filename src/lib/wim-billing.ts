@@ -134,9 +134,6 @@ export async function verifyLemonSqueezySignature(
     }
 }
 
-/**
- * Note: live Lemon Squeezy API keys/secrets are managed by Ops (E2) and should not be included in PRs.
- */
 export function getLemonSqueezyConfig(env?: EnvStore) {
     const store = env ?? getRuntimeEnv()
     return {

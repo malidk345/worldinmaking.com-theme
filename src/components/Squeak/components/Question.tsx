@@ -389,7 +389,7 @@ export function Question(props: QuestionProps) {
                                         className="text-secondary hover:underline hover:text-primary"
                                         state={{ newWindow: true }}
                                     >
-                                        worldinmaking.com{slugs[0]?.slug}
+                                        posthog.com{slugs[0]?.slug}
                                     </Link>
                                 </p>
                             )}

@@ -142,7 +142,7 @@ export default async function handler(req: Request) {
         const message = err?.message || String(err)
         const status = typeof err?.status === 'number' ? err.status : 500
         if (message.includes('wim_notebooks') || message.includes('schema cache') || err?.code === 'PGRST205') {
-            return json({ error: 'This workspace is still rolling out notebook sync (migration required)', code: 'MIGRATION_REQUIRED' }, 503)
+            return json({ error: 'Notebooks table not ready', code: 'MIGRATION_REQUIRED' }, 503)
         }
         if (status === 403) return json({ error: message }, 403)
         console.error('[api/notebooks/[id]]', err)

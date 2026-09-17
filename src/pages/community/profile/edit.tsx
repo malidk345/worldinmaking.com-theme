@@ -298,7 +298,7 @@ function EditProfile({ profile, mutate }) {
     return (
         <ScrollArea>
             <div data-scheme="primary" className="bg-primary min-h-full">
-                <SEO noindex title="Edit profile - WorldInMaking" />
+                <SEO noindex title="Edit profile - PostHog" />
                 <section className="max-w-2xl mx-auto py-12 px-4 bg-primary/90 backdrop-blur-sm rounded-lg">
                     <form className="m-0 space-y-6" onSubmit={handleSubmit}>
                         {formSections.map((section, index) => {

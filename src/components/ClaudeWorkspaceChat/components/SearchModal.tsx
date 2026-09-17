@@ -62,7 +62,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search workspace history..."
+            placeholder="Search chats and messages..."
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
             autoFocus
           />
@@ -79,7 +79,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {results.length === 0 ? (
             <div className="py-12 text-center text-xs text-muted">
               {query ? 'No matching chats.' : 'Type to search.'}
-              <div className="mt-2 opacity-70">Tip: Use ⌘K to search the global site</div>
             </div>
           ) : (
             results.map(({ chat, matchingMessage }) => (

@@ -74,7 +74,7 @@ const RegisterForm: React.FC = () => {
             } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
                 errors.email = 'Invalid email address'
             } else if (isPostHogEmail(values.email)) {
-                errors.email = 'Your employee account is created automatically. Sign in with WIM instead.'
+                errors.email = 'Your employee account is created automatically. Sign in with PostHog instead.'
             }
             if (!values.password) {
                 errors.password = 'Required'
@@ -106,7 +106,7 @@ const RegisterForm: React.FC = () => {
 
     useEffect(() => {
         if (appWindow) {
-            setWindowTitle(appWindow, 'Register for WorldInMaking.com')
+            setWindowTitle(appWindow, 'Register for PostHog.com')
         }
     }, [])
 
@@ -134,8 +134,8 @@ const RegisterForm: React.FC = () => {
                         <img src={SecurityHog} className="w-20" />
                     </div>
                     <div data-scheme="primary" className="flex-1">
-                        <h3 className="text-base font-semibold leading-tight mb-4">Create your WorldInMaking.com account</h3>
-                        <PostHogButton label="Sign up with WIM" className="mb-2" />
+                        <h3 className="text-base font-semibold leading-tight mb-4">Create your PostHog.com account</h3>
+                        <PostHogButton label="Sign up with PostHog" className="mb-2" />
                         <div className="flex items-center gap-2 text-xs text-muted my-2">
                             <span className="flex-1 border-t border-border" />
                             or
