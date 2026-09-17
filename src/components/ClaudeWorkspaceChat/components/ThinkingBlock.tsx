@@ -8,7 +8,7 @@ import {
 } from '../../../lib/bots/agent/timeline'
 import { IconBrain, IconSearch, IconNotebook, IconCheckCircle, IconChevronRight, IconArrowRight } from '@posthog/icons'
 import { Activity, ShimmeringContent, type ActivityStatus } from './activity/ActivityPrimitives'
-import { PixelPause } from './ThinkingBangDots'
+import { PixelPause, pauseMoodFromTool } from './ThinkingBangDots'
 
 function toActivityStatus(status: TimelineItem['status']): ActivityStatus {
   if (status === 'running') return 'in_progress'
@@ -36,6 +36,57 @@ function toolIcon(name?: string) {
   return <IconArrowRight className={ICON} />
 }
 
+function LiveThoughtContent({ text }: { text: string }) {
+  const scrollRef = React.useRef<HTMLSpanElement>(null)
+  const userScrolledUp = React.useRef(false)
+  const [scrollState, setScrollState] = React.useState({ up: false, down: false })
+
+  const updateScroll = React.useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const up = el.scrollTop > 4
+    const down = el.scrollTop + el.clientHeight < el.scrollHeight - 4
+    userScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight >= 20
+    setScrollState((prev) => (prev.up === up && prev.down === down ? prev : { up, down }))
+  }, [])
+
+  React.useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (!userScrolledUp.current) {
+      el.scrollTop = el.scrollHeight
+    }
+    updateScroll()
+  }, [text, updateScroll])
+
+  const maskStyle = React.useMemo(() => {
+    if (scrollState.up && scrollState.down) {
+      const grad = 'linear-gradient(to bottom, transparent 0px, black 14px, black calc(100% - 14px), transparent 100%)'
+      return { maskImage: grad, WebkitMaskImage: grad }
+    }
+    if (scrollState.up) {
+      const grad = 'linear-gradient(to bottom, transparent 0px, black 14px, black 100%)'
+      return { maskImage: grad, WebkitMaskImage: grad }
+    }
+    if (scrollState.down) {
+      const grad = 'linear-gradient(to bottom, black 0px, black calc(100% - 14px), transparent 100%)'
+      return { maskImage: grad, WebkitMaskImage: grad }
+    }
+    return undefined
+  }, [scrollState.up, scrollState.down])
+
+  return (
+    <span
+      ref={scrollRef}
+      onScroll={updateScroll}
+      style={maskStyle}
+      className="block max-h-[82px] overflow-y-auto overscroll-contain pr-1 select-text transition-[mask-image] duration-150"
+    >
+      {text}
+    </span>
+  )
+}
+
 function ReasoningActivity({
   item,
   isLive,
@@ -50,7 +101,7 @@ function ReasoningActivity({
   return (
     <Activity
       id={item.id}
-      title={isLive ? body : collapsedThoughtTitle(durationSeconds)}
+      title={isLive ? <LiveThoughtContent text={body} /> : collapsedThoughtTitle(durationSeconds)}
       status={isLive ? 'in_progress' : 'completed'}
       icon={<IconBrain className={ICON} />}
       animate={false}
@@ -248,13 +299,15 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   const restItems = items.filter((item) => item.kind !== 'tool')
   const collapseTools = !isLive && toolItems.length > 1
   const visible = collapseTools && !toolsOpen ? restItems : items
+  const liveTool = [...items].reverse().find((item) => item.kind === 'tool' && item.status === 'running')
+  const faceMood = pauseMoodFromTool(liveTool?.toolName, liveTool?.status)
   if (!hasItems && !isLive) return null
 
   return (
     <div className="wim-ask-thinking w-full max-w-full font-sans text-secondary space-y-1 mb-0">
       {isLive ? (
         <div className="flex items-center gap-1.5 w-full min-w-0 py-0.5">
-          <PixelPause live onStop={onStop} />
+          <PixelPause live mood={faceMood} onStop={onStop} />
         </div>
       ) : null}
 

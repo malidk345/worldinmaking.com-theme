@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Antigravity (Pause-eyes frame cleanup + 5-line streaming thought scroll & soft edge fade)
+- **Scope:** Cleaned black frames / backgrounds from `read`, `focus`, `wonder`, `search`, `peek` pause-eyes icons across `src/images/icons/pause-eyes/`, `static/icons/pause-eyes/`, and `public/icons/pause-eyes/` to match the transparent 778x778 alpha-masked look of `look.png`. In `ThinkingBlock.tsx`, wrapped live streaming thought text in `LiveThoughtContent` bounded to ~5 lines (`max-h-[82px] overflow-y-auto overscroll-contain`) with auto-scroll down as tokens stream in, plus a subtle scroll-aware 14px mask fade at the top/bottom overflow edges. Finished/collapsed thoughts remain completely unchanged.
+- **Files:** `pause-eyes/{read,focus,wonder,search,peek}.png`, `ThinkingBlock.tsx`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core shell allowlist).
+- **Handoff:** Work kept local per user directive (NO git push).
+
+### 2026-09-17 — Grok 4.6 (Pause-eye moods)
+- **Scope:** Loop is ORIGINAL glance (unchanged) then expression beats (read/focus/wonder) then tool-thinking beats (search round eyes, peek, read, focus). A live tool only appends two extra faces of that kind.
+- **Files:** `pause-eyes/{read,focus,wonder,search,peek}.png`, `ThinkingBangDots.tsx`, `ThinkingBlock.tsx`
+
 ### 2026-09-17 — Grok 4.6 (Lock browser chrome — no flicker)
 - **Scope:** Safari was flipping between mint top (`#D8DCCE` from `_document`) and bottom (`#BDC6B0` from iOS theme-color) plus resampling the gradient as the URL bar moved. One locked `theme-color`, observer disconnected while writing, re-applied on `pageshow`/`visibilitychange`. Removed the static fighting meta.
 - **Files:** `wallpaperChrome.ts`, `_document.tsx`, `App.tsx`
