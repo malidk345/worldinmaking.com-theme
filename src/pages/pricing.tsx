@@ -3,6 +3,8 @@ import dynamic from 'next/dynamic'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { lemonSqueezyMissingConfig } from 'lib/wim-billing'
 
+export const runtime = 'edge'
+
 const PricingWindow = dynamic(() => import('../components/Pricing/PricingWindow'), {
     ssr: false,
 })

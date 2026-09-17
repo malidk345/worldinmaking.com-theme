@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (Edge runtime on /pricing)
+- **Scope:** Remote WIM-B3-3 added `getServerSideProps` to `/pricing`, which next-on-pages rejects unless the page is Edge. Export `runtime = 'edge'` so Lemon fail-closed checkout still runs on CF Pages.
+- **Files:** `src/pages/pricing.tsx`
+- **Verify:** local typecheck not required for one export. Push after commit so CF rebuilds.
+
 ### 2026-09-17 — Grok 4.6 (Ask AI header: icons only, then rebase/push)
 - **Scope:** Removed chat title from the floating Ask AI header. Origin/main is 11 commits ahead; overlap is chat.ts (CHAT_LIMITS) and index.tsx (philosopher avatars) — rebase expected to be clean.
 - **Files:** `Header.tsx`, `ClaudeWorkspaceChat/index.tsx`
