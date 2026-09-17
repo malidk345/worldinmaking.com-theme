@@ -42,7 +42,10 @@ Evidence from repo docs + structure (not from disputed browser QA):
 5. **Window architecture residual risk** — improvement report still flags historical duplication between `AppWindow` routing and `WindowRouter` / chrome / content split (many A-cards done; keep regression vigilance).
 6. **Billing go-live** — Lemon Squeezy code paths exist (`docs/billing.md`); checkout fails closed until store env is configured (E2).
 7. **Email confirm / SMTP** — auth stays autoconfirm until SMTP + `WIM_REQUIRE_EMAIL_CONFIRM` (see `SUPABASE_AUTH.md`).
-8. **STRATEJI_VE_MONETIZASYON.md` is marked **LEGACY — not WIM**; do not treat its App Router / TipTap / Tailwind v4 claims as current stack facts.
+8. **STRATEJI_VE_MONETIZASYON.md** is marked **LEGACY — not WIM**; do not treat its App Router / TipTap / Tailwind v4 claims as current stack facts.
+9. **Route naming confusion** — `src/pages/desktop.tsx` is actually the marketing home, while the OS Desktop component is located at `src/components/Wrapper`.
+10. **Billing fails closed** — Billing webhook in `wim-billing` fails closed without store secrets.
+11. **Philosopher cron 503** — Philosopher cron job returns a 503 error without the secret.
 
 ---
 
@@ -56,6 +59,7 @@ Prioritized for product leverage without visual chrome restyle:
 | P0 | Complete E2 Lemon env on Cloudflare Pages + GitHub | Monetization path is coded but dark without keys |
 | P1 | Keep shell gates green (`typecheck:shell`, smoke) with real env in CI secrets | Red smoke against placeholders hides regressions |
 | P1 | Continue lazy-loading / isolation of notebook + heavy routes | Performance without restyling |
+| P1 | Document shell vs marketing routes | Prevent confusion between the OS shell and the legacy marketing homepage |
 | P2 | Reader/SEO surfaces for posts (json-ld already touched in past work) | Discovery beyond the desktop shell |
 | P2 | Harden BYOK UX + quota messaging | AI is a core differentiator (`WIM_AI.md`) |
 | P3 | Reputation / dossiers / creator economy | From vision docs — after desk+notebook reliability |
@@ -72,6 +76,10 @@ Prioritized for product leverage without visual chrome restyle:
 - Notebook CSS rebuilt on `predev` / `prebuild` (`build:notebook-styles`) — first `pnpm dev` is intentionally heavier.
 - Heavy AI / notebook paths are designed to be lazy/isolated; improvement report recommends measuring First Load JS and route chunks before further dep cuts.
 - Suggest (for later hours): inventory largest `src/pages` and `src/components` import graphs; confirm dead PostHog merch/roadmap paths stay no-op without Squeak host.
+- ~05:07 TRT: Wrapper dynamic overlays identified for rendering optimizations.
+- ~05:07 TRT: WindowRouter notebook dynamic import handles heavy payload splitting.
+- ~05:07 TRT: edge API runtime is in use to reduce latency on certain endpoints.
+- ~05:07 TRT: small desktopApps set configured to limit the base OS load impact.
 
 ---
 
@@ -90,6 +98,11 @@ Prioritized for product leverage without visual chrome restyle:
 
 **Auth reliability:** Supabase-only (`SUPABASE_AUTH.md`); Squeak fetch guard in `App.tsx`; service role never `NEXT_PUBLIC_*`.
 
+**API reliability:**
+- `chat`: Single interactive SSE path, does not invent answers when providers are down.
+- `notebooks`: Ensure endpoints reject oversized/malformed data.
+- `seo`: Maintains valid canonical/robots generation properly across paths.
+
 ---
 
 ## Fırsatlar / Opportunities
@@ -99,7 +112,9 @@ Prioritized for product leverage without visual chrome restyle:
 3. **Philosopher / forum autonomy** — 16-bot roster + hourly GH Actions cron = living community surface.
 4. **BYOK** — groq/gemini/openai/anthropic vault in browser reduces margin pressure for power users.
 5. **Cleanup dividend** — shrinking unused PostHog marketing surface (careful; dynamic MDX may still reference) improves DX and CI signal.
-6. **Avoid** — visual redesign of fonts/wallpaper; disputed mobile/cookie browser claims; Jules for this docs stream beyond this one PR.
+6. **Path-routed window OS** — enhances OS simulation by directly routing app-specific paths inside window containers.
+7. **Guest vs signed-in desktop** — providing distinct desktop shells to show value before login.
+8. **Avoid** — visual redesign of fonts/wallpaper; disputed mobile/cookie browser claims; Jules for this docs stream beyond this one PR.
 
 ---
 
@@ -160,6 +175,10 @@ Other docs: `docs/billing.md`, `docs/NOTEBOOK_SAAS_ROADMAP.md`, `docs/security.m
 - Risk register from `WORLDINMAKING_SITE_IMPROVEMENT_REPORT.md` vs current `WIM_REPORT` completion state.
 - Optional: sample Playwright/CI workflow expectations without running against placeholder env as “facts about production.”
 
----
-
-*End of first pass. Document will grow with dated hourly entries until ~14:00 TRT.*
+### 2026-09-17 ~05:07 TRT — API surface + desktop shell
+- **41 edge API routes table**: (account/admin/billing/chat/cron/forum/notebooks/rooms/seo).
+- **Desktop shell mount path via Wrapper**: Located at `src/components/Wrapper` integrating Desktop, AppWindow, and Taskbar.
+- **Naming trap for desktop.tsx**: `src/pages/desktop.tsx` is actually the marketing homepage, and not the true interactive desktop shell.
+- E1/E2 still operations focus.
+- **No font/wallpaper changes** recommended.
+- Next focus: notebooks or forum deeper analysis.
