@@ -58,6 +58,36 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-17 — Grok 4.6 (Lock browser chrome — no flicker)
+- **Scope:** Safari was flipping between mint top (`#D8DCCE` from `_document`) and bottom (`#BDC6B0` from iOS theme-color) plus resampling the gradient as the URL bar moved. One locked `theme-color`, observer disconnected while writing, re-applied on `pageshow`/`visibilitychange`. Removed the static fighting meta.
+- **Files:** `wallpaperChrome.ts`, `_document.tsx`, `App.tsx`
+- **Verify:** wallpaperChrome.test.ts PASS (6).
+- **Handoff:** Hard-reload Safari. Chrome should stay put too.
+
+### 2026-09-17 — Grok 4.6 (Safari vs Chrome wallpaper chrome)
+- **Scope:** Colors were the wallpaper 0%/100% stops — the miss was the engine. Safari status bar overlays the page (top already looked right) while the bottom toolbar is opaque `theme-color`. That meta was the TOP stop, so the bottom bar was the top of the lawn. iOS now uses `theme-color` = field 100% + `black-translucent`. Android Chrome still uses field 0% for the status bar. Dropped `background-attachment:fixed` (Safari ignores it); field is `body::before` fixed to the viewport.
+- **Files:** `wallpaperChrome.ts`, `_document.tsx`, `global.css`
+- **Verify:** wallpaperChrome.test.ts PASS (6).
+- **Handoff:** Reload in Safari — bottom toolbar should be mint `#BDC6B0`. Chrome Android status bar stays `#D8DCCE`.
+
+### 2026-09-17 — Grok 4.6 (Browser chrome top+bottom = wallpaper field)
+- **Scope:** theme-color stays the field 0% (status bar). html/body now paint the same gradient as the wallpaper; background-color at the bottom is the 100% stop so overscroll / home-indicator gap matches the lawn bottom, not the top mint.
+- **Files:** `wallpaperChrome.ts`, `global.css`, `_document.tsx`, `wallpaperChrome.test.ts`
+- **Verify:** vitest wallpaperChrome.test.ts PASS (6).
+- **Handoff:** Reload on phone — top bar still top-of-field, bottom empty area should be the field's bottom stop.
+
+### 2026-09-17 — Grok 4.6 (Mint: drop felt dots)
+- **Scope:** Removed mint-felt SVG tile and radial patches from KeyboardMint. Field is the 200deg gradient only (plus grass tufts). Chrome stays `#D8DCCE` / `#141E18` = field 0%.
+- **Files:** `src/components/Desktop/Wallpapers.tsx`
+- **Verify:** wallpaperChrome.test.ts still locks 0% stops.
+- **Handoff:** Reload mint — no white speckle sheet.
+
+### 2026-09-17 — Grok 4.6 (Wallpaper chrome = field 0%)
+- **Scope:** Default mint theme-color used the 48% stop (`#C9D0BE`) instead of the top of the field (`#D8DCCE`). Mobile `--browser-chrome` / `theme-color` / html+body now use each wallpaper's 0% stop. Lock test against `Wallpapers.tsx`.
+- **Files:** `src/lib/wallpaperChrome.ts`, `src/styles/global.css`, `src/lib/wallpaperChrome.test.ts`
+- **Verify:** vitest wallpaperChrome.test.ts PASS (6).
+- **Handoff:** Reload on phone; mint status/overscroll should match the top of the lawn.
+
 ### 2026-09-17 — Grok 4.6 (/pricing experimental-edge)
 - **Scope:** Next 14 Pages Router rejects `runtime = 'edge'` on pages (`experimental-edge` required). `/pricing` GSSP stays for Lemon fail-closed.
 - **Files:** `src/pages/pricing.tsx`

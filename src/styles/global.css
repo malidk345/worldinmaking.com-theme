@@ -572,46 +572,74 @@
 }
 
 html {
-    --browser-chrome: #c9d0be;
+    --browser-chrome: #d8dcce;
+    --browser-chrome-bottom: #bdc6b0;
+    --browser-chrome-field: linear-gradient(200deg, #d8dcce 0%, #c9d0be 48%, #bdc6b0 100%);
 }
 html.dark {
     --browser-chrome: #141e18;
+    --browser-chrome-bottom: #121a14;
+    --browser-chrome-field: linear-gradient(200deg, #141e18 0%, #18241c 52%, #121a14 100%);
 }
 html[data-wallpaper='keyboard-mint'] {
-    --browser-chrome: #c9d0be;
+    --browser-chrome: #d8dcce;
+    --browser-chrome-bottom: #bdc6b0;
+    --browser-chrome-field: linear-gradient(200deg, #d8dcce 0%, #c9d0be 48%, #bdc6b0 100%);
 }
 html.dark[data-wallpaper='keyboard-mint'] {
     --browser-chrome: #141e18;
+    --browser-chrome-bottom: #121a14;
+    --browser-chrome-field: linear-gradient(200deg, #141e18 0%, #18241c 52%, #121a14 100%);
 }
 html[data-wallpaper='cobalt'] {
     --browser-chrome: #2f7ed4;
+    --browser-chrome-bottom: #5eb0f0;
+    --browser-chrome-field: linear-gradient(180deg, #2f7ed4 0%, #4a9ee6 42%, #5eb0f0 100%);
 }
 html.dark[data-wallpaper='cobalt'] {
     --browser-chrome: #1e5dad;
+    --browser-chrome-bottom: #3d8fdc;
+    --browser-chrome-field: linear-gradient(180deg, #1e5dad 0%, #2f7ed4 50%, #3d8fdc 100%);
 }
 html[data-wallpaper='hogzilla'] {
     --browser-chrome: #e3e1e4;
+    --browser-chrome-bottom: #fdfdfd;
+    --browser-chrome-field: linear-gradient(268.63deg, #e3e1e4 0%, #fdfdfd 80%, #fdfdfd 100%);
 }
 html.dark[data-wallpaper='hogzilla'] {
     --browser-chrome: #141e40;
+    --browser-chrome-bottom: #46368b;
+    --browser-chrome-field: linear-gradient(180deg, #141e40 0%, #46368b 100%);
 }
 html[data-wallpaper='draft-world'] {
     --browser-chrome: #f3efe6;
+    --browser-chrome-bottom: #ddd6c8;
+    --browser-chrome-field: linear-gradient(180deg, #f3efe6 0%, #e8e2d6 55%, #ddd6c8 100%);
 }
 html.dark[data-wallpaper='draft-world'] {
     --browser-chrome: #141e40;
+    --browser-chrome-bottom: #121a33;
+    --browser-chrome-field: linear-gradient(180deg, #141e40 0%, #1a2748 55%, #121a33 100%);
 }
 html[data-wallpaper='rain-embers'] {
     --browser-chrome: #1a3350;
+    --browser-chrome-bottom: #163044;
+    --browser-chrome-field: linear-gradient(180deg, #1a3350 0%, #23486a 52%, #163044 100%);
 }
 html.dark[data-wallpaper='rain-embers'] {
     --browser-chrome: #0f2236;
+    --browser-chrome-bottom: #0c1a28;
+    --browser-chrome-field: linear-gradient(180deg, #0f2236 0%, #17324a 50%, #0c1a28 100%);
 }
 html[data-wallpaper='plaza-bang'] {
     --browser-chrome: #e6dfd2;
+    --browser-chrome-bottom: #e6dfd2;
+    --browser-chrome-field: #e6dfd2;
 }
 html.dark[data-wallpaper='plaza-bang'] {
     --browser-chrome: #141e40;
+    --browser-chrome-bottom: #141e40;
+    --browser-chrome-field: #141e40;
 }
 
 html,
@@ -620,18 +648,43 @@ body,
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+
+html {
     background-color: var(--browser-chrome);
 }
 
 body {
     @apply font-rounded m-0;
+    position: relative;
     word-wrap: break-word;
     min-height: 100dvh;
+    min-height: -webkit-fill-available;
     -webkit-text-size-adjust: 100%;
+    background-color: var(--browser-chrome-bottom);
 }
+
 body.light,
 body.dark {
-    background-color: var(--browser-chrome);
+    background-color: var(--browser-chrome-bottom);
+}
+
+/* Same field as the wallpaper. Avoid background-attachment:fixed — Safari ignores it. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--browser-chrome-bottom);
+    background-image: var(--browser-chrome-field);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+
+#__next {
+    background-color: transparent;
+    background-image: none;
 }
 
 #app-container {

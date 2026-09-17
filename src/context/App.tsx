@@ -1491,7 +1491,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             applyWallpaperBrowserChrome({
                 wallpaper: siteSettings.wallpaper,
                 colorMode: siteSettings.colorMode,
-                theme: document.body.className.includes('dark') ? 'dark' : 'light',
+                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
             })
         paintChrome()
         cleanupCustomCursor()

@@ -29,21 +29,99 @@ export interface WallpaperTone {
     dark: string
 }
 
+export type WallpaperField = {
+    top: string
+    bottom: string
+    /** Same field as `Wallpapers.tsx` — paints html/body so top and bottom chrome continue. */
+    css: string
+}
+
 /**
- * Top-of-field colors for each wallpaper — the band that sits under the mobile
- * browser tab / address bar. Keep these in lockstep with the CSS fields in
- * `src/components/Desktop/Wallpapers.tsx`.
+ * Field 0% = top of the viewport (status bar / theme-color).
+ * Field 100% = bottom of the viewport (home indicator / overscroll).
+ * `css` must match the wallpaper layer in `Wallpapers.tsx`.
  */
+export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; dark: WallpaperField }> = {
+    cobalt: {
+        light: {
+            top: '#2F7ED4',
+            bottom: '#5EB0F0',
+            css: 'linear-gradient(180deg, #2F7ED4 0%, #4A9EE6 42%, #5EB0F0 100%)',
+        },
+        dark: {
+            top: '#1E5DAD',
+            bottom: '#3D8FDC',
+            css: 'linear-gradient(180deg, #1E5DAD 0%, #2F7ED4 50%, #3D8FDC 100%)',
+        },
+    },
+    hogzilla: {
+        light: {
+            top: '#E3E1E4',
+            bottom: '#FDFDFD',
+            css: 'linear-gradient(268.63deg, #E3E1E4 0%, #FDFDFD 80%, #FDFDFD 100%)',
+        },
+        dark: {
+            top: '#141E40',
+            bottom: '#46368B',
+            css: 'linear-gradient(180deg, #141E40 0%, #46368B 100%)',
+        },
+    },
+    'keyboard-mint': {
+        light: {
+            top: '#D8DCCE',
+            bottom: '#BDC6B0',
+            css: 'linear-gradient(200deg, #D8DCCE 0%, #C9D0BE 48%, #BDC6B0 100%)',
+        },
+        dark: {
+            top: '#141E18',
+            bottom: '#121A14',
+            css: 'linear-gradient(200deg, #141E18 0%, #18241C 52%, #121A14 100%)',
+        },
+    },
+    'draft-world': {
+        light: {
+            top: '#F3EFE6',
+            bottom: '#DDD6C8',
+            css: 'linear-gradient(180deg, #F3EFE6 0%, #E8E2D6 55%, #DDD6C8 100%)',
+        },
+        dark: {
+            top: '#141E40',
+            bottom: '#121A33',
+            css: 'linear-gradient(180deg, #141E40 0%, #1A2748 55%, #121A33 100%)',
+        },
+    },
+    'rain-embers': {
+        light: {
+            top: '#1A3350',
+            bottom: '#163044',
+            css: 'linear-gradient(180deg, #1A3350 0%, #23486A 52%, #163044 100%)',
+        },
+        dark: {
+            top: '#0F2236',
+            bottom: '#0C1A28',
+            css: 'linear-gradient(180deg, #0F2236 0%, #17324A 50%, #0C1A28 100%)',
+        },
+    },
+    'plaza-bang': {
+        light: { top: '#E6DFD2', bottom: '#E6DFD2', css: '#E6DFD2' },
+        dark: { top: '#141E40', bottom: '#141E40', css: '#141E40' },
+    },
+}
+
 export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
-    cobalt: { light: '#2F7ED4', dark: '#1E5DAD' },
-    hogzilla: { light: '#E3E1E4', dark: '#141E40' },
-    'keyboard-mint': { light: '#C9D0BE', dark: '#141E18' },
-    'draft-world': { light: '#F3EFE6', dark: '#141E40' },
-    'rain-embers': { light: '#1A3350', dark: '#0F2236' },
-    'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },
+    cobalt: { light: WALLPAPER_FIELDS.cobalt.light.top, dark: WALLPAPER_FIELDS.cobalt.dark.top },
+    hogzilla: { light: WALLPAPER_FIELDS.hogzilla.light.top, dark: WALLPAPER_FIELDS.hogzilla.dark.top },
+    'keyboard-mint': {
+        light: WALLPAPER_FIELDS['keyboard-mint'].light.top,
+        dark: WALLPAPER_FIELDS['keyboard-mint'].dark.top,
+    },
+    'draft-world': { light: WALLPAPER_FIELDS['draft-world'].light.top, dark: WALLPAPER_FIELDS['draft-world'].dark.top },
+    'rain-embers': { light: WALLPAPER_FIELDS['rain-embers'].light.top, dark: WALLPAPER_FIELDS['rain-embers'].dark.top },
+    'plaza-bang': { light: WALLPAPER_FIELDS['plaza-bang'].light.top, dark: WALLPAPER_FIELDS['plaza-bang'].dark.top },
 }
 
 export const DEFAULT_WALLPAPER_THEME_COLOR: WallpaperTone = WALLPAPER_THEME_COLORS[DEFAULT_WALLPAPER]
+export const DEFAULT_WALLPAPER_FIELD = WALLPAPER_FIELDS[DEFAULT_WALLPAPER]
 
 export function resolveKeptWallpaper(wallpaper: string | null | undefined): WallpaperName {
     return KEPT_WALLPAPERS.includes(wallpaper as WallpaperName)
@@ -89,6 +167,10 @@ export function getWallpaperThemeColor(wallpaper: string, mode: ResolvedTheme): 
     return WALLPAPER_THEME_COLORS[resolveKeptWallpaper(wallpaper)][mode]
 }
 
+export function getWallpaperField(wallpaper: string, mode: ResolvedTheme): WallpaperField {
+    return WALLPAPER_FIELDS[resolveKeptWallpaper(wallpaper)][mode]
+}
+
 export function resolveChromeTheme(colorMode: ColorMode, theme: ResolvedTheme, prefersDark = false): ResolvedTheme {
     if (colorMode === 'system') return prefersDark ? 'dark' : 'light'
     return theme === 'dark' ? 'dark' : 'light'
@@ -101,6 +183,19 @@ export function chromeColorFor(
     prefersDark = false
 ): string {
     return getWallpaperThemeColor(wallpaper, resolveChromeTheme(colorMode, theme, prefersDark))
+}
+
+/** iOS WebKit: status bar overlays the page; the opaque chrome is the bottom toolbar. */
+export function usesOverlayStatusBar(): boolean {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent || ''
+    if (/iP(hone|od|ad)/i.test(ua)) return true
+    if (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1) return true
+    return false
+}
+
+export function themeColorForEngine(field: WallpaperField): string {
+    return usesOverlayStatusBar() ? field.bottom : field.top
 }
 
 function hexLuminance(hex: string): number {
@@ -129,16 +224,31 @@ function upsertNamedMeta(name: string, content: string): HTMLMetaElement | null 
 
 function syncThemeColorMeta(color: string): void {
     const head = document.head
+    chromeGuard?.disconnect()
     const metas = Array.from(head.querySelectorAll('meta[name="theme-color"]')) as HTMLMetaElement[]
     const keep = metas[0] || upsertNamedMeta('theme-color', color)
-    if (!keep) return
-    keep.removeAttribute('media')
-    keep.setAttribute('content', color)
+    if (keep) {
+        keep.removeAttribute('media')
+        keep.setAttribute('content', color)
+    }
     for (const extra of metas.slice(1)) extra.remove()
+    chromeGuard?.observe(head, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['content', 'media', 'name'],
+    })
 }
 
 let chromeGuard: MutationObserver | null = null
 let lastChromeColor = ''
+let lastChromeKey = ''
+let lastChromeOpts: {
+    wallpaper: string
+    colorMode: ColorMode
+    theme: ResolvedTheme
+} | null = null
+let chromeLifetime = false
 
 function startChromeGuard(): void {
     if (typeof document === 'undefined' || chromeGuard) return
@@ -157,27 +267,50 @@ function startChromeGuard(): void {
     })
 }
 
+function startChromeLifetime(): void {
+    if (chromeLifetime || typeof window === 'undefined') return
+    chromeLifetime = true
+    const relock = () => {
+        if (!lastChromeOpts) return
+        applyWallpaperBrowserChrome({ ...lastChromeOpts, force: true })
+    }
+    window.addEventListener('pageshow', relock)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') relock()
+    })
+}
+
 export function applyWallpaperBrowserChrome(opts: {
     wallpaper: string
     colorMode: ColorMode
     theme: ResolvedTheme
+    force?: boolean
 }): void {
     if (typeof document === 'undefined') return
 
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false
-    const active = chromeColorFor(opts.wallpaper, opts.colorMode, opts.theme, prefersDark)
-    lastChromeColor = active
+    const mode = resolveChromeTheme(opts.colorMode, opts.theme, prefersDark)
+    const field = getWallpaperField(opts.wallpaper, mode)
+    const chrome = themeColorForEngine(field)
+    const key = `${resolveKeptWallpaper(opts.wallpaper)}|${mode}|${chrome}`
+    lastChromeOpts = { wallpaper: opts.wallpaper, colorMode: opts.colorMode, theme: opts.theme }
+    if (!opts.force && key === lastChromeKey && lastChromeColor === chrome) return
+    lastChromeKey = key
+    lastChromeColor = chrome
 
     const root = document.documentElement
-    root.style.setProperty('--browser-chrome', active)
-    root.style.backgroundColor = active
-    if (document.body) document.body.style.backgroundColor = active
+    root.style.setProperty('--browser-chrome', field.top)
+    root.style.setProperty('--browser-chrome-bottom', field.bottom)
+    root.style.setProperty('--browser-chrome-field', field.css)
+    root.style.removeProperty('background-color')
+    if (document.body) document.body.style.removeProperty('background-color')
 
-    syncThemeColorMeta(active)
+    syncThemeColorMeta(chrome)
     upsertNamedMeta(
         'apple-mobile-web-app-status-bar-style',
-        hexLuminance(active) < 150 ? 'black-translucent' : 'default'
+        usesOverlayStatusBar() ? 'black-translucent' : hexLuminance(field.top) < 150 ? 'black-translucent' : 'default'
     )
-    upsertNamedMeta('msapplication-navbutton-color', active)
+    upsertNamedMeta('msapplication-navbutton-color', field.bottom)
     startChromeGuard()
+    startChromeLifetime()
 }

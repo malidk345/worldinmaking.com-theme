@@ -344,14 +344,6 @@ const KeyboardGarden = () => (
     </div>
 )
 
-const MINT_FELT_LIGHT = 'url("/images/wallpapers/mint-felt-light.svg")'
-const MINT_FELT_DARK = 'url("/images/wallpapers/mint-felt-dark.svg")'
-
-const MINT_PATCHES =
-    'radial-gradient(ellipse 38% 28% at 62% 72%, rgba(74,84,64,0.16) 0%, rgba(74,84,64,0) 70%),' +
-    'radial-gradient(ellipse 24% 20% at 28% 58%, rgba(74,84,64,0.12) 0%, rgba(74,84,64,0) 68%),' +
-    'radial-gradient(ellipse 20% 16% at 78% 38%, rgba(74,84,64,0.1) 0%, rgba(74,84,64,0) 70%)'
-
 type MintBlade = { left: string; top: string; size: number; rotate: number }
 
 const MINT_BLADES: MintBlade[] = (() => {
@@ -401,18 +393,10 @@ const KeyboardMint = () => (
         <div
             className={`absolute inset-0 bg-[linear-gradient(200deg,#D8DCCE_0%,#C9D0BE_48%,#BDC6B0_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
         />
+        {/* 0% #D8DCCE is WALLPAPER_THEME_COLORS keyboard-mint.light — mobile chrome */}
         <div
             className={`absolute inset-0 bg-[linear-gradient(200deg,#141E18_0%,#18241C_52%,#121A14_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
-        <div
-            className={`absolute inset-0 opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-            style={{ backgroundImage: MINT_FELT_LIGHT, backgroundSize: '64px 64px', backgroundRepeat: 'repeat' }}
-        />
-        <div
-            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{ backgroundImage: MINT_FELT_DARK, backgroundSize: '64px 64px', backgroundRepeat: 'repeat' }}
-        />
-        <div className={`absolute inset-0 opacity-100 dark:opacity-40 ${FADE_OPACITY}`} style={{ backgroundImage: MINT_PATCHES }} />
         <div className="absolute inset-0">
             {MINT_BLADES.map((blade, i) => (
                 <div
