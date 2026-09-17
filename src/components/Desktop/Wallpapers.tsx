@@ -64,22 +64,8 @@ const DraftField = () => (
     </>
 )
 
-const draftGrainPlate = (seed: number, colors: string[]) => {
-    const S = 64
-    const rand = mulberry32(seed)
-    const rects: string[] = []
-    for (let y = 0; y < S; y++) {
-        for (let x = 0; x < S; x++) {
-            rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[Math.floor(rand() * colors.length)]}"/>`)
-        }
-    }
-    return `url("data:image/svg+xml,${encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" shape-rendering="crispEdges">${rects.join('')}</svg>`
-    )}")`
-}
-
-const DRAFT_GRAIN_LIGHT = draftGrainPlate(11, ['#EDE8DC', '#E8E2D6', '#E3DDD0', '#F0EBE1', '#E6E0D4', '#EBE5D9'])
-const DRAFT_GRAIN_DARK = draftGrainPlate(13, ['#141E40', '#182444', '#121A36', '#1C2A4C', '#162040', '#10182E'])
+const DRAFT_GRAIN_LIGHT = 'url("/images/wallpapers/draft-grain-light.svg")'
+const DRAFT_GRAIN_DARK = 'url("/images/wallpapers/draft-grain-dark.svg")'
 
 const DraftGrid = () => (
     <>
@@ -358,8 +344,8 @@ const KeyboardGarden = () => (
     </div>
 )
 
-const MINT_FELT_LIGHT = draftGrainPlate(61, ['#D4D8CA', '#CCD2C2', '#C4CCB8', '#DCE0D2', '#C8D0C0', '#D0D6C6'])
-const MINT_FELT_DARK = draftGrainPlate(67, ['#141E18', '#18241C', '#121A14', '#1C2820', '#161E1A', '#101814'])
+const MINT_FELT_LIGHT = 'url("/images/wallpapers/mint-felt-light.svg")'
+const MINT_FELT_DARK = 'url("/images/wallpapers/mint-felt-dark.svg")'
 
 const MINT_PATCHES =
     'radial-gradient(ellipse 38% 28% at 62% 72%, rgba(74,84,64,0.16) 0%, rgba(74,84,64,0) 70%),' +
@@ -486,7 +472,7 @@ export default function Wallpapers(props?: {
                     className={`absolute inset-0 ${key === active ? 'block' : 'hidden'}`}
                     aria-hidden={key !== active}
                 >
-                    <Scene />
+                    {key === active ? <Scene /> : null}
                 </div>
             ))}
         </div>

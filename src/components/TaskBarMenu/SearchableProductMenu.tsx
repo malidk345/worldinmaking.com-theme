@@ -82,7 +82,7 @@ const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products 
                 <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search tools..."
+                    placeholder="Search tools & apps..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full !pl-8 pr-3 py-2 text-sm bg-accent border border-input rounded text-primary placeholder-muted focus:outline-none focus:ring-1 focus:ring-blue"
@@ -142,7 +142,10 @@ const SearchableProductMenu: React.FC<SearchableProductMenuProps> = ({ products 
                         </div>
                     </>
                 ) : (
-                    <div className="text-center py-4 text-muted text-sm">No tools found for "{searchTerm}"</div>
+                    <div className="text-center py-4 text-muted text-sm">
+                        No tools found for "{searchTerm}"
+                        <div className="mt-2 text-xs opacity-70">Tip: Use ⌘K to search the entire site</div>
+                    </div>
                 )}
             </div>
         </div>

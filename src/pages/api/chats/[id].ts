@@ -33,7 +33,7 @@ function storeError(err: unknown) {
     if (isChatStoreUnavailable(err)) {
         return json(
             {
-                error: 'Chat tables not ready',
+                    error: 'This workspace is still rolling out notebook sync (migration required)',
                 code: 'MIGRATION_REQUIRED',
                 hint: 'Run supabase/migrations/20260813_workspace_chats.sql',
             },
