@@ -66,5 +66,5 @@ export default async function handler(req: Request) {
         geminiKeyCount: collectGeminiKeys(env).length,
         // Only aggregate readiness is returned. Never expose key names or previews.
         visibleKeyCount: visibleKeys.length,
-    }, 200, { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' })
+    })
 }

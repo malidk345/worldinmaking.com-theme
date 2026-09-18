@@ -27,22 +27,22 @@ export { isForumPath, isBlogPath }
 
 const routeFallback = () => <div className="h-full min-h-0 flex-1" aria-hidden />
 
-const IdeasHub = dynamic(() => import('components/Ideas'), { ssr: false, loading: routeFallback })
+const IdeasHub = dynamic(() => import('components/Ideas'), { loading: routeFallback })
 const ProfileWrapper = dynamic(() => import('components/Profile'), { loading: routeFallback })
-const FlashcardStudyWindow = dynamic(() => import('../Study/FlashcardStudyWindow'), { ssr: false, loading: routeFallback })
+const FlashcardStudyWindow = dynamic(() => import('../Study/FlashcardStudyWindow'), { loading: routeFallback })
 const Inbox = dynamic(() => import('components/Inbox'), { loading: routeFallback })
 const PostEditorWindow = dynamic(() => import('../Community/PostEditorWindow'), { loading: routeFallback })
 const BlogPost = dynamic(() => import('../../templates/BlogPost'), { loading: routeFallback })
 const PostListing = dynamic(() => import('../../templates/PostListing'), { loading: routeFallback })
 const DisplayOptions = dynamic(() => import('components/DisplayOptions'), { ssr: false, loading: routeFallback })
-const Legal = dynamic(() => import('components/Legal'), { ssr: false, loading: routeFallback })
+const Legal = dynamic(() => import('components/Legal'), { loading: routeFallback })
 const WimAuthPortal = dynamic(() => import('components/Auth/WimAuthPortal'), { ssr: false, loading: routeFallback })
 const TapePlayer = dynamic(() => import('components/TapePlayer'), { ssr: false, loading: routeFallback })
 const AdminDashboard = dynamic(() => import('components/Admin/AdminDashboard'), { ssr: false, loading: routeFallback })
-const ArchiveWindow = dynamic(() => import('components/Archive/ArchiveWindow'), { ssr: false, loading: routeFallback })
-const ContactWindow = dynamic(() => import('components/Contact/ContactWindow'), { ssr: false, loading: routeFallback })
+const ArchiveWindow = dynamic(() => import('components/Archive/ArchiveWindow'), { loading: routeFallback })
+const ContactWindow = dynamic(() => import('components/Contact/ContactWindow'), { loading: routeFallback })
 const HomeWindow = dynamic(() => import('components/Home/HomeWindow'), { loading: routeFallback })
-const AccountWindow = dynamic(() => import('components/Account/AccountWindow'), { ssr: false, loading: routeFallback })
+const AccountWindow = dynamic(() => import('components/Account/AccountWindow'), { loading: routeFallback })
 const AboutContent = dynamic(() => import('../../pages/about').then((m) => ({ default: m.AboutContent })), {
     loading: routeFallback,
 })
