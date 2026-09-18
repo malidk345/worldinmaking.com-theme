@@ -908,7 +908,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div
           className="mt-1.5 h-0.5 w-full overflow-hidden rounded bg-primary/20"
           role="meter"
-          aria-label="Daily token budget"
+          aria-label="Weekly token budget"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.min(100, Math.round(quota.percentage))}
@@ -923,12 +923,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {quotaBlocksSend ? (
         <div role="status" aria-live="polite" className="mt-1.5 h-4 text-center text-[11px] leading-4 font-sans pointer-events-auto">
           {quota === null ? (
-            <span className="text-muted animate-pulse">checking inquiry budget...</span>
+            <span className="text-muted animate-pulse">checking weekly budget...</span>
           ) : quota?.unavailable ? (
             <span className="text-muted">can't verify budget — try again later.</span>
           ) : (
             <span className="text-secondary">
-              daily limit reached.{' '}
+              weekly limit reached.{' '}
               <button
                 type="button"
                 onClick={() => app?.addWindow?.({ path: '/pricing' })}
