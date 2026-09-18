@@ -30,7 +30,7 @@ const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
     },
     groq: {
         providerId: 'groq',
-        name: 'Groq Cloud (Llama 3.3)',
+        name: 'Groq',
         apiKey: '',
         preferredModel: 'llama-3.3-70b-versatile',
         enabled: false,
@@ -38,7 +38,7 @@ const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
     },
     openai: {
         providerId: 'openai',
-        name: 'OpenAI (GPT-4o / o3-mini)',
+        name: 'OpenAI',
         apiKey: '',
         preferredModel: 'gpt-4o',
         enabled: false,
@@ -46,7 +46,7 @@ const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
     },
     anthropic: {
         providerId: 'anthropic',
-        name: 'Anthropic Claude 3.7 / 3.5',
+        name: 'Anthropic',
         apiKey: '',
         preferredModel: 'claude-3-7-sonnet',
         enabled: false,
