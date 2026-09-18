@@ -52,8 +52,7 @@ export const BILLING_PLANS = {
         features: [
             'deeper models when a question needs to sit',
             'a larger weekly token budget',
-            'panel debates — several philosophers at once',
-            'memory that follows you across notebooks',
+            'richer tools for deeper inquiry',
             'more room for charts, mermaid, and live sandboxes',
         ],
     },

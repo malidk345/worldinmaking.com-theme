@@ -12,8 +12,8 @@ import { IconCheck, IconSpinner } from '@posthog/icons'
 const COMPARISON: Array<{ label: string; desk: string; study: string }> = [
     { label: 'WIM AI models', desk: 'fast, everyday', study: 'deeper when it has to think' },
     { label: 'weekly token budget', desk: BILLING_PLANS.free.weeklyTokenBudget, study: BILLING_PLANS.pro.weeklyTokenBudget },
-    { label: 'philosopher panel', desk: '—', study: 'several voices at once' },
-    { label: 'memory across notebooks', desk: 'session', study: 'persistent' },
+    { label: 'philosopher conversations', desk: 'included', study: 'included' },
+    { label: 'AI memory', desk: 'local device', study: 'local device' },
     { label: 'artifacts (charts, mermaid, sandboxes)', desk: 'yes', study: 'more, faster' },
 ]
 
@@ -76,7 +76,7 @@ export default function PricingWindow({ checkoutAvailable = true }: { checkoutAv
         <div data-scheme="primary" className="bg-transparent text-primary h-full min-h-0 flex flex-col select-text">
             <SEO
                 title="study"
-                description="the desk is already yours. study is extra heat for WIM AI, notebook memory, and longer days of inquiry."
+                description="the desk is already yours. study is extra heat for WIM AI, a larger AI budget, and longer days of inquiry."
             />
             <ScrollArea className="flex-1 min-h-0">
                 <div className="px-5 @md:px-8 py-7 @md:py-8 max-w-5xl">
@@ -95,7 +95,7 @@ export default function PricingWindow({ checkoutAvailable = true }: { checkoutAv
                     </h1>
                     <p className="text-[15px] text-secondary leading-relaxed m-0 mb-5 max-w-2xl">
                         the desk is already running: notebooks, forum, WIM AI. study is not another product — it is the
-                        same windows, with more inquiry, memory that lasts, and philosophers who can argue in a panel.
+                        same windows, with a much larger AI budget, deeper models, and richer tools for inquiry.
                     </p>
 
                     <div className="flex flex-wrap items-center gap-2 mb-6">
