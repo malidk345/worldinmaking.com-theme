@@ -11,6 +11,7 @@ import { IconCheck, IconSpinner } from '@posthog/icons'
 
 const COMPARISON: Array<{ label: string; desk: string; study: string }> = [
     { label: 'WIM AI models', desk: 'fast, everyday', study: 'deeper when it has to think' },
+    { label: 'hourly inquiry budget', desk: `${BILLING_PLANS.free.hourlyChatLimit} / hr`, study: `${BILLING_PLANS.pro.hourlyChatLimit} / hr` },
     { label: 'daily inquiry budget', desk: `${BILLING_PLANS.free.dailyChatLimit} / day`, study: `${BILLING_PLANS.pro.dailyChatLimit} / day` },
     { label: 'philosopher panel', desk: '—', study: 'several voices at once' },
     { label: 'memory across notebooks', desk: 'session', study: 'persistent' },

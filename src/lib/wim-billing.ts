@@ -38,7 +38,7 @@ export const BILLING_PLANS = {
         dailyChatLimit: CHAT_LIMITS.free.daily,
         features: [
             'the OS: notebooks, forum, WIM AI in a window',
-            'standard daily inquiry budget',
+            'standard hourly/daily inquiry budget',
             'fast models for ordinary questions',
             'published pages and public threads',
         ],
@@ -52,7 +52,7 @@ export const BILLING_PLANS = {
         dailyChatLimit: CHAT_LIMITS.pro.daily,
         features: [
             'deeper models when a question needs to sit',
-            'a larger daily inquiry budget',
+            'a larger hourly/daily inquiry budget',
             'panel debates — several philosophers at once',
             'memory that follows you across notebooks',
             'more room for charts, mermaid, and live sandboxes',
