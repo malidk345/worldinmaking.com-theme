@@ -175,8 +175,8 @@ export default function AccountWindow() {
     }
 
     const handlePassword = async () => {
-        if (password.length < 6) {
-            addToast({ error: true, description: 'Password must be at least 6 characters.' })
+        if (password.length < 8) {
+            addToast({ error: true, description: 'Password must be at least 8 characters.' })
             return
         }
         if (password !== passwordConfirm) {

@@ -148,7 +148,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <AppErrorBoundary>
             <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-[99999] bg-primary text-primary px-4 py-2 rounded shadow-md"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-[99999] bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded shadow-md"
             >
                 Skip to main content
             </a>
