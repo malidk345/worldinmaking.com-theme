@@ -119,12 +119,16 @@ const SidebarUsageMeter: React.FC = () => {
     if (!quota) return null
 
     const remainingPercent = Math.max(0, Math.min(100, Math.round(100 - (quota.percentage || 0))))
+    const planLabel =
+        quota.tier === 'pro' ? 'pro' : quota.tier === 'guest' ? 'guest' : quota.tier === 'dev' ? 'dev' : 'free'
 
     return (
         <div className="px-3 py-1.5 space-y-1">
             <div className="flex items-center justify-between text-[11.5px] text-secondary">
                 <span>Usage</span>
-                <span className="font-mono text-[11px] font-medium text-primary">{remainingPercent}%</span>
+                <span className="font-mono text-[11px] font-medium text-primary">
+                    {remainingPercent}% · weekly · {planLabel}
+                </span>
             </div>
             <div className="h-1 w-full rounded-full bg-primary/10 overflow-hidden">
                 <div
