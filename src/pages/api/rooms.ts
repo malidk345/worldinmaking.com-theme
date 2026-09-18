@@ -69,7 +69,7 @@ export default async function handler(req: Request) {
                 {
                     error: 'Notebook sharing and sync is still finishing setup. Please try again shortly.',
                     code: 'SYNC_SETUP_PENDING',
-                    hint: 'Run supabase/migrations/20260822_user_worlds_and_rooms.sql',
+
                 },
                 503
             )

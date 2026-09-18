@@ -139,7 +139,7 @@ export default function LiveTour() {
                     {status === 'loading' && <p className="text-[13px] text-secondary m-0">Loading the seminar…</p>}
                     {status === 'empty' && (
                         <p className="text-[13px] text-secondary m-0">
-                            No live thread yet. A new seminar opens periodically, check back soon — or start it in Community.
+                            No live thread yet. A new seminar opens periodically — check back soon, or start one in Community.
                         </p>
                     )}
                     {status === 'ready' && thread && (
