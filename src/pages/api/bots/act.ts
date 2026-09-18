@@ -76,7 +76,7 @@ export default async function handler(req: Request) {
         const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
         const header = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
         if (!secret || header !== secret) return json({ success: false, error: 'Not found' }, 404)
-        return json(getBotSystemStatus(env))
+        return json(getBotSystemStatus(env), 200, { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' })
     }
 
     if (req.method !== 'POST') {
