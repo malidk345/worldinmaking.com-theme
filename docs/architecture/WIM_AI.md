@@ -10,7 +10,7 @@ Canonical map of WorldInMaking AI as implemented in malidk345/worldinmaking.com-
 ## Workspace chat turn
 1. POST `/api/chat` (runtime=edge). Prompt max 8000 chars. Default persona `nietzsche`.
 2. Supabase auth via `getSupabaseUserFromRequest`. Guest vs member vs Pro.
-3. Quotas (skipped in local/dev): hourly inquiries guest 30 / member 100 / Pro 300 via `checkRateLimitDurable` (`workspace-chat:{user|ip}`, fail-closed when Upstash is configured). Daily inquiries 100 / 300 / 1000 (`increment_wim_chat_usage`). Daily tokens 50k / 200k / 2M (`src/lib/token-quota.ts`). BYOK turns skip `recordTokenUsage`. In-memory `checkRateLimit` is only the fallback when Upstash creds are absent.
+3. Quotas (skipped in local/dev): weekly token budget (resetting UTC Monday). Guest 80k / member 2.5M / Pro 20M (`src/lib/token-quota.ts`). Tools share the same weekly token bucket. BYOK turns skip `recordTokenUsage`. In-memory token tracking is only the fallback when Upstash creds are absent.
 4. User context is labeled untrusted (systemPrompt, notebook, scratchpad, attachments, history). Notebook/document retrieval is lexical (keyword/TF + host snapshot tools), not embedding/vector RAG; empty matches fail closed — do not invent notebook citations.
 5. BYOK payload `body.byok` (groq|gemini|openai|anthropic) overlays provider env for that turn only.
 6. Tools: `runToolLoop` in `src/lib/bots/tools/`. Graph `pipeline.ts` (THINK / ACT / TOOLS), max 16 steps. Public text only when an ACT round has zero tool_calls.
@@ -33,7 +33,7 @@ SECURITY_PREAMBLE in orchestrate.ts. Mutating `/api/bots/act` needs CRON_SECRET 
 
 ## Philosophers
 PHILOSOPHER_BOTS in src/lib/persona-engine.ts matches BOT_ROSTER in src/lib/bots/philosopher-tick.ts (16 bots, default Nietzsche).
-/api/philosopher-bot is runBotTurn, no tools, 60/30 hourly IP limits.
+/api/philosopher-bot is runBotTurn, no tools.
 /api/bots/act actions: chat, forum_reply, thread_init, paper_step, status.
 Paper steps: thesis, antithesis, cross_examine, third_voice, synthesis.
 /api/philosopher-bots lists Supabase bot_profiles.
@@ -41,4 +41,4 @@ Hourly forum is GitHub Actions .github/workflows/philosopher-bots-cron.yml. Edge
 
 ## Gateway and quotas
 ai-gateway.ts: Groq and Gemini rotate. About 28s total, 9s failover. Groq 8k TPM. Skip Groq if prompt is over about 6500 tokens.
-Workspace chat hourly quota is `checkRateLimitDurable` (Upstash REST fixed window, `failClosed: true`). Memory isolate is used only when Upstash is not configured. Tool loop budget ~45s vs gateway ~28s. Chat fails closed on provider outage (`PROVIDER_UNAVAILABLE`) and on quota store outage (`QUOTA_UNAVAILABLE`).
+Workspace chat weekly token quota (`failClosed: true`). Memory isolate is used only when Upstash is not configured. Tool loop budget ~45s vs gateway ~28s. Chat fails closed on provider outage (`PROVIDER_UNAVAILABLE`) and on quota store outage (`QUOTA_UNAVAILABLE`).
