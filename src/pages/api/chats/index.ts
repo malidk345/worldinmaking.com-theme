@@ -26,8 +26,8 @@ function storeError(err: unknown) {
     if (isChatStoreUnavailable(err)) {
         return json(
             {
-                    error: 'This workspace is still rolling out notebook sync (migration required)',
-                code: 'MIGRATION_REQUIRED',
+                    error: 'Notebook sharing and sync is still finishing setup. Please try again shortly.',
+                code: 'SYNC_SETUP_PENDING',
                 hint: 'Run supabase/migrations/20260813_workspace_chats.sql',
             },
             503

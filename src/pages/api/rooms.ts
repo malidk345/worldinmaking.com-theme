@@ -67,8 +67,8 @@ export default async function handler(req: Request) {
         if (/schema cache|does not exist|relation/i.test(error.message || '')) {
             return json(
                 {
-                    error: 'This workspace is still rolling out notebook sync (migration required)',
-                    code: 'MIGRATION_REQUIRED',
+                    error: 'Notebook sharing and sync is still finishing setup. Please try again shortly.',
+                    code: 'SYNC_SETUP_PENDING',
                     hint: 'Run supabase/migrations/20260822_user_worlds_and_rooms.sql',
                 },
                 503
