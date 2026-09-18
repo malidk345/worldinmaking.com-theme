@@ -10,7 +10,7 @@
 WorldInMaking is a **Desktop OS product shell** (windows, taskbar, command palette, notebooks, AI philosopher bots) built on Next.js 14 and React 18.
 
 - **Vibrant & Premium:** Avoid plain generic colors. Use curated HSL color schemes, dark mode support, and frosted glassmorphism (`backdrop-blur-md`).
-- **Typography:** Modern typography (Inter, Outfit, Roboto Mono). Avoid default browser fallbacks.
+- **Typography:** Locked WIM fonts (RoundHog, Charter, Fairytale, Computer Modern, Squeak). Avoid default browser fallbacks. **Explicit Guidance: do not change fonts; do not propose Inter/Outfit/Roboto Mono swaps.**
 - **Micro-Animations:** Use subtle hover transitions (`transition-all duration-200 ease-in-out`), active states, and desktop window drag/minimize effects.
 
 ---
