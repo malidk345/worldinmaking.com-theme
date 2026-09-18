@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2026-09-18 - [React Bailout Optimization on High-Frequency Events]
+**Learning:** React state updaters during high-frequency events (like `resize`) can cause massive render thrashing if they blindly construct and set new object instances. Even if the actual data structure values are logically identical, React's `Object.is` check fails because the object reference is new.
+**Action:** When updating object state in event listeners like `window.addEventListener('resize')`, always use the functional state update pattern (`setState(prev => ...)`). Shallow compare the necessary values between `prev` and the newly computed `next` object. If the values are identical, return the `prev` reference. This enables React to correctly bail out of the update cycle, significantly improving UI thread performance.
