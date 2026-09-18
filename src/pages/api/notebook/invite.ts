@@ -9,10 +9,10 @@ import { acceptNotebookInvite, getInvitePreview } from '../../../../lib/notebook
 import { getNotebookByIdOrShort } from '../../../../lib/notebooks-repo'
 import { isNotebookInviteToken } from '../../../lib/notebook-sharing'
 
-function json(body: Record<string, unknown>, status = 200) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     })
 }
 
@@ -30,7 +30,7 @@ export default async function handler(req: Request) {
         if (req.method === 'GET') {
             const preview = await getInvitePreview(token)
             if (!preview) return json({ error: 'Invite not found' }, 404)
-            return json({ invite: preview })
+            return json({ invite: preview }, 200, { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' })
         }
 
         if (req.method === 'POST') {
