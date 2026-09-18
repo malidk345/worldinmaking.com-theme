@@ -297,19 +297,20 @@ export default async function handler(req: Request) {
         try {
             const tokenQuota = await getTokenQuota(quotaSubject, tokenTier)
             if (!tokenQuota.allowed) {
+                const retryAfterSec = Math.max(1, Math.ceil((new Date(tokenQuota.resetAtUtc).getTime() - Date.now()) / 1000))
                 return json(
                     {
                         success: false,
                         error: isPro
                             ? `[app] Weekly token budget reached. Quota resets at ${tokenQuota.resetAtUtc}.`
                             : user
-                            ? `[app] Weekly token budget reached. Upgrade to Study for unbounded thought and frontier models.`
+                            ? `[app] Weekly token budget reached. Upgrade to Study for a larger generous weekly budget and frontier models.`
                             : `[app] Guest token budget reached. Sign in to keep writing and save your notebooks.`,
-                        retryAfterSec: 86400,
+                        retryAfterSec,
                         code: 'QUOTA_EXCEEDED',
                     },
                     429,
-                    { 'Retry-After': '86400' }
+                    { 'Retry-After': String(retryAfterSec) }
                 )
             }
         } catch (err) {

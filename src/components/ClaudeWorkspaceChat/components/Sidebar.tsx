@@ -111,7 +111,7 @@ const SidebarUsageMeter: React.FC = () => {
         return (
             <div className="px-3 py-1.5 flex items-center justify-between text-[11.5px] text-muted">
                 <span>Usage</span>
-                <span className="text-[11px] font-medium text-primary">BYOK (Unlimited)</span>
+                <span className="text-[11px] font-medium text-primary">BYOK (your keys)</span>
             </div>
         )
     }

@@ -926,6 +926,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <span className="text-muted animate-pulse">checking weekly budget...</span>
           ) : quota?.unavailable ? (
             <span className="text-muted">can't verify budget — try again later.</span>
+          ) : quota?.tier === 'pro' || quota?.tier === 'dev' ? (
+            <span className="text-secondary">
+              weekly limit reached. resets {new Date(quota.resetAtUtc).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).toLowerCase()} or add your own keys (BYOK).
+            </span>
           ) : (
             <span className="text-secondary">
               weekly limit reached.{' '}
@@ -936,7 +940,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               >
                 Study
               </button>{' '}
-              to keep going.
+              for a larger budget.
             </span>
           )}
         </div>
