@@ -28,6 +28,17 @@ function getBreakpoints(width: number): Breakpoints {
     }
 }
 
+function areBreakpointsEqual(a: Breakpoints, b: Breakpoints): boolean {
+    return (
+        a.xs === b.xs &&
+        a.sm === b.sm &&
+        a.md === b.md &&
+        a.lg === b.lg &&
+        a.xl === b.xl &&
+        a.xxl === b.xxl
+    )
+}
+
 export function useBreakpoint(): Breakpoints {
     const [breakpoints, setBreakpoints] = useState<Breakpoints>(() =>
         typeof window !== 'undefined'
@@ -36,7 +47,12 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        const update = () => {
+            setBreakpoints((prev) => {
+                const next = getBreakpoints(window.innerWidth)
+                return areBreakpointsEqual(prev, next) ? prev : next
+            })
+        }
         update()
         window.addEventListener('resize', update)
         return () => window.removeEventListener('resize', update)
