@@ -181,9 +181,12 @@ export default function PricingWindow({ checkoutAvailable = true }: { checkoutAv
                                         Manage membership
                                     </OSButton>
                                 ) : !checkoutAvailable ? (
-                                    <OSButton size="sm" variant="default" className="w-full" disabled>
-                                        payments opening soon
-                                    </OSButton>
+                                    <div className="flex flex-col gap-1.5 text-center w-full">
+                                        <OSButton size="md" variant="default" className="w-full" disabled>
+                                            payments opening soon
+                                        </OSButton>
+                                        <span className="text-[11px] text-muted">check back shortly</span>
+                                    </div>
                                 ) : (
                                     <OSButton size="md" variant="primary" onClick={handleUpgrade} disabled={loading}>
                                         {loading ? (
