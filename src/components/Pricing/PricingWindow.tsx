@@ -181,8 +181,8 @@ export default function PricingWindow({ checkoutAvailable = true }: { checkoutAv
                                         Manage membership
                                     </OSButton>
                                 ) : !checkoutAvailable ? (
-                                    <OSButton size="md" disabled>
-                                        checkout unavailable
+                                    <OSButton size="sm" variant="default" className="w-full" disabled>
+                                        payments opening soon
                                     </OSButton>
                                 ) : (
                                     <OSButton size="md" variant="primary" onClick={handleUpgrade} disabled={loading}>
