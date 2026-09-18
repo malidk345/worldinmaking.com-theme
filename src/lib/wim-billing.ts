@@ -5,7 +5,7 @@
 
 import { envFrom, getRuntimeEnv, type EnvStore } from './bots/runtime-env'
 
-export type SubscriptionPlan = 'free' | 'pro' | 'patron'
+export type SubscriptionPlan = 'free' | 'pro'
 
 export type SubscriptionRecord = {
     id: string
