@@ -57,8 +57,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
                 {isPro
-                  ? 'deeper models and notebook memory are on.'
-                  : 'open study for deeper models, panel debates, and memory that lasts.'}
+                  ? 'deeper models and a larger AI budget are on.'
+                  : 'open study for deeper models, a larger AI budget, and richer tools for inquiry.'}
               </div>
             </div>
             <button
