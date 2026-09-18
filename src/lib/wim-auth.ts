@@ -383,8 +383,8 @@ export async function signInWithGoogle(): Promise<{ error?: string }> {
 
 export async function updatePassword(password: string): Promise<{ error?: string }> {
     if (!isSupabaseConfigured) return { error: 'Supabase is not configured' }
-    if (!password || password.length < 6) {
-        return { error: 'Password must be at least 6 characters' }
+    if (!password || password.length < 8) {
+        return { error: 'Password must be at least 8 characters' }
     }
     const { error } = await supabase.auth.updateUser({ password })
     if (error) return { error: error.message }

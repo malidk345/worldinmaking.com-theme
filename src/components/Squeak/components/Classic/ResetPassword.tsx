@@ -57,8 +57,8 @@ const ResetPasswordForm: React.FC = () => {
             const errors: any = {}
             if (!values.password) {
                 errors.password = 'Required'
-            } else if (values.password.length < 6) {
-                errors.password = 'Password must be at least 6 characters'
+        } else if (values.password.length < 8) {
+            errors.password = 'Password must be at least 8 characters'
             }
             if (!values.confirmPassword) {
                 errors.confirmPassword = 'Required'
