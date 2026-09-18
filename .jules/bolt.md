@@ -53,3 +53,7 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+
+## 2026-09-18 - Reduce Functional Allocation Overhead for Large Lists
+**Learning:** Using `.reduce()` to iterate over a large array (such as building a map or grouping elements) introduces unnecessary functional overhead, especially when used inside component render cycles, as it creates an allocation for the callback on each iteration. For frequently re-evaluated component scopes like grouping map elements (`PeopleMap`), this directly impacts UI responsiveness and creates memory allocations that trigger garbage collection overhead.
+**Action:** When aggregating, mapping, or grouping large arrays inside high-frequency components, always replace `.reduce()` with a standard `for...of` loop. This avoids the per-element function allocation overhead and executes significantly faster.
