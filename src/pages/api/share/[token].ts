@@ -57,7 +57,7 @@ export default async function handler(req: Request) {
         })
     } catch (err) {
         if (isChatStoreUnavailable(err)) {
-            return json({ error: 'This workspace is still rolling out notebook sync (migration required)', code: 'MIGRATION_REQUIRED' }, 503)
+            return json({ error: 'Notebook sharing and sync is still finishing setup. Please try again shortly.', code: 'SYNC_SETUP_PENDING' }, 503)
         }
         return json({ error: 'Share lookup failed' }, 500)
     }

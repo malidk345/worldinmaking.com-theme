@@ -176,8 +176,8 @@ export default async function handler(req: Request) {
         if (message.includes('wim_notebook_collaborators') || message.includes('schema cache') || err?.code === 'PGRST205') {
             return json(
                 {
-                    error: 'This workspace is still rolling out notebook sync (migration required)',
-                    code: 'MIGRATION_REQUIRED',
+                    error: 'Notebook sharing and sync is still finishing setup. Please try again shortly.',
+                    code: 'SYNC_SETUP_PENDING',
                     hint: 'Run supabase/migrations/20260903_notebook_collaborators.sql',
                 },
                 503
