@@ -1,10 +1,11 @@
 import { supabaseAdmin } from '../../lib/supabase-admin'
 
+// Weekly ceilings based on UTC Monday boundary
 export const TOKEN_LIMITS = {
-    guest: 50_000,
-    member: 200_000,
-    pro: 2_000_000,
-    dev: 10_000_000,
+    guest: 80_000,
+    member: 2_500_000,
+    pro: 20_000_000,
+    dev: 50_000_000,
 } as const
 
 export type UserTier = keyof typeof TOKEN_LIMITS
@@ -31,22 +32,34 @@ export function estimateTokens(text: unknown): number {
     return Math.ceil(chars / 3.6)
 }
 
-export function getUtcDayString(): string {
-    return new Date().toISOString().slice(0, 10)
+export function estimateToolSurchargeTokens(toolCallCount: number): number {
+    // 2,000 tokens flat rate surcharge per tool call
+    return toolCallCount > 0 ? toolCallCount * 2_000 : 0
 }
 
-export function getUtcMidnightString(): string {
+export function getUtcWeekStartString(): string {
     const d = new Date()
-    d.setUTCDate(d.getUTCDate() + 1)
-    d.setUTCHours(0, 0, 0, 0)
-    return d.toISOString()
+    // 0 = Sunday, 1 = Monday, etc.
+    const day = d.getUTCDay()
+    const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+    const monday = new Date(d.setUTCDate(diff))
+    return monday.toISOString().slice(0, 10)
+}
+
+export function getUtcWeekResetString(): string {
+    const d = new Date()
+    const day = d.getUTCDay()
+    const diff = d.getUTCDate() - day + (day === 0 ? 1 : 8) // next Monday
+    const nextMonday = new Date(d.setUTCDate(diff))
+    nextMonday.setUTCHours(0, 0, 0, 0)
+    return nextMonday.toISOString()
 }
 
 export async function getTokenQuota(
     subject: string,
     tier: UserTier = 'guest'
 ): Promise<TokenQuotaSnapshot> {
-    const day = getUtcDayString()
+    const day = getUtcWeekStartString()
     const limit = TOKEN_LIMITS[tier] || TOKEN_LIMITS.guest
     const memKey = `${subject}:${day}`
 
@@ -79,7 +92,7 @@ export async function getTokenQuota(
         remainingTokens: remaining,
         percentage,
         allowed: used < limit,
-        resetAtUtc: getUtcMidnightString(),
+        resetAtUtc: getUtcWeekResetString(),
     }
 }
 
@@ -88,7 +101,7 @@ export async function recordTokenUsage(
     tokensConsumed: number,
     tier: UserTier = 'guest'
 ): Promise<TokenQuotaSnapshot> {
-    const day = getUtcDayString()
+    const day = getUtcWeekStartString()
     const limit = TOKEN_LIMITS[tier] || TOKEN_LIMITS.guest
     const memKey = `${subject}:${day}`
 
@@ -135,7 +148,7 @@ export async function recordTokenUsage(
         remainingTokens: remaining,
         percentage,
         allowed: newTotal <= limit,
-        resetAtUtc: getUtcMidnightString(),
+        resetAtUtc: getUtcWeekResetString(),
     }
 }
 

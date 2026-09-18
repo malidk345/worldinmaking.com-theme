@@ -22,7 +22,8 @@ export type SubscriptionRecord = {
     updatedAt: string
 }
 
-// marketing copy and enforcement must stay in sync
+// Obsolete: Hourly/Daily limits replaced by weekly token quotas.
+// Left here for any legacy admin views or references that might break if deleted outright.
 export const CHAT_LIMITS = {
     guest: { hourly: 30, daily: 100 },
     free: { hourly: 100, daily: 300 },
@@ -34,11 +35,10 @@ export const BILLING_PLANS = {
         id: 'free',
         name: 'desk',
         priceMonthlyUsd: 0,
-        hourlyChatLimit: CHAT_LIMITS.free.hourly,
-        dailyChatLimit: CHAT_LIMITS.free.daily,
+        weeklyTokenBudget: '2.5M tokens / week',
         features: [
             'the OS: notebooks, forum, WIM AI in a window',
-            'standard daily inquiry budget',
+            'standard weekly token budget',
             'fast models for ordinary questions',
             'published pages and public threads',
         ],
@@ -48,11 +48,10 @@ export const BILLING_PLANS = {
         name: 'study',
         priceMonthlyUsd: 9.99,
         priceYearlyUsd: 99.99,
-        hourlyChatLimit: CHAT_LIMITS.pro.hourly,
-        dailyChatLimit: CHAT_LIMITS.pro.daily,
+        weeklyTokenBudget: '20M tokens / week',
         features: [
             'deeper models when a question needs to sit',
-            'a larger daily inquiry budget',
+            'a larger weekly token budget',
             'panel debates — several philosophers at once',
             'memory that follows you across notebooks',
             'more room for charts, mermaid, and live sandboxes',

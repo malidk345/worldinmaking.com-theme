@@ -27,13 +27,12 @@ import {
     NOTEBOOK_EDITOR_INSTRUCTION,
 } from '../../lib/notebook-chat-bind'
 import { getSupabaseUserFromRequest } from '../../../lib/api-authz'
-import { incrementDailyUsage } from '../../lib/chat-store'
 import { collectGroqKeys, type GatewayMessage } from 'lib/bots/ai-gateway'
 import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoint'
 import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
-import { isUserPro, CHAT_LIMITS } from '../../lib/wim-billing'
-import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+import { isUserPro } from '../../lib/wim-billing'
+import { estimateTokens, estimateToolSurchargeTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 
 const MAX_BODY_BYTES = 1024 * 1024
 
@@ -268,56 +267,27 @@ export default async function handler(req: Request) {
         clientIp === '::1' ||
         clientIp === 'localhost'
 
-    const hourlyLimit = isDevEnv
-        ? 5000
-        : isPro
-        ? CHAT_LIMITS.pro.hourly
-        : user
-        ? CHAT_LIMITS.free.hourly
-        : CHAT_LIMITS.guest.hourly
-    const dailyLimit = isDevEnv
-        ? 20000
-        : isPro
-        ? CHAT_LIMITS.pro.daily
-        : user
-        ? CHAT_LIMITS.free.daily
-        : CHAT_LIMITS.guest.daily
     const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
 
     if (!isDevEnv) {
-        const hourly = await checkRateLimitDurable(
-            `workspace-chat:${quotaSubject}`,
-            hourlyLimit,
-            60 * 60 * 1000,
+        // Light abuse IP rate limit only
+        const burst = await checkRateLimitDurable(
+            `workspace-chat-abuse:${clientIp}`,
+            60,
+            60 * 1000,
             getRuntimeEnv(),
             { failClosed: true }
         )
-        if (!hourly.allowed) {
-            if (hourly.source === 'unavailable') {
-                return json(
-                    {
-                        success: false,
-                        error: '[app] Inquiry quota could not be verified. Please try again.',
-                        code: 'QUOTA_UNAVAILABLE',
-                        retryAfterSec: hourly.retryAfterSec,
-                    },
-                    503,
-                    { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
-                )
-            }
+        if (!burst.allowed) {
             return json(
                 {
                     success: false,
-                    error: isPro
-                        ? `[app] Pace limit reached. Please pause a moment before continuing.`
-                        : user
-                        ? `[app] Hourly inquiry limit reached. Upgrade to Pro for expanded capacity.`
-                        : `[app] Guest inquiry limit reached. Sign in to keep exploring without waiting.`,
-                    retryAfterSec: hourly.retryAfterSec,
+                    error: `[app] Pace limit reached. Please pause a moment before continuing.`,
+                    retryAfterSec: burst.retryAfterSec,
                     code: 'QUOTA_EXCEEDED',
                 },
                 429,
-                { ...buildRateLimitHeaders(hourly), 'Retry-After': String(hourly.retryAfterSec) }
+                { ...buildRateLimitHeaders(burst), 'Retry-After': String(burst.retryAfterSec) }
             )
         }
     }
@@ -331,27 +301,10 @@ export default async function handler(req: Request) {
                     {
                         success: false,
                         error: isPro
-                            ? `[app] Daily token budget reached. Quota resets at 00:00 UTC.`
+                            ? `[app] Weekly token budget reached. Quota resets at ${tokenQuota.resetAtUtc}.`
                             : user
-                            ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
-                            : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
-                        retryAfterSec: 86400,
-                        code: 'QUOTA_EXCEEDED',
-                    },
-                    429,
-                    { 'Retry-After': '86400' }
-                )
-            }
-            const dailyCount = await incrementDailyUsage(quotaSubject)
-            if (typeof dailyCount === 'number' && dailyCount > dailyLimit) {
-                return json(
-                    {
-                        success: false,
-                        error: isPro
-                            ? `[app] Daily inquiry limit reached. Quota resets at 00:00 UTC.`
-                            : user
-                            ? `[app] Daily inquiry limit reached. Upgrade to Pro for unbounded thought and frontier models.`
-                            : `[app] Guest inquiry limit reached. Sign in to keep writing and save your notebooks.`,
+                            ? `[app] Weekly token budget reached. Upgrade to Study for unbounded thought and frontier models.`
+                            : `[app] Guest token budget reached. Sign in to keep writing and save your notebooks.`,
                         retryAfterSec: 86400,
                         code: 'QUOTA_EXCEEDED',
                     },
@@ -593,9 +546,16 @@ export default async function handler(req: Request) {
 
                 // Record & stream real token usage to update client sidebar
                 if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY) {
+                    const toolCallsAcc = result.success && (result as any).tool_calls ? (result as any).tool_calls : []
                     const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
-                    const totalTurnTokens = Math.max(10, inTokens + outTokens)
+
+                    let toolTokens = 0
+                    if (toolCallsAcc.length > 0) {
+                        toolTokens = estimateTokens(JSON.stringify(toolCallsAcc)) + estimateToolSurchargeTokens(toolCallsAcc.length)
+                    }
+
+                    const totalTurnTokens = Math.max(10, inTokens + outTokens + toolTokens)
                     try {
                         const snapshot = await recordTokenUsage(quotaSubject, totalTurnTokens, tokenTier)
                         send({ type: 'token_usage', snapshot })
