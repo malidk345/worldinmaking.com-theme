@@ -7,6 +7,7 @@ import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
 import { WINDOW_BG } from '../../constants/frostedSurfaces'
 import { useApp } from '../../context/App'
+import { Spinner } from '../Spinner'
 import { useWindow } from '../../context/Window'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
@@ -54,7 +55,14 @@ const ScratchpadWindow = dynamic(() => import('../ScratchpadWindow').then((m) =>
 const TrashWindow = dynamic(() => import('../TrashWindow').then((m) => ({ default: m.TrashWindow })), {
     loading: routeFallback,
 })
-const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), { ssr: false, loading: routeFallback })
+const AskAiWindow = dynamic(() => import('../ClaudeWorkspaceChat/AskAiWindow'), {
+    ssr: false,
+    loading: () => (
+        <div className="flex h-full w-full items-center justify-center text-primary">
+            <Spinner />
+        </div>
+    )
+})
 const PricingWindow = dynamic(() => import('../Pricing/PricingWindow'), { ssr: false, loading: routeFallback })
 const AssistantWindow = dynamic(() => import('../AssistantWindow'), { ssr: false, loading: routeFallback })
 
@@ -64,7 +72,7 @@ const NotebookApp = dynamic(
         ssr: false,
         loading: () => (
             <div className="flex h-full w-full items-center justify-center bg-primary text-primary">
-                <div className="animate-pulse text-sm text-muted">loading notebooks...</div>
+                <Spinner />
             </div>
         ),
     }

@@ -858,7 +858,10 @@ export function useWindowRegistry({
                 windowed: true,
                 expanded: isMobileClient || item.expanded,
                 snapped: isMobileClient ? false : snappedSide,
-                fromOrigin: item.fromOrigin,
+                fromOrigin: item.fromOrigin ? {
+                    x: Math.round(item.fromOrigin.x - size.width / 2),
+                    y: Math.round(item.fromOrigin.y - size.height / 2),
+                } : undefined,
                 props: { path },
             }
             return [...prev, newWin]
