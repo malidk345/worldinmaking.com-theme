@@ -36,9 +36,23 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        const update = () => setBreakpoints(prev => {
+            const next = getBreakpoints(window.innerWidth)
+            // Shallow compare to bail out of React rendering if bounds didn't change
+            // This is a high-frequency event, returning the prev reference avoids GC churn
+            let hasChanged = false
+            for (const key in next) {
+                if (Object.prototype.hasOwnProperty.call(next, key)) {
+                    if (prev[key as BreakpointKey] !== next[key as BreakpointKey]) {
+                        hasChanged = true
+                        break
+                    }
+                }
+            }
+            return hasChanged ? next : prev
+        })
         update()
-        window.addEventListener('resize', update)
+        window.addEventListener('resize', update, { passive: true })
         return () => window.removeEventListener('resize', update)
     }, [])
 
