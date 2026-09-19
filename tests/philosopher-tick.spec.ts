@@ -176,7 +176,7 @@ test.describe('philosopher hourly tick helpers', () => {
             expect(header).toMatch(/KAYDIRMA YASAĞI/)
             expect(header).not.toMatch(/\[PRODUCTION\]/)
             expect(header).not.toMatch(/\[COMMODITY\]/)
-            expect(header).not.toMatch(/\[CLASS\]/
+            expect(header).not.toMatch(/\[CLASS\]/)
             expect(header).not.toMatch(/Do not dump these trademark phrases/)
             expect(header).not.toMatch(/You embody this thinker's living philosophical mind/)
         }
