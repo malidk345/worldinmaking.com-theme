@@ -31,7 +31,7 @@ import { IconArrowUpRight, IconExternal } from '@posthog/icons'
 
 interface OSButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
     children?: React.ReactNode
-    variant?: 'default' | 'primary' | 'secondary' | 'underline' | 'underlineOnHover'
+    variant?: 'default' | 'primary' | 'secondary' | 'underline' | 'underlineOnHover' | 'white'
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     icon?: React.ReactNode
     iconClassName?: string
@@ -41,6 +41,7 @@ interface OSButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElemen
     chip?: string
     chipColor?: string
     className?: string
+    childClassName?: string
     active?: boolean
     disabled?: boolean
     align?: 'left' | 'center'
@@ -70,6 +71,7 @@ export default function OSButton({
     chip,
     chipColor,
     className = '',
+    childClassName = '',
     active = false,
     disabled = false,
     align = 'center',
@@ -170,17 +172,23 @@ export default function OSButton({
             parent: 'bg-orange dark:bg-button-secondary-shadow-dark dark:border-button-secondary-dark text-primary border-button text-center group disabled:opacity-50 disabled:cursor-not-allowed inline-block',
             child: 'flex items-center justify-center bg-white text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark no-underline border-button dark:border-orange dark:bg-dark font-bold active:transition-all active:duration-100 select-none',
         },
+        white: {
+            parent: 'bg-button-shadow dark:bg-button-shadow-dark text-primary border-button-shadow dark:border-button-shadow-dark text-center group disabled:opacity-50 disabled:cursor-not-allowed inline-block',
+            child: 'flex items-center justify-center bg-white text-black hover:text-black dark:bg-white dark:text-black no-underline border-button-shadow dark:border-button-shadow font-bold active:transition-all active:duration-100 select-none',
+        },
         underline: 'underline border-transparent hover:no-underline disabled:hover:underline !p-0',
         underlineOnHover: 'hover:underline border-transparent disabled:hover:no-underline !p-0',
     }
 
+    const isElevatedVariant = variant === 'primary' || variant === 'secondary' || variant === 'white'
+
     const buttonContent = (
         <>
-            {variant === 'primary' || variant === 'secondary' ? (
+            {isElevatedVariant ? (
                 <span
                     className={`${variantClasses[variant].child} ${childSizeClasses[size]} ${
                         width === 'full' ? fullWidthChildClasses[size] : ''
-                    }`}
+                    } ${childClassName}`}
                 >
                     {icon && iconPosition === 'left' && (
                         <span className={`${iconSizeClasses[size]} ${iconClassName}`}>{icon}</span>
@@ -234,14 +242,14 @@ export default function OSButton({
 
     const commonProps = {
         className: `${baseClasses} ${width === 'full' ? 'flex' : 'inline-flex'} ${
-            variant === 'primary' || variant === 'secondary'
+            isElevatedVariant
                 ? `${parentSizeClasses[size]} ${variantClasses[variant].parent}`
                 : `${simpleSizeClasses[size]} ${variantClasses[variant]} ${
                       disabled ? 'disabled:hover:bg-transparent' : ''
                   }`
         } ${align === 'center' ? 'justify-center' : 'justify-start text-left'} ${
             !children ? '' : width === 'full' ? 'w-full' : 'w-auto'
-        } ${width === 'full' && (variant === 'primary' || variant === 'secondary') ? '!block' : ''} ${
+        } ${width === 'full' && isElevatedVariant ? '!block' : ''} ${
             asLink ? '!no-underline' : ''
         } ${className}`,
         onClick,

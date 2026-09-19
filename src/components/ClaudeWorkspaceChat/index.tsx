@@ -724,7 +724,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
   const pinChatToBottom = useCallback(() => {
-    if (!autoScrollRef.current || userInteractingRef.current) return;
+    if (!autoScrollRef.current || userInteractingRef.current || isStreamingRef.current) return;
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     const next = scroller.scrollHeight - scroller.clientHeight;
@@ -829,7 +829,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      pinChatToBottom();
+      if (!isStreamingRef.current && autoScrollRef.current && !userInteractingRef.current) {
+        pinChatToBottom();
+      }
     });
     observer.observe(scroller);
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
@@ -845,29 +847,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       observer.disconnect();
     };
   }, [activeChatId, handleScroll, pinChatToBottom, Boolean(activeChat?.messages.length)]);
-
-  const lastStreamTick = (() => {
-    const last = activeChat?.messages[activeChat.messages.length - 1];
-    if (!last) return `${activeChatId}:empty`;
-    return `${last.id}:${last.content.length}:${last.isStreaming ? 1 : 0}:${last.thinkingProcess?.steps?.length || 0}:${last.toolTrace?.length || 0}:${last.artifacts?.length || 0}:${last.osAction ? 1 : 0}`;
-  })();
-
-  useLayoutEffect(() => {
-    pinChatToBottom();
-  }, [lastStreamTick, pinChatToBottom]);
-
-
-  useEffect(() => {
-    if (!isStreaming) return
-    const viewport = window.visualViewport
-    const onViewport = () => pinChatToBottom()
-    viewport?.addEventListener('resize', onViewport)
-    viewport?.addEventListener('scroll', onViewport)
-    return () => {
-      viewport?.removeEventListener('resize', onViewport)
-      viewport?.removeEventListener('scroll', onViewport)
-    }
-  }, [isStreaming, pinChatToBottom])
 
   // Scroll chat to bottom when switching chats
   useEffect(() => {
@@ -1060,9 +1039,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     setIsStreaming(true);
     setStreamStatus('thinking');
-    autoScrollRef.current = true;
+    autoScrollRef.current = false;
     setIsAwayFromBottom(false);
-    requestAnimationFrame(() => scrollChatToBottom('auto'));
+    requestAnimationFrame(() => scrollChatToBottom('smooth'));
     abortActiveStream();
     const activeController = new AbortController();
     abortControllerRef.current = activeController;

@@ -58,6 +58,26 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-19 — Antigravity (Major LLM stream scroll stabilization: eliminated forced auto-scroll during generation)
+- **Scope:** Solved the jarring issue where the chat window continuously auto-scrolled down on every token during streaming generation, dragging the text away and pushing the prompt/top of the response off-screen:
+  1. In `src/components/ClaudeWorkspaceChat/index.tsx`, eliminated the aggressive `useLayoutEffect` on `lastStreamTick` that force-pinned `scroller.scrollTop = scrollHeight - clientHeight` on every single character length change.
+  2. Guarded `pinChatToBottom()` with `!isStreamingRef.current`, ensuring that while the model is outputting text, the viewport stays anchored steadily on what the user is reading (matching the behavior of major LLMs like Claude.ai and ChatGPT).
+  3. Prevented `ResizeObserver` from forcing `pinChatToBottom` during active streaming.
+  4. On message send, smoothly scrolls to the user's prompt once, allowing the stream to flow into view without dragging the screen downwards.
+- **Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core allowlist).
+- **Handoff:** Ready for user review.
+
+### 2026-09-19 — Antigravity (OSActionCard button labels shortened to 'Add' / 'Rewrite' & natural content width)
+- **Scope:** Refactored `OSActionCard.tsx` button labels per user directive:
+  1. Button Labels: Simplified action button labels from verbose phrases (`Add to notebook` -> `Add`, `Rewrite notebook` -> `Rewrite`, `Replace selection` -> `Replace`, `Create notebook` -> `Create`).
+  2. Button Geometry: Preserved `size="sm"` scale and allow natural horizontal width auto-fit (`enden daralma`) based on content, avoiding forced oversized min-widths.
+  3. Smooth Fade Scroll & Markdown: Retained vertical fade gradient mask and `ReactMarkdown` rich rendering.
+  4. White Top OSButton: Retained `variant="white"` tactile `OSButton` at `-bottom-3 right-3`.
+- **Files:** `src/notebook-app/scenes/notebooks/AskAI/components/OSActionCard.tsx`, `src/components/OSButton/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell` PASS (0 errors in core allowlist).
+- **Handoff:** Ready for user review.
+
 ### 2026-09-19 — Antigravity (ChatInput normal writing & removal of typewriter cycling placeholders)
 - **Scope:** Cleaned `ChatInput.tsx` to ensure the user writes normally without typewriter-simulating effects. Removed the rotating `PLACEHOLDERS` interval timer (`setInterval` cycling every 4000ms through prompt suggestions) and associated focus-tracking state. Set a clean, static placeholder (`Write a message...`, maintaining ask/plan mode overrides) and added standard `autoComplete="off"`, `autoCorrect="on"`, `spellCheck="true"` attributes to the composer textarea while strictly leaving all other workspace components and systems untouched.
 - **Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
