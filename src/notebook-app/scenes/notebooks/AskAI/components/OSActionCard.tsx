@@ -1,4 +1,13 @@
 import React from 'react'
+import { AppIcon, type AppIconName } from 'components/OSIcons/AppIcon'
+import OSButton from 'components/OSButton'
+import {
+    APPS_BLURB_CLASS,
+    APPS_FIELDSET_CHROME_CLASS,
+    APPS_ICON_CLASS,
+    APPS_ROW_CLASS,
+    APPS_TITLE_CLASS,
+} from 'components/Home/appsCardClasses'
 import type { OSActionCard as OSActionCardType } from '../types'
 
 interface OSActionCardProps {
@@ -7,9 +16,32 @@ interface OSActionCardProps {
     isStreaming?: boolean
 }
 
+function actionAppIcon(type: string): AppIconName {
+    switch (type) {
+        case 'create_forum_topic':
+        case 'publish_to_forum':
+            return 'forums'
+        case 'manage_windows':
+        case 'open_window':
+            return 'home'
+        case 'set_system_appearance':
+            return 'page'
+        case 'create_notebook':
+        case 'insert_notebook_block':
+        case 'rewrite_notebook_document':
+        case 'replace_notebook_selection':
+        case 'update_notebook_title':
+        case 'annotate_notebook':
+        case 'add_notebook_footnote':
+            return 'notebook'
+        default:
+            return 'wimAi'
+    }
+}
+
 /**
- * Clean, minimal action card for notebook additions.
- * Uses unified font, clean hierarchy, and only essential controls.
+ * WIM AI executable action card — visual tokens match Home → Apps rows
+ * (`APPS_*` from `components/Home/appsCardClasses`).
  */
 export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardProps): JSX.Element {
     const content = action.payload?.content?.trim()
@@ -20,49 +52,44 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
     else if (action.type === 'rewrite_notebook_document') buttonLabel = 'Rewrite notebook'
     else if (action.type === 'replace_notebook_selection') buttonLabel = 'Replace selection'
 
+    const title = action.title || buttonLabel
+    const blurb = action.description?.trim()
 
     return (
-        <div className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary font-sans">
-            <div className="flex items-center justify-between gap-2">
-                <p className="m-0 font-medium text-[13px] text-primary truncate">
-                    {action.title || buttonLabel}
-                </p>
+        <div className={`mt-2 ${APPS_FIELDSET_CHROME_CLASS}`}>
+            <div className={APPS_ROW_CLASS}>
+                <AppIcon name={actionAppIcon(action.type)} className={APPS_ICON_CLASS} />
+                <span className="min-w-0 flex-1">
+                    <span className={`${APPS_TITLE_CLASS} truncate`}>{title}</span>
+                    {blurb && blurb !== title ? <span className={APPS_BLURB_CLASS}>{blurb}</span> : null}
+                </span>
 
                 <div className="shrink-0">
                     {action.executed ? (
-                        <span className="text-[11.5px] text-muted font-medium">
-                            Added ✓
-                        </span>
+                        <span className="text-xs text-muted font-medium">Added ✓</span>
                     ) : isStreaming ? (
-                        <span className="text-[11.5px] text-muted animate-pulse">
-                            Preparing…
-                        </span>
+                        <span className="text-xs text-muted animate-pulse">Preparing…</span>
                     ) : (
-                        <button
+                        <OSButton
                             type="button"
+                            size="sm"
+                            variant="primary"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 onExecute()
                             }}
-                            className="rounded px-2.5 py-1 text-[12px] font-medium text-white bg-[#1E3A8A] hover:bg-[#1e40af] transition-colors cursor-pointer"
                         >
                             {buttonLabel}
-                        </button>
+                        </OSButton>
                     )}
                 </div>
             </div>
 
-            {action.description && (
-                <p className="mt-1 mb-0 text-[12px] text-secondary leading-relaxed">
-                    {action.description}
-                </p>
-            )}
-
-            {content && (
-                <div className="mt-2 rounded border border-primary/20 bg-primary/60 p-2 text-[12px] leading-relaxed text-secondary whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+            {content ? (
+                <div className="mt-1 border-t border-primary pt-2 text-xs leading-relaxed text-secondary whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                     {content}
                 </div>
-            )}
+            ) : null}
         </div>
     )
 }
