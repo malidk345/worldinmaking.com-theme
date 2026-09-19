@@ -77,6 +77,8 @@ interface ChatInputProps {
   onChangeStylePreset?: (preset: StylePresetId) => void;
   onScrollToBottom?: () => void;
   showScrollToBottom?: boolean;
+  /** Parent uses this to suppress message-list auto-scroll while typing. */
+  onComposerActiveChange?: (active: boolean) => void;
   models?: any[];
   selectedModelId?: string;
   onSelectModel?: (id: string) => void;
@@ -101,6 +103,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   isStreaming,
   onScrollToBottom,
   showScrollToBottom = true,
+  onComposerActiveChange,
   models = [],
   selectedModelId = 'nietzsche',
   onSelectModel,
@@ -185,20 +188,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [lockShakeNonce])
 
 
-  // Auto-resize textarea without collapsing the first line
+  // Auto-resize textarea. Measure with height:auto off-paint via scrollHeight only
+  // when the value changes — avoid forcing 24px first (that flashes the dock and
+  // can scroll outer window containers).
   useEffect(() => {
     const el = textareaRef.current
     if (el) {
-      el.style.height = '24px'
       const isMobileKeyboard =
         typeof window !== 'undefined' &&
         window.innerWidth < 768 &&
         document.documentElement.getAttribute('data-keyboard') === 'open'
       const maxHeight = isMobileKeyboard ? 100 : 160
-      el.style.height = `${Math.min(Math.max(el.scrollHeight, 24), maxHeight)}px`
+      const previous = el.style.height
+      el.style.height = 'auto'
+      const next = `${Math.min(Math.max(el.scrollHeight, 24), maxHeight)}px`
+      // Restore previous immediately if unchanged to limit layout thrash.
+      el.style.height = next === previous ? previous : next
     }
     setSlashIndex(0)
   }, [prompt]);
+
+  useEffect(() => {
+    return () => {
+      onComposerActiveChange?.(false)
+    }
+  }, [onComposerActiveChange])
 
   const awaitingAsk = Boolean(
     pendingHumanTurn && pendingHumanTurn.kind === 'ask_user' && pendingHumanTurn.status === 'pending' && !humanDismissed
@@ -703,9 +717,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           aria-label="Message composer"
           ref={textareaRef}
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            onComposerActiveChange?.(true)
+            setPrompt(e.target.value)
+          }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          onFocus={() => onComposerActiveChange?.(true)}
+          onBlur={() => onComposerActiveChange?.(false)}
           placeholder={
             awaitingAsk
               ? 'Type your answer...'
