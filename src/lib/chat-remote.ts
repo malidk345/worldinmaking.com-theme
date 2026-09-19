@@ -251,10 +251,31 @@ export async function pullChatsFromRemote(): Promise<{ chats: Chat[]; deletedIds
         if (res.status === 503) return null
         if (!res.ok) return null
         const body = await parseJson<{ chats?: Chat[]; deleted_ids?: string[] }>(res)
+        // List is metadata-only (messages may be empty stubs).
         return {
             chats: Array.isArray(body?.chats) ? body.chats : [],
             deletedIds: Array.isArray(body?.deleted_ids) ? body.deleted_ids : [],
         }
+    } catch {
+        return null
+    }
+}
+
+/** Load one chat with full messages (active/open chat path). */
+export async function pullChatByIdFromRemote(chatId: string): Promise<Chat | null> {
+    if (typeof window === 'undefined' || !chatId) return null
+    try {
+        const res = await fetch(
+            `/api/chats/${encodeURIComponent(chatId)}?owner_key=${encodeURIComponent(getChatOwnerKey())}`,
+            {
+                method: 'GET',
+                headers: await chatAuthHeadersFresh(),
+            }
+        )
+        if (res.status === 503 || res.status === 404) return null
+        if (!res.ok) return null
+        const body = await parseJson<{ chat?: Chat }>(res)
+        return body?.chat || null
     } catch {
         return null
     }

@@ -44,6 +44,8 @@ import {
     rememberRemoteNotebook,
     backfillNotebookActors,
     retryNotebookRemoteSync,
+    startLiveNotebookSync,
+    stopLiveNotebookSync,
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
     WIM_NOTEBOOK_SYNC_EVENT,
@@ -173,6 +175,14 @@ export function App() {
     ensureNotebookProductStyles()
     return () => {
       releaseNotebookProductStyles()
+    }
+  }, [])
+
+  // Live sync while any notebook App window is mounted (egress).
+  useEffect(() => {
+    startLiveNotebookSync()
+    return () => {
+      stopLiveNotebookSync()
     }
   }, [])
 
@@ -610,8 +620,8 @@ export function App() {
       if (latest) applyIfNewer(latest)
     }
 
-    // Content-specific poll: fetch the full body of the open notebook every 30s.
-    // List polling only brings contentOmitted=true stubs so this is the only reliable
+    // Content-specific poll: full body of the open notebook (≥120s; focus still refreshes).
+    // List polling only brings contentOmitted=true stubs so this remains the reliable
     // way to pick up edits made on another device/tab when both have local content.
     let contentPollTimer: ReturnType<typeof window.setTimeout> | undefined
     const pollOpenNotebookContent = () => {
@@ -627,11 +637,11 @@ export function App() {
       contentPollTimer = window.setTimeout(() => {
         pollOpenNotebookContent()
         scheduleContentPoll() // reschedule
-      }, 30_000)
+      }, 120_000)
     }
     scheduleContentPoll()
 
-    // Also re-fetch on tab focus / page becoming visible (user switches back from other device context)
+    // Cheap focus refresh (user switches back from other device context)
     const onVisible = () => {
       if (document.visibilityState === 'visible') pollOpenNotebookContent()
     }

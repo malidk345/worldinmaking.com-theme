@@ -169,8 +169,21 @@ function applyOwnerScope<T extends { or: Function; eq: Function }>(query: T, own
 }
 
 export async function listChatsByOwner(ownerKey: string, userId?: string): Promise<ChatListItem[]> {
-    const chats = await listChatsWithMessages(ownerKey, userId)
-    return chats.map((chat) => ({ ...chat, messageCount: chat.messages.length }))
+    // Metadata only — no wim_chat_messages dump (egress). Load messages via getChatForOwner.
+    let query = supabaseAdmin
+        .from('wim_chats')
+        .select('*')
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
+        .limit(MAX_CHATS)
+    query = applyOwnerScope(query, ownerKey, userId)
+    const { data, error } = await query
+    if (error) throw error
+    const rows = (data as ChatRow[] | null) || []
+    return rows.map((row) => {
+        const { messages: _omit, ...meta } = rowToChat(row, [])
+        return { ...meta, messageCount: 0 }
+    })
 }
 
 export async function listDeletedChatIds(ownerKey: string, userId?: string): Promise<string[]> {
