@@ -20,12 +20,6 @@ import { uploadFile, getFileUrl } from '../../../lib/storage-worker';
 
 const TOOLBAR_ICON = 'size-4 shrink-0'
 const CHIP_ICON = 'size-3.5 shrink-0'
-const PLACEHOLDERS = [
-  'Write a message...',
-  'Ask a philosopher...',
-  'Research a claim...',
-  'Draft into your notebook...',
-]
 const ASK_SKIP_ANSWER = 'The user skipped this question. Continue with your best judgment.'
 
 export type SlashCommandItem = {
@@ -142,8 +136,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [justReady, setJustReady] = useState(false);
   const [modeShake, setModeShake] = useState(false);
   const [linkChips, setLinkChips] = useState<Array<{ id: string; url: string }>>([]);
-  const [composerFocused, setComposerFocused] = useState(false);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [askChoice, setAskChoice] = useState<string | 'free' | null>(null);
   const [humanDismissed, setHumanDismissed] = useState(false);
   const wasStreamingRef = useRef(false);
@@ -290,18 +282,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         }
         setIsRecording(false)
       }
-    } else {
-      setPlaceholderIndex(0)
     }
   }, [awaitingHuman])
-
-  useEffect(() => {
-    if (prompt.trim() || composerFocused || awaitingHuman) return
-    const timer = window.setInterval(() => {
-      setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length)
-    }, 4000)
-    return () => window.clearInterval(timer)
-  }, [prompt, composerFocused, awaitingHuman])
 
   // Fail closed until quota is known (null = cold-start / still loading).
   const quotaBlocksSend = quota?.allowed !== true;
@@ -724,16 +706,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          onFocus={() => setComposerFocused(true)}
-          onBlur={() => setComposerFocused(false)}
           placeholder={
             awaitingAsk
               ? 'Type your answer...'
               : awaitingPlan
                 ? 'Revision note (optional)'
-                : PLACEHOLDERS[placeholderIndex]
+                : 'Write a message...'
           }
           rows={1}
+          autoComplete="off"
+          autoCorrect="on"
+          spellCheck="true"
           className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-relaxed font-sans"
         />
 
