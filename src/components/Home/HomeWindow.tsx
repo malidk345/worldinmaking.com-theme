@@ -5,6 +5,12 @@ import OSButton from 'components/OSButton'
 import WimLogo from 'components/WimLogo'
 import { Fieldset } from 'components/OSFieldset'
 import { AppIcon } from 'components/OSIcons/AppIcon'
+import {
+    APPS_BLURB_CLASS,
+    APPS_ICON_CLASS,
+    APPS_ROW_CLASS,
+    APPS_TITLE_CLASS,
+} from 'components/Home/appsCardClasses'
 import { useUser } from 'hooks/useUser'
 import { useAppActions, useAppWindows, useAppSettings } from 'context/App'
 import { useWindow } from 'context/Window'
@@ -132,12 +138,12 @@ export default function HomeWindow() {
                                     <button
                                         type="button"
                                         onClick={app.onClick}
-                                        className="w-full flex items-center gap-3 py-2.5 px-0.5 text-left hover:bg-accent/40 rounded transition-colors"
+                                        className={APPS_ROW_CLASS}
                                     >
-                                        <AppIcon name={app.icon} className="!size-8 shrink-0" />
+                                        <AppIcon name={app.icon} className={APPS_ICON_CLASS} />
                                         <span className="min-w-0">
-                                            <span className="block text-sm font-semibold">{app.name}</span>
-                                            <span className="block text-xs text-secondary">{app.blurb}</span>
+                                            <span className={APPS_TITLE_CLASS}>{app.name}</span>
+                                            <span className={APPS_BLURB_CLASS}>{app.blurb}</span>
                                         </span>
                                     </button>
                                 </li>
