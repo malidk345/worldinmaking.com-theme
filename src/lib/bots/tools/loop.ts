@@ -596,9 +596,7 @@ export async function runToolLoop(params: {
         : parseAgentMode(params.agentMode)
     const modePrompt = modeSystemPrompt(agentMode)
     const protocol = agentMode === 'plan' ? PLAN_TOOL_PROTOCOL : TOOL_PROTOCOL
-    const head = [modePrompt, protocol].filter(Boolean).join('\n\n')
-    const restBudget = Math.max(1500, 12_000 - head.length)
-    const systemPrompt = `${head}\n\n${params.systemPrompt.slice(0, restBudget)}`
+    const systemPrompt = [params.systemPrompt, modePrompt, protocol].filter(Boolean).join('\n\n')
     const onMode = (mode: AgentMode) => {
         agentMode = mode
         params.onMode?.(mode)

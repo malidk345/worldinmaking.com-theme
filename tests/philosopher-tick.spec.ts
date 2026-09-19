@@ -173,8 +173,8 @@ test.describe('philosopher hourly tick helpers', () => {
         for (const header of [chat, forum, paper]) {
             expect(header).toMatch(/You are \*\*Marx\*\*/)
             expect(header).toMatch(/I am Marx|answer I am Marx/)
-            expect(header).toMatch(/OPERATÖR 1/)
-            expect(header).toMatch(/KAYDIRMA YASAĞI/)
+            expect(header).toMatch(/OPERATOR 1|OPERATÖR 1/)
+            expect(header).toMatch(/FRAME LOCK|FORBIDDEN SLIPPAGE|KAYDIRMA YASAĞI/)
             expect(header).not.toMatch(/\[PRODUCTION\]/)
             expect(header).not.toMatch(/\[COMMODITY\]/)
             expect(header).not.toMatch(/\[CLASS\]/)
@@ -184,7 +184,7 @@ test.describe('philosopher hourly tick helpers', () => {
         expect(forum).toMatch(/This turn is public/)
         expect(forum).toMatch(/language of the thread/)
         expect(chat).toMatch(/do not print operator names|Short answer after operators/i)
-        expect(persona.thinkingMethod || '').toMatch(/BAŞARI KRİTERİ/)
+        expect(persona.thinkingMethod || '').toMatch(/SUCCESS CRITERIA|BAŞARI KRİTERİ/)
     })
 
     test('formatRssBriefing and thread transcript give the model usable context', () => {

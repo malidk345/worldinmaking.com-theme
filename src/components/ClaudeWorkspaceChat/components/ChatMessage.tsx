@@ -141,6 +141,39 @@ function ensureClosedCodeFences(markdown: string): string {
   return markdown;
 }
 
+async function copyToClipboardSafe(text: string): Promise<boolean> {
+  const value = String(text ?? '')
+  if (!value) return false
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      await navigator.clipboard.writeText(value)
+      return true
+    }
+  } catch {
+    /* fallback to execCommand below */
+  }
+
+  try {
+    if (typeof document !== 'undefined') {
+      const textArea = document.createElement('textarea')
+      textArea.value = value
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      textArea.style.left = '-9999px'
+      textArea.style.top = '-9999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      const successful = document.execCommand('copy')
+      document.body.removeChild(textArea)
+      return successful
+    }
+  } catch {
+    /* ignore fallback error */
+  }
+  return false
+}
+
 function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [applyStatus, setApplyStatus] = useState<DiffApplyUiStatus>('idle');
@@ -158,10 +191,13 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
     return code;
   }, [addedLines, code]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(cleanContentToApply || code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const textToCopy = cleanContentToApply || code;
+    const ok = await copyToClipboardSafe(textToCopy);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const removedBlockText = React.useMemo(() => {
@@ -331,10 +367,12 @@ function ChatMessageCodeBlock({ language, code, isLive }: { language: string; co
   }
 
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const ok = await copyToClipboardSafe(code);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
   return (
     <div className="my-1.5 rounded border border-primary/20 bg-primary overflow-hidden text-primary text-xs font-sans shadow-2xs">
@@ -551,10 +589,13 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const textToProcess = normalizeAudioMarkdown(displayedText);
   const markdownText = isLiveAnswer ? ensureClosedCodeFences(textToProcess) : textToProcess;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const textToCopy = String(displayedText || message.content || '');
+    const ok = await copyToClipboardSafe(textToCopy);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (

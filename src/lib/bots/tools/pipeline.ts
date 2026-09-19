@@ -43,14 +43,14 @@ const TASK_READ_TOOLS = new Set([
 ])
 
 /** Cap for the host THINK round. gpt-oss native CoT still counts against this. */
-export const THINK_MAX_TOKENS = 512
+export const THINK_MAX_TOKENS = 256
 
-/** Host THINK is a routing note, not the public answer. Native CoT already happens on ACT. */
+/** Host THINK is the comprehensive planning round where the entire approach is decided. */
 export const THINK_PLAN_INSTRUCTION =
-    'PLANNING STEP: In a few short sentences, say whether you need tools, which ones, and in what order. Do not write the public answer. Do not call tools in this thought.'
+    'PLANNING STEP: In a few short sentences, plan your entire approach: identify the core thesis, the analytical argument, the structure of your answer, and whether any tools are needed. Keep this private to your reasoning. Do not call tools in this thought.'
 
 export const THINK_REFLECT_INSTRUCTION =
-    'REFLECTION STEP: In a few short sentences, note what the tool results change about the next action. Do not repeat the results. Do not write the public answer. Do not call tools in this thought.'
+    'REFLECTION STEP: In a few short sentences, evaluate if the tool results fully satisfy what the user requested. If more information or another tool is needed, identify it; otherwise, outline how to synthesize the comprehensive final answer. Keep this private to your reasoning. Do not repeat the results. Do not call tools in this thought.'
 
 /** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
 export function shouldRunThinkPhase(input: {
@@ -72,7 +72,8 @@ export function shouldRunThinkPhase(input: {
     const words = text.split(/\s+/).filter(Boolean)
     if (words.length > 18) return true
     if (/\b(why|how|explain|analiz|araştır|research|compare|karşılaştır|planla|pdf|notebook)\b/i.test(text)) return true
-    if (/(nedir|nasıl|neden|\?)/i.test(text) && words.length > 4) return true
+    if (/(nedir|nasıl|neden)/i.test(text) && words.length > 8) return true
+    if (/\?/i.test(text) && words.length > 10) return true
     return false
 }
 
@@ -332,7 +333,13 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const emitPublic = (text: string) => {
         const cleaned = stripLeakedToolMarkup(text)
         if (!cleaned) return
-        if (params.holdPublicUntilCitations && state.citations.length === 0) return
+        if (
+            params.holdPublicUntilCitations &&
+            state.citations.length === 0 &&
+            !state.usedTools &&
+            state.currentToolCalls.length === 0
+        )
+            return
         params.onToken?.(cleaned)
     }
 
@@ -354,6 +361,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         },
         onThinking: (delta) => {
             if (!delta) return
+            if (state.cycleThought) return
             streamedThought += delta.length
             state.thinkingText += delta
             emitThoughtDelta(params, thoughtId, delta)
@@ -447,8 +455,8 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         emitNode(params, 'root', 'completed', cycle)
         state.writeNudges += 1
         state.pendingReminder = state.publicText.trim()
-            ? 'Continue writing seamlessly from where you left off. Integrate the returned tool findings to complete the comprehensive piece. No more tools.'
-            : 'Write the full user-requested answer in the public bubble now. No tools. If they asked for a long article, essay, or word count, write that length. Do not outline. Do not summarize.'
+            ? 'Continue writing seamlessly from where you left off. Integrate the returned tool findings to complete the comprehensive piece.'
+            : 'Evaluate if the returned findings fully satisfy what the user requested. If additional investigation or tools are needed, continue autonomously; you may share concise progress context with the user if helpful. When satisfied, deliver the comprehensive, high-quality response in the public bubble. If they asked for a specific length or format, deliver that. Do not outline. Do not summarize.'
         state.phase = 'decision'
         return
     }
@@ -892,7 +900,7 @@ function runSynthesisNode(state: AgentState, params: AgentPipelineParams): void 
             // Artifact is the primary output
             state.publicText = ''
         } else if (state.usedTools) {
-            state.publicText = 'İstenen işlemler ve araç analizleri başarıyla tamamlandı.'
+            state.publicText = 'Requested operations and tool actions completed successfully.'
         }
     }
 

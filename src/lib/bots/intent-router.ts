@@ -27,9 +27,9 @@ const INTENT_SYSTEM_PROMPT = `You are a fast intent classifier for a philosophic
 Your ONLY job is to analyze the user's request and output a STRICT JSON object representing what the user wants the assistant to do.
 
 Analyze if the user explicitly asks to, or would clearly benefit from:
-1. Search the web for current/real-world/factual information (internette arama yap, araştır, güncel veri, kim, ne zaman, haberler, vs.)
-2. Create a To-Do list (to-do, yapılacaklar listesi, vs.)
-3. Create a Plan (plan yap, yol haritası, vs.)
+1. Search the web for current, real-world, or factual information (e.g. current events, news, specific facts, "search the web", "look up", etc. in any language)
+2. Create a To-Do list or task checklist
+3. Create a structured Plan or roadmap
 
 Output ONLY valid JSON with this exact structure, nothing else:
 {
