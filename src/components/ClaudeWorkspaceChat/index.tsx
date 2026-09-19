@@ -258,6 +258,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
   const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || '');
+  /** Only pin-to-bottom on intentional chat switches (sidebar/new/search/delete), not rehydrate flicker. */
+  const pinBottomOnNextChatRef = useRef(true);
+  /** Keep last known open chat so metadata sync / hydrate gaps do not flash empty and reset scrollTop to 0. */
+  const stickyActiveChatRef = useRef<Chat | undefined>(undefined);
   const [selectedModelId, setSelectedModelId] = useState<ModelId>(settings.defaultModel);
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
   const [selectedStylePreset, setSelectedStylePreset] = useState<StylePresetId>('default');
@@ -275,7 +279,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       setChats((prev) => {
         const existing = prev.find((chat) => chat.notebookId === bind.notebookId)
         if (existing) {
-          setActiveChatId(existing.id)
+          setActiveChatId((current) => {
+            if (existing.id === current) return current
+            pinBottomOnNextChatRef.current = true
+            return existing.id
+          })
           return prev
         }
         const boundChat: Chat = {
@@ -290,6 +298,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           webSearchEnabled: false,
           messages: [],
         }
+        pinBottomOnNextChatRef.current = true
         setActiveChatId(boundChat.id)
         return [boundChat, ...prev]
       })
@@ -577,10 +586,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           const merged = mergeChats(prev, remote.chats, deletedIds)
           if (merged.length > 0 && !merged.some((chat) => chat.id === nextActive)) {
             nextActive = merged[0].id
+            pinBottomOnNextChatRef.current = true
             setActiveChatId(merged[0].id)
           }
           if (merged.length === 0) {
             nextActive = ''
+            pinBottomOnNextChatRef.current = true
             setActiveChatId('')
           }
           return merged
@@ -620,6 +631,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
+      // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
       setChats(Array.isArray(stored) ? stored : [])
       void syncFromRemote(true)
     }
@@ -684,7 +696,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [abortActiveStream])
 
-  const activeChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
+  const resolvedActiveChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
+  if (resolvedActiveChat) {
+    stickyActiveChatRef.current = resolvedActiveChat
+  } else if (!activeChatId) {
+    stickyActiveChatRef.current = undefined
+  }
+  // While remote list/hydrate briefly omits the open chat, keep prior messages mounted so scrollTop stays put.
+  const activeChat =
+    resolvedActiveChat ||
+    (activeChatId && stickyActiveChatRef.current?.id === activeChatId ? stickyActiveChatRef.current : undefined)
   isStreamingRef.current =
     isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming)
 
@@ -731,10 +752,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (Math.abs(scroller.scrollTop - next) > 1) scroller.scrollTop = next;
   }, []);
 
-  const scrollToBottomInstant = useCallback(() => {
-    pinChatToBottom();
-  }, [pinChatToBottom]);
-
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
@@ -778,7 +795,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   useEffect(() => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
-    if (autoScrollRef.current) scrollToBottomInstant();
+    // Do not pin here — rebinding when messages appear/disappear would yank scroll mid-thread.
 
     let touchTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -848,8 +865,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     };
   }, [activeChatId, handleScroll, pinChatToBottom, Boolean(activeChat?.messages.length)]);
 
-  // Scroll chat to bottom when switching chats
+  // Scroll chat to bottom only on intentional chat switches (not identity/sync rehydrate of same thread).
   useEffect(() => {
+    if (!pinBottomOnNextChatRef.current) return;
+    pinBottomOnNextChatRef.current = false;
     scrollChatToBottom('auto');
   }, [activeChatId]);
 
@@ -875,6 +894,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     };
 
     setChats((prev) => [newChat, ...prev]);
+    pinBottomOnNextChatRef.current = true;
     setActiveChatId(newChat.id);
     setActiveArtifact(null);
     closeArtifacts();
@@ -884,6 +904,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   // Handle HTML/JSON Chat Import
   const handleImportChat = (importedChat: Chat) => {
     setChats((prev) => [importedChat, ...prev]);
+    pinBottomOnNextChatRef.current = true;
     setActiveChatId(importedChat.id);
   };
 
@@ -944,6 +965,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         messages: [],
       };
       setChats((prev) => [newChat, ...prev]);
+      pinBottomOnNextChatRef.current = true;
       setActiveChatId(newChat.id);
       targetChatId = newChat.id;
     }
@@ -2307,7 +2329,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setChats((prev) => {
       const next = prev.filter((c) => c.id !== id)
       writeLocalChats(next)
-      if (activeChatId === id) setActiveChatId(next[0]?.id || '')
+      if (activeChatId === id) {
+        pinBottomOnNextChatRef.current = true
+        setActiveChatId(next[0]?.id || '')
+      }
       return next
     })
     void deleteChatOnRemote(id)
@@ -2463,6 +2488,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     setChats(INITIAL_CHATS);
     setProjects(INITIAL_PROJECTS);
+    pinBottomOnNextChatRef.current = true;
     setActiveChatId(INITIAL_CHATS[0]?.id || '');
     setActiveArtifact(null);
     closeArtifacts();
@@ -2530,6 +2556,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             setIsStreaming(false)
             setStreamStatus(null)
           }
+          if (id !== activeChatId) pinBottomOnNextChatRef.current = true
           setActiveChatId(id)
           setComposerDraftNonce((n) => n + 1)
         }}
@@ -2568,7 +2595,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [overflow-anchor:none] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
@@ -2743,7 +2770,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
         chats={chats}
-        onSelectChat={(id) => setActiveChatId(id)}
+        onSelectChat={(id) => {
+          if (id !== activeChatId) pinBottomOnNextChatRef.current = true
+          setActiveChatId(id)
+        }}
       />
 
       <ProjectModal

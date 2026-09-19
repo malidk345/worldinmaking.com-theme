@@ -1,6 +1,7 @@
 import React from 'react'
 import type { AppWindow } from '../../context/Window'
 import { isArtifactWindowPath, isAssistantWindowPath, isNotebookWindowPath, isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
+import { isAskAiPath } from '../../lib/open-ask-ai-window'
 import { isProfilePath } from '../../lib/profile-path'
 import WindowErrorBoundary from './WindowErrorBoundary'
 
@@ -30,6 +31,7 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
         isScratchpadWindowPath(path) ||
         isTrashWindowPath(path) ||
         isAssistantWindowPath(path) ||
+        isAskAiPath(path) ||
         isProfilePath(path) ||
         path === '/display-options'
 

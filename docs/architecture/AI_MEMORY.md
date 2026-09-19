@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-19 — Cursor (WIM AI sudden jump to chat top mid-thread)
+- **Scope:** Remaining jump-to-top causes on current main after stream-pin work; does not reopen PR #741 (typing/composer).
+  1. Lock `/workspace-chat` via `isAskAiPath` in `WindowContent` so the OS pane is `overflow-hidden` (outer pane was scrolling to top).
+  2. Restore `[overflow-anchor:none]` on the message scroller so thinking/tool layout shifts above the viewport do not yank `scrollTop` toward 0.
+  3. Gate `scrollChatToBottom` on intentional chat switches only (`pinBottomOnNextChatRef`); sidebar/new/search/delete/notebook-bind/sync-fallback set the flag — identity rehydrate of the same thread does not.
+  4. Sticky `activeChat` while remote list/hydrate briefly omits the open chat, so the empty-state swap cannot collapse content and reset `scrollTop` to 0.
+  5. Stop listener `useEffect` from calling `scrollToBottomInstant` when rebinding on messages appear/disappear.
+- **Files:** `WindowContent.tsx`, `ClaudeWorkspaceChat/index.tsx`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`
+- **Handoff:** PR `[WIM] Fix WIM AI sudden jump to chat top`. Leave #741 typing/composer autosize to Sona.
+
+
 ### 2026-09-19 — Antigravity (Major LLM stream scroll stabilization: eliminated forced auto-scroll during generation)
 - **Scope:** Solved the jarring issue where the chat window continuously auto-scrolled down on every token during streaming generation, dragging the text away and pushing the prompt/top of the response off-screen:
   1. In `src/components/ClaudeWorkspaceChat/index.tsx`, eliminated the aggressive `useLayoutEffect` on `lastStreamTick` that force-pinned `scroller.scrollTop = scrollHeight - clientHeight` on every single character length change.
