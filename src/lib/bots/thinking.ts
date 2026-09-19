@@ -128,7 +128,14 @@ export function buildThinkingInstruction(
     _taskType: TaskType,
     _depth?: ThinkingDepth,
     philosopher?: string,
+    hasMethodCard?: boolean,
 ): string {
+    // Philosophers with a custom thinkingMethod / operator card already carry the full
+    // private method — do not re-inject repertoire schema tags (e.g. PRODUCTION/CLASS).
+    if (hasMethodCard) {
+        return 'Reason privately using your method card; do not emit XML tags; then write the visible reply.'
+    }
+
     const rep = repertoireFor(philosopher)
     if (rep) {
         const movesList = rep.moves.map((m) => `[${m.tag}]`).join(', ')

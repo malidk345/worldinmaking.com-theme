@@ -165,7 +165,7 @@ export function withHostContext<T extends { role: string; content: string | null
     const thought = input.thought?.trim()
     if (thought) {
         blocks.push(
-            `<private_thought>\n${thought.slice(0, 2_500)}\n</private_thought>\nUse this private thought when choosing tools. Do not repeat it in the user-visible answer.`
+            `<private_thought>\n${thought.slice(0, 2_500)}\n</private_thought>\nYour response plan is established above. Keep internal deliberation in your reasoning channel. In the public channel, you may autonomously share brief interim context with the user if helpful during research or multi-step work, or proceed directly to your tools and comprehensive final reply.`
         )
     }
     const memories = (input.memories || []).filter((item) => item.fact?.trim()).slice(0, 12)

@@ -156,9 +156,9 @@ export function openaiMessagesToGeminiContents(messages: OpenAiChatMessage[]): G
     return contents
 }
 
-/** Native Gemini thinking on host THINK would consume the whole 512-token cap. */
+/** Native Gemini thinking on host THINK would consume the whole token cap. */
 export function geminiToolGenerationConfig(params: { omitTools?: boolean; maxTokens?: number }) {
-    const maxOutputTokens = params.maxTokens || (params.omitTools ? 512 : 8192)
+    const maxOutputTokens = params.maxTokens || (params.omitTools ? 256 : 8192)
     if (params.omitTools) {
         return {
             temperature: 0.6,

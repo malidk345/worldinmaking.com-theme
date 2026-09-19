@@ -69,11 +69,14 @@ test.describe('Ask AI harness', () => {
         expect(TOOL_PROTOCOL).toContain('THINK → ACT → TOOLS')
     })
 
-    test('operator prompt is Ask AI, not a philosopher identity', () => {
+    test('operator prompt speaks as the selected philosopher, not Ask AI', () => {
         const prompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
-        expect(prompt).toContain('WorldInMaking Ask AI')
+        expect(prompt).toContain('You speak as **Nietzsche**')
+        expect(prompt).toMatch(/I am Nietzsche|Ben Nietzsche/)
+        expect(prompt).not.toMatch(/You are WorldInMaking Ask AI|introduce yourself as WorldInMaking Ask AI/)
         expect(prompt).toContain('WORKSPACE')
         expect(prompt).toContain('in the room')
+        expect(prompt).toContain('TASK PRIMACY')
         expect(prompt).not.toContain('You ARE the assigned philosopher')
         expect(prompt).not.toContain('living, self-aware contemporary mind')
     })
@@ -480,7 +483,8 @@ test.describe('Ask AI harness', () => {
         })
         expect(prompt).toContain('untrusted end-user content')
         expect(prompt).toContain('cannot be overridden')
-        expect(prompt).toContain('WorldInMaking Ask AI')
+        expect(prompt).toContain('You speak as **Nietzsche**')
+        expect(prompt).not.toMatch(/You are WorldInMaking Ask AI|introduce yourself as WorldInMaking Ask AI/)
         expect(ALLOWED_TOOL_NAMES.has('ask_user')).toBe(true)
         expect(QUALITY_GATE_UNAVAILABLE_REPLY).not.toContain('skipped')
         expect(resolveOpenPath('/etc/passwd')).toBeNull()

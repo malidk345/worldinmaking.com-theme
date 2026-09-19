@@ -126,7 +126,7 @@ test.describe('thinking stream routing', () => {
         expect(publicText.join('').trim()).toBe('Four')
     })
 
-    test('native provider reasoning is off; each mind gets a short prompted cue', () => {
+    test('native provider reasoning is off; method-card minds get a short cue without repertoire tags', () => {
         expect(usesNativeQwenReasoning(undefined)).toBe(false)
         expect(usesNativeQwenReasoning('brief')).toBe(false)
         expect(usesNativeQwenReasoning('standard')).toBe(false)
@@ -134,14 +134,17 @@ test.describe('thinking stream routing', () => {
         expect(shouldPromptThinkingTags('brief')).toBe(true)
         expect(shouldPromptThinkingTags('standard')).toBe(true)
         expect(shouldPromptThinkingTags('deep')).toBe(true)
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).not.toContain('<think>')
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('Do not emit XML thinking tags')
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('[PRODUCTION]')
-        expect(buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx')).toContain('[COMMODITY]')
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('[POWER]')
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche')).toContain('[GENEALOGY]')
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Hegel')).toContain('[AUFHEBUNG]')
-        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Marx')).toMatch(/user's language/)
+        const marxCue = buildThinkingInstruction('autonomous_assistant', 'standard', 'Marx', true)
+        expect(marxCue).not.toContain('<think>')
+        expect(marxCue).toContain('method card')
+        expect(marxCue).toMatch(/do not emit XML tags/i)
+        expect(marxCue).not.toContain('[PRODUCTION]')
+        expect(marxCue).not.toContain('[COMMODITY]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche', true)).toContain('method card')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche', true)).not.toContain('[POWER]')
+        // Without a method card, repertoire tags still inject for schema-only minds
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Hegel', false)).toContain('[AUFHEBUNG]')
+        expect(buildThinkingInstruction('autonomous_assistant', 'brief', 'Nietzsche', false)).toContain('[GENEALOGY]')
     })
 
     test('stage text drops model names and keeps the clause', () => {

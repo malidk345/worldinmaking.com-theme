@@ -171,14 +171,20 @@ test.describe('philosopher hourly tick helpers', () => {
         const forum = buildPersonaHeader(persona, 'calm', 'community_reply')
         const paper = buildPersonaHeader(persona, 'calm', 'paper_section', 'full')
         for (const header of [chat, forum, paper]) {
-            expect(header).toMatch(/method, not a costume/)
-            expect(header).toMatch(/Stage first/)
-            expect(header).not.toMatch(/class analysis as the lens for every/)
+            expect(header).toMatch(/You are \*\*Marx\*\*/)
+            expect(header).toMatch(/I am Marx|answer I am Marx/)
+            expect(header).toMatch(/OPERATOR 1|OPERATÖR 1/)
+            expect(header).toMatch(/FRAME LOCK|FORBIDDEN SLIPPAGE|KAYDIRMA YASAĞI/)
+            expect(header).not.toMatch(/\[PRODUCTION\]/)
+            expect(header).not.toMatch(/\[COMMODITY\]/)
+            expect(header).not.toMatch(/\[CLASS\]/)
             expect(header).not.toMatch(/Do not dump these trademark phrases/)
-            expect(header).not.toMatch(/surplus value/)
+            expect(header).not.toMatch(/You embody this thinker's living philosophical mind/)
         }
         expect(forum).toMatch(/This turn is public/)
-        expect(chat).toMatch(/Answer first/)
+        expect(forum).toMatch(/language of the thread/)
+        expect(chat).toMatch(/do not print operator names|Short answer after operators/i)
+        expect(persona.thinkingMethod || '').toMatch(/SUCCESS CRITERIA|BAŞARI KRİTERİ/)
     })
 
     test('formatRssBriefing and thread transcript give the model usable context', () => {

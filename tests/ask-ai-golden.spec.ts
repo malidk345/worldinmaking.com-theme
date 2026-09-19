@@ -14,9 +14,11 @@ test.describe('Ask AI golden tours', () => {
         }
     })
 
-    test('identity tour is Ask AI, not the underlying model', () => {
+    test('identity tour is the selected voice, not Ask AI or the underlying model', () => {
         const prompt = getAskAiSystemPrompt({ voiceName: 'Nietzsche' })
-        expect(prompt).toContain('WorldInMaking Ask AI')
+        expect(prompt).toContain('You speak as **Nietzsche**')
+        expect(prompt).toMatch(/I am Nietzsche|Ben Nietzsche/)
+        expect(prompt).not.toMatch(/You are WorldInMaking Ask AI|introduce yourself as WorldInMaking Ask AI/)
         expect(prompt).not.toContain('You ARE the assigned philosopher')
         expect(runtimeLabel('groq')).toBe('Groq')
         expect(runtimeLabel('gemini-fetch:tools')).toBe('Gemini')

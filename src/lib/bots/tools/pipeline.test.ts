@@ -39,7 +39,7 @@ describe('Pipeline Abort Handling', () => {
 
 describe('Think token budget', () => {
     it('keeps host THINK as a short routing note, not an essay', () => {
-        expect(THINK_MAX_TOKENS).toBe(512)
+        expect(THINK_MAX_TOKENS).toBe(256)
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).toContain('few short sentences')
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).toContain('few short sentences')
@@ -48,7 +48,7 @@ describe('Think token budget', () => {
 
     it('does not spend Gemini native thinking on the host THINK round', () => {
         const think = geminiToolGenerationConfig({ omitTools: true, maxTokens: THINK_MAX_TOKENS })
-        expect(think.maxOutputTokens).toBe(512)
+        expect(think.maxOutputTokens).toBe(256)
         expect(think.thinkingConfig.thinkingBudget).toBe(0)
         expect(think.thinkingConfig.includeThoughts).toBe(false)
 

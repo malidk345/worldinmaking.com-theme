@@ -481,14 +481,14 @@ test.describe('Think skip and Groq-first', () => {
     })
 
     test('host THINK is a short routing note; Gemini native thought stays on ACT', () => {
-        expect(THINK_MAX_TOKENS).toBe(512)
+        expect(THINK_MAX_TOKENS).toBe(256)
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).toContain('few short sentences')
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).toContain('few short sentences')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
 
         const think = geminiToolGenerationConfig({ omitTools: true, maxTokens: THINK_MAX_TOKENS })
-        expect(think.maxOutputTokens).toBe(512)
+        expect(think.maxOutputTokens).toBe(256)
         expect(think.thinkingConfig.thinkingBudget).toBe(0)
 
         const act = geminiToolGenerationConfig({ omitTools: false })
