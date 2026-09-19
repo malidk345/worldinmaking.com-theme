@@ -89,6 +89,7 @@ import {
   startWorkspaceChatPolling,
   subscribeToWorkspaceChats,
   mergeChats,
+  pullChatByIdFromRemote,
   pullChatsFromRemote,
   pushChatToRemote,
   readLocalChats,
@@ -543,10 +544,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     knownChatIdsRef.current = new Set(chats.map((c) => c.id))
   }, [chats])
 
+  const activeChatIdRef = useRef(activeChatId)
+  activeChatIdRef.current = activeChatId
+
   useEffect(() => {
     let cancelled = false
     let isSyncing = false
     let syncPending = false
+
+    const hydrateChatById = async (chatId: string) => {
+      if (!chatId || cancelled) return
+      const full = await pullChatByIdFromRemote(chatId)
+      if (cancelled || !full) return
+      setChats((prev) => mergeChats(prev, [full], readLocalDeletedChatIds()))
+    }
 
     const syncFromRemote = async (claim = false) => {
       if (isSyncing) {
@@ -561,14 +572,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (cancelled || !remote) return
         const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
         for (const id of remote.deletedIds) rememberDeletedChatId(id)
+        let nextActive = activeChatIdRef.current
         setChats((prev) => {
           const merged = mergeChats(prev, remote.chats, deletedIds)
-          if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
+          if (merged.length > 0 && !merged.some((chat) => chat.id === nextActive)) {
+            nextActive = merged[0].id
             setActiveChatId(merged[0].id)
           }
-          if (merged.length === 0) setActiveChatId('')
+          if (merged.length === 0) {
+            nextActive = ''
+            setActiveChatId('')
+          }
           return merged
         })
+        // List is metadata-only — load messages for the open chat (egress).
+        if (nextActive) await hydrateChatById(nextActive)
       } finally {
         isSyncing = false
         if (syncPending && !cancelled) {
@@ -583,7 +601,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schedulePull = (payload?: any) => {
       if (payload?.table === 'wim_chat_messages' && payload.new?.chat_id) {
-         if (!knownChatIdsRef.current.has(payload.new.chat_id)) return
+         const chatId = String(payload.new.chat_id)
+         if (!knownChatIdsRef.current.has(chatId)) return
+         window.clearTimeout(pullTimer)
+         pullTimer = window.setTimeout(() => {
+           void hydrateChatById(chatId)
+         }, 350)
+         return
       }
       window.clearTimeout(pullTimer)
       pullTimer = window.setTimeout(() => {
@@ -668,6 +692,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   useEffect(() => {
     if (activeChat?.modelId) {
       setSelectedModelId(activeChat.modelId);
+    }
+  }, [activeChatId]);
+
+  // Load full messages for the open chat (list endpoint is metadata-only).
+  useEffect(() => {
+    if (!activeChatId) return
+    let cancelled = false
+    void pullChatByIdFromRemote(activeChatId).then((full) => {
+      if (cancelled || !full) return
+      setChats((prev) => mergeChats(prev, [full], readLocalDeletedChatIds()))
+    })
+    return () => {
+      cancelled = true
     }
   }, [activeChatId]);
 

@@ -221,8 +221,10 @@ function schedulePushAll(): void {
 /** Background pull + merge into localStorage (no React state — next read/remount sees data) */
 let hydrateStarted = false
 let liveSyncStarted = false
+let liveSyncRefCount = 0
 let stopLiveSync: (() => void) | null = null
 let livePullTimer: number | undefined
+let isNotebookRealtimeActive = false
 
 function mergeRemoteIntoLocal(
     remote: { notebooks: StoredNotebook[]; deletedIds: string[] },
@@ -261,11 +263,12 @@ function mergeRemoteIntoLocal(
     }
 }
 
-function refreshNotebooksFromRemote(claim = false): void {
+function refreshNotebooksFromRemote(claim = false, force = false): void {
     queueRemote(
         (async () => {
             if (claim) await claimDeviceAccountOnLogin()
-            const remote = await pullNotebooksFromRemote({ force: true })
+            // force:true only for hydrate/claim — poll ticks honor pull throttle (egress)
+            const remote = await pullNotebooksFromRemote({ force })
             if (!remote) return
             mergeRemoteIntoLocal(remote, { pushMissing: true })
             emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
@@ -302,28 +305,57 @@ function ensureLiveNotebookSync(): void {
         return
     }
     liveSyncStarted = true
-    const schedulePull = () => {
+    isNotebookRealtimeActive = false
+    // Realtime events may force; poll ticks must not (egress + throttle).
+    const schedulePull = (force = false) => {
         window.clearTimeout(livePullTimer)
-        livePullTimer = window.setTimeout(() => refreshNotebooksFromRemote(false), 350)
+        livePullTimer = window.setTimeout(() => refreshNotebooksFromRemote(false, force), 350)
     }
     let stopRealtime = () => {}
     try {
-        stopRealtime = subscribeToWorkspaceNotebooks(schedulePull) || (() => {})
+        stopRealtime = subscribeToWorkspaceNotebooks(
+            () => schedulePull(true),
+            (status) => {
+                isNotebookRealtimeActive = status === 'SUBSCRIBED'
+            }
+        ) || (() => {})
     } catch (err) {
         console.warn('[notebookStorage] realtime subscription failed, fallback to polling:', err)
     }
     let stopPolling = () => {}
     try {
-        stopPolling = startNotebookPolling(schedulePull, 20_000) || (() => {})
+        // Skip fallback timer while Realtime SUBSCRIBED (mirror chat). Interval ≥60s.
+        stopPolling = startNotebookPolling(() => {
+            if (!isNotebookRealtimeActive) schedulePull(false)
+        }, 60_000) || (() => {})
     } catch (err) {
         console.warn('[notebookStorage] polling initialization failed:', err)
     }
     stopLiveSync = () => {
         window.clearTimeout(livePullTimer)
+        isNotebookRealtimeActive = false
         try { stopRealtime() } catch { /* best effort */ }
         try { stopPolling() } catch { /* best effort */ }
     }
     ensureRemoteHydrate()
+}
+
+/** Start live notebook sync when Notebooks list/window mounts (egress: not from Desktop alone). */
+export function startLiveNotebookSync(): void {
+    if (typeof window === 'undefined') return
+    liveSyncRefCount += 1
+    ensureLiveNotebookSync()
+}
+
+/** Stop live notebook sync when the last Notebooks window unmounts. */
+export function stopLiveNotebookSync(): void {
+    if (typeof window === 'undefined') return
+    liveSyncRefCount = Math.max(0, liveSyncRefCount - 1)
+    if (liveSyncRefCount > 0) return
+    stopLiveSync?.()
+    stopLiveSync = null
+    liveSyncStarted = false
+    hydrateStarted = false
 }
 
 export const INTRODUCING_NOTEBOOK_ID = 'introducing-wim-notebook'
@@ -622,7 +654,7 @@ function readLocalNotebooks(): StoredNotebook[] {
 }
 
 export function getNotebooks(): StoredNotebook[] {
-    ensureLiveNotebookSync()
+    // Local read only — live sync starts from Notebooks window mount (egress).
     return readLocalNotebooks()
 }
 
@@ -678,9 +710,12 @@ export function rehydrateNotebooksForIdentity(): void {
     inMemoryNotebooksCache = null
     hydrateStarted = false
     resetNotebookPullThrottle()
+    const wasLive = liveSyncRefCount > 0
     stopLiveSync?.()
+    stopLiveSync = null
     liveSyncStarted = false
-    ensureLiveNotebookSync()
+    // Only restart live sync if a Notebooks window still holds a ref (egress).
+    if (wasLive) ensureLiveNotebookSync()
     emitWindowEvent(WIM_NOTEBOOKS_CHANGED_EVENT)
 }
 
@@ -693,7 +728,7 @@ if (typeof window !== 'undefined') {
     window.addEventListener(WIM_IDENTITY_EVENT, () => {
         rehydrateNotebooksForIdentity()
     })
-    ensureLiveNotebookSync()
+    // Do not start live sync on module import — Desktop/getNotebooks must stay local (egress).
 }
 
 export function getNotebook(id: string): StoredNotebook | undefined {

@@ -31,6 +31,8 @@ import {
     getNotebookWithContent,
     rememberRemoteNotebook,
     rememberRemoteNotebooks,
+    startLiveNotebookSync,
+    stopLiveNotebookSync,
     WIM_NOTEBOOKS_CHANGED_EVENT,
     WIM_NOTEBOOKS_HYDRATED_EVENT,
 } from './notebookStorage'
@@ -98,6 +100,14 @@ export function NotebooksListScene({
         ensureNotebookProductStyles()
         return () => {
             releaseNotebookProductStyles()
+        }
+    }, [])
+
+    // Start live sync only while Notebooks list is open (egress: not from Desktop alone).
+    useEffect(() => {
+        startLiveNotebookSync()
+        return () => {
+            stopLiveNotebookSync()
         }
     }, [])
 

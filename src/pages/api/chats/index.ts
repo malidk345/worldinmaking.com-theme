@@ -1,5 +1,5 @@
 /**
- * GET  /api/chats?owner_key=...   → list owner's workspace chats
+ * GET  /api/chats?owner_key=...   → list owner's workspace chats (metadata only)
  * POST /api/chats                 → upsert one chat + messages
  *
  * Authz: Bearer Supabase JWT (preferred) or device owner_key + X-WIM-Owner-Key.
@@ -9,7 +9,7 @@ export const runtime = 'edge'
 import { resolveNotebookOwner } from '../../../../lib/api-authz'
 import {
     isChatStoreUnavailable,
-    listChatsWithMessages,
+    listChatsByOwner,
     listDeletedChatIds,
     upsertChatWithMessages,
     type StoredChatDTO,
@@ -45,10 +45,15 @@ export default async function handler(req: Request) {
         if (req.method === 'GET') {
             const auth = await resolveNotebookOwner(req, url.searchParams.get('owner_key'))
             if (!auth.ok) return json({ error: auth.error }, auth.status)
-            const [chats, deletedIds] = await Promise.all([
-                listChatsWithMessages(auth.ownerKey, auth.userId),
+            // Lean list: chat metadata only (no full message dump). Messages via GET /api/chats/:id.
+            const [chatItems, deletedIds] = await Promise.all([
+                listChatsByOwner(auth.ownerKey, auth.userId),
                 listDeletedChatIds(auth.ownerKey, auth.userId),
             ])
+            const chats = chatItems.map(({ messageCount: _count, ...meta }) => ({
+                ...meta,
+                messages: [],
+            }))
             return json({ chats, deleted_ids: deletedIds, auth: { via: auth.via } })
         }
 

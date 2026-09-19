@@ -142,7 +142,8 @@ export async function pullNotebooksFromRemote(options?: {
 }): Promise<{ notebooks: StoredNotebook[]; deletedIds: string[] } | null> {
     if (typeof window === 'undefined') return null
     const now = Date.now()
-    if (!options?.force && now - lastPullAt < PULL_MIN_INTERVAL_MS && remoteAvailable === false) {
+    // Honor throttle for all non-force pulls (poll ticks must not bypass — egress).
+    if (!options?.force && now - lastPullAt < PULL_MIN_INTERVAL_MS) {
         return null
     }
     lastPullAt = now
@@ -406,7 +407,10 @@ export function planOpenNotebookRemoteApply(input: {
     }
 }
 
-export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void {
+export function subscribeToWorkspaceNotebooks(
+    onChange: () => void,
+    onStatusChange?: (status: string) => void
+): () => void {
     if (typeof window === 'undefined' || !isSupabaseConfigured) {
         return () => {}
     }
@@ -464,10 +468,17 @@ export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void 
                     }
                 }
                 try {
-                    channel.subscribe()
+                    channel.subscribe((status) => {
+                        if (onStatusChange) onStatusChange(status)
+                        if (status === 'CHANNEL_ERROR') {
+                            console.warn('[notebookRemote] realtime channel error, falling back to polling')
+                        }
+                    })
                 } catch {
                     /* ignore */
                 }
+            } else if (onStatusChange) {
+                onStatusChange('SUBSCRIBED')
             }
         } catch (err) {
             console.warn('[notebookRemote] channel setup failed:', err)
@@ -493,7 +504,7 @@ export function subscribeToWorkspaceNotebooks(onChange: () => void): () => void 
     }
 }
 
-export function startNotebookPolling(onTick: () => void, intervalMs = 20000): () => void {
+export function startNotebookPolling(onTick: () => void, intervalMs = 60000): () => void {
     if (typeof window === 'undefined') return () => {}
     const timer = window.setInterval(() => {
         if (document.visibilityState === 'visible') onTick()

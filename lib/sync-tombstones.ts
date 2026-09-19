@@ -28,6 +28,9 @@ function applyOwnerScope<T extends { or: Function; eq: Function }>(query: T, own
     return query.eq('owner_key', ownerKey)
 }
 
+const TOMBSTONE_LIST_TTL_MS = 45_000
+const tombstoneListCache = new Map<string, { ids: string[]; expiresAt: number }>()
+
 export async function recordSyncTombstone(
     kind: SyncTombstoneKind,
     itemId: string,
@@ -51,6 +54,7 @@ export async function recordSyncTombstone(
         if (isMissingRelation(error)) return false
         throw error
     }
+    tombstoneListCache.clear()
     return true
 }
 
@@ -73,6 +77,10 @@ export async function listSyncTombstoneIds(
     ownerKey: string,
     userId?: string
 ): Promise<string[]> {
+    const cacheKey = `${kind}:${ownerKey}:${userId || ''}`
+    const hit = tombstoneListCache.get(cacheKey)
+    if (hit && hit.expiresAt > Date.now()) return hit.ids
+
     let query = supabaseAdmin.from('wim_sync_tombstones').select('item_id').eq('kind', kind)
     query = applyOwnerScope(query, ownerKey, userId)
     const { data, error } = await query.limit(1000)
@@ -80,7 +88,9 @@ export async function listSyncTombstoneIds(
         if (isMissingRelation(error)) return []
         throw error
     }
-    return ((data as { item_id: string }[] | null) || []).map((row) => row.item_id)
+    const ids = ((data as { item_id: string }[] | null) || []).map((row) => row.item_id)
+    tombstoneListCache.set(cacheKey, { ids, expiresAt: Date.now() + TOMBSTONE_LIST_TTL_MS })
+    return ids
 }
 
 /** Owner restore from trash: drop the ledger row so upsert can recreate the notebook. */
@@ -98,5 +108,6 @@ export async function clearSyncTombstoneForOwner(
         if (isMissingRelation(error)) return false
         throw error
     }
+    if ((count ?? 0) > 0) tombstoneListCache.clear()
     return (count ?? 0) > 0
 }

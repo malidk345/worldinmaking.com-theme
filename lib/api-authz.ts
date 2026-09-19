@@ -16,6 +16,43 @@ const OWNER_KEY_MIN = 8
 const OWNER_KEY_MAX = 128
 const BOT_TOKEN_MIN = 24
 
+/** In-memory JWT user cache (30–120s). Fail closed; no external cache. */
+const JWT_CACHE_TTL_MS = 60_000
+const JWT_CACHE_MAX = 200
+type JwtCacheEntry = { user: Record<string, any> | null; expiresAt: number; withProfile: boolean }
+const jwtUserCache = new Map<string, JwtCacheEntry>()
+
+async function hashTokenKey(token: string): Promise<string> {
+    try {
+        if (typeof crypto !== 'undefined' && crypto.subtle) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
+            return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('')
+        }
+    } catch {
+        /* fall through */
+    }
+    // Fail closed on hash failure: unique per-call key → no cross-request reuse
+    return `nocache:${token.length}:${token.slice(0, 8)}:${token.slice(-8)}`
+}
+
+function readJwtCache(key: string, withProfile: boolean): Record<string, any> | null | undefined {
+    const hit = jwtUserCache.get(key)
+    if (!hit) return undefined
+    if (hit.expiresAt <= Date.now() || hit.withProfile !== withProfile) {
+        jwtUserCache.delete(key)
+        return undefined
+    }
+    return hit.user
+}
+
+function writeJwtCache(key: string, user: Record<string, any> | null, withProfile: boolean): void {
+    if (jwtUserCache.size >= JWT_CACHE_MAX) {
+        const oldest = jwtUserCache.keys().next().value
+        if (oldest) jwtUserCache.delete(oldest)
+    }
+    jwtUserCache.set(key, { user, expiresAt: Date.now() + JWT_CACHE_TTL_MS, withProfile })
+}
+
 export function isOwnerKey(v: unknown): v is string {
     return typeof v === 'string' && v.length >= OWNER_KEY_MIN && v.length <= OWNER_KEY_MAX
 }
@@ -42,6 +79,12 @@ export async function getSupabaseUserFromBearer(
     if (!token || token.length < 20) return null
 
     const withProfile = options?.withProfile !== false
+    const cacheKey = await hashTokenKey(token)
+    const cached = readJwtCache(cacheKey, withProfile)
+    if (cached !== undefined) {
+        // Fail closed: cached null means previously rejected / invalid token
+        return cached
+    }
 
     const env = getRuntimeEnv()
     const base =
@@ -72,9 +115,15 @@ export async function getSupabaseUserFromBearer(
                 apikey,
             },
         })
-        if (!res.ok) return null
+        if (!res.ok) {
+            writeJwtCache(cacheKey, null, withProfile)
+            return null
+        }
         const user = (await res.json()) as Record<string, any>
-        if (!user?.id || typeof user.id !== 'string') return null
+        if (!user?.id || typeof user.id !== 'string') {
+            writeJwtCache(cacheKey, null, withProfile)
+            return null
+        }
 
         if (withProfile && serviceKey) {
             try {
@@ -98,8 +147,10 @@ export async function getSupabaseUserFromBearer(
                 /* profile enrichment is optional */
             }
         }
+        writeJwtCache(cacheKey, user, withProfile)
         return user
     } catch {
+        // Network / unexpected errors: do not cache — fail closed and retry next request
         return null
     }
 }
