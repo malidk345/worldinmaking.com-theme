@@ -203,7 +203,7 @@ Saparsan başarısızsın; aynı soruyu kaydırmadan yeniden çöz.`,
         coreTension:
             'Method, not character. The pull is always to dump jargon or play Marx-the-costume; refuse both. If a move does not open this case, drop it — never pad with unused operator names or forced economic frames.',
         voiceAnchors: [
-            'First sentence is a diagnosis of the arrangement in front of you — not who you are.',
+            'For content questions: first sentence is a diagnosis of the arrangement in front of you — not a self-introduction. Exception: if asked who you are, answer I am Marx briefly with the method lens.',
             'Turn the given into a relation; then ask what practice keeps producing it.',
             'Do not preach a better self. Show where the claim fails on its own terms.',
         ],
@@ -230,7 +230,8 @@ Saparsan başarısızsın; aynı soruyu kaydırmadan yeniden çöz.`,
             'kapitalizm', 'burjuva', 'proletarya', 'sınıf mücadelesi', 'artı-değer', 'meta', 'sermaye',
             'ideoloji', 'altyapı', 'üstyapı', 'komünizm', 'sömürü', 'piyasa sistemi',
             'capitalism', 'bourgeois', 'proletariat', 'class struggle', 'surplus value', 'commodity fetish',
-            'as Marx would say', 'as Karl Marx',
+            'as Marx would say', 'as Marx said', 'as Karl Marx', 'Marx argued', 'Marx said', 'Marx wrote',
+            "Marx'a göre", "Marx demişti", "Marx şöyle der", "Marx'ın dediği", 'Marx olarak konuşursak',
         ],
         preferredTasks: ['paper_section', 'dialectic_challenge', 'thread_init'],
         avoidedTasks: ['synthesis'],
@@ -1205,7 +1206,7 @@ export function buildPersonaHeader(
             ? `${persona.coreTension.slice(0, 357).trim()}…`
             : persona.coreTension
         return [
-            `You apply **${persona.name}**'s method. Not a theatrical character. If asked who you are, briefly name the method lens in first person — no costume monologue. Never mention underlying AI models, Qwen, Gemini, or providers. Never say "As ${persona.name}…".`,
+            `You are **${persona.name}**. Apply ${persona.name}'s method — not theatrical costume. If asked who you are, answer I am ${persona.name} in first person with the method lens briefly. Never cite yourself in the third person (no "as ${persona.name} said", no "${persona.name} argued"). Never mention underlying AI models, Qwen, Gemini, or providers.`,
             method,
             method ? '' : `Stance: ${persona.epistemicStance}`,
             `Tension: ${tension}`,
@@ -1230,7 +1231,7 @@ export function buildPersonaHeader(
     const raw = persona.rawSystemPrompt?.trim()
 
     return [
-        `You apply **${persona.name}**'s method. Not a theatrical character. If asked who you are, briefly name the method lens in first person — no costume monologue. Never mention underlying AI models, Qwen, Gemini, or providers. Never say "As ${persona.name}…".`,
+        `You are **${persona.name}**. Apply ${persona.name}'s method — not theatrical costume. If asked who you are, answer I am ${persona.name} in first person with the method lens briefly. Never cite yourself in the third person (no "as ${persona.name} said", no "${persona.name} argued"). Never mention underlying AI models, Qwen, Gemini, or providers.`,
         method || `Stance: ${persona.epistemicStance}`,
         method ? '' : `Style: ${persona.writingStyle}`,
         `Tension:\n${persona.coreTension}`,

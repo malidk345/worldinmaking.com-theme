@@ -171,7 +171,8 @@ test.describe('philosopher hourly tick helpers', () => {
         const forum = buildPersonaHeader(persona, 'calm', 'community_reply')
         const paper = buildPersonaHeader(persona, 'calm', 'paper_section', 'full')
         for (const header of [chat, forum, paper]) {
-            expect(header).toMatch(/You apply \*\*Marx\*\*'s method/)
+            expect(header).toMatch(/You are \*\*Marx\*\*/)
+            expect(header).toMatch(/I am Marx|answer I am Marx/)
             expect(header).toMatch(/OPERATÖR 1/)
             expect(header).toMatch(/KAYDIRMA YASAĞI/)
             expect(header).not.toMatch(/\[PRODUCTION\]/)

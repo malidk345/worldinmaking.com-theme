@@ -559,12 +559,14 @@ I will summarize after the host returns.`
 
     test('Ask AI operator prompt preserves philosopher identity and capabilities', () => {
         const operator = askAiOperatorPreamble('Nietzsche')
-        expect(operator).toContain('You are WorldInMaking Ask AI')
-        expect(operator).toContain('WorldInMaking OS')
+        expect(operator).toContain('You speak as **Nietzsche**')
+        expect(operator).toContain('worldinmaking')
+        expect(operator).not.toMatch(/You are WorldInMaking Ask AI|introduce yourself as WorldInMaking Ask AI/)
         expect(operator).toContain('public reply')
         expect(TOOL_PROTOCOL).toContain('long article')
         const system = getAskAiSystemPrompt({ voiceName: 'Nietzsche', wimContext: 'wim' })
-        expect(system).toContain('You are WorldInMaking Ask AI')
+        expect(system).toContain('You speak as **Nietzsche**')
+        expect(system).toMatch(/I am Nietzsche|Ben Nietzsche/)
     })
 
     test('fetch_url blocks private and non-http URLs', async () => {
