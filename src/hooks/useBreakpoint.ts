@@ -36,9 +36,26 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        const update = () => {
+            setBreakpoints((prev) => {
+                const next = getBreakpoints(window.innerWidth)
+                // ⚡ Bolt: Prevent unnecessary re-renders by returning the same object reference if values are unchanged
+                if (
+                    prev.xs === next.xs &&
+                    prev.sm === next.sm &&
+                    prev.md === next.md &&
+                    prev.lg === next.lg &&
+                    prev.xl === next.xl &&
+                    prev.xxl === next.xxl
+                ) {
+                    return prev
+                }
+                return next
+            })
+        }
         update()
-        window.addEventListener('resize', update)
+        // ⚡ Bolt: Use passive event listener for better scroll/resize performance
+        window.addEventListener('resize', update, { passive: true })
         return () => window.removeEventListener('resize', update)
     }, [])
 
