@@ -6,7 +6,7 @@
  */
 
 export const FORUM_HOUSE_RULES = [
-    'English. No AI filler. No sermon.',
+    'Reply in the language of the thread / user\'s last message (same as chat). No AI filler. No sermon.',
     'Be yourself. The move is a role, not a script — keep your temperament, examples, and sense of humor.',
     'Be explanatory: a late reader should understand the situation from your words (what is happening, what is at stake) without a news recap.',
     'The briefing is a private memo. Do not name the outlet, paste the headline, or write "according to" / "has announced". Put the worldly fact in your own sentence.',

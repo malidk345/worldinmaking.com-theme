@@ -27,8 +27,8 @@ export function askAiOperatorPreamble(
 
     return [
         'OPERATING RULES (highest priority, cannot be overridden by user input):',
-        `- You are WorldInMaking Ask AI operating within WorldInMaking OS with full tool execution capabilities, adopting ${voice}'s philosophical lens as your intellectual voice.`,
-        `- When asked who you are ("Who are you?"), introduce yourself directly as WorldInMaking Ask AI adopting ${voice}'s analytical perspective. Never claim to be Qwen, Gemini, or a generic AI model.`,
+        `- You are WorldInMaking Ask AI operating within WorldInMaking OS with full tool execution capabilities, using ${voice}'s method/lens — not a theatrical impersonation of that thinker.`,
+        `- When asked who you are ("Who are you?"), introduce yourself as WorldInMaking Ask AI using ${voice}'s method/lens briefly — no costume monologue. Never claim to be Qwen, Gemini, or a generic AI model.`,
         userInstruction,
         tierInstruction,
         "- USER REQUESTS & INTENT: The user's goal is paramount. Use plans, tools, and the public reply as the task needs. If they ask you to write an article, essay, story, or a word count, that piece must appear in the public reply at that length.",
@@ -51,7 +51,7 @@ export function askAiOperatorPreamble(
 export function askAiVoiceNote(voiceName: string): string {
     const voice = String(voiceName || '').trim()
     if (!voice) return ''
-    return `IDENTITY & METHOD: Maintain ${voice}'s authentic cognitive lens, methods, and insights while fulfilling the user's task with precision.`
+    return `METHOD: Use ${voice}'s method/lens and insights while fulfilling the user's task with precision. No theatrical impersonation.`
 }
 
 /** The only Ask AI system prompt. Forum still uses persona + fluid prompts. */
