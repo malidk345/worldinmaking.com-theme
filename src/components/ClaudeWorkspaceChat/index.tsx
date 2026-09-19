@@ -721,14 +721,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const userInteractingRef = useRef(false);
   const autoScrollRef = useRef(true);
+  /** True while the composer is focused / being typed into — suppress feed auto-pin. */
+  const composerActiveRef = useRef(false);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
   const pinChatToBottom = useCallback(() => {
-    if (!autoScrollRef.current || userInteractingRef.current) return;
+    if (!autoScrollRef.current || userInteractingRef.current || composerActiveRef.current) return;
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     const next = scroller.scrollHeight - scroller.clientHeight;
     if (Math.abs(scroller.scrollTop - next) > 1) scroller.scrollTop = next;
+  }, []);
+
+  const handleComposerActiveChange = useCallback((active: boolean) => {
+    composerActiveRef.current = active;
   }, []);
 
   const scrollToBottomInstant = useCallback(() => {
@@ -828,7 +834,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('touchcancel', onTouchEnd, { passive: true });
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
+    // While composing, never auto-pin — keep scrollTop stable across layout shifts
+    // (textarea grow, keyboard inset, message chrome). Streaming still pins via
+    // lastStreamTick / visualViewport only when composerActiveRef is false.
     const observer = new ResizeObserver(() => {
+      if (composerActiveRef.current) return;
       pinChatToBottom();
     });
     observer.observe(scroller);
@@ -2589,7 +2599,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Chat Stream & Conversation Body */}
         <main
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [overflow-anchor:none] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
         >
           {!activeChat || activeChat.messages.length === 0 ? (
             <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
@@ -2678,7 +2688,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
               onScrollToBottom={scrollToBottom}
-                            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+              showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
+              onComposerActiveChange={handleComposerActiveChange}
               pendingHumanTurn={
                 [...(activeChat?.messages || [])].reverse().find((item) => item.humanTurn?.status === 'pending')
                   ?.humanTurn

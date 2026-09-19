@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-19 — Grok (Fix WIM AI input typing scroll jump)
+- **Scope:** Stopped the Ask AI / WIM AI message feed from jumping while the user types in the composer. Root cause: `/workspace-chat` was missing from `WindowContent` `lockToWindow`, so the OS window pane stayed `overflow-y-auto` and the browser scrolled that outer pane when the focused textarea grew. Also suppressed message-list `pinChatToBottom` / `ResizeObserver` auto-pin while the composer is focused or receiving input, restored `[overflow-anchor:none]` on the chat scroller, and softened ChatInput autosize so it no longer forces height to 24px on every keystroke.
+- **Files:** `src/components/AppWindow/WindowContent.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Manual — type multi-line prompts in WIM AI; feed must not jump. Streaming auto-scroll still pins when composer is blurred.
+- **Handoff:** PR `[WIM] Fix WIM AI input typing scroll jump`.
+
 ### 2026-09-19 — Antigravity (ChatInput normal writing & removal of typewriter cycling placeholders)
 - **Scope:** Cleaned `ChatInput.tsx` to ensure the user writes normally without typewriter-simulating effects. Removed the rotating `PLACEHOLDERS` interval timer (`setInterval` cycling every 4000ms through prompt suggestions) and associated focus-tracking state. Set a clean, static placeholder (`Write a message...`, maintaining ask/plan mode overrides) and added standard `autoComplete="off"`, `autoCorrect="on"`, `spellCheck="true"` attributes to the composer textarea while strictly leaving all other workspace components and systems untouched.
 - **Files:** `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
