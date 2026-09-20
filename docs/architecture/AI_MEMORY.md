@@ -51,8 +51,8 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
-- **Task:** Add missing `.env.example` (README `cp` target) + `.gitignore` exception; placeholders only.
+- **Status:** `[IDLE]`
+- **Task:** None. (`.env.example` added — see §5.)
 
 ---
 
