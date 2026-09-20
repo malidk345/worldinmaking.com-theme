@@ -13,3 +13,11 @@ html.dark[data-wallpaper='hogzilla'] {
     --browser-chrome-bottom: #46368b;
     --browser-chrome-field: linear-gradient(180deg, #141e40 0%, #46368b 100%);
 }
+
+/* Paint into the notch / home-indicator band. inset:0 stops at the layout viewport. */
+body::before {
+    top: calc(-1 * env(safe-area-inset-top, 0px));
+    right: calc(-1 * env(safe-area-inset-right, 0px));
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    left: calc(-1 * env(safe-area-inset-left, 0px));
+}

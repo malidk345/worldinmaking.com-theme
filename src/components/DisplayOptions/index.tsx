@@ -7,6 +7,7 @@ import type { SiteSettings } from '../../context/App'
 import Tooltip from 'components/RadixUI/Tooltip'
 import useTheme from '../../hooks/useTheme'
 import KeyboardShortcut from 'components/KeyboardShortcut'
+import { applyWallpaperBrowserChrome, resolveKeptWallpaper } from '../../lib/wallpaperChrome'
 
 const colorModeOptions: ToggleOption[] = [
     {
@@ -58,7 +59,7 @@ const WallpaperSelect = ({ value, onValueChange, title }: WallpaperSelectProps) 
                 <p className="text-xs text-secondary text-balance leading-normal mt-1 mb-0">
                     Cycle between wallpapers with{' '}
                     <span className="inline-block">
-                        <KeyboardShortcut text="\" size="xs" />
+                        <KeyboardShortcut text="\\" size="xs" />
                     </span>
                 </p>
             </div>
@@ -111,9 +112,25 @@ export default function DisplayOptions(): JSX.Element {
     }
 
     const handleWallpaperChange = (value: string) => {
+        const wallpaper = resolveKeptWallpaper(value) as SiteSettings['wallpaper']
+        applyWallpaperBrowserChrome({
+            wallpaper,
+            colorMode: siteSettings.colorMode,
+            theme:
+                typeof document !== 'undefined' &&
+                (document.documentElement.classList.contains('dark') ||
+                    document.body.classList.contains('dark'))
+                    ? 'dark'
+                    : 'light',
+            force: true,
+        })
+        if (typeof document !== 'undefined') {
+            document.documentElement.setAttribute('data-wallpaper', wallpaper)
+            document.body.setAttribute('data-wallpaper', wallpaper)
+        }
         updateSiteSettings({
             ...siteSettings,
-            wallpaper: value as SiteSettings['wallpaper'],
+            wallpaper,
         })
     }
 
