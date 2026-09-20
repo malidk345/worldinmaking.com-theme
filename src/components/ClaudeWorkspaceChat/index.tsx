@@ -163,11 +163,34 @@ function isAbortError(err: unknown): boolean {
   return false
 }
 
+
+/** Reload / crash mid-stream can leave isStreaming:true in localStorage — settle as stopped. */
+function settleInterruptedStreams(chats: Chat[]): Chat[] {
+  let changed = false
+  const next = chats.map((chat) => {
+    let msgChanged = false
+    const messages = (chat.messages || []).map((message) => {
+      if (!message.isStreaming) return message
+      msgChanged = true
+      changed = true
+      return {
+        ...message,
+        isStreaming: false,
+        isTypingDone: true,
+        stopped: message.stopped ?? true,
+      }
+    })
+    return msgChanged ? { ...chat, messages } : chat
+  })
+  return changed ? next : chats
+}
+
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
     const stored = readLocalChats<unknown>(readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS));
-    return Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
+    const list = Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
+    return settleInterruptedStreams(list);
   });
 
 
@@ -438,6 +461,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  /** Monotonic turn id so an aborted turn's finally cannot clear a newer in-flight stream. */
+  const streamEpochRef = useRef(0);
   const resumeAbortRef = useRef(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -654,7 +679,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
-      setChats(Array.isArray(stored) ? stored : [])
+      setChats(settleInterruptedStreams(Array.isArray(stored) ? stored : []))
       void syncFromRemote(true)
     }
 
@@ -1115,6 +1140,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setIsAwayFromBottom(false);
     requestAnimationFrame(() => scrollChatToBottom('smooth'));
     abortActiveStream();
+    const streamEpoch = ++streamEpochRef.current;
     const activeController = new AbortController();
     abortControllerRef.current = activeController;
     streamReaderRef.current = null;
@@ -2044,11 +2070,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         });
       }
     } finally {
+      // Always queue a remote persist for this chat's settled rows.
       persistChatIdRef.current = targetChatId;
-      setIsStreaming(false);
-      setStreamStatus(null);
-      streamReaderRef.current = null;
-      abortControllerRef.current = null;
+      // Only the latest turn may clear shared streaming UI / AbortController refs.
+      if (abortControllerRef.current === activeController) {
+        abortControllerRef.current = null;
+      }
+      if (streamEpochRef.current === streamEpoch) {
+        setIsStreaming(false);
+        setStreamStatus(null);
+        streamReaderRef.current = null;
+      }
     }
   };
 

@@ -299,15 +299,25 @@ type PushOptions = { keepalive?: boolean }
 const pushInFlight = new Map<string, Promise<Chat | null>>()
 const pushQueued = new Map<string, Chat>()
 
+
+/** Drop in-flight streaming rows before upsert — remote always stores finished messages. */
+export function chatSnapshotForRemote(chat: Chat): Chat {
+    return {
+        ...chat,
+        messages: (chat.messages || []).filter((message) => !message.isStreaming),
+    }
+}
+
 async function postChatToRemote(chat: Chat, opts?: PushOptions): Promise<Chat | null> {
     if (readLocalDeletedChatIds().includes(chat.id)) return null
     try {
         // pagehide/unmount keepalive cannot await a session refresh — use sync headers there.
         const headers = opts?.keepalive ? chatAuthHeaders(true) : await chatAuthHeadersFresh(true)
+        const payload = chatSnapshotForRemote(chat)
         const res = await fetch('/api/chats', {
             method: 'POST',
             headers,
-            body: JSON.stringify({ owner_key: getChatOwnerKey(), chat }),
+            body: JSON.stringify({ owner_key: getChatOwnerKey(), chat: payload }),
             keepalive: Boolean(opts?.keepalive),
         })
         if (res.status === 410) {
