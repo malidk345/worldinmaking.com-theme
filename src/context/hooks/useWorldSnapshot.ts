@@ -73,21 +73,25 @@ export function useWorldSnapshot<TSettings extends WorldSnapshotSettings>({
     const applySnapshot = useCallback(
         (snapshot: WorldSnapshot, opts?: { reopenWindows?: boolean }) => {
             const visiting = isVisitingRoom()
-            const next = {
-                ...siteSettings,
-                wallpaper: snapshot.wallpaper,
-                colorMode: snapshot.colorMode,
-                reduceTransparency: !!snapshot.reduceTransparency,
-                clickBehavior: snapshot.clickBehavior,
-            } as TSettings
-            setSiteSettings(next)
-            if (!visiting) {
-                try {
-                    localStorage.setItem('siteSettings', JSON.stringify(next))
-                } catch {
-                    /* ignore */
+            // Functional update so we never spread a stale DEFAULT_WALLPAPER /
+            // missing siteDefaultsVersion from the mount-time closure.
+            setSiteSettings((prev) => {
+                const next = {
+                    ...prev,
+                    wallpaper: snapshot.wallpaper,
+                    colorMode: snapshot.colorMode,
+                    reduceTransparency: !!snapshot.reduceTransparency,
+                    clickBehavior: snapshot.clickBehavior,
+                } as TSettings
+                if (!visiting) {
+                    try {
+                        localStorage.setItem('siteSettings', JSON.stringify(next))
+                    } catch {
+                        /* ignore */
+                    }
                 }
-            }
+                return next
+            })
             if (snapshot.colorMode === 'dark' || snapshot.colorMode === 'light') {
                 try {
                     window.__setPreferredTheme?.(snapshot.colorMode)
@@ -125,7 +129,6 @@ export function useWorldSnapshot<TSettings extends WorldSnapshotSettings>({
             )
         },
         [
-            siteSettings,
             taskbarHeight,
             constraintsRef,
             layoutRestoredRef,

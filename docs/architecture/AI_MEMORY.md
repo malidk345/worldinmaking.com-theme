@@ -52,11 +52,19 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None. (`paper-white` solid wallpaper added — see §5.)
+- **Task:** None. (Wallpaper persistence fix — see §5.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper survives reload)
+- **Scope:** User (TR): changing wallpaper then refresh restores keyboard-mint every time.
+- **Root cause:** `window.__onThemeChange` in `App.tsx` was registered in a mount-only effect and closed over the initial `siteSettings` (`DEFAULT_WALLPAPER` = keyboard-mint). Logged-in world hydrate `applySnapshot` calls `__setPreferredTheme`, which invoked that stale handler and rewrote `localStorage.siteSettings` back to mint — any chosen wallpaper lost on reload. Secondary: local appearance edits did not bump `wim_world_updated_at`, so a stale `user_worlds` mint row could also win the timestamp race.
+- **Fix:** Functional `setSiteSettings` in `__onThemeChange` / `updateSiteSettings` / `applySnapshot` (preserve wallpaper + `siteDefaultsVersion`); lazy-init settings from `getInitialSiteSettings`; stamp `WORLD_UPDATED_AT_KEY` on local appearance writes; migration unit tests.
+- **Files:** `src/context/App.tsx`, `src/context/hooks/useWorldSnapshot.ts`, `src/lib/wallpaperChrome.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Change wallpaper → hard refresh → same wallpaper; signed-in dual-device still syncs when remote `updated_at` is newer; new users still default to keyboard-mint.
+- **Handoff:** PR `fix/wallpaper-persist-reload`.
 
 ### 2026-09-20 — Grok Bot / Cursor (feat: paper-white solid wallpaper)
 - **Scope:** User asked for a completely white wallpaper next to the existing set without breaking chrome.
