@@ -28,6 +28,45 @@ import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
 
+
+/** Desktop-OS window morph (open ↔ close are true reverses).
+ *  Width/height stay at the laid-out window size; scale does the visual grow/shrink
+ *  so transform-origin stays centered on the click point (fromOrigin is already
+ *  top-left adjusted by half size in the registry). Soft, lightly-damped springs
+ *  avoid macOS/Windows-style overshoot pop at the end.
+ */
+const OS_WINDOW_ORIGIN_SCALE = 0.08
+const OS_WINDOW_NON_ORIGIN_SCALE = 0.94
+
+const OS_WINDOW_SCALE_SPRING = { type: 'spring' as const, stiffness: 400, damping: 30, mass: 0.65 }
+const OS_WINDOW_POSITION_SPRING = { type: 'spring' as const, stiffness: 380, damping: 32, mass: 0.7 }
+const OS_WINDOW_SIZE_SPRING = { type: 'spring' as const, stiffness: 360, damping: 32, mass: 0.75 }
+/** Opacity eases are complementary: ease-out on open, ease-in on close. */
+const OS_WINDOW_OPACITY_IN = { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const }
+const OS_WINDOW_OPACITY_OUT = { duration: 0.16, ease: [0.4, 0, 1, 1] as const }
+
+const OS_WINDOW_OPEN_TRANSITION = {
+    scale: OS_WINDOW_SCALE_SPRING,
+    left: OS_WINDOW_POSITION_SPRING,
+    top: OS_WINDOW_POSITION_SPRING,
+    width: OS_WINDOW_SIZE_SPRING,
+    height: OS_WINDOW_SIZE_SPRING,
+    opacity: OS_WINDOW_OPACITY_IN,
+    default: OS_WINDOW_POSITION_SPRING,
+}
+
+const OS_WINDOW_CLOSE_ORIGIN_TRANSITION = {
+    scale: OS_WINDOW_SCALE_SPRING,
+    left: OS_WINDOW_POSITION_SPRING,
+    top: OS_WINDOW_POSITION_SPRING,
+    opacity: OS_WINDOW_OPACITY_OUT,
+}
+
+const OS_WINDOW_CLOSE_DEFAULT_TRANSITION = {
+    scale: OS_WINDOW_SCALE_SPRING,
+    opacity: OS_WINDOW_OPACITY_OUT,
+}
+
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
 
@@ -401,6 +440,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                             item.modal || inView || isCompositorActive ? 'visible' : 'auto',
                         containIntrinsicSize: `${Math.round(size.width)}px ${Math.round(size.height)}px`,
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
+                        // Centered scale keeps click-origin morph aligned with registry fromOrigin math.
+                        transformOrigin: '50% 50%',
                         x: dragging ? motionX : undefined,
                         y: dragging ? motionY : undefined,
                         // 3D tilt only while dragging (brief transform is OK; rest must be transform-free)
@@ -429,7 +470,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         return generated
                     }}
                     initial={{
-                        scale: item.fromOrigin && !compact ? 0.08 : 0.94,
+                        scale: item.fromOrigin && !compact ? OS_WINDOW_ORIGIN_SCALE : OS_WINDOW_NON_ORIGIN_SCALE,
                         opacity: 0,
                         left: item.fromOrigin && !compact ? Math.round(item.fromOrigin.x) : Math.round(position.x),
                         top: item.fromOrigin && !compact ? Math.round(item.fromOrigin.y) : Math.round(position.y),
@@ -453,42 +494,29 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                               }
                             : item.fromOrigin
                               ? {
-                                    // Mirror open-from-origin: shrink back to the click point.
-                                    // Keep width/height at the window size; scale does the visual collapse
-                                    // (same model as initial), so transform-origin stays correct.
-                                    scale: 0.08,
+                                    // True reverse of open-from-origin: same scale floor, same springs,
+                                    // complementary opacity ease — shrinks back to the click point.
+                                    scale: OS_WINDOW_ORIGIN_SCALE,
                                     opacity: 0,
                                     left: Math.round(item.fromOrigin.x),
                                     top: Math.round(item.fromOrigin.y),
-                                    transition: {
-                                        scale: { type: 'spring', stiffness: 480, damping: 34, mass: 0.55 },
-                                        left: { type: 'spring', stiffness: 420, damping: 36, mass: 0.6 },
-                                        top: { type: 'spring', stiffness: 420, damping: 36, mass: 0.6 },
-                                        opacity: { duration: 0.14, ease: [0.32, 0, 0.67, 0] },
-                                    },
+                                    width: size.width,
+                                    height: size.height,
+                                    transition: OS_WINDOW_CLOSE_ORIGIN_TRANSITION,
                                 }
                               : {
-                                    scale: 0.95,
+                                    // Reverse of non-origin open (0.94 → 1): spring back to 0.94, not a hard fade.
+                                    scale: OS_WINDOW_NON_ORIGIN_SCALE,
                                     opacity: 0,
-                                    transition: {
-                                        duration: 0.12,
-                                        ease: [0.32, 0, 0.67, 0],
-                                    },
+                                    transition: OS_WINDOW_CLOSE_DEFAULT_TRANSITION,
                                 }
                     }
                     transition={
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
-                            : {
-                                  scale: { type: 'spring', stiffness: 440, damping: 25, mass: 0.6 },
-                                  left: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  top: { type: 'spring', stiffness: 380, damping: 27, mass: 0.75 },
-                                  width: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  height: { type: 'spring', stiffness: 360, damping: 28, mass: 0.8 },
-                                  opacity: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
-                                  default: { type: 'spring', stiffness: 380, damping: 26 },
-                              }
+                            : OS_WINDOW_OPEN_TRANSITION
                     }
+
                     drag={inSwitcher ? false : !item.fixedSize}
                     dragControls={controls}
                     dragListener={false}
