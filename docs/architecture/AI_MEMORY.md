@@ -51,12 +51,21 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** None. (Post-#750 audit: persist chat notebook bind columns — see §5.)
+- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
+- **Task:** Add missing `.env.example` (README `cp` target) + `.gitignore` exception; placeholders only.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (chore: add missing .env.example)
+- **Scope:** README tells contributors to `cp .env.example .env.local`, but the file was absent. Root `.gitignore` has `.env*` which also ignored `.env.example`.
+  1. Add `.env.example` with placeholder keys only (Supabase required, optional AI/Lemon/cron/Upstash/PostHog/storage).
+  2. Un-ignore via `!.env.example` in `.gitignore`.
+  3. Claim AI_MEMORY §4/§5.
+- **Files:** `.env.example`, `.gitignore`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** File visible on branch; `cp .env.example .env.local` works; no real secrets.
+- **Handoff:** Trivial docs/chore PR — merge after CI green.
 
 ### 2026-09-20 — Grok Bot / Cursor (audit: persist chat notebookId for dual-device tools)
 - **Scope:** Post-#750 audit of dual-device + WIM AI + Supabase alignment. Found concrete gap: client merge/rehydrate keeps `notebookId` / `agentMode` / `activePlan`, but `chat-store` never wrote them to `wim_chats`, so a fresh device pull lost notebook tool bind.
