@@ -29,12 +29,14 @@ import {
     DEFAULT_WALLPAPER,
     migrateAppearanceSettings,
     resolveKeptWallpaper,
+    SITE_APPEARANCE_DEFAULTS_VERSION,
 } from '../lib/wallpaperChrome'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { createWorldRoom } from '../lib/world-account'
 import {
     exitVisitingRoom,
     readVisitingRoomToken,
+    WORLD_UPDATED_AT_KEY,
 } from '../lib/world-snapshot'
 import { useWorldSnapshot } from './hooks/useWorldSnapshot'
 
@@ -1011,16 +1013,20 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)
     const [isMobile, setIsMobile] = useState(false)
-    const [siteSettings, setSiteSettings] = useState<SiteSettings>({
-        colorMode: 'light',
-        theme: 'light',
-        skinMode: 'modern',
-        iconSet: DEFAULT_ICON_SET,
-        wallpaper: DEFAULT_WALLPAPER,
-        clickBehavior: 'double',
-        performanceBoost: false,
-        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
-    })
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>(() =>
+        typeof window !== 'undefined'
+            ? getInitialSiteSettings()
+            : {
+                  colorMode: 'light',
+                  theme: 'light',
+                  skinMode: 'modern',
+                  iconSet: DEFAULT_ICON_SET,
+                  wallpaper: DEFAULT_WALLPAPER,
+                  clickBehavior: 'double',
+                  performanceBoost: false,
+                  reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
+              }
+    )
     const [taskbarHeight, setTaskbarHeight] = useState(59)
     const [lastClickedElementRect, setLastClickedElementRect] = useState<{ x: number; y: number } | null>(null)
     const [desktopCopied, setDesktopCopied] = useState(false)
@@ -1215,8 +1221,25 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     const updateSiteSettings = (settings: SiteSettings) => {
         try {
-            setSiteSettings(settings)
-            localStorage.setItem('siteSettings', JSON.stringify(settings))
+            setSiteSettings((prev) => {
+                const next: SiteSettings = {
+                    ...prev,
+                    ...settings,
+                    // Preserve migration stamp so reload does not re-default wallpaper.
+                    siteDefaultsVersion:
+                        settings.siteDefaultsVersion ??
+                        prev.siteDefaultsVersion ??
+                        SITE_APPEARANCE_DEFAULTS_VERSION,
+                }
+                try {
+                    localStorage.setItem('siteSettings', JSON.stringify(next))
+                    // Local appearance edits must beat a stale user_worlds row on reload.
+                    localStorage.setItem(WORLD_UPDATED_AT_KEY, new Date().toISOString())
+                } catch {
+                    /* ignore quota */
+                }
+                return next
+            })
         } catch (error) {
             console.error('Failed to update site settings:', error)
         }
@@ -1550,10 +1573,22 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
         }
 
+        // Functional update only — never close over mount-time siteSettings.
+        // applySnapshot calls __setPreferredTheme during world hydrate; a stale
+        // DEFAULT_WALLPAPER spread would clobber the user's kept wallpaper on every reload.
         window.__onThemeChange = (theme) => {
-            updateSiteSettings({
-                ...siteSettings,
-                theme: (theme === 'dark' || theme === 'light' ? theme : siteSettings.theme) as SiteSettings['theme'],
+            setSiteSettings((prev) => {
+                const nextTheme = (
+                    theme === 'dark' || theme === 'light' ? theme : prev.theme
+                ) as SiteSettings['theme']
+                if (prev.theme === nextTheme) return prev
+                const next: SiteSettings = { ...prev, theme: nextTheme }
+                try {
+                    localStorage.setItem('siteSettings', JSON.stringify(next))
+                } catch {
+                    /* ignore */
+                }
+                return next
             })
         }
 

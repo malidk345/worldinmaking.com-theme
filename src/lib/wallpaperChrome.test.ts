@@ -1,7 +1,14 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { describe, expect, it } from 'vitest'
-import { WALLPAPER_FIELDS, WALLPAPER_THEME_COLORS, type WallpaperName } from './wallpaperChrome'
+import {
+    DEFAULT_WALLPAPER,
+    migrateAppearanceSettings,
+    SITE_APPEARANCE_DEFAULTS_VERSION,
+    WALLPAPER_FIELDS,
+    WALLPAPER_THEME_COLORS,
+    type WallpaperName,
+} from './wallpaperChrome'
 
 const WALLPAPERS = resolve(__dirname, '../components/Desktop/Wallpapers.tsx')
 
@@ -68,5 +75,43 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
         expect(darkBottom).toBe(WALLPAPER_FIELDS[name].dark.bottom.toUpperCase())
         expect(WALLPAPER_FIELDS[name].light.top.toUpperCase()).toBe(lightTop)
         expect(WALLPAPER_FIELDS[name].dark.top.toUpperCase()).toBe(darkTop)
+    })
+})
+
+
+describe('migrateAppearanceSettings preserves user wallpaper', () => {
+    it('keeps an explicit kept wallpaper when already on current defaults version', () => {
+        const next = migrateAppearanceSettings({
+            wallpaper: 'cobalt',
+            siteDefaultsVersion: SITE_APPEARANCE_DEFAULTS_VERSION,
+        })
+        expect(next.wallpaper).toBe('cobalt')
+        expect(next.siteDefaultsVersion).toBe(SITE_APPEARANCE_DEFAULTS_VERSION)
+    })
+
+    it('does not reset a kept wallpaper to keyboard-mint when migrating from v0', () => {
+        const next = migrateAppearanceSettings({
+            wallpaper: 'plaza-bang',
+            siteDefaultsVersion: 0,
+        })
+        expect(next.wallpaper).toBe('plaza-bang')
+        expect(next.siteDefaultsVersion).toBe(SITE_APPEARANCE_DEFAULTS_VERSION)
+    })
+
+    it('upgrades previous product default draft-world to keyboard-mint once', () => {
+        const next = migrateAppearanceSettings({
+            wallpaper: 'draft-world',
+            siteDefaultsVersion: 0,
+        })
+        expect(next.wallpaper).toBe(DEFAULT_WALLPAPER)
+        expect(next.siteDefaultsVersion).toBe(SITE_APPEARANCE_DEFAULTS_VERSION)
+    })
+
+    it('keeps paper-white through migration', () => {
+        const next = migrateAppearanceSettings({
+            wallpaper: 'paper-white',
+            siteDefaultsVersion: 1,
+        })
+        expect(next.wallpaper).toBe('paper-white')
     })
 })
