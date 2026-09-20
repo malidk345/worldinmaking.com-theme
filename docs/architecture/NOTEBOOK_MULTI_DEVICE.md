@@ -22,3 +22,7 @@ Not Yjs. Do not rewrite the editor for these checks.
 - Never paste Supabase PATs or service-role keys into chat, commits, or `.env` that is tracked.
 - Rotate any token that appeared in a chat log.
 - Local only: `SUPABASE_ACCESS_TOKEN` in the shell or GitHub Actions secrets.
+
+## List flash (deleted rows)
+
+Tombstones must be applied before paint: API list filters `deleted_ids` out of `notebooks`; client `rememberRemoteNotebooks` / `getNotebooks` honor local+remote deleted ids. Do not merge raw remote rows without the ledger.
