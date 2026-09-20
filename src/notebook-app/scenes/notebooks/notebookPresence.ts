@@ -208,9 +208,11 @@ export function useNotebookPresence({
         }
 
         // Mobile background / tab hide must drop caret or the other device keeps a ghost peer.
+        // On visible again, re-track so peers see presence without waiting for a caret move.
         const onPageHide = () => leavePresence()
         const onVisibility = () => {
             if (document.visibilityState === 'hidden') leavePresence()
+            else if (document.visibilityState === 'visible') void publishNowRef.current()
         }
         window.addEventListener('pagehide', onPageHide)
         document.addEventListener('visibilitychange', onVisibility)
