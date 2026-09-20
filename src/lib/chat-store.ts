@@ -348,17 +348,41 @@ export async function upsertChatWithMessages(
         const { error: insertError } = await supabaseAdmin.from('wim_chat_messages').insert(inserts)
         if (insertError) throw insertError
     }
-    for (const row of updates) {
-        const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
-        const { error: updateError } = await supabaseAdmin
-            .from('wim_chat_messages')
-            .update(patch)
-            .eq('id', row.id)
-            .eq('chat_id', chatId)
+    // Parallel updates — sequential round-trips were the dominant save latency
+    // (N messages ⇒ N PostgREST calls) and a common timeout/close race.
+    if (updates.length > 0) {
+        const results = await Promise.all(
+            updates.map(async (row) => {
+                const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
+                return supabaseAdmin
+                    .from('wim_chat_messages')
+                    .update(patch)
+                    .eq('id', row.id)
+                    .eq('chat_id', chatId)
+            })
+        )
+        const updateError = results.find((result) => result.error)?.error
         if (updateError) throw updateError
     }
 
-    return getChatForOwner(chatId, ownerKey, userId) as Promise<Chat>
+    // Avoid a second full read after write — client already has the payload;
+    // rebuild from the row we just persisted.
+    return {
+        ...chat,
+        id: chatId,
+        title: row.title,
+        projectId: row.project_id || undefined,
+        modelId: row.model_id,
+        starred: !!row.starred,
+        thinkingBudget: toThinkingBudget(row.thinking_budget),
+        webSearchEnabled: !!row.web_search_enabled,
+        systemPrompt: row.system_prompt || undefined,
+        shareToken: row.share_token || undefined,
+        isShared: !!row.is_shared,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        messages: persistable,
+    }
 }
 
 export async function patchChatForOwner(

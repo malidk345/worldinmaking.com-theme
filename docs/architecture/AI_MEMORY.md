@@ -52,11 +52,23 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None.
+- **Task:** None. (PR #750 updated: conflicts resolved + multi-device sync hardening.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (multi-device: chat merge + dirty push + presence leave)
+- **Scope:** Same PR #750 after merging main (#749). Harden dual-device notebook + WIM AI sync without Yjs / App Router / chrome restyle. Keep #750 perf saves.
+  1. **Conflicts:** Merged `main` into `perf/wim-ai-load-chat-save` — took AppWindow open/close symmetry from #749; kept Ask AI load/save; merged AI_MEMORY §5 entries.
+  2. **Chat merge:** Metadata-only remote stubs no longer clobber local message-bearing chats; preserve `notebookId` / `agentMode` / `activePlan` / `systemPrompt` across list GET merges.
+  3. **Chat sync:** `pushDirtyLocalChats` on remote sync tick so Device A drafts reach Device B without requiring window close; mark pushed `updatedAt` to avoid loops.
+  4. **Tools:** Rehydrate `bindNotebookChat` from `chat.notebookId` after reload / other-device open so notebook tools keep a bind.
+  5. **Presence:** `untrack` on `pagehide` / `visibilitychange=hidden` so ghost carets do not stick on the other device.
+- **Files:** `chat-merge.ts`, `chat-remote.ts`, `ClaudeWorkspaceChat/index.tsx`, `notebookPresence.ts`, `AI_MEMORY.md`
+- **Verify:** Two browsers same account — edit chat on A, focus WIM AI on B (pull+dirty push); delete on A (tombstone on B); open notebook-bound chat on B (bind restored); leave notebook tab (presence drops).
+- **Handoff:** PR #750. Residual: presence still best-effort without auth; dirty push capped at 6 chats/tick; ChatMessage markdown still on first paint.
+
 
 ### 2026-09-20 — Grok Bot / Cursor (OS-like window open/close symmetry)
 - **Scope:** Follow-up after #748 merge — make close a true reverse of open with polished desktop-OS feel. Motion only; no chrome restyle; keep click-origin + perf deferrals.
@@ -67,6 +79,18 @@
 - **Files:** `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
 - **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open from desktop icon then close — should reverse along the same path/feel; open without origin then close — soft scale to 0.94.
 - **Handoff:** New PR `perf/os-window-open-close-symmetry` (do not reopen #748). Residual: optional taskbar minimize/restore genie later.
+
+
+### 2026-09-20 — Grok Bot / Cursor (perf: Ask AI cold load + chat save reliability)
+- **Scope:** User-reported Ask AI window slow open + chat persistence issues. Incremental only — no chrome restyle, no notebook sync, no Yjs/App Router.
+  1. **Cold load:** Removed nested `next/dynamic` in `AskAiWindow` (WindowRouter already lazy-loads it) so opening Ask AI is one chunk fetch, not two waterfalls.
+  2. **Cold load:** Deferred Artifacts/Sources panels + Search/Project/Settings/Share modals via `next/dynamic`; lazy-import `prepareSandpackSource` only when a react artifact is finalized.
+  3. **Save reliability:** Debounced localStorage writes while streaming (400ms); flush local + remote on `pagehide`/unmount via `fetch` keepalive; Stop now marks `persistChatIdRef` so aborted turns still sync.
+  4. **Save reliability:** Coalesce concurrent `pushChatToRemote` for the same chat id (latest snapshot wins); skip `getSession` when cached JWT has >2 minutes left.
+  5. **Save latency:** Persist message updates in parallel (was N sequential PostgREST updates) and skip the post-write full re-read.
+- **Files:** `AskAiWindow.tsx`, `ClaudeWorkspaceChat/index.tsx`, `chat-remote.ts`, `chat-store.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open Ask AI from desktop icon (first open); send a message, Stop mid-stream, close window — chat should remain after reload; rename/star still sync.
+- **Handoff:** PR `perf/wim-ai-load-chat-save`. Residual: ChatMessage still pulls markdown on first paint; optional further split of message list; measure First Load JS for Ask AI chunk.
 
 ### 2026-09-20 — Grok Bot / Cursor (perf: open/close from-origin + defer route mount)
 - **Scope:** Follow-up on PR #748 — window open/close performance and click-origin fidelity. No chrome restyle; no notebook sync changes.
