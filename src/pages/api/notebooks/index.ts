@@ -72,10 +72,16 @@ export default async function handler(req: Request) {
             const includeContent =
                 url.searchParams.get('include') === 'content' || url.searchParams.get('bodies') === '1'
 
-            const [notebooks, deletedIds] = await Promise.all([
+            const [notebooksRaw, deletedIds] = await Promise.all([
                 listNotebooksByOwner(auth.ownerKey, auth.userId, extraOwnerKeys, { includeContent }),
                 listDeletedNotebookIds(auth.ownerKey, auth.userId, extraOwnerKeys),
             ])
+            // Tombstone wins over live rows: hard-delete can lag the ledger write, and a
+            // parallel list GET must not re-surface a just-deleted notebook to clients.
+            const dead = new Set(deletedIds)
+            const notebooks = notebooksRaw.filter(
+                (nb) => !dead.has(nb.id) && !(nb.short_id && dead.has(nb.short_id))
+            )
             return json({ notebooks, deleted_ids: deletedIds, auth: { via: auth.via } })
         }
 

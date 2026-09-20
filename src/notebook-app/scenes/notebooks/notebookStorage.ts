@@ -655,7 +655,13 @@ function readLocalNotebooks(): StoredNotebook[] {
 
 export function getNotebooks(): StoredNotebook[] {
     // Local read only — live sync starts from Notebooks window mount (egress).
-    return readLocalNotebooks()
+    // Always hide tombstoned ids before paint (guards against a remote merge that
+    // briefly re-wrote a deleted row before deleted_ids were applied).
+    const notebooks = readLocalNotebooks()
+    const deleted = readLocalDeletedNotebookIds()
+    if (!deleted.length) return notebooks
+    const dead = new Set(deleted)
+    return notebooks.filter((nb) => !dead.has(nb.id) && !(nb.short_id && dead.has(nb.short_id)))
 }
 
 export type NotebookBrowserItem = Omit<StoredNotebook, 'content'> & {
@@ -746,9 +752,14 @@ export async function getNotebookWithContent(id: string): Promise<StoredNotebook
 
 /** Merge a remote/shared notebook into local storage without bumping version. */
 export function rememberRemoteNotebook(notebook: StoredNotebook): StoredNotebook {
+    const deleted = readLocalDeletedNotebookIds()
+    if (deleted.includes(notebook.id) || (notebook.short_id && deleted.includes(notebook.short_id))) {
+        // In-flight GET can still return a row after local delete + tombstone; do not resurrect.
+        return notebook
+    }
     forgetDeletedNotebookId(notebook.id)
     if (notebook.short_id) forgetDeletedNotebookId(notebook.short_id)
-    const notebooks = getNotebooks()
+    const notebooks = readLocalNotebooks()
     const index = notebooks.findIndex((n) => n.id === notebook.id || n.short_id === notebook.short_id)
     if (index >= 0) {
         const merged = pickNewerNotebook(notebooks[index], notebook)
@@ -765,20 +776,12 @@ export function rememberRemoteNotebook(notebook: StoredNotebook): StoredNotebook
     return notebook
 }
 
-export function rememberRemoteNotebooks(notebooks: StoredNotebook[]): void {
-    if (!notebooks.length) return
-    const current = getNotebooks()
-    const map = new Map(current.map((nb) => [nb.id, nb]))
-    for (const notebook of notebooks) {
-        const existing = map.get(notebook.id)
-        map.set(
-            notebook.id,
-            existing
-                ? { ...pickNewerNotebook(existing, notebook), access_role: notebook.access_role || existing.access_role }
-                : notebook
-        )
-    }
-    writeAll(Array.from(map.values()))
+export function rememberRemoteNotebooks(notebooks: StoredNotebook[], deletedIds: string[] = []): void {
+    if (!notebooks.length && !deletedIds.length) return
+    for (const id of deletedIds) rememberDeletedNotebookId(id)
+    const dead = [...readLocalDeletedNotebookIds(), ...deletedIds]
+    // Same tombstone filter as mergeRemoteIntoLocal — never paint deleted rows from a raw pull.
+    writeAll(withCanonicalTemplates(mergeNotebookLists(readLocalNotebooks(), notebooks, dead)))
 }
 
 export async function leaveSharedNotebook(id: string): Promise<boolean> {
