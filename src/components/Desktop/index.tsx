@@ -12,9 +12,11 @@ import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import { apps, useProductLinks } from './desktopApps'
 import { extractNotebookId, isHomeWindowPath, notebookWindowPath } from '../../lib/window-path'
 import { useUser } from 'hooks/useUser'
-import { readLocalDeletedNotebookIds } from '../../notebook-app/scenes/notebooks/notebookRemote'
-import { getNotebooks, WIM_NOTEBOOKS_CHANGED_EVENT, WIM_NOTEBOOKS_HYDRATED_EVENT } from '../../notebook-app/scenes/notebooks/notebookStorage'
 import { ASSISTANT_OPEN_PATH_EVENT } from '../../lib/assistant-actions'
+
+// Event names mirrored from notebookStorage so Desktop stays off the notebook cold graph.
+const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
+const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
 
 const NotificationsPanel = dynamic(() => import('components/NotificationsPanel'), { ssr: false })
 const ClaudeWorkspaceChatPanel = dynamic(
@@ -75,7 +77,8 @@ function Desktop() {
 
     const loadPinnedApps = useCallback(() => {
         if (typeof window === 'undefined') return
-        try {
+        void (async () => {
+            try {
             const customAppsKey = 'wim_os_desktop_pinned_items'
             const raw = localStorage.getItem(customAppsKey)
             const existing = JSON.parse(raw || '[]')
@@ -83,6 +86,11 @@ function Desktop() {
                 setPinnedApps([])
                 return
             }
+
+            const [{ readLocalDeletedNotebookIds }, { getNotebooks }] = await Promise.all([
+                import('../../notebook-app/scenes/notebooks/notebookRemote'),
+                import('../../notebook-app/scenes/notebooks/notebookStorage'),
+            ])
 
             const deletedSet = new Set(readLocalDeletedNotebookIds())
             try {
@@ -132,6 +140,7 @@ function Desktop() {
         } catch (e) {
             console.error('Failed to load pinned apps', e)
         }
+        })()
     }, [])
 
     useEffect(() => {
