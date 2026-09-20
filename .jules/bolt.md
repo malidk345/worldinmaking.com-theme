@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2024-05-19 - Bailing out of state updates in resize listeners
+**Learning:** React state updates in high-frequency event listeners like `window.addEventListener('resize')` trigger complete component re-renders even when the underlying derived values (like breakpoint flags) haven't actually flipped. This forces unnecessary main thread work on every pixel of window drag. Furthermore, omitting `{ passive: true }` blocks UI painting until JavaScript completes execution.
+**Action:** Always wrap state updates in resize/scroll listeners with a functional updater (`setState(prev => ...)`) that shallow-compares the new object against the old one, returning `prev` to trigger React's native `Object.is` bailout if no data has changed. Also, always add `{ passive: true }` to the event listener if `preventDefault` is not required.

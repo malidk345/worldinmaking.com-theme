@@ -36,9 +36,27 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        const update = () => {
+            const next = getBreakpoints(window.innerWidth)
+            setBreakpoints((prev) => {
+                // ⚡ Bolt Optimization: Shallow compare properties to allow React to bail out of
+                // rendering via Object.is equality if the actual boolean values haven't changed.
+                let hasChanges = false
+                for (const key in next) {
+                    if (Object.prototype.hasOwnProperty.call(next, key)) {
+                        if (prev[key as BreakpointKey] !== next[key as BreakpointKey]) {
+                            hasChanges = true
+                            break
+                        }
+                    }
+                }
+                return hasChanges ? next : prev
+            })
+        }
         update()
-        window.addEventListener('resize', update)
+
+        // ⚡ Bolt Optimization: Added { passive: true } to prevent UI thread blocking on high-frequency resize events
+        window.addEventListener('resize', update, { passive: true })
         return () => window.removeEventListener('resize', update)
     }, [])
 
