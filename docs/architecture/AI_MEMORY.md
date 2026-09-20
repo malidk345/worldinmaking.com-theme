@@ -52,11 +52,20 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None. (`.env.example` added — see §5.)
+- **Task:** None. (`paper-white` solid wallpaper added — see §5.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (feat: paper-white solid wallpaper)
+- **Scope:** User asked for a completely white wallpaper next to the existing set without breaking chrome.
+  1. Add kept wallpaper id `paper-white`: light `#FFFFFF`, dark `#121212` solids (plaza-bang pattern).
+  2. Wire Scene + glow, `wallpaperChrome` union/fields/theme colors, picker thumb, SiteSettings, global.css chrome vars, legacy theme-init KEPT/THEME_COLORS, lock-test needles.
+  3. Leave Hogzilla/mint/cobalt/etc. untouched; branch from latest main (PR #755 Hogzilla global.css sync left alone).
+- **Files:** `Wallpapers.tsx`, `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `useTheme.tsx`, `global.css`, `App.tsx`, `theme-init.js`, `AI_MEMORY.md`
+- **Verify:** wallpaperChrome.test.ts needles for paper-white; Display Options shows Paper white; light/dark chrome/theme-color match solids; other wallpapers unchanged.
+- **Handoff:** PR `feat/wallpaper-paper-white`. Residual: #755 still open for Hogzilla `global.css` sync.
 
 ### 2026-09-20 — Grok Bot / Cursor (chore: add missing .env.example)
 - **Scope:** README tells contributors to `cp .env.example .env.local`, but the file was absent. Root `.gitignore` has `.env*` which also ignored `.env.example`.

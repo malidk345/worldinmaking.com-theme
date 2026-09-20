@@ -418,6 +418,16 @@ export const themeOptions: ThemeOption[] = [
             },
         },
     },
+    {
+        label: 'Paper white',
+        value: 'paper-white',
+        background: {
+            thumb: {
+                light: svgThumb('#FFFFFF'),
+                dark: svgThumb('#121212'),
+            },
+        },
+    },
 ]
 
 const generateThemeClasses = (theme: ThemeOption) => {

@@ -941,6 +941,7 @@ export interface SiteSettings {
         | 'draft-world'
         | 'rain-embers'
         | 'plaza-bang'
+        | 'paper-white'
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
     performanceBoost?: boolean
