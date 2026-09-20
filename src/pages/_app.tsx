@@ -1,5 +1,6 @@
 import { AppProps } from 'next/app'
 import '../styles/global.css'
+import '../styles/wallpaper-mobile-chrome.css'
 import '../styles/notebook-taskbar-glass.css'
 import '../styles/taskbar-keyboard-lock.css'
 import '../styles/notebook-mobile-block-chrome.css'
