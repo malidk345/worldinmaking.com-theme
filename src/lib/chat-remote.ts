@@ -159,6 +159,18 @@ export function chatAuthHeaders(jsonBody = false, ownerKey = getChatOwnerKey()):
     return headers
 }
 
+function jwtExpirySec(token: string): number | null {
+    try {
+        const payload = token.split('.')[1]
+        if (!payload) return null
+        const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+        return typeof json?.exp === 'number' ? json.exp : null
+    } catch {
+        return null
+    }
+}
+
+/** Prefer the cached JWT when it still has >2 minutes left — avoids getSession/refresh on every save. */
 export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatOwnerKey()): Promise<HeadersInit> {
     const headers: Record<string, string> = {
         Accept: 'application/json',
@@ -168,13 +180,14 @@ export async function chatAuthHeadersFresh(jsonBody = false, ownerKey = getChatO
 
     try {
         let token = getStoredJwt()
+        const nowSec = Math.floor(Date.now() / 1000)
+        const cachedExp = token ? jwtExpirySec(token) : null
+        const cachedStillGood = Boolean(token && token.length >= 20 && cachedExp && cachedExp > nowSec + 120)
 
-        if (isSupabaseConfigured) {
+        if (!cachedStillGood && isSupabaseConfigured) {
             try {
                 const { data } = await supabase.auth.getSession()
                 let session = data?.session
-
-                const nowSec = Math.floor(Date.now() / 1000)
                 const isExpiringSoon = session?.expires_at ? session.expires_at < nowSec + 120 : false
 
                 if (!session || isExpiringSoon) {
@@ -281,25 +294,77 @@ export async function pullChatByIdFromRemote(chatId: string): Promise<Chat | nul
     }
 }
 
-export async function pushChatToRemote(chat: Chat): Promise<Chat | null> {
-    if (typeof window === 'undefined') return null
+type PushOptions = { keepalive?: boolean }
+
+const pushInFlight = new Map<string, Promise<Chat | null>>()
+const pushQueued = new Map<string, Chat>()
+
+async function postChatToRemote(chat: Chat, opts?: PushOptions): Promise<Chat | null> {
     if (readLocalDeletedChatIds().includes(chat.id)) return null
     try {
+        // pagehide/unmount keepalive cannot await a session refresh — use sync headers there.
+        const headers = opts?.keepalive ? chatAuthHeaders(true) : await chatAuthHeadersFresh(true)
         const res = await fetch('/api/chats', {
             method: 'POST',
-            headers: await chatAuthHeadersFresh(true),
+            headers,
             body: JSON.stringify({ owner_key: getChatOwnerKey(), chat }),
+            keepalive: Boolean(opts?.keepalive),
         })
         if (res.status === 410) {
             rememberDeletedChatId(chat.id)
             return null
         }
         if (!res.ok) return null
+        if (opts?.keepalive) return chat
         const body = await parseJson<{ chat?: Chat }>(res)
         return body?.chat || null
     } catch {
         return null
     }
+}
+
+/**
+ * Upsert one chat to Supabase. Concurrent pushes for the same id coalesce to the
+ * latest snapshot so a close/unmount flush cannot lose the newest messages.
+ */
+export async function pushChatToRemote(chat: Chat, opts?: PushOptions): Promise<Chat | null> {
+    if (typeof window === 'undefined') return null
+    if (readLocalDeletedChatIds().includes(chat.id)) return null
+
+    if (opts?.keepalive) {
+        return postChatToRemote(chat, opts)
+    }
+
+    const existing = pushInFlight.get(chat.id)
+    if (existing) {
+        pushQueued.set(chat.id, chat)
+        return existing
+    }
+
+    const run = (async () => {
+        let current: Chat | undefined = chat
+        let last: Chat | null = null
+        while (current) {
+            pushQueued.delete(chat.id)
+            last = await postChatToRemote(current)
+            current = pushQueued.get(chat.id)
+        }
+        return last
+    })()
+
+    pushInFlight.set(chat.id, run)
+    try {
+        return await run
+    } finally {
+        pushInFlight.delete(chat.id)
+    }
+}
+
+/** Best-effort flush for pagehide/unmount — uses fetch keepalive so the browser can finish after teardown. */
+export function flushChatToRemoteKeepalive(chat: Chat): void {
+    if (typeof window === 'undefined') return
+    if (!chat?.id || readLocalDeletedChatIds().includes(chat.id)) return
+    void pushChatToRemote(chat, { keepalive: true })
 }
 
 export async function deleteChatOnRemote(chatId: string): Promise<boolean> {

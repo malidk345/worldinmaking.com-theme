@@ -22,18 +22,21 @@ import {
   INITIAL_PROJECTS,
   STYLE_PRESETS,
 } from './data/initialData';
+import dynamic from 'next/dynamic';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
 import { ASK_STARTERS, ChatInput } from './components/ChatInput';
-import { ArtifactsPanel } from './components/ArtifactsPanel';
-import { ArtifactWindowContent } from './components/ArtifactWindowContent';
-import { SourcesPanel } from './components/SourcesPanel';
-import { SearchModal } from './components/SearchModal';
-import { ProjectModal } from './components/ProjectModal';
-import { SettingsModal } from './components/SettingsModal';
-import { ShareModal } from './components/ShareModal';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Panels/modals are rare on cold open — keep them out of the Ask AI first paint chunk.
+const ArtifactsPanel = dynamic(() => import('./components/ArtifactsPanel').then((m) => m.ArtifactsPanel), { ssr: false });
+const ArtifactWindowContent = dynamic(() => import('./components/ArtifactWindowContent').then((m) => m.ArtifactWindowContent), { ssr: false });
+const SourcesPanel = dynamic(() => import('./components/SourcesPanel').then((m) => m.SourcesPanel), { ssr: false });
+const SearchModal = dynamic(() => import('./components/SearchModal').then((m) => m.SearchModal), { ssr: false });
+const ProjectModal = dynamic(() => import('./components/ProjectModal').then((m) => m.ProjectModal), { ssr: false });
+const SettingsModal = dynamic(() => import('./components/SettingsModal').then((m) => m.SettingsModal), { ssr: false });
+const ShareModal = dynamic(() => import('./components/ShareModal').then((m) => m.ShareModal), { ssr: false });
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { useUser } from '../../hooks/useUser';
@@ -71,7 +74,6 @@ import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
 import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 
-import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import { LemonScope } from '../LemonScope';
@@ -91,6 +93,7 @@ import {
   mergeChats,
   pullChatByIdFromRemote,
   pullChatsFromRemote,
+  flushChatToRemoteKeepalive,
   pushChatToRemote,
   readLocalChats,
   readLocalDeletedChatIds,
@@ -514,23 +517,36 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const persistOwnerRef = useRef(getChatStorageKey())
   const lastWrittenChatsStrRef = useRef<string>('')
-  // Save to LocalStorage
-  useEffect(() => {
+  const chatsRef = useRef(chats)
+  chatsRef.current = chats
+  const isStreamingRefForPersist = useRef(isStreaming)
+  isStreamingRefForPersist.current = isStreaming
+
+  const flushLocalChats = useCallback((next: Chat[] = chatsRef.current) => {
     try {
       const key = getChatStorageKey()
       if (key !== persistOwnerRef.current) {
         persistOwnerRef.current = key
         return
       }
-      const serialized = JSON.stringify(chats)
+      const serialized = JSON.stringify(next)
       if (serialized !== lastWrittenChatsStrRef.current) {
-        writeLocalChats(chats)
+        writeLocalChats(next)
         lastWrittenChatsStrRef.current = serialized
       }
     } catch {
       // A full localStorage quota must not break an active conversation.
     }
-  }, [chats]);
+  }, [])
+
+  // Save to LocalStorage — debounce during streaming so every token does not sync I/O.
+  useEffect(() => {
+    if (isStreaming) {
+      const timer = window.setTimeout(() => flushLocalChats(chats), 400)
+      return () => window.clearTimeout(timer)
+    }
+    flushLocalChats(chats)
+  }, [chats, isStreaming, flushLocalChats]);
 
   useEffect(() => {
     try {
@@ -689,12 +705,31 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [])
 
-  // Unmount / window close must cancel in-flight /api/chat work (industry-standard AbortController).
+  // Unmount / window close must cancel in-flight /api/chat work and flush pending chat saves.
   useEffect(() => {
+    const flushPendingRemote = () => {
+      const pendingId = persistChatIdRef.current
+      const list = chatsRef.current
+      const target = pendingId
+        ? list.find((item) => item.id === pendingId)
+        : list.find((item) => item.id === activeChatIdRef.current)
+      if (!target) return
+      if (readLocalDeletedChatIds().includes(target.id)) return
+      if (!target.messages.some((message) => !message.isStreaming)) return
+      persistChatIdRef.current = null
+      flushLocalChats(list)
+      flushChatToRemoteKeepalive(target)
+    }
+    const onPageHide = () => {
+      flushPendingRemote()
+    }
+    window.addEventListener('pagehide', onPageHide)
     return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      flushPendingRemote()
       abortActiveStream()
     }
-  }, [abortActiveStream])
+  }, [abortActiveStream, flushLocalChats])
 
   const resolvedActiveChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
   if (resolvedActiveChat) {
@@ -1893,15 +1928,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         const rawArtifacts = dedupeArtifacts([...streamedArtifacts, ...turn.artifacts]);
         if (rawArtifacts.length > 0) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
+          let prepareSandpackSource: ((source: string) => string) | null = null
           for (const rawArt of rawArtifacts) {
             const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt, {
               preferId: activeArtifact?.id,
             });
-            extractedArtifacts.push(
-              revisedArt.type === 'react'
-                ? { ...revisedArt, content: prepareSandpackSource(revisedArt.content) }
-                : revisedArt
-            );
+            if (revisedArt.type === 'react') {
+              if (!prepareSandpackSource) {
+                prepareSandpackSource = (await import('./sandbox/reactPreview')).prepareSandpackSource
+              }
+              extractedArtifacts.push({ ...revisedArt, content: prepareSandpackSource(revisedArt.content) })
+            } else {
+              extractedArtifacts.push(revisedArt)
+            }
           }
         }
         visibleMessageText = turn.visibleText || finalCleanContent
@@ -2026,6 +2065,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         stopped: true,
       })
     }
+    // Stop used to skip remote persist (only stream finally set the ref) — mark for save.
+    if (chatId) persistChatIdRef.current = chatId
   }
 
   const executeOSAction = (msgId: string, action: OSActionCardType, chatId = activeChatId) => {

@@ -52,11 +52,23 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None.
+- **Task:** None. (PR `perf/wim-ai-load-chat-save` opened for Ask AI load + chat save.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (perf: Ask AI cold load + chat save reliability)
+- **Scope:** User-reported Ask AI window slow open + chat persistence issues. Incremental only — no chrome restyle, no notebook sync, no Yjs/App Router.
+  1. **Cold load:** Removed nested `next/dynamic` in `AskAiWindow` (WindowRouter already lazy-loads it) so opening Ask AI is one chunk fetch, not two waterfalls.
+  2. **Cold load:** Deferred Artifacts/Sources panels + Search/Project/Settings/Share modals via `next/dynamic`; lazy-import `prepareSandpackSource` only when a react artifact is finalized.
+  3. **Save reliability:** Debounced localStorage writes while streaming (400ms); flush local + remote on `pagehide`/unmount via `fetch` keepalive; Stop now marks `persistChatIdRef` so aborted turns still sync.
+  4. **Save reliability:** Coalesce concurrent `pushChatToRemote` for the same chat id (latest snapshot wins); skip `getSession` when cached JWT has >2 minutes left.
+  5. **Save latency:** Persist message updates in parallel (was N sequential PostgREST updates) and skip the post-write full re-read.
+- **Files:** `AskAiWindow.tsx`, `ClaudeWorkspaceChat/index.tsx`, `chat-remote.ts`, `chat-store.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open Ask AI from desktop icon (first open); send a message, Stop mid-stream, close window — chat should remain after reload; rename/star still sync.
+- **Handoff:** PR `perf/wim-ai-load-chat-save`. Residual: ChatMessage still pulls markdown on first paint; optional further split of message list; measure First Load JS for Ask AI chunk.
+
 
 ### 2026-09-20 — Grok Bot / Cursor (perf: open/close from-origin + defer route mount)
 - **Scope:** Follow-up on PR #748 — window open/close performance and click-origin fidelity. No chrome restyle; no notebook sync changes.

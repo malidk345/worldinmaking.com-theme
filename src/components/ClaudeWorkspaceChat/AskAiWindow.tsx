@@ -1,9 +1,7 @@
 import React from 'react'
-import dynamic from 'next/dynamic'
 import { useApp, useAppWindows } from '../../context/App'
 import { ASK_AI_KEY, findAskAiWindow } from '../../lib/open-ask-ai-window'
-
-const ChatApp = dynamic(() => import('./index'), { ssr: false })
+import ChatApp from './index'
 
 /** Ask AI as window content — same chrome as every other AppWindow. */
 export default function AskAiWindow(): JSX.Element {
