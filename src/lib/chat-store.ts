@@ -348,7 +348,10 @@ export async function upsertChatWithMessages(
         if (error) throw error
     }
 
+    // Never persist an in-flight assistant row as a finished remote message.
+    // Dirty pushes during an active stream would otherwise show truncated "done" replies on other devices.
     const persistable = (chat.messages || [])
+        .filter((message) => !message.isStreaming)
         .filter((message) => message.role === 'user' || message.role === 'assistant' || message.role === 'system')
         .filter((message) => message.role === 'user' || (message.content || '').trim().length > 0)
         .slice(0, MAX_MESSAGES)
