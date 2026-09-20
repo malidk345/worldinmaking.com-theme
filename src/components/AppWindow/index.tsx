@@ -364,7 +364,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                             : `border-primary/40 shadow-sm${
                                   isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? '' : ' opacity-[0.985]'
                               }`
-                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'bg-primary' : WINDOW_BG} ${
+                    } ${isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) || isCompositorActive ? 'bg-primary' : WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
                         item.expanded
@@ -384,7 +384,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         // makes backdrop-filter sample only this stacking context, so frosted
                         // glass never blurs the desktop wallpaper (unlike wimpos plain divs).
                         zIndex: inSwitcher ? 10001 + switcherIndex : item.zIndex,
-                        contentVisibility: inView ? 'visible' : 'auto',
+                        contentVisibility: item.modal || inView ? 'visible' : 'auto',
                         containIntrinsicSize: `${Math.round(size.width)}px ${Math.round(size.height)}px`,
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
                         x: dragging ? motionX : undefined,
