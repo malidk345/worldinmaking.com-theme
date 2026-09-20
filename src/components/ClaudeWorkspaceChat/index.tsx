@@ -50,6 +50,7 @@ import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
   type NotebookChatBind,
+  bindNotebookChat,
   buildNotebookAgentContext,
   readNotebookChatBind,
   readNotebookSelection,
@@ -95,6 +96,7 @@ import {
   pullChatsFromRemote,
   flushChatToRemoteKeepalive,
   pushChatToRemote,
+  pushDirtyLocalChats,
   readLocalChats,
   readLocalDeletedChatIds,
   rememberDeletedChatId,
@@ -614,6 +616,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         })
         // List is metadata-only — load messages for the open chat (egress).
         if (nextActive) await hydrateChatById(nextActive)
+        // Push local drafts the other device has not seen yet (cap inside helper).
+        if (!cancelled) {
+          void pushDirtyLocalChats(chatsRef.current, 6)
+        }
       } finally {
         isSyncing = false
         if (syncPending && !cancelled) {
@@ -743,6 +749,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     (activeChatId && stickyActiveChatRef.current?.id === activeChatId ? stickyActiveChatRef.current : undefined)
   isStreamingRef.current =
     isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming)
+
+  // Cross-device / reload: chats persist notebookId; session bind does not. Rehydrate bind so tools keep working.
+  useEffect(() => {
+    const notebookId = activeChat?.notebookId
+    if (!notebookId) return
+    const current = readNotebookChatBind()
+    if (current?.notebookId === notebookId) return
+    bindNotebookChat({ notebookId, title: activeChat?.title })
+  }, [activeChat?.id, activeChat?.notebookId, activeChat?.title])
 
   // Sync selected model when switching active chat
   useEffect(() => {

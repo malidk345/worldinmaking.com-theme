@@ -51,12 +51,24 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS by Grok Bot]`
-- **Task:** PR #750 — resolve main conflicts + multi-device chat/notebook sync hardening.
+- **Status:** `[IDLE]`
+- **Task:** None. (PR #750 updated: conflicts resolved + multi-device sync hardening.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (multi-device: chat merge + dirty push + presence leave)
+- **Scope:** Same PR #750 after merging main (#749). Harden dual-device notebook + WIM AI sync without Yjs / App Router / chrome restyle. Keep #750 perf saves.
+  1. **Conflicts:** Merged `main` into `perf/wim-ai-load-chat-save` — took AppWindow open/close symmetry from #749; kept Ask AI load/save; merged AI_MEMORY §5 entries.
+  2. **Chat merge:** Metadata-only remote stubs no longer clobber local message-bearing chats; preserve `notebookId` / `agentMode` / `activePlan` / `systemPrompt` across list GET merges.
+  3. **Chat sync:** `pushDirtyLocalChats` on remote sync tick so Device A drafts reach Device B without requiring window close; mark pushed `updatedAt` to avoid loops.
+  4. **Tools:** Rehydrate `bindNotebookChat` from `chat.notebookId` after reload / other-device open so notebook tools keep a bind.
+  5. **Presence:** `untrack` on `pagehide` / `visibilitychange=hidden` so ghost carets do not stick on the other device.
+- **Files:** `chat-merge.ts`, `chat-remote.ts`, `ClaudeWorkspaceChat/index.tsx`, `notebookPresence.ts`, `AI_MEMORY.md`
+- **Verify:** Two browsers same account — edit chat on A, focus WIM AI on B (pull+dirty push); delete on A (tombstone on B); open notebook-bound chat on B (bind restored); leave notebook tab (presence drops).
+- **Handoff:** PR #750. Residual: presence still best-effort without auth; dirty push capped at 6 chats/tick; ChatMessage markdown still on first paint.
+
 
 ### 2026-09-20 — Grok Bot / Cursor (OS-like window open/close symmetry)
 - **Scope:** Follow-up after #748 merge — make close a true reverse of open with polished desktop-OS feel. Motion only; no chrome restyle; keep click-origin + perf deferrals.

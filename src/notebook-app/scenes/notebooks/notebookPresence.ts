@@ -197,10 +197,31 @@ export function useNotebookPresence({
             channelRef.current = null
         }
 
+        const leavePresence = () => {
+            if (!channel) return
+            try {
+                const untrack = (channel as { untrack?: () => Promise<unknown> }).untrack
+                if (typeof untrack === 'function') void untrack.call(channel)
+            } catch {
+                /* best-effort */
+            }
+        }
+
+        // Mobile background / tab hide must drop caret or the other device keeps a ghost peer.
+        const onPageHide = () => leavePresence()
+        const onVisibility = () => {
+            if (document.visibilityState === 'hidden') leavePresence()
+        }
+        window.addEventListener('pagehide', onPageHide)
+        document.addEventListener('visibilitychange', onVisibility)
+
         return () => {
             isCancelled = true
+            window.removeEventListener('pagehide', onPageHide)
+            document.removeEventListener('visibilitychange', onVisibility)
             if (caretTimerRef.current) window.clearTimeout(caretTimerRef.current)
             caretTimerRef.current = 0
+            leavePresence()
             channelRef.current = null
             if (channel) {
                 try {
