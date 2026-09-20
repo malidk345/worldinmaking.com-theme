@@ -56,9 +56,9 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
     },
     hogzilla: {
         light: {
-            top: '#E3E1E4',
-            bottom: '#FDFDFD',
-            css: 'linear-gradient(268.63deg, #E3E1E4 0%, #FDFDFD 80%, #FDFDFD 100%)',
+            top: '#B4ADC4',
+            bottom: '#8B839C',
+            css: 'linear-gradient(180deg, #B4ADC4 0%, #9E97AE 52%, #8B839C 100%)',
         },
         dark: {
             top: '#141E40',

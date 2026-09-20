@@ -32,7 +32,7 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
             dark: 'linear-gradient(180deg,#1E5DAD_0%',
         },
         hogzilla: {
-            light: 'linear-gradient(268.63deg,#E3E1E4_0%',
+            light: 'linear-gradient(180deg,#B4ADC4_0%',
             dark: 'linear-gradient(180deg,#141E40_0%',
         },
         'keyboard-mint': {
