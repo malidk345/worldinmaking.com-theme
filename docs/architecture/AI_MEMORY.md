@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-20 — Grok Bot / Cursor (OS-like window open/close symmetry)
+- **Scope:** Follow-up after #748 merge — make close a true reverse of open with polished desktop-OS feel. Motion only; no chrome restyle; keep click-origin + perf deferrals.
+  1. `AppWindow`: shared `OS_WINDOW_*` spring/opacity constants — open and close use the same scale/position springs; opacity uses complementary ease-out (open) / ease-in (close).
+  2. Origin close still returns to `fromOrigin` at `OS_WINDOW_ORIGIN_SCALE` (0.08); non-origin close springs to `OS_WINDOW_NON_ORIGIN_SCALE` (0.94) instead of a hard duration fade — true reverse of non-origin open.
+  3. Explicit `transformOrigin: 50% 50%` so scale morph stays centered on the click-origin math from the registry.
+  4. Compact / `performanceBoost` still skip motion (duration 0). `routeReady` deferral of `WindowRouter` from #748 unchanged.
+- **Files:** `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open from desktop icon then close — should reverse along the same path/feel; open without origin then close — soft scale to 0.94.
+- **Handoff:** New PR `perf/os-window-open-close-symmetry` (do not reopen #748). Residual: optional taskbar minimize/restore genie later.
+
 ### 2026-09-20 — Grok Bot / Cursor (perf: open/close from-origin + defer route mount)
 - **Scope:** Follow-up on PR #748 — window open/close performance and click-origin fidelity. No chrome restyle; no notebook sync changes.
   1. `AppWindow`: defer `WindowRouter` until open-from-origin spring completes (`routeReady`), with a 480ms safety timeout if `onAnimationComplete` is skipped — keeps route JS/layout off the compositor frames.
