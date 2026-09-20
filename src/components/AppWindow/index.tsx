@@ -163,7 +163,18 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const [playOpenAnimation, setPlayOpenAnimation] = useState(!!item.fromOrigin)
     const skipsOpenAnimation = !playOpenAnimation
     const [animating, setAnimating] = useState(playOpenAnimation)
+    // Defer heavy WindowRouter until the open-from-origin spring finishes so the
+    // compositor is not competing with route JS/layout on the same frames.
+    // Skipped opens (no fromOrigin / already settled) mount content immediately.
+    const [routeReady, setRouteReady] = useState(skipsOpenAnimation)
     const animationStartTimeRef = useRef<number | null>(null)
+
+    // If Framer skips onAnimationComplete (e.g. duration:0 race), still mount the route.
+    useEffect(() => {
+        if (routeReady) return
+        const timer = window.setTimeout(() => setRouteReady(true), 480)
+        return () => window.clearTimeout(timer)
+    }, [routeReady])
     const posthog = usePostHog()
     const [view, setView] = useState<'marketing' | 'developer'>('marketing')
     const [hasDeveloperMode, setHasDeveloperMode] = useState(false)
@@ -244,6 +255,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const onAnimationComplete = () => {
         setAnimating(false)
         setPlayOpenAnimation(false)
+        // Always safe / idempotent — opens without fromOrigin already start ready.
+        setRouteReady(true)
         const endTime = performance.now()
         const startTime = animationStartTimeRef.current || 0
         const duration = endTime - startTime
@@ -384,7 +397,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         // makes backdrop-filter sample only this stacking context, so frosted
                         // glass never blurs the desktop wallpaper (unlike wimpos plain divs).
                         zIndex: inSwitcher ? 10001 + switcherIndex : item.zIndex,
-                        contentVisibility: item.modal || inView ? 'visible' : 'auto',
+                        contentVisibility:
+                            item.modal || inView || isCompositorActive ? 'visible' : 'auto',
                         containIntrinsicSize: `${Math.round(size.width)}px ${Math.round(size.height)}px`,
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
                         x: dragging ? motionX : undefined,
@@ -431,14 +445,37 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         width: size.width,
                         height: size.height,
                     }}
-                    exit={{
-                        scale: 0.95,
-                        opacity: 0,
-                        transition: {
-                            duration: compact ? 0.05 : 0.12,
-                            ease: [0.32, 0, 0.67, 0],
-                        },
-                    }}
+                    exit={
+                        compact || siteSettings?.performanceBoost
+                            ? {
+                                  opacity: 0,
+                                  transition: { duration: 0 },
+                              }
+                            : item.fromOrigin
+                              ? {
+                                    // Mirror open-from-origin: shrink back to the click point.
+                                    // Keep width/height at the window size; scale does the visual collapse
+                                    // (same model as initial), so transform-origin stays correct.
+                                    scale: 0.08,
+                                    opacity: 0,
+                                    left: Math.round(item.fromOrigin.x),
+                                    top: Math.round(item.fromOrigin.y),
+                                    transition: {
+                                        scale: { type: 'spring', stiffness: 480, damping: 34, mass: 0.55 },
+                                        left: { type: 'spring', stiffness: 420, damping: 36, mass: 0.6 },
+                                        top: { type: 'spring', stiffness: 420, damping: 36, mass: 0.6 },
+                                        opacity: { duration: 0.14, ease: [0.32, 0, 0.67, 0] },
+                                    },
+                                }
+                              : {
+                                    scale: 0.95,
+                                    opacity: 0,
+                                    transition: {
+                                        duration: 0.12,
+                                        ease: [0.32, 0, 0.67, 0],
+                                    },
+                                }
+                    }
                     transition={
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
@@ -480,7 +517,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         }}
                     />
                     <WindowContent item={item} chrome={chrome} hasToolbar={!!hasToolbar}>
-                        <WindowRouter item={{ ...item, children: item.element }} />
+                        {routeReady ? (
+                            <WindowRouter item={{ ...item, children: item.element }} />
+                        ) : (
+                            // Lightweight shell during open-from-origin: preserves pane
+                            // geometry without mounting route modules mid-spring.
+                            <div className="h-full min-h-0 flex-1" aria-hidden />
+                        )}
                     </WindowContent>
                     {!item.fixedSize && !item.expanded && !isMobile && (
                         <>

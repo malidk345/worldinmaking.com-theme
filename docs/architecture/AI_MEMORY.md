@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-20 — Grok Bot / Cursor (perf: open/close from-origin + defer route mount)
+- **Scope:** Follow-up on PR #748 — window open/close performance and click-origin fidelity. No chrome restyle; no notebook sync changes.
+  1. `AppWindow`: defer `WindowRouter` until open-from-origin spring completes (`routeReady`), with a 480ms safety timeout if `onAnimationComplete` is skipped — keeps route JS/layout off the compositor frames.
+  2. `AppWindow`: close mirrors open when `item.fromOrigin` exists (scale `0.08` back to click point); fallback stays scale `0.95`. Compact / `performanceBoost` still skip motion.
+  3. `AppWindow`: force `content-visibility: visible` while `isCompositorActive` so open/close chrome is never skipped mid-animation.
+- **Files:** `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open from desktop icon (expands from click) and close (returns to origin); open without origin still fine.
+- **Handoff:** Continues PR #748 (`perf/shell-windows-load`). Residual: measure open frame times; optional taskbar minimize/restore origin later.
+
 ### 2026-09-20 — Grok Bot / Cursor (perf: shell cold load + window compositor)
 - **Scope:** Phase 3 performance — initial load / window open-close-focus. No chrome restyle, no notebook sync changes, no Yjs/App Router.
   1. `WindowRouter`: lazy-load `NotebooksList` (`next/dynamic`, `ssr: false`) so cold `/` and non-notebook windows do not pull the notebooks list module.
