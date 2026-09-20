@@ -53,3 +53,7 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+
+## 2026-10-25 - Prevent UI Main Thread Blocking from Resize Hooks
+**Learning:** In the `useBreakpoint` hook, updating state during `resize` events without checking if the logical breakpoint category actually shifted forces React to re-render all dependent tree elements (e.g., Markdown blocks, Navigation) on every sub-pixel change. Additionally, emitting `resize` events without `{ passive: true }` blocks the UI thread unnecessarily.
+**Action:** Always use functional state updates (`setBreakpoints(prev => ...)`) equipped with a shallow equality check using `for...in` and `Object.prototype.hasOwnProperty` in resize listeners, and always attach the `{ passive: true }` flag to high-frequency DOM event listeners that don't need `preventDefault`.
