@@ -1,3 +1,5 @@
+successfully downloaded text file (SHA: 99c8c398c6bfbe87603d96c80787f28b1ddb9f58)
+
 # AI Agent Memory & Coordination Log
 
 **Document Location:** `docs/architecture/AI_MEMORY.md`  
@@ -52,11 +54,20 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None. (PR #750 updated: conflicts resolved + multi-device sync hardening.)
+- **Task:** None. (Post-#750 audit: persist chat notebook bind columns — see §5.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-20 — Grok Bot / Cursor (audit: persist chat notebookId for dual-device tools)
+- **Scope:** Post-#750 audit of dual-device + WIM AI + Supabase alignment. Found concrete gap: client merge/rehydrate keeps `notebookId` / `agentMode` / `activePlan`, but `chat-store` never wrote them to `wim_chats`, so a fresh device pull lost notebook tool bind.
+  1. Migration `20260920_wim_chats_notebook_bind.sql`: add `notebook_id`, `agent_mode`, `active_plan` (+ check + partial index). Applied live on `iydypisgfaksqkjdraiu`.
+  2. `chat-store.ts`: read/write those columns on list/get/upsert return paths.
+  3. Docs: `SUPABASE_LIVE_SCHEMA.md` wim_chats columns; AI_MEMORY §4/§5.
+- **Files:** `supabase/migrations/20260920_wim_chats_notebook_bind.sql`, `src/lib/chat-store.ts`, `docs/architecture/SUPABASE_LIVE_SCHEMA.md`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Bind Ask AI from a notebook on device A; sync; open that chat on device B (cleared sessionStorage) — tools still see notebook bind from remote `notebookId`.
+- **Handoff:** PR `fix/persist-chat-notebook-bind`. Residual: dirty push still capped at 6; presence best-effort; advisor WARN for unused indexes / SECURITY DEFINER forum RPCs (non-blocking).
 
 ### 2026-09-20 — Grok Bot / Cursor (multi-device: chat merge + dirty push + presence leave)
 - **Scope:** Same PR #750 after merging main (#749). Harden dual-device notebook + WIM AI sync without Yjs / App Router / chrome restyle. Keep #750 perf saves.
