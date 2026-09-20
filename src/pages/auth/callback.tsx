@@ -1,17 +1,37 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, isSupabaseConfigured } from 'lib/supabase'
-import { consumeAuthNextPath, safeAuthNextPath, shouldIgnorePkceExchangeError } from 'lib/auth-callback'
+import {
+    consumeAuthNextPath,
+    readOAuthProviderError,
+    safeAuthNextPath,
+    shouldIgnorePkceExchangeError,
+} from 'lib/auth-callback'
+import usePostHog from 'hooks/usePostHog'
 import WimLogo from 'components/WimLogo'
+
+const COOKIELESS_SENTINEL_VALUE = '$posthog_cookieless'
 
 export default function AuthCallbackPage() {
     const router = useRouter()
+    const posthog = usePostHog()
     const [error, setError] = useState<string | null>(null)
     const ran = useRef(false)
 
     useEffect(() => {
         if (!router.isReady || ran.current) return
         ran.current = true
+
+        // Record a failed OAuth login once, then show the reason to the visitor.
+        const failLogin = (reason: string, message?: string) => {
+            posthog?.capture?.('wim login error', {
+                source: 'auth_callback',
+                provider: 'google',
+                reason,
+                ...(message ? { message } : {}),
+            })
+            setError(message || 'We could not complete sign in. Please try again.')
+        }
 
         const finish = async () => {
             if (!isSupabaseConfigured) {
@@ -22,27 +42,53 @@ export default function AuthCallbackPage() {
             const code = typeof router.query.code === 'string' ? router.query.code : null
             const next = consumeAuthNextPath() || safeAuthNextPath(router.query.next)
 
+            // The provider redirects back with an error when the user rejects the consent screen.
+            const providerError = readOAuthProviderError(router.query)
+            if (providerError) {
+                failLogin(providerError.reason, providerError.description)
+                return
+            }
+
             const existing = await supabase.auth.getSession()
             if (!existing.data.session && code) {
                 const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
                 if (exchangeError) {
                     const after = await supabase.auth.getSession()
                     if (!shouldIgnorePkceExchangeError(exchangeError.message, !!after.data.session)) {
-                        setError(exchangeError.message)
+                        failLogin('code_exchange_failed', exchangeError.message)
                         return
                     }
                 }
             }
 
+            // Confirm authentication before we record success — the funnel and person
+            // identity must only advance once Supabase returns a real session.
+            const { data: sessionData } = await supabase.auth.getSession()
+            const session = sessionData.session
+            if (!session?.user) {
+                failLogin('no_session')
+                return
+            }
+
             // Persist auth tokens to localStorage so early API calls on next page have auth context
             try {
-                const { data: sessionData } = await supabase.auth.getSession()
-                if (sessionData.session?.access_token) {
-                    localStorage.setItem('jwt', sessionData.session.access_token)
+                localStorage.setItem('jwt', session.access_token)
+                localStorage.setItem('wim_auth_user_id', session.user.id)
+            } catch {
+                /* best-effort */
+            }
+
+            // Identify the person and record login success now that auth is confirmed.
+            // The password path does this in useUser.finalizeLogin; OAuth returns here instead.
+            try {
+                const distinctId = posthog?.get_distinct_id?.()
+                if (distinctId && distinctId !== COOKIELESS_SENTINEL_VALUE && session.user.email) {
+                    posthog?.identify?.(session.user.id, { email: session.user.email })
                 }
-                if (sessionData.session?.user?.id) {
-                    localStorage.setItem('wim_auth_user_id', sessionData.session.user.id)
-                }
+                posthog?.capture?.('wim login success', {
+                    method: 'google',
+                    email: session.user.email,
+                })
             } catch {
                 /* best-effort */
             }
@@ -53,7 +99,7 @@ export default function AuthCallbackPage() {
         }
 
         void finish()
-    }, [router.isReady, router.query.code, router.query.next])
+    }, [router.isReady, router.query])
 
     return (
         <div className="min-h-screen bg-primary text-primary flex items-center justify-center p-6">
