@@ -1,0 +1,23 @@
+/* Mobile overscroll / browser chrome must share the wallpaper field.
+   Hogzilla light used to be a near-white 268deg wash, so Safari gaps
+   and theme-color looked unchanged next to Keyboard mint. */
+
+html[data-wallpaper='hogzilla'] {
+    --browser-chrome: #b4adc4;
+    --browser-chrome-bottom: #8b839c;
+    --browser-chrome-field: linear-gradient(180deg, #b4adc4 0%, #c9c3d6 42%, #8b839c 100%);
+}
+
+html.dark[data-wallpaper='hogzilla'] {
+    --browser-chrome: #141e40;
+    --browser-chrome-bottom: #46368b;
+    --browser-chrome-field: linear-gradient(180deg, #141e40 0%, #46368b 100%);
+}
+
+/* Paint into the notch / home-indicator band. inset:0 stops at the layout viewport. */
+body::before {
+    top: calc(-1 * env(safe-area-inset-top, 0px));
+    right: 0;
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    left: 0;
+}
