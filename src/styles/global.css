@@ -641,6 +641,16 @@ html.dark[data-wallpaper='plaza-bang'] {
     --browser-chrome-bottom: #141e40;
     --browser-chrome-field: #141e40;
 }
+html[data-wallpaper='paper-white'] {
+    --browser-chrome: #ffffff;
+    --browser-chrome-bottom: #ffffff;
+    --browser-chrome-field: #ffffff;
+}
+html.dark[data-wallpaper='paper-white'] {
+    --browser-chrome: #121212;
+    --browser-chrome-bottom: #121212;
+    --browser-chrome-field: #121212;
+}
 
 html,
 body,

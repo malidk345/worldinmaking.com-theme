@@ -51,6 +51,10 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
             light: 'bg-[#E6DFD2]',
             dark: 'bg-[#141E40]',
         },
+        'paper-white': {
+            light: 'bg-[#FFFFFF]',
+            dark: 'bg-[#121212]',
+        },
     }
 
     it.each(Object.keys(fields) as WallpaperName[])('%s light/dark chrome equals wallpaper top and bottom', (name) => {

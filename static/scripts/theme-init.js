@@ -22,8 +22,9 @@
         'draft-world': { light: '#F3EFE6', dark: '#141E40' },
         'rain-embers': { light: '#1A3350', dark: '#0F2236' },
         'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },
+        'paper-white': { light: '#FFFFFF', dark: '#121212' },
     }
-    var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang']
+    var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang', 'paper-white']
 
     function applyBrowserChrome() {
         var head = document.head

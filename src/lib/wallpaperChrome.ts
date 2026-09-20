@@ -5,6 +5,7 @@ export type WallpaperName =
     | 'draft-world'
     | 'rain-embers'
     | 'plaza-bang'
+    | 'paper-white'
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -22,6 +23,7 @@ export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
     'draft-world',
     'rain-embers',
     'plaza-bang',
+    'paper-white',
 ]
 
 export interface WallpaperTone {
@@ -106,6 +108,10 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
         light: { top: '#E6DFD2', bottom: '#E6DFD2', css: '#E6DFD2' },
         dark: { top: '#141E40', bottom: '#141E40', css: '#141E40' },
     },
+    'paper-white': {
+        light: { top: '#FFFFFF', bottom: '#FFFFFF', css: '#FFFFFF' },
+        dark: { top: '#121212', bottom: '#121212', css: '#121212' },
+    },
 }
 
 export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
@@ -118,6 +124,10 @@ export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
     'draft-world': { light: WALLPAPER_FIELDS['draft-world'].light.top, dark: WALLPAPER_FIELDS['draft-world'].dark.top },
     'rain-embers': { light: WALLPAPER_FIELDS['rain-embers'].light.top, dark: WALLPAPER_FIELDS['rain-embers'].dark.top },
     'plaza-bang': { light: WALLPAPER_FIELDS['plaza-bang'].light.top, dark: WALLPAPER_FIELDS['plaza-bang'].dark.top },
+    'paper-white': {
+        light: WALLPAPER_FIELDS['paper-white'].light.top,
+        dark: WALLPAPER_FIELDS['paper-white'].dark.top,
+    },
 }
 
 export const DEFAULT_WALLPAPER_THEME_COLOR: WallpaperTone = WALLPAPER_THEME_COLORS[DEFAULT_WALLPAPER]
