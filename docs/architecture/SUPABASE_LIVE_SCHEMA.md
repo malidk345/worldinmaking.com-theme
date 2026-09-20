@@ -649,12 +649,14 @@ Votes: `community_*_votes.vote` and `post_votes.vote` are **integer** (`1` / `-1
   - `system_prompt` text
   - `share_token` text
   - `is_shared` boolean not null
+  - `notebook_id` text
+  - `agent_mode` text
+  - `active_plan` jsonb
   - `created_at` timestamp with time zone not null
   - `updated_at` timestamp with time zone not null
   - `deleted_at` timestamp with time zone
 - Policies:
-  - `SELECT` wim_chats_account_select
-  - `SELECT` wim_chats_public_shared_read
+  - `SELECT` wim_chats_select (owner/auth + public shared; writes via service-role API)
 
 ## wim_notebook_collaborators
 
