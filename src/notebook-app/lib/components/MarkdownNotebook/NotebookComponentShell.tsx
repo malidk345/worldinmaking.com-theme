@@ -213,6 +213,7 @@ export function NotebookComponentShell({
             const nextProps = { ...currentNode.props }
 
             for (const key in props) {
+                if (!Object.prototype.hasOwnProperty.call(props, key)) continue
                 if (props[key] === undefined) {
                     delete nextProps[key]
                 } else {
