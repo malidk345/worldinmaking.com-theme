@@ -602,9 +602,9 @@ html.dark[data-wallpaper='cobalt'] {
     --browser-chrome-field: linear-gradient(180deg, #1e5dad 0%, #2f7ed4 50%, #3d8fdc 100%);
 }
 html[data-wallpaper='hogzilla'] {
-    --browser-chrome: #e3e1e4;
-    --browser-chrome-bottom: #fdfdfd;
-    --browser-chrome-field: linear-gradient(268.63deg, #e3e1e4 0%, #fdfdfd 80%, #fdfdfd 100%);
+    --browser-chrome: #b4adc4;
+    --browser-chrome-bottom: #8b839c;
+    --browser-chrome-field: linear-gradient(180deg, #b4adc4 0%, #9e97ae 52%, #8b839c 100%);
 }
 html.dark[data-wallpaper='hogzilla'] {
     --browser-chrome: #141e40;
@@ -640,6 +640,16 @@ html.dark[data-wallpaper='plaza-bang'] {
     --browser-chrome: #141e40;
     --browser-chrome-bottom: #141e40;
     --browser-chrome-field: #141e40;
+}
+html[data-wallpaper='paper-white'] {
+    --browser-chrome: #ffffff;
+    --browser-chrome-bottom: #ffffff;
+    --browser-chrome-field: #ffffff;
+}
+html.dark[data-wallpaper='paper-white'] {
+    --browser-chrome: #121212;
+    --browser-chrome-bottom: #121212;
+    --browser-chrome-field: #121212;
 }
 
 html,

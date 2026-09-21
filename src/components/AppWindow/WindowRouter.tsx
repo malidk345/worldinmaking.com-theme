@@ -2,7 +2,6 @@
 
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { NotebooksList } from 'components/Notebooks/NotebooksList'
 import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
 import { WINDOW_BG } from '../../constants/frostedSurfaces'
@@ -27,6 +26,11 @@ import {
 export { isForumPath, isBlogPath }
 
 const routeFallback = () => <div className="h-full min-h-0 flex-1" aria-hidden />
+
+const NotebooksList = dynamic(() => import('components/Notebooks/NotebooksList').then((m) => ({ default: m.NotebooksList })), {
+    ssr: false,
+    loading: routeFallback,
+})
 
 const IdeasHub = dynamic(() => import('components/Ideas'), { ssr: false, loading: routeFallback })
 const ProfileWrapper = dynamic(() => import('components/Profile'), { loading: routeFallback })

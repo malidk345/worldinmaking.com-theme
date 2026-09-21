@@ -49,10 +49,36 @@ const themeScript = `(function () {
     var THEME_COLORS = ${JSON.stringify(WALLPAPER_THEME_COLORS)}
     var FIELDS = ${JSON.stringify(WALLPAPER_FIELDS)}
     if (KEPT.indexOf(wallpaper) === -1) wallpaper = DEFAULT_WALLPAPER
+    window.__wallpaper = wallpaper
+
+    function resolveWallpaper(nextWallpaper) {
+        if (nextWallpaper && KEPT.indexOf(nextWallpaper) !== -1) {
+            wallpaper = nextWallpaper
+            window.__wallpaper = wallpaper
+            return wallpaper
+        }
+        if (typeof window.__wallpaper === 'string' && KEPT.indexOf(window.__wallpaper) !== -1) {
+            wallpaper = window.__wallpaper
+            return wallpaper
+        }
+        var fromDom = document.documentElement && document.documentElement.getAttribute('data-wallpaper')
+        if (fromDom && KEPT.indexOf(fromDom) !== -1) {
+            wallpaper = fromDom
+            window.__wallpaper = wallpaper
+            return wallpaper
+        }
+        return wallpaper
+    }
+
+    // Sync closed-over wallpaper only — React owns theme-color / CSS vars after hydrate.
+    window.__setWallpaper = function (nextWallpaper) {
+        resolveWallpaper(nextWallpaper)
+    }
 
     function applyBrowserChrome(nextWallpaper, nextTheme, nextColorMode) {
         var head = document.head
         if (!head) return
+        nextWallpaper = resolveWallpaper(nextWallpaper)
         var pair = THEME_COLORS[nextWallpaper] || THEME_COLORS[${JSON.stringify(DEFAULT_WALLPAPER)}]
         var modes = FIELDS[nextWallpaper] || FIELDS[${JSON.stringify(DEFAULT_WALLPAPER)}]
         var mode = nextColorMode === 'system'
@@ -123,7 +149,7 @@ const themeScript = `(function () {
         if (document.body) document.body.className = nextTheme
         colorMode = newThemeChoice === 'system' ? 'system' : nextTheme
         theme = nextTheme
-        applyBrowserChrome(wallpaper, nextTheme, colorMode)
+        applyBrowserChrome(resolveWallpaper(), nextTheme, colorMode)
         window.__onThemeChange(nextTheme)
         try {
             localStorage.setItem('theme', nextTheme)
@@ -147,7 +173,7 @@ const themeScript = `(function () {
             theme = nextTheme
             if (document.documentElement) document.documentElement.className = nextTheme
             if (document.body) document.body.className = nextTheme
-            applyBrowserChrome(wallpaper, nextTheme, 'system')
+            applyBrowserChrome(resolveWallpaper(), nextTheme, 'system')
             window.__onThemeChange(nextTheme)
         })
     }

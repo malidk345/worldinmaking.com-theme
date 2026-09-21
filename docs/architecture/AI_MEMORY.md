@@ -51,12 +51,123 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** None.
+- **Status:** `[DONE by Grok Bot / Cursor]`
+- **Task:** Profile mobile tab-panel spacing + Notebooks-first tab order (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper mobile chrome on change + all kept)
+- **Scope:** User (TR): after changing wallpaper, mobile browser chrome / safe-area gaps (theme-color, overscroll, status/bottom UI) sometimes do not update; audit EVERY kept wallpaper not just hogzilla/paper-white.
+- **Root cause:** `_document.tsx` boot script closed over the initial `wallpaper` from localStorage. Later `__setPreferredTheme` / system-scheme handlers called `applyBrowserChrome(staleWallpaper)`, rewriting `--browser-chrome*` CSS vars. React `chromeGuard` only restored `theme-color` meta — and skipped when two wallpapers shared the same top (e.g. dark `#141E40`). Result: wallpaper art updated, safe-area/overscroll often stuck on the previous field. Secondary: `theme-init.js` had stale hogzilla/mint tops; `wallpaper-mobile-chrome.css` only declared hogzilla.
+- **Fix:** Live `resolveWallpaper()` / `window.__wallpaper` / `__setWallpaper` in `_document.tsx`; `applyWallpaperBrowserChrome` syncs wallpaper + forces attrs; chromeGuard re-applies full field (vars + meta); expand mobile CSS to all KEPT; sync `theme-init.js` THEME_COLORS/FIELDS; App siteSettings effect paints with `force: true`; lock tests for global/mobile/theme-init/document needles.
+- **Files:** `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `_document.tsx`, `App.tsx`, `theme-init.js`, `wallpaper-mobile-chrome.css`, `AI_MEMORY.md`
+- **Verify:** vitest wallpaperChrome.test.ts; on mobile Safari/Chrome cycle every kept wallpaper light+dark — theme-color + overscroll/safe-area match field; change wallpaper then toggle color mode — chrome stays on the new wallpaper.
+- **Handoff:** PR `fix/wim-wallpaper-mobile-chrome-all`. Residual: iOS may still need a visibility bounce before the UI chrome samples a new theme-color (existing pageshow/visibility relock).
+
+### 2026-09-21 — Grok Bot / Cursor (fix: profile mobile tab content spacing + Notebooks first)
+- **Scope:** User (TR): on mobile only, Posts/Notebooks content sits too far from window edge; do not touch profile header; put Notebooks before Posts; desktop unchanged.
+- **Change:** Reordered `ProfileTabs` to Notebooks → Posts → Discussions. Disabled default OSTabs `contentPadding` (`p-4`) and set `tabContentClassName="px-2 py-3 @2xl:p-4"`. ProfileTabs column wrapper uses `-mx-3 @2xl:mx-0` so stacked/mobile reclaim parent `p-4` inset; `@2xl` side-by-side layout unchanged. Header/avatar column untouched.
+- **Files:** `src/components/Profile/ProfileView.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Mobile/narrow profile: tab panel closer to edges; header spacing same; default tab Notebooks; `?tab=posts` still works; desktop/@2xl profile padding unchanged.
+- **Handoff:** PR `fix/profile-mobile-tabs-spacing`. Residual: deep links to `?tab=` still honor URL; if OSTabs used elsewhere, this change is ProfileView-local only.
+
+### 2026-09-21 — Grok Bot / Cursor (chore: remove profile Saved posts tab)
+- **Scope:** User (TR): profile “Saved posts” is redundant with bookmarks; remove carefully without breaking bookmarks or profile pages.
+- **Change:** Removed own-profile-only `Saved posts` tab and local `SavedPosts` component from `ProfileView.tsx`. It only re-rendered `user.profile.bookmarks` (same data as `/bookmarks`).
+- **Kept:** Bookmarks feature intact — `BookmarkButton`, `/bookmarks` page, `useUser` add/removeBookmark, `lib/wim-user-data.ts` (`user_saved_posts` table + fetch/add/remove). No migration/table drops.
+- **Files:** `src/components/Profile/ProfileView.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Own profile tabs = Posts / Notebooks / Discussions only; `/bookmarks` still lists/removes; bookmark toast still links to `/bookmarks`; `?tab=saved` falls back to first tab.
+- **Handoff:** PR `chore/remove-profile-saved-posts`. Residual: old deep links to `?tab=saved` quietly fall back.
+
+### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper survives reload)
+- **Scope:** User (TR): changing wallpaper then refresh restores keyboard-mint every time.
+- **Root cause:** `window.__onThemeChange` in `App.tsx` was registered in a mount-only effect and closed over the initial `siteSettings` (`DEFAULT_WALLPAPER` = keyboard-mint). Logged-in world hydrate `applySnapshot` calls `__setPreferredTheme`, which invoked that stale handler and rewrote `localStorage.siteSettings` back to mint — any chosen wallpaper lost on reload. Secondary: local appearance edits did not bump `wim_world_updated_at`, so a stale `user_worlds` mint row could also win the timestamp race.
+- **Fix:** Functional `setSiteSettings` in `__onThemeChange` / `updateSiteSettings` / `applySnapshot` (preserve wallpaper + `siteDefaultsVersion`); lazy-init settings from `getInitialSiteSettings`; stamp `WORLD_UPDATED_AT_KEY` on local appearance writes; migration unit tests.
+- **Files:** `src/context/App.tsx`, `src/context/hooks/useWorldSnapshot.ts`, `src/lib/wallpaperChrome.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Change wallpaper → hard refresh → same wallpaper; signed-in dual-device still syncs when remote `updated_at` is newer; new users still default to keyboard-mint.
+- **Handoff:** PR `fix/wallpaper-persist-reload`.
+
+### 2026-09-20 — Grok Bot / Cursor (feat: paper-white solid wallpaper)
+- **Scope:** User asked for a completely white wallpaper next to the existing set without breaking chrome.
+  1. Add kept wallpaper id `paper-white`: light `#FFFFFF`, dark `#121212` solids (plaza-bang pattern).
+  2. Wire Scene + glow, `wallpaperChrome` union/fields/theme colors, picker thumb, SiteSettings, global.css chrome vars, legacy theme-init KEPT/THEME_COLORS, lock-test needles.
+  3. Leave Hogzilla/mint/cobalt/etc. untouched; branch from latest main (PR #755 Hogzilla global.css sync left alone).
+- **Files:** `Wallpapers.tsx`, `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `useTheme.tsx`, `global.css`, `App.tsx`, `theme-init.js`, `AI_MEMORY.md`
+- **Verify:** wallpaperChrome.test.ts needles for paper-white; Display Options shows Paper white; light/dark chrome/theme-color match solids; other wallpapers unchanged.
+- **Handoff:** PR `feat/wallpaper-paper-white`. Residual: #755 still open for Hogzilla `global.css` sync.
+
+### 2026-09-20 — Grok Bot / Cursor (chore: add missing .env.example)
+- **Scope:** README tells contributors to `cp .env.example .env.local`, but the file was absent. Root `.gitignore` has `.env*` which also ignored `.env.example`.
+  1. Add `.env.example` with placeholder keys only (Supabase required, optional AI/Lemon/cron/Upstash/PostHog/storage).
+  2. Un-ignore via `!.env.example` in `.gitignore`.
+  3. Claim AI_MEMORY §4/§5.
+- **Files:** `.env.example`, `.gitignore`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** File visible on branch; `cp .env.example .env.local` works; no real secrets.
+- **Handoff:** Trivial docs/chore PR — merge after CI green.
+
+### 2026-09-20 — Grok Bot / Cursor (audit: persist chat notebookId for dual-device tools)
+- **Scope:** Post-#750 audit of dual-device + WIM AI + Supabase alignment. Found concrete gap: client merge/rehydrate keeps `notebookId` / `agentMode` / `activePlan`, but `chat-store` never wrote them to `wim_chats`, so a fresh device pull lost notebook tool bind.
+  1. Migration `20260920_wim_chats_notebook_bind.sql`: add `notebook_id`, `agent_mode`, `active_plan` (+ check + partial index). Applied live on `iydypisgfaksqkjdraiu`.
+  2. `chat-store.ts`: read/write those columns on list/get/upsert return paths.
+  3. Docs: `SUPABASE_LIVE_SCHEMA.md` wim_chats columns; AI_MEMORY §4/§5.
+- **Files:** `supabase/migrations/20260920_wim_chats_notebook_bind.sql`, `src/lib/chat-store.ts`, `docs/architecture/SUPABASE_LIVE_SCHEMA.md`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Bind Ask AI from a notebook on device A; sync; open that chat on device B (cleared sessionStorage) — tools still see notebook bind from remote `notebookId`.
+- **Handoff:** PR `fix/persist-chat-notebook-bind`. Residual: dirty push still capped at 6; presence best-effort; advisor WARN for unused indexes / SECURITY DEFINER forum RPCs (non-blocking).
+
+### 2026-09-20 — Grok Bot / Cursor (multi-device: chat merge + dirty push + presence leave)
+- **Scope:** Same PR #750 after merging main (#749). Harden dual-device notebook + WIM AI sync without Yjs / App Router / chrome restyle. Keep #750 perf saves.
+  1. **Conflicts:** Merged `main` into `perf/wim-ai-load-chat-save` — took AppWindow open/close symmetry from #749; kept Ask AI load/save; merged AI_MEMORY §5 entries.
+  2. **Chat merge:** Metadata-only remote stubs no longer clobber local message-bearing chats; preserve `notebookId` / `agentMode` / `activePlan` / `systemPrompt` across list GET merges.
+  3. **Chat sync:** `pushDirtyLocalChats` on remote sync tick so Device A drafts reach Device B without requiring window close; mark pushed `updatedAt` to avoid loops.
+  4. **Tools:** Rehydrate `bindNotebookChat` from `chat.notebookId` after reload / other-device open so notebook tools keep a bind.
+  5. **Presence:** `untrack` on `pagehide` / `visibilitychange=hidden` so ghost carets do not stick on the other device.
+- **Files:** `chat-merge.ts`, `chat-remote.ts`, `ClaudeWorkspaceChat/index.tsx`, `notebookPresence.ts`, `AI_MEMORY.md`
+- **Verify:** Two browsers same account — edit chat on A, focus WIM AI on B (pull+dirty push); delete on A (tombstone on B); open notebook-bound chat on B (bind restored); leave notebook tab (presence drops).
+- **Handoff:** PR #750. Residual: presence still best-effort without auth; dirty push capped at 6 chats/tick; ChatMessage markdown still on first paint.
+
+
+### 2026-09-20 — Grok Bot / Cursor (OS-like window open/close symmetry)
+- **Scope:** Follow-up after #748 merge — make close a true reverse of open with polished desktop-OS feel. Motion only; no chrome restyle; keep click-origin + perf deferrals.
+  1. `AppWindow`: shared `OS_WINDOW_*` spring/opacity constants — open and close use the same scale/position springs; opacity uses complementary ease-out (open) / ease-in (close).
+  2. Origin close still returns to `fromOrigin` at `OS_WINDOW_ORIGIN_SCALE` (0.08); non-origin close springs to `OS_WINDOW_NON_ORIGIN_SCALE` (0.94) instead of a hard duration fade — true reverse of non-origin open.
+  3. Explicit `transformOrigin: 50% 50%` so scale morph stays centered on the click-origin math from the registry.
+  4. Compact / `performanceBoost` still skip motion (duration 0). `routeReady` deferral of `WindowRouter` from #748 unchanged.
+- **Files:** `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open from desktop icon then close — should reverse along the same path/feel; open without origin then close — soft scale to 0.94.
+- **Handoff:** New PR `perf/os-window-open-close-symmetry` (do not reopen #748). Residual: optional taskbar minimize/restore genie later.
+
+
+### 2026-09-20 — Grok Bot / Cursor (perf: Ask AI cold load + chat save reliability)
+- **Scope:** User-reported Ask AI window slow open + chat persistence issues. Incremental only — no chrome restyle, no notebook sync, no Yjs/App Router.
+  1. **Cold load:** Removed nested `next/dynamic` in `AskAiWindow` (WindowRouter already lazy-loads it) so opening Ask AI is one chunk fetch, not two waterfalls.
+  2. **Cold load:** Deferred Artifacts/Sources panels + Search/Project/Settings/Share modals via `next/dynamic`; lazy-import `prepareSandpackSource` only when a react artifact is finalized.
+  3. **Save reliability:** Debounced localStorage writes while streaming (400ms); flush local + remote on `pagehide`/unmount via `fetch` keepalive; Stop now marks `persistChatIdRef` so aborted turns still sync.
+  4. **Save reliability:** Coalesce concurrent `pushChatToRemote` for the same chat id (latest snapshot wins); skip `getSession` when cached JWT has >2 minutes left.
+  5. **Save latency:** Persist message updates in parallel (was N sequential PostgREST updates) and skip the post-write full re-read.
+- **Files:** `AskAiWindow.tsx`, `ClaudeWorkspaceChat/index.tsx`, `chat-remote.ts`, `chat-store.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open Ask AI from desktop icon (first open); send a message, Stop mid-stream, close window — chat should remain after reload; rename/star still sync.
+- **Handoff:** PR `perf/wim-ai-load-chat-save`. Residual: ChatMessage still pulls markdown on first paint; optional further split of message list; measure First Load JS for Ask AI chunk.
+
+### 2026-09-20 — Grok Bot / Cursor (perf: open/close from-origin + defer route mount)
+- **Scope:** Follow-up on PR #748 — window open/close performance and click-origin fidelity. No chrome restyle; no notebook sync changes.
+  1. `AppWindow`: defer `WindowRouter` until open-from-origin spring completes (`routeReady`), with a 480ms safety timeout if `onAnimationComplete` is skipped — keeps route JS/layout off the compositor frames.
+  2. `AppWindow`: close mirrors open when `item.fromOrigin` exists (scale `0.08` back to click point); fallback stays scale `0.95`. Compact / `performanceBoost` still skip motion.
+  3. `AppWindow`: force `content-visibility: visible` while `isCompositorActive` so open/close chrome is never skipped mid-animation.
+- **Files:** `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`; open from desktop icon (expands from click) and close (returns to origin); open without origin still fine.
+- **Handoff:** Continues PR #748 (`perf/shell-windows-load`). Residual: measure open frame times; optional taskbar minimize/restore origin later.
+
+### 2026-09-20 — Grok Bot / Cursor (perf: shell cold load + window compositor)
+- **Scope:** Phase 3 performance — initial load / window open-close-focus. No chrome restyle, no notebook sync changes, no Yjs/App Router.
+  1. `WindowRouter`: lazy-load `NotebooksList` (`next/dynamic`, `ssr: false`) so cold `/` and non-notebook windows do not pull the notebooks list module.
+  2. `AppWindow`: apply `content-visibility: auto` only for inactive, non-modal windows (`item.modal || inView ? visible : auto`).
+  3. `AppWindow`: while dragging/resizing/animating (`isCompositorActive`), use solid `bg-primary` instead of frosted `WINDOW_BG` (skips expensive `backdrop-blur` during compositor).
+  4. `Desktop`: drop static `notebookRemote` / `notebookStorage` imports; dynamic-import them inside `loadPinnedApps`; mirror notebook event name strings locally.
+- **Files:** `src/components/AppWindow/WindowRouter.tsx`, `src/components/AppWindow/index.tsx`, `src/components/Desktop/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`, `pnpm test:smoke`, window Playwright if applicable
+- **Handoff:** PR `perf/shell-windows-load`. Follow-ups: measure First Load JS; consider splitting wallpaper glow helper so Wallpapers can be deferred separately.
 
 ### 2026-09-19 — Cursor (WIM AI sudden jump to chat top mid-thread)
 - **Scope:** Remaining jump-to-top causes on current main after stream-pin work; does not reopen PR #741 (typing/composer).

@@ -35,6 +35,21 @@ export function mergeMessages(left: Message[] = [], right: Message[] = [], prefe
     return ordered
 }
 
+function hasPersistableMessages(chat: Chat | undefined): boolean {
+    return Boolean(
+        chat?.messages?.some(
+            (message) => !message.isStreaming && String(message.content || '').trim().length > 0
+        )
+    )
+}
+
+/**
+ * Dual-device chat merge.
+ * - Tombstones always win.
+ * - Metadata-only remote stubs (empty messages) must not clobber a local copy that
+ *   already has messages / notebook bind / agent plan — common after list GET.
+ * - Message bodies merge by id; streaming local rows keep priority until typed done.
+ */
 export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] = []): Chat[] {
     const dead = new Set(deletedIds)
     const byId = new Map<string, Chat>()
@@ -50,15 +65,24 @@ export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] =
         }
         const remoteTime = Date.parse(chat.updatedAt) || 0
         const localTime = Date.parse(existing.updatedAt) || 0
-        const preferRemote = remoteTime >= localTime
+        const remoteIsStub = !hasPersistableMessages(chat)
+        const localHasMessages = hasPersistableMessages(existing)
+        // A newer metadata-only list row must not beat a message-bearing local draft.
+        const preferRemote = remoteIsStub && localHasMessages ? false : remoteTime >= localTime
         const newer = preferRemote ? chat : existing
         const older = newer === chat ? existing : chat
         byId.set(chat.id, {
             ...older,
             ...newer,
-            messages: mergeMessages(existing.messages, chat.messages, preferRemote),
+            messages: mergeMessages(existing.messages, chat.messages, preferRemote && !remoteIsStub),
+            title: (newer.title && newer.title.trim()) || older.title,
+            notebookId: newer.notebookId || older.notebookId,
+            agentMode: newer.agentMode || older.agentMode,
+            activePlan: newer.activePlan?.length ? newer.activePlan : older.activePlan,
+            systemPrompt: newer.systemPrompt || older.systemPrompt,
             shareToken: existing.shareToken || chat.shareToken,
             isShared: existing.isShared || chat.isShared,
+            updatedAt: preferRemote ? newer.updatedAt : existing.updatedAt || newer.updatedAt,
         })
     }
     return Array.from(byId.values()).sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))

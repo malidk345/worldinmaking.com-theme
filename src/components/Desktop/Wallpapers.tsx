@@ -15,7 +15,7 @@ const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
 const Hogzilla = () => (
     <>
         <div
-            className={`absolute inset-0 bg-[linear-gradient(268.63deg,#E3E1E4_0%,#FDFDFD_80%,#FDFDFD_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#B4ADC4_0%,#9E97AE_52%,#8B839C_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
         />
         <div
             className={`absolute inset-0 bg-[linear-gradient(180deg,#141E40_0%,#46368B_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
@@ -411,6 +411,14 @@ const KeyboardMint = () => (
     </div>
 )
 
+/** Solid pure white field — blank paper; dark mode near-black so chrome still works. */
+const PaperWhite = () => (
+    <div className="absolute inset-0 isolate">
+        <div className={`absolute inset-0 bg-[#FFFFFF] opacity-100 dark:opacity-0 ${FADE_OPACITY}`} />
+        <div className={`absolute inset-0 bg-[#121212] opacity-0 dark:opacity-100 ${FADE_OPACITY}`} />
+    </div>
+)
+
 const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'cobalt', Scene: Cobalt, visible: 'wallpaper-cobalt:block' },
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
@@ -419,6 +427,7 @@ const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'draft-world', Scene: DraftWorldWallpaper, visible: 'wallpaper-draft-world:block' },
     { key: 'rain-embers', Scene: RainEmbersWallpaper, visible: 'wallpaper-rain-embers:block' },
     { key: 'plaza-bang', Scene: PlazaBangWallpaper, visible: 'wallpaper-plaza-bang:block' },
+    { key: 'paper-white', Scene: PaperWhite, visible: 'wallpaper-paper-white:block' },
 ]
 
 export interface WallpaperGlow {
@@ -434,6 +443,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     'draft-world': { light: '#C4A574', dark: '#9370F0' },
     'rain-embers': { light: '#7EB4D4', dark: '#D08A3A' },
     'plaza-bang': { light: '#CFC6B6', dark: '#9370F0' },
+    'paper-white': { light: '#E8E8E8', dark: '#3A3A3A' },
 }
 
 export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-mint']

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Chat,
   Message,
@@ -22,18 +22,21 @@ import {
   INITIAL_PROJECTS,
   STYLE_PRESETS,
 } from './data/initialData';
+import dynamic from 'next/dynamic';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
 import { ASK_STARTERS, ChatInput } from './components/ChatInput';
-import { ArtifactsPanel } from './components/ArtifactsPanel';
-import { ArtifactWindowContent } from './components/ArtifactWindowContent';
-import { SourcesPanel } from './components/SourcesPanel';
-import { SearchModal } from './components/SearchModal';
-import { ProjectModal } from './components/ProjectModal';
-import { SettingsModal } from './components/SettingsModal';
-import { ShareModal } from './components/ShareModal';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Panels/modals are rare on cold open — keep them out of the Ask AI first paint chunk.
+const ArtifactsPanel = dynamic(() => import('./components/ArtifactsPanel').then((m) => m.ArtifactsPanel), { ssr: false });
+const ArtifactWindowContent = dynamic(() => import('./components/ArtifactWindowContent').then((m) => m.ArtifactWindowContent), { ssr: false });
+const SourcesPanel = dynamic(() => import('./components/SourcesPanel').then((m) => m.SourcesPanel), { ssr: false });
+const SearchModal = dynamic(() => import('./components/SearchModal').then((m) => m.SearchModal), { ssr: false });
+const ProjectModal = dynamic(() => import('./components/ProjectModal').then((m) => m.ProjectModal), { ssr: false });
+const SettingsModal = dynamic(() => import('./components/SettingsModal').then((m) => m.SettingsModal), { ssr: false });
+const ShareModal = dynamic(() => import('./components/ShareModal').then((m) => m.ShareModal), { ssr: false });
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppWindows } from '../../context/App';
 import { useUser } from '../../hooks/useUser';
@@ -47,6 +50,7 @@ import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
   type NotebookChatBind,
+  bindNotebookChat,
   buildNotebookAgentContext,
   readNotebookChatBind,
   readNotebookSelection,
@@ -71,7 +75,6 @@ import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
 import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 
-import { prepareSandpackSource } from './sandbox/reactPreview';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import { LemonScope } from '../LemonScope';
@@ -91,7 +94,9 @@ import {
   mergeChats,
   pullChatByIdFromRemote,
   pullChatsFromRemote,
+  flushChatToRemoteKeepalive,
   pushChatToRemote,
+  pushDirtyLocalChats,
   readLocalChats,
   readLocalDeletedChatIds,
   rememberDeletedChatId,
@@ -158,11 +163,34 @@ function isAbortError(err: unknown): boolean {
   return false
 }
 
+
+/** Reload / crash mid-stream can leave isStreaming:true in localStorage — settle as stopped. */
+function settleInterruptedStreams(chats: Chat[]): Chat[] {
+  let changed = false
+  const next = chats.map((chat) => {
+    let msgChanged = false
+    const messages = (chat.messages || []).map((message) => {
+      if (!message.isStreaming) return message
+      msgChanged = true
+      changed = true
+      return {
+        ...message,
+        isStreaming: false,
+        isTypingDone: true,
+        stopped: message.stopped ?? true,
+      }
+    })
+    return msgChanged ? { ...chat, messages } : chat
+  })
+  return changed ? next : chats
+}
+
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
   // Persistence state
   const [chats, setChats] = useState<Chat[]>(() => {
     const stored = readLocalChats<unknown>(readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS));
-    return Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
+    const list = Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
+    return settleInterruptedStreams(list);
   });
 
 
@@ -433,6 +461,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamStatus, setStreamStatus] = useState<'thinking' | 'quality' | 'answering' | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  /** Monotonic turn id so an aborted turn's finally cannot clear a newer in-flight stream. */
+  const streamEpochRef = useRef(0);
   const resumeAbortRef = useRef(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -514,23 +544,36 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const persistOwnerRef = useRef(getChatStorageKey())
   const lastWrittenChatsStrRef = useRef<string>('')
-  // Save to LocalStorage
-  useEffect(() => {
+  const chatsRef = useRef(chats)
+  chatsRef.current = chats
+  const isStreamingRefForPersist = useRef(isStreaming)
+  isStreamingRefForPersist.current = isStreaming
+
+  const flushLocalChats = useCallback((next: Chat[] = chatsRef.current) => {
     try {
       const key = getChatStorageKey()
       if (key !== persistOwnerRef.current) {
         persistOwnerRef.current = key
         return
       }
-      const serialized = JSON.stringify(chats)
+      const serialized = JSON.stringify(next)
       if (serialized !== lastWrittenChatsStrRef.current) {
-        writeLocalChats(chats)
+        writeLocalChats(next)
         lastWrittenChatsStrRef.current = serialized
       }
     } catch {
       // A full localStorage quota must not break an active conversation.
     }
-  }, [chats]);
+  }, [])
+
+  // Save to LocalStorage — debounce during streaming so every token does not sync I/O.
+  useEffect(() => {
+    if (isStreaming) {
+      const timer = window.setTimeout(() => flushLocalChats(chats), 400)
+      return () => window.clearTimeout(timer)
+    }
+    flushLocalChats(chats)
+  }, [chats, isStreaming, flushLocalChats]);
 
   useEffect(() => {
     try {
@@ -598,6 +641,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         })
         // List is metadata-only — load messages for the open chat (egress).
         if (nextActive) await hydrateChatById(nextActive)
+        // Push local drafts the other device has not seen yet (cap inside helper).
+        if (!cancelled) {
+          void pushDirtyLocalChats(chatsRef.current, 6)
+        }
       } finally {
         isSyncing = false
         if (syncPending && !cancelled) {
@@ -632,7 +679,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
-      setChats(Array.isArray(stored) ? stored : [])
+      setChats(settleInterruptedStreams(Array.isArray(stored) ? stored : []))
       void syncFromRemote(true)
     }
 
@@ -689,12 +736,31 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [])
 
-  // Unmount / window close must cancel in-flight /api/chat work (industry-standard AbortController).
+  // Unmount / window close must cancel in-flight /api/chat work and flush pending chat saves.
   useEffect(() => {
+    const flushPendingRemote = () => {
+      const pendingId = persistChatIdRef.current
+      const list = chatsRef.current
+      const target = pendingId
+        ? list.find((item) => item.id === pendingId)
+        : list.find((item) => item.id === activeChatIdRef.current)
+      if (!target) return
+      if (readLocalDeletedChatIds().includes(target.id)) return
+      if (!target.messages.some((message) => !message.isStreaming)) return
+      persistChatIdRef.current = null
+      flushLocalChats(list)
+      flushChatToRemoteKeepalive(target)
+    }
+    const onPageHide = () => {
+      flushPendingRemote()
+    }
+    window.addEventListener('pagehide', onPageHide)
     return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      flushPendingRemote()
       abortActiveStream()
     }
-  }, [abortActiveStream])
+  }, [abortActiveStream, flushLocalChats])
 
   const resolvedActiveChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
   if (resolvedActiveChat) {
@@ -708,6 +774,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     (activeChatId && stickyActiveChatRef.current?.id === activeChatId ? stickyActiveChatRef.current : undefined)
   isStreamingRef.current =
     isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming)
+
+  // Cross-device / reload: chats persist notebookId; session bind does not. Rehydrate bind so tools keep working.
+  useEffect(() => {
+    const notebookId = activeChat?.notebookId
+    if (!notebookId) return
+    const current = readNotebookChatBind()
+    if (current?.notebookId === notebookId) return
+    bindNotebookChat({ notebookId, title: activeChat?.title })
+  }, [activeChat?.id, activeChat?.notebookId, activeChat?.title])
 
   // Sync selected model when switching active chat
   useEffect(() => {
@@ -745,7 +820,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
   const pinChatToBottom = useCallback(() => {
-    if (!autoScrollRef.current || userInteractingRef.current || isStreamingRef.current) return;
+    // Stick only when the user is near bottom (autoScrollRef). Do NOT bail on
+    // isStreaming — thinking/tool growth above the live answer with
+    // overflow-anchor:none would otherwise flick the viewport upward.
+    if (!autoScrollRef.current || userInteractingRef.current) return;
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     const next = scroller.scrollHeight - scroller.clientHeight;
@@ -822,15 +900,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     const onWheel = (e: WheelEvent) => {
       userInteractingRef.current = true;
+      const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
       if (e.deltaY < 0) {
-        autoScrollRef.current = false;
-        setIsAwayFromBottom(true);
-      } else if (e.deltaY > 0) {
-        const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
-        if (distanceToBottom <= 30) {
-          autoScrollRef.current = true;
-          setIsAwayFromBottom(false);
+        // Ignore tiny trackpad noise while still glued to the bottom.
+        if (distanceToBottom > 48) {
+          autoScrollRef.current = false;
+          setIsAwayFromBottom(true);
         }
+      } else if (e.deltaY > 0 && distanceToBottom <= 30) {
+        autoScrollRef.current = true;
+        setIsAwayFromBottom(false);
       }
       if (touchTimeout) clearTimeout(touchTimeout);
       touchTimeout = setTimeout(() => {
@@ -846,7 +925,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      if (!isStreamingRef.current && autoScrollRef.current && !userInteractingRef.current) {
+      if (autoScrollRef.current && !userInteractingRef.current) {
         pinChatToBottom();
       }
     });
@@ -1061,10 +1140,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     setIsStreaming(true);
     setStreamStatus('thinking');
-    autoScrollRef.current = false;
+    // Keep stick-to-bottom armed; rAF waits for the new bubbles to lay out.
+    // Use 'auto' so the first tokens cannot race a smooth animation mid-flight.
     setIsAwayFromBottom(false);
-    requestAnimationFrame(() => scrollChatToBottom('smooth'));
+    requestAnimationFrame(() => scrollChatToBottom('auto'));
     abortActiveStream();
+    const streamEpoch = ++streamEpochRef.current;
     const activeController = new AbortController();
     abortControllerRef.current = activeController;
     streamReaderRef.current = null;
@@ -1893,15 +1974,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         const rawArtifacts = dedupeArtifacts([...streamedArtifacts, ...turn.artifacts]);
         if (rawArtifacts.length > 0) {
           const existingChatArtifacts = activeChat?.messages.flatMap((m) => m.artifacts || []) || [];
+          let prepareSandpackSource: ((source: string) => string) | null = null
           for (const rawArt of rawArtifacts) {
             const { activeArtifact: revisedArt } = processArtifactRevision(existingChatArtifacts, rawArt, {
               preferId: activeArtifact?.id,
             });
-            extractedArtifacts.push(
-              revisedArt.type === 'react'
-                ? { ...revisedArt, content: prepareSandpackSource(revisedArt.content) }
-                : revisedArt
-            );
+            if (revisedArt.type === 'react') {
+              if (!prepareSandpackSource) {
+                prepareSandpackSource = (await import('./sandbox/reactPreview')).prepareSandpackSource
+              }
+              extractedArtifacts.push({ ...revisedArt, content: prepareSandpackSource(revisedArt.content) })
+            } else {
+              extractedArtifacts.push(revisedArt)
+            }
           }
         }
         visibleMessageText = turn.visibleText || finalCleanContent
@@ -1990,11 +2075,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         });
       }
     } finally {
+      // Always queue a remote persist for this chat's settled rows.
       persistChatIdRef.current = targetChatId;
-      setIsStreaming(false);
-      setStreamStatus(null);
-      streamReaderRef.current = null;
-      abortControllerRef.current = null;
+      // Only the latest turn may clear shared streaming UI / AbortController refs.
+      if (abortControllerRef.current === activeController) {
+        abortControllerRef.current = null;
+      }
+      if (streamEpochRef.current === streamEpoch) {
+        setIsStreaming(false);
+        setStreamStatus(null);
+        streamReaderRef.current = null;
+      }
     }
   };
 
@@ -2026,6 +2117,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         stopped: true,
       })
     }
+    // Stop used to skip remote persist (only stream finally set the ref) — mark for save.
+    if (chatId) persistChatIdRef.current = chatId
   }
 
   const executeOSAction = (msgId: string, action: OSActionCardType, chatId = activeChatId) => {

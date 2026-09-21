@@ -1,3 +1,14 @@
+declare global {
+    interface Window {
+        __wallpaper?: string
+        /** Boot script in _document.tsx — updates closed-over wallpaper without fighting React chrome. */
+        __setWallpaper?: (wallpaper: string) => void
+        __setPreferredTheme?: (theme: string) => string
+        __onThemeChange?: (theme: string) => void
+        __theme?: string
+    }
+}
+
 export type WallpaperName =
     | 'cobalt'
     | 'hogzilla'
@@ -5,6 +16,7 @@ export type WallpaperName =
     | 'draft-world'
     | 'rain-embers'
     | 'plaza-bang'
+    | 'paper-white'
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -22,6 +34,7 @@ export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
     'draft-world',
     'rain-embers',
     'plaza-bang',
+    'paper-white',
 ]
 
 export interface WallpaperTone {
@@ -56,9 +69,9 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
     },
     hogzilla: {
         light: {
-            top: '#E3E1E4',
-            bottom: '#FDFDFD',
-            css: 'linear-gradient(268.63deg, #E3E1E4 0%, #FDFDFD 80%, #FDFDFD 100%)',
+            top: '#B4ADC4',
+            bottom: '#8B839C',
+            css: 'linear-gradient(180deg, #B4ADC4 0%, #9E97AE 52%, #8B839C 100%)',
         },
         dark: {
             top: '#141E40',
@@ -106,6 +119,10 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
         light: { top: '#E6DFD2', bottom: '#E6DFD2', css: '#E6DFD2' },
         dark: { top: '#141E40', bottom: '#141E40', css: '#141E40' },
     },
+    'paper-white': {
+        light: { top: '#FFFFFF', bottom: '#FFFFFF', css: '#FFFFFF' },
+        dark: { top: '#121212', bottom: '#121212', css: '#121212' },
+    },
 }
 
 export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
@@ -118,6 +135,10 @@ export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
     'draft-world': { light: WALLPAPER_FIELDS['draft-world'].light.top, dark: WALLPAPER_FIELDS['draft-world'].dark.top },
     'rain-embers': { light: WALLPAPER_FIELDS['rain-embers'].light.top, dark: WALLPAPER_FIELDS['rain-embers'].dark.top },
     'plaza-bang': { light: WALLPAPER_FIELDS['plaza-bang'].light.top, dark: WALLPAPER_FIELDS['plaza-bang'].dark.top },
+    'paper-white': {
+        light: WALLPAPER_FIELDS['paper-white'].light.top,
+        dark: WALLPAPER_FIELDS['paper-white'].dark.top,
+    },
 }
 
 export const DEFAULT_WALLPAPER_THEME_COLOR: WallpaperTone = WALLPAPER_THEME_COLORS[DEFAULT_WALLPAPER]
@@ -250,13 +271,39 @@ let lastChromeOpts: {
 } | null = null
 let chromeLifetime = false
 
+function expectedFieldFromLastOpts(): WallpaperField | null {
+    if (!lastChromeOpts || typeof window === 'undefined') return null
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false
+    const mode = resolveChromeTheme(lastChromeOpts.colorMode, lastChromeOpts.theme, prefersDark)
+    return getWallpaperField(lastChromeOpts.wallpaper, mode)
+}
+
+function chromeVarsMatch(field: WallpaperField): boolean {
+    if (typeof document === 'undefined') return false
+    const root = document.documentElement
+    return (
+        root.style.getPropertyValue('--browser-chrome').trim().toLowerCase() === field.top.toLowerCase() &&
+        root.style.getPropertyValue('--browser-chrome-bottom').trim().toLowerCase() === field.bottom.toLowerCase() &&
+        root.style.getPropertyValue('--browser-chrome-field').trim() === field.css
+    )
+}
+
 function startChromeGuard(): void {
     if (typeof document === 'undefined' || chromeGuard) return
     chromeGuard = new MutationObserver(() => {
-        if (!lastChromeColor) return
+        if (!lastChromeOpts && !lastChromeColor) return
+        const field = expectedFieldFromLastOpts()
         const metas = document.head.querySelectorAll('meta[name="theme-color"]')
         const first = metas[0] as HTMLMetaElement | undefined
-        if (metas.length === 1 && first && !first.media && first.content === lastChromeColor) return
+        const metaOk = metas.length === 1 && !!first && !first.media && first.content === lastChromeColor
+        const varsOk = field ? chromeVarsMatch(field) : true
+        if (metaOk && varsOk) return
+        // Document boot script can rewrite CSS vars with a stale closed-over wallpaper while
+        // leaving theme-color looking "fine" (shared tops). Re-apply the full React chrome.
+        if (lastChromeOpts) {
+            applyWallpaperBrowserChrome({ ...lastChromeOpts, force: true })
+            return
+        }
         syncThemeColorMeta(lastChromeColor)
     })
     chromeGuard.observe(document.head, {
@@ -294,11 +341,20 @@ export function applyWallpaperBrowserChrome(opts: {
     const chrome = themeColorForEngine(field)
     const key = `${resolveKeptWallpaper(opts.wallpaper)}|${mode}|${chrome}`
     lastChromeOpts = { wallpaper: opts.wallpaper, colorMode: opts.colorMode, theme: opts.theme }
+    // Keep the pre-React boot script in sync so __setPreferredTheme never paints a stale wallpaper.
+    const kept = resolveKeptWallpaper(opts.wallpaper)
+    if (typeof window !== 'undefined') {
+        window.__wallpaper = kept
+        // Prefer boot helper when present (updates closed-over `wallpaper` without re-applying).
+        if (typeof window.__setWallpaper === 'function') window.__setWallpaper(kept)
+    }
     if (!opts.force && key === lastChromeKey && lastChromeColor === chrome) return
     lastChromeKey = key
     lastChromeColor = chrome
 
     const root = document.documentElement
+    root.setAttribute('data-wallpaper', kept)
+    if (document.body) document.body.setAttribute('data-wallpaper', kept)
     root.style.setProperty('--browser-chrome', field.top)
     root.style.setProperty('--browser-chrome-bottom', field.bottom)
     root.style.setProperty('--browser-chrome-field', field.css)

@@ -318,7 +318,11 @@ export async function listNotebooksByOwner(
         }
     }
 
-    return Array.from(byId.values()).sort(
+    const tombstoned = new Set(await listSyncTombstoneIds('notebook', ownerKey, userId))
+    const live = Array.from(byId.values()).filter(
+        (nb) => !tombstoned.has(nb.id) && !(nb.short_id && tombstoned.has(nb.short_id))
+    )
+    return live.sort(
         (a, b) => (Date.parse(b.updatedAt || '') || 0) - (Date.parse(a.updatedAt || '') || 0)
     )
 }
@@ -384,6 +388,9 @@ export async function getNotebookByIdOrShort(
     if (error) throw error
     if (!data) return null
     let row = data as StoredNotebookRow
+    // Race: tombstone recorded but row not hard-deleted yet — treat as gone.
+    if (await hasSyncTombstone('notebook', row.id)) return null
+    if (row.short_id && (await hasSyncTombstone('notebook', row.short_id))) return null
     if (options?.publishedOnly && !row.is_published) return null
     if (options?.ownerKey) {
         const extra = (options.extraOwnerKeys || []).filter(Boolean)

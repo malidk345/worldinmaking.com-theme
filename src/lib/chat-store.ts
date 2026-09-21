@@ -4,7 +4,7 @@
  */
 import { supabaseAdmin } from '../../lib/supabase-admin'
 import { hasSyncTombstone, listSyncTombstoneIds, recordSyncTombstone } from '../../lib/sync-tombstones'
-import type { Artifact, Chat, FileAttachment, Message, ThinkingBudget, WebCitation } from '../components/ClaudeWorkspaceChat/types'
+import type { AgentMode, Artifact, Chat, FileAttachment, Message, ThinkingBudget, WebCitation } from '../components/ClaudeWorkspaceChat/types'
 import { packMessageThinking, unpackMessageThinking } from './chat-thinking'
 
 
@@ -30,6 +30,9 @@ type ChatRow = {
     system_prompt: string | null
     share_token: string | null
     is_shared: boolean
+    notebook_id?: string | null
+    agent_mode?: string | null
+    active_plan?: Chat['activePlan'] | null
     created_at: string
     updated_at: string
     deleted_at?: string | null
@@ -100,6 +103,12 @@ function toThinkingBudget(value: string | null | undefined): ThinkingBudget {
     return 'balanced'
 }
 
+
+function toAgentMode(value: string | null | undefined): AgentMode | undefined {
+    if (value === 'ask' || value === 'plan' || value === 'execute') return value
+    return undefined
+}
+
 function rowToChat(row: ChatRow, messages: Message[] = []): Chat {
     return {
         id: row.id,
@@ -115,6 +124,9 @@ function rowToChat(row: ChatRow, messages: Message[] = []): Chat {
         systemPrompt: row.system_prompt || undefined,
         shareToken: row.share_token || undefined,
         isShared: !!row.is_shared,
+        notebookId: row.notebook_id || undefined,
+        agentMode: toAgentMode(row.agent_mode),
+        activePlan: Array.isArray(row.active_plan) && row.active_plan.length ? row.active_plan : undefined,
     }
 }
 
@@ -292,6 +304,9 @@ export async function upsertChatWithMessages(
         system_prompt: chat.systemPrompt ? clampText(chat.systemPrompt, 5000) : null,
         share_token: chat.shareToken ? clampText(chat.shareToken, 80) : null,
         is_shared: !!chat.isShared,
+        notebook_id: chat.notebookId ? clampText(chat.notebookId, 128) : null,
+        agent_mode: toAgentMode(chat.agentMode) || null,
+        active_plan: sanitizeJson(chat.activePlan),
         created_at: chat.createdAt || new Date().toISOString(),
         updated_at: chat.updatedAt || new Date().toISOString(),
     }
@@ -333,7 +348,10 @@ export async function upsertChatWithMessages(
         if (error) throw error
     }
 
+    // Never persist an in-flight assistant row as a finished remote message.
+    // Dirty pushes during an active stream would otherwise show truncated "done" replies on other devices.
     const persistable = (chat.messages || [])
+        .filter((message) => !message.isStreaming)
         .filter((message) => message.role === 'user' || message.role === 'assistant' || message.role === 'system')
         .filter((message) => message.role === 'user' || (message.content || '').trim().length > 0)
         .slice(0, MAX_MESSAGES)
@@ -348,17 +366,44 @@ export async function upsertChatWithMessages(
         const { error: insertError } = await supabaseAdmin.from('wim_chat_messages').insert(inserts)
         if (insertError) throw insertError
     }
-    for (const row of updates) {
-        const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
-        const { error: updateError } = await supabaseAdmin
-            .from('wim_chat_messages')
-            .update(patch)
-            .eq('id', row.id)
-            .eq('chat_id', chatId)
+    // Parallel updates — sequential round-trips were the dominant save latency
+    // (N messages ⇒ N PostgREST calls) and a common timeout/close race.
+    if (updates.length > 0) {
+        const results = await Promise.all(
+            updates.map(async (row) => {
+                const { created_at: _createdAt, chat_id: _chatId, ...patch } = row
+                return supabaseAdmin
+                    .from('wim_chat_messages')
+                    .update(patch)
+                    .eq('id', row.id)
+                    .eq('chat_id', chatId)
+            })
+        )
+        const updateError = results.find((result) => result.error)?.error
         if (updateError) throw updateError
     }
 
-    return getChatForOwner(chatId, ownerKey, userId) as Promise<Chat>
+    // Avoid a second full read after write — client already has the payload;
+    // rebuild from the row we just persisted.
+    return {
+        ...chat,
+        id: chatId,
+        title: row.title,
+        projectId: row.project_id || undefined,
+        modelId: row.model_id,
+        starred: !!row.starred,
+        thinkingBudget: toThinkingBudget(row.thinking_budget),
+        webSearchEnabled: !!row.web_search_enabled,
+        systemPrompt: row.system_prompt || undefined,
+        shareToken: row.share_token || undefined,
+        isShared: !!row.is_shared,
+        notebookId: row.notebook_id || undefined,
+        agentMode: toAgentMode(row.agent_mode),
+        activePlan: Array.isArray(row.active_plan) && row.active_plan.length ? row.active_plan : undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        messages: persistable,
+    }
 }
 
 export async function patchChatForOwner(

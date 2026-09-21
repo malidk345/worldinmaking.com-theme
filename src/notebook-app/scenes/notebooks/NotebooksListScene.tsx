@@ -142,7 +142,7 @@ export function NotebooksListScene({
         let cancelled = false
         void pullNotebooksFromRemote({ force: true, includeContent: true }).then((remote) => {
             if (cancelled || !remote) return
-            rememberRemoteNotebooks(remote.notebooks)
+            rememberRemoteNotebooks(remote.notebooks, remote.deletedIds)
             reloadNotebooks()
         })
         return () => {
