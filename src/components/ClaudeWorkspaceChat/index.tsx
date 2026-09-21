@@ -74,6 +74,7 @@ import {
 import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
 import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
+import { resolveHumanTurn } from '../../lib/human-turn-ux';
 
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
@@ -464,6 +465,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   /** Monotonic turn id so an aborted turn's finally cannot clear a newer in-flight stream. */
   const streamEpochRef = useRef(0);
   const resumeAbortRef = useRef(false);
+  /** Prevent double Answer/Run from racing two resumes before pending clears. */
+  const humanRespondInFlightRef = useRef(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLElement>(null);
@@ -1002,6 +1005,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   ) => {
     if (!promptText.trim() && attachments.length === 0 && !options?.resume) return;
+    humanRespondInFlightRef.current = false
 
     if (!options?.resume && !options?.skipUserAppend) {
       const pendingAsk = [...((chats.find((c) => c.id === (activeChatId || '')) || activeChat)?.messages || [])]
@@ -1782,9 +1786,18 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
           if (parsed.type === 'human') {
             streamedHumanTurn = { ...parsed.human, status: parsed.human.status || 'pending' }
+            // Unlock composer immediately: interrupt means the turn is waiting on the user.
+            // Remaining SSE (checkpoint/done) may still drain; Answer must not hide behind Stop.
             updateAssistantMessage(targetChatId, assistantMessageId, {
               humanTurn: streamedHumanTurn,
+              isStreaming: false,
+              isTypingDone: true,
             })
+            if (streamEpochRef.current === streamEpoch) {
+              setIsStreaming(false)
+              setStreamStatus(null)
+            }
+            humanRespondInFlightRef.current = false
             if (streamedHumanTurn.plan && streamedHumanTurn.plan.length) {
               setChats((prev) =>
                 prev.map((chat) =>
@@ -2096,7 +2109,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (c.id === chatId) {
           return {
             ...c,
-            messages: c.messages.map((m) => (m.id === msgId ? { ...m, ...patch } : m)),
+            messages: c.messages.map((m) => {
+              if (m.id !== msgId) return m
+              const next: Message = { ...m, ...patch }
+              // Late stream flush must not revive a settled ask_user / plan_approval as pending
+              if ('humanTurn' in patch) {
+                next.humanTurn = resolveHumanTurn(m.humanTurn, patch.humanTurn)
+              }
+              return next
+            }),
           };
         }
         return c;
@@ -2368,6 +2389,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
   const handleHumanRespond = (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => {
+    if (humanRespondInFlightRef.current) return
     if (isStreaming) {
       resumeAbortRef.current = true
       abortActiveStream()
@@ -2383,6 +2405,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const trimmed = (payload || '').trim()
     // ask_user: never continue on empty/whitespace — old path fell back to "Yes"
     if (action === 'answer' && !trimmed) return
+    humanRespondInFlightRef.current = true
     const nextStatus = action === 'run' ? 'approved' : action === 'answer' ? 'answered' : 'revised'
     updateAssistantMessage(chat.id, message.id, {
       humanTurn: {
@@ -2394,6 +2417,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     })
     const nextMode = action === 'run' ? 'execute' : action === 'revise' ? 'plan' : (chat.agentMode || 'ask')
     setChats((prev) => prev.map((row) => (row.id === chat.id ? { ...row, agentMode: nextMode } : row)))
+    // inFlight stays true until handleSendMessage starts (or a new human interrupt arrives)
     if (message.checkpoint) {
       void handleSendMessage('', [], {
         skipUserAppend: true,

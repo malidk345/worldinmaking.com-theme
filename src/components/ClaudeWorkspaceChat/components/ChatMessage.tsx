@@ -838,10 +838,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {message.humanTurn && message.humanTurn.status !== 'pending' ? (
+          {message.humanTurn ? (
             <HumanTurnCard
               turn={message.humanTurn}
-              disabled={!!message.isStreaming}
+              // Pending form stays in composer; thread shows read-only question/plan so the card is not "only stuck" in the input.
+              disabled={message.humanTurn.status === 'pending' || !!message.isStreaming}
               onRespond={(action, payload) => onHumanRespond?.(message.id, action, payload)}
             />
           ) : null}
