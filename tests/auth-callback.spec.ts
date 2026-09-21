@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { safeAuthNextPath, shouldIgnorePkceExchangeError } from '../src/lib/auth-callback'
+import { readOAuthProviderError, safeAuthNextPath, shouldIgnorePkceExchangeError } from '../src/lib/auth-callback'
 
 test.describe('auth callback', () => {
     test('only allows same-origin relative next paths', () => {
@@ -22,5 +22,14 @@ test.describe('auth callback', () => {
         ).toBe(true)
         expect(shouldIgnorePkceExchangeError('PKCE code verifier not found in storage.', false)).toBe(false)
         expect(shouldIgnorePkceExchangeError('Invalid login credentials', true)).toBe(false)
+    })
+
+    test('detects a provider error returned to the callback', () => {
+        expect(readOAuthProviderError({})).toBeNull()
+        expect(readOAuthProviderError({ code: 'abc' })).toBeNull()
+        expect(
+            readOAuthProviderError({ error: 'access_denied', error_description: 'The user denied the request' })
+        ).toEqual({ reason: 'access_denied', description: 'The user denied the request' })
+        expect(readOAuthProviderError({ error_code: 'server_error' })).toEqual({ reason: 'server_error' })
     })
 })

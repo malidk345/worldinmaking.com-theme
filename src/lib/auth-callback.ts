@@ -48,3 +48,22 @@ export function shouldIgnorePkceExchangeError(message: string | undefined, hasSe
     if (hasSession && /code verifier not found/i.test(message || '')) return true
     return false
 }
+
+/**
+ * Read an OAuth provider error from the callback query.
+ * The provider adds `error` (or `error_code`) and `error_description` when the
+ * user rejects the consent screen or the provider refuses the request.
+ */
+export function readOAuthProviderError(query: {
+    error?: unknown
+    error_code?: unknown
+    error_description?: unknown
+}): { reason: string; description?: string } | null {
+    const reason =
+        (typeof query.error === 'string' && query.error) ||
+        (typeof query.error_code === 'string' && query.error_code) ||
+        null
+    if (!reason) return null
+    const description = typeof query.error_description === 'string' ? query.error_description : undefined
+    return { reason, description }
+}
