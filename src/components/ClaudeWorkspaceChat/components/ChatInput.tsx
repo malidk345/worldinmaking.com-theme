@@ -889,22 +889,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       </div>
 
-      {quota && !quota.unavailable && quota.limitTokens > 0 ? (
-        <div
-          className="mt-1.5 h-0.5 w-full overflow-hidden rounded bg-primary/20"
-          role="meter"
-          aria-label="Weekly token budget"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.min(100, Math.round(quota.percentage))}
-        >
-          <div
-            className={`h-full bg-accent transition-all duration-300 ${quota.percentage >= 80 ? 'animate-pulse' : ''}`}
-            style={{ width: `${Math.min(100, Math.max(0, quota.percentage))}%` }}
-          />
-        </div>
-      ) : null}
-
       {quotaBlocksSend ? (
         <div role="status" aria-live="polite" className="mt-1.5 h-4 text-center text-[11px] leading-4 font-sans pointer-events-auto">
           {quota === null ? (

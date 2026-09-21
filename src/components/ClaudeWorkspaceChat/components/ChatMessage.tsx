@@ -599,7 +599,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   };
 
   return (
-    <div className="py-2 sm:py-2.5 px-3.5 sm:px-6 max-w-3xl mx-auto">
+    <div data-message-id={message.id} className="py-2 sm:py-2.5 px-3.5 sm:px-6 max-w-3xl mx-auto">
       {/* USER MESSAGE: Compact Bubble with Action Icons Underneath */}
       {isUser ? (
         <div className="flex flex-col items-end group">
