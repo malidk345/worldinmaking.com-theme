@@ -81,14 +81,14 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
     },
     'keyboard-mint': {
         light: {
-            top: '#D8DCCE',
-            bottom: '#BDC6B0',
-            css: 'linear-gradient(200deg, #D8DCCE 0%, #C9D0BE 48%, #BDC6B0 100%)',
+            top: '#2FD44E',
+            bottom: '#5EF06D',
+            css: 'linear-gradient(180deg, #2FD44E 0%, #4AE65E 42%, #5EF06D 100%)',
         },
         dark: {
-            top: '#141E18',
-            bottom: '#121A14',
-            css: 'linear-gradient(200deg, #141E18 0%, #18241C 52%, #121A14 100%)',
+            top: '#1EAD3E',
+            bottom: '#3DDC55',
+            css: 'linear-gradient(180deg, #1EAD3E 0%, #2FD44E 50%, #3DDC55 100%)',
         },
     },
     'draft-world': {

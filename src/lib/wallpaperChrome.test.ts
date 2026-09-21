@@ -44,8 +44,8 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
             dark: 'linear-gradient(180deg,#141E40_0%',
         },
         'keyboard-mint': {
-            light: 'linear-gradient(200deg,#D8DCCE_0%',
-            dark: 'linear-gradient(200deg,#141E18_0%',
+            light: 'linear-gradient(180deg,#2FD44E_0%',
+            dark: 'linear-gradient(180deg,#1EAD3E_0%',
         },
         'draft-world': {
             light: 'linear-gradient(180deg,#F3EFE6_0%',
