@@ -47,15 +47,12 @@ function clip(value: string, max: number): string {
     return text.length <= max ? text : text.slice(0, max)
 }
 
-/** Prior artifacts stay in the thread so follow-ups can revise them. */
-export function formatHistoryContent(
-    item: HistoryTurn,
+function formatArtifactBlocks(
+    artifacts: HistoryArtifact[],
     options?: { includeArtifactBodies?: boolean }
-): string {
-    const body = clip(item.content || '', MAX_VISIBLE)
-    if (item.role !== 'assistant' || !item.artifacts?.length) return body
+): string[] {
     const includeBodies = options?.includeArtifactBodies !== false
-    const blocks = item.artifacts.slice(0, MAX_ARTIFACTS_PER_TURN).map((artifact) => {
+    return artifacts.slice(0, MAX_ARTIFACTS_PER_TURN).map((artifact) => {
         const title = clip(artifact.title || 'Untitled', 80)
         const id = artifact.id ? ` id=${clip(artifact.id, 64)}` : ''
         if (!includeBodies) {
@@ -63,10 +60,34 @@ export function formatHistoryContent(
         }
         return `### ${artifact.type} "${title}"${id}\n${clip(artifact.content || '', MAX_ARTIFACT_BODY)}`
     })
+}
+
+/**
+ * Host note for the model about on-screen artifacts.
+ * Sent as a separate synthetic user turn — never inlined into assistant content
+ * (models echo inlined blocks into the public bubble).
+ */
+export function formatOnScreenArtifactsNote(
+    artifacts: HistoryArtifact[],
+    options?: { includeArtifactBodies?: boolean }
+): string {
+    const blocks = formatArtifactBlocks(artifacts, options)
+    if (!blocks.length) return ''
     return clip(
-        `${body}\n\n[On-screen artifacts — revise with create_artifact using the same title]\n${blocks.join('\n\n')}`,
+        `[Host note — on-screen artifacts. Revise with create_artifact using the same title. Do NOT paste this note or raw artifact JSON into the public answer.]\n${blocks.join('\n\n')}`,
         MAX_MESSAGE
     )
+}
+
+/**
+ * Public assistant body only. Artifacts are NOT appended here — use
+ * formatOnScreenArtifactsNote as a separate synthetic turn instead.
+ */
+export function formatHistoryContent(
+    item: HistoryTurn,
+    _options?: { includeArtifactBodies?: boolean }
+): string {
+    return clip(item.content || '', MAX_VISIBLE)
 }
 
 /** Rebuild OpenAI tool_calls + role:tool turns from the client thread. */
@@ -85,6 +106,14 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
         }
         return -1
     })()
+
+    let pendingArtifactNote: string | null = null
+    const flushPendingArtifactNote = () => {
+        if (!pendingArtifactNote) return
+        out.push({ role: 'user', content: pendingArtifactNote })
+        pendingArtifactNote = null
+    }
+
     for (let index = 0; index < window.length; index += 1) {
         const item = window[index]
         if (item.role === 'tool' && item.tool_call_id) {
@@ -93,14 +122,18 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                 tool_call_id: item.tool_call_id.slice(0, 80),
                 content: clip(item.content || '', recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
             })
+            const next = window[index + 1]
+            if (!next || next.role !== 'tool') flushPendingArtifactNote()
             continue
         }
         if (item.role === 'user') {
+            flushPendingArtifactNote()
             const content = clip(item.content || '', MAX_VISIBLE)
             if (content.trim()) out.push({ role: 'user', content })
             continue
         }
         if (item.role !== 'assistant') continue
+        flushPendingArtifactNote()
         const toolCalls = (item.tool_calls || [])
             .filter((call) => call && call.id && call.name)
             .slice(0, 4)
@@ -113,16 +146,28 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                         ? call.thoughtSignature
                         : undefined,
             }))
-        // Latest on-screen artifact keeps body; older turns keep id/title only.
-        const content = formatHistoryContent(item, {
-            includeArtifactBodies: index === lastArtifactIndex,
-        })
-        if (!content.trim() && toolCalls.length === 0) continue
+        // Public prose only — never inline on-screen artifact dumps into assistant content.
+        const content = formatHistoryContent(item)
+        if (!content.trim() && toolCalls.length === 0 && !item.artifacts?.length) continue
         out.push({
             role: 'assistant',
             content,
             tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
         })
+        if (item.artifacts?.length) {
+            const note = formatOnScreenArtifactsNote(item.artifacts, {
+                includeArtifactBodies: index === lastArtifactIndex,
+            })
+            if (note) {
+                if (toolCalls.length > 0) {
+                    // Keep tool_calls → tool results contiguous; flush after tools (or at end).
+                    pendingArtifactNote = note
+                } else {
+                    out.push({ role: 'user', content: note })
+                }
+            }
+        }
     }
+    flushPendingArtifactNote()
     return out
 }

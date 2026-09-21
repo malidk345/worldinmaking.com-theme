@@ -122,6 +122,79 @@ export function parseLeakedToolCalls(value: string): ToolCall[] {
     return calls
 }
 
+const HOST_ARTIFACT_MARKER =
+    /^\s*\[(?:On-screen artifacts\b[^\]]*|Host note\b[^\]]*on-screen artifacts[^\]]*|On screen — revise with create_artifact[^\]]*)\]\s*$/i
+const ARTIFACT_HEADING = /^\s*###\s+[A-Za-z][\w-]*\s+"[^"]*"(?:\s+id=\S+)?\s*$/
+
+function isHostArtifactMarker(line: string): boolean {
+    return HOST_ARTIFACT_MARKER.test(line)
+}
+
+function isArtifactHeading(line: string): boolean {
+    return ARTIFACT_HEADING.test(line)
+}
+
+/** Skip a ### type "title" id=... heading plus its body (JSON or stub line). */
+function skipArtifactDump(lines: string[], start: number): number {
+    let i = start
+    if (i >= lines.length || !isArtifactHeading(lines[i]!)) return start
+    i += 1
+    if (i >= lines.length) return i
+    const first = lines[i]!.trim()
+    if (first.startsWith('{')) {
+        let depth = 0
+        while (i < lines.length) {
+            for (const ch of lines[i]!) {
+                if (ch === '{') depth += 1
+                else if (ch === '}') depth -= 1
+            }
+            i += 1
+            if (depth <= 0) break
+        }
+        return i
+    }
+    // Stub / omitted-body line, or non-JSON dump until blank / next marker / heading.
+    while (
+        i < lines.length &&
+        lines[i]!.trim() !== '' &&
+        !isHostArtifactMarker(lines[i]!) &&
+        !isArtifactHeading(lines[i]!)
+    ) {
+        i += 1
+    }
+    return i
+}
+
+/**
+ * Models sometimes echo host on-screen artifact memory
+ * (`[On-screen artifacts — ...]`, `### model3d "..." id=...` + JSON) into the
+ * public bubble. Strip those before persist/display.
+ */
+export function stripLeakedOnScreenArtifacts(value: string): string {
+    if (!value) return ''
+    const lines = value.split('\n')
+    const out: string[] = []
+    let i = 0
+    while (i < lines.length) {
+        const line = lines[i]!
+        if (isHostArtifactMarker(line)) {
+            i += 1
+            while (i < lines.length && isArtifactHeading(lines[i]!)) {
+                i = skipArtifactDump(lines, i)
+            }
+            continue
+        }
+        // Orphan ### type "title" id=art-... dumps (pending/temp ids often leak).
+        if (isArtifactHeading(line) && /\bid=/.test(line)) {
+            i = skipArtifactDump(lines, i)
+            continue
+        }
+        out.push(line)
+        i += 1
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
 export function stripLeakedToolMarkup(value: string): string {
     if (!value) return ''
     let text = value
@@ -130,6 +203,7 @@ export function stripLeakedToolMarkup(value: string): string {
         .replace(BARE_CALL, '\n')
         .replace(LEAK_UNCLOSED, '')
         .replace(TRAILING_BARE_CALL, '')
+    text = stripLeakedOnScreenArtifacts(text)
     text = text.replace(/\n{3,}/g, '\n\n').trim()
     return text
 }
