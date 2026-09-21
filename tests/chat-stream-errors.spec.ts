@@ -114,6 +114,21 @@ test.describe('chat-stream-errors classifier', () => {
     ).toBe(false)
   })
 
+  test('empty-after-thinking is provider, not Connection', () => {
+    const empty = classifyChatStreamError({ message: 'AI returned no content' })
+    expect(empty.kind).toBe('provider')
+    expect(empty.title).toBe('Philosopher network')
+    expect(empty.isTransientNetwork).toBe(false)
+    expect(
+      shouldSilentRetryChatStream({
+        classified: classifyChatStreamError({ err: new TypeError('Failed to fetch') }),
+        hadPublicText: false,
+        hadStreamProgress: true,
+        attempt: 0,
+      })
+    ).toBe(false)
+  })
+
   test('telemetry props stay PII-free (no prompt/body fields)', () => {
     const props = chatStreamErrorTelemetryProps({
       kind: 'network',

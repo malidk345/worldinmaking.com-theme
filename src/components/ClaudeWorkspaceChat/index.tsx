@@ -1504,6 +1504,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             shouldSilentRetryChatStream({
               classified: classifiedFetch,
               hadPublicText: Boolean(accumulatedContent.trim()),
+              // Fetch-only retry site: chunks are always 0 here; keep gate for safety.
+              hadStreamProgress: streamChunkCount > 0,
               attempt: fetchAttempt,
             }) &&
             !activeController.signal.aborted
@@ -2016,11 +2018,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             });
             streamErrorKind =
               classifiedSse.kind === 'abort' ? undefined : classifiedSse.kind;
+            // Prefer scrubbed backend copy when present (pre-#772). Only fall back to
+            // product-safe defaults so unknown SSE errors are not forced into a blank
+            // generic "Connection" body after thinking has already started.
             const rawSseMessage = String(parsed.message || '').trim();
-            const preferredSseCopy =
-              (classifiedSse.kind === 'quota' || classifiedSse.kind === 'provider') && rawSseMessage
-                ? rawSseMessage
-                : classifiedSse.userMessage;
+            const preferredSseCopy = rawSseMessage || classifiedSse.userMessage;
             const safeMessage =
               scrubSecretMaterial(preferredSseCopy) || classifiedSse.userMessage;
             const hasPublicReply = Boolean(accumulatedContent.trim());
