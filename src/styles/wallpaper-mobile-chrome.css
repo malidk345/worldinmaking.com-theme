@@ -3,14 +3,14 @@
    body::before extends into safe-area insets (inset:0 stops at layout viewport). */
 
 html[data-wallpaper='keyboard-mint'] {
-    --browser-chrome: #2fd44e;
-    --browser-chrome-bottom: #5ef06d;
-    --browser-chrome-field: linear-gradient(180deg, #2fd44e 0%, #4ae65e 42%, #5ef06d 100%);
+    --browser-chrome: #4a8f7c;
+    --browser-chrome-bottom: #74b8a8;
+    --browser-chrome-field: linear-gradient(180deg, #4a8f7c 0%, #5fa996 42%, #74b8a8 100%);
 }
 html.dark[data-wallpaper='keyboard-mint'] {
-    --browser-chrome: #1ead3e;
-    --browser-chrome-bottom: #3ddc55;
-    --browser-chrome-field: linear-gradient(180deg, #1ead3e 0%, #2fd44e 50%, #3ddc55 100%);
+    --browser-chrome: #2e6b5c;
+    --browser-chrome-bottom: #4e9a86;
+    --browser-chrome-field: linear-gradient(180deg, #2e6b5c 0%, #3f8572 50%, #4e9a86 100%);
 }
 
 html[data-wallpaper='cobalt'] {

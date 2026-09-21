@@ -20,7 +20,7 @@
     var THEME_COLORS = {
         cobalt: { light: '#2F7ED4', dark: '#1E5DAD' },
         hogzilla: { light: '#B4ADC4', dark: '#141E40' },
-        'keyboard-mint': { light: '#2FD44E', dark: '#1EAD3E' },
+        'keyboard-mint': { light: '#4A8F7C', dark: '#2E6B5C' },
         'draft-world': { light: '#F3EFE6', dark: '#141E40' },
         'rain-embers': { light: '#1A3350', dark: '#0F2236' },
         'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },
@@ -36,8 +36,8 @@
             dark: { top: '#141E40', bottom: '#46368B', css: 'linear-gradient(180deg, #141E40 0%, #46368B 100%)' },
         },
         'keyboard-mint': {
-            light: { top: '#2FD44E', bottom: '#5EF06D', css: 'linear-gradient(180deg, #2FD44E 0%, #4AE65E 42%, #5EF06D 100%)' },
-            dark: { top: '#1EAD3E', bottom: '#3DDC55', css: 'linear-gradient(180deg, #1EAD3E 0%, #2FD44E 50%, #3DDC55 100%)' },
+            light: { top: '#4A8F7C', bottom: '#74B8A8', css: 'linear-gradient(180deg, #4A8F7C 0%, #5FA996 42%, #74B8A8 100%)' },
+            dark: { top: '#2E6B5C', bottom: '#4E9A86', css: 'linear-gradient(180deg, #2E6B5C 0%, #3F8572 50%, #4E9A86 100%)' },
         },
         'draft-world': {
             light: { top: '#F3EFE6', bottom: '#DDD6C8', css: 'linear-gradient(180deg, #F3EFE6 0%, #E8E2D6 55%, #DDD6C8 100%)' },
