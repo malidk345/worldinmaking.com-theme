@@ -52,12 +52,19 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** keyboard-mint = cobalt green twin (HLS −80°) + grass; mobile chrome synced; squash-merged.
+- **Task:** keyboard-mint neon greens (#778) → soft sage-teal; cobalt geometry + grass kept; mobile chrome synced; squash-merged.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (wallpaper: keyboard-mint soft sage-teal)
+- **Scope:** User (TR): #778 hue-shift neon acid greens hate vs hogzilla/cobalt quality. Keep cobalt gradient geometry 1:1; pull green to soft sage/teal (lower sat); keep MintBlade grass; sync mobile chrome; then merge.
+- **Change:** Replace neon mint stops with soft sage-teal (≈H165 / S30–40%). Light `#2FD44E/#4AE65E/#5EF06D` → `#4A8F7C/#5FA996/#74B8A8`; dark `#1EAD3E/#2FD44E/#3DDC55` → `#2E6B5C/#3F8572/#4E9A86`. Glow `#5FA996/#4A8F7C`. Geometry still mirrors cobalt (180deg, 42%/50%). Grass unchanged. Cobalt untouched. Sync WALLPAPER_FIELDS, theme-init, global/mobile chrome CSS, useTheme thumb, lock-test needles.
+- **Files:** `Wallpapers.tsx`, `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `useTheme.tsx`, `global.css`, `wallpaper-mobile-chrome.css`, `theme-init.js`, `AI_MEMORY.md`
+- **Verify:** vitest wallpaperChrome.test.ts; light/dark mint theme-color + overscroll match sage-teal; grass still visible; cobalt unchanged.
+- **Handoff:** PR `fix/wallpaper-mint-sage-teal`.
 
 ### 2026-09-21 — Grok Bot / Cursor (wallpaper: keyboard-mint = cobalt green twin)
 - **Scope:** User (TR): keyboard-mint green must be the exact green equivalent of cobalt blue; grass stays on top; cobalt design mirrored 1:1 in green; mobile browser chrome/gaps match; then merge.

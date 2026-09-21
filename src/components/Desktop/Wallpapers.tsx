@@ -385,17 +385,17 @@ const MintBlade = ({ size, rotate }: { size: number; rotate: number }) => (
 )
 
 /**
- * Cobalt's green twin (HLS hue −80° from cobalt blues) + grass tufts on top.
- * Field geometry mirrors CobaltField 1:1 (180deg, same stop %).
+ * Cobalt geometry 1:1 (180deg, same stop %) in soft sage-teal — lower sat, not neon.
+ * MintBlade grass stays on top; cobalt field unchanged.
  */
 const KeyboardMint = () => (
     <div className="absolute inset-0 isolate">
         <div
-            className={`absolute inset-0 bg-[linear-gradient(180deg,#2FD44E_0%,#4AE65E_42%,#5EF06D_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#4A8F7C_0%,#5FA996_42%,#74B8A8_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
         />
-        {/* 0% #2FD44E is WALLPAPER_THEME_COLORS keyboard-mint.light — mobile chrome */}
+        {/* 0% #4A8F7C is WALLPAPER_THEME_COLORS keyboard-mint.light — mobile chrome */}
         <div
-            className={`absolute inset-0 bg-[linear-gradient(180deg,#1EAD3E_0%,#2FD44E_50%,#3DDC55_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#2E6B5C_0%,#3F8572_50%,#4E9A86_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
         <div className="absolute inset-0">
             {MINT_BLADES.map((blade, i) => (
@@ -439,7 +439,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     cobalt: { light: '#4A9EE6', dark: '#2F7ED4' },
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
     'keyboard-garden': { light: '#53FFCB', dark: '#49BAC5' },
-    'keyboard-mint': { light: '#4AE65E', dark: '#2FD44E' },
+    'keyboard-mint': { light: '#5FA996', dark: '#4A8F7C' },
     'draft-world': { light: '#C4A574', dark: '#9370F0' },
     'rain-embers': { light: '#7EB4D4', dark: '#D08A3A' },
     'plaza-bang': { light: '#CFC6B6', dark: '#9370F0' },
