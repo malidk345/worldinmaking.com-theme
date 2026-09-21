@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Chat,
   Message,
@@ -820,7 +820,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
 
   const pinChatToBottom = useCallback(() => {
-    if (!autoScrollRef.current || userInteractingRef.current || isStreamingRef.current) return;
+    // Stick only when the user is near bottom (autoScrollRef). Do NOT bail on
+    // isStreaming — thinking/tool growth above the live answer with
+    // overflow-anchor:none would otherwise flick the viewport upward.
+    if (!autoScrollRef.current || userInteractingRef.current) return;
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     const next = scroller.scrollHeight - scroller.clientHeight;
@@ -897,15 +900,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     const onWheel = (e: WheelEvent) => {
       userInteractingRef.current = true;
+      const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
       if (e.deltaY < 0) {
-        autoScrollRef.current = false;
-        setIsAwayFromBottom(true);
-      } else if (e.deltaY > 0) {
-        const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
-        if (distanceToBottom <= 30) {
-          autoScrollRef.current = true;
-          setIsAwayFromBottom(false);
+        // Ignore tiny trackpad noise while still glued to the bottom.
+        if (distanceToBottom > 48) {
+          autoScrollRef.current = false;
+          setIsAwayFromBottom(true);
         }
+      } else if (e.deltaY > 0 && distanceToBottom <= 30) {
+        autoScrollRef.current = true;
+        setIsAwayFromBottom(false);
       }
       if (touchTimeout) clearTimeout(touchTimeout);
       touchTimeout = setTimeout(() => {
@@ -921,7 +925,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      if (!isStreamingRef.current && autoScrollRef.current && !userInteractingRef.current) {
+      if (autoScrollRef.current && !userInteractingRef.current) {
         pinChatToBottom();
       }
     });
@@ -1136,9 +1140,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     setIsStreaming(true);
     setStreamStatus('thinking');
-    autoScrollRef.current = false;
+    // Keep stick-to-bottom armed; rAF waits for the new bubbles to lay out.
+    // Use 'auto' so the first tokens cannot race a smooth animation mid-flight.
     setIsAwayFromBottom(false);
-    requestAnimationFrame(() => scrollChatToBottom('smooth'));
+    requestAnimationFrame(() => scrollChatToBottom('auto'));
     abortActiveStream();
     const streamEpoch = ++streamEpochRef.current;
     const activeController = new AbortController();
