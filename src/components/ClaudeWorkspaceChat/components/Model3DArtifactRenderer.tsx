@@ -57,7 +57,7 @@ function createCustomMeshGeometry(vertices: number[][], faces?: number[][]): THR
   return geo
 }
 
-export function Model3DArtifactRenderer({ content }: { content: string | unknown }): JSX.Element {
+export function Model3DArtifactRenderer({ content, chrome = false }: { content: string | unknown; chrome?: boolean }): JSX.Element {
   const spec = useMemo(() => parseModel3DSpec(content), [content])
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -599,7 +599,8 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-zinc-950 select-none font-sans">
-      {/* Control Actions (Top Right) */}
+      {/* Control Actions (Top Right) — off by default; notebook embed passes chrome={false} */}
+      {chrome ? (
       <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-0.5 rounded-sm border border-white/15 bg-zinc-900/90 p-0.5 backdrop-blur-md shadow-sm">
         <button
           type="button"
@@ -667,6 +668,7 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
           <RotateCcw className="h-3 w-3" />
         </button>
       </div>
+      ) : null}
 
       {/* Hover Tooltip / Inspector */}
       {hoveredObject && (

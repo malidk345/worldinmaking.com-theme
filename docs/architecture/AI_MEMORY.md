@@ -51,13 +51,23 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** keyboard-mint neon greens (#778) → soft sage-teal; cobalt geometry + grass kept; mobile chrome synced; squash-merged.
+- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
+- **Task:** Clean notebook model3d UI — hide in-viewer control bar + strip extra white card chrome around notebook embed.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (notebook model3d: clean chrome)
+- **Scope:** User (TR): notebook 3D shows floating play/pause/cube/grid/ISO/MODEL3D+trash overlays and an extra white bordered rounded card; wants 3D flush in notebook flow without chrome.
+- **Change:**
+  1. `Model3DArtifactRenderer`: add `chrome?: boolean` (default `false`); hide top-right control pill unless `chrome`.
+  2. `NotebookWimBlocks`: model3d embed drops `rounded-xl border border-primary bg-primary` card; pass `chrome={false}`; hide floating MODEL3D+trash edit overlay on model3d (keyboard delete still works when focused).
+- **Files:** `Model3DArtifactRenderer.tsx`, `NotebookWimBlocks.tsx`, `AI_MEMORY.md`
+- **Verify:** no Model3D UI test pattern; typecheck/shell CI on PR.
+- **Residual:** Chat/window preview also defaults chrome off (same component); pass `chrome` to re-enable. Simulation/canvas still use bordered cards. Model3d edit delete is keyboard-only now.
+- **Handoff:** PR `fix/notebook-model3d-clean-chrome`.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix blank model3d after #777)
 - **Scope:** User (TR): After #777 3D/tool-memory work, even when 3D is produced the viewport is empty/blank — code exists but nothing shows. Still weak on complex 3D. Investigate + fix; soft autonomy; PR + CI; may squash-merge if green.

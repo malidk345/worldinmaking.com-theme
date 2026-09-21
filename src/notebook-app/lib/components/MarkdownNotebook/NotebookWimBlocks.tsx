@@ -130,7 +130,7 @@ export function NotebookWimCodeBlock({
             tabIndex={mode === 'edit' ? 0 : undefined}
             onKeyDown={handleKeyDown}
         >
-            {mode === 'edit' && deleteNode ? (
+            {mode === 'edit' && deleteNode && !isModel3d ? (
                 <div
                     className="absolute top-2 right-2 z-30 flex items-center gap-1 rounded-md bg-primary/90 px-1.5 py-0.5 shadow-sm border border-primary/40 backdrop-blur-md opacity-0 group-hover/wim-block:opacity-100 focus-within:opacity-100 transition-opacity duration-150"
                     contentEditable={false}
@@ -159,8 +159,8 @@ export function NotebookWimCodeBlock({
                     <ChartArtifactRenderer spec={{ ...spec, title: undefined }} chrome={false} />
                 </div>
             ) : isModel3d ? (
-                <div data-testid="notebook-model3d-block" className="relative h-[420px] w-full overflow-hidden rounded-xl border border-primary bg-primary">
-                    <Model3DArtifactRenderer content={node.text} />
+                <div data-testid="notebook-model3d-block" className="relative my-1 h-[420px] w-full overflow-hidden">
+                    <Model3DArtifactRenderer content={node.text} chrome={false} />
                 </div>
             ) : isSimulation ? (
                 <div data-testid="notebook-simulation-block" className="relative min-h-[320px] w-full overflow-auto rounded-xl border border-primary bg-primary">
