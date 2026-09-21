@@ -52,11 +52,25 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** WIM AI remove quota limit bar + pin user message to chat viewport top on send (see §5).
+- **Task:** WIM AI chat scroll pin-lock clean-up after #770 (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: WIM AI chat scroll pin-lock after #770)
+- **Scope:** User (TR): after send, user bubble must stay put near the top of the chat scroller (“bir tık daha aşağısı” — small inset, not flush); AI stream grows below with **no** up/down bounce; remove conflicting scroll rules (#766 stick-during-stream vs #770 top-pin vs spacer/near-bottom re-arm).
+- **Root conflict:** #770 pinned with a bottom spacer so `distanceToBottom ≈ 0`. Near-bottom handlers then re-armed `autoScrollRef`, and ResizeObserver `#766` `pinChatToBottom` fought the top pin as tokens grew.
+- **One model:**
+  1. On send: `pinnedMessageIdRef` + spacer + `scrollTop = messageOffset - 16px`.
+  2. While pinned: ResizeObserver only re-asserts that scrollTop (`maintainPinnedScroll`); `pinChatToBottom` and near-bottom re-arm are disabled.
+  3. Meaningful wheel/touch releases the pin; optional near-bottom stick may re-arm only after release.
+  4. Next send re-pins to the new user message. Chat switch / scroll-to-bottom clears the pin.
+- **Removed/simplified:** flush-top pin; stick-during-stream while pinned; near-bottom auto-rearm while pinned; RO bottom re-pin loops during a pinned turn.
+- **Files:** `chat-scroll.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-scroll.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`. Manual: send → user bubble ~16px below pane top, stable while reply streams; wheel releases lock; scroll to bottom can stick again; send again re-locks.
+- **Handoff:** PR `fix/wim-ai-chat-scroll-pin-lock`. Residual: very tall user bubbles can still clip under the `pt-9` mask; pin hold does not shrink spacer mid-stream (harmless empty tail until next pin/chat switch).
+
 
 ### 2026-09-21 — Grok Bot / Cursor (UX: WIM AI hide quota bar + pin user send to top)
 - **Scope:** User (TR): (1) remove the bottom quota/usage “limit çizgisi” under the chat composer; (2) on send, pin the new user bubble to the **top** of the WIM AI AppWindow chat scroller (not the page), with the assistant reply streaming below — no forced stick-to-bottom; manual scroll remains free; each new send re-pins that user message to the top.

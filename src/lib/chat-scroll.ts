@@ -1,7 +1,13 @@
 /**
- * WIM AI chat scroller helpers — pin a message to the top of the AppWindow
- * chat pane without forcing stick-to-bottom.
+ * WIM AI chat scroller helpers — lock a user message near the top of the
+ * AppWindow chat pane while the assistant reply streams below.
+ *
+ * One model: pin-to-message (with small top inset). Stick-to-bottom is a
+ * separate mode and must stay off while a pin lock is active.
  */
+
+/** Small inset so the bubble sits under the scroller top mask, not flush to 0. */
+export const CHAT_PIN_TOP_PADDING_PX = 16
 
 /** Content-Y of `el`'s top edge relative to the scroller's scrollable content. */
 export function elementOffsetInScroller(scroller: HTMLElement, el: HTMLElement): number {
@@ -11,23 +17,38 @@ export function elementOffsetInScroller(scroller: HTMLElement, el: HTMLElement):
 }
 
 /**
- * Extra bottom spacer so `scrollTop = messageOffset` stays reachable when the
- * reply below the user bubble is still short.
+ * Extra bottom spacer so `scrollTop = messageOffset - topPadding` stays reachable
+ * when the reply below the user bubble is still short.
  */
 export function computePinSpacerHeight(
     scrollerClientHeight: number,
     contentHeightExcludingSpacer: number,
-    messageOffset: number
+    messageOffset: number,
+    topPadding: number = CHAT_PIN_TOP_PADDING_PX
 ): number {
     if (scrollerClientHeight <= 0) return 0
-    const needed = messageOffset + scrollerClientHeight - contentHeightExcludingSpacer
+    const targetScroll = Math.max(0, messageOffset - topPadding)
+    const needed = targetScroll + scrollerClientHeight - contentHeightExcludingSpacer
     return Math.max(0, Math.ceil(needed))
 }
 
-/** Align `el`'s top with the scroller viewport top (no smooth / page scroll). */
-export function scrollElementToScrollerTop(scroller: HTMLElement, el: HTMLElement): void {
-    const next = Math.max(0, elementOffsetInScroller(scroller, el))
+/**
+ * Align `el` near the scroller top with a small inset (no smooth / page scroll).
+ * Growing content below does not need this call again if scrollTop is held;
+ * call again after layout when a pin lock is active.
+ */
+export function scrollElementToScrollerPin(
+    scroller: HTMLElement,
+    el: HTMLElement,
+    topPadding: number = CHAT_PIN_TOP_PADDING_PX
+): void {
+    const next = Math.max(0, elementOffsetInScroller(scroller, el) - topPadding)
     if (Math.abs(scroller.scrollTop - next) > 1) {
         scroller.scrollTop = next
     }
+}
+
+/** @deprecated Prefer scrollElementToScrollerPin — kept for flush-top callers. */
+export function scrollElementToScrollerTop(scroller: HTMLElement, el: HTMLElement): void {
+    scrollElementToScrollerPin(scroller, el, 0)
 }
