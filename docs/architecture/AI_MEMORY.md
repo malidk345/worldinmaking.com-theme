@@ -52,11 +52,24 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Profile mobile tab-panel spacing + Notebooks-first tab order (see §5).
+- **Task:** WIM AI ask_user / human-turn composer unlock (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: ask_user card stuck in composer)
+- **Scope:** User (TR): ask_user card often broken / stuck in the input field; plan approval, human interrupt, and input lock feel intermittent.
+- **Root causes (high confidence):**
+  1. After SSE `human` interrupt, `isStreaming` stayed true until stream `done`/`finally`, so composer showed **Stop** instead of **Answer** and Enter no-op'd (`handleSubmit` returned on `isStreaming`). Choices/Skip worked (they call `handleHumanRespond` which aborts); free-text Answer looked "stuck in the input".
+  2. Stream success/flush could patch `humanTurn: pending` over an already **answered/approved/revised** turn — card reappeared in composer after the user had responded.
+  3. Dual-device `mergeMessages` could revive a stale remote `pending` over local settled status.
+  4. Pending ask was hidden from the thread (`status !== 'pending'`), so the only visible UI was the composer banner (felt glued to the input).
+- **Fix:** Composer prefers Answer/Revise over Stop while `awaitingHuman`; submit paths no longer block on `isStreaming`; unlock streaming flags on `human` event; `resolveHumanTurn` guards updates + merge; thread shows read-only pending card; double-respond in-flight ref.
+- **Files:** `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`, `ChatMessage.tsx`, `chat-merge.ts`, `human-turn-ux.ts`, `tests/human-turn-ux.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/human-turn-ux.spec.ts` (or project test runner for that file). Manual: force ask_user mid-tool-turn — Answer appears immediately (not only Stop); answer free text; card clears and does not bounce back; second device hydrate keeps answered.
+- **Handoff:** PR `fix/wim-ai-human-turn-composer`. Deferred: full plan-mode redesign; edit/retry orphan remote ids; aggressive abort of leftover SSE bytes after interrupt (drain is fine).
+- **Residual risks:** Very slow networks may still briefly show Stop before the `human` event arrives; multi-device races if both devices answer different choices before either persists.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper mobile chrome on change + all kept)
 - **Scope:** User (TR): after changing wallpaper, mobile browser chrome / safe-area gaps (theme-color, overscroll, status/bottom UI) sometimes do not update; audit EVERY kept wallpaper not just hogzilla/paper-white.

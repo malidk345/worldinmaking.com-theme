@@ -1,4 +1,5 @@
 import type { Chat, Message } from '../components/ClaudeWorkspaceChat/types'
+import { resolveHumanTurn } from './human-turn-ux'
 
 export function mergeMessages(left: Message[] = [], right: Message[] = [], preferRight: boolean = false): Message[] {
     const byId = new Map<string, Message>()
@@ -19,6 +20,11 @@ export function mergeMessages(left: Message[] = [], right: Message[] = [], prefe
             merged = { ...existing, ...message }
         } else {
             merged = preferRight ? { ...existing, ...message } : { ...message, ...existing }
+        }
+        // Dual-device: never let a stale remote pending interrupt revive after local answer/run
+        merged = {
+            ...merged,
+            humanTurn: resolveHumanTurn(existing.humanTurn, message.humanTurn, preferRight),
         }
         byId.set(message.id, merged)
     }

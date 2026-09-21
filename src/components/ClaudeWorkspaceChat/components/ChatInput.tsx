@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect';
 import { StylePresetId, FileAttachment, ModelId, ModelOption, AgentMode, HumanTurn } from '../types';
+import { preferHumanAnswerOverStop } from '../../../lib/human-turn-ux';
 import {
   IconPlus,
   IconMicrophone,
@@ -291,9 +292,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const handleSubmit = () => {
     const links = linkChips.map((chip) => chip.url).join('\n')
     const body = [links, prompt.trim()].filter(Boolean).join('\n\n')
-    if (pendingHumanTurn && pendingHumanTurn.kind === 'ask_user') {
+    if (pendingHumanTurn && pendingHumanTurn.kind === 'ask_user' && pendingHumanTurn.status === 'pending') {
       const picked = askChoice && askChoice !== 'free' ? askChoice : body
-      if (!picked || isStreaming) return
+      // handleHumanRespond aborts any still-open interrupt stream — do not block Answer on isStreaming
+      if (!picked) return
       setHumanDismissed(true)
       onHumanRespond?.('answer', picked)
       setPrompt('')
@@ -302,8 +304,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       if (textareaRef.current) textareaRef.current.style.height = '24px'
       return
     }
-    if (pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval') {
-      if (isStreaming) return
+    if (pendingHumanTurn && pendingHumanTurn.kind === 'plan_approval' && pendingHumanTurn.status === 'pending') {
+      // Same as ask_user: revise/run must work while the interrupt SSE drains
       setHumanDismissed(true)
       onHumanRespond?.('revise', body || undefined)
       setPrompt('')
@@ -851,23 +853,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </button>
             ) : null}
 
-            {/* Send / Stop Action Button */}
-            {isStreaming ? (
-              <button
-                type="button"
-                onClick={onStopStreaming}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1E3A8A] bg-[#1E3A8A] shadow-2xs hover:bg-[#1e40af] cursor-pointer transition-colors transition-transform duration-150 active:scale-95"
-                title="Stop generating"
-                aria-label="Stop generating"
-              >
-                <div className="size-2.5 rounded-[2px] bg-white shadow-xs" />
-              </button>
-            ) : (
+            {/* Send / Stop Action Button — pending human interrupt wins over Stop so ask_user is not stuck behind Stop */}
+            {preferHumanAnswerOverStop(isStreaming, awaitingHuman) ? (
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={
-                  isStreaming ||
+                  (!awaitingHuman && isStreaming) ||
                   (!awaitingHuman && quotaBlocksSend) ||
                   (!awaitingPlan && !prompt.trim() && attachments.length === 0 && linkChips.length === 0)
                 }
@@ -881,6 +873,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 aria-label={awaitingAsk ? 'Answer' : awaitingPlan ? 'Revise' : 'Send message'}
               >
                 <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onStopStreaming}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1E3A8A] bg-[#1E3A8A] shadow-2xs hover:bg-[#1e40af] cursor-pointer transition-colors transition-transform duration-150 active:scale-95"
+                title="Stop generating"
+                aria-label="Stop generating"
+              >
+                <div className="size-2.5 rounded-[2px] bg-white shadow-xs" />
               </button>
             )}
           </div>
