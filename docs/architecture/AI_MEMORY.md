@@ -59,6 +59,22 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-21 — Grok Bot / Cursor (fix blank model3d after #777)
+- **Scope:** User (TR): After #777 3D/tool-memory work, even when 3D is produced the viewport is empty/blank — code exists but nothing shows. Still weak on complex 3D. Investigate + fix; soft autonomy; PR + CI; may squash-merge if green.
+- **Root cause (high confidence):** #777 staged scaffold→enrich + loop compaction of prior `create_artifact` bodies. Enrich often sent materials/camera/`preset:"custom"`/empty `group`s (or `parts[]` not mapped to `children`). `parseModel3DSpecStrict` accepted those (custom preset or non-empty objects array) so a weak enrich **replaced** a good scaffold. Renderer drew empty groups as a 0.01 box → looked blank while Code tab still showed JSON. Compaction itself did **not** strip persisted artifact bodies (UI path kept full content); it starved the model of geometry context mid-loop.
+- **Fix:**
+  1. Fail-closed: require leaf geometry or a real viewport preset (`polyhedra`/`orbital_system`/…); `custom` alone / empty groups rejected.
+  2. Aliases: `parts`/`meshes`/… → children; `meshes`/`items`/… → objects; size/colour aliases.
+  3. Loop compaction: keep a geometry digest when stubbing prior model3d args.
+  4. Pipeline: refuse weaker same-title model3d enrich (keeps scaffold; errors ask for full `objects[]`).
+  5. Renderer: `group` → `THREE.Group` (not invisible box). Soft prompt: every enrich must resend full `objects[]`.
+- **Tests:** execute-visual-artifacts (reject blank / accept parts); pipeline (digest + weaker enrich).
+- **Files:** `visual-artifacts.ts`, `pipeline.ts`, `spec.ts`, `Model3DArtifactRenderer.tsx`, tests, `AI_MEMORY.md`
+- **Verify:** vitest execute-visual-artifacts + model3d compaction/weaker guards (node env).
+- **Residual:** Complex quality still model-limited; aliases won’t cover every invented schema. Soft continue nudge integration tests can timeout if `web_search` hits network without stubs.
+- **Handoff:** PR `fix/wim-ai-model3d-blank-after-777`.
+
+
 ### 2026-09-21 — Grok Bot / Cursor (wallpaper: keyboard-mint soft sage-teal)
 - **Scope:** User (TR): #778 hue-shift neon acid greens hate vs hogzilla/cobalt quality. Keep cobalt gradient geometry 1:1; pull green to soft sage/teal (lower sat); keep MintBlade grass; sync mobile chrome; then merge.
 - **Change:** Replace neon mint stops with soft sage-teal (≈H165 / S30–40%). Light `#2FD44E/#4AE65E/#5EF06D` → `#4A8F7C/#5FA996/#74B8A8`; dark `#1EAD3E/#2FD44E/#3DDC55` → `#2E6B5C/#3F8572/#4E9A86`. Glow `#5FA996/#4A8F7C`. Geometry still mirrors cobalt (180deg, 42%/50%). Grass unchanged. Cobalt untouched. Sync WALLPAPER_FIELDS, theme-init, global/mobile chrome CSS, useTheme thumb, lock-test needles.
