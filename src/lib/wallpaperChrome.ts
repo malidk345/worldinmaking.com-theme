@@ -1,3 +1,14 @@
+declare global {
+    interface Window {
+        __wallpaper?: string
+        /** Boot script in _document.tsx — updates closed-over wallpaper without fighting React chrome. */
+        __setWallpaper?: (wallpaper: string) => void
+        __setPreferredTheme?: (theme: string) => string
+        __onThemeChange?: (theme: string) => void
+        __theme?: string
+    }
+}
+
 export type WallpaperName =
     | 'cobalt'
     | 'hogzilla'
@@ -260,13 +271,39 @@ let lastChromeOpts: {
 } | null = null
 let chromeLifetime = false
 
+function expectedFieldFromLastOpts(): WallpaperField | null {
+    if (!lastChromeOpts || typeof window === 'undefined') return null
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false
+    const mode = resolveChromeTheme(lastChromeOpts.colorMode, lastChromeOpts.theme, prefersDark)
+    return getWallpaperField(lastChromeOpts.wallpaper, mode)
+}
+
+function chromeVarsMatch(field: WallpaperField): boolean {
+    if (typeof document === 'undefined') return false
+    const root = document.documentElement
+    return (
+        root.style.getPropertyValue('--browser-chrome').trim().toLowerCase() === field.top.toLowerCase() &&
+        root.style.getPropertyValue('--browser-chrome-bottom').trim().toLowerCase() === field.bottom.toLowerCase() &&
+        root.style.getPropertyValue('--browser-chrome-field').trim() === field.css
+    )
+}
+
 function startChromeGuard(): void {
     if (typeof document === 'undefined' || chromeGuard) return
     chromeGuard = new MutationObserver(() => {
-        if (!lastChromeColor) return
+        if (!lastChromeOpts && !lastChromeColor) return
+        const field = expectedFieldFromLastOpts()
         const metas = document.head.querySelectorAll('meta[name="theme-color"]')
         const first = metas[0] as HTMLMetaElement | undefined
-        if (metas.length === 1 && first && !first.media && first.content === lastChromeColor) return
+        const metaOk = metas.length === 1 && !!first && !first.media && first.content === lastChromeColor
+        const varsOk = field ? chromeVarsMatch(field) : true
+        if (metaOk && varsOk) return
+        // Document boot script can rewrite CSS vars with a stale closed-over wallpaper while
+        // leaving theme-color looking "fine" (shared tops). Re-apply the full React chrome.
+        if (lastChromeOpts) {
+            applyWallpaperBrowserChrome({ ...lastChromeOpts, force: true })
+            return
+        }
         syncThemeColorMeta(lastChromeColor)
     })
     chromeGuard.observe(document.head, {
@@ -304,11 +341,20 @@ export function applyWallpaperBrowserChrome(opts: {
     const chrome = themeColorForEngine(field)
     const key = `${resolveKeptWallpaper(opts.wallpaper)}|${mode}|${chrome}`
     lastChromeOpts = { wallpaper: opts.wallpaper, colorMode: opts.colorMode, theme: opts.theme }
+    // Keep the pre-React boot script in sync so __setPreferredTheme never paints a stale wallpaper.
+    const kept = resolveKeptWallpaper(opts.wallpaper)
+    if (typeof window !== 'undefined') {
+        window.__wallpaper = kept
+        // Prefer boot helper when present (updates closed-over `wallpaper` without re-applying).
+        if (typeof window.__setWallpaper === 'function') window.__setWallpaper(kept)
+    }
     if (!opts.force && key === lastChromeKey && lastChromeColor === chrome) return
     lastChromeKey = key
     lastChromeColor = chrome
 
     const root = document.documentElement
+    root.setAttribute('data-wallpaper', kept)
+    if (document.body) document.body.setAttribute('data-wallpaper', kept)
     root.style.setProperty('--browser-chrome', field.top)
     root.style.setProperty('--browser-chrome-bottom', field.bottom)
     root.style.setProperty('--browser-chrome-field', field.css)
