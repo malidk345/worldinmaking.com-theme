@@ -52,11 +52,19 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Soft tool-result memory + staged 3D/screen + long-job continue nudge (see §5).
+- **Task:** keyboard-mint = cobalt green twin (HLS −80°) + grass; mobile chrome synced; squash-merged.
+
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (wallpaper: keyboard-mint = cobalt green twin)
+- **Scope:** User (TR): keyboard-mint green must be the exact green equivalent of cobalt blue; grass stays on top; cobalt design mirrored 1:1 in green; mobile browser chrome/gaps match; then merge.
+- **Change:** Derive mint field from cobalt via HLS hue −80° (preserve S/L). Light `#2F7ED4/#4A9EE6/#5EB0F0` → `#2FD44E/#4AE65E/#5EF06D`; dark `#1E5DAD/#2F7ED4/#3D8FDC` → `#1EAD3E/#2FD44E/#3DDC55`. Gradient angle/stops match cobalt (180deg, 42%/50%). Keep MintBlade grass. Sync glow, WALLPAPER_FIELDS, theme-init, global/mobile chrome CSS, useTheme thumb, lock-test needles.
+- **Files:** `Wallpapers.tsx`, `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `useTheme.tsx`, `global.css`, `wallpaper-mobile-chrome.css`, `theme-init.js`, `AI_MEMORY.md`
+- **Verify:** vitest wallpaperChrome.test.ts; light/dark mint theme-color + overscroll match new greens; grass still visible; cobalt unchanged.
+- **Handoff:** PR `feat/wallpaper-mint-cobalt-green-twin`.
 
 ### 2026-09-21 — Grok Bot / Cursor (pre-merge harden #777)
 - **Scope:** Pre-merge review of PR #777 only — do not merge. Fix high-confidence clean-run issues on same branch.

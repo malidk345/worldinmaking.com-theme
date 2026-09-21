@@ -572,24 +572,24 @@
 }
 
 html {
-    --browser-chrome: #d8dcce;
-    --browser-chrome-bottom: #bdc6b0;
-    --browser-chrome-field: linear-gradient(200deg, #d8dcce 0%, #c9d0be 48%, #bdc6b0 100%);
+    --browser-chrome: #2fd44e;
+    --browser-chrome-bottom: #5ef06d;
+    --browser-chrome-field: linear-gradient(180deg, #2fd44e 0%, #4ae65e 42%, #5ef06d 100%);
 }
 html.dark {
-    --browser-chrome: #141e18;
-    --browser-chrome-bottom: #121a14;
-    --browser-chrome-field: linear-gradient(200deg, #141e18 0%, #18241c 52%, #121a14 100%);
+    --browser-chrome: #1ead3e;
+    --browser-chrome-bottom: #3ddc55;
+    --browser-chrome-field: linear-gradient(180deg, #1ead3e 0%, #2fd44e 50%, #3ddc55 100%);
 }
 html[data-wallpaper='keyboard-mint'] {
-    --browser-chrome: #d8dcce;
-    --browser-chrome-bottom: #bdc6b0;
-    --browser-chrome-field: linear-gradient(200deg, #d8dcce 0%, #c9d0be 48%, #bdc6b0 100%);
+    --browser-chrome: #2fd44e;
+    --browser-chrome-bottom: #5ef06d;
+    --browser-chrome-field: linear-gradient(180deg, #2fd44e 0%, #4ae65e 42%, #5ef06d 100%);
 }
 html.dark[data-wallpaper='keyboard-mint'] {
-    --browser-chrome: #141e18;
-    --browser-chrome-bottom: #121a14;
-    --browser-chrome-field: linear-gradient(200deg, #141e18 0%, #18241c 52%, #121a14 100%);
+    --browser-chrome: #1ead3e;
+    --browser-chrome-bottom: #3ddc55;
+    --browser-chrome-field: linear-gradient(180deg, #1ead3e 0%, #2fd44e 50%, #3ddc55 100%);
 }
 html[data-wallpaper='cobalt'] {
     --browser-chrome: #2f7ed4;

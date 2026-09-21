@@ -385,17 +385,17 @@ const MintBlade = ({ size, rotate }: { size: number; rotate: number }) => (
 )
 
 /**
- * Inspired by wimpos Keyboard garden grass — pale felt lawn + sparse tufts.
- * Own CSS layers, not the photo.
+ * Cobalt's green twin (HLS hue −80° from cobalt blues) + grass tufts on top.
+ * Field geometry mirrors CobaltField 1:1 (180deg, same stop %).
  */
 const KeyboardMint = () => (
     <div className="absolute inset-0 isolate">
         <div
-            className={`absolute inset-0 bg-[linear-gradient(200deg,#D8DCCE_0%,#C9D0BE_48%,#BDC6B0_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#2FD44E_0%,#4AE65E_42%,#5EF06D_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
         />
-        {/* 0% #D8DCCE is WALLPAPER_THEME_COLORS keyboard-mint.light — mobile chrome */}
+        {/* 0% #2FD44E is WALLPAPER_THEME_COLORS keyboard-mint.light — mobile chrome */}
         <div
-            className={`absolute inset-0 bg-[linear-gradient(200deg,#141E18_0%,#18241C_52%,#121A14_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#1EAD3E_0%,#2FD44E_50%,#3DDC55_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
         <div className="absolute inset-0">
             {MINT_BLADES.map((blade, i) => (
@@ -439,7 +439,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     cobalt: { light: '#4A9EE6', dark: '#2F7ED4' },
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
     'keyboard-garden': { light: '#53FFCB', dark: '#49BAC5' },
-    'keyboard-mint': { light: '#8FA882', dark: '#6B8B70' },
+    'keyboard-mint': { light: '#4AE65E', dark: '#2FD44E' },
     'draft-world': { light: '#C4A574', dark: '#9370F0' },
     'rain-embers': { light: '#7EB4D4', dark: '#D08A3A' },
     'plaza-bang': { light: '#CFC6B6', dark: '#9370F0' },

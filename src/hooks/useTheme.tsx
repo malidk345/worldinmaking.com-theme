@@ -253,8 +253,11 @@ const iceThumb = (extra: 'field' | 'grain' | 'marks') => {
 
 const gardenThumb = (mode: 'light' | 'dark', field: 'cream' | 'mint') => {
     if (field === 'mint') {
-        const top = mode === 'light' ? '#D8DCCE' : '#141E18'
-        const bot = mode === 'light' ? '#BDC6B0' : '#121A14'
+        // Cobalt green twin (HLS −80°) — same vertical stops as cobaltThumb + grass tufts
+        const top = mode === 'light' ? '#2FD44E' : '#1EAD3E'
+        const mid = mode === 'light' ? '#4AE65E' : '#2FD44E'
+        const bot = mode === 'light' ? '#5EF06D' : '#3DDC55'
+        const midOff = mode === 'light' ? '42%' : '50%'
         const stroke = mode === 'light' ? '#4A5440' : '#A8B89A'
         const tufts = `<g fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round">
             <path d="M180 360 L168 300 M180 360 L182 288 M180 360 L194 308"/>
@@ -266,8 +269,9 @@ const gardenThumb = (mode: 'light' | 'dark', field: 'cream' | 'mint') => {
             encodeURIComponent(
                 `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
                     <defs>
-                        <linearGradient id="mint-th-${mode}" x1="0" y1="0" x2="0.2" y2="1">
+                        <linearGradient id="mint-th-${mode}" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="${top}"/>
+                            <stop offset="${midOff}" stop-color="${mid}"/>
                             <stop offset="100%" stop-color="${bot}"/>
                         </linearGradient>
                     </defs>
