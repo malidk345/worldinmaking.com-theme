@@ -221,6 +221,16 @@ export function classifyChatStreamError(input: {
     })
   }
 
+  // Thinking finished / stream ended with no public tokens — not a Connection failure.
+  if (/^ai returned no content$/i.test(message) || code === 'EMPTY_CONTENT') {
+    return buildResult('provider', {
+      httpStatus: status,
+      code: code || 'EMPTY_REPLY',
+      userMessage:
+        'The model finished thinking but did not produce a public answer. Please try again.',
+    })
+  }
+
   if (isTransientNetworkError(input.err) || isTransientNetworkError(message)) {
     return {
       ...buildResult('network', { httpStatus: status, code: code || undefined }),
@@ -241,12 +251,15 @@ export function classifyChatStreamError(input: {
 export function shouldSilentRetryChatStream(opts: {
   classified: ClassifiedChatStreamError
   hadPublicText: boolean
+  /** True once SSE/thinking progress exists — never retry mid-stream. */
+  hadStreamProgress?: boolean
   attempt: number
   maxAttempts?: number
 }): boolean {
   const max = opts.maxAttempts ?? 1
   if (opts.attempt >= max) return false
   if (opts.hadPublicText) return false
+  if (opts.hadStreamProgress) return false
   if (opts.classified.kind === 'abort') return false
   if (opts.classified.kind === 'quota' || opts.classified.kind === 'auth') return false
   return opts.classified.isTransientNetwork === true
