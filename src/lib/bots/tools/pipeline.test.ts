@@ -320,7 +320,24 @@ describe('Tool-result memory (soft loop compaction)', () => {
         expect(digested).not.toContain('y'.repeat(100))
     })
 
-    it('compacts older create_artifact argument bodies while keeping recent full', () => {
+    it('preserves error/detail when digesting artifact-shaped failures', () => {
+        const huge = JSON.stringify({
+            ok: false,
+            id: 'art-bad',
+            type: 'model3d',
+            title: 'Broken Scene',
+            error: 'objects[2] missing position',
+            content: 'y'.repeat(5_000),
+        })
+        const digested = digestToolResultForLoop(huge, 360)
+        expect(digested).toContain('art-bad')
+        expect(digested).toContain('Broken Scene')
+        expect(digested).toContain('objects[2] missing position')
+        expect(digested).toContain('"ok":false')
+        expect(digested).not.toContain('y'.repeat(100))
+    })
+
+    it('compacts prior create_artifact bodies; only the latest stays full', () => {
         const bigBody = 'z'.repeat(3_000)
         const messages: ChatMessage[] = [{ role: 'user', content: 'build' }]
         for (let i = 0; i < 10; i += 1) {
@@ -357,10 +374,15 @@ describe('Tool-result memory (soft loop compaction)', () => {
         const compacted = compactLoopMessages(messages)
         const assistantCalls = compacted.filter((m) => m.role === 'assistant' && m.tool_calls)
         const olderArgs = assistantCalls[0]!.tool_calls![0]!.function.arguments
-        const recentArgs = assistantCalls[assistantCalls.length - 1]!.tool_calls![0]!.function.arguments
+        const priorRecentArgs = assistantCalls[assistantCalls.length - 2]!.tool_calls![0]!.function.arguments
+        const latestArgs = assistantCalls[assistantCalls.length - 1]!.tool_calls![0]!.function.arguments
         expect(olderArgs).toContain('_compacted')
         expect(olderArgs).not.toContain(bigBody)
-        expect(recentArgs).toContain(bigBody)
+        // Inside the recent tool window, prior create_artifact bodies still compact (budget guard).
+        expect(priorRecentArgs).toContain('_compacted')
+        expect(priorRecentArgs).not.toContain(bigBody)
+        expect(latestArgs).toContain(bigBody)
+        expect(latestArgs).not.toContain('_compacted')
     })
 })
 

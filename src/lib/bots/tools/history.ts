@@ -32,7 +32,8 @@ export type CompactedMessage = {
     tool_call_id?: string
 }
 
-const MAX_TURNS = 12
+// Wide enough that recentTools(6) can leave older tools in-window (pairs need ~2 slots each).
+const MAX_TURNS = 20
 const MAX_VISIBLE = 2_000
 const MAX_ARTIFACT_BODY = 4_000
 const MAX_MESSAGE = 10_000

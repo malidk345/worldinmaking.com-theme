@@ -58,6 +58,17 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-21 — Grok Bot / Cursor (pre-merge harden #777)
+- **Scope:** Pre-merge review of PR #777 only — do not merge. Fix high-confidence clean-run issues on same branch.
+- **Change:**
+  1. `digestToolResultForLoop`: preserve `error`/`detail`/`message` (+ ok:false) when digesting large id/title payloads — do not lose critical tool failures.
+  2. `compactLoopMessages`: only the **latest** `create_artifact` args stay full; prior large bodies compact even inside the recent tool window (guards staged enrich 8×120k blowup; mirrors history latest-artifact body).
+  3. `LONG_JOB_CONTINUE_NUDGE`: require `maxSteps >= 4` and `stepCount >= max(1, maxSteps-3)` so tiny budgets do not nudge on step 0.
+  4. `history.ts` `MAX_TURNS` 12→20 so `recentTools(6)` can leave older tools in-window (with 12, max ~6 tool pairs → all "recent", older digest dead + test lied).
+- **Tests:** pipeline — error preserve; prior-recent create_artifact compacted; latest full; soft continue still soft.
+- **Files:** `pipeline.ts`, `pipeline.test.ts`, `history.ts`, `AI_MEMORY.md`
+- **Handoff:** Still PR #777 — do **not** merge from agent.
+
 ### 2026-09-21 — Grok Bot / Cursor (soft: tool-result memory + staged 3D/screen + long-job continue)
 - **Scope:** User (TR): continue plan — (1) tool-result memory so model doesn't forget mid multi-tool jobs, (2) staged/parça-parça generation for 3D and screen (not one-shot), (3) soft "continue next turn" near step budget — no hard autonomy-killing rules. Prefer soft nudges. Open PR, do not merge.
 - **Change:**

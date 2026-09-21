@@ -100,7 +100,7 @@ export const LOOP_OLD_TOOL_CHARS = 360
 export const LONG_JOB_CONTINUE_NUDGE =
     "Approaching this turn's step budget: prefer finishing a coherent chunk now. If more remains, leave todos or a short note — you can continue on the next user turn."
 
-/** Prefer id/title when a tool result is a large artifact-shaped payload. */
+/** Prefer id/title when a tool result is a large artifact-shaped payload. Always keep error/detail. */
 export function digestToolResultForLoop(content: string, maxChars: number): string {
     if (content.length <= maxChars) return content
     try {
@@ -109,14 +109,26 @@ export function digestToolResultForLoop(content: string, maxChars: number): stri
             const id = typeof parsed.id === 'string' ? parsed.id : undefined
             const title = typeof parsed.title === 'string' ? parsed.title : undefined
             const type = typeof parsed.type === 'string' ? parsed.type : undefined
+            const error =
+                typeof parsed.error === 'string'
+                    ? parsed.error
+                    : typeof parsed.detail === 'string'
+                      ? parsed.detail
+                      : typeof parsed.message === 'string'
+                        ? parsed.message
+                        : undefined
             if (id || title) {
-                return JSON.stringify({
+                const stub: Record<string, unknown> = {
                     ok: parsed.ok,
                     id,
                     type,
                     title,
                     note: 'Body omitted — revise with create_artifact using the same title if needed.',
-                })
+                }
+                // Never drop critical failure context when digesting huge payloads.
+                if (error) stub.error = error
+                if (parsed.ok === false && stub.ok === undefined) stub.ok = false
+                return JSON.stringify(stub)
             }
             if (typeof parsed.content === 'string' && parsed.content.length > 400) {
                 const slim: Record<string, unknown> = {
@@ -156,7 +168,7 @@ function compactCreateArtifactArgs(argumentsJson: string, keepFull: boolean): st
     return argumentsJson.length <= 2_500 ? argumentsJson : `${argumentsJson.slice(0, 2_500)}…`
 }
 
-/** Soften mid-loop tool memory: last N results fuller; older digest; huge artifact args not re-dumped. */
+/** Soften mid-loop tool memory: last N results fuller; older digest; only latest create_artifact body kept full. */
 export function compactLoopMessages(messages: ChatMessage[]): ChatMessage[] {
     const toolIndexes = messages
         .map((message, index) => (message.role === 'tool' ? index : -1))
@@ -164,12 +176,21 @@ export function compactLoopMessages(messages: ChatMessage[]): ChatMessage[] {
     if (toolIndexes.length === 0) return messages
 
     const keepFullToolIdx = new Set(toolIndexes.slice(-LOOP_RECENT_TOOL_KEEP))
-    const keepFullCallIds = new Set(
-        toolIndexes
-            .filter((index) => keepFullToolIdx.has(index))
-            .map((index) => messages[index]?.tool_call_id)
-            .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    )
+    // Staged scaffold→enrich can stack many large create_artifact bodies. Keep only the latest
+    // full (same idea as history.ts last-artifact body) so 8×120k args cannot blow the budget.
+    let latestCreateArtifactId: string | null = null
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+        const message = messages[i]
+        if (message.role !== 'assistant' || !message.tool_calls?.length) continue
+        for (let j = message.tool_calls.length - 1; j >= 0; j -= 1) {
+            const call = message.tool_calls[j]
+            if (call?.function?.name === 'create_artifact' && call.id) {
+                latestCreateArtifactId = call.id
+                break
+            }
+        }
+        if (latestCreateArtifactId) break
+    }
 
     return messages.map((message, index) => {
         if (message.role === 'tool' && typeof message.content === 'string') {
@@ -182,7 +203,7 @@ export function compactLoopMessages(messages: ChatMessage[]): ChatMessage[] {
             const tool_calls = message.tool_calls.map((call) => {
                 const name = call.function?.name
                 if (name !== 'create_artifact') return call
-                const keep = keepFullCallIds.has(call.id)
+                const keep = Boolean(latestCreateArtifactId && call.id === latestCreateArtifactId)
                 const nextArgs = compactCreateArtifactArgs(call.function.arguments || '{}', keep)
                 if (nextArgs === call.function.arguments) return call
                 changed = true
@@ -455,7 +476,9 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     let heldPublic = ''
     let streamedPublicLength = 0
     // Soft optional nudges — models stay autonomous (no hard stop / MUST).
-    const nearStepBudget = state.stepCount >= Math.max(0, state.maxSteps - 3)
+    // Soft: last few steps only; require a real budget so tiny maxSteps don't nudge on step 0.
+    const nearStepBudget =
+        state.maxSteps >= 4 && state.stepCount >= Math.max(1, state.maxSteps - 3)
     const reminder = [
         state.pendingReminder,
         state.publicText.trim() ? PUBLIC_CONTINUE_NUDGE : '',
