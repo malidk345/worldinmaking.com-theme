@@ -44,8 +44,11 @@ const Start = dynamic(() => import('components/Start'), { ssr: false })
 
 declare global {
     interface Window {
-        __setPreferredTheme: (theme: string) => string
-        __onThemeChange: (theme: string) => void
+        __setPreferredTheme?: (theme: string) => string
+        __onThemeChange?: (theme: string) => void
+        __wallpaper?: string
+        __setWallpaper?: (wallpaper: string) => void
+        __theme?: string
     }
 }
 
@@ -1515,17 +1518,19 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         applyChromeAttrs(document.body)
         applyChromeAttrs(document.documentElement)
-        const paintChrome = () =>
+        const paintChrome = (force = false) =>
             applyWallpaperBrowserChrome({
                 wallpaper: siteSettings.wallpaper,
                 colorMode: siteSettings.colorMode,
                 theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                force,
             })
-        paintChrome()
+        // Always force on siteSettings change so a stale boot-script wallpaper cannot stick.
+        paintChrome(true)
         cleanupCustomCursor()
         if (siteSettings.colorMode !== 'system') return
         const mq = window.matchMedia('(prefers-color-scheme: dark)')
-        const onScheme = () => paintChrome()
+        const onScheme = () => paintChrome(true)
         if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onScheme)
         else if (typeof mq.addListener === 'function') mq.addListener(onScheme)
         return () => {
@@ -1565,7 +1570,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         const onMessage = (e: MessageEvent): void => {
             if (e.data.type === 'theme-toggle') {
-                window.__setPreferredTheme(e.data.isDarkModeOn ? 'dark' : 'light')
+                window.__setPreferredTheme?.(e.data.isDarkModeOn ? 'dark' : 'light')
                 return
             }
             if (e.data.type === 'navigate' && isSafeInternalPath(e.data.url)) {

@@ -58,6 +58,14 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper mobile chrome on change + all kept)
+- **Scope:** User (TR): after changing wallpaper, mobile browser chrome / safe-area gaps (theme-color, overscroll, status/bottom UI) sometimes do not update; audit EVERY kept wallpaper not just hogzilla/paper-white.
+- **Root cause:** `_document.tsx` boot script closed over the initial `wallpaper` from localStorage. Later `__setPreferredTheme` / system-scheme handlers called `applyBrowserChrome(staleWallpaper)`, rewriting `--browser-chrome*` CSS vars. React `chromeGuard` only restored `theme-color` meta — and skipped when two wallpapers shared the same top (e.g. dark `#141E40`). Result: wallpaper art updated, safe-area/overscroll often stuck on the previous field. Secondary: `theme-init.js` had stale hogzilla/mint tops; `wallpaper-mobile-chrome.css` only declared hogzilla.
+- **Fix:** Live `resolveWallpaper()` / `window.__wallpaper` / `__setWallpaper` in `_document.tsx`; `applyWallpaperBrowserChrome` syncs wallpaper + forces attrs; chromeGuard re-applies full field (vars + meta); expand mobile CSS to all KEPT; sync `theme-init.js` THEME_COLORS/FIELDS; App siteSettings effect paints with `force: true`; lock tests for global/mobile/theme-init/document needles.
+- **Files:** `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `_document.tsx`, `App.tsx`, `theme-init.js`, `wallpaper-mobile-chrome.css`, `AI_MEMORY.md`
+- **Verify:** vitest wallpaperChrome.test.ts; on mobile Safari/Chrome cycle every kept wallpaper light+dark — theme-color + overscroll/safe-area match field; change wallpaper then toggle color mode — chrome stays on the new wallpaper.
+- **Handoff:** PR `fix/wim-wallpaper-mobile-chrome-all`. Residual: iOS may still need a visibility bounce before the UI chrome samples a new theme-color (existing pageshow/visibility relock).
+
 ### 2026-09-21 — Grok Bot / Cursor (fix: profile mobile tab content spacing + Notebooks first)
 - **Scope:** User (TR): on mobile only, Posts/Notebooks content sits too far from window edge; do not touch profile header; put Notebooks before Posts; desktop unchanged.
 - **Change:** Reordered `ProfileTabs` to Notebooks → Posts → Discussions. Disabled default OSTabs `contentPadding` (`p-4`) and set `tabContentClassName="px-2 py-3 @2xl:p-4"`. ProfileTabs column wrapper uses `-mx-3 @2xl:mx-0` so stacked/mobile reclaim parent `p-4` inset; `@2xl` side-by-side layout unchanged. Header/avatar column untouched.
