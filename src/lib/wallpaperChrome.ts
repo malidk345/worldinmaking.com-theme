@@ -243,16 +243,25 @@ function upsertNamedMeta(name: string, content: string): HTMLMetaElement | null 
     return meta
 }
 
+/**
+ * Safari / iOS WebKit caches theme-color on the meta *node*. Updating `content`
+ * in place often leaves the UI chrome (toolbar / safe-area bands) on the previous
+ * wallpaper — especially noticeable when leaving keyboard-mint. Remove every
+ * theme-color meta and insert a fresh one so WebKit re-samples.
+ */
 function syncThemeColorMeta(color: string): void {
+    if (typeof document === 'undefined') return
     const head = document.head
+    if (!head) return
     chromeGuard?.disconnect()
     const metas = Array.from(head.querySelectorAll('meta[name="theme-color"]')) as HTMLMetaElement[]
-    const keep = metas[0] || upsertNamedMeta('theme-color', color)
-    if (keep) {
-        keep.removeAttribute('media')
-        keep.setAttribute('content', color)
-    }
-    for (const extra of metas.slice(1)) extra.remove()
+    for (const meta of metas) meta.remove()
+    const fresh = document.createElement('meta')
+    fresh.setAttribute('name', 'theme-color')
+    fresh.setAttribute('content', color)
+    head.appendChild(fresh)
+    // Force a layout read so WebKit notices the new meta before we re-lock the guard.
+    void document.documentElement.offsetHeight
     chromeGuard?.observe(head, {
         childList: true,
         subtree: true,
@@ -353,20 +362,40 @@ export function applyWallpaperBrowserChrome(opts: {
     lastChromeColor = chrome
 
     const root = document.documentElement
+    const prevWallpaper = root.getAttribute('data-wallpaper')
     root.setAttribute('data-wallpaper', kept)
     if (document.body) document.body.setAttribute('data-wallpaper', kept)
+    // Inline tokens beat the mint `html { --browser-chrome }` defaults in global.css.
     root.style.setProperty('--browser-chrome', field.top)
     root.style.setProperty('--browser-chrome-bottom', field.bottom)
     root.style.setProperty('--browser-chrome-field', field.css)
     root.style.removeProperty('background-color')
     if (document.body) document.body.style.removeProperty('background-color')
+    // Leaving any wallpaper (esp. mint defaults): force a layout so body::before
+    // resamples --browser-chrome-* for safe-area / overscroll gaps.
+    if (prevWallpaper !== kept) void root.offsetHeight
 
     syncThemeColorMeta(chrome)
-    upsertNamedMeta(
-        'apple-mobile-web-app-status-bar-style',
-        usesOverlayStatusBar() ? 'black-translucent' : hexLuminance(field.top) < 150 ? 'black-translucent' : 'default'
-    )
+    // Recreate status-bar-style on wallpaper change so Safari does not keep a
+    // style sampled while keyboard-mint was active.
+    const barStyle =
+        usesOverlayStatusBar() || hexLuminance(field.top) < 150 ? 'black-translucent' : 'default'
+    if (prevWallpaper !== kept) {
+        for (const m of Array.from(
+            document.head.querySelectorAll('meta[name="apple-mobile-web-app-status-bar-style"]')
+        ) as HTMLMetaElement[]) {
+            m.remove()
+        }
+    }
+    upsertNamedMeta('apple-mobile-web-app-status-bar-style', barStyle)
     upsertNamedMeta('msapplication-navbutton-color', field.bottom)
     startChromeGuard()
     startChromeLifetime()
+    // Safari often samples theme-color on the next frame after a wallpaper switch.
+    if (prevWallpaper !== kept && typeof requestAnimationFrame === 'function') {
+        const color = chrome
+        requestAnimationFrame(() => {
+            if (lastChromeColor === color) syncThemeColorMeta(color)
+        })
+    }
 }

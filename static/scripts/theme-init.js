@@ -109,16 +109,13 @@
             document.body.style.removeProperty('background-color')
             document.body.setAttribute('data-wallpaper', wallpaper)
         }
+        // Safari caches theme-color on the meta node — always recreate.
         var metas = head.querySelectorAll('meta[name="theme-color"]')
-        var keep = metas[0]
-        if (!keep) {
-            keep = document.createElement('meta')
-            keep.setAttribute('name', 'theme-color')
-            head.appendChild(keep)
-        }
-        keep.removeAttribute('media')
+        for (var i = 0; i < metas.length; i++) metas[i].parentNode.removeChild(metas[i])
+        var keep = document.createElement('meta')
+        keep.setAttribute('name', 'theme-color')
         keep.setAttribute('content', chrome)
-        for (var i = 1; i < metas.length; i++) metas[i].parentNode.removeChild(metas[i])
+        head.appendChild(keep)
         var n = parseInt(String(field.top).replace('#', ''), 16)
         var lum = isNaN(n) ? 255 : (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000
         var bar = head.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')

@@ -1,7 +1,9 @@
+// @vitest-environment node
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { describe, expect, it } from 'vitest'
 import {
+    applyWallpaperBrowserChrome,
     DEFAULT_WALLPAPER,
     KEPT_WALLPAPERS,
     migrateAppearanceSettings,
@@ -149,8 +151,219 @@ describe('every kept wallpaper has chrome coverage', () => {
         expect(documentBoot).toContain('window.__wallpaper')
     })
 
+    it('boot + theme-init recreate theme-color meta (Safari sticky chrome)', () => {
+        expect(documentBoot).toContain('Safari caches theme-color')
+        expect(themeInit).toContain('Safari caches theme-color')
+        expect(documentBoot).toContain('metas[i].parentNode.removeChild(metas[i])')
+        expect(themeInit).toContain('metas[i].parentNode.removeChild(metas[i])')
+    })
+
     it('mobile chrome extends body::before into safe-area insets', () => {
         expect(mobileCss).toContain('safe-area-inset-top')
         expect(mobileCss).toContain('safe-area-inset-bottom')
+    })
+})
+
+
+describe('applyWallpaperBrowserChrome clears sticky mint chrome', () => {
+    type Meta = { name: string; content: string; getAttribute: (k: string) => string | null; setAttribute: (k: string, v: string) => void; removeAttribute: (k: string) => void; remove: () => void; parentNode: { removeChild: (n: Meta) => void } | null }
+
+    function installDom() {
+        const metas: Meta[] = []
+        const makeMeta = (name = '', content = ''): Meta => {
+            const meta: Meta = {
+                name,
+                content,
+                getAttribute(k) {
+                    if (k === 'name') return meta.name
+                    if (k === 'content') return meta.content
+                    if (k === 'media') return null
+                    return null
+                },
+                setAttribute(k, v) {
+                    if (k === 'name') meta.name = v
+                    if (k === 'content') meta.content = v
+                },
+                removeAttribute() {},
+                remove() {
+                    const i = metas.indexOf(meta)
+                    if (i >= 0) metas.splice(i, 1)
+                },
+                parentNode: {
+                    removeChild(n) {
+                        const i = metas.indexOf(n)
+                        if (i >= 0) metas.splice(i, 1)
+                    },
+                },
+            }
+            return meta
+        }
+
+        const styleStore: Record<string, string> = {}
+        const attrs: Record<string, string> = {}
+        const root = {
+            style: {
+                setProperty(k: string, v: string) {
+                    styleStore[k] = v
+                },
+                getPropertyValue(k: string) {
+                    return styleStore[k] || ''
+                },
+                removeProperty(k: string) {
+                    delete styleStore[k]
+                },
+                cssText: '',
+            },
+            setAttribute(k: string, v: string) {
+                attrs[k] = v
+            },
+            getAttribute(k: string) {
+                return attrs[k] ?? null
+            },
+            removeAttribute(k: string) {
+                delete attrs[k]
+            },
+            classList: { contains: () => false },
+            offsetHeight: 1,
+        }
+        const bodyAttrs: Record<string, string> = {}
+        const body = {
+            style: {
+                setProperty() {},
+                getPropertyValue() {
+                    return ''
+                },
+                removeProperty() {},
+                cssText: '',
+            },
+            setAttribute(k: string, v: string) {
+                bodyAttrs[k] = v
+            },
+            getAttribute(k: string) {
+                return bodyAttrs[k] ?? null
+            },
+            removeAttribute(k: string) {
+                delete bodyAttrs[k]
+            },
+            classList: { contains: () => false },
+        }
+        const head = {
+            querySelector(sel: string) {
+                if (sel.startsWith('meta[name="')) {
+                    const name = sel.slice('meta[name="'.length, -2)
+                    return metas.find((m) => m.name === name) || null
+                }
+                return null
+            },
+            querySelectorAll(sel: string) {
+                if (sel.startsWith('meta[name="')) {
+                    const name = sel.slice('meta[name="'.length, -2)
+                    return metas.filter((m) => m.name === name) as unknown as NodeListOf<HTMLMetaElement>
+                }
+                return [] as unknown as NodeListOf<HTMLMetaElement>
+            },
+            appendChild(node: Meta) {
+                metas.push(node)
+                return node
+            },
+        }
+
+        const doc = {
+            documentElement: root,
+            body,
+            head,
+            createElement(tag: string) {
+                if (tag === 'meta') return makeMeta()
+                return {}
+            },
+            visibilityState: 'visible',
+            addEventListener() {},
+        }
+
+        Object.defineProperty(globalThis, 'document', { value: doc, configurable: true })
+        Object.defineProperty(globalThis, 'window', {
+            value: {
+                __wallpaper: undefined as string | undefined,
+                __setWallpaper: undefined as ((w: string) => void) | undefined,
+                matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+                addEventListener() {},
+                requestAnimationFrame: (cb: FrameRequestCallback) => {
+                    cb(0)
+                    return 0
+                },
+            },
+            configurable: true,
+        })
+        Object.defineProperty(globalThis, 'navigator', {
+            value: { userAgent: 'Mozilla/5.0', platform: 'Linux', maxTouchPoints: 0 },
+            configurable: true,
+        })
+        Object.defineProperty(globalThis, 'MutationObserver', {
+            value: class {
+                observe() {}
+                disconnect() {}
+            },
+            configurable: true,
+        })
+        return { root, body, metas, styleStore }
+    }
+
+    it('replaces theme-color meta node and CSS vars when leaving keyboard-mint for cobalt', async () => {
+        const { root, body, metas, styleStore } = installDom()
+        // Fresh module state would be ideal; force:true still replaces meta nodes.
+        applyWallpaperBrowserChrome({
+            wallpaper: 'keyboard-mint',
+            colorMode: 'light',
+            theme: 'light',
+            force: true,
+        })
+        const mintMeta = metas.find((m) => m.name === 'theme-color')
+        expect(mintMeta).toBeTruthy()
+        expect(mintMeta!.content.toUpperCase()).toBe(WALLPAPER_FIELDS['keyboard-mint'].light.top.toUpperCase())
+        expect(styleStore['--browser-chrome'].toUpperCase()).toBe(
+            WALLPAPER_FIELDS['keyboard-mint'].light.top.toUpperCase()
+        )
+        expect(root.getAttribute('data-wallpaper')).toBe('keyboard-mint')
+
+        applyWallpaperBrowserChrome({
+            wallpaper: 'cobalt',
+            colorMode: 'light',
+            theme: 'light',
+            force: true,
+        })
+        const themeMetas = metas.filter((m) => m.name === 'theme-color')
+        expect(themeMetas).toHaveLength(1)
+        const cobaltMeta = themeMetas[0]
+        expect(cobaltMeta).not.toBe(mintMeta)
+        expect(cobaltMeta.content.toUpperCase()).toBe(WALLPAPER_FIELDS.cobalt.light.top.toUpperCase())
+        expect(root.getAttribute('data-wallpaper')).toBe('cobalt')
+        expect(body.getAttribute('data-wallpaper')).toBe('cobalt')
+        expect(styleStore['--browser-chrome'].toUpperCase()).toBe(WALLPAPER_FIELDS.cobalt.light.top.toUpperCase())
+        expect(styleStore['--browser-chrome-bottom'].toUpperCase()).toBe(
+            WALLPAPER_FIELDS.cobalt.light.bottom.toUpperCase()
+        )
+        expect(styleStore['--browser-chrome-field']).toBe(WALLPAPER_FIELDS.cobalt.light.css)
+    })
+
+    it('replaces theme-color meta when leaving keyboard-mint for paper-white', () => {
+        const { root, metas, styleStore } = installDom()
+        applyWallpaperBrowserChrome({
+            wallpaper: 'keyboard-mint',
+            colorMode: 'light',
+            theme: 'light',
+            force: true,
+        })
+        const mintMeta = metas.find((m) => m.name === 'theme-color')
+        applyWallpaperBrowserChrome({
+            wallpaper: 'paper-white',
+            colorMode: 'light',
+            theme: 'light',
+            force: true,
+        })
+        const next = metas.find((m) => m.name === 'theme-color')
+        expect(next).not.toBe(mintMeta)
+        expect(next!.content.toUpperCase()).toBe('#FFFFFF')
+        expect(styleStore['--browser-chrome'].toUpperCase()).toBe('#FFFFFF')
+        expect(root.getAttribute('data-wallpaper')).toBe('paper-white')
     })
 })
