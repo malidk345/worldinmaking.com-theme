@@ -189,7 +189,7 @@ export interface Message {
   /** Coarse gateway tier from SSE done — never raw model ids. */
   provider?: 'groq' | 'gemini' | 'openai'
   humanTurn?: HumanTurn
-  errorKind?: 'quota' | 'provider' | 'network'
+  errorKind?: 'quota' | 'provider' | 'network' | 'auth' | 'timeout' | 'server'
   /**
    * Soft honesty from SSE done.qualityGate.
    * failed/skipped may still show a reply; never treated as errorKind.

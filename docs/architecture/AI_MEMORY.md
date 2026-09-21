@@ -52,11 +52,28 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** WIM AI chat scroll pin-lock clean-up after #770 (see §5).
+- **Task:** WIM AI chat stream connection-error classification + telemetry (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: chat stream errorKind + PostHog + one silent retry)
+- **Scope:** User (TR): implement connection-error suggestions carefully — do not dump 502/504/auth/quota into generic "Connection"; keep abort → stop/resume; additive telemetry; optional one silent pre-stream retry for transient network only.
+- **Classification matrix (`src/lib/chat-stream-errors.ts`):**
+  - `abort` — never `errorKind` / never Connection (Stop / human interrupt)
+  - `quota` — 429, `QUOTA_*`, `RATE_LIMIT*`, `[app]` quota copy, 503+quota
+  - `auth` — 401/403 / auth codes → title "Session"
+  - `timeout` — 504 / timeout codes → "Taking too long"
+  - `server` — 500/502/503 (non-quota) → "Temporary issue"
+  - `provider` — `PROVIDER_UNAVAILABLE`, `EMPTY_REPLY`, `TOOLS_REQUIRED`, `CHAT_FAILED`
+  - `network` — Failed to fetch / TypeError network → "Connection"
+- **Telemetry:** best-effort `wim chat stream fail` via `usePostHog` with `kind`, `httpStatus`, `hadPublicText`, `durationMs`, `chunkCount`, `byteLength`, `agentMode`, `retried` — no prompt/email/message body.
+- **Silent retry:** max 1, only when no public text yet AND transient network AND not abort/quota/auth; never mid-stream / after partial reply.
+- **Deliberately unchanged:** `/api/chat` edge runtime; plan mode / scroll (#771) / ask_user (#769) / quota UX; success streaming path.
+- **Files:** `chat-stream-errors.ts`, `ClaudeWorkspaceChat/index.tsx`, `ChatMessage.tsx`, `types.ts`, `tests/chat-stream-errors.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-stream-errors.spec.ts`
+- **Handoff:** PR `fix/wim-ai-chat-stream-error-hardening`. Residual: edge proxy drops mid-stream still surface as network/server without body codes; silent retry cannot help after first byte.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: WIM AI chat scroll pin-lock after #770)
 - **Scope:** User (TR): after send, user bubble must stay put near the top of the chat scroller (“bir tık daha aşağısı” — small inset, not flush); AI stream grows below with **no** up/down bounce; remove conflicting scroll rules (#766 stick-during-stream vs #770 top-pin vs spacer/near-bottom re-arm).
