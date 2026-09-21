@@ -59,6 +59,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-22 — Grok Bot / Cursor (fix: Safari sticky mint mobile chrome)
+- **Scope:** After keyboard-mint, switching wallpaper updated the scene but Safari toolbar / safe-area gap colors stayed mint.
+- **Root cause:** `syncThemeColorMeta` updated `theme-color` `content` in place. iOS Safari caches theme-color on the meta *node*, so leaving mint kept mint UI chrome. Mint is also the `html { --browser-chrome }` CSS default, amplifying the sticky look if WebKit delayed resampling CSS vars.
+- **Fix:** Always remove+recreate `theme-color` (and status-bar-style on wallpaper change); rAF bounce; layout nudge for `body::before`; same recreate in `_document` boot + `theme-init.js`. Unit tests assert fresh meta node + CSS vars when leaving mint → cobalt/paper-white.
+- **Files:** `wallpaperChrome.ts`, `wallpaperChrome.test.ts`, `_document.tsx`, `theme-init.js`, `AI_MEMORY.md`
+- **Verify:** `vitest src/lib/wallpaperChrome.test.ts`; Mobile Safari: mint → cobalt/paper-white — toolbar + safe-area gaps follow new field (may still need a brief visibility bounce on older iOS).
+- **Handoff:** PR `fix/wim-wallpaper-chrome-sticky-mint`.
+
+
 ### 2026-09-21 — Grok Bot / Cursor (notebook model3d: clean chrome)
 - **Scope:** User (TR): notebook 3D shows floating play/pause/cube/grid/ISO/MODEL3D+trash overlays and an extra white bordered rounded card; wants 3D flush in notebook flow without chrome.
 - **Change:**
