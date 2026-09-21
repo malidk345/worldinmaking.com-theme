@@ -58,6 +58,20 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-21 — Grok Bot / Cursor (fix: WIM AI turn lifecycle solidity after #773)
+- **Scope:** User (TR): #773 merged; do not drop controls — harden remaining high-confidence gaps across thinking→done, error classification, silent retry, scroll pin, human interrupt, edge empty-after-think, telemetry. Open PR(s), do not merge.
+- **Hardened (high confidence):**
+  1. Classifier default: unknown non-network failures → `provider` (Philosopher network), not Connection. Real `Failed to fetch` still `network`.
+  2. Catch path: never stamp `errorKind: 'network'` as blind fallback; preserve pending `ask_user` / `plan_approval` on mid-interrupt failure (no Connection card wipe).
+  3. Silent retry gate: `hadMeaningfulStreamProgress` on activity/phase/token/tool/human/error/thinking/search/done (plus byte chunks) — never retry after progress.
+  4. Scroll pin: clear pin + spacer on Stop, stream fail/abort `finally`, and chat switch (clean success keeps pin for reading).
+  5. Telemetry: SSE `error` path now emits `wim chat stream fail`; props include `hadStreamProgress`; kind reflects classifier reality.
+- **Already solid (evidence, no change):** abort≠error; Stop mid-think → stopped bubble; #773 empty-after-thinking → provider; server `empty_public_reply` → SSE `EMPTY_REPLY`; keep-alive 15s; human Answer unlock (#769); pin vs stick model (#771).
+- **Deferred (speculative):** lower keep-alive interval; root-cause empty-after-think model/prompt rate (orchestrate already recovers + EMPTY_REPLY); shrink spacer on wheel release.
+- **Files:** `chat-stream-errors.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-stream-errors.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-stream-errors.spec.ts`
+- **Handoff:** PR `fix/wim-ai-turn-lifecycle-solidity` — do not merge from agent.
+
 ### 2026-09-21 — Grok Bot / Cursor (fix: chat stream errorKind + PostHog + one silent retry)
 - **Scope:** User (TR): implement connection-error suggestions carefully — do not dump 502/504/auth/quota into generic "Connection"; keep abort → stop/resume; additive telemetry; optional one silent pre-stream retry for transient network only.
 - **Classification matrix (`src/lib/chat-stream-errors.ts`):**

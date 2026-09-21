@@ -129,6 +129,22 @@ test.describe('chat-stream-errors classifier', () => {
     ).toBe(false)
   })
 
+  test('unknown non-network failures default to provider, not Connection', () => {
+    const unknown = classifyChatStreamError({ message: 'stream ended unexpectedly' })
+    expect(unknown.kind).toBe('provider')
+    expect(unknown.title).toBe('Philosopher network')
+    expect(unknown.isTransientNetwork).toBe(false)
+
+    const bare = classifyChatStreamError({})
+    expect(bare.kind).toBe('provider')
+    expect(bare.title).toBe('Philosopher network')
+
+    // Real browser network failure still Connection
+    const net = classifyChatStreamError({ err: new TypeError('Failed to fetch') })
+    expect(net.kind).toBe('network')
+    expect(net.isTransientNetwork).toBe(true)
+  })
+
   test('telemetry props stay PII-free (no prompt/body fields)', () => {
     const props = chatStreamErrorTelemetryProps({
       kind: 'network',
@@ -144,6 +160,7 @@ test.describe('chat-stream-errors classifier', () => {
       kind: 'network',
       httpStatus: undefined,
       hadPublicText: false,
+      hadStreamProgress: undefined,
       durationMs: 1235,
       chunkCount: 0,
       byteLength: 0,
