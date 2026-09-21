@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { geminiToolGenerationConfig } from './gemini'
 import {
+    compactLoopMessages,
+    digestToolResultForLoop,
     extractFallbackAnswerFromThinking,
+    LONG_JOB_CONTINUE_NUDGE,
+    LOOP_OLD_TOOL_CHARS,
+    LOOP_RECENT_TOOL_CHARS,
+    LOOP_RECENT_TOOL_KEEP,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
     THINK_MAX_TOKENS,
     THINK_PLAN_INSTRUCTION,
     THINK_REFLECT_INSTRUCTION,
     type AgentPipelineParams,
+    type ChatMessage,
     type CompletionRound,
 } from './pipeline'
 import type { AgentActivity } from '../agent/activity'
@@ -251,5 +258,182 @@ describe('Soft public-continue nudge (autonomous, optional)', () => {
         expect(reminders.some((r) => r.includes(PUBLIC_CONTINUE_NUDGE))).toBe(true)
         expect(PUBLIC_CONTINUE_NUDGE.toLowerCase()).toContain('prefer')
         expect(PUBLIC_CONTINUE_NUDGE.toLowerCase()).not.toMatch(/\bmust\b|\bnever\b|\bdo not\b/)
+    })
+})
+
+describe('Tool-result memory (soft loop compaction)', () => {
+    it('keeps recent tool results fuller and digests older ones', () => {
+        const messages: ChatMessage[] = [
+            { role: 'system', content: 'sys' },
+            { role: 'user', content: 'go' },
+        ]
+        for (let i = 0; i < 10; i += 1) {
+            const id = `call-${i}`
+            messages.push({
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                    {
+                        id,
+                        type: 'function',
+                        function: { name: 'web_search', arguments: '{"query":"q"}' },
+                    },
+                ],
+            })
+            messages.push({
+                role: 'tool',
+                tool_call_id: id,
+                content: `RESULT-${i}-` + 'x'.repeat(1_200),
+            })
+        }
+
+        const compacted = compactLoopMessages(messages)
+        const toolMsgs = compacted.filter((m) => m.role === 'tool')
+        expect(toolMsgs.length).toBe(10)
+
+        const older = toolMsgs.slice(0, -LOOP_RECENT_TOOL_KEEP)
+        const recent = toolMsgs.slice(-LOOP_RECENT_TOOL_KEEP)
+        for (const msg of older) {
+            expect(typeof msg.content).toBe('string')
+            expect((msg.content as string).length).toBeLessThanOrEqual(LOOP_OLD_TOOL_CHARS + 1)
+        }
+        for (const msg of recent) {
+            expect(typeof msg.content).toBe('string')
+            // Recent stay fuller than the old aggressive 500-char clip
+            expect((msg.content as string).length).toBeGreaterThan(500)
+            expect((msg.content as string).length).toBeLessThanOrEqual(LOOP_RECENT_TOOL_CHARS + 1)
+        }
+    })
+
+    it('digests large artifact-shaped tool results to id/title', () => {
+        const huge = JSON.stringify({
+            ok: true,
+            id: 'art-1',
+            type: 'model3d',
+            title: 'Solar System',
+            content: 'y'.repeat(5_000),
+        })
+        const digested = digestToolResultForLoop(huge, 360)
+        expect(digested.length).toBeLessThan(huge.length)
+        expect(digested).toContain('art-1')
+        expect(digested).toContain('Solar System')
+        expect(digested).not.toContain('y'.repeat(100))
+    })
+
+    it('preserves error/detail when digesting artifact-shaped failures', () => {
+        const huge = JSON.stringify({
+            ok: false,
+            id: 'art-bad',
+            type: 'model3d',
+            title: 'Broken Scene',
+            error: 'objects[2] missing position',
+            content: 'y'.repeat(5_000),
+        })
+        const digested = digestToolResultForLoop(huge, 360)
+        expect(digested).toContain('art-bad')
+        expect(digested).toContain('Broken Scene')
+        expect(digested).toContain('objects[2] missing position')
+        expect(digested).toContain('"ok":false')
+        expect(digested).not.toContain('y'.repeat(100))
+    })
+
+    it('compacts prior create_artifact bodies; only the latest stays full', () => {
+        const bigBody = 'z'.repeat(3_000)
+        const messages: ChatMessage[] = [{ role: 'user', content: 'build' }]
+        for (let i = 0; i < 10; i += 1) {
+            const id = `art-${i}`
+            messages.push({
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                    {
+                        id,
+                        type: 'function',
+                        function: {
+                            name: 'create_artifact',
+                            arguments: JSON.stringify({
+                                type: 'model3d',
+                                title: `Scene ${i}`,
+                                content: bigBody,
+                            }),
+                        },
+                    },
+                ],
+            })
+            messages.push({
+                role: 'tool',
+                tool_call_id: id,
+                content: JSON.stringify({
+                    ok: true,
+                    id: `doc-${i}`,
+                    type: 'model3d',
+                    title: `Scene ${i}`,
+                }),
+            })
+        }
+        const compacted = compactLoopMessages(messages)
+        const assistantCalls = compacted.filter((m) => m.role === 'assistant' && m.tool_calls)
+        const olderArgs = assistantCalls[0]!.tool_calls![0]!.function.arguments
+        const priorRecentArgs = assistantCalls[assistantCalls.length - 2]!.tool_calls![0]!.function.arguments
+        const latestArgs = assistantCalls[assistantCalls.length - 1]!.tool_calls![0]!.function.arguments
+        expect(olderArgs).toContain('_compacted')
+        expect(olderArgs).not.toContain(bigBody)
+        // Inside the recent tool window, prior create_artifact bodies still compact (budget guard).
+        expect(priorRecentArgs).toContain('_compacted')
+        expect(priorRecentArgs).not.toContain(bigBody)
+        expect(latestArgs).toContain(bigBody)
+        expect(latestArgs).not.toContain('_compacted')
+    })
+})
+
+describe('Long-job soft continue nudge (near maxSteps)', () => {
+    it('injects soft continue reminder when near step budget', async () => {
+        let decision = 0
+        const reminders: string[] = []
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            if (input.omitTools) {
+                return { ok: true, content: '', toolCalls: [], reasoning: 'plan' }
+            }
+            decision += 1
+            const system = input.messages.find((m) => m.role === 'system')
+            const content = typeof system?.content === 'string' ? system.content : ''
+            const match = content.match(/<system_reminder>\n([\s\S]*?)\n<\/system_reminder>/)
+            reminders.push(match?.[1]?.trim() || '')
+
+            if (decision < 3) {
+                const section = decision === 1 ? 'Working through the research.' : ' Still gathering.'
+                input.onToken?.(section)
+                return {
+                    ok: true,
+                    content: section,
+                    toolCalls: [
+                        {
+                            id: `call-${decision}`,
+                            name: 'web_search',
+                            argumentsJson: JSON.stringify({ query: `q${decision}` }),
+                        },
+                    ],
+                }
+            }
+            input.onToken?.(' Final chunk.')
+            return { ok: true, content: ' Final chunk.', toolCalls: [] }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are helpful.' },
+                { role: 'user', content: 'Do a careful multi-step research writeup.' },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            maxSteps: 5,
+        })
+
+        expect(result.ok).toBe(true)
+        expect(reminders.some((r) => r.includes(LONG_JOB_CONTINUE_NUDGE))).toBe(true)
+        expect(LONG_JOB_CONTINUE_NUDGE.toLowerCase()).toMatch(/prefer|leave todos|continue/)
+        expect(LONG_JOB_CONTINUE_NUDGE.toLowerCase()).not.toMatch(/\bmust\b|\bnever\b|\bdo not\b|hard stop/)
     })
 })

@@ -130,7 +130,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                     content: {
                         type: 'string',
                         description:
-                            'Body only. React/HTML screens: complete production UI using host tokens (bg-primary, text-primary, bg-navy, border-primary), a full-frame layout, labeled sample data, no toy skeletons. Canvas JSON (nodes/edges), model3d JSON (primitives + position/size/color), simulation JSON (variables, outputs, chart), analytics JSON, mermaid, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
+                            'Body only. React/HTML screens: prefer a solid scaffold then enrich; use host tokens (bg-primary, text-primary, bg-navy, border-primary), full-frame layout, labeled sample data — avoid toy skeletons. Canvas JSON (nodes/edges), model3d JSON (objects with position/size/color; groups/materials/camera welcome across refinements), simulation JSON (variables, outputs, chart), analytics JSON, mermaid, TSX, chart JSON, GFM table, markdown, HTML, or SVG. No markdown fences, no commentary.',
                     },
                 },
                 required: ['type', 'title', 'content'],
@@ -1047,9 +1047,9 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
 ]
 
 export const ARTIFACT_RECIPES = `
-  * For interactive apps, games, or UI tools: call create_artifact with type="react" or type="html".
+  * For interactive apps, games, or UI tools: call create_artifact with type="react" or type="html". Prefer scaffold then enrich (layout first, then detail) over one fragile giant shot — revise with the same title.
   * For concept/idea networks: call create_artifact with type="canvas" and structured JSON {"title":"...","nodes":[...],"edges":[...]}.
-  * For 3D scenes: call create_artifact with type="model3d" and structured JSON {"title":"...","objects":[...]}.
+  * For 3D scenes: call create_artifact with type="model3d" and structured JSON {"title":"...","objects":[...]}. Prefer iterative refine: scaffold objects/layout, then enrich materials, groups, camera — richer scenes welcome; one perfect JSON shot is not required.
   * For parametric simulations: call create_artifact with type="simulation" and structured JSON {"variables":[...],"outputs":[...]}.
   * For analytics/metrics: call create_artifact with type="posthog-analytics" and structured JSON.
   * After a visual artifact succeeds, write one short sentence. If the user asked you to write an article, essay, story, or a word count, that text belongs in the public bubble — do not replace it with a one-line confirmation.
@@ -1076,7 +1076,7 @@ ${ARTIFACT_RECIPES.trimEnd()}
 - If a tool returns an error, fix the arguments and call it again. Do not dump the failed source in the bubble.
 - LENGTH: If they asked for a long article, essay, or a word count, the public bubble must be that piece. Do not summarize it away. Do not stop at an outline unless they asked for an outline.
 - Quality & Follow-Up: After receiving tool results, evaluate whether the findings fully answer the user’s request. If critical information is still missing, call further tools as needed; once satisfied, synthesize the evidence into a dense, rigorous, and direct response.
-- Production-Scale Artifacts: When building interactive apps, 3D scenes, or technical tools, fully implement all parts, controls, and logic without lazy skeletons or "// TODO" placeholders.
+- Production-Scale Artifacts: Prefer complete working pieces without lazy "// TODO" stubs. For complex 3D or screens, staged scaffold→enrich across create_artifact calls (same title) is encouraged — one giant perfect shot is not required.
 - Never print <tool_code>, <tool_call>, Python-style todo_write(...), or default_api.* in the bubble. Tools go through the function channel only.
 - If no tool is needed, answer normally and at the length they asked for.
 `.trim()
