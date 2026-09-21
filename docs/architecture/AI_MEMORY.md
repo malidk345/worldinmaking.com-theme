@@ -52,11 +52,21 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Fix public answer leaking into Thinking UI during host think phase (see §5).
+- **Task:** Soft public-continue nudge for multi-cycle answers (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (soft: multi-cycle public continue nudge)
+- **Scope:** User (TR): intermediate public answers wanted for progress; same bubble appends; sometimes model restates the whole answer → feels like double-write. Soft prefer continue/refine only — **no hard MUST NOT / checklist**. Autonomy preserved. Open PR, do not merge.
+- **Change:** `PUBLIC_CONTINUE_NUDGE` + inject into decision `system_reminder` only when `state.publicText` already non-empty. One soft prefer-line in `TOOL_PROTOCOL`. No status-vs-final UI split.
+- **Exact soft text:** `Prefer continuing or refining the public text already in this bubble rather than restating it from the start.` / protocol: `When this turn already has public text in the bubble, prefer continuing or refining it rather than restating the same opening from scratch.`
+- **Tests:** `pipeline.test.ts` — nudge absent on first public, present on later decision; wording stays prefer/not mandatory.
+- **Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/pipeline.test.ts`, `src/lib/bots/tools/spec.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts`
+- **Handoff:** PR branch — do not merge from agent.
+- **Residual:** Prompt-only; models may still ignore and restate. No hard enforcement.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: think-phase content must not paint Thought UI)
 - **Scope:** User (TR): planning-round draft/full answer was streaming into ThinkingBlock via `runThinkPhase` absorb of `onToken` → `emitThoughtDelta` → SSE `activity` thought. Demux→onThinking (billing) is unrelated — focus think-phase absorb only. Open PR, do not merge.

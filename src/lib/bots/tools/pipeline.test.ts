@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { geminiToolGenerationConfig } from './gemini'
 import {
     extractFallbackAnswerFromThinking,
+    PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
     THINK_MAX_TOKENS,
     THINK_PLAN_INSTRUCTION,
@@ -190,5 +191,65 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         expect(result.ok).toBe(true)
         expect(thoughtUi.join('')).toContain('quick native thought')
         expect(publicTokens.join('')).toContain('Hi!')
+    })
+})
+
+describe('Soft public-continue nudge (autonomous, optional)', () => {
+    it('injects prefer-continue reminder only after public text already exists', async () => {
+        let decision = 0
+        const reminders: string[] = []
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            if (input.omitTools) {
+                return { ok: true, content: '', toolCalls: [], reasoning: 'plan' }
+            }
+            decision += 1
+            const system = input.messages.find((m) => m.role === 'system')
+            const content = typeof system?.content === 'string' ? system.content : ''
+            const match = content.match(/<system_reminder>\n([\s\S]*?)\n<\/system_reminder>/)
+            reminders.push(match?.[1]?.trim() || '')
+
+            if (decision === 1) {
+                const section = 'Opening progress note for the user.'
+                input.onToken?.(section)
+                return {
+                    ok: true,
+                    content: section,
+                    toolCalls: [
+                        {
+                            id: 'call-1',
+                            name: 'web_search',
+                            argumentsJson: JSON.stringify({ query: 'test' }),
+                        },
+                    ],
+                }
+            }
+            input.onToken?.(' Continued with new findings.')
+            return { ok: true, content: ' Continued with new findings.', toolCalls: [] }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are helpful.' },
+                {
+                    role: 'user',
+                    content:
+                        'Please research carefully and write a clear multi-part answer with sources and structure.',
+                },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            // Avoid real tool execution side effects: empty env / no host — web_search may error but still returns tool role
+            maxSteps: 6,
+        })
+
+        expect(result.ok).toBe(true)
+        // First decision: no prior public text → nudge absent
+        expect(reminders[0] || '').not.toContain(PUBLIC_CONTINUE_NUDGE)
+        // Later decision after public streamed → soft prefer-continue present
+        expect(reminders.some((r) => r.includes(PUBLIC_CONTINUE_NUDGE))).toBe(true)
+        expect(PUBLIC_CONTINUE_NUDGE.toLowerCase()).toContain('prefer')
+        expect(PUBLIC_CONTINUE_NUDGE.toLowerCase()).not.toMatch(/\bmust\b|\bnever\b|\bdo not\b/)
     })
 })

@@ -52,6 +52,10 @@ export const THINK_PLAN_INSTRUCTION =
 export const THINK_REFLECT_INSTRUCTION =
     'REFLECTION STEP: In a few short sentences, evaluate if the tool results fully satisfy what the user requested. If more information or another tool is needed, identify it; otherwise, outline how to synthesize the comprehensive final answer. Keep this private to your reasoning. Do not repeat the results. Do not call tools in this thought.'
 
+/** Soft optional hint when public text already streamed this turn — prefer continue/refine, not a hard rule. */
+export const PUBLIC_CONTINUE_NUDGE =
+    'Prefer continuing or refining the public text already in this bubble rather than restating it from the start.'
+
 /** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
 export function shouldRunThinkPhase(input: {
     userPrompt: string
@@ -360,11 +364,15 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     let streamedThought = 0
     let heldPublic = ''
     let streamedPublicLength = 0
+    // Soft optional nudge only when public text already exists — models stay autonomous.
+    const reminder = state.publicText.trim()
+        ? [state.pendingReminder, PUBLIC_CONTINUE_NUDGE].filter(Boolean).join('\n')
+        : state.pendingReminder
     const round = await params.complete({
         messages: withHostContext(compactLoopMessages(state.messages), {
             todos: state.todos,
             thought: state.cycleThought,
-            reminder: state.pendingReminder,
+            reminder,
             memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
         }),
         toolChoice,

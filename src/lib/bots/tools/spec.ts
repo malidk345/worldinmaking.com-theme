@@ -1059,6 +1059,7 @@ export const TOOL_PROTOCOL = `
 PROCESS (host graph: THINK → ACT → TOOLS → THINK → …):
 - First think privately. The host shows that as Thought. Then call tools in the function channel.
 - Private reasoning remains in your thoughts. In the public channel, you may autonomously share brief interim context or status notes with the user when conducting research or multi-step tasks, before delivering the comprehensive final answer.
+- When this turn already has public text in the bubble, prefer continuing or refining it rather than restating the same opening from scratch.
 - Do not dump the comprehensive final answer in the same step as a tool call; wait for tool results before final synthesis.
 - <system_reminder> and <private_thought> and <plan_board> are host notes, not the user. Do not quote them in the bubble.
 
