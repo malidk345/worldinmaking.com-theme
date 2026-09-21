@@ -557,34 +557,6 @@ const Avatar = (props: { className?: string; src?: string; color?: string }) => 
     )
 }
 
-const SavedPosts = () => {
-    const { user, isLoading } = useUser()
-    const bookmarks = user?.profile?.bookmarks || []
-
-    if (isLoading) {
-        return <HourglassLoader title="Loading saved posts..." />
-    }
-
-    if (bookmarks.length === 0) {
-        return (
-            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
-                You haven't saved any posts yet
-            </p>
-        )
-    }
-
-    return (
-        <ProfileDocumentGrid
-            items={bookmarks.map((bookmark) => ({
-                key: bookmark.url,
-                title: bookmark.title || bookmark.url,
-                href: bookmark.url,
-                excerpt: bookmark.description,
-            }))}
-        />
-    )
-}
-
 const Block = ({ title, children, url, className }) => {
     return (
         <Fieldset
@@ -763,21 +735,7 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
                     />
                 </>
             ),
-        },
-        ...(user?.profile?.id === id || user?.id === id
-            ? [
-                  {
-                      value: 'saved',
-                      label: 'Saved posts',
-                      content: (
-                          <>
-                              <h4 className="text-lg font-bold mb-4">Saved</h4>
-                              <SavedPosts />
-                          </>
-                      ),
-                  },
-              ]
-            : []),
+        }
     ]
 
     const initialTab = useMemo(() => {

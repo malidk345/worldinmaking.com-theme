@@ -52,11 +52,19 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** None. (Wallpaper persistence fix — see §5.)
+- **Task:** None. (Removed redundant profile Saved posts tab — see §5.)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (chore: remove profile Saved posts tab)
+- **Scope:** User (TR): profile “Saved posts” is redundant with bookmarks; remove carefully without breaking bookmarks or profile pages.
+- **Change:** Removed own-profile-only `Saved posts` tab and local `SavedPosts` component from `ProfileView.tsx`. It only re-rendered `user.profile.bookmarks` (same data as `/bookmarks`).
+- **Kept:** Bookmarks feature intact — `BookmarkButton`, `/bookmarks` page, `useUser` add/removeBookmark, `lib/wim-user-data.ts` (`user_saved_posts` table + fetch/add/remove). No migration/table drops.
+- **Files:** `src/components/Profile/ProfileView.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Own profile tabs = Posts / Notebooks / Discussions only; `/bookmarks` still lists/removes; bookmark toast still links to `/bookmarks`; `?tab=saved` falls back to first tab.
+- **Handoff:** PR `chore/remove-profile-saved-posts`. Residual: old deep links to `?tab=saved` quietly fall back.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: wallpaper survives reload)
 - **Scope:** User (TR): changing wallpaper then refresh restores keyboard-mint every time.
