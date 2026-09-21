@@ -1,3 +1,5 @@
+import { stripLeakedToolMarkup } from './leak'
+
 export type HistoryArtifact = {
     id?: string
     type: string
@@ -87,7 +89,8 @@ export function formatHistoryContent(
     item: HistoryTurn,
     _options?: { includeArtifactBodies?: boolean }
 ): string {
-    return clip(item.content || '', MAX_VISIBLE)
+    // Defense: old polluted assistant bubbles still in client storage must not re-seed the model.
+    return clip(stripLeakedToolMarkup(item.content || ''), MAX_VISIBLE)
 }
 
 /** Rebuild OpenAI tool_calls + role:tool turns from the client thread. */
@@ -108,10 +111,22 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
     })()
 
     let pendingArtifactNote: string | null = null
+    /** Push/merge user text — never emit consecutive user turns (Anthropic rejects them). */
+    const pushUserContent = (content: string) => {
+        const trimmed = String(content || '').trim()
+        if (!trimmed) return
+        const last = out[out.length - 1]
+        if (last && last.role === 'user') {
+            last.content = clip(`${last.content}\n\n${trimmed}`, MAX_MESSAGE)
+            return
+        }
+        out.push({ role: 'user', content: clip(trimmed, MAX_MESSAGE) })
+    }
     const flushPendingArtifactNote = () => {
         if (!pendingArtifactNote) return
-        out.push({ role: 'user', content: pendingArtifactNote })
+        const note = pendingArtifactNote
         pendingArtifactNote = null
+        pushUserContent(note)
     }
 
     for (let index = 0; index < window.length; index += 1) {
@@ -123,13 +138,19 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                 content: clip(item.content || '', recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
             })
             const next = window[index + 1]
-            if (!next || next.role !== 'tool') flushPendingArtifactNote()
+            // Keep note pending when the next turn is a real user so we can merge (no consecutive users).
+            if (!next || (next.role !== 'tool' && next.role !== 'user')) flushPendingArtifactNote()
             continue
         }
         if (item.role === 'user') {
-            flushPendingArtifactNote()
             const content = clip(item.content || '', MAX_VISIBLE)
-            if (content.trim()) out.push({ role: 'user', content })
+            if (pendingArtifactNote) {
+                const note = pendingArtifactNote
+                pendingArtifactNote = null
+                pushUserContent(content.trim() ? `${note}\n\n${content}` : note)
+            } else {
+                pushUserContent(content)
+            }
             continue
         }
         if (item.role !== 'assistant') continue
@@ -158,14 +179,8 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
             const note = formatOnScreenArtifactsNote(item.artifacts, {
                 includeArtifactBodies: index === lastArtifactIndex,
             })
-            if (note) {
-                if (toolCalls.length > 0) {
-                    // Keep tool_calls → tool results contiguous; flush after tools (or at end).
-                    pendingArtifactNote = note
-                } else {
-                    out.push({ role: 'user', content: note })
-                }
-            }
+            // Always defer — flush before next assistant, merge into next user, or at end.
+            if (note) pendingArtifactNote = note
         }
     }
     flushPendingArtifactNote()

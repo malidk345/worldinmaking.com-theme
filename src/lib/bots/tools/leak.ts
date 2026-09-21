@@ -122,9 +122,15 @@ export function parseLeakedToolCalls(value: string): ToolCall[] {
     return calls
 }
 
-const HOST_ARTIFACT_MARKER =
-    /^\s*\[(?:On-screen artifacts\b[^\]]*|Host note\b[^\]]*on-screen artifacts[^\]]*|On screen — revise with create_artifact[^\]]*)\]\s*$/i
+// Em/en/hyphen dash variants — models echo host copy with any of them.
+const DASH = '[-\\u2010-\\u2015]'
+const HOST_ARTIFACT_MARKER = new RegExp(
+    `^\\s*\\[(?:On[-\\s]?screen artifacts\\b[^\\]]*|Host note\\b[^\\]]*on[-\\s]?screen artifacts[^\\]]*|On screen ${DASH} revise with create_artifact[^\\]]*)\\]\\s*$`,
+    'i'
+)
 const ARTIFACT_HEADING = /^\s*###\s+[A-Za-z][\w-]*\s+"[^"]*"(?:\s+id=\S+)?\s*$/
+const ARTIFACT_TYPES =
+    /^(?:model3d|canvas|react|html|mermaid|chart|simulation|posthog-analytics|table|markdown|svg|code|3d|3d_model|scene)$/i
 
 function isHostArtifactMarker(line: string): boolean {
     return HOST_ARTIFACT_MARKER.test(line)
@@ -134,25 +140,41 @@ function isArtifactHeading(line: string): boolean {
     return ARTIFACT_HEADING.test(line)
 }
 
-/** Skip a ### type "title" id=... heading plus its body (JSON or stub line). */
+function artifactHeadingType(line: string): string | null {
+    const match = /^\s*###\s+([A-Za-z][\w-]*)\s+"/.exec(line)
+    return match ? match[1]! : null
+}
+
+function skipBalancedJson(lines: string[], start: number, open: '{' | '['): number {
+    let i = start
+    let depth = 0
+    const close = open === '{' ? '}' : ']'
+    while (i < lines.length) {
+        for (const ch of lines[i]!) {
+            if (ch === open) depth += 1
+            else if (ch === close) depth -= 1
+        }
+        i += 1
+        if (depth <= 0) break
+    }
+    return i
+}
+
+/** Skip a ### type "title" id=... heading plus its body (JSON, fence, or stub). */
 function skipArtifactDump(lines: string[], start: number): number {
     let i = start
     if (i >= lines.length || !isArtifactHeading(lines[i]!)) return start
     i += 1
     if (i >= lines.length) return i
     const first = lines[i]!.trim()
-    if (first.startsWith('{')) {
-        let depth = 0
-        while (i < lines.length) {
-            for (const ch of lines[i]!) {
-                if (ch === '{') depth += 1
-                else if (ch === '}') depth -= 1
-            }
-            i += 1
-            if (depth <= 0) break
-        }
+    if (first.startsWith('```')) {
+        i += 1
+        while (i < lines.length && !lines[i]!.trim().startsWith('```')) i += 1
+        if (i < lines.length) i += 1
         return i
     }
+    if (first.startsWith('{')) return skipBalancedJson(lines, i, '{')
+    if (first.startsWith('[')) return skipBalancedJson(lines, i, '[')
     // Stub / omitted-body line, or non-JSON dump until blank / next marker / heading.
     while (
         i < lines.length &&
@@ -164,6 +186,7 @@ function skipArtifactDump(lines: string[], start: number): number {
     }
     return i
 }
+
 
 /**
  * Models sometimes echo host on-screen artifact memory
@@ -184,10 +207,22 @@ export function stripLeakedOnScreenArtifacts(value: string): string {
             }
             continue
         }
-        // Orphan ### type "title" id=art-... dumps (pending/temp ids often leak).
-        if (isArtifactHeading(line) && /\bid=/.test(line)) {
-            i = skipArtifactDump(lines, i)
-            continue
+        // Orphan ### type "title" dumps — with id=, or known artifact type + JSON/fence body.
+        if (isArtifactHeading(line)) {
+            const type = artifactHeadingType(line)
+            const next = lines[i + 1]?.trim() || ''
+            const known = Boolean(type && ARTIFACT_TYPES.test(type))
+            const hasId = /\bid=/.test(line)
+            const bodyLooksDump =
+                next.startsWith('{') ||
+                next.startsWith('[') ||
+                next.startsWith('```') ||
+                next.startsWith('[On screen') ||
+                next.startsWith('[prior body omitted')
+            if (hasId || (known && bodyLooksDump)) {
+                i = skipArtifactDump(lines, i)
+                continue
+            }
         }
         out.push(line)
         i += 1

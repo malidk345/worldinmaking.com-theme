@@ -121,4 +121,34 @@ describe('History tool/artifact memory (soft)', () => {
         expect(text).toContain('a1')
         expect(text).toContain('Do NOT paste')
     })
+
+    it('strips polluted on-screen dumps already baked into assistant content', () => {
+        const polluted = [
+            'Nice scene.',
+            '',
+            '[On-screen artifacts — revise with create_artifact using the same title]',
+            '### model3d "City" id=art-pending-1',
+            '{"objects":[{"id":"a"}]}',
+        ].join('\n')
+        expect(formatHistoryContent({ role: 'assistant', content: polluted })).toBe('Nice scene.')
+    })
+
+    it('merges host artifact note into the following user turn (no consecutive users)', () => {
+        const history: HistoryTurn[] = [
+            {
+                role: 'assistant',
+                content: 'done',
+                artifacts: [
+                    { id: 'art-1', type: 'model3d', title: 'Scene', content: '{"objects":[]}' },
+                ],
+            },
+            { role: 'user', content: 'make it taller' },
+        ]
+        const compacted = compactToolHistory(history)
+        expect(compacted.map((m) => m.role)).toEqual(['assistant', 'user'])
+        expect(compacted[1]!.content).toContain('on-screen artifacts')
+        expect(compacted[1]!.content).toContain('art-1')
+        expect(compacted[1]!.content).toContain('make it taller')
+        expect(compacted[0]!.content).toBe('done')
+    })
 })

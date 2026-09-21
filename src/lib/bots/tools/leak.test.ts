@@ -51,4 +51,50 @@ describe('stripLeakedOnScreenArtifacts', () => {
         const cleaned = stripLeakedToolMarkup(leaked)
         expect(cleaned).toBe('Hi')
     })
+
+    it('strips Host note marker and hyphen dash variants', () => {
+        const leaked = [
+            'Intro',
+            '[Host note - on-screen artifacts. Revise with create_artifact using the same title. Do NOT paste this note or raw artifact JSON into the public answer.]',
+            '### mermaid "Flow" id=art-2',
+            '```',
+            'graph TD; A-->B',
+            '```',
+            'Outro',
+        ].join('\n')
+        const cleaned = stripLeakedOnScreenArtifacts(leaked)
+        expect(cleaned).toContain('Intro')
+        expect(cleaned).toContain('Outro')
+        expect(cleaned).not.toContain('Host note')
+        expect(cleaned).not.toContain('### mermaid')
+        expect(cleaned).not.toContain('graph TD')
+    })
+
+    it('strips known-type orphan heading without id when JSON follows', () => {
+        const leaked = [
+            'Prose',
+            '### html "Widget"',
+            '{"title":"Widget","markup":"<div/>"}',
+            'After',
+        ].join('\n')
+        const cleaned = stripLeakedOnScreenArtifacts(leaked)
+        expect(cleaned).toContain('Prose')
+        expect(cleaned).toContain('After')
+        expect(cleaned).not.toContain('### html')
+        expect(cleaned).not.toContain('"markup"')
+    })
+
+    it('strips fenced JSON after ### model3d heading', () => {
+        const leaked = [
+            'See this.',
+            '### model3d "Tower" id=art-9',
+            '```json',
+            '{"objects":[{"id":"t1"}]}',
+            '```',
+            'Done.',
+        ].join('\n')
+        const cleaned = stripLeakedOnScreenArtifacts(leaked)
+        expect(cleaned).toBe('See this.\nDone.')
+    })
+
 })
