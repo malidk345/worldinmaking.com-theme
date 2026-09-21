@@ -38,7 +38,7 @@ const MAX_ARTIFACT_BODY = 4_000
 const MAX_MESSAGE = 10_000
 const MAX_ARTIFACTS_PER_TURN = 2
 const MAX_TOOL_ARGS = 2_000
-const MAX_TOOL_RESULT = 1_200
+const MAX_TOOL_RESULT = 2_400
 const MAX_OLD_TOOL_RESULT = 400
 
 function clip(value: string, max: number): string {
@@ -47,12 +47,20 @@ function clip(value: string, max: number): string {
 }
 
 /** Prior artifacts stay in the thread so follow-ups can revise them. */
-export function formatHistoryContent(item: HistoryTurn): string {
+export function formatHistoryContent(
+    item: HistoryTurn,
+    options?: { includeArtifactBodies?: boolean }
+): string {
     const body = clip(item.content || '', MAX_VISIBLE)
     if (item.role !== 'assistant' || !item.artifacts?.length) return body
+    const includeBodies = options?.includeArtifactBodies !== false
     const blocks = item.artifacts.slice(0, MAX_ARTIFACTS_PER_TURN).map((artifact) => {
         const title = clip(artifact.title || 'Untitled', 80)
-        return `### ${artifact.type} "${title}"\n${clip(artifact.content || '', MAX_ARTIFACT_BODY)}`
+        const id = artifact.id ? ` id=${clip(artifact.id, 64)}` : ''
+        if (!includeBodies) {
+            return `### ${artifact.type} "${title}"${id}\n[On screen — revise with create_artifact using the same title; prior body omitted]`
+        }
+        return `### ${artifact.type} "${title}"${id}\n${clip(artifact.content || '', MAX_ARTIFACT_BODY)}`
     })
     return clip(
         `${body}\n\n[On-screen artifacts — revise with create_artifact using the same title]\n${blocks.join('\n\n')}`,
@@ -67,7 +75,15 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
     const toolPositions = window
         .map((item, index) => (item.role === 'tool' ? index : -1))
         .filter((index) => index >= 0)
-    const recentTools = new Set(toolPositions.slice(-4))
+    // Keep more recent tool results fuller so multi-tool threads don't forget mid-job.
+    const recentTools = new Set(toolPositions.slice(-6))
+    const lastArtifactIndex = (() => {
+        for (let i = window.length - 1; i >= 0; i -= 1) {
+            const row = window[i]
+            if (row.role === 'assistant' && row.artifacts && row.artifacts.length > 0) return i
+        }
+        return -1
+    })()
     for (let index = 0; index < window.length; index += 1) {
         const item = window[index]
         if (item.role === 'tool' && item.tool_call_id) {
@@ -96,7 +112,10 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                         ? call.thoughtSignature
                         : undefined,
             }))
-        const content = formatHistoryContent(item)
+        // Latest on-screen artifact keeps body; older turns keep id/title only.
+        const content = formatHistoryContent(item, {
+            includeArtifactBodies: index === lastArtifactIndex,
+        })
         if (!content.trim() && toolCalls.length === 0) continue
         out.push({
             role: 'assistant',

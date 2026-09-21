@@ -91,16 +91,106 @@ function lastUserText(messages: ChatMessage[]): string {
     return ''
 }
 
-function compactLoopMessages(messages: ChatMessage[]): ChatMessage[] {
+/** Recent tool results stay fuller mid multi-tool jobs; older digest. Soft limits — not a hard wipe. */
+export const LOOP_RECENT_TOOL_KEEP = 8
+export const LOOP_RECENT_TOOL_CHARS = 8_000
+export const LOOP_OLD_TOOL_CHARS = 360
+
+/** Soft optional hint when this turn is near maxSteps — finish a coherent chunk; continue next turn if needed. */
+export const LONG_JOB_CONTINUE_NUDGE =
+    "Approaching this turn's step budget: prefer finishing a coherent chunk now. If more remains, leave todos or a short note — you can continue on the next user turn."
+
+/** Prefer id/title when a tool result is a large artifact-shaped payload. */
+export function digestToolResultForLoop(content: string, maxChars: number): string {
+    if (content.length <= maxChars) return content
+    try {
+        const parsed = JSON.parse(content) as Record<string, unknown>
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const id = typeof parsed.id === 'string' ? parsed.id : undefined
+            const title = typeof parsed.title === 'string' ? parsed.title : undefined
+            const type = typeof parsed.type === 'string' ? parsed.type : undefined
+            if (id || title) {
+                return JSON.stringify({
+                    ok: parsed.ok,
+                    id,
+                    type,
+                    title,
+                    note: 'Body omitted — revise with create_artifact using the same title if needed.',
+                })
+            }
+            if (typeof parsed.content === 'string' && parsed.content.length > 400) {
+                const slim: Record<string, unknown> = {
+                    ...parsed,
+                    content: '[omitted — id/title enough to revise]',
+                }
+                const encoded = JSON.stringify(slim)
+                if (encoded.length <= maxChars) return encoded
+            }
+        }
+    } catch {
+        /* plain text */
+    }
+    return `${content.slice(0, maxChars)}…`
+}
+
+function compactCreateArtifactArgs(argumentsJson: string, keepFull: boolean): string {
+    if (keepFull || argumentsJson.length <= 2_500) return argumentsJson
+    try {
+        const args = JSON.parse(argumentsJson) as Record<string, unknown>
+        if (!args || typeof args !== 'object' || Array.isArray(args)) {
+            return `${argumentsJson.slice(0, 2_500)}…`
+        }
+        const content = args.content
+        if (typeof content === 'string' && content.length > 800) {
+            return JSON.stringify({
+                type: args.type,
+                title: args.title,
+                content:
+                    '[prior body omitted — revise with create_artifact same title; enrich from scaffold]',
+                _compacted: true,
+            })
+        }
+    } catch {
+        /* keep slice */
+    }
+    return argumentsJson.length <= 2_500 ? argumentsJson : `${argumentsJson.slice(0, 2_500)}…`
+}
+
+/** Soften mid-loop tool memory: last N results fuller; older digest; huge artifact args not re-dumped. */
+export function compactLoopMessages(messages: ChatMessage[]): ChatMessage[] {
     const toolIndexes = messages
         .map((message, index) => (message.role === 'tool' ? index : -1))
         .filter((index) => index >= 0)
-    if (toolIndexes.length <= 6) return messages
-    const keepFull = new Set(toolIndexes.slice(-4))
+    if (toolIndexes.length === 0) return messages
+
+    const keepFullToolIdx = new Set(toolIndexes.slice(-LOOP_RECENT_TOOL_KEEP))
+    const keepFullCallIds = new Set(
+        toolIndexes
+            .filter((index) => keepFullToolIdx.has(index))
+            .map((index) => messages[index]?.tool_call_id)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    )
+
     return messages.map((message, index) => {
-        if (message.role !== 'tool' || keepFull.has(index) || typeof message.content !== 'string') return message
-        if (message.content.length <= 500) return message
-        return { ...message, content: `${message.content.slice(0, 500)}…` }
+        if (message.role === 'tool' && typeof message.content === 'string') {
+            const limit = keepFullToolIdx.has(index) ? LOOP_RECENT_TOOL_CHARS : LOOP_OLD_TOOL_CHARS
+            if (message.content.length <= limit) return message
+            return { ...message, content: digestToolResultForLoop(message.content, limit) }
+        }
+        if (message.role === 'assistant' && message.tool_calls?.length) {
+            let changed = false
+            const tool_calls = message.tool_calls.map((call) => {
+                const name = call.function?.name
+                if (name !== 'create_artifact') return call
+                const keep = keepFullCallIds.has(call.id)
+                const nextArgs = compactCreateArtifactArgs(call.function.arguments || '{}', keep)
+                if (nextArgs === call.function.arguments) return call
+                changed = true
+                return { ...call, function: { ...call.function, arguments: nextArgs } }
+            })
+            return changed ? { ...message, tool_calls } : message
+        }
+        return message
     })
 }
 
@@ -364,10 +454,15 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     let streamedThought = 0
     let heldPublic = ''
     let streamedPublicLength = 0
-    // Soft optional nudge only when public text already exists — models stay autonomous.
-    const reminder = state.publicText.trim()
-        ? [state.pendingReminder, PUBLIC_CONTINUE_NUDGE].filter(Boolean).join('\n')
-        : state.pendingReminder
+    // Soft optional nudges — models stay autonomous (no hard stop / MUST).
+    const nearStepBudget = state.stepCount >= Math.max(0, state.maxSteps - 3)
+    const reminder = [
+        state.pendingReminder,
+        state.publicText.trim() ? PUBLIC_CONTINUE_NUDGE : '',
+        nearStepBudget ? LONG_JOB_CONTINUE_NUDGE : '',
+    ]
+        .filter(Boolean)
+        .join('\n')
     const round = await params.complete({
         messages: withHostContext(compactLoopMessages(state.messages), {
             todos: state.todos,

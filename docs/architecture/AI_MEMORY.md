@@ -52,11 +52,24 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Soft public-continue nudge for multi-cycle answers (see §5).
+- **Task:** Soft tool-result memory + staged 3D/screen + long-job continue nudge (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (soft: tool-result memory + staged 3D/screen + long-job continue)
+- **Scope:** User (TR): continue plan — (1) tool-result memory so model doesn't forget mid multi-tool jobs, (2) staged/parça-parça generation for 3D and screen (not one-shot), (3) soft "continue next turn" near step budget — no hard autonomy-killing rules. Prefer soft nudges. Open PR, do not merge.
+- **Change:**
+  1. `compactLoopMessages` / `digestToolResultForLoop`: keep last N tool results fuller; older digest; artifact-shaped payloads prefer id/title; older `create_artifact` args not re-dumped.
+  2. `history.ts`: recent tool results fuller (2400); latest artifact keeps body, older → id/title stub.
+  3. Soft staged guidance in `ARTIFACT_RECIPES` + create_artifact content desc + Production-Scale line (scaffold→enrich; richer 3D welcome).
+  4. `LONG_JOB_CONTINUE_NUDGE` when near maxSteps — finish coherent chunk / leave todos; continue next user turn. Composes with #776 `PUBLIC_CONTINUE_NUDGE` (no hard stop).
+- **Tests:** `pipeline.test.ts` (compaction + long-job nudge), `history.test.ts` (recent tools + artifact stub).
+- **Files:** `pipeline.ts`, `pipeline.test.ts`, `history.ts`, `history.test.ts`, `spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts src/lib/bots/tools/history.test.ts`
+- **Handoff:** PR branch — do not merge from agent.
+- **Residual:** Prompt-only staged/continue guidance; models may still one-shot or ignore. Compaction is soft length/digest, not a vector memory store.
 
 ### 2026-09-21 — Grok Bot / Cursor (soft: multi-cycle public continue nudge)
 - **Scope:** User (TR): intermediate public answers wanted for progress; same bubble appends; sometimes model restates the whole answer → feels like double-write. Soft prefer continue/refine only — **no hard MUST NOT / checklist**. Autonomy preserved. Open PR, do not merge.
