@@ -1325,7 +1325,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const streamStartedAt = Date.now();
     let streamChunkCount = 0;
     let streamByteLength = 0;
+    let hadMeaningfulStreamProgress = false;
     let networkRetryUsed = false;
+    const markStreamProgress = () => {
+      hadMeaningfulStreamProgress = true;
+    };
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1504,8 +1508,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             shouldSilentRetryChatStream({
               classified: classifiedFetch,
               hadPublicText: Boolean(accumulatedContent.trim()),
-              // Fetch-only retry site: chunks are always 0 here; keep gate for safety.
-              hadStreamProgress: streamChunkCount > 0,
+              // Fetch-only retry site: progress flags are always false here; keep gate for safety.
+              hadStreamProgress: hadMeaningfulStreamProgress || streamChunkCount > 0,
               attempt: fetchAttempt,
             }) &&
             !activeController.signal.aborted
@@ -1589,6 +1593,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         for (const frame of frames) {
           const parsed = parseAiSseEvent(frame);
           if (!parsed) continue;
+          // Keep-alive comments never parse; any real event means the turn left pre-stream.
+          if (
+            parsed.type === 'activity' ||
+            parsed.type === 'phase' ||
+            parsed.type === 'token' ||
+            parsed.type === 'tool' ||
+            parsed.type === 'human' ||
+            parsed.type === 'error' ||
+            parsed.type === 'thinking_start' ||
+            parsed.type === 'search' ||
+            parsed.type === 'done'
+          ) {
+            markStreamProgress();
+          }
 
           if (parsed.type === 'activity') {
             const scrubbedActivity = {
@@ -2143,6 +2161,27 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         console.error('[workspace chat] artifact extract failed', artifactError)
       }
 
+      // SSE error event already painted the bubble — still record fail telemetry (kind accurate).
+      if (backendError && streamErrorKind) {
+        try {
+          posthog?.capture?.(
+            'wim chat stream fail',
+            chatStreamErrorTelemetryProps({
+              kind: streamErrorKind,
+              hadPublicText: Boolean(accumulatedContent.trim()),
+              hadStreamProgress: hadMeaningfulStreamProgress || streamChunkCount > 0,
+              durationMs: Date.now() - streamStartedAt,
+              chunkCount: streamChunkCount,
+              byteLength: streamByteLength,
+              agentMode: turnAgentMode,
+              retried: networkRetryUsed,
+            })
+          );
+        } catch {
+          /* telemetry must never break chat */
+        }
+      }
+
       // If we had a backend error, do not overwrite the assistant message again with empty content!
       if (!backendError) {
         currentThinkingProcess.durationSeconds = Math.max(
@@ -2229,25 +2268,34 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               ? scrubbedError.slice(0, 220)
               : productSafeFallback;
 
-        updateAssistantMessage(targetChatId, assistantMessageId, {
-          content: errorMessage,
+        // Pending ask_user / plan_approval already unlocked — do not replace with Connection card.
+        const preserveHumanInterrupt = streamedHumanTurn?.status === 'pending';
+        const failPatch: Partial<Message> = {
           thinkingProcess: { ...currentThinkingProcess },
           isStreaming: false,
           isTypingDone: true,
-          ...(displayContent.trim()
-            ? {}
-            : { errorKind: errKind || 'network' }),
-        });
+          ...(streamedHumanTurn ? { humanTurn: streamedHumanTurn } : {}),
+          ...(streamedCheckpoint ? { checkpoint: streamedCheckpoint } : {}),
+        };
+        if (displayContent.trim()) {
+          failPatch.content = displayContent;
+        } else if (!preserveHumanInterrupt) {
+          failPatch.content = errorMessage;
+          if (errKind) failPatch.errorKind = errKind;
+        }
+        updateAssistantMessage(targetChatId, assistantMessageId, failPatch);
 
         // Best-effort PostHog — never block UX; no prompt/email/message body.
         try {
-          const telemetryKind = errKind || (classified.kind !== 'abort' ? classified.kind : 'network');
+          const telemetryKind =
+            errKind || (classified.kind !== 'abort' ? classified.kind : 'provider');
           posthog?.capture?.(
             'wim chat stream fail',
             chatStreamErrorTelemetryProps({
               kind: telemetryKind,
               httpStatus,
               hadPublicText: Boolean(displayContent.trim()),
+              hadStreamProgress: hadMeaningfulStreamProgress || streamChunkCount > 0,
               durationMs: Date.now() - streamStartedAt,
               chunkCount: streamChunkCount,
               byteLength: streamByteLength,
@@ -2270,6 +2318,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         setIsStreaming(false);
         setStreamStatus(null);
         streamReaderRef.current = null;
+        // Clear send-pin on stop/error/abort (keep pin after clean success for reading).
+        if (!isStreamComplete || backendError) {
+          pinnedMessageIdRef.current = null;
+          setPinSpacerHeight(0);
+        }
       }
     }
   };
@@ -2301,6 +2354,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     abortActiveStream()
     setIsStreaming(false)
     setStreamStatus(null)
+    // Release send-pin immediately so stop does not leave a locked empty spacer.
+    pinnedMessageIdRef.current = null
+    setPinSpacerHeight(0)
     const chatId = activeChat?.id
     const last = activeChat?.messages.at(-1)
     if (chatId && last?.role === 'assistant' && last.isStreaming) {
@@ -2844,8 +2900,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             abortActiveStream()
             setIsStreaming(false)
             setStreamStatus(null)
+            pinnedMessageIdRef.current = null
+            setPinSpacerHeight(0)
           }
-          if (id !== activeChatId) pinBottomOnNextChatRef.current = true
+          if (id !== activeChatId) {
+            pinBottomOnNextChatRef.current = true
+            pinnedMessageIdRef.current = null
+            setPinSpacerHeight(0)
+          }
           setActiveChatId(id)
           setComposerDraftNonce((n) => n + 1)
         }}

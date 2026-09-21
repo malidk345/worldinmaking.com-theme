@@ -244,7 +244,17 @@ export function classifyChatStreamError(input: {
     return buildResult('provider', { httpStatus: status, code: code || undefined })
   }
 
-  return buildResult('network', { httpStatus: status, code: code || undefined })
+  // No network fingerprint and no HTTP status: unknown / SSE / client throws are
+  // Philosopher network — not Connection. Real Failed-to-fetch already returned above.
+  if (message) {
+    return buildResult('provider', {
+      httpStatus: status,
+      code: code || undefined,
+      userMessage: message.slice(0, 220),
+    })
+  }
+
+  return buildResult('provider', { httpStatus: status, code: code || undefined })
 }
 
 /** Whether one silent retry is allowed (pre-stream network only). */
@@ -280,6 +290,8 @@ export function chatStreamErrorTelemetryProps(opts: {
   kind: ChatStreamErrorKind
   httpStatus?: number
   hadPublicText: boolean
+  /** True once thinking/tokens/tools/SSE progress existed (not keep-alive alone). */
+  hadStreamProgress?: boolean
   durationMs: number
   chunkCount?: number
   byteLength?: number
@@ -290,6 +302,7 @@ export function chatStreamErrorTelemetryProps(opts: {
     kind: opts.kind,
     httpStatus: opts.httpStatus,
     hadPublicText: opts.hadPublicText,
+    hadStreamProgress: opts.hadStreamProgress,
     durationMs: Math.max(0, Math.round(opts.durationMs)),
     chunkCount: opts.chunkCount,
     byteLength: opts.byteLength,
