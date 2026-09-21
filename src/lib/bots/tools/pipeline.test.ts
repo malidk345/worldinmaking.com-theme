@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { geminiToolGenerationConfig } from './gemini'
 import {
     compactLoopMessages,
+    isWeakerModel3dRevision,
     digestToolResultForLoop,
     extractFallbackAnswerFromThinking,
     LONG_JOB_CONTINUE_NUDGE,
@@ -435,5 +436,110 @@ describe('Long-job soft continue nudge (near maxSteps)', () => {
         expect(reminders.some((r) => r.includes(LONG_JOB_CONTINUE_NUDGE))).toBe(true)
         expect(LONG_JOB_CONTINUE_NUDGE.toLowerCase()).toMatch(/prefer|leave todos|continue/)
         expect(LONG_JOB_CONTINUE_NUDGE.toLowerCase()).not.toMatch(/\bmust\b|\bnever\b|\bdo not\b|hard stop/)
+    })
+})
+
+
+describe('model3d compaction + weaker enrich guard', () => {
+    it('keeps a geometry digest when stubbing prior create_artifact model3d bodies', () => {
+        const bigPad = (tag: string) =>
+            JSON.stringify({
+                title: 'Solar System',
+                description: tag.repeat(200),
+                objects: [
+                    { type: 'sphere', name: 'Sun', radius: 2, position: [0, 0, 0], color: '#fbbf24' },
+                    { type: 'sphere', name: 'Earth', radius: 0.6, position: [5, 0, 0], color: '#38bdf8' },
+                    ...Array.from({ length: 40 }, (_, i) => ({
+                        type: 'box',
+                        name: `${tag}-pad-${i}`,
+                        size: [0.2, 0.2, 0.2],
+                        position: [i * 0.1, 0, 0],
+                        color: '#999999',
+                    })),
+                ],
+            })
+        const scaffold0 = bigPad('z')
+        const scaffold1 = bigPad('y')
+        expect(scaffold0.length).toBeGreaterThan(2_500)
+        const messages: ChatMessage[] = [
+            { role: 'user', content: 'build' },
+            {
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                    {
+                        id: 'art-0',
+                        type: 'function',
+                        function: {
+                            name: 'create_artifact',
+                            arguments: JSON.stringify({ type: 'model3d', title: 'Solar System', content: scaffold0 }),
+                        },
+                    },
+                ],
+            },
+            {
+                role: 'tool',
+                tool_call_id: 'art-0',
+                content: JSON.stringify({ ok: true, id: 'doc-0', type: 'model3d', title: 'Solar System' }),
+            },
+            {
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                    {
+                        id: 'art-1',
+                        type: 'function',
+                        function: {
+                            name: 'create_artifact',
+                            arguments: JSON.stringify({
+                                type: 'model3d',
+                                title: 'Solar System',
+                                content: scaffold1,
+                            }),
+                        },
+                    },
+                ],
+            },
+            {
+                role: 'tool',
+                tool_call_id: 'art-1',
+                content: JSON.stringify({ ok: true, id: 'doc-1', type: 'model3d', title: 'Solar System' }),
+            },
+        ]
+        const compacted = compactLoopMessages(messages)
+        const priorArgs = compacted[1]!.tool_calls![0]!.function.arguments
+        const latestArgs = compacted[3]!.tool_calls![0]!.function.arguments
+        expect(priorArgs).toContain('_compacted')
+        expect(priorArgs).toMatch(/renderable:|Sun|Earth|objects:/)
+        expect(priorArgs).not.toContain('z-pad-20')
+        expect(latestArgs).toContain('y-pad-20')
+        expect(latestArgs).not.toContain('_compacted')
+    })
+
+    it('flags materials-only enrich as weaker than a geometry scaffold', () => {
+        const scaffold = {
+            type: 'model3d',
+            title: 'House',
+            content: JSON.stringify({
+                title: 'House',
+                objects: [
+                    { type: 'box', name: 'Walls', size: [8, 4, 6], position: [0, 2, 0], color: '#fff' },
+                    { type: 'box', name: 'Roof', size: [9, 1, 7], position: [0, 4.5, 0], color: '#a00' },
+                ],
+            }),
+        }
+        const enrich = {
+            type: 'model3d',
+            title: 'House',
+            content: JSON.stringify({
+                title: 'House',
+                preset: 'custom',
+                materials: [{ id: 'wood', color: '#888' }],
+                camera: { position: [10, 8, 10] },
+                objects: [{ type: 'group', name: 'House', children: [] }],
+            }),
+        }
+        expect(isWeakerModel3dRevision(enrich, scaffold)).toBe(true)
+        expect(isWeakerModel3dRevision(scaffold, enrich)).toBe(false)
     })
 })

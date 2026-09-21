@@ -146,6 +146,36 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
 
     const buildObjectMesh = (obj: Model3DObjectSpec): THREE.Object3D => {
       const type = (obj.type || 'box').toLowerCase()
+      const applyTransform = (node: THREE.Object3D) => {
+        if (obj.position) node.position.set(obj.position[0], obj.position[1], obj.position[2])
+        if (obj.rotation) {
+          const rx = Math.abs(obj.rotation[0]) > 6.28 ? (obj.rotation[0] * Math.PI) / 180 : obj.rotation[0]
+          const ry = Math.abs(obj.rotation[1]) > 6.28 ? (obj.rotation[1] * Math.PI) / 180 : obj.rotation[1]
+          const rz = Math.abs(obj.rotation[2]) > 6.28 ? (obj.rotation[2] * Math.PI) / 180 : obj.rotation[2]
+          node.rotation.set(rx, ry, rz)
+        }
+        if (obj.scale) {
+          if (typeof obj.scale === 'number') node.scale.set(obj.scale, obj.scale, obj.scale)
+          else node.scale.set(obj.scale[0], obj.scale[1], obj.scale[2])
+        }
+        node.userData = {
+          name: obj.name || obj.type || 'Object',
+          type: obj.type || 'box',
+          position: obj.position || [0, 0, 0],
+          color: obj.color,
+        }
+      }
+
+      // Groups are containers — never a near-invisible 0.01 box (looked like a blank scene).
+      if (type === 'group') {
+        const group = new THREE.Group()
+        applyTransform(group)
+        if (Array.isArray(obj.children) && obj.children.length > 0) {
+          for (const childSpec of obj.children) group.add(buildObjectMesh(childSpec))
+        }
+        return group
+      }
+
       let geo: THREE.BufferGeometry
 
       const size = obj.size || [1, 1, 1]
@@ -201,9 +231,8 @@ export function Model3DArtifactRenderer({ content }: { content: string | unknown
         case 'capsule':
           geo = new THREE.CapsuleGeometry(radius, height, 8, 16)
           break
-        case 'group':
         default:
-          geo = obj.vertices && obj.vertices.length > 0 ? createCustomMeshGeometry(obj.vertices, obj.faces) : new THREE.BoxGeometry(0.01, 0.01, 0.01)
+          geo = obj.vertices && obj.vertices.length > 0 ? createCustomMeshGeometry(obj.vertices, obj.faces) : new THREE.BoxGeometry(1, 1, 1)
           break
       }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { executeToolCall } from './execute'
 import {
+    countModel3DRenderable,
     parseCanvasSpec,
     parseModel3DSpec,
     parseSimulationSpec,
@@ -210,5 +211,62 @@ describe('Interactive Visual Artifacts (Canvas, 3D Models, Parametric Simulation
         expect(result.ok).toBe(true)
         expect(result.artifact?.id).toBe('art-open-1')
         expect(result.artifact?.version).toBe(3)
+    })
+})
+
+
+describe('model3d blank-scene guards (post #777)', () => {
+    it('rejects empty groups / materials-only / preset custom without leaf geometry', async () => {
+        const blankish = [
+            { title: 'Empty group', objects: [{ type: 'group', name: 'Building', children: [] }] },
+            { title: 'Materials only', materials: [{ id: 'wood', color: '#888' }], camera: { position: [5, 5, 5] }, preset: 'custom' },
+            { title: 'Parts not mapped previously', objects: [{ type: 'group', name: 'House', parts: [] }] },
+        ]
+        for (const body of blankish) {
+            const result = await executeToolCall({
+                id: 'call-blank-3d',
+                name: 'create_artifact',
+                argumentsJson: JSON.stringify({
+                    type: 'model3d',
+                    title: body.title,
+                    content: JSON.stringify(body),
+                }),
+            })
+            expect(result.ok).toBe(false)
+            expect(result.artifact).toBeUndefined()
+        }
+    })
+
+    it('accepts parts[] as children and still persists full body (compaction is loop-only)', async () => {
+        const body = {
+            title: 'House via parts',
+            objects: [
+                {
+                    type: 'group',
+                    name: 'House',
+                    parts: [
+                        { type: 'box', name: 'Walls', size: [8, 4, 6], position: [0, 2, 0], color: '#f8fafc' },
+                        { type: 'pyramid', name: 'Roof', radius: 5, height: 2, position: [0, 5, 0], color: '#dc2626' },
+                    ],
+                },
+            ],
+        }
+        const result = await executeToolCall({
+            id: 'call-parts-3d',
+            name: 'create_artifact',
+            argumentsJson: JSON.stringify({
+                type: 'model3d',
+                title: 'House via parts',
+                content: JSON.stringify(body),
+            }),
+        })
+        expect(result.ok).toBe(true)
+        expect(result.artifact?.content).toContain('House')
+        expect(result.artifact?.content.length).toBeGreaterThan(80)
+        const parsed = parseModel3DSpec(result.artifact?.content)
+        expect(countModel3DRenderable(parsed.objects)).toBe(2)
+        // Tool result stays id/title — body lives on artifact for the UI.
+        expect(result.result).not.toContain('size')
+        expect(JSON.parse(result.result).title).toBe('House via parts')
     })
 })

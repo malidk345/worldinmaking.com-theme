@@ -9,6 +9,7 @@
 
 import type { AiCitation } from '../../ai/contracts'
 import type { ArtifactDocument } from '../../artifacts/kinds'
+import { countModel3DRenderable, model3dGeometryDigest, parseModel3DSpecStrict } from '../../ai/visual-artifacts'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
 import { snapshotCheckpoint, type AgentCheckpoint } from '../agent/checkpoint'
 import type { HumanTurn } from '../agent/human'
@@ -154,18 +155,52 @@ function compactCreateArtifactArgs(argumentsJson: string, keepFull: boolean): st
         }
         const content = args.content
         if (typeof content === 'string' && content.length > 800) {
+            const type = typeof args.type === 'string' ? args.type : undefined
+            // Keep a geometry digest so staged model3d enrich still knows the scaffold shape.
+            const digest =
+                type === 'model3d' || type === '3d' || type === '3d_model' || type === 'scene'
+                    ? model3dGeometryDigest(content)
+                    : ''
+            const note = digest
+                ? `[prior body omitted — ${digest}; revise with create_artifact same title and FULL objects[] (not materials/camera-only)]`
+                : '[prior body omitted — revise with create_artifact same title; enrich must resend full body]'
             return JSON.stringify({
                 type: args.type,
                 title: args.title,
-                content:
-                    '[prior body omitted — revise with create_artifact same title; enrich from scaffold]',
+                content: note,
                 _compacted: true,
+                ...(digest ? { _geometry: digest } : {}),
             })
         }
     } catch {
         /* keep slice */
     }
     return argumentsJson.length <= 2_500 ? argumentsJson : `${argumentsJson.slice(0, 2_500)}…`
+}
+
+function normalizedArtifactTitle(title: string | undefined): string {
+    return String(title || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[\s\-_]+/g, '')
+}
+
+/** True when incoming model3d would wipe a richer same-title scaffold (blank enrich). */
+export function isWeakerModel3dRevision(
+    incoming: { type?: string; title?: string; content?: string },
+    previous: { type?: string; title?: string; content?: string }
+): boolean {
+    if (incoming.type !== 'model3d' || previous.type !== 'model3d') return false
+    if (normalizedArtifactTitle(incoming.title) !== normalizedArtifactTitle(previous.title)) return false
+    const prevSpec = parseModel3DSpecStrict(previous.content || '')
+    const nextSpec = parseModel3DSpecStrict(incoming.content || '')
+    if (!prevSpec) return false
+    // Invalid/empty incoming is weaker.
+    if (!nextSpec) return true
+    if (prevSpec.url && !nextSpec.url && countModel3DRenderable(nextSpec.objects) === 0) return true
+    const prevN = prevSpec.url ? 10_000 : countModel3DRenderable(prevSpec.objects)
+    const nextN = nextSpec.url ? 10_000 : countModel3DRenderable(nextSpec.objects)
+    return prevN > 0 && nextN < prevN
 }
 
 /** Soften mid-loop tool memory: last N results fuller; older digest; only latest create_artifact body kept full. */
@@ -790,7 +825,37 @@ async function runOneToolCall(
     let executed = preExecuted || (await executeToolCall(call, params.env, params.host, state.agentMode, params.signal))
 
     if (executed.artifact) {
-        state.artifacts.push(executed.artifact)
+        const incoming = executed.artifact
+        if (incoming.type === 'model3d') {
+            const prior = [...state.artifacts]
+                .reverse()
+                .find(
+                    (item) =>
+                        item.type === 'model3d' &&
+                        normalizedArtifactTitle(item.title) === normalizedArtifactTitle(incoming.title)
+                )
+            if (prior && isWeakerModel3dRevision(incoming, prior)) {
+                // Keep the richer scaffold on screen; tell the model to resend full objects[].
+                executed = {
+                    ...executed,
+                    ok: false,
+                    artifact: undefined,
+                    result: JSON.stringify({
+                        ok: false,
+                        error:
+                            'model3d enrich dropped geometry — resend the FULL objects[] (complete scene). Materials/camera-only or empty groups cannot replace a scaffold.',
+                        id: prior.id,
+                        title: prior.title,
+                        kept: 'prior',
+                    }),
+                    summary: '3D enrich lacked geometry — kept prior scene',
+                }
+            } else {
+                state.artifacts.push(incoming)
+            }
+        } else {
+            state.artifacts.push(incoming)
+        }
     }
     if (executed.citations?.length) {
         state.citations.push(...executed.citations)

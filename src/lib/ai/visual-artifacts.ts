@@ -175,39 +175,133 @@ export interface Model3DSpec {
     nodes?: Array<{ label: string; position?: [number, number, number]; color?: string }>
 }
 
+/** Presets the viewport can draw without an objects[] list. `custom` alone is not enough. */
+export const MODEL3D_VIEWPORT_PRESETS = new Set([
+    'polyhedra',
+    'orbital_system',
+    'dna_helix',
+    'ontology_network',
+    'torus_knot',
+])
+
+function asVec3(value: unknown, fallback?: [number, number, number]): [number, number, number] | undefined {
+    if (Array.isArray(value) && value.length >= 3) {
+        return [Number(value[0]) || 0, Number(value[1]) || 0, Number(value[2]) || 0]
+    }
+    return fallback
+}
+
+function asSize3(raw: Record<string, unknown>): [number, number, number] | undefined {
+    const direct = raw.size ?? raw.dimensions ?? raw.scale3
+    if (Array.isArray(direct) && direct.length >= 3) {
+        return [Number(direct[0]) || 1, Number(direct[1]) || 1, Number(direct[2]) || 1]
+    }
+    const w = raw.width ?? raw.w
+    const h = raw.height ?? raw.h
+    const d = raw.depth ?? raw.d ?? raw.length
+    if (typeof w === 'number' || typeof h === 'number' || typeof d === 'number') {
+        return [Number(w) || 1, Number(h) || 1, Number(d) || 1]
+    }
+    return undefined
+}
+
+function childList(raw: Record<string, unknown>): unknown[] | undefined {
+    for (const key of ['children', 'parts', 'nodes', 'items', 'meshes', 'objects', 'elements']) {
+        const value = raw[key]
+        if (Array.isArray(value)) return value
+    }
+    return undefined
+}
+
+/** Count leaf primitives (groups alone do not count). */
+export function countModel3DRenderable(objects: Model3DObjectSpec[] | undefined): number {
+    if (!objects?.length) return 0
+    let total = 0
+    for (const obj of objects) {
+        const kind = String(obj.type || 'box').toLowerCase()
+        if (kind === 'group') {
+            total += countModel3DRenderable(obj.children)
+            continue
+        }
+        total += 1
+    }
+    return total
+}
+
+export function model3dGeometryDigest(content: string): string {
+    const spec = parseModel3DSpecStrict(content)
+    if (!spec) return ''
+    if (spec.url) return `url:${spec.url.slice(0, 80)}`
+    const objects = spec.objects || []
+    const renderable = countModel3DRenderable(objects)
+    if (renderable <= 0) return ''
+    const labels = objects.slice(0, 10).map((obj) => obj.name || obj.type || 'obj')
+    const more = objects.length > 10 ? ', …' : ''
+    return `renderable:${renderable} objects:${objects.length} [${labels.join(', ')}${more}]`
+}
+
 function normalizeObject(rawObj: any): Model3DObjectSpec | null {
     if (!rawObj || typeof rawObj !== 'object') return null
-    const type = String(rawObj.type || (rawObj.vertices ? 'custom_mesh' : 'box')).toLowerCase() as Model3DPrimitiveType
+    const raw = rawObj as Record<string, unknown>
+    const typeHint = raw.type ?? raw.shape ?? raw.primitive ?? raw.kind ?? (Array.isArray(raw.vertices) ? 'custom_mesh' : undefined)
+    const nestedChildren = childList(raw)
+    const type = String(typeHint || (nestedChildren ? 'group' : 'box')).toLowerCase() as Model3DPrimitiveType
+    const color =
+        typeof raw.color === 'string'
+            ? raw.color
+            : typeof raw.colour === 'string'
+              ? raw.colour
+              : undefined
     return {
-        id: rawObj.id ? String(rawObj.id) : undefined,
-        name: rawObj.name ? String(rawObj.name) : undefined,
+        id: raw.id ? String(raw.id) : undefined,
+        name: raw.name ? String(raw.name) : typeof raw.label === 'string' ? raw.label : undefined,
         type,
-        size: Array.isArray(rawObj.size) && rawObj.size.length >= 3 ? [Number(rawObj.size[0]) || 1, Number(rawObj.size[1]) || 1, Number(rawObj.size[2]) || 1] : undefined,
-        radius: typeof rawObj.radius === 'number' ? rawObj.radius : undefined,
-        radiusTop: typeof rawObj.radiusTop === 'number' ? rawObj.radiusTop : undefined,
-        radiusBottom: typeof rawObj.radiusBottom === 'number' ? rawObj.radiusBottom : undefined,
-        height: typeof rawObj.height === 'number' ? rawObj.height : undefined,
-        tube: typeof rawObj.tube === 'number' ? rawObj.tube : undefined,
-        radialSegments: typeof rawObj.radialSegments === 'number' ? rawObj.radialSegments : undefined,
-        position: Array.isArray(rawObj.position) && rawObj.position.length >= 3 ? [Number(rawObj.position[0]) || 0, Number(rawObj.position[1]) || 0, Number(rawObj.position[2]) || 0] : [0, 0, 0],
-        rotation: Array.isArray(rawObj.rotation) && rawObj.rotation.length >= 3 ? [Number(rawObj.rotation[0]) || 0, Number(rawObj.rotation[1]) || 0, Number(rawObj.rotation[2]) || 0] : undefined,
-        scale: Array.isArray(rawObj.scale) ? [Number(rawObj.scale[0]) || 1, Number(rawObj.scale[1]) || 1, Number(rawObj.scale[2]) || 1] : (typeof rawObj.scale === 'number' ? rawObj.scale : undefined),
-        color: typeof rawObj.color === 'string' ? rawObj.color : undefined,
-        roughness: typeof rawObj.roughness === 'number' ? Math.max(0, Math.min(1, rawObj.roughness)) : undefined,
-        metalness: typeof rawObj.metalness === 'number' ? Math.max(0, Math.min(1, rawObj.metalness)) : undefined,
-        opacity: typeof rawObj.opacity === 'number' ? Math.max(0, Math.min(1, rawObj.opacity)) : undefined,
-        transparent: typeof rawObj.transparent === 'boolean' ? rawObj.transparent : undefined,
-        wireframe: typeof rawObj.wireframe === 'boolean' ? rawObj.wireframe : undefined,
-        emissive: typeof rawObj.emissive === 'string' ? rawObj.emissive : undefined,
-        emissiveIntensity: typeof rawObj.emissiveIntensity === 'number' ? rawObj.emissiveIntensity : undefined,
-        vertices: Array.isArray(rawObj.vertices) ? rawObj.vertices : undefined,
-        faces: Array.isArray(rawObj.faces) ? rawObj.faces : undefined,
-        children: Array.isArray(rawObj.children) ? rawObj.children.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[] : undefined,
+        size: asSize3(raw),
+        radius: typeof raw.radius === 'number' ? raw.radius : undefined,
+        radiusTop: typeof raw.radiusTop === 'number' ? raw.radiusTop : undefined,
+        radiusBottom: typeof raw.radiusBottom === 'number' ? raw.radiusBottom : undefined,
+        height: typeof raw.height === 'number' ? raw.height : undefined,
+        tube: typeof raw.tube === 'number' ? raw.tube : undefined,
+        radialSegments: typeof raw.radialSegments === 'number' ? raw.radialSegments : undefined,
+        position: asVec3(raw.position ?? raw.pos ?? raw.coords, [0, 0, 0]),
+        rotation: asVec3(raw.rotation ?? raw.rot),
+        scale: Array.isArray(raw.scale)
+            ? [Number(raw.scale[0]) || 1, Number(raw.scale[1]) || 1, Number(raw.scale[2]) || 1]
+            : typeof raw.scale === 'number'
+              ? raw.scale
+              : undefined,
+        color,
+        roughness: typeof raw.roughness === 'number' ? Math.max(0, Math.min(1, raw.roughness)) : undefined,
+        metalness: typeof raw.metalness === 'number' ? Math.max(0, Math.min(1, raw.metalness)) : undefined,
+        opacity: typeof raw.opacity === 'number' ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
+        transparent: typeof raw.transparent === 'boolean' ? raw.transparent : undefined,
+        wireframe: typeof raw.wireframe === 'boolean' ? raw.wireframe : undefined,
+        emissive: typeof raw.emissive === 'string' ? raw.emissive : undefined,
+        emissiveIntensity: typeof raw.emissiveIntensity === 'number' ? raw.emissiveIntensity : undefined,
+        vertices: Array.isArray(raw.vertices) ? raw.vertices : undefined,
+        faces: Array.isArray(raw.faces) ? raw.faces : undefined,
+        children: nestedChildren
+            ? (nestedChildren.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[])
+            : undefined,
     }
 }
 
 function buildModel3DSpec(raw: any): Model3DSpec {
-    const rawObjects = Array.isArray(raw.objects) ? raw.objects : (Array.isArray(raw.scene) ? raw.scene : (Array.isArray(raw.elements) ? raw.elements : undefined))
+    const rawObjects = Array.isArray(raw.objects)
+        ? raw.objects
+        : Array.isArray(raw.scene)
+          ? raw.scene
+          : Array.isArray(raw.elements)
+            ? raw.elements
+            : Array.isArray(raw.meshes)
+              ? raw.meshes
+              : Array.isArray(raw.items)
+                ? raw.items
+                : Array.isArray(raw.bodies)
+                  ? raw.bodies
+                  : Array.isArray(raw.entities)
+                    ? raw.entities
+                    : undefined
     const objects = rawObjects ? (rawObjects.map(normalizeObject).filter(Boolean) as Model3DObjectSpec[]) : undefined
     const url = typeof raw.url === 'string' ? raw.url : (typeof raw.modelUrl === 'string' ? raw.modelUrl : (typeof raw.src === 'string' ? raw.src : undefined))
 
@@ -244,7 +338,7 @@ function parseModel3DRaw(content: string | unknown): unknown | null {
         const parsed = JSON.parse(text)
         return parsed && typeof parsed === 'object' ? parsed : null
     } catch {
-        const match = text.match(/\{[\s\S]*("objects"|"preset"|"scene"|"url"|"modelUrl")[\s\S]*\}/)
+        const match = text.match(/\{[\s\S]*("objects"|"preset"|"scene"|"url"|"modelUrl"|"meshes"|"items")[\s\S]*\}/)
         if (!match) return null
         try {
             const parsed = JSON.parse(match[0])
@@ -260,8 +354,12 @@ export function parseModel3DSpecStrict(content: string | unknown): Model3DSpec |
     if (!raw || typeof raw !== 'object') return null
     const row = raw as Record<string, unknown>
     const spec = buildModel3DSpec(row)
-    const hasPreset = typeof row.preset === 'string' && row.preset.trim().length > 0
-    if (!spec.url && !(spec.objects && spec.objects.length > 0) && !hasPreset) return null
+    const presetKey = typeof row.preset === 'string' ? row.preset.trim().toLowerCase() : ''
+    const hasViewportPreset = MODEL3D_VIEWPORT_PRESETS.has(presetKey)
+    const renderable = countModel3DRenderable(spec.objects)
+    // Fail closed: id/title/materials/camera or empty groups alone must not pass as a scene.
+    // `preset: "custom"` without leaf geometry is not a drawable viewport preset.
+    if (!spec.url && renderable <= 0 && !hasViewportPreset) return null
     return spec
 }
 
