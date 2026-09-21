@@ -649,6 +649,24 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
 
     const tabs = [
         {
+            value: 'notebooks',
+            label: 'Notebooks',
+            content: (
+                <>
+                    <h4 className="text-lg font-bold m-0 mb-4">Notebooks</h4>
+                    <ProfileNotebookGrid
+                        loading={notebooksLoading}
+                        items={notebooks}
+                        empty={
+                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
+                                {firstName} hasn&apos;t published any notebooks yet
+                            </p>
+                        }
+                    />
+                </>
+            ),
+        },
+        {
             value: 'posts',
             label: 'Posts',
             content: (
@@ -701,24 +719,6 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
             ),
         },
         {
-            value: 'notebooks',
-            label: 'Notebooks',
-            content: (
-                <>
-                    <h4 className="text-lg font-bold m-0 mb-4">Notebooks</h4>
-                    <ProfileNotebookGrid
-                        loading={notebooksLoading}
-                        items={notebooks}
-                        empty={
-                            <p className="prose dark:prose-invert prose-sm max-w-full text-primary m-0">
-                                {firstName} hasn&apos;t published any notebooks yet
-                            </p>
-                        }
-                    />
-                </>
-            ),
-        },
-        {
             value: 'discussions',
             label: 'Discussions',
             content: (
@@ -736,6 +736,7 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
                 </>
             ),
         }
+
     ]
 
     const initialTab = useMemo(() => {
@@ -750,6 +751,8 @@ const ProfileTabs = ({ profile, firstName, id, username }) => {
             className="h-auto"
             triggerDataScheme="primary"
             tabContentDataScheme="primary"
+            contentPadding={false}
+            tabContentClassName="px-2 py-3 @2xl:p-4"
         />
     )
 }
@@ -1138,7 +1141,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             )}
                         </div>
 
-                        <div className="flex-grow @container">
+                        <div className="flex-grow @container -mx-3 @2xl:mx-0">
                             <ProfileTabs
                                 profile={profile}
                                 firstName={firstName}

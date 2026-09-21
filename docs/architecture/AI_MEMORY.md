@@ -51,12 +51,19 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** None. (Removed redundant profile Saved posts tab — see §5.)
+- **Status:** `[DONE by Grok Bot / Cursor]`
+- **Task:** Profile mobile tab-panel spacing + Notebooks-first tab order (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: profile mobile tab content spacing + Notebooks first)
+- **Scope:** User (TR): on mobile only, Posts/Notebooks content sits too far from window edge; do not touch profile header; put Notebooks before Posts; desktop unchanged.
+- **Change:** Reordered `ProfileTabs` to Notebooks → Posts → Discussions. Disabled default OSTabs `contentPadding` (`p-4`) and set `tabContentClassName="px-2 py-3 @2xl:p-4"`. ProfileTabs column wrapper uses `-mx-3 @2xl:mx-0` so stacked/mobile reclaim parent `p-4` inset; `@2xl` side-by-side layout unchanged. Header/avatar column untouched.
+- **Files:** `src/components/Profile/ProfileView.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Mobile/narrow profile: tab panel closer to edges; header spacing same; default tab Notebooks; `?tab=posts` still works; desktop/@2xl profile padding unchanged.
+- **Handoff:** PR `fix/profile-mobile-tabs-spacing`. Residual: deep links to `?tab=` still honor URL; if OSTabs used elsewhere, this change is ProfileView-local only.
 
 ### 2026-09-21 — Grok Bot / Cursor (chore: remove profile Saved posts tab)
 - **Scope:** User (TR): profile “Saved posts” is redundant with bookmarks; remove carefully without breaking bookmarks or profile pages.
