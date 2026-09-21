@@ -122,6 +122,114 @@ export function parseLeakedToolCalls(value: string): ToolCall[] {
     return calls
 }
 
+// Em/en/hyphen dash variants — models echo host copy with any of them.
+const DASH = '[-\\u2010-\\u2015]'
+const HOST_ARTIFACT_MARKER = new RegExp(
+    `^\\s*\\[(?:On[-\\s]?screen artifacts\\b[^\\]]*|Host note\\b[^\\]]*on[-\\s]?screen artifacts[^\\]]*|On screen ${DASH} revise with create_artifact[^\\]]*)\\]\\s*$`,
+    'i'
+)
+const ARTIFACT_HEADING = /^\s*###\s+[A-Za-z][\w-]*\s+"[^"]*"(?:\s+id=\S+)?\s*$/
+const ARTIFACT_TYPES =
+    /^(?:model3d|canvas|react|html|mermaid|chart|simulation|posthog-analytics|table|markdown|svg|code|3d|3d_model|scene)$/i
+
+function isHostArtifactMarker(line: string): boolean {
+    return HOST_ARTIFACT_MARKER.test(line)
+}
+
+function isArtifactHeading(line: string): boolean {
+    return ARTIFACT_HEADING.test(line)
+}
+
+function artifactHeadingType(line: string): string | null {
+    const match = /^\s*###\s+([A-Za-z][\w-]*)\s+"/.exec(line)
+    return match ? match[1]! : null
+}
+
+function skipBalancedJson(lines: string[], start: number, open: '{' | '['): number {
+    let i = start
+    let depth = 0
+    const close = open === '{' ? '}' : ']'
+    while (i < lines.length) {
+        for (const ch of lines[i]!) {
+            if (ch === open) depth += 1
+            else if (ch === close) depth -= 1
+        }
+        i += 1
+        if (depth <= 0) break
+    }
+    return i
+}
+
+/** Skip a ### type "title" id=... heading plus its body (JSON, fence, or stub). */
+function skipArtifactDump(lines: string[], start: number): number {
+    let i = start
+    if (i >= lines.length || !isArtifactHeading(lines[i]!)) return start
+    i += 1
+    if (i >= lines.length) return i
+    const first = lines[i]!.trim()
+    if (first.startsWith('```')) {
+        i += 1
+        while (i < lines.length && !lines[i]!.trim().startsWith('```')) i += 1
+        if (i < lines.length) i += 1
+        return i
+    }
+    if (first.startsWith('{')) return skipBalancedJson(lines, i, '{')
+    if (first.startsWith('[')) return skipBalancedJson(lines, i, '[')
+    // Stub / omitted-body line, or non-JSON dump until blank / next marker / heading.
+    while (
+        i < lines.length &&
+        lines[i]!.trim() !== '' &&
+        !isHostArtifactMarker(lines[i]!) &&
+        !isArtifactHeading(lines[i]!)
+    ) {
+        i += 1
+    }
+    return i
+}
+
+
+/**
+ * Models sometimes echo host on-screen artifact memory
+ * (`[On-screen artifacts — ...]`, `### model3d "..." id=...` + JSON) into the
+ * public bubble. Strip those before persist/display.
+ */
+export function stripLeakedOnScreenArtifacts(value: string): string {
+    if (!value) return ''
+    const lines = value.split('\n')
+    const out: string[] = []
+    let i = 0
+    while (i < lines.length) {
+        const line = lines[i]!
+        if (isHostArtifactMarker(line)) {
+            i += 1
+            while (i < lines.length && isArtifactHeading(lines[i]!)) {
+                i = skipArtifactDump(lines, i)
+            }
+            continue
+        }
+        // Orphan ### type "title" dumps — with id=, or known artifact type + JSON/fence body.
+        if (isArtifactHeading(line)) {
+            const type = artifactHeadingType(line)
+            const next = lines[i + 1]?.trim() || ''
+            const known = Boolean(type && ARTIFACT_TYPES.test(type))
+            const hasId = /\bid=/.test(line)
+            const bodyLooksDump =
+                next.startsWith('{') ||
+                next.startsWith('[') ||
+                next.startsWith('```') ||
+                next.startsWith('[On screen') ||
+                next.startsWith('[prior body omitted')
+            if (hasId || (known && bodyLooksDump)) {
+                i = skipArtifactDump(lines, i)
+                continue
+            }
+        }
+        out.push(line)
+        i += 1
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
 export function stripLeakedToolMarkup(value: string): string {
     if (!value) return ''
     let text = value
@@ -130,6 +238,7 @@ export function stripLeakedToolMarkup(value: string): string {
         .replace(BARE_CALL, '\n')
         .replace(LEAK_UNCLOSED, '')
         .replace(TRAILING_BARE_CALL, '')
+    text = stripLeakedOnScreenArtifacts(text)
     text = text.replace(/\n{3,}/g, '\n\n').trim()
     return text
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, HumanTurn } from '../types';
 import { getRenderer } from '../../../lib/artifacts'
+import { stripLeakedToolMarkup } from '../../../lib/bots/tools/leak'
 import { ThinkingBlock } from './ThinkingBlock';
 
 import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
@@ -594,7 +595,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
-  const displayedText = message.content;
+  // Strip host/tool leaks from stored bubbles (pre-fix polluted localStorage).
+  const displayedText = isUser ? message.content : stripLeakedToolMarkup(message.content || '');
   const isLiveAnswer = !isUser && !!message.isStreaming;
   const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
   const textToProcess = normalizeAudioMarkdown(displayedText);

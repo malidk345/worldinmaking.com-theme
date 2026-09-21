@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { compactToolHistory, formatHistoryContent, type HistoryTurn } from './history'
+import {
+    compactToolHistory,
+    formatHistoryContent,
+    formatOnScreenArtifactsNote,
+    type HistoryTurn,
+} from './history'
 
 describe('History tool/artifact memory (soft)', () => {
     it('keeps recent tool results fuller than older ones', () => {
@@ -26,7 +31,7 @@ describe('History tool/artifact memory (soft)', () => {
         expect(recent.length).toBeLessThanOrEqual(2_400)
     })
 
-    it('keeps latest artifact body and stubs older ones to id/title', () => {
+    it('keeps assistant prose clean and puts artifacts in a synthetic user note', () => {
         const history: HistoryTurn[] = [
             {
                 role: 'assistant',
@@ -56,21 +61,94 @@ describe('History tool/artifact memory (soft)', () => {
         ]
         const compacted = compactToolHistory(history)
         const assistants = compacted.filter((m) => m.role === 'assistant')
-        expect(assistants[0]!.content).toContain('art-old')
-        expect(assistants[0]!.content).toContain('Old Scene')
-        expect(assistants[0]!.content).toContain('prior body omitted')
+        expect(assistants[0]!.content).toBe('first')
+        expect(assistants[0]!.content).not.toContain('On-screen artifacts')
         expect(assistants[0]!.content).not.toContain('OLD_BODY_')
-        expect(assistants[1]!.content).toContain('NEW_BODY_')
-        expect(assistants[1]!.content).toContain('art-new')
+        expect(assistants[0]!.content).not.toContain('art-old')
+        expect(assistants[1]!.content).toBe('second')
+        expect(assistants[1]!.content).not.toContain('NEW_BODY_')
+
+        const notes = compacted.filter(
+            (m) => m.role === 'user' && m.content.includes('on-screen artifacts')
+        )
+        expect(notes.length).toBe(2)
+        expect(notes[0]!.content).toContain('art-old')
+        expect(notes[0]!.content).toContain('Old Scene')
+        expect(notes[0]!.content).toContain('prior body omitted')
+        expect(notes[0]!.content).not.toContain('OLD_BODY_')
+        expect(notes[1]!.content).toContain('NEW_BODY_')
+        expect(notes[1]!.content).toContain('art-new')
+        expect(notes[1]!.content).toContain('Do NOT paste')
     })
 
-    it('formatHistoryContent defaults to including bodies', () => {
+    it('defers artifact note until after tool results when assistant has tool_calls', () => {
+        const history: HistoryTurn[] = [
+            {
+                role: 'assistant',
+                content: '',
+                tool_calls: [{ id: 'c1', name: 'create_artifact', arguments: '{}' }],
+                artifacts: [
+                    {
+                        id: 'art-1',
+                        type: 'model3d',
+                        title: 'Scene',
+                        content: '{"objects":[]}',
+                    },
+                ],
+            },
+            { role: 'tool', tool_call_id: 'c1', content: 'ok' },
+        ]
+        const compacted = compactToolHistory(history)
+        expect(compacted.map((m) => m.role)).toEqual(['assistant', 'tool', 'user'])
+        expect(compacted[2]!.content).toContain('art-1')
+        expect(compacted[0]!.content).toBe('')
+    })
+
+    it('formatHistoryContent returns public body only', () => {
         const text = formatHistoryContent({
             role: 'assistant',
             content: 'hi',
             artifacts: [{ id: 'a1', type: 'react', title: 'Panel', content: 'CODE' }],
         })
+        expect(text).toBe('hi')
+        expect(text).not.toContain('CODE')
+        expect(text).not.toContain('a1')
+    })
+
+    it('formatOnScreenArtifactsNote includes bodies by default', () => {
+        const text = formatOnScreenArtifactsNote([{ id: 'a1', type: 'react', title: 'Panel', content: 'CODE' }])
         expect(text).toContain('CODE')
         expect(text).toContain('a1')
+        expect(text).toContain('Do NOT paste')
+    })
+
+    it('strips polluted on-screen dumps already baked into assistant content', () => {
+        const polluted = [
+            'Nice scene.',
+            '',
+            '[On-screen artifacts — revise with create_artifact using the same title]',
+            '### model3d "City" id=art-pending-1',
+            '{"objects":[{"id":"a"}]}',
+        ].join('\n')
+        expect(formatHistoryContent({ role: 'assistant', content: polluted })).toBe('Nice scene.')
+    })
+
+    it('merges host artifact note into the following user turn (no consecutive users)', () => {
+        const history: HistoryTurn[] = [
+            {
+                role: 'assistant',
+                content: 'done',
+                artifacts: [
+                    { id: 'art-1', type: 'model3d', title: 'Scene', content: '{"objects":[]}' },
+                ],
+            },
+            { role: 'user', content: 'make it taller' },
+        ]
+        const compacted = compactToolHistory(history)
+        expect(compacted.map((m) => m.role)).toEqual(['assistant', 'user'])
+        expect(compacted[1]!.content).toContain('on-screen artifacts')
+        expect(compacted[1]!.content).toContain('art-1')
+        expect(compacted[1]!.content).toContain('make it taller')
+        expect(compacted[0]!.content).toBe('done')
     })
 })

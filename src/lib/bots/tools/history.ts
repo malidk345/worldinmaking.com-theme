@@ -1,3 +1,5 @@
+import { stripLeakedToolMarkup } from './leak'
+
 export type HistoryArtifact = {
     id?: string
     type: string
@@ -47,15 +49,12 @@ function clip(value: string, max: number): string {
     return text.length <= max ? text : text.slice(0, max)
 }
 
-/** Prior artifacts stay in the thread so follow-ups can revise them. */
-export function formatHistoryContent(
-    item: HistoryTurn,
+function formatArtifactBlocks(
+    artifacts: HistoryArtifact[],
     options?: { includeArtifactBodies?: boolean }
-): string {
-    const body = clip(item.content || '', MAX_VISIBLE)
-    if (item.role !== 'assistant' || !item.artifacts?.length) return body
+): string[] {
     const includeBodies = options?.includeArtifactBodies !== false
-    const blocks = item.artifacts.slice(0, MAX_ARTIFACTS_PER_TURN).map((artifact) => {
+    return artifacts.slice(0, MAX_ARTIFACTS_PER_TURN).map((artifact) => {
         const title = clip(artifact.title || 'Untitled', 80)
         const id = artifact.id ? ` id=${clip(artifact.id, 64)}` : ''
         if (!includeBodies) {
@@ -63,10 +62,35 @@ export function formatHistoryContent(
         }
         return `### ${artifact.type} "${title}"${id}\n${clip(artifact.content || '', MAX_ARTIFACT_BODY)}`
     })
+}
+
+/**
+ * Host note for the model about on-screen artifacts.
+ * Sent as a separate synthetic user turn — never inlined into assistant content
+ * (models echo inlined blocks into the public bubble).
+ */
+export function formatOnScreenArtifactsNote(
+    artifacts: HistoryArtifact[],
+    options?: { includeArtifactBodies?: boolean }
+): string {
+    const blocks = formatArtifactBlocks(artifacts, options)
+    if (!blocks.length) return ''
     return clip(
-        `${body}\n\n[On-screen artifacts — revise with create_artifact using the same title]\n${blocks.join('\n\n')}`,
+        `[Host note — on-screen artifacts. Revise with create_artifact using the same title. Do NOT paste this note or raw artifact JSON into the public answer.]\n${blocks.join('\n\n')}`,
         MAX_MESSAGE
     )
+}
+
+/**
+ * Public assistant body only. Artifacts are NOT appended here — use
+ * formatOnScreenArtifactsNote as a separate synthetic turn instead.
+ */
+export function formatHistoryContent(
+    item: HistoryTurn,
+    _options?: { includeArtifactBodies?: boolean }
+): string {
+    // Defense: old polluted assistant bubbles still in client storage must not re-seed the model.
+    return clip(stripLeakedToolMarkup(item.content || ''), MAX_VISIBLE)
 }
 
 /** Rebuild OpenAI tool_calls + role:tool turns from the client thread. */
@@ -85,6 +109,26 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
         }
         return -1
     })()
+
+    let pendingArtifactNote: string | null = null
+    /** Push/merge user text — never emit consecutive user turns (Anthropic rejects them). */
+    const pushUserContent = (content: string) => {
+        const trimmed = String(content || '').trim()
+        if (!trimmed) return
+        const last = out[out.length - 1]
+        if (last && last.role === 'user') {
+            last.content = clip(`${last.content}\n\n${trimmed}`, MAX_MESSAGE)
+            return
+        }
+        out.push({ role: 'user', content: clip(trimmed, MAX_MESSAGE) })
+    }
+    const flushPendingArtifactNote = () => {
+        if (!pendingArtifactNote) return
+        const note = pendingArtifactNote
+        pendingArtifactNote = null
+        pushUserContent(note)
+    }
+
     for (let index = 0; index < window.length; index += 1) {
         const item = window[index]
         if (item.role === 'tool' && item.tool_call_id) {
@@ -93,14 +137,24 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                 tool_call_id: item.tool_call_id.slice(0, 80),
                 content: clip(item.content || '', recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
             })
+            const next = window[index + 1]
+            // Keep note pending when the next turn is a real user so we can merge (no consecutive users).
+            if (!next || (next.role !== 'tool' && next.role !== 'user')) flushPendingArtifactNote()
             continue
         }
         if (item.role === 'user') {
             const content = clip(item.content || '', MAX_VISIBLE)
-            if (content.trim()) out.push({ role: 'user', content })
+            if (pendingArtifactNote) {
+                const note = pendingArtifactNote
+                pendingArtifactNote = null
+                pushUserContent(content.trim() ? `${note}\n\n${content}` : note)
+            } else {
+                pushUserContent(content)
+            }
             continue
         }
         if (item.role !== 'assistant') continue
+        flushPendingArtifactNote()
         const toolCalls = (item.tool_calls || [])
             .filter((call) => call && call.id && call.name)
             .slice(0, 4)
@@ -113,16 +167,22 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
                         ? call.thoughtSignature
                         : undefined,
             }))
-        // Latest on-screen artifact keeps body; older turns keep id/title only.
-        const content = formatHistoryContent(item, {
-            includeArtifactBodies: index === lastArtifactIndex,
-        })
-        if (!content.trim() && toolCalls.length === 0) continue
+        // Public prose only — never inline on-screen artifact dumps into assistant content.
+        const content = formatHistoryContent(item)
+        if (!content.trim() && toolCalls.length === 0 && !item.artifacts?.length) continue
         out.push({
             role: 'assistant',
             content,
             tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
         })
+        if (item.artifacts?.length) {
+            const note = formatOnScreenArtifactsNote(item.artifacts, {
+                includeArtifactBodies: index === lastArtifactIndex,
+            })
+            // Always defer — flush before next assistant, merge into next user, or at end.
+            if (note) pendingArtifactNote = note
+        }
     }
+    flushPendingArtifactNote()
     return out
 }

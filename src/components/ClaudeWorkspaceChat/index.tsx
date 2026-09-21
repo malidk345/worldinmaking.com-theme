@@ -161,20 +161,30 @@ function sanitizePublicAssistantText(value: string): string {
   );
 }
 
-/** Reload / crash mid-stream can leave isStreaming:true in localStorage — settle as stopped. */
+/** Reload / crash mid-stream can leave isStreaming:true in localStorage — settle as stopped.
+ * Also scrub host/tool artifact leaks left in older assistant bubbles. */
 function settleInterruptedStreams(chats: Chat[]): Chat[] {
   let changed = false
   const next = chats.map((chat) => {
     let msgChanged = false
     const messages = (chat.messages || []).map((message) => {
-      if (!message.isStreaming) return message
+      let nextMessage = message
+      if (message.role === 'assistant' && message.content) {
+        const cleaned = sanitizePublicAssistantText(message.content)
+        if (cleaned !== message.content) {
+          nextMessage = { ...nextMessage, content: cleaned }
+          msgChanged = true
+          changed = true
+        }
+      }
+      if (!nextMessage.isStreaming) return nextMessage
       msgChanged = true
       changed = true
       return {
-        ...message,
+        ...nextMessage,
         isStreaming: false,
         isTypingDone: true,
-        stopped: message.stopped ?? true,
+        stopped: nextMessage.stopped ?? true,
       }
     })
     return msgChanged ? { ...chat, messages } : chat
@@ -1359,7 +1369,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       const conversationHistory: Array<Record<string, unknown>> = []
       for (const message of baseMessages.filter((item) => item.role === 'user' || item.role === 'assistant').slice(-6)) {
-        let msgContent = message.content;
+        let msgContent =
+          message.role === 'assistant' ? sanitizePublicAssistantText(message.content) : message.content;
         if (message.role === 'user' && message.attachments && message.attachments.length > 0) {
           const docSnippet = message.attachments
             .filter((a) => a.type !== 'image' && (a.content || a.contentPreview))
