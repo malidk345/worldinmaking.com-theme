@@ -417,12 +417,23 @@ function InquiryStatusCard({
   onRetry,
   onOpenByok,
 }: {
-  kind: 'quota' | 'provider' | 'network'
+  kind: 'quota' | 'provider' | 'network' | 'auth' | 'timeout' | 'server'
   text: string
   onRetry?: () => void
   onOpenByok?: () => void
 }) {
-  const title = kind === 'quota' ? 'Inquiry limit' : kind === 'provider' ? 'Philosopher network' : 'Connection'
+  const title =
+    kind === 'quota'
+      ? 'Inquiry limit'
+      : kind === 'provider'
+        ? 'Philosopher network'
+        : kind === 'auth'
+          ? 'Session'
+          : kind === 'timeout'
+            ? 'Taking too long'
+            : kind === 'server'
+              ? 'Temporary issue'
+              : 'Connection'
   const body = text.replace(/^\[app\]\s*/, '').replace(/^Chat API \d+\s*/, '').trim()
   return (
     <div role="status" aria-live="polite" className="mt-2 rounded border border-primary/50 bg-accent/60 px-3 py-2.5 text-[12.5px] text-primary">

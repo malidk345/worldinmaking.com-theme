@@ -75,6 +75,14 @@ import { toolStatusLabel } from '../../lib/bots/tools/labels';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
 import { stripLeakedToolMarkup } from '../../lib/bots/tools/leak';
 import { resolveHumanTurn } from '../../lib/human-turn-ux';
+import {
+  classifyChatStreamError,
+  isAbortError,
+  shouldSilentRetryChatStream,
+  chatStreamErrorTelemetryProps,
+  userFacingChatStreamMessage,
+} from '../../lib/chat-stream-errors';
+import usePostHog from '../../hooks/usePostHog';
 
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
@@ -153,24 +161,6 @@ function sanitizePublicAssistantText(value: string): string {
   );
 }
 
-function isAbortError(err: unknown): boolean {
-  if (!err) return false
-  if (err === 'client-stop') return true
-  if (typeof err === 'string') {
-    const lower = err.toLowerCase()
-    return lower.includes('abort') || lower.includes('client-stop')
-  }
-  if (typeof err === 'object') {
-    const e = err as { name?: unknown; message?: unknown; code?: unknown }
-    if (e.name === 'AbortError') return true
-    if (e.code === 20) return true // DOMException.ABORT_ERR
-    const msg = String(e.message || '').toLowerCase()
-    if (msg.includes('aborted') || msg.includes('abort') || msg.includes('client-stop')) return true
-  }
-  return false
-}
-
-
 /** Reload / crash mid-stream can leave isStreaming:true in localStorage — settle as stopped. */
 function settleInterruptedStreams(chats: Chat[]): Chat[] {
   let changed = false
@@ -221,6 +211,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   // App Context for openNewChat params
   const app = useApp();
   const { user } = useUser();
+  const posthog = usePostHog();
   const { chatParams, setChatParams } = app;
   const processedInitialQuestionRef = useRef<string | null>(null);
   // Subscribe to windows via dedicated context so we re-render when windows change
@@ -1331,6 +1322,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let backendError = false;
     let streamErrorKind: Message["errorKind"] | undefined;
     let streamedQualityGate: Message["qualityGate"] | undefined;
+    const streamStartedAt = Date.now();
+    let streamChunkCount = 0;
+    let streamByteLength = 0;
+    let networkRetryUsed = false;
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1405,11 +1400,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (activeController.signal.aborted || abortControllerRef.current !== activeController) {
         return;
       }
-      const sseRes = await fetch('/api/chat', {
-        method: 'POST',
-        headers: authHeaders,
-        signal: activeController.signal,
-        body: JSON.stringify({
+      const chatRequestBody = JSON.stringify({
           prompt: effectivePrompt,
           byok: getActiveByokPayload(),
           modelId: selectedModelId,
@@ -1495,8 +1486,43 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               memories: ScratchpadStore.getState().memories.map((m) => ({ fact: m.fact, category: m.category })),
             },
           },
-        }),
       });
+      let sseRes: Response | undefined;
+      for (let fetchAttempt = 0; ; fetchAttempt += 1) {
+        try {
+          sseRes = await fetch('/api/chat', {
+            method: 'POST',
+            headers: authHeaders,
+            signal: activeController.signal,
+            body: chatRequestBody,
+          });
+          break;
+        } catch (fetchErr) {
+          if (isAbortError(fetchErr)) throw fetchErr;
+          const classifiedFetch = classifyChatStreamError({ err: fetchErr });
+          if (
+            shouldSilentRetryChatStream({
+              classified: classifiedFetch,
+              hadPublicText: Boolean(accumulatedContent.trim()),
+              attempt: fetchAttempt,
+            }) &&
+            !activeController.signal.aborted
+          ) {
+            networkRetryUsed = true;
+            continue;
+          }
+          const fail = new Error(
+            String((fetchErr as { message?: unknown } | undefined)?.message || classifiedFetch.userMessage || 'Failed to fetch')
+          ) as Error & { kind?: Message['errorKind'] };
+          if (classifiedFetch.kind !== 'abort') fail.kind = classifiedFetch.kind;
+          throw fail;
+        }
+      }
+      if (!sseRes) {
+        const fail = new Error('Failed to fetch') as Error & { kind?: Message['errorKind'] };
+        fail.kind = 'network';
+        throw fail;
+      }
 
       if (!sseRes.ok || !sseRes.body) {
         let errorMessage = `Chat API ${sseRes.status}`;
@@ -1508,29 +1534,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         } catch {
           /* use status text */
         }
-        const fail = new Error(errorMessage) as Error & { kind?: Message["errorKind"] };
-        if (
-          sseRes.status === 429 ||
-          errCode.startsWith("QUOTA_") ||
-          errCode === "RATE_LIMITED" ||
-          errCode === "RATE_LIMIT_UNAVAILABLE" ||
-          errorMessage.includes("[app]") ||
-          (sseRes.status === 503 &&
-            (errCode.startsWith("QUOTA_") ||
-              errCode === "RATE_LIMIT_UNAVAILABLE" ||
-              errorMessage.includes("[app]")))
-        ) {
-          fail.kind = "quota";
-        } else if (
-          errCode === "PROVIDER_UNAVAILABLE" ||
-          errCode === "EMPTY_REPLY" ||
-          errCode === "TOOLS_REQUIRED" ||
-          errCode === "CHAT_FAILED"
-        ) {
-          fail.kind = "provider";
-        } else {
-          fail.kind = "network";
-        }
+        const classifiedHttp = classifyChatStreamError({
+          httpStatus: sseRes.status,
+          code: errCode,
+          message: errorMessage,
+        });
+        const fail = new Error(errorMessage) as Error & {
+          kind?: Message["errorKind"];
+          httpStatus?: number;
+          code?: string;
+        };
+        if (classifiedHttp.kind !== "abort") fail.kind = classifiedHttp.kind;
+        fail.httpStatus = sseRes.status;
+        if (errCode) fail.code = errCode;
         throw fail;
       }
 
@@ -1559,6 +1575,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
         const { value, done } = readResult;
         if (done) break;
+        if (value) {
+          streamChunkCount += 1;
+          streamByteLength += value.byteLength;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const frames = buffer.split('\n\n');
@@ -1990,26 +2010,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
             const errCode = (parsed as { code?: string }).code || '';
-            if (
-              errCode === 'PROVIDER_UNAVAILABLE' ||
-              errCode === 'EMPTY_REPLY' ||
-              errCode === 'TOOLS_REQUIRED' ||
-              errCode === 'CHAT_FAILED'
-            ) {
-              streamErrorKind = 'provider';
-            } else if (
-              errCode.startsWith('QUOTA_') ||
-              errCode === 'RATE_LIMITED' ||
-              errCode === 'RATE_LIMIT_UNAVAILABLE' ||
-              (parsed.message || '').includes('[app]')
-            ) {
-              streamErrorKind = 'quota';
-            } else {
-              streamErrorKind = 'network';
-            }
-            const safeMessage = scrubSecretMaterial(
-              String(parsed.message || 'Philosopher network unavailable.').trim()
-            ) || 'Philosopher network unavailable.';
+            const classifiedSse = classifyChatStreamError({
+              code: errCode,
+              message: String(parsed.message || ''),
+            });
+            streamErrorKind =
+              classifiedSse.kind === 'abort' ? undefined : classifiedSse.kind;
+            const rawSseMessage = String(parsed.message || '').trim();
+            const preferredSseCopy =
+              (classifiedSse.kind === 'quota' || classifiedSse.kind === 'provider') && rawSseMessage
+                ? rawSseMessage
+                : classifiedSse.userMessage;
+            const safeMessage =
+              scrubSecretMaterial(preferredSseCopy) || classifiedSse.userMessage;
             const hasPublicReply = Boolean(accumulatedContent.trim());
             updateAssistantMessage(targetChatId, assistantMessageId, {
               content: hasPublicReply
@@ -2179,17 +2192,33 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         })
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
-        
+
         const displayContent = visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent));
         const scrubbedError = scrubSecretMaterial(String(err?.message || '')).replace(/\s+/g, ' ').trim();
-        const errKind = ((err as any).kind || streamErrorKind) as Message["errorKind"] | undefined;
+        const httpStatus =
+          typeof (err as { httpStatus?: unknown })?.httpStatus === 'number'
+            ? (err as { httpStatus: number }).httpStatus
+            : undefined;
+        const errCode =
+          typeof (err as { code?: unknown })?.code === 'string'
+            ? (err as { code: string }).code
+            : undefined;
+        const classified = classifyChatStreamError({
+          err,
+          httpStatus,
+          code: errCode,
+          message: scrubbedError,
+        });
+        const stampedKind = (err as { kind?: Message['errorKind'] })?.kind;
+        const errKind = (stampedKind ||
+          streamErrorKind ||
+          (classified.kind !== 'abort' ? classified.kind : undefined)) as
+          | Message['errorKind']
+          | undefined;
         // Prefer product-safe inquiry copy over raw fetch/network dumps; keep no-content special-case.
-        const productSafeFallback =
-          errKind === 'quota'
-            ? 'Inquiry limit reached. Please try again shortly.'
-            : errKind === 'provider'
-              ? 'Philosopher network unavailable.'
-              : 'The reply could not be completed because of a connection error.';
+        const productSafeFallback = errKind
+          ? userFacingChatStreamMessage(errKind, { message: scrubbedError })
+          : classified.userMessage;
         const errorMessage = displayContent
           ? displayContent
           : scrubbedError === 'AI returned no content'
@@ -2207,6 +2236,26 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             ? {}
             : { errorKind: errKind || 'network' }),
         });
+
+        // Best-effort PostHog — never block UX; no prompt/email/message body.
+        try {
+          const telemetryKind = errKind || (classified.kind !== 'abort' ? classified.kind : 'network');
+          posthog?.capture?.(
+            'wim chat stream fail',
+            chatStreamErrorTelemetryProps({
+              kind: telemetryKind,
+              httpStatus,
+              hadPublicText: Boolean(displayContent.trim()),
+              durationMs: Date.now() - streamStartedAt,
+              chunkCount: streamChunkCount,
+              byteLength: streamByteLength,
+              agentMode: turnAgentMode,
+              retried: networkRetryUsed,
+            })
+          );
+        } catch {
+          /* telemetry must never break chat */
+        }
       }
     } finally {
       // Always queue a remote persist for this chat's settled rows.
