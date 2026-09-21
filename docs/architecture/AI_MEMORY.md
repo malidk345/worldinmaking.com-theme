@@ -52,11 +52,21 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** WIM AI chat stream connection-error classification + telemetry (see §5).
+- **Task:** Fix public answer leaking into Thinking UI during host think phase (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (fix: think-phase content must not paint Thought UI)
+- **Scope:** User (TR): planning-round draft/full answer was streaming into ThinkingBlock via `runThinkPhase` absorb of `onToken` → `emitThoughtDelta` → SSE `activity` thought. Demux→onThinking (billing) is unrelated — focus think-phase absorb only. Open PR, do not merge.
+- **Root cause:** `absorb(delta, fromNative)` routed BOTH native thinking and content tokens into `emitThoughtDelta` when `nativeThought === 0` (common on Gemini THINK with `thinkingBudget: 0`). `holdPublicUntilCitations` made public look empty while Thought filled with the draft.
+- **Fix (minimal):** In `runThinkPhase`, content/`onToken` updates `thinkingText` only (keeps `cycleThought` + `extractFallbackAnswerFromThinking` recovery). Only native `onThinking` / final `reasoning` calls `emitThoughtDelta`. Decision/tools public `onToken` path unchanged.
+- **Tests:** `pipeline.test.ts` — content draft not in Thought UI/activity; empty-public fallback still recovers draft; decision-round native onThinking still paints when think phase skipped.
+- **Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/pipeline.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts`
+- **Handoff:** PR `fix/wim-ai-think-content-not-thought-ui` — do not merge from agent.
+- **Residual:** Providers that only emit planning as content (no native thoughts) will show an empty live Thought during the host THINK round; plan still reaches the decision round via `cycleThought`. Content discarded when nativeThought > 0 (pre-existing).
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: WIM AI turn lifecycle solidity after #773)
 - **Scope:** User (TR): #773 merged; do not drop controls — harden remaining high-confidence gaps across thinking→done, error classification, silent retry, scroll pin, human interrupt, edge empty-after-think, telemetry. Open PR(s), do not merge.

@@ -276,12 +276,26 @@ async function runThinkPhase(
     postTool = false
 ): Promise<void> {
     let nativeThought = 0
+    /**
+     * Think-phase demux:
+     * - Native reasoning (onThinking) → Thought UI + thinkingText.
+     * - Content tokens (onToken) → thinkingText only (cycleThought / empty-public
+     *   fallback). Never live-stream content into Thought — models often draft a
+     *   full answer in the planning round, which previously painted ThinkingBlock.
+     */
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
-        if (fromNative) nativeThought += delta.length
-        else if (nativeThought > 0) return
+        if (fromNative) {
+            nativeThought += delta.length
+            state.thinkingText += delta
+            emitThoughtDelta(params, thoughtId, delta)
+            return
+        }
+        // Content during think: never live-stream into Thought UI. If native reasoning
+        // already arrived, drop content (same as before). Otherwise buffer into
+        // thinkingText for cycleThought / extractFallbackAnswerFromThinking only.
+        if (nativeThought > 0) return
         state.thinkingText += delta
-        emitThoughtDelta(params, thoughtId, delta)
     }
     const started = state.thinkingText.length
     const think = await params.complete({
