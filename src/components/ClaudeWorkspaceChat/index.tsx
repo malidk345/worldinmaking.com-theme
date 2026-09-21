@@ -107,6 +107,11 @@ import {
 } from '../../lib/chat-remote';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
+import {
+  computePinSpacerHeight,
+  elementOffsetInScroller,
+  scrollElementToScrollerTop,
+} from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
@@ -821,6 +826,48 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const userInteractingRef = useRef(false);
   const autoScrollRef = useRef(true);
   const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
+  const pinSpacerRef = useRef<HTMLDivElement>(null);
+  const [pinSpacerHeight, setPinSpacerHeight] = useState(0);
+
+  /** Pin a user bubble to the top of the chat AppWindow scroller (not page). */
+  const pinUserMessageToTop = useCallback((messageId: string) => {
+    autoScrollRef.current = false;
+    userInteractingRef.current = false;
+    setIsAwayFromBottom(true);
+
+    const escapeId =
+      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+        ? CSS.escape(messageId)
+        : messageId.replace(/"/g, '\\"');
+
+    const attemptPin = (attempt: number) => {
+      const scroller = chatScrollRef.current;
+      if (!scroller || !messageId) return;
+      const el = scroller.querySelector(`[data-message-id="${escapeId}"]`) as HTMLElement | null;
+      if (!el) {
+        if (attempt < 8) requestAnimationFrame(() => attemptPin(attempt + 1));
+        return;
+      }
+
+      const currentSpacer = pinSpacerRef.current?.offsetHeight ?? 0;
+      const contentExcludingSpacer = scroller.scrollHeight - currentSpacer;
+      const messageOffset = elementOffsetInScroller(scroller, el);
+      const nextSpacer = computePinSpacerHeight(
+        scroller.clientHeight,
+        contentExcludingSpacer,
+        messageOffset
+      );
+      // Apply spacer synchronously so scrollTop math can reach the message top
+      // in this frame; React state keeps it for subsequent renders.
+      if (pinSpacerRef.current) {
+        pinSpacerRef.current.style.height = `${nextSpacer}px`;
+      }
+      setPinSpacerHeight(nextSpacer);
+      scrollElementToScrollerTop(scroller, el);
+    };
+
+    attemptPin(0);
+  }, []);
 
   const pinChatToBottom = useCallback(() => {
     // Stick only when the user is near bottom (autoScrollRef). Do NOT bail on
@@ -951,8 +998,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   useEffect(() => {
     if (!pinBottomOnNextChatRef.current) return;
     pinBottomOnNextChatRef.current = false;
+    setPinSpacerHeight(0);
     scrollChatToBottom('auto');
-  }, [activeChatId]);
+  }, [activeChatId, scrollChatToBottom]);
 
   // Handle New Chat Creation
   const handleNewChat = (projId?: string) => {
@@ -1048,7 +1096,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         messages: [],
       };
       setChats((prev) => [newChat, ...prev]);
-      pinBottomOnNextChatRef.current = true;
+      // New chat created by send: top-align the user bubble (do not arm stick-to-bottom).
       setActiveChatId(newChat.id);
       targetChatId = newChat.id;
     }
@@ -1144,10 +1192,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     setIsStreaming(true);
     setStreamStatus('thinking');
-    // Keep stick-to-bottom armed; rAF waits for the new bubbles to lay out.
-    // Use 'auto' so the first tokens cannot race a smooth animation mid-flight.
-    setIsAwayFromBottom(false);
-    requestAnimationFrame(() => scrollChatToBottom('auto'));
+    // On a new user send: pin the user bubble to the TOP of the chat pane.
+    // Do not arm stick-to-bottom (no forced pull-down). #766 stick still resumes
+    // if the user later scrolls to the bottom intentionally during the stream.
+    // skipUserAppend (Continue / resume) keeps prior near-bottom stick behavior.
+    if (!options?.skipUserAppend) {
+      pinBottomOnNextChatRef.current = false;
+      autoScrollRef.current = false;
+      userInteractingRef.current = false;
+      setIsAwayFromBottom(true);
+      const pinId = userMessage.id;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => pinUserMessageToTop(pinId));
+      });
+    } else {
+      setIsAwayFromBottom(false);
+      requestAnimationFrame(() => scrollChatToBottom('auto'));
+    }
     abortActiveStream();
     const streamEpoch = ++streamEpochRef.current;
     const activeController = new AbortController();
@@ -2783,6 +2844,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   }
                 />
               ))}
+              <div
+                ref={pinSpacerRef}
+                aria-hidden
+                className="pointer-events-none w-full shrink-0"
+                style={{ height: pinSpacerHeight }}
+              />
               <div ref={chatBottomRef} className="h-px w-full" />
             </div>
           )}

@@ -52,11 +52,21 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** WIM AI ask_user / human-turn composer unlock (see §5).
+- **Task:** WIM AI remove quota limit bar + pin user message to chat viewport top on send (see §5).
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-21 — Grok Bot / Cursor (UX: WIM AI hide quota bar + pin user send to top)
+- **Scope:** User (TR): (1) remove the bottom quota/usage “limit çizgisi” under the chat composer; (2) on send, pin the new user bubble to the **top** of the WIM AI AppWindow chat scroller (not the page), with the assistant reply streaming below — no forced stick-to-bottom; manual scroll remains free; each new send re-pins that user message to the top.
+- **Change:**
+  1. Removed the thin `role="meter"` weekly token progress bar under `ChatInput` (kept fail-closed send block + “weekly limit reached” copy; sidebar Usage meter unchanged).
+  2. On send (`!skipUserAppend`): disarm `autoScrollRef`, compute a bottom pin-spacer, `scrollTop` so `[data-message-id]` user bubble aligns to the scroller viewport top (`chat-scroll` helpers). #766 stick-during-stream still resumes if the user scrolls to bottom intentionally.
+  3. Chat switch / new-chat-from-sidebar still lands at bottom; send-created chats no longer arm bottom-pin.
+- **Files:** `ChatInput.tsx`, `ChatMessage.tsx`, `ClaudeWorkspaceChat/index.tsx`, `src/lib/chat-scroll.ts`, `tests/chat-scroll.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`. Manual: send → user bubble at top of pane, reply grows below; scroll up/down free; scroll to bottom mid-stream → stick resumes; send again → new user bubble jumps to top; quota bar gone under composer; limit-reached text still shows when blocked.
+- **Handoff:** PR `ux/wim-ai-pin-send-top-hide-quota-bar`. Residual: very tall user bubbles may sit partially under the scroller top mask (`pt-9` fade); spacer height is per-pin and resets on chat switch.
 
 ### 2026-09-21 — Grok Bot / Cursor (fix: ask_user card stuck in composer)
 - **Scope:** User (TR): ask_user card often broken / stuck in the input field; plan approval, human interrupt, and input lock feel intermittent.
