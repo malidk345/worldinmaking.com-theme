@@ -52,12 +52,22 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Mobile upward jump reframed — AppWindow height-only chrome resize (not chat pin). Fix PR `fix/mobile-viewport-chrome-window-jump`.
+- **Task:** LOCAL-FIRST chat persistence — IndexedDB primary + optional Supabase sync (`feat/wim-ai-chat-idb-local-first`).
+
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-22 — Grok Bot / Cursor (feat: chat local-first IndexedDB + open-thread sync guards)
+
+- **Scope:** User chose IndexedDB + optional Supabase sync. Source of truth while viewing = in-memory + IndexedDB; cloud sync kept for dual-device / share / account claim.
+- **Local:** Reuse `wim_local_first_db` (DB v2) with new `chats` object store. Migrate `claude_workspace_chats_v7` LS → IDB once on boot; LS remains write-through / sync cold-start. `writeLocalChats` dual-writes; pagehide also flushes IDB.
+- **Sync guards:** `guardOpenThreadRemote` + `mergeChats({ preferLocalIds })` — never wipe open thread with metadata stubs; mid-stream prefers local merge-by-id; `noteSelfChatPush` / `shouldSuppressSelfEchoHydrate` skips active-chat hydrate echo after push (list/sidebar still updates).
+- **Files:** `indexeddb-storage.ts`, `chat-local.ts`, `chat-remote.ts`, `chat-merge.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-local-idb.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm exec playwright test tests/chat-local-idb.spec.ts tests/chat-merge.spec.ts`
+- **Handoff:** Do not couple to scroll/pin. Cloud sync must stay.
 
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: mobile chat upward jump = AppWindow chrome resize, NOT chat pin)

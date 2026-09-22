@@ -49,15 +49,61 @@ function hasPersistableMessages(chat: Chat | undefined): boolean {
     )
 }
 
+function hasLocalThreadContent(chat: Chat | undefined): boolean {
+    if (!chat?.messages?.length) return false
+    return (
+        hasPersistableMessages(chat) ||
+        chat.messages.some((message) => Boolean(message.isStreaming) || String(message.content || '').trim().length > 0)
+    )
+}
+
+export type OpenThreadGuard = 'merge-prefer-local' | 'merge-prefer-remote'
+
+/**
+ * Open-thread remote hydrate guard.
+ * Never replace an open/local thread from remote unless remote updatedAt is newer,
+ * not mid-stream, and remote is not a metadata stub fighting local messages.
+ * Callers should still merge-by-id (never wipe); this only chooses prefer side.
+ */
+export function guardOpenThreadRemote(
+    local: Chat | undefined,
+    remote: Chat,
+    opts: { midStream?: boolean } = {}
+): OpenThreadGuard {
+    if (!local) return 'merge-prefer-remote'
+    if (opts.midStream) return 'merge-prefer-local'
+
+    const remoteIsStub = !hasPersistableMessages(remote)
+    const localHasContent = hasLocalThreadContent(local)
+    if (remoteIsStub && localHasContent) return 'merge-prefer-local'
+
+    const remoteTime = Date.parse(remote.updatedAt) || 0
+    const localTime = Date.parse(local.updatedAt) || 0
+    if (remoteTime > localTime) return 'merge-prefer-remote'
+    return 'merge-prefer-local'
+}
+
+export type MergeChatsOptions = {
+    /** Force prefer-local merge for these chat ids (open thread mid-stream / self-echo soft path). */
+    preferLocalIds?: Iterable<string>
+}
+
 /**
  * Dual-device chat merge.
  * - Tombstones always win.
  * - Metadata-only remote stubs (empty messages) must not clobber a local copy that
  *   already has messages / notebook bind / agent plan — common after list GET.
  * - Message bodies merge by id; streaming local rows keep priority until typed done.
+ * - Optional preferLocalIds hardens open-thread / mid-stream against remote replace.
  */
-export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] = []): Chat[] {
+export function mergeChats(
+    local: Chat[],
+    remote: Chat[],
+    deletedIds: string[] = [],
+    opts: MergeChatsOptions = {}
+): Chat[] {
     const dead = new Set(deletedIds)
+    const preferLocal = new Set(opts.preferLocalIds || [])
     const byId = new Map<string, Chat>()
     for (const chat of local) {
         if (!dead.has(chat.id)) byId.set(chat.id, chat)
@@ -72,9 +118,13 @@ export function mergeChats(local: Chat[], remote: Chat[], deletedIds: string[] =
         const remoteTime = Date.parse(chat.updatedAt) || 0
         const localTime = Date.parse(existing.updatedAt) || 0
         const remoteIsStub = !hasPersistableMessages(chat)
-        const localHasMessages = hasPersistableMessages(existing)
+        const localHasMessages = hasLocalThreadContent(existing)
         // A newer metadata-only list row must not beat a message-bearing local draft.
-        const preferRemote = remoteIsStub && localHasMessages ? false : remoteTime >= localTime
+        // Open-thread mid-stream / explicit prefer-local also blocks remote wholesale win.
+        const preferRemote =
+            preferLocal.has(chat.id) || (remoteIsStub && localHasMessages)
+                ? false
+                : remoteTime >= localTime
         const newer = preferRemote ? chat : existing
         const older = newer === chat ? existing : chat
         byId.set(chat.id, {
