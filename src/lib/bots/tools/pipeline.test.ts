@@ -9,11 +9,15 @@ import {
     LOOP_OLD_TOOL_CHARS,
     LOOP_RECENT_TOOL_CHARS,
     LOOP_RECENT_TOOL_KEEP,
+    PLAN_RESEARCH_CLUSTER_N,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
+    thinkInstructionFor,
     THINK_MAX_TOKENS,
     THINK_PLAN_INSTRUCTION,
+    THINK_PLAN_MODE_INSTRUCTION,
     THINK_REFLECT_INSTRUCTION,
+    THINK_REFLECT_PLAN_INSTRUCTION,
     type AgentPipelineParams,
     type ChatMessage,
     type CompletionRound,
@@ -55,6 +59,10 @@ describe('Think token budget', () => {
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).toContain('few short sentences')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
+        expect(thinkInstructionFor('plan', false)).toBe(THINK_PLAN_MODE_INSTRUCTION)
+        expect(thinkInstructionFor('plan', true)).toBe(THINK_REFLECT_PLAN_INSTRUCTION)
+        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/this step only/)
+        expect(PLAN_RESEARCH_CLUSTER_N).toBe(3)
     })
 
     it('does not spend Gemini native thinking on the host THINK round', () => {

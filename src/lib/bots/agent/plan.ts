@@ -4,6 +4,10 @@ export type PlanTodo = {
     id: string
     title: string
     status: PlanStatus
+    /** Short success criteria for this step (prompt/host quality; optional). */
+    done_when?: string
+    /** When true, prefer evidence on scratchpad before marking completed. */
+    needs_evidence?: boolean
 }
 
 const LONG_FORM_RE =
@@ -46,7 +50,13 @@ function findIncoming(prev: PlanTodo, incoming: PlanTodo[]): PlanTodo | undefine
 export function normalizePlan(todos: PlanTodo[]): PlanTodo[] {
     const next = todos
         .filter((todo) => todo.title.trim())
-        .map((todo) => ({ id: todo.id, title: todo.title.trim(), status: todo.status }))
+        .map((todo) => ({
+            id: todo.id,
+            title: todo.title.trim(),
+            status: todo.status,
+            ...(todo.done_when?.trim() ? { done_when: todo.done_when.trim().slice(0, 200) } : {}),
+            ...(todo.needs_evidence ? { needs_evidence: true } : {}),
+        }))
     let kept = false
     for (const todo of next) {
         if (todo.status !== 'in_progress') continue
@@ -74,6 +84,10 @@ export function mergePlan(prev: PlanTodo[], incoming: PlanTodo[]): PlanTodo[] {
             id: String(todo.id || `task_${index + 1}`),
             title: todo.title.trim(),
             status: (['pending', 'in_progress', 'completed'].includes(todo.status) ? todo.status : 'pending') as PlanStatus,
+            ...(typeof todo.done_when === 'string' && todo.done_when.trim()
+                ? { done_when: todo.done_when.trim().slice(0, 200) }
+                : {}),
+            ...(todo.needs_evidence ? { needs_evidence: true as const } : {}),
         }))
     if (!prev.length) return normalizePlan(next)
     if (!next.length) return normalizePlan(prev)
@@ -96,7 +110,12 @@ export function mergePlan(prev: PlanTodo[], incoming: PlanTodo[]): PlanTodo[] {
         const incomingItem = findIncoming(todo, next)
         if (!incomingItem) return todo
         const status = RANK[incomingItem.status] >= RANK[todo.status] ? incomingItem.status : todo.status
-        return { ...todo, status }
+        return {
+            ...todo,
+            status,
+            ...(incomingItem.done_when ? { done_when: incomingItem.done_when } : {}),
+            ...(incomingItem.needs_evidence != null ? { needs_evidence: incomingItem.needs_evidence } : {}),
+        }
     })
     for (const incomingItem of next) {
         const exists = merged.some(
@@ -113,14 +132,16 @@ export function formatPlanBoard(todos: PlanTodo[], mode?: 'ask' | 'plan' | 'exec
     const lines = todos.map((todo, index) => {
         const mark = todo.status === 'completed' ? 'x' : todo.status === 'in_progress' ? '>' : ' '
         const pointer = todo.status === 'in_progress' ? '  ← do this now' : ''
-        return `${index + 1}. [${mark}] ${todo.id}: ${todo.title}${pointer}`
+        const doneWhen = todo.done_when?.trim() ? ` (done when: ${todo.done_when.trim()})` : ''
+        return `${index + 1}. [${mark}] ${todo.id}: ${todo.title}${doneWhen}${pointer}`
     })
     let instruction: string
     if (!current) {
         instruction = 'All steps are completed. Write the user-visible answer. Do not create a new plan.'
     } else if (mode === 'plan') {
+        const criteria = current.done_when?.trim() ? ` Done when: ${current.done_when.trim()}.` : ''
         instruction =
-            `Current step only: "${current.title}". Use tools for THIS step. Do not ask the user what comes next. When it is done, call todo_write with the SAME ids (mark it completed and the next pending item in_progress), then STOP this turn — do not start the next step.`
+            `Current step only: "${current.title}".${criteria} Use tools for THIS step; persist research via write_scratchpad. Do not ask the user what comes next. When it is done, call todo_write with the SAME ids (mark it completed and the next pending item in_progress), then STOP this turn — do not start the next step.`
     } else {
         instruction =
             `Next step: "${current.title}". You may use several tools for it. Do not rewrite this list. When that step is done, call todo_write with the SAME ids: mark it completed and the next pending item in_progress.`

@@ -17,11 +17,16 @@ import { buildThinkingTimeline, shouldShowLiveThinkingIndicator } from '../src/l
 import { isLongFormWriting, mergePlan, normalizePlan, seedLongFormPlan, formatPlanBoard, withHostContext } from '../src/lib/bots/agent/plan'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
 import {
+    finalizePlanReadinessReminder,
+    PLAN_RESEARCH_CLUSTER_N,
     runAgentNodePipeline,
     shouldRunThinkPhase,
+    thinkInstructionFor,
     THINK_MAX_TOKENS,
     THINK_PLAN_INSTRUCTION,
+    THINK_PLAN_MODE_INSTRUCTION,
     THINK_REFLECT_INSTRUCTION,
+    THINK_REFLECT_PLAN_INSTRUCTION,
 } from '../src/lib/bots/tools/pipeline'
 import { geminiToolGenerationConfig } from '../src/lib/bots/tools/gemini'
 import { TOOL_FAMILY_ORDER } from '../src/lib/bots/tools/loop'
@@ -86,7 +91,9 @@ test.describe('Agent modes', () => {
     test('plan mode prefers one focused action per turn', () => {
         const prompt = modeSystemPrompt('plan')
         expect(prompt.toLowerCase()).toMatch(/one focused action per turn|stop this turn|current step only|prefer one/)
+        expect(prompt.toLowerCase()).toMatch(/write_scratchpad|done_when/)
         expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/one focused|prefer one|stop/)
+        expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/write_scratchpad|research cluster/)
     })
 
 
@@ -851,6 +858,144 @@ test.describe('Graph checkpoint resume', () => {
         expect(result.interrupt).toBeFalsy()
         expect(decisionRounds).toBeLessThanOrEqual(2)
         expect(result.text.toLowerCase()).toMatch(/outline|previous plan step|next|finished/)
+    })
+
+    test('plan THINK/REFLECT instructions stay step-scoped', () => {
+        expect(thinkInstructionFor('ask', false)).toBe(THINK_PLAN_INSTRUCTION)
+        expect(thinkInstructionFor('plan', false)).toBe(THINK_PLAN_MODE_INSTRUCTION)
+        expect(thinkInstructionFor('plan', true)).toBe(THINK_REFLECT_PLAN_INSTRUCTION)
+        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/this step only|one tool move/)
+        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).not.toMatch(/plan your entire approach/)
+        expect(THINK_REFLECT_PLAN_INSTRUCTION.toLowerCase()).toMatch(/write_scratchpad|todo_write|stop/)
+        expect(PLAN_RESEARCH_CLUSTER_N).toBe(3)
+    })
+
+    test('finalize_plan readiness soft-gates empty spine and research without scratchpad', () => {
+        expect(
+            finalizePlanReadinessReminder({ todos: [], scratchpad: [] })
+        ).toMatch(/todo spine/i)
+        expect(
+            finalizePlanReadinessReminder({
+                todos: [{ id: 't1', title: 'Outline', status: 'in_progress' }],
+                scratchpad: [],
+            })
+        ).toBeNull()
+        expect(
+            finalizePlanReadinessReminder({
+                todos: [{ id: 't1', title: 'Research sources', status: 'completed' }],
+                scratchpad: [],
+            })
+        ).toMatch(/scratchpad/i)
+        expect(
+            finalizePlanReadinessReminder({
+                todos: [{ id: 't1', title: 'Outline', status: 'in_progress' }],
+                scratchpad: [],
+                usedPlanResearch: true,
+            })
+        ).toMatch(/scratchpad/i)
+        expect(
+            finalizePlanReadinessReminder({
+                todos: [{ id: 't1', title: 'Research sources', status: 'completed' }],
+                scratchpad: [{ note: 'Kant 1781 cite' }],
+            })
+        ).toBeNull()
+    })
+
+    test('finalize_plan soft-rejects without a todo spine', async () => {
+        let decisionRounds = 0
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools }) => {
+                if (omitTools) return { ok: true as const, content: '', toolCalls: [] }
+                decisionRounds += 1
+                if (decisionRounds === 1) {
+                    return {
+                        ok: true as const,
+                        content: '',
+                        toolCalls: [
+                            {
+                                id: 'c1',
+                                name: 'finalize_plan',
+                                argumentsJson: JSON.stringify({ summary: 'Ready' }),
+                            },
+                        ],
+                    }
+                }
+                return { ok: true as const, content: 'Need a spine first.', toolCalls: [] }
+            },
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'plan something' },
+            ],
+            provider: 'test',
+            agentMode: 'plan',
+            maxSteps: 4,
+        })
+        expect(result.status).not.toBe('awaiting_human')
+        expect(result.interrupt).toBeFalsy()
+    })
+
+    test('plan mode research cluster N stops after scratchpad', async () => {
+        let decisionRounds = 0
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools }) => {
+                if (omitTools) return { ok: true as const, content: '', toolCalls: [] }
+                decisionRounds += 1
+                if (decisionRounds === 1) {
+                    return {
+                        ok: true as const,
+                        content: '',
+                        toolCalls: Array.from({ length: PLAN_RESEARCH_CLUSTER_N }, (_, i) => ({
+                            id: `r${i + 1}`,
+                            name: 'list_notebooks',
+                            argumentsJson: '{}',
+                        })),
+                    }
+                }
+                if (decisionRounds === 2) {
+                    return {
+                        ok: true as const,
+                        content: '',
+                        toolCalls: [
+                            {
+                                id: 's1',
+                                name: 'write_scratchpad',
+                                argumentsJson: JSON.stringify({
+                                    content: 'Notebook inventory synthesis for research step.',
+                                    type: 'synthesis',
+                                }),
+                            },
+                        ],
+                    }
+                }
+                return {
+                    ok: true as const,
+                    content: 'Should stop after research cluster scratchpad.',
+                    toolCalls: [],
+                }
+            },
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'plan a research pass' },
+            ],
+            provider: 'test',
+            agentMode: 'plan',
+            maxSteps: 8,
+        })
+        expect(result.status).toBe('done')
+        expect(decisionRounds).toBeLessThanOrEqual(3)
+        expect(result.interrupt).toBeFalsy()
+    })
+
+    test('formatPlanBoard shows done_when for plan steps', () => {
+        const board = formatPlanBoard(
+            [
+                { id: 't1', title: 'Research', status: 'in_progress', done_when: '3 sources on scratchpad' },
+                { id: 't2', title: 'Outline', status: 'pending' },
+            ],
+            'plan'
+        )
+        expect(board).toContain('done when: 3 sources on scratchpad')
+        expect(board.toLowerCase()).toMatch(/write_scratchpad|current step only/)
     })
 
 

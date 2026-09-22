@@ -26,7 +26,7 @@ export type CheckpointMessage = {
 export type AgentCheckpoint = {
     v: 1
     messages: CheckpointMessage[]
-    todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
+    todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed'; done_when?: string; needs_evidence?: boolean }>
     scratchpad: Array<{ note: string; source?: string }>
     agentMode: AgentMode
     stepCount: number
@@ -108,13 +108,18 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
         ? row.todos
               .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
               .slice(0, 24)
-              .map((item, index) => ({
-                  id: clip(item.id || `task_${index + 1}`, 40),
-                  title: clip(item.title, 120),
-                  status: (['pending', 'in_progress', 'completed'].includes(String(item.status))
-                      ? String(item.status)
-                      : 'pending') as 'pending' | 'in_progress' | 'completed',
-              }))
+              .map((item, index) => {
+                  const doneWhen = typeof item.done_when === 'string' ? clip(item.done_when, 200) : ''
+                  return {
+                      id: clip(item.id || `task_${index + 1}`, 40),
+                      title: clip(item.title, 120),
+                      status: (['pending', 'in_progress', 'completed'].includes(String(item.status))
+                          ? String(item.status)
+                          : 'pending') as 'pending' | 'in_progress' | 'completed',
+                      ...(doneWhen ? { done_when: doneWhen } : {}),
+                      ...(item.needs_evidence === true ? { needs_evidence: true as const } : {}),
+                  }
+              })
               .filter((item) => item.title)
         : []
     const scratchpad = Array.isArray(row.scratchpad)

@@ -51,13 +51,26 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
-- **Task:** Fix WIM AI plan mode quality/flow — no user next-step prompts; one step per turn.
+- **Status:** `[DONE by Grok Bot / Cursor]`
+- **Task:** Plan mode QUALITY pack (THINK/REFLECT + research scratchpad cluster + done_when/finalize gate).
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-22 — Grok Bot / Cursor (feat: plan mode QUALITY pack)
+- **Scope:** User "evet yap" after #792: (A) plan-aware THINK/REFLECT + mode-aware post-tools reminder; (B) research → scratchpad contract + host stop after research cluster; (C) done_when on todos + finalize_plan readiness soft gate.
+- **Choice:** One coherent PR. N=`PLAN_RESEARCH_CLUSTER_N=3` (search→fetch→read without starving; then scratchpad+stop). Soft finalize gate (no brick). Optional `done_when`/`needs_evidence` on todos without breaking persistence.
+- **Change:**
+  1. `pipeline.ts`: `THINK_PLAN_MODE_INSTRUCTION` / `THINK_REFLECT_PLAN_INSTRUCTION`; `thinkInstructionFor`; research cluster counter + awaitingScratchpad → stopAfterTools; plan post-tools reminder (one focused tool / todo+STOP); `finalizePlanReadinessReminder` soft-reject.
+  2. `modes.ts` / `spec.ts`: scratchpad = plan research durability; todo `done_when`; finalize needs spine (+ scratchpad if research ran).
+  3. `plan.ts` / `execute.ts` / `checkpoint.ts`: preserve optional done_when; board shows criteria.
+- **Tests:** agent-modes + pipeline think/cluster/finalize soft-gate.
+- **Files:** `pipeline.ts`, `modes.ts`, `spec.ts`, `plan.ts`, `execute.ts`, `checkpoint.ts`, tests, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run tests/agent-modes.spec.ts src/lib/bots/tools/pipeline.test.ts tests/ai-public-surface.spec.ts --environment node`
+- **Handoff:** PR `feat/wim-ai-plan-mode-quality-pack` — merge when green.
+- **Residual:** Soft gates still depend on model obedience before todo/scratchpad; cluster N=3 is host-tuned (raise if deep multi-fetch research starves).
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: plan mode — no next-step asks + step isolation)
 - **Scope:** User (TR): plan mode broken / low quality — (1) next steps must NOT be asked to the user, (2) each step as its own request is more sensible than one continuous packed plan turn.
