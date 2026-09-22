@@ -122,6 +122,21 @@
 
 
 
+### 2026-09-22 — Grok Bot / Cursor (feat: research speed + breadth pack)
+- **Scope:** User (TR): AI search too slow; wants BOTH more searching/coverage AND more speed WITHOUT sacrificing quality — quality should increase. Question: "how will we do this?"
+- **Bottleneck evidence:** Host already `Promise.all`-s `PARALLEL_READ_TOOLS` (web_search/fetch_url/…) in one ACT, but plan-mode QUALITY pack (#793) prompts said "one focused tool/action" and `PLAN_RESEARCH_CLUSTER_N=3`, which trained the model into serial THINK→ACT→tool rounds. Each round pays provider TTFT (THINK ≤15s + ACT) + search/fetch latency. No per-turn web_search dedupe. Academic/corpus tools were research-counted but missing from the parallel set. Subagent nested reads ran serially.
+- **Choice (implement now — low risk, quality gates kept):** Reframe "one focused move" to allow **parallel research fan-out** for the current step (several web_search/fetch_url in one ACT) while still forbidding packing research+drafting+finalize. Raise cluster N 3→5 so one fan-out can complete before scratchpad stop (#793 residual explicitly allowed raising N). Add academic/corpus to parallel set. Per-pipeline identical-query web_search cache. Parallelize subagent nested reads. Keep THINK/REFLECT + scratchpad + finalize soft gates.
+- **Deferred (needs product call):** Skip post-tool THINK mid-cluster (quality risk); cross-request search cache; stream partial/early scratchpad.
+- **Change:**
+  1. `pipeline.ts`: `PLAN_RESEARCH_CLUSTER_N=5`; plan THINK/REFLECT + post-tool reminders encourage fan-out; expand `PARALLEL_READ_TOOLS`; per-turn `searchCache` for web_search; subagent nested reads `Promise.all`.
+  2. `modes.ts` / `spec.ts`: parallel research fan-out language; tool descriptions note host parallelism.
+  3. Tests: cluster N=5; fan-out prompt assertions.
+- **Files:** `pipeline.ts`, `modes.ts`, `spec.ts`, `pipeline.test.ts`, `agent-modes.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts tests/agent-modes.spec.ts --environment node`
+- **Handoff:** PR `feat/wim-ai-research-speed-breadth` — merge when green.
+- **Residual:** Soft prompt obedience; wall-clock still bounded by slowest tool in the parallel batch + one THINK/ACT round per cluster.
+
+
 ### 2026-09-22 — Grok Bot / Cursor (fix: post-#795 settle collapse + window reflow yank)
 - **Scope:** User (TR, urgent, post-#794/#795): mid-stream pin correct; when reply *finishes*, chat still jumps into older messages. Clue: opening/resizing a window a bit "re-centers" the conversation.
 - **Confirmed root cause (remaining after #795):** Settle called `minSpacerToPreserveScrollTop` **while live Thought/tools were still tall**, then React set `isStreaming:false` and ThinkingBlock collapsed. That drop in `scrollHeight` clamps `scrollTop` into older history. ResizeObserver runs *after* layout clamp, so a post-clamp re-preserve cannot restore the pre-clamp view. #795 tests never collapsed content after the first preserve. AppWindow `clientHeight` growth similarly lowers maxScroll and needs more spacer (opening/resizing a window changes the chat pane — matches the "re-center" clue).

@@ -64,7 +64,7 @@ describe('Think token budget', () => {
         expect(thinkInstructionFor('plan', false)).toBe(THINK_PLAN_MODE_INSTRUCTION)
         expect(thinkInstructionFor('plan', true)).toBe(THINK_REFLECT_PLAN_INSTRUCTION)
         expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/this step only/)
-        expect(PLAN_RESEARCH_CLUSTER_N).toBe(3)
+        expect(PLAN_RESEARCH_CLUSTER_N).toBe(5)
     })
 
     it('spends modest Gemini native thinking on host THINK for early Thought paint', () => {
@@ -80,6 +80,14 @@ describe('Think token budget', () => {
         expect(act.maxOutputTokens).toBe(8192)
         expect(act.thinkingConfig.thinkingBudget).toBe(512)
         expect(act.thinkingConfig.includeThoughts).toBe(true)
+    })
+})
+
+describe('Research breadth + speed pack', () => {
+    it('encourages parallel research fan-out in plan think/reflect', () => {
+        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/parallel|fan-out|2–5|2-5|together/)
+        expect(THINK_REFLECT_PLAN_INSTRUCTION.toLowerCase()).toMatch(/fan out|parallel|together/)
+        expect(PLAN_RESEARCH_CLUSTER_N).toBeGreaterThanOrEqual(5)
     })
 })
 
