@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { coalesceToNextFrame } from '../lib/raf-coalesce'
 
 interface HorizontalScrollFadeState {
     /** Attach to the horizontally scrollable element. */
@@ -47,22 +48,13 @@ export function useHorizontalScrollFade(enabled = true): HorizontalScrollFadeSta
         el.addEventListener('scroll', update, { passive: true })
         window.addEventListener('resize', update)
 
-        // Re-measure when the viewport or its content changes size. Defer the
-        // state write to the next frame so the callback never mutates layout
-        // while ResizeObserver is still delivering — that self-feeding loop is
-        // what makes the browser raise "ResizeObserver loop completed with
-        // undelivered notifications".
+        // Re-measure when the viewport or its content changes size, coalesced to
+        // the next frame so the callback never mutates layout while the observer
+        // is still delivering (see coalesceToNextFrame).
         let resizeObserver: ResizeObserver | undefined
-        let rafId = 0
+        const coalesced = coalesceToNextFrame(update)
         if (typeof ResizeObserver !== 'undefined') {
-            const scheduleUpdate = () => {
-                if (rafId) return
-                rafId = requestAnimationFrame(() => {
-                    rafId = 0
-                    update()
-                })
-            }
-            resizeObserver = new ResizeObserver(scheduleUpdate)
+            resizeObserver = new ResizeObserver(coalesced.schedule)
             resizeObserver.observe(el)
             if (el.firstElementChild) {
                 resizeObserver.observe(el.firstElementChild)
@@ -73,7 +65,7 @@ export function useHorizontalScrollFade(enabled = true): HorizontalScrollFadeSta
             el.removeEventListener('scroll', update)
             window.removeEventListener('resize', update)
             resizeObserver?.disconnect()
-            if (rafId) cancelAnimationFrame(rafId)
+            coalesced.cancel()
         }
     }, [enabled, update])
 

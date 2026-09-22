@@ -124,6 +124,7 @@ import {
   scrollElementToScrollerPin,
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
+import { coalesceToNextFrame } from '../../lib/raf-coalesce';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -1037,45 +1038,40 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('wheel', onWheel, { passive: true });
     scroller.addEventListener('scroll', onScroll, { passive: true });
 
-    // Defer the layout read/write to the next frame so the callback never
-    // mutates spacer height or scrollTop while ResizeObserver is still
-    // delivering — that self-feeding loop is what makes the browser raise
-    // "ResizeObserver loop completed with undelivered notifications".
-    let roRafId = 0;
-    const observer = new ResizeObserver(() => {
-      if (roRafId) return;
-      roRafId = requestAnimationFrame(() => {
-        roRafId = 0;
-        // Pin is stream-only: never re-assert after the turn settles (idle image/font/layout
-        // changes were yanking scrollTop back to the user bubble — upward jumps).
-        if (pinnedMessageIdRef.current && isStreamingRef.current) {
-          maintainPinnedScroll();
-          return;
-        }
-        // Post-settle: Thought/tool collapse or AppWindow clientHeight change can drop
-        // maxScroll under scrollTop. Grow spacer for sticky/saved Y and restore — do not re-pin.
-        if (!pinnedMessageIdRef.current) {
-          const desired = stickyViewScrollTopRef.current;
-          if (desired != null) {
-            applyingPinScrollRef.current = true;
-            const nextSpacer = applyMinSpacerForScrollTop(
-              scroller,
-              pinSpacerRef.current,
-              desired
-            );
-            setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
-            if (Math.abs(scroller.scrollTop - desired) > 1) {
-              scroller.scrollTop = desired;
-            }
-            requestAnimationFrame(() => {
-              applyingPinScrollRef.current = false;
-            });
-          } else {
-            preserveViewWithMinSpacer();
+    // Coalesce the layout read/write to the next frame so the callback never
+    // mutates spacer height or scrollTop while the observer is still delivering
+    // (see coalesceToNextFrame).
+    const coalesced = coalesceToNextFrame(() => {
+      // Pin is stream-only: never re-assert after the turn settles (idle image/font/layout
+      // changes were yanking scrollTop back to the user bubble — upward jumps).
+      if (pinnedMessageIdRef.current && isStreamingRef.current) {
+        maintainPinnedScroll();
+        return;
+      }
+      // Post-settle: Thought/tool collapse or AppWindow clientHeight change can drop
+      // maxScroll under scrollTop. Grow spacer for sticky/saved Y and restore — do not re-pin.
+      if (!pinnedMessageIdRef.current) {
+        const desired = stickyViewScrollTopRef.current;
+        if (desired != null) {
+          applyingPinScrollRef.current = true;
+          const nextSpacer = applyMinSpacerForScrollTop(
+            scroller,
+            pinSpacerRef.current,
+            desired
+          );
+          setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
+          if (Math.abs(scroller.scrollTop - desired) > 1) {
+            scroller.scrollTop = desired;
           }
+          requestAnimationFrame(() => {
+            applyingPinScrollRef.current = false;
+          });
+        } else {
+          preserveViewWithMinSpacer();
         }
-      });
+      }
     });
+    const observer = new ResizeObserver(coalesced.schedule);
     observer.observe(scroller);
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
 
@@ -1084,7 +1080,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.removeEventListener('wheel', onWheel);
       scroller.removeEventListener('scroll', onScroll);
       observer.disconnect();
-      if (roRafId) cancelAnimationFrame(roRafId);
+      coalesced.cancel();
     };
   }, [activeChatId, clearMessagePinPreservingView, maintainPinnedScroll, preserveViewWithMinSpacer, Boolean(activeChat?.messages.length)]);
 

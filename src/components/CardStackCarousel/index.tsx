@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { IconChevronLeft, IconChevronRight } from '@posthog/icons'
 import { usePrefersReducedMotion } from '../Code/usePrefersReducedMotion'
+import { coalesceToNextFrame } from '../../lib/raf-coalesce'
 
 export type CardStackRenderMeta = {
     /** True when this slide is the centered (front) card */
@@ -309,22 +310,14 @@ export function CardStackCarousel({
         }
         measure()
         if (!stageRef.current) return
-        // Defer the measure to the next frame so the observer callback never
-        // reads layout while ResizeObserver is still delivering notifications —
-        // that loop makes the browser raise "ResizeObserver loop completed with
-        // undelivered notifications".
-        let rafId = 0
-        const observer = new ResizeObserver(() => {
-            if (rafId) return
-            rafId = requestAnimationFrame(() => {
-                rafId = 0
-                measure()
-            })
-        })
+        // Coalesce the measure to the next frame so the observer callback never
+        // reads layout while it is still delivering (see coalesceToNextFrame).
+        const coalesced = coalesceToNextFrame(measure)
+        const observer = new ResizeObserver(coalesced.schedule)
         observer.observe(stageRef.current)
         return () => {
             observer.disconnect()
-            if (rafId) cancelAnimationFrame(rafId)
+            coalesced.cancel()
         }
     }, [count, visibleCards.length])
 

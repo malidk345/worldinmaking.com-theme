@@ -63,8 +63,8 @@
 ### 2026-09-22 — PostHog Desktop (fix: drop benign ResizeObserver loop warning from error tracking)
 - **Scope:** Chrome and Safari raise "ResizeObserver loop completed with undelivered notifications" as an unhandled window error. Exception autocapture ingests it, but it is a layout-timing warning with no user-visible failure, so it only adds noise to error tracking on a low-traffic project.
 - **Root cause:** `posthog.init` set no `before_send`, so every occurrence reached error tracking. The loops came from RO callbacks that wrote layout or React state synchronously while the observer was still delivering.
-- **Fix:** (1) `before_send` in `initPostHog` drops any `$exception` whose message contains `ResizeObserver loop`. (2) Deferred the write in each of the three RO callbacks to `requestAnimationFrame` (coalesced, cancelled on cleanup) so the loop stops happening at all.
-- **Files:** `src/lib/wim-posthog.ts`, `src/hooks/useHorizontalScrollFade.tsx`, `src/components/CardStackCarousel/index.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `AI_MEMORY.md`
+- **Fix:** (1) `before_send` in `initPostHog` drops any `$exception` whose message contains `ResizeObserver loop`. (2) Deferred the write in each of the three RO callbacks to the next frame via a shared `coalesceToNextFrame` helper (`src/lib/raf-coalesce.ts`, coalesced + cancelled on cleanup) so the loop stops happening at all.
+- **Files:** `src/lib/wim-posthog.ts`, `src/lib/raf-coalesce.ts`, `src/hooks/useHorizontalScrollFade.tsx`, `src/components/CardStackCarousel/index.tsx`, `src/components/ClaudeWorkspaceChat/index.tsx`, `AI_MEMORY.md`
 - **Verify:** No unit test covers these files (suite is Playwright e2e). `before_send` filter is a deterministic message match; confirm in error tracking that captured events for this issue drop to 0.
 - **Handoff:** PR `posthog-self-driving/fixposthog-drop-benign-resizeobserver-2d3c91`.
 
