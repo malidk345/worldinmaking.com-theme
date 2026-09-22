@@ -129,14 +129,17 @@ test.describe('Human SSE includes plan_approval and ask_user', () => {
         expect(JSON.stringify(turn)).toContain('Use the draft notebook')
     })
 
-    test('OPENAI_CHAT_TOOLS and mode toolkits CONTAIN ask_user', () => {
+    test('OPENAI_CHAT_TOOLS contains ask_user; ask/execute allow it; plan mode excludes it', () => {
         const catalog = OPENAI_CHAT_TOOLS.map((tool) => tool.function.name)
         expect(catalog).toContain('ask_user')
 
-        for (const mode of ['ask', 'plan', 'execute'] as const) {
+        for (const mode of ['ask', 'execute'] as const) {
             const names = toolsForAgentMode(mode).map((tool) => tool.function.name)
             expect(names).toContain('ask_user')
         }
+        const planNames = toolsForAgentMode('plan').map((tool) => tool.function.name)
+        expect(planNames).not.toContain('ask_user')
+        expect(planNames).toContain('finalize_plan')
     })
 })
 
@@ -300,12 +303,12 @@ test.describe('HumanTurnCard answer history wiring', () => {
         const input = readFileSync(resolve('src/components/ClaudeWorkspaceChat/components/ChatInput.tsx'), 'utf8')
         const index = readFileSync(resolve('src/components/ClaudeWorkspaceChat/index.tsx'), 'utf8')
         // Composer: Enter on ask_user requires trimmed non-empty (parity with disabled Answer button)
-        expect(input).toContain("if (pendingHumanTurn.kind === 'ask_user')")
-        expect(input).toContain('if (!trimmed) return')
-        expect(input).toContain("onHumanRespond?.('answer', trimmed)")
-        // Handler: reject empty answer; never fall back to literal "Yes"
+        expect(input).toContain("pendingHumanTurn.kind === 'ask_user'")
+        expect(input).toContain('if (!picked) return')
+        expect(input).toContain("onHumanRespond?.('answer', picked)")
+                // Handler: reject empty answer; never fall back to literal "Yes"
         expect(index).toContain("if (action === 'answer' && !trimmed) return")
-        expect(index).toContain("void handleSendMessage(trimmed, [], { agentMode: 'execute' })")
         expect(index).not.toContain("payload || 'Yes'")
+        expect(index).not.toContain("|| 'Yes'")
     })
 })

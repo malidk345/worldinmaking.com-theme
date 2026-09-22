@@ -2966,23 +2966,26 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               lockShakeNonce={lockShakeNonce}
               nextSectionTitle={
                 !isStreaming &&
-                (activeChat?.agentMode || 'ask') === 'execute' &&
+                ((activeChat?.agentMode || 'ask') === 'execute' || (activeChat?.agentMode || 'ask') === 'plan') &&
                 activeChat?.messages.at(-1)?.role === 'assistant' &&
-                activeChat.messages.at(-1)?.isTypingDone
+                activeChat.messages.at(-1)?.isTypingDone &&
+                !(activeChat?.messages || []).some((item) => item.humanTurn?.status === 'pending')
                   ? (activeChat.activePlan || []).find((item) => item.status === 'in_progress')?.title ||
                     (activeChat.activePlan || []).find((item) => item.status === 'pending')?.title
                   : undefined
               }
+              nextSectionLabel={(activeChat?.agentMode || 'ask') === 'plan' ? 'Next step' : 'Next section'}
               onNextSection={() => {
                 const step =
                   (activeChat?.activePlan || []).find((item) => item.status === 'in_progress') ||
                   (activeChat?.activePlan || []).find((item) => item.status === 'pending')
                 if (!step) return
-                void handleSendMessage(
-                  `Continue with the next plan step: "${step.title}". Write that section into the notebook. Do not skip ahead.`,
-                  [],
-                  { agentMode: 'execute' }
-                )
+                const mode = (activeChat?.agentMode || 'ask') === 'plan' ? 'plan' : 'execute'
+                const prompt =
+                  mode === 'plan'
+                    ? `Continue with the next plan step: "${step.title}". Do only that step. Do not ask me for next steps. When it is done, stop so I can continue.`
+                    : `Continue with the next plan step: "${step.title}". Write that section into the notebook. Do not skip ahead.`
+                void handleSendMessage(prompt, [], { agentMode: mode })
               }}
 
               onDismissNotebookContext={() => {

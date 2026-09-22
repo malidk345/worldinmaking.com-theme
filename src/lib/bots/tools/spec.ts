@@ -325,7 +325,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'ask_user',
             description:
-                'Ask the user a question to clarify ambiguous requirements, confirm destructive actions, or gather necessary input before proceeding. Execution pauses until the user replies. Prefer 2–5 short choices when the answer is a decision; the host always offers free text and skip.',
+                'Ask the user a clarifying question only when a missing fact blocks progress (e.g. which document, which deadline). Never use this to ask what the next steps or plan should be — invent the plan yourself. Not available in plan mode. Execution pauses until the user replies. Prefer 2–5 short choices when the answer is a decision; the host always offers free text and skip.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,

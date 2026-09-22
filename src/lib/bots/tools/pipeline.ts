@@ -302,6 +302,8 @@ export interface AgentState {
     cycleThought: string
     pendingReminder: string
     planNudges: number
+    /** Plan mode: end the turn after completing one todo step (quality isolation). */
+    stopAfterTools: boolean
     execNudges: number
     writeNudges: number
     stepCount: number
@@ -464,7 +466,8 @@ async function runThinkPhase(
     const think = await params.complete({
         messages: withThinkInstruction(
             withHostContext(compactLoopMessages(state.messages), {
-                todos: state.todos,
+            todos: state.todos,
+            mode: state.agentMode,
                 reminder: state.pendingReminder,
                 memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
             }),
@@ -543,6 +546,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const round = await params.complete({
         messages: withHostContext(compactLoopMessages(state.messages), {
             todos: state.todos,
+            mode: state.agentMode,
             thought: state.cycleThought,
             reminder,
             memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
@@ -629,14 +633,14 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         return
     }
 
-    if (state.agentMode === 'plan' && state.stepCount < state.maxSteps && state.planNudges < 2) {
+    if (state.agentMode === 'plan' && !state.stopAfterTools && state.stepCount < state.maxSteps && state.planNudges < 2) {
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.planNudges += 1
         state.pendingReminder =
             state.todos.length === 0
-                ? 'Plan mode is on. Use todo_write or research tools if they help, or write the user-facing piece now.'
-                : 'Continue as needed: research, then finalize_plan so the user can Run, or write the public answer now.'
+                ? 'Plan mode is on. Invent the plan yourself — do not ask the user for next steps. Use todo_write or research tools if they help, or write the user-facing piece now.'
+                : 'One focused action: research the current step or call finalize_plan when ready. Do not ask the user for next steps. Prefer stopping after one step rather than packing the whole plan into this turn.'
         state.phase = 'decision'
         return
     }
@@ -916,9 +920,23 @@ async function runOneToolCall(
                     state.todos.length === 0
                         ? seedLongFormPlan(incoming, String(userPrompt?.content || ''))
                         : incoming
+                const completedBefore = state.todos.filter((todo) => todo.status === 'completed').length
                 state.todos = mergePlan(state.todos as PlanTodo[], seeded)
                 const current = state.todos.find((todo) => todo.status === 'in_progress')
                 const completedCount = state.todos.filter((todo) => todo.status === 'completed').length
+                const advanced = completedCount > completedBefore
+                const hasOpen = state.todos.some((todo) => todo.status !== 'completed')
+                if (state.agentMode === 'plan' && advanced && hasOpen) {
+                    state.stopAfterTools = true
+                }
+                const planStopInstruction =
+                    state.agentMode === 'plan' && advanced && hasOpen && current
+                        ? `Step done. Next is "${current.title}" — STOP this turn now. Do not ask the user for next steps. Do not start the next step until the next request.`
+                        : state.agentMode === 'plan' && current
+                          ? `Current step only: ${current.title}. Do that work, then todo_write with the SAME ids, then STOP this turn.`
+                          : current
+                            ? `Do this step now: ${current.title}. Then todo_write with the SAME ids.`
+                            : 'All steps completed. Write the full user-requested answer in the public bubble now. If they asked for a long article or word count, write that length. No more tools.'
                 executed = {
                     ...executed,
                     result: JSON.stringify({
@@ -927,9 +945,7 @@ async function runOneToolCall(
                         tasks: state.todos,
                         progress: `${completedCount}/${state.todos.length}`,
                         current: current?.title,
-                        instruction: current
-                            ? `Do this step now: ${current.title}. Then todo_write with the SAME ids.`
-                            : 'All steps completed. Write the full user-requested answer in the public bubble now. If they asked for a long article or word count, write that length. No more tools.',
+                        instruction: planStopInstruction,
                     }),
                     summary: current
                         ? `Working on: ${current.title} (${completedCount}/${state.todos.length})`
@@ -1098,7 +1114,13 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
         state.phase = 'synthesis'
         return
     }
-    if (state.stepCount >= state.maxSteps) {
+    if (state.stopAfterTools || state.stepCount >= state.maxSteps) {
+        if (state.stopAfterTools && !state.publicText.trim()) {
+            const nxt = state.todos.find((todo) => todo.status === 'in_progress')
+            state.publicText = nxt
+                ? `Finished the previous plan step. Next: ${nxt.title}.`
+                : 'Finished this plan step.'
+        }
         state.phase = 'synthesis'
     } else {
         state.phase = 'decision'
@@ -1158,6 +1180,7 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         cycleThought: '',
         pendingReminder: '',
         planNudges: 0,
+        stopAfterTools: false,
         execNudges: 0,
         writeNudges: 0,
         stepCount: 0,
