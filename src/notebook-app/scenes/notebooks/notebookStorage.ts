@@ -1,5 +1,6 @@
 import { uuid } from '../../lib/utils/dom'
 import {
+    canSyncNotebooksToRemote,
     deleteNotebookRemote,
     isNotebookRemoteKnownAvailable,
     filterRevokedSharedNotebooks,
@@ -201,6 +202,7 @@ function canPushNotebook(notebook: StoredNotebook): boolean {
 
 function schedulePushNotebook(notebook: StoredNotebook): void {
     if (typeof window === 'undefined') return
+    if (!canSyncNotebooksToRemote()) return
     if (!canPushNotebook(notebook)) return
     const history = getNotebookHistory(notebook.id)
     queueRemote(pushNotebookToRemote(notebook, history))
@@ -209,6 +211,7 @@ function schedulePushNotebook(notebook: StoredNotebook): void {
 
 function schedulePushAll(): void {
     if (typeof window === 'undefined') return
+    if (!canSyncNotebooksToRemote()) return
     const notebooks = readLocalNotebooks().filter(canPushNotebook)
     if (!notebooks.length) return
     const history: Record<string, NotebookVersion[]> = {}
@@ -264,6 +267,7 @@ function mergeRemoteIntoLocal(
 }
 
 function refreshNotebooksFromRemote(claim = false, force = false): void {
+    if (!canSyncNotebooksToRemote()) return
     queueRemote(
         (async () => {
             if (claim) await claimDeviceAccountOnLogin()
@@ -279,6 +283,12 @@ function refreshNotebooksFromRemote(claim = false, force = false): void {
 
 function ensureRemoteHydrate(): void {
     if (typeof window === 'undefined' || hydrateStarted) return
+    if (!canSyncNotebooksToRemote()) {
+        // Guests stay local-only; mark hydrated so UI does not wait on cloud.
+        hydrateStarted = true
+        emitWindowEvent(WIM_NOTEBOOKS_HYDRATED_EVENT)
+        return
+    }
     hydrateStarted = true
     queueRemote(
         (async () => {
@@ -300,6 +310,11 @@ function ensureRemoteHydrate(): void {
 
 function ensureLiveNotebookSync(): void {
     if (typeof window === 'undefined') return
+    if (!canSyncNotebooksToRemote()) {
+        // Guests: local IndexedDB/localStorage only — no realtime/poll/push egress.
+        ensureRemoteHydrate()
+        return
+    }
     if (liveSyncStarted) {
         ensureRemoteHydrate()
         return
