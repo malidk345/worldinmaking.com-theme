@@ -59,6 +59,17 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-22 — Grok Bot / Cursor (fix: post-tool reflect Thought visibility after #775)
+- **Scope:** User (TR): after tools/searches, second Thought (reflect) disappeared; quality (model mastering tool results) must stay. Surgical fix — do not revert #775 wholesale; do not break #785 decision native streaming.
+- **Root cause:** #775 stopped think-phase `onToken` from painting Thought (correct for planning drafts). Gemini THINK uses `omitTools` → `thinkingBudget: 0` / no native thoughts, so post-tool reflect is content-only → reflection ran in-loop (`cycleThought` → `<private_thought>` → ACT) but Thought UI stayed empty.
+- **Fix (minimal):** In `runThinkPhase` `absorb()`, paint content/`onToken` as Thought **only when `postTool`** (hasNewToolResults / `THINK_REFLECT_INSTRUCTION` path). Pre-tool planning content still buffers only (#775). Native `onThinking` unchanged. Decision-round Thought gating still uses `paintedThought` (#785).
+- **Quality:** Already intact — reflect text still sets `cycleThought` and feeds next ACT via `withHostContext`; visibility restored only. Did not invent a Gemini reflect-only thinkingBudget (would need new complete() plumbing; prefer visibility first).
+- **Tests:** `pipeline.test.ts` — post-tool content-only reflect paints Thought; planning draft still excluded; reflect still reaches ACT `private_thought`.
+- **Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/pipeline.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node -t "Think-phase|post-tool reflect"`
+- **Handoff:** PR `fix/wim-ai-post-tool-reflect-thought` — merge expected.
+- **Residual:** Long reflect content could look answer-like in Thought (mitigated by `THINK_REFLECT_INSTRUCTION` "few short sentences"); planning still invisible on content-only Gemini THINK until decision native streams.
+
 ### 2026-09-22 — Grok Bot / Cursor (fix: Safari sticky mint mobile chrome)
 - **Scope:** After keyboard-mint, switching wallpaper updated the scene but Safari toolbar / safe-area gap colors stayed mint.
 - **Root cause:** `syncThemeColorMeta` updated `theme-color` `content` in place. iOS Safari caches theme-color on the meta *node*, so leaving mint kept mint UI chrome. Mint is also the `html { --browser-chrome }` CSS default, amplifying the sticky look if WebKit delayed resampling CSS vars.
