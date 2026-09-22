@@ -3,9 +3,10 @@
  * AppWindow chat pane while the assistant reply streams below.
  *
  * One model: pin-to-message (with small top inset) while the assistant streams.
- * Manual scroll releases the pin; stream settle clears the pin (no idle re-pin)
- * but keeps the minimum bottom spacer needed so scrollTop is not clamped into
- * older history. There is no stick-to-bottom re-arm.
+ * Manual scroll releases the pin; stream settle clears the pin (no idle re-pin).
+ * Settle must remember scrollTop and re-apply min spacer for that *saved* value
+ * after Thought/tool collapse — measuring min spacer before collapse undershoots,
+ * and ResizeObserver runs after the browser has already clamped scrollTop.
  */
 
 /** Small inset so the bubble sits under the scroller top mask, not flush to 0. */
@@ -35,9 +36,9 @@ export function computePinSpacerHeight(
 }
 
 /**
- * Minimum bottom spacer so the current `scrollTop` stays reachable after the
- * pin is released. Removing more than this clamps scrollTop downward and yanks
- * the viewport into older messages (post-#794 settle bug).
+ * Minimum bottom spacer so the given `scrollTop` stays reachable.
+ * Removing more than this clamps scrollTop downward and yanks the viewport
+ * into older messages (post-#794 settle bug).
  */
 export function minSpacerToPreserveScrollTop(
     scrollTop: number,
@@ -47,6 +48,39 @@ export function minSpacerToPreserveScrollTop(
     if (scrollerClientHeight <= 0) return 0
     const needed = scrollTop + scrollerClientHeight - contentHeightExcludingSpacer
     return Math.max(0, Math.ceil(needed))
+}
+
+/**
+ * Sync DOM spacer so `desiredScrollTop` stays reachable. Prefer this over reading
+ * `scroller.scrollTop` after a content shrink — the browser may already have clamped.
+ * Returns the applied spacer height.
+ */
+export function applyMinSpacerForScrollTop(
+    scroller: HTMLElement,
+    spacerEl: HTMLElement | null | undefined,
+    desiredScrollTop: number
+): number {
+    const currentSpacer = spacerEl?.offsetHeight ?? 0
+    const contentExcludingSpacer = scroller.scrollHeight - currentSpacer
+    const nextSpacer = minSpacerToPreserveScrollTop(
+        desiredScrollTop,
+        scroller.clientHeight,
+        contentExcludingSpacer
+    )
+    if (spacerEl && Math.abs(nextSpacer - currentSpacer) >= 1) {
+        spacerEl.style.height = `${nextSpacer}px`
+    }
+    return nextSpacer
+}
+
+/**
+ * Convenience: preserve whatever scrollTop is right now (safe when not yet clamped).
+ */
+export function applyMinSpacerToPreserveScrollTop(
+    scroller: HTMLElement,
+    spacerEl: HTMLElement | null | undefined
+): number {
+    return applyMinSpacerForScrollTop(scroller, spacerEl, scroller.scrollTop)
 }
 
 /**

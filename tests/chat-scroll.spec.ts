@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import {
     CHAT_PIN_TOP_PADDING_PX,
+    applyMinSpacerForScrollTop,
+    applyMinSpacerToPreserveScrollTop,
     computePinSpacerHeight,
     elementOffsetInScroller,
     minSpacerToPreserveScrollTop,
@@ -168,12 +170,162 @@ test.describe('chat-scroll pin-to-message helpers', () => {
         expect(proof.minKeep).toBe(proof.needed)
     })
 
+    test('post-preserve thought collapse clamps; saved-scrollTop restore holds view', async ({ page }) => {
+        // #795 minSpacer while Thought tall, then collapse → clamp. RO sees clamped scrollTop
+        // and cannot restore. Production fix: save scrollTop at settle, grow spacer for the
+        // *saved* value after collapse, write scrollTop back (applyMinSpacerForScrollTop).
+        await page.setContent(`
+          <div id="scroller" style="height:400px;overflow:auto;position:relative;">
+            <div id="history" style="height:2000px;background:#eee;">old</div>
+            <div id="msg" style="height:50px;background:#ccc;">user</div>
+            <div id="reply" style="height:80px;background:#ddd;">short ai</div>
+            <div id="thought" style="height:220px;background:#cfc;">live thought</div>
+            <div id="spacer" style="height:0;pointer-events:none;"></div>
+          </div>
+        `)
+
+        const proof = await page.evaluate((padding) => {
+            const scroller = document.getElementById('scroller') as HTMLElement
+            const msg = document.getElementById('msg') as HTMLElement
+            const thought = document.getElementById('thought') as HTMLElement
+            const spacer = document.getElementById('spacer') as HTMLElement
+
+            const offset =
+                scroller.scrollTop +
+                (msg.getBoundingClientRect().top - scroller.getBoundingClientRect().top)
+            const targetScroll = Math.max(0, offset - padding)
+            const pinNeeded = Math.max(
+                0,
+                Math.ceil(targetScroll + scroller.clientHeight - scroller.scrollHeight)
+            )
+            spacer.style.height = `${pinNeeded}px`
+            scroller.scrollTop = targetScroll
+            const savedScrollTop = scroller.scrollTop
+
+            // Buggy #795: shrink to min while tall, then collapse
+            const minKeepTall = Math.max(
+                0,
+                Math.ceil(
+                    scroller.scrollTop +
+                        scroller.clientHeight -
+                        (scroller.scrollHeight - spacer.offsetHeight)
+                )
+            )
+            spacer.style.height = `${minKeepTall}px`
+            thought.style.height = '24px'
+            void scroller.scrollHeight
+            const afterBugScrollTop = scroller.scrollTop
+            const afterBugMsgTop =
+                msg.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+
+            // Fixed path: restore geometry, save scrollTop, collapse, then
+            // applyMinSpacerForScrollTop(saved) + write scrollTop back
+            thought.style.height = '220px'
+            spacer.style.height = `${pinNeeded}px`
+            scroller.scrollTop = savedScrollTop
+            const saved = scroller.scrollTop
+            thought.style.height = '24px'
+            void scroller.scrollHeight
+            const clamped = scroller.scrollTop
+            const cur = spacer.offsetHeight
+            const excl = scroller.scrollHeight - cur
+            const need = Math.max(0, Math.ceil(saved + scroller.clientHeight - excl))
+            spacer.style.height = `${need}px`
+            scroller.scrollTop = saved
+            void scroller.scrollHeight
+            const afterRestoreScrollTop = scroller.scrollTop
+            const afterRestoreMsgTop =
+                msg.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+
+            return {
+                pinNeeded,
+                minKeepTall,
+                savedScrollTop,
+                afterBugScrollTop,
+                afterBugMsgTop,
+                clamped,
+                need,
+                afterRestoreScrollTop,
+                afterRestoreMsgTop,
+            }
+        }, CHAT_PIN_TOP_PADDING_PX)
+
+        expect(proof.savedScrollTop - proof.afterBugScrollTop).toBeGreaterThan(100)
+        expect(proof.afterBugMsgTop).toBeGreaterThan(CHAT_PIN_TOP_PADDING_PX + 80)
+        expect(proof.clamped).toBeLessThan(proof.savedScrollTop - 50)
+        expect(proof.need).toBeGreaterThan(proof.minKeepTall + 100)
+        expect(Math.abs(proof.afterRestoreScrollTop - proof.savedScrollTop)).toBeLessThan(2)
+        expect(Math.abs(proof.afterRestoreMsgTop - CHAT_PIN_TOP_PADDING_PX)).toBeLessThan(3)
+    })
+
+    test('clientHeight growth: saved scrollTop + applyMinSpacerForScrollTop prevents clamp', async ({
+        page,
+    }) => {
+        await page.setContent(`
+          <div id="scroller" style="height:280px;overflow:auto;position:relative;">
+            <div id="history" style="height:2000px;background:#eee;">old</div>
+            <div id="msg" style="height:50px;background:#ccc;">user</div>
+            <div id="reply" style="height:80px;background:#ddd;">ai</div>
+            <div id="spacer" style="height:0;pointer-events:none;"></div>
+          </div>
+        `)
+
+        const proof = await page.evaluate((padding) => {
+            const scroller = document.getElementById('scroller') as HTMLElement
+            const msg = document.getElementById('msg') as HTMLElement
+            const spacer = document.getElementById('spacer') as HTMLElement
+
+            const offset =
+                scroller.scrollTop +
+                (msg.getBoundingClientRect().top - scroller.getBoundingClientRect().top)
+            const targetScroll = Math.max(0, offset - padding)
+            const pinNeeded = Math.max(
+                0,
+                Math.ceil(targetScroll + scroller.clientHeight - scroller.scrollHeight)
+            )
+            spacer.style.height = `${pinNeeded}px`
+            scroller.scrollTop = targetScroll
+            const saved = scroller.scrollTop
+            const spacerAtShort = spacer.offsetHeight
+
+            // Grow pane without restore → clamp
+            scroller.style.height = '420px'
+            void scroller.scrollHeight
+            const afterGrowNoFix = scroller.scrollTop
+
+            // Production-style: grow spacer for *saved* scrollTop, then write it back
+            const cur = spacer.offsetHeight
+            const excl = scroller.scrollHeight - cur
+            const next = Math.max(0, Math.ceil(saved + scroller.clientHeight - excl))
+            spacer.style.height = `${next}px`
+            scroller.scrollTop = saved
+            void scroller.scrollHeight
+
+            return {
+                saved,
+                spacerAtShort,
+                afterGrowNoFix,
+                next,
+                scrollAfter: scroller.scrollTop,
+                msgTop: msg.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+            }
+        }, CHAT_PIN_TOP_PADDING_PX)
+
+        expect(proof.spacerAtShort).toBeGreaterThan(50)
+        expect(proof.saved - proof.afterGrowNoFix).toBeGreaterThan(50)
+        expect(proof.next).toBeGreaterThan(proof.spacerAtShort + 50)
+        expect(Math.abs(proof.scrollAfter - proof.saved)).toBeLessThan(2)
+        expect(Math.abs(proof.msgTop - CHAT_PIN_TOP_PADDING_PX)).toBeLessThan(3)
+    })
+
     test('helper exports stay wired for CI', () => {
         expect(typeof elementOffsetInScroller).toBe('function')
         expect(typeof scrollElementToScrollerPin).toBe('function')
         expect(typeof scrollElementToScrollerTop).toBe('function')
         expect(typeof computePinSpacerHeight).toBe('function')
         expect(typeof minSpacerToPreserveScrollTop).toBe('function')
+        expect(typeof applyMinSpacerToPreserveScrollTop).toBe('function')
+        expect(typeof applyMinSpacerForScrollTop).toBe('function')
         expect(CHAT_PIN_TOP_PADDING_PX).toBe(16)
     })
 })
