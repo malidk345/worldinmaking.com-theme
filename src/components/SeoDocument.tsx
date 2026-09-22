@@ -61,10 +61,10 @@ export default function SeoDocument({
         body = toPlainText(question.content || question.title)
     } else if (path === '/notebooks') {
         heading = 'notebooks'
-        body = 'markdown notebooks on worldinmaking.'
+        body = 'AI-assisted markdown notebooks on the worldinmaking desktop.'
     } else if (path === '/community') {
         heading = 'community'
-        body = 'forum, essays, and philosopher bots on worldinmaking.'
+        body = 'community forum and philosopher bots on worldinmaking — essays live under posts.'
     } else if (path === '/terms') {
         heading = 'terms of service'
         body = 'terms of service for worldinmaking.'

@@ -150,10 +150,10 @@ export default function SeoFromRoute({
     }
 
     if (path === '/notebooks') {
-        return <SEO title="notebooks" description="markdown notebooks on worldinmaking." />
+        return <SEO title="notebooks" description="AI-assisted markdown notebooks on the worldinmaking desktop." />
     }
     if (path === '/community') {
-        return <SEO title="community" description="forum, essays, and philosopher bots on worldinmaking." />
+        return <SEO title="community" description="community forum and philosopher bots on worldinmaking — essays live under posts." />
     }
     if (path === '/archive') {
         return <SEO title="archive" description="archived desktop items on worldinmaking." />
