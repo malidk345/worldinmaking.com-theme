@@ -52,12 +52,22 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Post-#795 settle jump — keep spacer through Thought collapse; RO trim; window clientHeight.
+- **Task:** Mobile settle sticky wipe race — onScroll must not clear sticky on clamp/scroll; wheel/touch clear sticky after settle.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+
+### 2026-09-22 — Grok Bot / Cursor (fix: mobile settle sticky wipe via onScroll clamp)
+- **Scope:** User "devam" after mobile test-only report. Proven race: #796 saves settle/sticky scrollTop and restores via useLayoutEffect+RO, but `onScroll` cleared those refs whenever `!pinned`. After Thought collapse / soft-keyboard hide the browser clamps `scrollTop` and fires `scroll`, wiping the saved Y before restore → jump into older history (mobile: scrollTop 2020→1824, user bubble 16→212).
+- **Fix (minimal):** Stop clearing `settleScrollTopRef` / `stickyViewScrollTopRef` in `onScroll` when `!pinned`. User intent clears sticky via `wheel` / `touchmove` after settle. Mid-stream pin + #795/#796 preserve math unchanged. touchmove early pin-release during stream left as-is (not broadened).
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/mobile-scroll-race.spec.ts`, `AI_MEMORY.md`
+- **Cleanup:** Do not merge throwaway `scripts/_live-*.mjs` probes.
+- **Verify:** `pnpm exec playwright test tests/mobile-scroll-race.spec.ts tests/chat-scroll.spec.ts`
+- **Handoff:** PR `fix/wim-ai-mobile-settle-sticky-wipe` — merge when green.
+
 
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: post-#795 settle collapse + window reflow yank)
