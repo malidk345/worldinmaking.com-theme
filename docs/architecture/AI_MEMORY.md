@@ -142,6 +142,16 @@
 - **Handoff:** PR branch — do not merge from agent.
 - **Residual:** Prompt-only; models may still ignore and restate. No hard enforcement.
 
+### 2026-09-22 — Grok Bot / Cursor (fix: restore native thinking stream after #775)
+- **Scope:** User (TR): Thought used to stream token-by-token; after #775 it dumps all at once when done. Restore native thinking stream without reintroducing public content into Thought. Soft PR, do not merge.
+- **Root cause:** #775 correctly stopped think-phase `onToken` content from painting Thought. Decision-round live `onThinking` was still gated on `state.cycleThought` — which is also set from content-only think buffers (Gemini THINK `thinkingBudget: 0`). Live native deltas were dropped; final `round.reasoning` still painted when `streamedThought === 0` → Thought arrived as one dump at end of decision.
+- **Fix (minimal):** `runThinkPhase` returns `paintedThought` (true only when native `onThinking` / final reasoning hit `emitThoughtDelta`). Decision suppresses further Thought paint only when `thoughtUiPainted`, not merely when `cycleThought` exists. Final reasoning dump also respects that flag. Content/`onToken` still never live-streams into Thought (#775 intact).
+- **Tests:** `pipeline.test.ts` — content-only think then decision native streams live (multi-delta); native think still suppresses decision re-paint; prior #775 demux tests unchanged.
+- **Files:** `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/tools/pipeline.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node -t "Think-phase|streams decision|does not re-paint|still paints decision"`
+- **Handoff:** PR `fix/wim-ai-thinking-stream-again` — do not merge from agent.
+- **Residual:** Gemini host THINK still has `thinkingBudget: 0` so Thought stays empty during the planning round itself; streaming resumes on the decision round's native thoughts. Providers that only return final `reasoning` (no streamed `onThinking`) still dump once at round end. Public stream / pin scroll / connection errors / artifact leak strips untouched.
+
 ### 2026-09-21 — Grok Bot / Cursor (fix: think-phase content must not paint Thought UI)
 - **Scope:** User (TR): planning-round draft/full answer was streaming into ThinkingBlock via `runThinkPhase` absorb of `onToken` → `emitThoughtDelta` → SSE `activity` thought. Demux→onThinking (billing) is unrelated — focus think-phase absorb only. Open PR, do not merge.
 - **Root cause:** `absorb(delta, fromNative)` routed BOTH native thinking and content tokens into `emitThoughtDelta` when `nativeThought === 0` (common on Gemini THINK with `thinkingBudget: 0`). `holdPublicUntilCitations` made public look empty while Thought filled with the draft.

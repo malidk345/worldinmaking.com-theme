@@ -173,6 +173,100 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         expect(extractFallbackAnswerFromThinking(DRAFT_ANSWER)).toContain(DRAFT_ANSWER)
     })
 
+    it('streams decision native onThinking after content-only think (no Thought dump-at-end)', async () => {
+        let round = 0
+        const thoughtUi: string[] = []
+        const thoughtActivityDeltas: string[] = []
+        const DECISION_THOUGHT_A = 'First native reasoning piece. '
+        const DECISION_THOUGHT_B = 'Second native reasoning piece.'
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            round += 1
+            if (input.omitTools) {
+                // Gemini-style THINK: planning content only, no native thoughts.
+                input.onToken?.(DRAFT_ANSWER)
+                return { ok: true, content: DRAFT_ANSWER, toolCalls: [] }
+            }
+            // Decision: native reasoning streams token-by-token (must reach Thought UI).
+            input.onThinking?.(DECISION_THOUGHT_A)
+            input.onThinking?.(DECISION_THOUGHT_B)
+            input.onToken?.(PUBLIC_ANSWER)
+            return {
+                ok: true,
+                content: PUBLIC_ANSWER,
+                toolCalls: [],
+                reasoning: DECISION_THOUGHT_A + DECISION_THOUGHT_B,
+            }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are a careful philosopher.' },
+                { role: 'user', content: longUserPrompt() },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            onThinking: (piece) => thoughtUi.push(piece),
+            onActivity: (activity: AgentActivity) => {
+                if (activity.kind === 'thought' && activity.delta) {
+                    thoughtActivityDeltas.push(activity.delta)
+                }
+            },
+        })
+
+        expect(round).toBeGreaterThanOrEqual(2)
+        expect(result.ok).toBe(true)
+
+        const thoughtJoined = thoughtUi.join('')
+        const activityJoined = thoughtActivityDeltas.join('')
+        // Live decision native pieces — not a single end-of-round dump of reasoning alone.
+        expect(thoughtUi.length).toBeGreaterThanOrEqual(2)
+        expect(thoughtJoined).toContain(DECISION_THOUGHT_A)
+        expect(thoughtJoined).toContain(DECISION_THOUGHT_B)
+        expect(activityJoined).toContain(DECISION_THOUGHT_A)
+        // #775 guarantee: think-phase draft content still stays out of Thought.
+        expect(thoughtJoined).not.toContain(DRAFT_ANSWER)
+        expect(activityJoined).not.toContain(DRAFT_ANSWER)
+    })
+
+    it('does not re-paint decision native thought when think phase already streamed Thought', async () => {
+        const thoughtUi: string[] = []
+        const NATIVE_THINK = 'Host plan already visible in Thought.'
+        const DECISION_THOUGHT = 'Decision round should stay quiet.'
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            if (input.omitTools) {
+                input.onThinking?.(NATIVE_THINK)
+                return { ok: true, content: '', toolCalls: [], reasoning: NATIVE_THINK }
+            }
+            input.onThinking?.(DECISION_THOUGHT)
+            input.onToken?.(PUBLIC_ANSWER)
+            return {
+                ok: true,
+                content: PUBLIC_ANSWER,
+                toolCalls: [],
+                reasoning: DECISION_THOUGHT,
+            }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are a careful philosopher.' },
+                { role: 'user', content: longUserPrompt() },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            onThinking: (piece) => thoughtUi.push(piece),
+        })
+
+        expect(result.ok).toBe(true)
+        const thoughtJoined = thoughtUi.join('')
+        expect(thoughtJoined).toContain(NATIVE_THINK)
+        expect(thoughtJoined).not.toContain(DECISION_THOUGHT)
+    })
+
     it('still paints decision-round native onThinking when think phase is skipped', async () => {
         const thoughtUi: string[] = []
         const publicTokens: string[] = []
