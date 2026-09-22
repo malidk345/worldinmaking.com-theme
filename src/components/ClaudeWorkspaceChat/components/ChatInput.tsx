@@ -76,8 +76,6 @@ interface ChatInputProps {
   isStreaming: boolean;
   selectedStylePreset?: StylePresetId;
   onChangeStylePreset?: (preset: StylePresetId) => void;
-  onScrollToBottom?: () => void;
-  showScrollToBottom?: boolean;
   models?: any[];
   selectedModelId?: string;
   onSelectModel?: (id: string) => void;
@@ -100,8 +98,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   onStopStreaming,
   isStreaming,
-  onScrollToBottom,
-  showScrollToBottom = true,
   models = [],
   selectedModelId = 'nietzsche',
   onSelectModel,
@@ -465,21 +461,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </button>
         </div>
       ) : null}
-      {/* Overlay so the button never pushes the composer */}
-      {showScrollToBottom && slashMatches.length === 0 && !(nextSectionTitle && !awaitingHuman) && (
-        <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)]">
-          <button
-            type="button"
-            onClick={onScrollToBottom}
-            className={`pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/90 backdrop-blur-md border border-primary/50 shadow-sm text-secondary hover:bg-accent cursor-pointer transition-transform active:scale-95 ${
-              isStreaming ? 'animate-pulse' : ''
-            }`}
-            title="Scroll to bottom"
-          >
-            <IconChevronDown className={TOOLBAR_ICON} />
-          </button>
-        </div>
-      )}
+
 
       {/* Floating Input Box with Drag & Drop */}
       <div
