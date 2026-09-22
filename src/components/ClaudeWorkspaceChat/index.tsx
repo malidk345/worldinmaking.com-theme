@@ -1004,6 +1004,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const scroller = chatScrollRef.current;
     if (!scroller) return;
 
+    /** User intentionally moved the viewport after settle — stop sticky restore. */
+    const clearStickyForUserScroll = () => {
+      settleScrollTopRef.current = null;
+      stickyViewScrollTopRef.current = null;
+    };
+
     const releasePinForManualScroll = () => {
       if (!pinnedMessageIdRef.current) return;
       clearMessagePinPreservingView();
@@ -1012,23 +1018,35 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const onTouchMove = () => {
       if (pinnedMessageIdRef.current) {
         releasePinForManualScroll();
+        return;
+      }
+      // After settle: touch is user intent — clear sticky so RO does not yank back.
+      // Do not clear sticky from clamp-generated `scroll` (mobile race).
+      if (stickyViewScrollTopRef.current != null || settleScrollTopRef.current != null) {
+        clearStickyForUserScroll();
       }
     };
 
     const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) > 2 || Math.abs(e.deltaX) > 2) {
-        releasePinForManualScroll();
+        if (pinnedMessageIdRef.current) {
+          releasePinForManualScroll();
+        } else if (
+          stickyViewScrollTopRef.current != null ||
+          settleScrollTopRef.current != null
+        ) {
+          clearStickyForUserScroll();
+        }
       }
     };
 
-    // Scrollbar / keyboard / PageUp — wheel/touch alone missed these and left the pin armed.
+    // Mid-stream: scrollbar / keyboard / PageUp release the pin (wheel/touch alone miss these).
+    // Post-settle: do NOT clear sticky/settle refs here — Thought collapse and soft-keyboard
+    // hide clamp scrollTop and fire `scroll`, which would wipe the saved Y before
+    // useLayoutEffect/RO restore (mobile race: jump into older history). User intent
+    // clears sticky via wheel/touchmove above.
     const onScroll = () => {
       if (applyingPinScrollRef.current) return;
-      // User moved the viewport after settle — do not yank back to saved scrollTop.
-      if (!pinnedMessageIdRef.current) {
-        settleScrollTopRef.current = null;
-        stickyViewScrollTopRef.current = null;
-      }
       if (!pinnedMessageIdRef.current) return;
       releasePinForManualScroll();
     };
