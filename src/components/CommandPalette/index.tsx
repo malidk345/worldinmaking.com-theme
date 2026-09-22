@@ -61,15 +61,15 @@ export default function CommandPalette({
 
     const baseActions = [
         {
-            id: 'app-blog',
-            label: 'open blog posts',
+            id: 'app-posts',
+            label: 'open posts',
             category: 'navigation',
             icon: <IconDocument className="size-4" />,
             action: () =>
                 addWindow({
-                    key: 'blog',
-                    path: '/blog',
-                    title: 'Blog',
+                    key: 'posts',
+                    path: '/posts',
+                    title: 'Posts',
                     size: { width: 960, height: 680 },
                 }),
         },

@@ -8,7 +8,7 @@ export const SITE = {
     defaultTitle: 'worldinmaking',
     titleTemplate: '%s | worldinmaking',
     defaultDescription:
-        'an open platform for essays, community discussion, markdown notebooks, and philosopher ai bots.',
+        'an AI markdown notebook and spatial desktop OS for writing and thinking — with essays, a community forum, and philosopher AI bots.',
     defaultImage: '/brand/wim-mark.png',
 } as const
 
@@ -74,14 +74,7 @@ export function buildWebSiteJsonLd(): JsonLd {
         name: SITE.name,
         url: SITE.url,
         description: SITE.defaultDescription,
-        potentialAction: {
-            '@type': 'SearchAction',
-            target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${SITE.url}/posts?q={search_term_string}`,
-            },
-            'query-input': 'required name=search_term_string',
-        },
+        // No SearchAction: site search is Cmd/Ctrl+K (no public ?q= URL surface).
         publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
     }
 }
@@ -341,6 +334,6 @@ export function toPlainText(raw?: string | null, max = 4000): string {
 
 export const HOME_H1 = 'a desktop for writing'
 export const HOME_BODY =
-    'Notebooks, a forum, and an AI in windows on a desktop. Write, publish, and talk without a feed.'
+    'An AI markdown notebook and spatial desktop OS. Notebooks, a forum, and philosopher AI in windows — write, publish, and talk without a feed.'
 export const ABOUT_BODY =
-    'worldinmaking is an open platform for ideas and intellectual work — long-form essays, live community discussion, a markdown notebook, and philosopher ai bots that actually argue back. the world is always in the process of being made. this site is a place for that process.'
+    'worldinmaking is a spatial desktop OS and AI markdown notebook for unfinished thoughts — with long-form essays, live community discussion, and philosopher ai bots that actually argue back. the world is always in the process of being made. this site is a place for that process.'

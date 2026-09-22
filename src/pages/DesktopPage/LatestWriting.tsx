@@ -44,7 +44,7 @@ function PostCard({ post, featured = false }: { post: any; featured?: boolean })
     const date = attr.date ? dayjs(attr.date).fromNow() : ''
     const authors: any[] = attr.authors?.data || []
     const imageUrl = attr.featuredImage?.data?.attributes?.url || attr.featuredImageURL
-    const href = `/blog/${slug}`
+    const href = `/posts/${slug}`
     if (featured) {
         return (
             <Link href={href} className="group block border border-primary rounded-lg overflow-hidden hover:bg-accent/20 transition-colors h-full">
@@ -91,7 +91,7 @@ export default function LatestWriting() {
         <section className="px-4 @xl:px-10 py-10 @xl:py-12 border-b border-primary">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <p className="text-[11px] uppercase tracking-widest text-muted font-bold mb-1">Blog</p>
+                    <p className="text-[11px] uppercase tracking-widest text-muted font-bold mb-1">Posts</p>
                     <h2 className="text-xl font-bold">latest writing</h2>
                 </div>
                 <Link href="/posts" className="text-sm text-secondary hover:text-primary hover:underline transition-colors">See all →</Link>
