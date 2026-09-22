@@ -52,12 +52,24 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Settle spacer clear yank (post-#794) — preserve min spacer on pin clear.
+- **Task:** Post-#795 settle jump — keep spacer through Thought collapse; RO trim; window clientHeight.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+
+### 2026-09-22 — Grok Bot / Cursor (fix: post-#795 settle collapse + window reflow yank)
+- **Scope:** User (TR, urgent, post-#794/#795): mid-stream pin correct; when reply *finishes*, chat still jumps into older messages. Clue: opening/resizing a window a bit "re-centers" the conversation.
+- **Confirmed root cause (remaining after #795):** Settle called `minSpacerToPreserveScrollTop` **while live Thought/tools were still tall**, then React set `isStreaming:false` and ThinkingBlock collapsed. That drop in `scrollHeight` clamps `scrollTop` into older history. ResizeObserver runs *after* layout clamp, so a post-clamp re-preserve cannot restore the pre-clamp view. #795 tests never collapsed content after the first preserve. AppWindow `clientHeight` growth similarly lowers maxScroll and needs more spacer (opening/resizing a window changes the chat pane — matches the "re-center" clue).
+- **Not primary:** async `setPinSpacerHeight` alone (#795 already syncs DOM height). Blind `setPinSpacerHeight(0)` only on chat-switch / Continue-to-bottom — not settle.
+- **Fix (minimal):** On settle/stop/manual-release/human-unlock: capture `scrollTop` into settle+sticky refs, clear pin, keep spacer this frame. `useLayoutEffect` + rAF restore via `applyMinSpacerForScrollTop(saved)` then write `scrollTop` back (works even after browser clamp). RO when `!pinned` uses sticky Y for AppWindow clientHeight growth until the user scrolls. Mid-stream pin unchanged.
+- **Deploy note:** `vercel.json` enables deploys for `master` only (`*: false`); repo HEAD is `main` with no `origin/master`. User may still be on a pre-#795 build if production does not track `main` — fix still required on main.
+- **Files:** `src/lib/chat-scroll.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-scroll.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`
+- **Handoff:** PR `fix/wim-ai-settle-collapse-spacer-ro` — merge when green.
+
 
 ### 2026-09-22 — Grok Bot / Cursor (feat: plan mode QUALITY pack)
 - **Scope:** User "evet yap" after #792: (A) plan-aware THINK/REFLECT + mode-aware post-tools reminder; (B) research → scratchpad contract + host stop after research cluster; (C) done_when on todos + finalize_plan readiness soft gate.
@@ -109,7 +121,7 @@
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: settle spacer clear yank into older history)
 - **Scope:** User (TR, post-#794): mid-stream pin UX is correct; when the AI answer *finishes*, chat suddenly jumps into older/unrelated history.
-- **Confirmed root cause:** #794 cleared `pinnedMessageIdRef` + `setPinSpacerHeight(0)` on settle to stop idle RO re-pin. The bottom spacer was often large (set once on send while the reply was still short). Removing spacer height S drops `scrollHeight` by S; the browser clamps `scrollTop` to the new max → viewport yanks upward into older messages. Matches the post-completion timeline exactly. Thought collapse / action-bar mount add small layout noise below the pin; they do not clamp scrollTop into history.
+- **Confirmed root cause:** #794 cleared `pinnedMessageIdRef` + `setPinSpacerHeight(0)` on settle to stop idle RO re-pin. The bottom spacer was often large (set once on send while the reply was still short). Removing spacer height S drops `scrollHeight` by S; the browser clamps `scrollTop` to the new max → viewport yanks upward into older messages. Matches the post-completion timeline exactly. (Superseded by follow-up: Thought/tool collapse *after* the sync preserve *can* clamp when the reply+spacer tail is short — see 2026-09-22 post-#795 entry.)
 - **Fix (minimal):** Keep mid-stream pin + RO-while-streaming. On settle/stop/manual-release/human-unlock: clear the pin (no idle re-pin) but set spacer to `minSpacerToPreserveScrollTop(scrollTop, clientHeight, contentExcl)` so current scrollTop stays reachable. Long replies → spacer 0; short replies → keep the minimum empty tail (no yank).
 - **Files:** `src/lib/chat-scroll.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-scroll.spec.ts`, `AI_MEMORY.md`
 - **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`

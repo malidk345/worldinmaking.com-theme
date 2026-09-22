@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   Chat,
   Message,
@@ -117,9 +117,10 @@ import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
 import {
   CHAT_PIN_TOP_PADDING_PX,
+  applyMinSpacerForScrollTop,
+  applyMinSpacerToPreserveScrollTop,
   computePinSpacerHeight,
   elementOffsetInScroller,
-  minSpacerToPreserveScrollTop,
   scrollElementToScrollerPin,
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
@@ -832,39 +833,83 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const pinnedMessageIdRef = useRef<string | null>(null);
   /** Suppress scroll-event pin release while we programmatically re-assert the pin. */
   const applyingPinScrollRef = useRef(false);
+  /** scrollTop captured at settle — one-shot restore after Thought collapse (post-clamp). */
+  const settleScrollTopRef = useRef<number | null>(null);
+  /** Sticky post-settle view Y until the user scrolls — covers AppWindow clientHeight growth. */
+  const stickyViewScrollTopRef = useRef<number | null>(null);
 
   const clearMessagePin = useCallback(() => {
     pinnedMessageIdRef.current = null;
   }, []);
 
   /**
-   * Drop the pin (no idle RO re-assert) but keep the minimum bottom spacer so
-   * scrollTop is not browser-clamped into older history. Zeroing a large spacer
-   * after a short reply was the post-#794 settle yank.
+   * Sync min spacer for current scrollTop (DOM first, then React state).
+   * Used when scrollTop has not been clamped yet (e.g. AppWindow resize RO).
    */
-  const clearMessagePinPreservingView = useCallback(() => {
+  const preserveViewWithMinSpacer = useCallback(() => {
     const scroller = chatScrollRef.current;
     const spacerEl = pinSpacerRef.current;
-    const currentSpacer = spacerEl?.offsetHeight ?? 0;
-    pinnedMessageIdRef.current = null;
     if (!scroller) {
       if (spacerEl) spacerEl.style.height = '0px';
       setPinSpacerHeight(0);
       return;
     }
-    const contentExcludingSpacer = scroller.scrollHeight - currentSpacer;
-    const nextSpacer = minSpacerToPreserveScrollTop(
-      scroller.scrollTop,
-      scroller.clientHeight,
-      contentExcludingSpacer
-    );
     applyingPinScrollRef.current = true;
-    if (spacerEl) spacerEl.style.height = `${nextSpacer}px`;
-    setPinSpacerHeight(nextSpacer);
+    const nextSpacer = applyMinSpacerToPreserveScrollTop(scroller, spacerEl);
+    setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
     requestAnimationFrame(() => {
       applyingPinScrollRef.current = false;
     });
   }, []);
+
+  /**
+   * After Thought/tool collapse the browser may already have clamped scrollTop.
+   * Grow spacer for the *saved* settle scrollTop and write it back (layout-safe).
+   */
+  const restoreSettledScrollTop = useCallback(() => {
+    const scroller = chatScrollRef.current;
+    const saved = settleScrollTopRef.current;
+    if (!scroller || saved == null) return;
+    if (pinnedMessageIdRef.current) {
+      settleScrollTopRef.current = null;
+      return;
+    }
+    applyingPinScrollRef.current = true;
+    const nextSpacer = applyMinSpacerForScrollTop(scroller, pinSpacerRef.current, saved);
+    setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
+    if (Math.abs(scroller.scrollTop - saved) > 1) {
+      scroller.scrollTop = saved;
+    }
+    settleScrollTopRef.current = null;
+    requestAnimationFrame(() => {
+      applyingPinScrollRef.current = false;
+    });
+  }, []);
+
+  /**
+   * Drop the pin (no idle RO re-pin). Capture scrollTop *before* React paints the
+   * settled (collapsed Thought) UI. #795's immediate minSpacer undershot because it
+   * measured while Thought was still tall; RO then ran after the clamp and could
+   * not restore. Restore via useLayoutEffect + rAF using the saved scrollTop.
+   */
+  const clearMessagePinPreservingView = useCallback(() => {
+    const scroller = chatScrollRef.current;
+    if (scroller) {
+      settleScrollTopRef.current = scroller.scrollTop;
+      stickyViewScrollTopRef.current = scroller.scrollTop;
+    }
+    pinnedMessageIdRef.current = null;
+    // Keep current spacer this frame — collapse may need a larger one after paint.
+    const spacerEl = pinSpacerRef.current;
+    const keep = spacerEl?.offsetHeight ?? 0;
+    if (spacerEl) spacerEl.style.height = `${keep}px`;
+    setPinSpacerHeight((prev) => (prev === keep ? prev : keep));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        restoreSettledScrollTop();
+      });
+    });
+  }, [restoreSettledScrollTop]);
 
   const findPinnedMessageEl = useCallback((messageId: string): HTMLElement | null => {
     const scroller = chatScrollRef.current;
@@ -945,6 +990,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     pinnedMessageIdRef.current = null;
+    settleScrollTopRef.current = null;
+    stickyViewScrollTopRef.current = null;
     setPinSpacerHeight(0);
     if (behavior === 'auto') {
       scroller.scrollTop = scroller.scrollHeight;
@@ -977,6 +1024,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     // Scrollbar / keyboard / PageUp — wheel/touch alone missed these and left the pin armed.
     const onScroll = () => {
       if (applyingPinScrollRef.current) return;
+      // User moved the viewport after settle — do not yank back to saved scrollTop.
+      if (!pinnedMessageIdRef.current) {
+        settleScrollTopRef.current = null;
+        stickyViewScrollTopRef.current = null;
+      }
       if (!pinnedMessageIdRef.current) return;
       releasePinForManualScroll();
     };
@@ -990,6 +1042,29 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       // changes were yanking scrollTop back to the user bubble — upward jumps).
       if (pinnedMessageIdRef.current && isStreamingRef.current) {
         maintainPinnedScroll();
+        return;
+      }
+      // Post-settle: Thought/tool collapse or AppWindow clientHeight change can drop
+      // maxScroll under scrollTop. Grow spacer for sticky/saved Y and restore — do not re-pin.
+      if (!pinnedMessageIdRef.current) {
+        const desired = stickyViewScrollTopRef.current;
+        if (desired != null) {
+          applyingPinScrollRef.current = true;
+          const nextSpacer = applyMinSpacerForScrollTop(
+            scroller,
+            pinSpacerRef.current,
+            desired
+          );
+          setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
+          if (Math.abs(scroller.scrollTop - desired) > 1) {
+            scroller.scrollTop = desired;
+          }
+          requestAnimationFrame(() => {
+            applyingPinScrollRef.current = false;
+          });
+        } else {
+          preserveViewWithMinSpacer();
+        }
       }
     });
     observer.observe(scroller);
@@ -1001,7 +1076,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.removeEventListener('scroll', onScroll);
       observer.disconnect();
     };
-  }, [activeChatId, clearMessagePinPreservingView, maintainPinnedScroll, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, clearMessagePinPreservingView, maintainPinnedScroll, preserveViewWithMinSpacer, Boolean(activeChat?.messages.length)]);
+
+  // After settle: React commits Thought/tool collapse in the same turn as pin clear.
+  // useLayoutEffect runs after that DOM update and restores saved scrollTop before paint.
+  useLayoutEffect(() => {
+    if (settleScrollTopRef.current == null) return;
+    restoreSettledScrollTop();
+  }, [
+    isStreaming,
+    activeChat?.messages.at(-1)?.isStreaming,
+    activeChat?.messages.at(-1)?.thinkingProcess,
+    restoreSettledScrollTop,
+  ]);
 
   // Scroll chat to bottom only on intentional chat switches (not identity/sync rehydrate of same thread).
   useEffect(() => {
