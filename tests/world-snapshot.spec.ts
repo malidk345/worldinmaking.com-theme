@@ -35,7 +35,7 @@ test.describe('world snapshot parse', () => {
             pinnedItems: [{ label: 'Notes', url: '/notebooks', notebookId: 'n1' }],
         })
         expect(parsed).not.toBeNull()
-        expect(parsed?.wallpaper).toBe('keyboard-mint')
+        expect(parsed?.wallpaper).toBe('cobalt')
         expect(parsed?.colorMode).toBe('dark')
         expect(parsed?.clickBehavior).toBe('single')
         expect(parsed?.windows).toEqual([
@@ -129,13 +129,13 @@ test.describe('world snapshot parse', () => {
     })
 
     test('product defaults migrate old draft-world + transparency off once', () => {
-        expect(DEFAULT_WALLPAPER).toBe('keyboard-mint')
+        expect(DEFAULT_WALLPAPER).toBe('cobalt')
         expect(DEFAULT_REDUCE_TRANSPARENCY).toBe(true)
         const migrated = migrateAppearanceSettings({
             wallpaper: 'draft-world',
             reduceTransparency: false,
         })
-        expect(migrated.wallpaper).toBe('keyboard-mint')
+        expect(migrated.wallpaper).toBe('cobalt')
         expect(migrated.reduceTransparency).toBe(true)
         const kept = migrateAppearanceSettings({
             wallpaper: 'hogzilla',
@@ -232,7 +232,7 @@ test.describe('world snapshot collect/restore helpers', () => {
             pinnedItems: [],
         })
         expect(snap.v).toBe(1)
-        expect(snap.wallpaper).toBe('keyboard-mint')
+        expect(snap.wallpaper).toBe('cobalt')
         expect(snap.clickBehavior).toBe('double')
         expect(snap.reduceTransparency).toBe(false)
     })

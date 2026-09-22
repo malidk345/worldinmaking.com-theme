@@ -20,7 +20,7 @@ export type WallpaperName =
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
-export const DEFAULT_WALLPAPER: WallpaperName = 'keyboard-mint'
+export const DEFAULT_WALLPAPER: WallpaperName = 'cobalt'
 export const DEFAULT_REDUCE_TRANSPARENCY = true
 export const DEFAULT_ICON_SET = 'pixel' as const
 /** Bump when product appearance defaults change so existing local settings pick them up once. */

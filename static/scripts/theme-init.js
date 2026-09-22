@@ -14,7 +14,7 @@
     var preferredTheme
     var darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     var colorMode = 'light'
-    var wallpaper = 'keyboard-mint'
+    var wallpaper = 'cobalt'
     // Tops = WALLPAPER_FIELDS.*.top (must match src/lib/wallpaperChrome.ts).
     // Legacy duplicate of _document.tsx boot — keep in sync for any static consumers.
     var THEME_COLORS = {
@@ -83,8 +83,8 @@
         var head = document.head
         if (!head) return
         wallpaper = resolveWallpaper()
-        var pair = THEME_COLORS[wallpaper] || THEME_COLORS['keyboard-mint']
-        var modes = FIELDS[wallpaper] || FIELDS['keyboard-mint']
+        var pair = THEME_COLORS[wallpaper] || THEME_COLORS['cobalt']
+        var modes = FIELDS[wallpaper] || FIELDS['cobalt']
         var theme = window.__theme === 'dark' ? 'dark' : 'light'
         var mode =
             colorMode === 'system'
@@ -155,7 +155,7 @@
         var version = Number(siteSettings.siteDefaultsVersion || 0)
         if (version < 2) {
             if (!siteSettings.wallpaper || siteSettings.wallpaper === 'draft-world' || KEPT.indexOf(siteSettings.wallpaper) === -1) {
-                siteSettings.wallpaper = 'keyboard-mint'
+                siteSettings.wallpaper = 'cobalt'
             }
             siteSettings.reduceTransparency = true
         }
@@ -164,8 +164,8 @@
             siteSettings.siteDefaultsVersion = 3
             try { localStorage.setItem('siteSettings', JSON.stringify(siteSettings)) } catch (e) {}
         }
-        wallpaper = siteSettings.wallpaper || 'keyboard-mint'
-        if (KEPT.indexOf(wallpaper) === -1) wallpaper = 'keyboard-mint'
+        wallpaper = siteSettings.wallpaper || 'cobalt'
+        if (KEPT.indexOf(wallpaper) === -1) wallpaper = 'cobalt'
         window.__wallpaper = wallpaper
         colorMode = siteSettings.colorMode || preferredTheme || 'light'
         // Prefer stored colorMode when localStorage.theme was previously overwritten with resolved light/dark.

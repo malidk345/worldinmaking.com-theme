@@ -92,7 +92,7 @@ describe('migrateAppearanceSettings preserves user wallpaper', () => {
         expect(next.siteDefaultsVersion).toBe(SITE_APPEARANCE_DEFAULTS_VERSION)
     })
 
-    it('does not reset a kept wallpaper to keyboard-mint when migrating from v0', () => {
+    it('does not reset a kept wallpaper to the product default when migrating from v0', () => {
         const next = migrateAppearanceSettings({
             wallpaper: 'plaza-bang',
             siteDefaultsVersion: 0,
@@ -101,7 +101,7 @@ describe('migrateAppearanceSettings preserves user wallpaper', () => {
         expect(next.siteDefaultsVersion).toBe(SITE_APPEARANCE_DEFAULTS_VERSION)
     })
 
-    it('upgrades previous product default draft-world to keyboard-mint once', () => {
+    it('upgrades previous product default draft-world to current DEFAULT_WALLPAPER once', () => {
         const next = migrateAppearanceSettings({
             wallpaper: 'draft-world',
             siteDefaultsVersion: 0,

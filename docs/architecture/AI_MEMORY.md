@@ -52,12 +52,19 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
-- **Task:** Clean notebook model3d UI — hide in-viewer control bar + strip extra white card chrome around notebook embed.
+- **Task:** Product default wallpaper → cobalt (preserve user-persisted wallpaper).
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-22 — Grok Bot / Cursor (feat: default wallpaper = cobalt)
+- **Scope:** User: change product default wallpaper to cobalt; leave Groq/Gemini rotation as-is; preserve user-persisted wallpaper.
+- **Change:** `DEFAULT_WALLPAPER` `keyboard-mint` → `cobalt`. Sync theme-init boot/fallback strings and Wallpapers glow/active fallback. Do **not** bump `SITE_APPEARANCE_DEFAULTS_VERSION` — existing local/cloud `siteSettings.wallpaper` stays (including users who stayed on mint). New users / missing / invalid / retired ids (`resolveKeptWallpaper`) get cobalt. `_document.tsx` already injects `DEFAULT_WALLPAPER`.
+- **Files:** `wallpaperChrome.ts`, `theme-init.js`, `Wallpapers.tsx`, `wallpaperChrome.test.ts`, `world-snapshot.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/wallpaperChrome.test.ts tests/world-snapshot.spec.ts --environment node`
+- **Handoff:** PR `feat/default-wallpaper-cobalt` — merge expected.
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: post-tool reflect Thought visibility after #775)
 - **Scope:** User (TR): after tools/searches, second Thought (reflect) disappeared; quality (model mastering tool results) must stay. Surgical fix — do not revert #775 wholesale; do not break #785 decision native streaming.

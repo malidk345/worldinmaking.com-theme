@@ -446,7 +446,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     'paper-white': { light: '#E8E8E8', dark: '#3A3A3A' },
 }
 
-export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-mint']
+export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['cobalt']
 
 export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW
@@ -457,7 +457,7 @@ export default function Wallpapers(props?: {
     wallpaper?: string
     reduceMotion?: boolean
 }): JSX.Element {
-    const active = props?.wallpaper || 'keyboard-mint'
+    const active = props?.wallpaper || 'cobalt'
     return (
         <div className="absolute inset-0 z-0 select-none overflow-hidden pointer-events-none">
             {SCENES.map(({ key, Scene }) => (
