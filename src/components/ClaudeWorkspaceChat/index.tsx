@@ -119,6 +119,7 @@ import {
   CHAT_PIN_TOP_PADDING_PX,
   computePinSpacerHeight,
   elementOffsetInScroller,
+  minSpacerToPreserveScrollTop,
   scrollElementToScrollerPin,
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
@@ -836,6 +837,35 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     pinnedMessageIdRef.current = null;
   }, []);
 
+  /**
+   * Drop the pin (no idle RO re-assert) but keep the minimum bottom spacer so
+   * scrollTop is not browser-clamped into older history. Zeroing a large spacer
+   * after a short reply was the post-#794 settle yank.
+   */
+  const clearMessagePinPreservingView = useCallback(() => {
+    const scroller = chatScrollRef.current;
+    const spacerEl = pinSpacerRef.current;
+    const currentSpacer = spacerEl?.offsetHeight ?? 0;
+    pinnedMessageIdRef.current = null;
+    if (!scroller) {
+      if (spacerEl) spacerEl.style.height = '0px';
+      setPinSpacerHeight(0);
+      return;
+    }
+    const contentExcludingSpacer = scroller.scrollHeight - currentSpacer;
+    const nextSpacer = minSpacerToPreserveScrollTop(
+      scroller.scrollTop,
+      scroller.clientHeight,
+      contentExcludingSpacer
+    );
+    applyingPinScrollRef.current = true;
+    if (spacerEl) spacerEl.style.height = `${nextSpacer}px`;
+    setPinSpacerHeight(nextSpacer);
+    requestAnimationFrame(() => {
+      applyingPinScrollRef.current = false;
+    });
+  }, []);
+
   const findPinnedMessageEl = useCallback((messageId: string): HTMLElement | null => {
     const scroller = chatScrollRef.current;
     if (!scroller || !messageId) return null;
@@ -929,8 +959,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     const releasePinForManualScroll = () => {
       if (!pinnedMessageIdRef.current) return;
-      clearMessagePin();
-      setPinSpacerHeight(0);
+      clearMessagePinPreservingView();
     };
 
     const onTouchMove = () => {
@@ -972,7 +1001,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.removeEventListener('scroll', onScroll);
       observer.disconnect();
     };
-  }, [activeChatId, clearMessagePin, maintainPinnedScroll, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, clearMessagePinPreservingView, maintainPinnedScroll, Boolean(activeChat?.messages.length)]);
 
   // Scroll chat to bottom only on intentional chat switches (not identity/sync rehydrate of same thread).
   useEffect(() => {
@@ -1886,9 +1915,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             if (streamEpochRef.current === streamEpoch) {
               setIsStreaming(false)
               setStreamStatus(null)
-              // Unlock ends the pin hold — user is idle answering; do not let RO re-pin.
-              pinnedMessageIdRef.current = null
-              setPinSpacerHeight(0)
+              // Unlock ends the pin hold — preserve scroll when shrinking spacer.
+              clearMessagePinPreservingView()
             }
             humanRespondInFlightRef.current = false
             if (streamedHumanTurn.plan && streamedHumanTurn.plan.length) {
@@ -2250,11 +2278,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         setIsStreaming(false);
         setStreamStatus(null);
         streamReaderRef.current = null;
-        // Always clear send-pin when the turn settles. Keeping it after clean success left
-        // ResizeObserver armed: idle layout/image/font changes re-asserted scrollTop and
-        // yanked the viewport upward to the user bubble.
-        pinnedMessageIdRef.current = null;
-        setPinSpacerHeight(0);
+        // Clear pin (no idle RO re-pin) but keep min spacer so settle does not
+        // clamp scrollTop into older history (short-reply post-#794 yank).
+        clearMessagePinPreservingView();
       }
     }
   };
@@ -2286,9 +2312,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     abortActiveStream()
     setIsStreaming(false)
     setStreamStatus(null)
-    // Release send-pin immediately so stop does not leave a locked empty spacer.
-    pinnedMessageIdRef.current = null
-    setPinSpacerHeight(0)
+    // Release pin; keep min spacer so Stop does not yank into older history.
+    clearMessagePinPreservingView()
     const chatId = activeChat?.id
     const last = activeChat?.messages.at(-1)
     if (chatId && last?.role === 'assistant' && last.isStreaming) {

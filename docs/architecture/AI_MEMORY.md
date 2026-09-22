@@ -52,7 +52,7 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Plan mode QUALITY pack (THINK/REFLECT + research scratchpad cluster + done_when/finalize gate).
+- **Task:** Settle spacer clear yank (post-#794) — preserve min spacer on pin clear.
 
 
 ---
@@ -106,6 +106,14 @@
 - **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node -t "Think-phase|post-tool reflect"`
 - **Handoff:** PR `fix/wim-ai-post-tool-reflect-thought` — merge expected.
 - **Residual:** Long reflect content could look answer-like in Thought (mitigated by `THINK_REFLECT_INSTRUCTION` "few short sentences"); planning still invisible on content-only Gemini THINK until decision native streams.
+
+### 2026-09-22 — Grok Bot / Cursor (fix: settle spacer clear yank into older history)
+- **Scope:** User (TR, post-#794): mid-stream pin UX is correct; when the AI answer *finishes*, chat suddenly jumps into older/unrelated history.
+- **Confirmed root cause:** #794 cleared `pinnedMessageIdRef` + `setPinSpacerHeight(0)` on settle to stop idle RO re-pin. The bottom spacer was often large (set once on send while the reply was still short). Removing spacer height S drops `scrollHeight` by S; the browser clamps `scrollTop` to the new max → viewport yanks upward into older messages. Matches the post-completion timeline exactly. Thought collapse / action-bar mount add small layout noise below the pin; they do not clamp scrollTop into history.
+- **Fix (minimal):** Keep mid-stream pin + RO-while-streaming. On settle/stop/manual-release/human-unlock: clear the pin (no idle re-pin) but set spacer to `minSpacerToPreserveScrollTop(scrollTop, clientHeight, contentExcl)` so current scrollTop stays reachable. Long replies → spacer 0; short replies → keep the minimum empty tail (no yank).
+- **Files:** `src/lib/chat-scroll.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/chat-scroll.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`
+- **Handoff:** PR `fix/wim-ai-settle-spacer-scroll-jump`.
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: WIM AI idle upward scroll jump from leftover pin)
 - **Scope:** User (TR): chat viewport suddenly jumps upward while idle (no typing, no streaming). Want real root cause only.

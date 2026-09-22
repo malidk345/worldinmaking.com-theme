@@ -3,8 +3,9 @@
  * AppWindow chat pane while the assistant reply streams below.
  *
  * One model: pin-to-message (with small top inset) while the assistant streams.
- * Manual scroll releases the pin; stream settle clears it (no idle re-pin).
- * There is no stick-to-bottom re-arm.
+ * Manual scroll releases the pin; stream settle clears the pin (no idle re-pin)
+ * but keeps the minimum bottom spacer needed so scrollTop is not clamped into
+ * older history. There is no stick-to-bottom re-arm.
  */
 
 /** Small inset so the bubble sits under the scroller top mask, not flush to 0. */
@@ -30,6 +31,21 @@ export function computePinSpacerHeight(
     if (scrollerClientHeight <= 0) return 0
     const targetScroll = Math.max(0, messageOffset - topPadding)
     const needed = targetScroll + scrollerClientHeight - contentHeightExcludingSpacer
+    return Math.max(0, Math.ceil(needed))
+}
+
+/**
+ * Minimum bottom spacer so the current `scrollTop` stays reachable after the
+ * pin is released. Removing more than this clamps scrollTop downward and yanks
+ * the viewport into older messages (post-#794 settle bug).
+ */
+export function minSpacerToPreserveScrollTop(
+    scrollTop: number,
+    scrollerClientHeight: number,
+    contentHeightExcludingSpacer: number
+): number {
+    if (scrollerClientHeight <= 0) return 0
+    const needed = scrollTop + scrollerClientHeight - contentHeightExcludingSpacer
     return Math.max(0, Math.ceil(needed))
 }
 
