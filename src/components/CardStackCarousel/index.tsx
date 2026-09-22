@@ -309,9 +309,23 @@ export function CardStackCarousel({
         }
         measure()
         if (!stageRef.current) return
-        const observer = new ResizeObserver(measure)
+        // Defer the measure to the next frame so the observer callback never
+        // reads layout while ResizeObserver is still delivering notifications —
+        // that loop makes the browser raise "ResizeObserver loop completed with
+        // undelivered notifications".
+        let rafId = 0
+        const observer = new ResizeObserver(() => {
+            if (rafId) return
+            rafId = requestAnimationFrame(() => {
+                rafId = 0
+                measure()
+            })
+        })
         observer.observe(stageRef.current)
-        return () => observer.disconnect()
+        return () => {
+            observer.disconnect()
+            if (rafId) cancelAnimationFrame(rafId)
+        }
     }, [count, visibleCards.length])
 
     const onKeyDown = (e: React.KeyboardEvent) => {

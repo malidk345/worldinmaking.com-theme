@@ -30,6 +30,24 @@ function getPostHogHost(): string {
     return trimmed
 }
 
+/**
+ * True when an exception carries the benign "ResizeObserver loop ..." browser
+ * warning. Chrome and Safari raise this as an unhandled window error whenever a
+ * ResizeObserver callback changes layout faster than notifications deliver. It
+ * is a layout-timing warning, not a crash, so it only adds noise to error
+ * tracking. The message text sits in `$exception_message` and in each
+ * `$exception_list` item's `value`.
+ */
+function isResizeObserverLoopError(properties: Record<string, any> | undefined): boolean {
+    if (!properties) return false
+    const candidates: unknown[] = [properties.$exception_message]
+    const list = properties.$exception_list
+    if (Array.isArray(list)) {
+        for (const item of list) candidates.push(item?.value)
+    }
+    return candidates.some((value) => typeof value === 'string' && value.includes('ResizeObserver loop'))
+}
+
 let isInitialized = false
 
 /**
@@ -50,6 +68,12 @@ export function initPostHog(): void {
         posthog.init(key, {
             api_host: host,
             ui_host: host.includes('eu') ? 'https://eu.posthog.com' : 'https://us.posthog.com',
+            before_send: (event) => {
+                if (event?.event === '$exception' && isResizeObserverLoopError(event.properties)) {
+                    return null
+                }
+                return event
+            },
             capture_pageview: false, // Handled explicitly via Next.js router events
             capture_pageleave: allowed,
             autocapture: allowed,
