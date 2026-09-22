@@ -36,9 +36,28 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        const update = () => {
+            const next = getBreakpoints(window.innerWidth)
+            setBreakpoints((prev) => {
+                if (
+                    prev.xs === next.xs &&
+                    prev.sm === next.sm &&
+                    prev.md === next.md &&
+                    prev.lg === next.lg &&
+                    prev.xl === next.xl &&
+                    prev.xxl === next.xxl
+                ) {
+                    return prev
+                }
+                return next
+            })
+        }
         update()
-        window.addEventListener('resize', update)
+        // ⚡ Bolt Performance Optimization:
+        // Added { passive: true } to the resize listener to prevent UI thread blocking.
+        // Used a functional state update with shallow comparison in update() to bail
+        // out of unnecessary React re-renders when the breakpoint hasn't changed.
+        window.addEventListener('resize', update, { passive: true })
         return () => window.removeEventListener('resize', update)
     }, [])
 
