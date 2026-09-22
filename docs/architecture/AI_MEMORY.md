@@ -107,6 +107,17 @@
 - **Handoff:** PR `fix/wim-ai-post-tool-reflect-thought` — merge expected.
 - **Residual:** Long reflect content could look answer-like in Thought (mitigated by `THINK_REFLECT_INSTRUCTION` "few short sentences"); planning still invisible on content-only Gemini THINK until decision native streams.
 
+### 2026-09-22 — Grok Bot / Cursor (fix: WIM AI idle upward scroll jump from leftover pin)
+- **Scope:** User (TR): chat viewport suddenly jumps upward while idle (no typing, no streaming). Want real root cause only.
+- **Confirmed root cause:** After #771/#774/#788, `pinnedMessageIdRef` was intentionally kept on clean stream success ("for reading"). ResizeObserver still called `maintainPinnedScroll()` on any scroller/content resize (images, fonts, thought UI, tool cards, chrome). That re-asserted `scrollTop` to the user bubble → upward yank. Wheel/touch released the pin, but scrollbar/keyboard did not — so pin could stay armed forever after a successful send.
+- **Fix (minimal):**
+  1. Always clear pin + spacer when the stream settles (success included), and on human-interrupt composer unlock.
+  2. Gate ResizeObserver maintain on `isStreamingRef` (defense if pin were stuck).
+  3. Release pin on any user `scroll` (with `applyingPinScrollRef` so programmatic pin assigns do not self-release).
+- **Not the cause (ruled out):** stick-to-bottom (removed in #788); `overflow-anchor` (already `none`); chat-switch one-shot bottom (gated by `pinBottomOnNextChatRef`); ThinkingBlock internal scroll; empty-state remount (sticky active chat).
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/chat-scroll.spec.ts`
+
 ### 2026-09-22 — Grok Bot / Cursor (fix: Safari sticky mint mobile chrome)
 - **Scope:** After keyboard-mint, switching wallpaper updated the scene but Safari toolbar / safe-area gap colors stayed mint.
 - **Root cause:** `syncThemeColorMeta` updated `theme-color` `content` in place. iOS Safari caches theme-color on the meta *node*, so leaving mint kept mint UI chrome. Mint is also the `html { --browser-chrome }` CSS default, amplifying the sticky look if WebKit delayed resampling CSS vars.
@@ -216,7 +227,7 @@
   1. Classifier default: unknown non-network failures → `provider` (Philosopher network), not Connection. Real `Failed to fetch` still `network`.
   2. Catch path: never stamp `errorKind: 'network'` as blind fallback; preserve pending `ask_user` / `plan_approval` on mid-interrupt failure (no Connection card wipe).
   3. Silent retry gate: `hadMeaningfulStreamProgress` on activity/phase/token/tool/human/error/thinking/search/done (plus byte chunks) — never retry after progress.
-  4. Scroll pin: clear pin + spacer on Stop, stream fail/abort `finally`, and chat switch (clean success keeps pin for reading).
+  4. Scroll pin: clear pin + spacer on Stop, stream fail/abort `finally`, and chat switch. (Superseded 2026-09-22: clean success also clears pin — keeping it caused idle upward jumps.)
   5. Telemetry: SSE `error` path now emits `wim chat stream fail`; props include `hadStreamProgress`; kind reflects classifier reality.
 - **Already solid (evidence, no change):** abort≠error; Stop mid-think → stopped bubble; #773 empty-after-thinking → provider; server `empty_public_reply` → SSE `EMPTY_REPLY`; keep-alive 15s; human Answer unlock (#769); pin vs stick model (#771).
 - **Deferred (speculative):** lower keep-alive interval; root-cause empty-after-think model/prompt rate (orchestrate already recovers + EMPTY_REPLY); shrink spacer on wheel release.
