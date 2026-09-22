@@ -156,14 +156,24 @@ export function openaiMessagesToGeminiContents(messages: OpenAiChatMessage[]): G
     return contents
 }
 
-/** Native Gemini thinking on host THINK would consume the whole token cap. */
+/**
+ * Modest native CoT on host THINK so Thought UI can paint during planning.
+ * #775 demux still drops content tokens; only `part.thought` / onThinking paints.
+ * Historical note: budget 512 with maxOutputTokens 512 starved content — keep this
+ * small vs THINK_MAX_TOKENS so routing content can still land in cycleThought.
+ */
+export const THINK_NATIVE_BUDGET = 128
+
 export function geminiToolGenerationConfig(params: { omitTools?: boolean; maxTokens?: number }) {
     const maxOutputTokens = params.maxTokens || (params.omitTools ? 256 : 8192)
     if (params.omitTools) {
         return {
             temperature: 0.6,
             maxOutputTokens,
-            thinkingConfig: { thinkingBudget: 0, includeThoughts: false },
+            thinkingConfig: {
+                thinkingBudget: THINK_NATIVE_BUDGET,
+                includeThoughts: true,
+            },
         }
     }
     return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { geminiToolGenerationConfig } from './gemini'
+import { geminiToolGenerationConfig, THINK_NATIVE_BUDGET } from './gemini'
 import {
     compactLoopMessages,
     isWeakerModel3dRevision,
@@ -67,11 +67,14 @@ describe('Think token budget', () => {
         expect(PLAN_RESEARCH_CLUSTER_N).toBe(3)
     })
 
-    it('does not spend Gemini native thinking on the host THINK round', () => {
+    it('spends modest Gemini native thinking on host THINK for early Thought paint', () => {
         const think = geminiToolGenerationConfig({ omitTools: true, maxTokens: THINK_MAX_TOKENS })
         expect(think.maxOutputTokens).toBe(256)
-        expect(think.thinkingConfig.thinkingBudget).toBe(0)
-        expect(think.thinkingConfig.includeThoughts).toBe(false)
+        expect(THINK_NATIVE_BUDGET).toBe(128)
+        expect(think.thinkingConfig.thinkingBudget).toBe(THINK_NATIVE_BUDGET)
+        expect(think.thinkingConfig.includeThoughts).toBe(true)
+        // Keep native budget under content cap so routing notes can still land if shared.
+        expect(think.thinkingConfig.thinkingBudget).toBeLessThan(think.maxOutputTokens)
 
         const act = geminiToolGenerationConfig({ omitTools: false })
         expect(act.maxOutputTokens).toBe(8192)
@@ -157,7 +160,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         const complete: AgentPipelineParams['complete'] = async (input) => {
             round += 1
             if (input.omitTools) {
-                // Content-only think (Gemini THINK with thinkingBudget:0).
+                // Content-only think (no native onThinking deltas — fallback path).
                 input.onToken?.(DRAFT_ANSWER)
                 return { ok: true, content: DRAFT_ANSWER, toolCalls: [] }
             }
@@ -194,7 +197,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         const complete: AgentPipelineParams['complete'] = async (input) => {
             round += 1
             if (input.omitTools) {
-                // Gemini-style THINK: planning content only, no native thoughts.
+                // Content-only THINK fallback: planning content only, no native thoughts.
                 input.onToken?.(DRAFT_ANSWER)
                 return { ok: true, content: DRAFT_ANSWER, toolCalls: [] }
             }
@@ -323,7 +326,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
             if (input.omitTools) {
                 thinkRound += 1
                 if (sys.includes('REFLECTION STEP')) {
-                    // Content-only post-tool THINK (Gemini thinkingBudget:0).
+                    // Content-only post-tool THINK (no native onThinking deltas).
                     input.onToken?.(REFLECT_NOTE)
                     return { ok: true, content: REFLECT_NOTE, toolCalls: [] }
                 }

@@ -51,14 +51,28 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Mobile settle sticky wipe race — onScroll must not clear sticky on clamp/scroll; wheel/touch clear sticky after settle.
+- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
+- **Task:** Thought first-byte latency — enable modest Gemini native CoT on host THINK; mobile upward-jump re-test on live (no speculative scroll PR).
 
 
 ---
 
 ## 5. AI Change History & Log
 
+
+### 2026-09-22 — Grok Bot / Cursor (fix: Thought first-byte — modest native THINK)
+- **Scope:** User (TR): Thought does not start flowing immediately (waits). Separate from scroll (#794–798).
+- **Live evidence (worldinmaking.com/api/chat, Europe/Istanbul probe):**
+  - Mid prompt (THINK triggers): first_any 0.08s, **first_thought_delta none**, first_token **3.52s**, total 6.1s, provider gemini.
+  - Short (THINK skipped): first_token **2.26s**, no thoughts.
+  - Long+tools: **first_thought_delta 17.07s**, first_token 25.03s, total 29.9s — ~17s silent wait before any Thought paint.
+- **Root cause:** Pre-tool host THINK uses `omitTools` → was `thinkingBudget:0` / `includeThoughts:false`. #775 demux correctly refuses to paint content tokens; with native thoughts disabled the UI stays blank through the whole THINK (now capped 15s by #800) until ACT.
+- **Choice (option a):** Re-enable **modest** native CoT on THINK (`THINK_NATIVE_BUDGET=128`, `includeThoughts:true`). Demux already paints `onThinking` / `part.thought` and still buffers content unpainted (#775). Avoids skipping THINK (quality) and avoids painting draft answers.
+- **Not chosen:** (b) skip THINK — loses cycleThought routing; (c) start ACT earlier — same; (d) quality-gate post-answer latency is separate (mid/long had corrected:true after tokens).
+- **Files:** `gemini.ts`, `pipeline.ts` comment, `pipeline.test.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node`
+- **Handoff:** PR `fix/wim-ai-think-native-early-paint`. After CF deploy, re-measure long-prompt first_thought_delta (expect <<15s when THINK runs).
+- **Residual:** ACT cold-start and quality critic still add latency after first tokens; if Gemini rejects thinkingConfig, existing retry strips it (content-only fallback).
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: Reasoning… stall / stream hang UX)
 - **Scope:** Urgent TR report — WIM AI hangs on "Reasoning…", no answer / intermittent errors. Earlier mobile: stream stall at Reasoning (not CSS). Investigate Thought (#790), plan quality (#793), scroll (#794–798).
