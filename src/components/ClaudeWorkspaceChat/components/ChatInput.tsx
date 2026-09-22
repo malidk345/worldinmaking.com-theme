@@ -163,7 +163,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   useEffect(() => {
     if (draftNonce > 0) {
       setPrompt(draftPrompt)
-      textareaRef.current?.focus()
+      textareaRef.current?.focus({ preventScroll: true })
     }
   }, [draftNonce, draftPrompt])
 
@@ -235,7 +235,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       setPrompt(command.insert)
     }
     setSlashIndex(0)
-    requestAnimationFrame(() => textareaRef.current?.focus())
+    requestAnimationFrame(() => textareaRef.current?.focus({ preventScroll: true }))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -270,7 +270,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   useEffect(() => {
     if (awaitingAsk && !(pendingHumanTurn?.choices || []).length) {
-      requestAnimationFrame(() => textareaRef.current?.focus())
+      requestAnimationFrame(() => textareaRef.current?.focus({ preventScroll: true }))
     }
     if (awaitingHuman) {
       setAskChoice(null)

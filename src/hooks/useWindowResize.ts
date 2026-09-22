@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { PanInfo } from 'framer-motion'
 import type { AppWindow } from '../context/Window'
-import { getViewportMetrics } from './useViewportMetrics'
+import {
+    getViewportMetrics,
+    isEditableFocusTarget,
+    shouldIgnoreViewportResizeForWindows,
+} from './useViewportMetrics'
 
 type ResizeChange = { x: boolean } | { y: boolean } | { x: boolean; y: boolean }
 
@@ -29,6 +33,8 @@ export function useWindowResize({
     updateWindow,
 }: UseWindowResizeOptions) {
     const [isResizing, setIsResizing] = useState(false)
+    /** Last viewport we actually applied to window geometry (stable layout size). */
+    const appliedViewportRef = useRef<{ width: number; height: number } | null>(null)
 
     const handleDragResize = useCallback(
         (info: PanInfo, change: ResizeChange, isLeftResize = false) => {
@@ -71,6 +77,24 @@ export function useWindowResize({
     useEffect(() => {
         const handleViewportResize = () => {
             const { width: viewportWidth, height: viewportHeight } = getViewportMetrics()
+            const prev = appliedViewportRef.current
+            if (prev) {
+                const keyboardOpen = document.documentElement.getAttribute('data-keyboard') === 'open'
+                const editing = isEditableFocusTarget(document.activeElement)
+                const isMobile = viewportWidth < 768
+                if (
+                    shouldIgnoreViewportResizeForWindows(
+                        prev,
+                        { width: viewportWidth, height: viewportHeight },
+                        { keyboardOpen, editing, isMobile }
+                    )
+                ) {
+                    // Keep appliedViewportRef on the last stable layout size so a
+                    // later keyboard/chrome dismiss does not apply a second jump.
+                    return
+                }
+            }
+
             const containerBounds = constraintsRef.current?.getBoundingClientRect()
             const availableWidth = Math.min(viewportWidth, containerBounds?.width ?? viewportWidth)
             const availableHeight = Math.min(
@@ -95,11 +119,13 @@ export function useWindowResize({
                     position: item.expanded ? { x: 0, y: 0 } : newPosition,
                 })
             }
+            appliedViewportRef.current = { width: viewportWidth, height: viewportHeight }
         }
 
         if (isSSR) return
-        // Layout resize only (orientation / browser chrome). The virtual keyboard
-        // fires visualViewport resize and must not move or shrink OS windows.
+        // Layout resize only (orientation). Soft keyboard + mobile URL-bar chrome
+        // also fire window.resize with height-only deltas — those must not move or
+        // shrink OS windows (see shouldIgnoreViewportResizeForWindows).
         window.addEventListener('resize', handleViewportResize)
         handleViewportResize()
         return () => {

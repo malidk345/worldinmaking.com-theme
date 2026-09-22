@@ -2974,7 +2974,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
       if (meta && event.key.toLowerCase() === 'l') {
         event.preventDefault()
-        document.querySelector<HTMLTextAreaElement>('textarea[data-composer]')?.focus()
+        document.querySelector<HTMLTextAreaElement>('textarea[data-composer]')?.focus({ preventScroll: true })
         return
       }
     }
