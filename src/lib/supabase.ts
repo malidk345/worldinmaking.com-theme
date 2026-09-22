@@ -1,10 +1,45 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createGuardedRealtimeDecode } from './realtime-decode'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 let client: SupabaseClient | null = null
 let isConfigured = false
+
+// Holds the realtime client so the guarded decoder can reuse its serializer.
+let realtimeClient: { serializer?: { decode: RealtimeSerializerDecode } } | null = null
+type RealtimeSerializerDecode = (rawPayload: unknown, callback: (message: unknown) => void) => void
+type SupabaseRealtimeDecode = NonNullable<NonNullable<Parameters<typeof createClient>[2]>['realtime']>['decode']
+
+// Running count of malformed realtime frames we dropped. A truncated frame
+// throws inside the socket `onmessage` callback; the guard below swallows it so
+// the channel survives, and this counter keeps that recovery visible instead of
+// silent.
+let droppedRealtimeFrames = 0
+
+const guardedRealtimeDecode = createGuardedRealtimeDecode(
+    (rawPayload) => {
+        // Reuse realtime-js's own serializer so string and binary frames decode
+        // exactly as the library expects; we only add a guard around the parse.
+        let decoded: unknown
+        realtimeClient?.serializer?.decode(rawPayload, (message) => {
+            decoded = message
+        })
+        return decoded
+    },
+    (error) => {
+        droppedRealtimeFrames += 1
+        console.warn(`[Supabase] Dropped malformed realtime frame (#${droppedRealtimeFrames})`, error)
+        if (typeof window !== 'undefined') {
+            void import('./wim-posthog')
+                .then(({ trackEvent }) => trackEvent('realtime_frame_dropped', { total_dropped: droppedRealtimeFrames }))
+                .catch(() => {
+                    /* observability is best-effort */
+                })
+        }
+    }
+)
 
 if (supabaseUrl && supabaseKey) {
     try {
@@ -22,7 +57,13 @@ if (supabaseUrl && supabaseKey) {
                 persistSession: true,
                 storage: typeof window !== 'undefined' ? window.localStorage : undefined,
             },
+            realtime: {
+                // realtime-js types the decoder against its own frame shapes; the
+                // guard is deliberately library-agnostic, so bridge it here.
+                decode: guardedRealtimeDecode as unknown as SupabaseRealtimeDecode,
+            },
         })
+        realtimeClient = (client as unknown as { realtime?: typeof realtimeClient }).realtime ?? null
         isConfigured = true
     } catch (e) {
         console.error('[Supabase] Init failed:', e)
