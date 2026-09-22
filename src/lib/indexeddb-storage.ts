@@ -2,7 +2,7 @@
  * Local-First IndexedDB Storage & Document Version History — WorldInMaking
  *
  * Provides resilient, offline-first persistence and snapshot-based time-travel versioning
- * for research notebooks and uploaded documents.
+ * for research notebooks, uploaded documents, and workspace chats.
  */
 
 export interface DocumentSnapshot {
@@ -18,9 +18,11 @@ export interface DocumentSnapshot {
 }
 
 const LEGACY_DB_NAME = 'wim_local_first_db'
-const DB_VERSION = 1
+/** v2 adds `chats` object store (workspace chat local-first). */
+const DB_VERSION = 2
 const STORE_NOTEBOOKS = 'notebooks'
 const STORE_SNAPSHOTS = 'snapshots'
+const STORE_CHATS = 'chats'
 
 function currentOwnerKey(): string {
     if (typeof window === 'undefined') return 'server'
@@ -39,6 +41,20 @@ function dbNameForOwner(ownerKey: string): string {
     return `${LEGACY_DB_NAME}:${ownerKey}`
 }
 
+function ensureStores(db: IDBDatabase): void {
+    if (!db.objectStoreNames.contains(STORE_NOTEBOOKS)) {
+        db.createObjectStore(STORE_NOTEBOOKS, { keyPath: 'id' })
+    }
+    if (!db.objectStoreNames.contains(STORE_SNAPSHOTS)) {
+        const snapStore = db.createObjectStore(STORE_SNAPSHOTS, { keyPath: 'id' })
+        snapStore.createIndex('notebookId', 'notebookId', { unique: false })
+        snapStore.createIndex('timestamp', 'timestamp', { unique: false })
+    }
+    if (!db.objectStoreNames.contains(STORE_CHATS)) {
+        db.createObjectStore(STORE_CHATS, { keyPath: 'id' })
+    }
+}
+
 function openNamedDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         if (typeof window === 'undefined' || !window.indexedDB) {
@@ -49,14 +65,7 @@ function openNamedDB(name: string): Promise<IDBDatabase> {
 
         request.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result
-            if (!db.objectStoreNames.contains(STORE_NOTEBOOKS)) {
-                db.createObjectStore(STORE_NOTEBOOKS, { keyPath: 'id' })
-            }
-            if (!db.objectStoreNames.contains(STORE_SNAPSHOTS)) {
-                const snapStore = db.createObjectStore(STORE_SNAPSHOTS, { keyPath: 'id' })
-                snapStore.createIndex('notebookId', 'notebookId', { unique: false })
-                snapStore.createIndex('timestamp', 'timestamp', { unique: false })
-            }
+            ensureStores(db)
         }
 
         request.onsuccess = () => resolve(request.result)
@@ -107,14 +116,17 @@ async function adoptLegacyIfNeeded(ownerKey: string, target: IDBDatabase): Promi
             if (sourceDb === target) continue
             const hasNotes = sourceDb.objectStoreNames.contains(STORE_NOTEBOOKS)
             const hasSnaps = sourceDb.objectStoreNames.contains(STORE_SNAPSHOTS)
-            if (!hasNotes && !hasSnaps) {
+            const hasChats = sourceDb.objectStoreNames.contains(STORE_CHATS)
+            if (!hasNotes && !hasSnaps && !hasChats) {
                 sourceDb.close()
                 continue
             }
             await new Promise<void>((resolve, reject) => {
-                const stores = [hasNotes ? STORE_NOTEBOOKS : null, hasSnaps ? STORE_SNAPSHOTS : null].filter(
-                    Boolean
-                ) as string[]
+                const stores = [
+                    hasNotes ? STORE_NOTEBOOKS : null,
+                    hasSnaps ? STORE_SNAPSHOTS : null,
+                    hasChats ? STORE_CHATS : null,
+                ].filter(Boolean) as string[]
                 if (!stores.length) {
                     resolve()
                     return
@@ -240,3 +252,66 @@ export async function getDocumentSnapshots(notebookId: string): Promise<Document
         return []
     }
 }
+
+/** Row shape for workspace chats in the shared local-first DB. */
+export type LocalChatRow = {
+    id: string
+    /** Full chat JSON (Chat from workspace). */
+    chat: unknown
+    updatedAt: number
+}
+
+/**
+ * Replace the local chats object store with the given chat list (keyed by chat id).
+ */
+export async function persistChatsLocal(chats: Array<{ id: string }>): Promise<void> {
+    if (!Array.isArray(chats)) return
+    try {
+        const db = await openDB()
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(STORE_CHATS, 'readwrite')
+            const store = tx.objectStore(STORE_CHATS)
+            store.clear()
+            const now = Date.now()
+            for (const chat of chats) {
+                if (!chat?.id) continue
+                store.put({
+                    id: chat.id,
+                    chat,
+                    updatedAt: now,
+                } satisfies LocalChatRow)
+            }
+            tx.oncomplete = () => resolve()
+            tx.onerror = () => reject(tx.error)
+        })
+    } catch (e) {
+        console.warn('IndexedDB chat persist fallback:', e)
+    }
+}
+
+/**
+ * Load all locally persisted workspace chats from IndexedDB.
+ */
+export async function loadChatsLocal<T = unknown>(): Promise<T[]> {
+    try {
+        const db = await openDB()
+        return await new Promise<T[]>((resolve, reject) => {
+            const tx = db.transaction(STORE_CHATS, 'readonly')
+            const store = tx.objectStore(STORE_CHATS)
+            const request = store.getAll()
+            request.onsuccess = () => {
+                const rows = (request.result || []) as LocalChatRow[]
+                const chats = rows
+                    .map((row) => (row?.chat != null ? row.chat : row) as T)
+                    .filter((chat) => chat && typeof (chat as { id?: unknown }).id === 'string')
+                resolve(chats)
+            }
+            request.onerror = () => reject(request.error)
+        })
+    } catch (e) {
+        console.warn('IndexedDB chat load fallback:', e)
+        return []
+    }
+}
+
+export { STORE_CHATS }

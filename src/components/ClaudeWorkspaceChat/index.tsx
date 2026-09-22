@@ -104,6 +104,8 @@ import {
   pullChatByIdFromRemote,
   pullChatsFromRemote,
   flushChatToRemoteKeepalive,
+  flushLocalChatsToIdb,
+  hydrateLocalChats,
   pushChatToRemote,
   pushDirtyLocalChats,
   readLocalChats,
@@ -111,8 +113,10 @@ import {
   rememberDeletedChatId,
   setRemoteChatShare,
   setRemoteMessageLiked,
+  shouldSuppressSelfEchoHydrate,
   writeLocalChats,
 } from '../../lib/chat-remote';
+import { guardOpenThreadRemote } from '../../lib/chat-merge';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
 import {
@@ -618,9 +622,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     const hydrateChatById = async (chatId: string) => {
       if (!chatId || cancelled) return
+      const isActive = chatId === activeChatIdRef.current
+      // Suppress self-echo from our own push for the open thread (list/sidebar still syncs).
+      if (isActive && shouldSuppressSelfEchoHydrate(chatId)) return
+      const midStream = isActive && isStreamingRef.current
       const full = await pullChatByIdFromRemote(chatId)
       if (cancelled || !full) return
-      setChats((prev) => mergeChats(prev, [full], readLocalDeletedChatIds()))
+      setChats((prev) => {
+        const local = prev.find((c) => c.id === chatId)
+        const guard = guardOpenThreadRemote(local, full, { midStream })
+        return mergeChats(prev, [full], readLocalDeletedChatIds(), {
+          preferLocalIds: guard === 'merge-prefer-local' ? [chatId] : undefined,
+        })
+      })
     }
 
     const syncFromRemote = async (claim = false) => {
@@ -638,7 +652,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         for (const id of remote.deletedIds) rememberDeletedChatId(id)
         let nextActive = activeChatIdRef.current
         setChats((prev) => {
-          const merged = mergeChats(prev, remote.chats, deletedIds)
+          const openId = activeChatIdRef.current
+          const merged = mergeChats(prev, remote.chats, deletedIds, {
+            preferLocalIds:
+              openId && isStreamingRef.current ? [openId] : undefined,
+          })
           if (merged.length > 0 && !merged.some((chat) => chat.id === nextActive)) {
             nextActive = merged[0].id
             pinBottomOnNextChatRef.current = true
@@ -665,6 +683,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       }
     }
+    void (async () => {
+      try {
+        const fromLocal = await hydrateLocalChats(chatsRef.current)
+        if (cancelled || !Array.isArray(fromLocal) || !fromLocal.length) return
+        setChats((prev) => mergeChats(fromLocal, prev, readLocalDeletedChatIds()))
+      } catch {
+        /* IDB unavailable — LS cold start already applied */
+      }
+    })()
     void syncFromRemote(true)
 
     let pullTimer: number | undefined
@@ -756,11 +783,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       const target = pendingId
         ? list.find((item) => item.id === pendingId)
         : list.find((item) => item.id === activeChatIdRef.current)
+      flushLocalChats(list)
+      void flushLocalChatsToIdb(list)
       if (!target) return
       if (readLocalDeletedChatIds().includes(target.id)) return
       if (!target.messages.some((message) => !message.isStreaming)) return
       persistChatIdRef.current = null
-      flushLocalChats(list)
       flushChatToRemoteKeepalive(target)
     }
     const onPageHide = () => {
@@ -809,7 +837,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let cancelled = false
     void pullChatByIdFromRemote(activeChatId).then((full) => {
       if (cancelled || !full) return
-      setChats((prev) => mergeChats(prev, [full], readLocalDeletedChatIds()))
+      if (shouldSuppressSelfEchoHydrate(activeChatId)) return
+      setChats((prev) => {
+        const local = prev.find((c) => c.id === activeChatId)
+        const midStream = isStreamingRef.current
+        const guard = guardOpenThreadRemote(local, full, { midStream })
+        return mergeChats(prev, [full], readLocalDeletedChatIds(), {
+          preferLocalIds: guard === 'merge-prefer-local' ? [activeChatId] : undefined,
+        })
+      })
     })
     return () => {
       cancelled = true

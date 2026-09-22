@@ -1,6 +1,6 @@
 /**
  * Browser helper for workspace chat ↔ Supabase sync.
- * Failures are silent: localStorage remains the offline cache.
+ * Failures are silent: IndexedDB is primary local cache; localStorage is write-through / cold-start.
  */
 import type { Chat } from '../components/ClaudeWorkspaceChat/types'
 import { supabase, isSupabaseConfigured } from './supabase'
@@ -15,6 +15,15 @@ import {
 } from './wim-identity'
 import { adoptDeviceCacheToAccount, adoptStringIdLists } from './adopt-device-cache'
 import { mergeChats } from './chat-merge'
+import {
+    hydrateChatsFromLocal,
+    noteSelfChatPush,
+    persistChatsToIdb,
+    readChatsFromLocalStorage,
+    shouldSuppressSelfEchoHydrate,
+    writeChatsToLocalStorage,
+    writeLocalChatsDual,
+} from './chat-local'
 
 export { mergeChats, mergeMessages } from './chat-merge'
 
@@ -56,6 +65,14 @@ export function adoptGuestChatsIntoAccount(): void {
         accountKey: namespacedStorageKey(CHAT_DELETED_BASE, authId),
         sourceKeys: [namespacedStorageKey(CHAT_DELETED_BASE, deviceKey), CHAT_DELETED_BASE],
     })
+    // Mirror adopted LS bundle into IDB for the signed-in owner.
+    try {
+        const raw = window.localStorage.getItem(accountKey)
+        const parsed = raw ? (JSON.parse(raw) as Chat[]) : []
+        if (Array.isArray(parsed) && parsed.length) writeLocalChatsDual(parsed)
+    } catch {
+        /* ignore */
+    }
 }
 
 export function readLocalDeletedChatIds(): string[] {
@@ -69,41 +86,28 @@ export function readLocalDeletedChatIds(): string[] {
     }
 }
 
+/** Sync cold-start read (LS). Prefer hydrateLocalChats() after mount for IDB. */
 export function readLocalChats<T>(fallback: T): T {
-    if (typeof window === 'undefined') return fallback
-    try {
-        const namespaced = window.localStorage.getItem(getChatStorageKey())
-        if (namespaced) return JSON.parse(namespaced) as T
-    } catch {
-        /* ignore */
-    }
-    // Never copy a previous guest/account cache into a signed-in user.
-    if (getAuthUserId()) return fallback
-    const keys = [CHAT_CACHE_BASE, 'claude_workspace_chats_v6', 'claude_workspace_chats_v4']
-    for (const key of keys) {
-        try {
-            const saved = window.localStorage.getItem(key)
-            if (!saved) continue
-            const parsed = JSON.parse(saved) as T
-            if (Array.isArray(parsed)) {
-                window.localStorage.setItem(getChatStorageKey(), saved)
-            }
-            return parsed
-        } catch {
-            /* keep looking */
-        }
-    }
-    return fallback
+    return readChatsFromLocalStorage(fallback)
 }
 
+/** IDB primary + LS write-through. */
 export function writeLocalChats(chats: Chat[]): void {
-    if (typeof window === 'undefined') return
-    try {
-        window.localStorage.setItem(getChatStorageKey(), JSON.stringify(chats))
-    } catch {
-        /* quota */
-    }
+    writeLocalChatsDual(chats)
 }
+
+/** Awaitable IDB flush (pagehide / unmount). */
+export async function flushLocalChatsToIdb(chats: Chat[]): Promise<void> {
+    writeChatsToLocalStorage(chats)
+    await persistChatsToIdb(chats)
+}
+
+/** Boot: migrate LS → IDB once, then prefer IDB. */
+export async function hydrateLocalChats(lsFallback: Chat[] = []): Promise<Chat[]> {
+    return hydrateChatsFromLocal(lsFallback)
+}
+
+export { shouldSuppressSelfEchoHydrate, noteSelfChatPush }
 
 export function rememberDeletedChatId(chatId: string): void {
     if (typeof window === 'undefined' || !chatId) return
@@ -381,6 +385,7 @@ const lastPushedUpdatedAt = new Map<string, string>()
 export function markChatPushed(chat: Pick<Chat, 'id' | 'updatedAt'>): void {
     if (!chat?.id || !chat.updatedAt) return
     lastPushedUpdatedAt.set(chat.id, chat.updatedAt)
+    noteSelfChatPush(chat.id)
 }
 
 function chatLooksDirty(chat: Chat): boolean {
