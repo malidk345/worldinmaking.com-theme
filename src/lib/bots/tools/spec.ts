@@ -211,7 +211,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'write_scratchpad',
             description:
-                'Save a note the user asked to keep, or a fact extracted from a document they asked you to read. Do not dump scratchpad contents into the public reply, and do not write to the scratchpad unless the query needs it.',
+                'Save working notes: citations, source excerpts, and research synthesis. In plan mode, use this to persist research findings for the current step (not only when the user asked to keep something). Do not dump scratchpad contents into the public reply.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -248,7 +248,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'todo_write',
             description:
-                'Create the plan once, then only update statuses. Use the same ids. Do not write a new plan if one exists. Exactly one item in_progress. When a step is done, mark it completed and the next pending item in_progress.',
+                'Create the plan once, then only update statuses. Use the same ids. Do not write a new plan if one exists. Exactly one item in_progress. Prefer a short done_when on each step. When a step is done, mark it completed and the next pending item in_progress.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -265,6 +265,14 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
                                     type: 'string',
                                     enum: ['pending', 'in_progress', 'completed'],
                                     description: 'Current execution status of this task.',
+                                },
+                                done_when: {
+                                    type: 'string',
+                                    description: 'Short success criteria for this step (e.g. "3 primary sources on scratchpad").',
+                                },
+                                needs_evidence: {
+                                    type: 'boolean',
+                                    description: 'If true, prefer write_scratchpad evidence before marking completed.',
                                 },
                             },
                             required: ['id', 'title', 'status'],
@@ -349,7 +357,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'finalize_plan',
             description:
-                'Mark the plan ready and show it to the user. Call this in plan mode after todo_write. Execution pauses until they Run. Use switch_mode execute only to skip approval.',
+                'Mark the plan ready and show it to the user. Call in plan mode after todo_write (spine required). If research ran, write_scratchpad must hold findings first. Execution pauses until they Run. Use switch_mode execute only to skip approval.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,

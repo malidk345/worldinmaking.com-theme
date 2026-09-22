@@ -50,8 +50,78 @@ export const THINK_MAX_TOKENS = 256
 export const THINK_PLAN_INSTRUCTION =
     'PLANNING STEP: In a few short sentences, plan your entire approach: identify the core thesis, the analytical argument, the structure of your answer, and whether any tools are needed. Keep this private to your reasoning. Do not call tools in this thought.'
 
+/** Plan mode: this step only — not the whole essay approach. */
+export const THINK_PLAN_MODE_INSTRUCTION =
+    'PLANNING STEP (plan mode): In a few short sentences, focus on THIS step only: open questions, sources to check, success criteria for the current todo, and one tool move. Do not plan the entire essay approach. Keep this private to your reasoning. Do not call tools in this thought.'
+
 export const THINK_REFLECT_INSTRUCTION =
     'REFLECTION STEP: In a few short sentences, evaluate if the tool results fully satisfy what the user requested. If more information or another tool is needed, identify it; otherwise, outline how to synthesize the comprehensive final answer. Keep this private to your reasoning. Do not repeat the results. Do not call tools in this thought.'
+
+/** Plan mode reflect: enough for this step? → scratchpad/todo+STOP vs one more focused call. */
+export const THINK_REFLECT_PLAN_INSTRUCTION =
+    'REFLECTION STEP (plan mode): In a few short sentences, is this enough for the CURRENT step? If yes: write_scratchpad (citations/synthesis) and/or todo_write with the SAME ids, then STOP. If no: one more focused tool for this step only. Do not start the next step. Keep this private to your reasoning. Do not call tools in this thought.'
+
+/**
+ * Plan-mode research cluster size before requiring scratchpad + stop.
+ * N=3: allows a typical search → fetch → read trio without starving deep research;
+ * beyond that, findings must hit write_scratchpad and the turn stops (step isolation).
+ */
+export const PLAN_RESEARCH_CLUSTER_N = 3
+
+/** Research / read tools that count toward the plan-mode research cluster. */
+export const PLAN_RESEARCH_TOOL_NAMES = new Set([
+    'web_search',
+    'fetch_url',
+    'read_document',
+    'search_site',
+    'search_academic_corpus',
+    'verified_corpus_search',
+    'read_notebook',
+    'read_post',
+    'list_notebooks',
+    'get_workspace',
+    'task',
+    'analyze_image',
+    'transcribe_audio',
+    'run_code_sandbox',
+    'cross_examine_argument',
+])
+
+export function isPlanResearchTool(name: string): boolean {
+    return PLAN_RESEARCH_TOOL_NAMES.has(name)
+}
+
+export function thinkInstructionFor(agentMode: AgentMode, postTool = false): string {
+    if (agentMode === 'plan') {
+        return postTool ? THINK_REFLECT_PLAN_INSTRUCTION : THINK_PLAN_MODE_INSTRUCTION
+    }
+    return postTool ? THINK_REFLECT_INSTRUCTION : THINK_PLAN_INSTRUCTION
+}
+
+/** Soft gate before finalize_plan interrupt — returns reminder text or null if ready. */
+export function finalizePlanReadinessReminder(input: {
+    todos: Array<{ id: string; title: string; status: string }>
+    scratchpad: Array<{ note: string; source?: string }>
+    usedWebSearch?: boolean
+    /** True when any plan research tool succeeded this turn (or prior in restored state). */
+    usedPlanResearch?: boolean
+}): string | null {
+    if (!input.todos.length) {
+        return 'finalize_plan needs a todo spine first. Call todo_write with the plan steps (include short done_when where helpful), then finalize_plan.'
+    }
+    const completedResearch = input.todos.some(
+        (todo) =>
+            todo.status === 'completed' &&
+            /research|source|search|ara[sş]t[iı]r|kaynak|corpus|citation/i.test(todo.title)
+    )
+    const hasResearchScratch = input.scratchpad.some(
+        (item) => item.source !== 'memory' && Boolean(item.note?.trim())
+    )
+    if ((completedResearch || input.usedWebSearch || input.usedPlanResearch) && !hasResearchScratch) {
+        return 'Research findings are not on the scratchpad yet. Call write_scratchpad with citations/synthesis for the research step, then finalize_plan.'
+    }
+    return null
+}
 
 /** Soft optional hint when public text already streamed this turn — prefer continue/refine, not a hard rule. */
 export const PUBLIC_CONTINUE_NUDGE =
@@ -294,7 +364,7 @@ export interface AgentState {
     citations: AiCitation[]
     actions: HostOsAction[]
     scratchpad: Array<{ note: string; source?: string }>
-    todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed' }>
+    todos: Array<{ id: string; title: string; status: 'pending' | 'in_progress' | 'completed'; done_when?: string; needs_evidence?: boolean }>
     usedTools: boolean
     usedWebSearch: boolean
     publicText: string
@@ -304,6 +374,12 @@ export interface AgentState {
     planNudges: number
     /** Plan mode: end the turn after completing one todo step (quality isolation). */
     stopAfterTools: boolean
+    /** Plan mode: research tools since last todo advance / scratchpad persist. */
+    researchClusterCount: number
+    /** Plan mode: nudged once to write_scratchpad after a research cluster. */
+    researchClusterAwaitingScratchpad: boolean
+    /** Plan mode: at least one research tool succeeded (finalize soft gate). */
+    usedPlanResearch: boolean
     execNudges: number
     writeNudges: number
     stepCount: number
@@ -395,8 +471,8 @@ function emitNode(
     params.onNode?.({ name, status, detail: nodeStatusLabel(name, status) })
 }
 
-function withThinkInstruction(messages: ChatMessage[], postTool = false): ChatMessage[] {
-    const instruction = postTool ? THINK_REFLECT_INSTRUCTION : THINK_PLAN_INSTRUCTION
+function withThinkInstruction(messages: ChatMessage[], postTool = false, agentMode: AgentMode = 'ask'): ChatMessage[] {
+    const instruction = thinkInstructionFor(agentMode, postTool)
 
     return messages.map((message, index) => {
         if (index === 0 && message.role === 'system') {
@@ -471,7 +547,8 @@ async function runThinkPhase(
                 reminder: state.pendingReminder,
                 memories: memoriesForHostContext(params.host?.scratchpad?.memories, state.scratchpad),
             }),
-            postTool
+            postTool,
+            state.agentMode
         ),
         toolChoice: 'none',
         omitTools: true,
@@ -639,8 +716,8 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         state.planNudges += 1
         state.pendingReminder =
             state.todos.length === 0
-                ? 'Plan mode is on. Invent the plan yourself — do not ask the user for next steps. Use todo_write or research tools if they help, or write the user-facing piece now.'
-                : 'One focused action: research the current step or call finalize_plan when ready. Do not ask the user for next steps. Prefer stopping after one step rather than packing the whole plan into this turn.'
+                ? 'Plan mode is on. Invent the plan yourself — do not ask the user for next steps. Use todo_write (with short done_when) or one research tool if they help, or write the user-facing piece now.'
+                : 'One focused action for the CURRENT step only: one research tool, OR write_scratchpad, OR todo_write (same ids) then STOP, OR finalize_plan when ready. Do not ask the user for next steps. Do not pack several tools to finish the whole plan now.'
         state.phase = 'decision'
         return
     }
@@ -892,6 +969,10 @@ async function runOneToolCall(
     if (name === 'web_search') {
         state.usedWebSearch = true
     }
+    if (state.agentMode === 'plan' && executed.ok && isPlanResearchTool(name)) {
+        state.researchClusterCount += 1
+        state.usedPlanResearch = true
+    }
     if (name === 'write_scratchpad' && executed.ok) {
         try {
             const parsed = JSON.parse(executed.result)
@@ -900,6 +981,18 @@ async function runOneToolCall(
             }
         } catch {
             state.scratchpad.push({ note: executed.result })
+        }
+        // Plan research durability: after a cluster (or when awaiting), persist then stop.
+        if (
+            state.agentMode === 'plan' &&
+            (state.researchClusterAwaitingScratchpad || state.researchClusterCount >= PLAN_RESEARCH_CLUSTER_N)
+        ) {
+            state.stopAfterTools = true
+            state.researchClusterCount = 0
+            state.researchClusterAwaitingScratchpad = false
+        } else if (state.agentMode === 'plan') {
+            // Findings saved mid-cluster — reset cluster counter so research can continue carefully.
+            state.researchClusterCount = 0
         }
     }
     if (name === 'remember' && executed.ok) {
@@ -926,8 +1019,12 @@ async function runOneToolCall(
                 const completedCount = state.todos.filter((todo) => todo.status === 'completed').length
                 const advanced = completedCount > completedBefore
                 const hasOpen = state.todos.some((todo) => todo.status !== 'completed')
-                if (state.agentMode === 'plan' && advanced && hasOpen) {
-                    state.stopAfterTools = true
+                if (state.agentMode === 'plan') {
+                    state.researchClusterCount = 0
+                    state.researchClusterAwaitingScratchpad = false
+                    if (advanced && hasOpen) {
+                        state.stopAfterTools = true
+                    }
                 }
                 const planStopInstruction =
                     state.agentMode === 'plan' && advanced && hasOpen && current
@@ -976,30 +1073,51 @@ async function runOneToolCall(
         }
     }
     if (name === 'finalize_plan' && executed.ok) {
-        const parsed = parseJsonObject(executed.result)
-        const summary =
-            typeof parsed?.summary === 'string' && parsed.summary.trim()
-                ? parsed.summary.trim()
-                : undefined
-        const plan = state.todos.map((todo) => ({
-            id: todo.id,
-            title: todo.title,
-            status: todo.status,
-        }))
-        state.interrupt = {
-            kind: 'plan_approval',
-            status: 'pending',
-            title: 'Plan',
-            summary: summary || (plan.length ? plan.map((item) => item.title).join(' → ') : 'Ready to run'),
-            ...(plan.length ? { plan } : {}),
-        }
-        if (!state.publicText.trim()) state.publicText = state.interrupt.summary || 'Plan ready.'
-        toolContent = JSON.stringify({
-            ok: true,
-            awaiting: 'plan_approval',
-            summary: state.interrupt.summary,
-            tasks: plan,
+        const readiness = finalizePlanReadinessReminder({
+            todos: state.todos,
+            scratchpad: state.scratchpad,
+            usedWebSearch: state.usedWebSearch,
+            usedPlanResearch: state.usedPlanResearch,
         })
+        if (readiness) {
+            // Soft gate — do not interrupt; remind and let the model fix this turn.
+            toolContent = JSON.stringify({ ok: false, error: readiness })
+            executed = {
+                ...executed,
+                ok: false,
+                result: toolContent,
+                summary: readiness,
+            }
+            state.pendingReminder = state.pendingReminder
+                ? `${state.pendingReminder}\n${readiness}`
+                : readiness
+        } else {
+            const parsed = parseJsonObject(executed.result)
+            const summary =
+                typeof parsed?.summary === 'string' && parsed.summary.trim()
+                    ? parsed.summary.trim()
+                    : undefined
+            const plan = state.todos.map((todo) => ({
+                id: todo.id,
+                title: todo.title,
+                status: todo.status,
+                ...(todo.done_when ? { done_when: todo.done_when } : {}),
+            }))
+            state.interrupt = {
+                kind: 'plan_approval',
+                status: 'pending',
+                title: 'Plan',
+                summary: summary || (plan.length ? plan.map((item) => item.title).join(' → ') : 'Ready to run'),
+                ...(plan.length ? { plan } : {}),
+            }
+            if (!state.publicText.trim()) state.publicText = state.interrupt.summary || 'Plan ready.'
+            toolContent = JSON.stringify({
+                ok: true,
+                awaiting: 'plan_approval',
+                summary: state.interrupt.summary,
+                tasks: plan,
+            })
+        }
     }
     if (name === 'ask_user' && executed.ok) {
         const parsed = parseJsonObject(executed.result)
@@ -1091,9 +1209,31 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
     }
 
     emitNode(params, 'tools', 'completed', cycle)
+    // Plan research cluster: after N research tools without todo advance, require scratchpad then stop.
+    if (
+        state.agentMode === 'plan' &&
+        !state.interrupt &&
+        !state.stopAfterTools &&
+        state.researchClusterCount >= PLAN_RESEARCH_CLUSTER_N
+    ) {
+        if (!state.researchClusterAwaitingScratchpad) {
+            state.researchClusterAwaitingScratchpad = true
+            const clusterHint =
+                `Research cluster (≥${PLAN_RESEARCH_CLUSTER_N} tools) without a todo advance. Call write_scratchpad now with citations/synthesis for this step, then STOP. Do not start more research tools.`
+            state.pendingReminder = state.pendingReminder
+                ? `${clusterHint}\n${state.pendingReminder}`
+                : clusterHint
+        } else {
+            // Already nudged once; stop even without scratchpad so the turn cannot infinite-research.
+            state.stopAfterTools = true
+        }
+    }
     const current = state.todos.find((todo) => todo.status === 'in_progress')
-    if (current && !state.interrupt) {
-        const step = `Current step: ${current.title}. Do that work now. You may call several tools. Then todo_write with the SAME ids.`
+    if (current && !state.interrupt && !state.stopAfterTools) {
+        const step =
+            state.agentMode === 'plan'
+                ? `Current step: ${current.title}. If this step is done: todo_write with the SAME ids (mark completed, next in_progress) then STOP. Else: one focused tool for this step only — do not pack several tools to finish the whole plan.`
+                : `Current step: ${current.title}. Do that work now. You may call several tools. Then todo_write with the SAME ids.`
         state.pendingReminder = state.pendingReminder && state.pendingReminder !== step
             ? `${step}\n${state.pendingReminder}`
             : step
@@ -1181,6 +1321,9 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         pendingReminder: '',
         planNudges: 0,
         stopAfterTools: false,
+        researchClusterCount: 0,
+        researchClusterAwaitingScratchpad: false,
+        usedPlanResearch: false,
         execNudges: 0,
         writeNudges: 0,
         stepCount: 0,

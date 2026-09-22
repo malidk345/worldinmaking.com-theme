@@ -1824,13 +1824,19 @@ export async function executeToolCall(
             const rawTasks = Array.isArray(args.tasks) ? args.tasks : []
             const tasks = rawTasks
                 .filter((t): t is Record<string, unknown> => Boolean(t && typeof t === 'object'))
-                .map((t, idx) => ({
-                    id: asText(t.id || `task_${idx + 1}`, 40).trim(),
-                    title: asText(t.title || t.name || t.text, 120).trim(),
-                    status: (['pending', 'in_progress', 'completed'].includes(String(t.status))
-                        ? String(t.status)
-                        : 'pending') as 'pending' | 'in_progress' | 'completed',
-                }))
+                .map((t, idx) => {
+                    const doneWhen = asText(t.done_when || t.doneWhen, 200).trim()
+                    const needsEvidence = t.needs_evidence === true || t.needsEvidence === true
+                    return {
+                        id: asText(t.id || `task_${idx + 1}`, 40).trim(),
+                        title: asText(t.title || t.name || t.text, 120).trim(),
+                        status: (['pending', 'in_progress', 'completed'].includes(String(t.status))
+                            ? String(t.status)
+                            : 'pending') as 'pending' | 'in_progress' | 'completed',
+                        ...(doneWhen ? { done_when: doneWhen } : {}),
+                        ...(needsEvidence ? { needs_evidence: true } : {}),
+                    }
+                })
                 .filter((t) => t.title.length > 0)
             if (tasks.length === 0) {
                 const result = JSON.stringify({ ok: false, error: 'tasks array cannot be empty' })
