@@ -827,8 +827,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const pinSpacerRef = useRef<HTMLDivElement>(null);
   const [pinSpacerHeight, setPinSpacerHeight] = useState(0);
-  /** While set, hold this user message near the scroller top as the reply streams. */
+  /** While set, hold this user message near the scroller top — only while the reply streams. */
   const pinnedMessageIdRef = useRef<string | null>(null);
+  /** Suppress scroll-event pin release while we programmatically re-assert the pin. */
+  const applyingPinScrollRef = useRef(false);
 
   const clearMessagePin = useCallback(() => {
     pinnedMessageIdRef.current = null;
@@ -854,7 +856,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const scroller = chatScrollRef.current;
     const el = findPinnedMessageEl(messageId);
     if (!scroller || !el) return;
+    applyingPinScrollRef.current = true;
     scrollElementToScrollerPin(scroller, el, CHAT_PIN_TOP_PADDING_PX);
+    // Release on next frame so the synthetic scroll event from scrollTop assign is ignored.
+    requestAnimationFrame(() => {
+      applyingPinScrollRef.current = false;
+    });
   }, [findPinnedMessageEl]);
 
   /**
@@ -876,11 +883,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       CHAT_PIN_TOP_PADDING_PX
     );
     // Apply spacer synchronously so scrollTop can reach the pin target this frame.
+    // Hold the suppress flag across spacer + scrollTop so a synthetic scroll event
+    // cannot immediately release the pin we just established.
+    applyingPinScrollRef.current = true;
     if (pinSpacerRef.current) {
       pinSpacerRef.current.style.height = `${nextSpacer}px`;
     }
     setPinSpacerHeight(nextSpacer);
     scrollElementToScrollerPin(scroller, el, CHAT_PIN_TOP_PADDING_PX);
+    requestAnimationFrame(() => {
+      applyingPinScrollRef.current = false;
+    });
     return true;
   }, [findPinnedMessageEl]);
 
@@ -932,11 +945,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
     };
 
+    // Scrollbar / keyboard / PageUp — wheel/touch alone missed these and left the pin armed.
+    const onScroll = () => {
+      if (applyingPinScrollRef.current) return;
+      if (!pinnedMessageIdRef.current) return;
+      releasePinForManualScroll();
+    };
+
     scroller.addEventListener('touchmove', onTouchMove, { passive: true });
     scroller.addEventListener('wheel', onWheel, { passive: true });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      if (pinnedMessageIdRef.current) {
+      // Pin is stream-only: never re-assert after the turn settles (idle image/font/layout
+      // changes were yanking scrollTop back to the user bubble — upward jumps).
+      if (pinnedMessageIdRef.current && isStreamingRef.current) {
         maintainPinnedScroll();
       }
     });
@@ -946,6 +969,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return () => {
       scroller.removeEventListener('touchmove', onTouchMove);
       scroller.removeEventListener('wheel', onWheel);
+      scroller.removeEventListener('scroll', onScroll);
       observer.disconnect();
     };
   }, [activeChatId, clearMessagePin, maintainPinnedScroll, Boolean(activeChat?.messages.length)]);
@@ -1150,7 +1174,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setIsStreaming(true);
     setStreamStatus('thinking');
     // On a new user send: pin that user bubble near the top. ResizeObserver
-    // holds the pin as the reply grows. Manual wheel/touch releases the lock.
+    // holds the pin only while streaming. Manual scroll (wheel/touch/scrollbar)
+    // releases the lock; stream settle always clears it (no idle re-pin).
     // skipUserAppend (Continue / resume): one-shot jump to bottom, no stick mode.
     if (!options?.skipUserAppend) {
       pinBottomOnNextChatRef.current = false;
@@ -1861,6 +1886,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             if (streamEpochRef.current === streamEpoch) {
               setIsStreaming(false)
               setStreamStatus(null)
+              // Unlock ends the pin hold — user is idle answering; do not let RO re-pin.
+              pinnedMessageIdRef.current = null
+              setPinSpacerHeight(0)
             }
             humanRespondInFlightRef.current = false
             if (streamedHumanTurn.plan && streamedHumanTurn.plan.length) {
@@ -2222,11 +2250,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         setIsStreaming(false);
         setStreamStatus(null);
         streamReaderRef.current = null;
-        // Clear send-pin on stop/error/abort (keep pin after clean success for reading).
-        if (!isStreamComplete || backendError) {
-          pinnedMessageIdRef.current = null;
-          setPinSpacerHeight(0);
-        }
+        // Always clear send-pin when the turn settles. Keeping it after clean success left
+        // ResizeObserver armed: idle layout/image/font changes re-asserted scrollTop and
+        // yanked the viewport upward to the user bubble.
+        pinnedMessageIdRef.current = null;
+        setPinSpacerHeight(0);
       }
     }
   };

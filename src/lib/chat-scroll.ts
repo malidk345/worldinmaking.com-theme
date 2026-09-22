@@ -3,7 +3,8 @@
  * AppWindow chat pane while the assistant reply streams below.
  *
  * One model: pin-to-message (with small top inset) while the assistant streams.
- * Manual scroll releases the pin; there is no stick-to-bottom re-arm.
+ * Manual scroll releases the pin; stream settle clears it (no idle re-pin).
+ * There is no stick-to-bottom re-arm.
  */
 
 /** Small inset so the bubble sits under the scroller top mask, not flush to 0. */
