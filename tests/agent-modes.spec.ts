@@ -14,7 +14,7 @@ import {
     processItemToThinkingStep,
 } from '../src/lib/bots/agent/activity'
 import { buildThinkingTimeline, shouldShowLiveThinkingIndicator } from '../src/lib/bots/agent/timeline'
-import { isLongFormWriting, mergePlan, normalizePlan, seedLongFormPlan, withHostContext } from '../src/lib/bots/agent/plan'
+import { isLongFormWriting, mergePlan, normalizePlan, seedLongFormPlan, formatPlanBoard, withHostContext } from '../src/lib/bots/agent/plan'
 import { OPENAI_CHAT_TOOLS, toolsForAgentMode } from '../src/lib/bots/tools/spec'
 import {
     runAgentNodePipeline,
@@ -72,6 +72,23 @@ test.describe('Agent modes', () => {
         expect(PLAN_TOOL_PROTOCOL).toContain('Do not call todo_write unless a sequence helps')
         expect(PLAN_USER_PREFIX).toContain('Plan mode is ON')
     })
+
+    test('plan mode excludes ask_user and forbids asking the user for next steps', () => {
+        expect(PLAN_TOOL_NAMES).not.toContain('ask_user')
+        expect(isToolAllowedInMode('ask_user', 'plan')).toBe(false)
+        expect(isToolAllowedInMode('ask_user', 'ask')).toBe(true)
+        const prompt = modeSystemPrompt('plan')
+        expect(prompt.toLowerCase()).toMatch(/next steps|invent the plan|do not ask the user/)
+        expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/not available|do not ask the user|invent the plan/)
+        expect(PLAN_USER_PREFIX.toLowerCase()).toMatch(/do not ask the user|invent the plan/)
+    })
+
+    test('plan mode prefers one focused action per turn', () => {
+        const prompt = modeSystemPrompt('plan')
+        expect(prompt.toLowerCase()).toMatch(/one focused action per turn|stop this turn|current step only|prefer one/)
+        expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/one focused|prefer one|stop/)
+    })
+
 
     test('toolsForMode is a generic filter over any spec list', () => {
         const filtered = toolsForMode('plan', [{ function: { name: 'web_search' } }, { function: { name: 'open_path' } }])
@@ -265,6 +282,19 @@ test.describe('Thinking timeline', () => {
         expect(items[0].todos?.map((todo) => todo.status)).toEqual(['completed', 'in_progress'])
         expect(items[0].todos?.map((todo) => todo.title)).toEqual(['Search', 'Write'])
     })
+    test('formatPlanBoard in plan mode tells the model to stop after the current step', () => {
+        const board = formatPlanBoard(
+            [
+                { id: 'a', title: 'Research', status: 'in_progress' },
+                { id: 'b', title: 'Outline', status: 'pending' },
+            ],
+            'plan'
+        )
+        expect(board.toLowerCase()).toContain('current step only')
+        expect(board.toLowerCase()).toMatch(/stop this turn/)
+        expect(board.toLowerCase()).toContain('do not ask the user what comes next')
+    })
+
 
     test('todo_write becomes a plan row with todos', () => {
         const items = buildThinkingTimeline(
@@ -777,6 +807,52 @@ test.describe('Graph checkpoint resume', () => {
         expect(result.checkpoint).toBeTruthy()
         expect(result.agentMode).toBe('plan')
     })
+
+    test('plan mode stops after completing one todo step instead of packing the rest', async () => {
+        let decisionRounds = 0
+        const result = await runAgentNodePipeline({
+            complete: async ({ omitTools }) => {
+                if (omitTools) return { ok: true as const, content: '', toolCalls: [] }
+                decisionRounds += 1
+                if (decisionRounds === 1) {
+                    return {
+                        ok: true as const,
+                        content: '',
+                        toolCalls: [
+                            {
+                                id: 'c1',
+                                name: 'todo_write',
+                                argumentsJson: JSON.stringify({
+                                    tasks: [
+                                        { id: 't1', title: 'Research', status: 'completed' },
+                                        { id: 't2', title: 'Outline', status: 'in_progress' },
+                                    ],
+                                }),
+                            },
+                        ],
+                    }
+                }
+                // Should not keep tooling after the step isolation stop.
+                return {
+                    ok: true as const,
+                    content: 'Should not reach a second tooling round.',
+                    toolCalls: [],
+                }
+            },
+            baseMessages: [
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'plan a long essay' },
+            ],
+            provider: 'test',
+            agentMode: 'plan',
+            maxSteps: 6,
+        })
+        expect(result.status).toBe('done')
+        expect(result.interrupt).toBeFalsy()
+        expect(decisionRounds).toBeLessThanOrEqual(2)
+        expect(result.text.toLowerCase()).toMatch(/outline|previous plan step|next|finished/)
+    })
+
 
     test('switch_mode execute from plan does not wait for a human', async () => {
         const result = await runAgentNodePipeline({

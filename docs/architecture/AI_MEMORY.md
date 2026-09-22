@@ -52,12 +52,29 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
-- **Task:** Product default wallpaper → cobalt (preserve user-persisted wallpaper).
+- **Task:** Fix WIM AI plan mode quality/flow — no user next-step prompts; one step per turn.
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-22 — Grok Bot / Cursor (fix: plan mode — no next-step asks + step isolation)
+- **Scope:** User (TR): plan mode broken / low quality — (1) next steps must NOT be asked to the user, (2) each step as its own request is more sensible than one continuous packed plan turn.
+- **Root cause:** Plan mode allowed `ask_user` and prompt/board text pushed continuous multi-step packing in one turn (`planNudges` + "when done, mark next in_progress" without stop). Models solicited next steps mid-plan and crammed research+plan into one weak round.
+- **Choice:** Surgical — remove `ask_user` from plan toolkit; instruct model to invent the plan; host-stop after one completed todo in plan mode (reuse execute's one-section pattern); surface **Next step** chip for plan (not "what should we do next?"). Keep `finalize_plan` / Run approval. Avoided a full orchestrator redesign.
+- **Change:**
+  1. `modes.ts`: drop `ask_user` from `PLAN_TOOL_NAMES`; PLAN prompts/protocol/prefix forbid next-step asks; prefer one focused action per turn; align execute prompt with one-section-then-stop.
+  2. `plan.ts` `formatPlanBoard(mode)`: in plan mode, stop after current step.
+  3. `pipeline.ts`: `stopAfterTools` when a plan todo advances with open work left; skip packing nudges; pass `mode` into `withHostContext`.
+  4. `spec.ts`: `ask_user` description — never for next steps/plan structure; unavailable in plan mode.
+  5. Chat UI: **Next step** chip in plan mode (same machinery as execute **Next section**).
+- **Tests:** agent-modes + ai-public-surface (plan excludes ask_user; board stop text); pipeline step-isolation turn.
+- **Files:** `modes.ts`, `plan.ts`, `pipeline.ts`, `spec.ts`, ChatInput/index, tests, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run tests/agent-modes.spec.ts src/lib/bots/tools/pipeline.test.ts tests/ai-public-surface.spec.ts --environment node`
+- **Handoff:** PR `fix/wim-ai-plan-mode-step-isolation` — merge when green.
+- **Residual:** Prompt/host stop is soft on model obedience before `todo_write` completes a step; first-turn research without completing a todo can still run multiple tools. `ask_user` remains in ask/execute.
+
 
 ### 2026-09-22 — Grok Bot / Cursor (feat: default wallpaper = cobalt)
 - **Scope:** User: change product default wallpaper to cobalt; leave Groq/Gemini rotation as-is; preserve user-persisted wallpaper.

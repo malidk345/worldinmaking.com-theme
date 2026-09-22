@@ -107,7 +107,7 @@ export function mergePlan(prev: PlanTodo[], incoming: PlanTodo[]): PlanTodo[] {
     return normalizePlan(merged)
 }
 
-export function formatPlanBoard(todos: PlanTodo[]): string {
+export function formatPlanBoard(todos: PlanTodo[], mode?: 'ask' | 'plan' | 'execute'): string {
     if (!todos.length) return ''
     const current = todos.find((todo) => todo.status === 'in_progress')
     const lines = todos.map((todo, index) => {
@@ -115,14 +115,21 @@ export function formatPlanBoard(todos: PlanTodo[]): string {
         const pointer = todo.status === 'in_progress' ? '  ← do this now' : ''
         return `${index + 1}. [${mark}] ${todo.id}: ${todo.title}${pointer}`
     })
-    const instruction = current
-        ? `Next step: "${current.title}". You may use several tools for it. Do not rewrite this list. When that step is done, call todo_write with the SAME ids: mark it completed and the next pending item in_progress.`
-        : 'All steps are completed. Write the user-visible answer. Do not create a new plan.'
+    let instruction: string
+    if (!current) {
+        instruction = 'All steps are completed. Write the user-visible answer. Do not create a new plan.'
+    } else if (mode === 'plan') {
+        instruction =
+            `Current step only: "${current.title}". Use tools for THIS step. Do not ask the user what comes next. When it is done, call todo_write with the SAME ids (mark it completed and the next pending item in_progress), then STOP this turn — do not start the next step.`
+    } else {
+        instruction =
+            `Next step: "${current.title}". You may use several tools for it. Do not rewrite this list. When that step is done, call todo_write with the SAME ids: mark it completed and the next pending item in_progress.`
+    }
     return `<plan_board>\nLocked plan — same ids on every todo_write.\n${lines.join('\n')}\n${instruction}\n</plan_board>`
 }
 
-export function withPlanBoard<T extends { role: string; content: string | null }>(messages: T[], todos: PlanTodo[]): T[] {
-    const board = formatPlanBoard(todos)
+export function withPlanBoard<T extends { role: string; content: string | null }>(messages: T[], todos: PlanTodo[], mode?: 'ask' | 'plan' | 'execute'): T[] {
+    const board = formatPlanBoard(todos, mode)
     if (!board) return messages
     return messages.map((message, index) => {
         if (index !== 0 || message.role !== 'system') return message
@@ -155,12 +162,13 @@ export function withHostContext<T extends { role: string; content: string | null
     messages: T[],
     input: {
         todos: PlanTodo[]
+        mode?: 'ask' | 'plan' | 'execute'
         thought?: string
         reminder?: string
         memories?: Array<{ fact: string; category?: string }>
     }
 ): T[] {
-    const next = withPlanBoard(messages, input.todos)
+    const next = withPlanBoard(messages, input.todos, input.mode)
     const blocks: string[] = []
     const thought = input.thought?.trim()
     if (thought) {

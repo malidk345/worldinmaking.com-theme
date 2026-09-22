@@ -91,6 +91,8 @@ interface ChatInputProps {
   onAgentModeChange?: (mode: AgentMode) => void;
   lockShakeNonce?: number;
   nextSectionTitle?: string;
+  /** Chip label — 'Next section' (execute) or 'Next step' (plan). */
+  nextSectionLabel?: string;
   onNextSection?: () => void;
 }
 
@@ -113,6 +115,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onAgentModeChange,
   lockShakeNonce = 0,
   nextSectionTitle,
+  nextSectionLabel = 'Next section',
   onNextSection,
 }) => {
   const app = useOptionalApp();
@@ -456,7 +459,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onClick={onNextSection}
             className="w-full rounded-2xl border border-primary/50 bg-primary/95 px-3 py-2 text-left text-[13px] text-primary shadow-sm hover:bg-accent cursor-pointer"
           >
-            <span className="block text-[11px] font-medium text-muted">Next section</span>
+            <span className="block text-[11px] font-medium text-muted">{nextSectionLabel}</span>
             <span className="block truncate font-semibold">{nextSectionTitle}</span>
           </button>
         </div>
