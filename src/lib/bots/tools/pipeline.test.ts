@@ -294,6 +294,93 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         expect(thoughtUi.join('')).toContain('quick native thought')
         expect(publicTokens.join('')).toContain('Hi!')
     })
+
+    it('paints post-tool reflect content as Thought but keeps planning content out', async () => {
+        const thoughtUi: string[] = []
+        const thoughtActivityDeltas: string[] = []
+        const reflectInAct: string[] = []
+        const PLAN_DRAFT = 'PLANNING DRAFT that must not paint ThinkingBlock'
+        const REFLECT_NOTE = 'Reflect: tool results cover the ask; synthesize final answer next.'
+        const FINAL_ANSWER = 'Synthesized final answer after tools.'
+        let thinkRound = 0
+        let decisionRound = 0
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            const system = input.messages.find((m) => m.role === 'system')
+            const sys = typeof system?.content === 'string' ? system.content : ''
+
+            if (input.omitTools) {
+                thinkRound += 1
+                if (sys.includes('REFLECTION STEP')) {
+                    // Content-only post-tool THINK (Gemini thinkingBudget:0).
+                    input.onToken?.(REFLECT_NOTE)
+                    return { ok: true, content: REFLECT_NOTE, toolCalls: [] }
+                }
+                // Pre-tool planning: content-only draft must stay out of Thought (#775).
+                input.onToken?.(PLAN_DRAFT)
+                return { ok: true, content: PLAN_DRAFT, toolCalls: [] }
+            }
+
+            decisionRound += 1
+            if (sys.includes('<private_thought>') && sys.includes(REFLECT_NOTE)) {
+                reflectInAct.push(REFLECT_NOTE)
+            }
+
+            if (decisionRound === 1) {
+                input.onToken?.('Working…')
+                return {
+                    ok: true,
+                    content: 'Working…',
+                    // Local tool — avoids network hang in unit tests (web_search).
+                    toolCalls: [
+                        {
+                            id: 'call-reflect-1',
+                            name: 'todo_write',
+                            argumentsJson: JSON.stringify({
+                                tasks: [{ id: 't1', content: 'digest results', status: 'completed' }],
+                            }),
+                        },
+                    ],
+                }
+            }
+
+            input.onToken?.(FINAL_ANSWER)
+            return { ok: true, content: FINAL_ANSWER, toolCalls: [] }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are a careful philosopher.' },
+                { role: 'user', content: longUserPrompt() },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            maxSteps: 6,
+            onThinking: (piece) => thoughtUi.push(piece),
+            onActivity: (activity: AgentActivity) => {
+                if (activity.kind === 'thought' && activity.delta) {
+                    thoughtActivityDeltas.push(activity.delta)
+                }
+            },
+        })
+
+        expect(result.ok).toBe(true)
+        expect(thinkRound).toBeGreaterThanOrEqual(2)
+        expect(decisionRound).toBeGreaterThanOrEqual(2)
+        expect(result.text).toContain(FINAL_ANSWER)
+
+        const thoughtJoined = thoughtUi.join('')
+        const activityJoined = thoughtActivityDeltas.join('')
+        // Post-tool reflect content visible in Thought UI.
+        expect(thoughtJoined).toContain(REFLECT_NOTE)
+        expect(activityJoined).toContain(REFLECT_NOTE)
+        // #775: planning draft still must not paint Thought.
+        expect(thoughtJoined).not.toContain(PLAN_DRAFT)
+        expect(activityJoined).not.toContain(PLAN_DRAFT)
+        // Quality path: reflect text still reaches next ACT via cycleThought / private_thought.
+        expect(reflectInAct.length).toBeGreaterThan(0)
+    })
 })
 
 describe('Soft public-continue nudge (autonomous, optional)', () => {

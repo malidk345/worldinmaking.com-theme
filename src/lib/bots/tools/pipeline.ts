@@ -429,10 +429,15 @@ async function runThinkPhase(
     let paintedThought = false
     /**
      * Think-phase demux:
-     * - Native reasoning (onThinking) → Thought UI + thinkingText.
-     * - Content tokens (onToken) → thinkingText only (cycleThought / empty-public
-     *   fallback). Never live-stream content into Thought — models often draft a
-     *   full answer in the planning round, which previously painted ThinkingBlock.
+     * - Native reasoning (onThinking) → Thought UI + thinkingText (always).
+     * - Content tokens (onToken):
+     *   - Pre-tool / planning THINK: thinkingText only (cycleThought / empty-public
+     *     fallback). Do NOT paint Thought — models often draft a full answer here
+     *     (#775 answer-leak guard).
+     *   - Post-tool / reflect THINK (`postTool`): also paint Thought. Gemini host
+     *     THINK uses omitTools → thinkingBudget:0 / no native thoughts, so reflect
+     *     is content-only; without this the second Thought after tools is invisible
+     *     even though reflection still feeds cycleThought → next ACT (#775/#785).
      */
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
@@ -443,11 +448,17 @@ async function runThinkPhase(
             paintedThought = true
             return
         }
-        // Content during think: never live-stream into Thought UI. If native reasoning
-        // already arrived, drop content (same as before). Otherwise buffer into
-        // thinkingText for cycleThought / extractFallbackAnswerFromThinking only.
+        // Content during think. If native reasoning already arrived, drop content
+        // (same as before). Otherwise buffer into thinkingText for cycleThought /
+        // extractFallbackAnswerFromThinking.
         if (nativeThought > 0) return
         state.thinkingText += delta
+        // Post-tool reflect only: paint content-only THINK into Thought UI so users
+        // see tool-result mastery. Planning/decision must not (#775).
+        if (postTool) {
+            emitThoughtDelta(params, thoughtId, delta)
+            paintedThought = true
+        }
     }
     const started = state.thinkingText.length
     const think = await params.complete({
