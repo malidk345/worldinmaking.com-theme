@@ -827,7 +827,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const userInteractingRef = useRef(false);
   const autoScrollRef = useRef(true);
-  const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
   const pinSpacerRef = useRef<HTMLDivElement>(null);
   const [pinSpacerHeight, setPinSpacerHeight] = useState(0);
   /** While set, hold this user message near the scroller top; disable stick-to-bottom. */
@@ -892,7 +891,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     pinnedMessageIdRef.current = messageId;
     autoScrollRef.current = false;
     userInteractingRef.current = false;
-    setIsAwayFromBottom(true);
 
     const attemptPin = (attempt: number) => {
       if (pinnedMessageIdRef.current !== messageId) return;
@@ -921,7 +919,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     pinnedMessageIdRef.current = null;
     autoScrollRef.current = true;
     userInteractingRef.current = false;
-    setIsAwayFromBottom(false);
     setPinSpacerHeight(0);
     if (behavior === 'auto') {
       scroller.scrollTop = scroller.scrollHeight;
@@ -929,10 +926,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
     }
   }, []);
-
-  const scrollToBottom = useCallback(() => {
-    scrollChatToBottom('smooth');
-  }, [scrollChatToBottom]);
 
   const handleScroll = useCallback(() => {
     const scroller = chatScrollRef.current;
@@ -946,18 +939,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (autoScrollRef.current) return;
       if (distanceToBottom <= 25) {
         autoScrollRef.current = true;
-        setIsAwayFromBottom(false);
-      }
+          }
       return;
     }
 
     if (distanceToBottom > 48) {
       autoScrollRef.current = false;
-      setIsAwayFromBottom(true);
     } else if (distanceToBottom <= 25) {
       autoScrollRef.current = true;
-      setIsAwayFromBottom(false);
-    }
+      }
   }, []);
 
   useEffect(() => {
@@ -988,8 +978,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
       if (distanceToBottom > 48) {
         autoScrollRef.current = false;
-        setIsAwayFromBottom(true);
-      }
+        }
     };
 
     const onTouchEnd = () => {
@@ -1010,12 +999,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         // Ignore tiny trackpad noise while still glued to the bottom.
         if (distanceToBottom > 48) {
           autoScrollRef.current = false;
-          setIsAwayFromBottom(true);
-        }
+            }
       } else if (e.deltaY > 0 && distanceToBottom <= 30) {
         autoScrollRef.current = true;
-        setIsAwayFromBottom(false);
-      }
+          }
       if (touchTimeout) clearTimeout(touchTimeout);
       touchTimeout = setTimeout(() => {
         userInteractingRef.current = false;
@@ -1260,15 +1247,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       pinBottomOnNextChatRef.current = false;
       autoScrollRef.current = false;
       userInteractingRef.current = false;
-      setIsAwayFromBottom(true);
       const pinId = userMessage.id;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => pinUserMessageToTop(pinId));
       });
     } else {
       clearMessagePin();
-      setIsAwayFromBottom(false);
-      requestAnimationFrame(() => scrollChatToBottom('auto'));
+        requestAnimationFrame(() => scrollChatToBottom('auto'));
     }
     abortActiveStream();
     const streamEpoch = ++streamEpochRef.current;
@@ -3051,8 +3036,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               isStreaming={isStreaming}
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
-              onScrollToBottom={scrollToBottom}
-                            showScrollToBottom={Boolean(activeChat?.messages.length) && isAwayFromBottom}
               pendingHumanTurn={
                 [...(activeChat?.messages || [])].reverse().find((item) => item.humanTurn?.status === 'pending')
                   ?.humanTurn
