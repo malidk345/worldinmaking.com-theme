@@ -1,10 +1,15 @@
 import { test, expect } from '@playwright/test'
+
 import {
     keyboardRevealDelta,
     measureKeyboardOverlay,
     overlaySafeBottom,
     shouldPadWritingFrame,
 } from '../src/hooks/useKeyboardInset'
+import {
+    isEditableFocusTarget,
+    shouldIgnoreViewportResizeForWindows,
+} from '../src/hooks/useViewportMetrics'
 
 test.describe('keyboard overlay', () => {
     test('keyboard shrink becomes inset without treating pan as extra height', () => {
@@ -141,4 +146,62 @@ test.describe('keyboard overlay', () => {
     })
 })
 
+test.describe('mobile viewport chrome must not resize OS windows', () => {
+    test('height-only mobile resize is ignored (URL bar / Android keyboard)', () => {
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 390, height: 844 },
+                { width: 390, height: 560 },
+                { isMobile: true }
+            )
+        ).toBe(true)
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 390, height: 844 },
+                { width: 390, height: 800 },
+                { isMobile: true }
+            )
+        ).toBe(true)
+    })
 
+    test('editing or data-keyboard open forces ignore even on desktop width', () => {
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 1280, height: 800 },
+                { width: 1280, height: 500 },
+                { editing: true }
+            )
+        ).toBe(true)
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 1280, height: 800 },
+                { width: 1280, height: 500 },
+                { keyboardOpen: true }
+            )
+        ).toBe(true)
+    })
+
+    test('orientation / width change still applies', () => {
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 390, height: 844 },
+                { width: 844, height: 390 },
+                { isMobile: true }
+            )
+        ).toBe(false)
+    })
+
+    test('desktop height-only (devtools) still applies', () => {
+        expect(
+            shouldIgnoreViewportResizeForWindows(
+                { width: 1280, height: 800 },
+                { width: 1280, height: 600 },
+                { isMobile: false }
+            )
+        ).toBe(false)
+    })
+
+    test('isEditableFocusTarget matches writing fields only', () => {
+        expect(isEditableFocusTarget(null)).toBe(false)
+    })
+})

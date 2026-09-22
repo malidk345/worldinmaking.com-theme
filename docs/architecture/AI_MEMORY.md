@@ -52,13 +52,24 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** Thought first-byte (#801 merged). Mobile upward-jump re-tested on live — **NO repro**; no scroll PR.
+- **Task:** Mobile upward jump reframed — AppWindow height-only chrome resize (not chat pin). Fix PR `fix/mobile-viewport-chrome-window-jump`.
 
 
 ---
 
 ## 5. AI Change History & Log
 
+
+### 2026-09-22 — Grok Bot / Cursor (fix: mobile chat upward jump = AppWindow chrome resize, NOT chat pin)
+
+- **Scope:** User (TR): mobile chat still jumps upward spontaneously; may NOT be chat scroller/scrollTop (#794–798). Do not ship another pin/spacer PR.
+- **Layout map (live mobile 390×664):** `html/body` overflow hidden + position fixed; Ask AI `data-window-content` overflow **hidden**; chat `main` is the only message scroller; writing-dock is `position:absolute` with `--keyboard-inset` padding (does not change main via flex). Home non-Ask windows use `data-window-content overflow:auto`.
+- **Root cause (proven by code + layout, not chat pin):** `useWindowResize` listens to `window.resize` and resizes/repositions **expanded** AppWindows to the new `innerHeight - taskbar`. On mobile, soft keyboard (Android) and URL-bar show/hide change `innerHeight` with **width unchanged** → AppWindow height yanks → conversation view jumps / “re-centers”. Matches user clue that opening/resizing a window “centers” chat. Prior #794–798 only instrumented `main.scrollTop` (NO-repro there) — wrong scroll parent class of bug.
+- **Not primary:** chat pin/spacer/onScroll; document scroll (locked); `scrollIntoView` (none observed on composer path). Residual: `useKeyboardInset` `visualViewport.scrollTo(0,0)` can still fight iOS pan (not changed this PR).
+- **Fix (minimal):** `shouldIgnoreViewportResizeForWindows` — ignore height-only resizes on mobile, and whenever `data-keyboard=open` or an editable is focused. Orientation (width change) still applies. Composer `focus({ preventScroll: true })` hardening.
+- **Files:** `useViewportMetrics.ts`, `useWindowResize.ts`, ChatInput/ChatMessage/index focus, `tests/keyboard-overlay.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec playwright test tests/keyboard-overlay.spec.ts -g "mobile viewport chrome|keyboard shrink|small chrome|iOS pan|overlay-safe|comment at the bottom|only pad a frame"`
+- **Handoff:** PR `fix/mobile-viewport-chrome-window-jump` — merge when green.
 
 ### 2026-09-22 — Grok Bot / Cursor (test: mobile upward jump on live after #798 — NO repro)
 - **Scope:** User (TR): upward jump STILL broken despite #794–798. Constraint: only ship scroll fix if proven remaining bug with mobile repro.

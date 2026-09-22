@@ -165,7 +165,7 @@ async function copyToClipboardSafe(text: string): Promise<boolean> {
       textArea.style.left = '-9999px'
       textArea.style.top = '-9999px'
       document.body.appendChild(textArea)
-      textArea.focus()
+      textArea.focus({ preventScroll: true })
       textArea.select()
       const successful = document.execCommand('copy')
       document.body.removeChild(textArea)
