@@ -11,7 +11,7 @@ Not Yjs. Do not rewrite the editor for these checks.
 4. Concurrent edit on different blocks: both blocks survive.
 5. Concurrent edit on the same paragraph: merge or local-keep + visible conflict, never silent wipe of both.
 6. Delete on A: B must not resurrect the row after its next sync (tombstone).
-7. Guest device key, then login: `claimDeviceAccount` moves `wim_notebooks.owner_key` to the user id; list shows guest notes.
+7. Guest then login (same browser): guests are **local-only** (IndexedDB + localStorage; no anonymous remote push/pull/realtime). On sign-in, `adoptGuestNotebooksIntoAccount` copies the device cache onto the auth key; `claimDeviceAccount` still reassigns any legacy device-bound remote rows; hydrate `pushMissing` uploads local notes under the user id. List shows guest notes.
 8. [x] Compacted list row (`contentOmitted`) must not PUT an empty body over a full remote body.
 9. History restore uses remote history when local body was list-compacted.
 10. Mention / comment notification opens `/notebooks/:id?mark=mention|comment` and `useNotebookMarkFocus` scrolls to the mark.

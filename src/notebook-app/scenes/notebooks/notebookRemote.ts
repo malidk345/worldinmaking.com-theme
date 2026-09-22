@@ -1,6 +1,7 @@
 /**
- * Background Supabase sync for notebooks.
- * Never blocks the editor — failures are silent (localStorage remains source of truth).
+ * Background Supabase sync for notebooks (signed-in only).
+ * Guests stay on localStorage + IndexedDB; cloud sync starts after login/claim.
+ * Never blocks the editor — failures are silent (local remains source of truth).
  */
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 import { DEVICE_NOTEBOOK_OWNER_KEY, getActiveOwnerKey, getAuthUserId, getDeviceOwnerKey, namespacedStorageKey } from '../../../lib/wim-identity'
@@ -10,6 +11,16 @@ const NOTEBOOK_DELETED_BASE = 'wim_notebook_deleted_ids'
 
 export function getOrCreateOwnerKey(): string {
     return getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)
+}
+
+/**
+ * Cloud push/pull/realtime only when signed in.
+ * Guests keep localStorage + IndexedDB; on login, adoptGuestNotebooksIntoAccount
+ * + claimDeviceAccountOnLogin + pushMissing cover guest→account without burning
+ * anonymous device-bound Supabase rows / realtime / poll egress.
+ */
+export function canSyncNotebooksToRemote(): boolean {
+    return Boolean(getAuthUserId())
 }
 
 export function getNotebookDeletedStorageKey(): string {
@@ -141,6 +152,7 @@ export async function pullNotebooksFromRemote(options?: {
     includeContent?: boolean
 }): Promise<{ notebooks: StoredNotebook[]; deletedIds: string[] } | null> {
     if (typeof window === 'undefined') return null
+    if (!canSyncNotebooksToRemote()) return null
     const now = Date.now()
     // Honor throttle for all non-force pulls (poll ticks must not bypass — egress).
     if (!options?.force && now - lastPullAt < PULL_MIN_INTERVAL_MS) {
@@ -184,6 +196,7 @@ export async function pullNotebooksFromRemote(options?: {
 
 export async function pullNotebookById(id: string): Promise<StoredNotebook | null> {
     if (typeof window === 'undefined' || !id) return null
+    if (!canSyncNotebooksToRemote()) return null
     const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
@@ -201,6 +214,7 @@ export async function pullNotebookById(id: string): Promise<StoredNotebook | nul
 
 export async function pullNotebookHistory(id: string): Promise<NotebookVersion[] | null> {
     if (typeof window === 'undefined' || !id) return null
+    if (!canSyncNotebooksToRemote()) return null
     const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
@@ -257,6 +271,7 @@ export async function pushNotebookToRemote(
     options?: { restore?: boolean }
 ): Promise<{ ok: boolean; notebook?: StoredNotebook; conflict?: boolean; forbidden?: boolean; gone?: boolean }> {
     if (typeof window === 'undefined') return { ok: false }
+    if (!canSyncNotebooksToRemote()) return { ok: false }
     if (notebook.contentOmitted) return { ok: true }
     const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey(), true)
     const ownerKey = getOrCreateOwnerKey()
@@ -299,6 +314,7 @@ export async function pushAllNotebooksToRemote(
     history?: Record<string, NotebookVersion[]>
 ): Promise<boolean> {
     if (typeof window === 'undefined') return false
+    if (!canSyncNotebooksToRemote()) return false
     const writable = notebooks.filter((nb) => !nb.contentOmitted)
     if (!writable.length) return true
     const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey(), true)
@@ -327,6 +343,7 @@ export async function pushAllNotebooksToRemote(
 
 export async function deleteNotebookRemote(id: string): Promise<boolean> {
     if (typeof window === 'undefined') return false
+    if (!canSyncNotebooksToRemote()) return false
     const headers = await notebookAuthHeadersFresh(getOrCreateOwnerKey())
     const ownerKey = getOrCreateOwnerKey()
     try {
@@ -412,6 +429,10 @@ export function subscribeToWorkspaceNotebooks(
     onStatusChange?: (status: string) => void
 ): () => void {
     if (typeof window === 'undefined' || !isSupabaseConfigured) {
+        return () => {}
+    }
+    // Guests: no realtime — local-only until sign-in.
+    if (!canSyncNotebooksToRemote()) {
         return () => {}
     }
 
