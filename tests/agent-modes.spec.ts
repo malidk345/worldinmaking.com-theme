@@ -88,12 +88,14 @@ test.describe('Agent modes', () => {
         expect(PLAN_USER_PREFIX.toLowerCase()).toMatch(/do not ask the user|invent the plan/)
     })
 
-    test('plan mode prefers one focused action per turn', () => {
+    test('plan mode prefers one focused move per turn (parallel research OK)', () => {
         const prompt = modeSystemPrompt('plan')
-        expect(prompt.toLowerCase()).toMatch(/one focused action per turn|stop this turn|current step only|prefer one/)
+        expect(prompt.toLowerCase()).toMatch(/one focused (action|move) per turn|stop this turn|current step only|prefer one/)
         expect(prompt.toLowerCase()).toMatch(/write_scratchpad|done_when/)
+        expect(prompt.toLowerCase()).toMatch(/parallel research|fan-out|several web_search/)
         expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/one focused|prefer one|stop/)
         expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/write_scratchpad|research cluster/)
+        expect(PLAN_TOOL_PROTOCOL.toLowerCase()).toMatch(/parallel research|fan-out|several web_search/)
     })
 
 
@@ -864,10 +866,11 @@ test.describe('Graph checkpoint resume', () => {
         expect(thinkInstructionFor('ask', false)).toBe(THINK_PLAN_INSTRUCTION)
         expect(thinkInstructionFor('plan', false)).toBe(THINK_PLAN_MODE_INSTRUCTION)
         expect(thinkInstructionFor('plan', true)).toBe(THINK_REFLECT_PLAN_INSTRUCTION)
-        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/this step only|one tool move/)
+        expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).toMatch(/this step only|one tool move|parallel|fan-out|2–5|2-5/)
         expect(THINK_PLAN_MODE_INSTRUCTION.toLowerCase()).not.toMatch(/plan your entire approach/)
         expect(THINK_REFLECT_PLAN_INSTRUCTION.toLowerCase()).toMatch(/write_scratchpad|todo_write|stop/)
-        expect(PLAN_RESEARCH_CLUSTER_N).toBe(3)
+        expect(THINK_REFLECT_PLAN_INSTRUCTION.toLowerCase()).toMatch(/fan out|parallel|together/)
+        expect(PLAN_RESEARCH_CLUSTER_N).toBe(5)
     })
 
     test('finalize_plan readiness soft-gates empty spine and research without scratchpad', () => {

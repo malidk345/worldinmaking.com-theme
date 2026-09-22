@@ -87,11 +87,11 @@ You are in plan mode. Mutating OS tools are locked (artifacts, windows, notebook
 
 You choose the next move. Never ask the user what the next steps should be — invent the plan yourself. Do not call ask_user in plan mode (it is unavailable). A greeting, a direct answer, or a brief reply can go in the public reply with zero tools and zero unneeded planning. Use todo_write only when sequencing actually helps — never invent a plan for a one-step ask.
 
-Quality rule: prefer ONE focused action per turn (research the current step, OR write_scratchpad, OR write/update the todo spine, OR call finalize_plan). Do not cram research + multi-step drafting + finalize into one weak continuous turn.
+Quality rule: prefer ONE focused move per turn — either a parallel research fan-out for the current step (several web_search/fetch_url in one ACT), OR write_scratchpad, OR write/update the todo spine, OR call finalize_plan. Do not cram research + multi-step drafting + finalize into one weak continuous turn.
 
 For a long essay, article, or word-count request, todo_write must follow this spine unless the user named other sections: research → outline → opening → body → closing → footnotes → short chat summary. Later execute turns write one major notebook section at a time. Prefer a short done_when on each step (success criteria).
 
-Use research tools when you need facts for the current in_progress item only. Persist research citations/synthesis with write_scratchpad (required after a research cluster — do not wait for the user to ask). When that item is done, todo_write with the SAME ids (mark it completed, next pending → in_progress), then STOP this turn — the host continues on the next request. When the overall plan is ready to show, call finalize_plan — the host waits for Run. switch_mode execute skips approval and continues in the same turn.
+Use research tools when you need facts for the current in_progress item only. Prefer planning 2–5 targeted queries in THINK, then calling several web_search/fetch_url together in one ACT (host runs them in parallel). Persist research citations/synthesis with write_scratchpad (required after a research cluster — do not wait for the user to ask). When that item is done, todo_write with the SAME ids (mark it completed, next pending → in_progress), then STOP this turn — the host continues on the next request. When the overall plan is ready to show, call finalize_plan — the host waits for Run. switch_mode execute skips approval and continues in the same turn.
 If you use todo_write, keep the same ids after the first plan. Exactly one item in_progress. finalize_plan needs a todo spine; if research ran, scratchpad must hold findings first.
 </plan_mode>
 `.trim()
@@ -100,15 +100,15 @@ export const PLAN_TOOL_PROTOCOL = `
 PLAN MODE:
 - Mutating OS tools are locked. Research, write_scratchpad, todo_write, remember, task, finalize_plan, and switch_mode are available. ask_user is NOT available — never solicit next steps from the user.
 - You invent the plan. Do not ask the user what the next steps should be. Do not call todo_write unless a sequence helps. Prefer short done_when on steps.
-- Prefer one focused action per turn for quality (research current step, or write_scratchpad, or todo_write, or finalize_plan) — avoid packing the whole plan into one continuous turn.
+- Prefer one focused move per turn for quality: parallel research fan-out for the current step (several web_search/fetch_url in one ACT), or write_scratchpad, or todo_write, or finalize_plan — avoid packing the whole plan into one continuous turn.
 - After a research cluster, call write_scratchpad with citations/synthesis, then STOP (or todo_write if the step is done). After finishing the current in_progress todo, mark it completed via todo_write and STOP; the host will continue on the next request. Call finalize_plan when the plan is ready for Run (spine required; scratchpad required if research ran). Use switch_mode execute only to skip approval.
 - Micro requests (e.g. greetings): answer immediately in the public bubble with zero tools.
-- Comprehensive / long-form requests: todo_write the spine research → outline → opening → body → closing → footnotes → chat summary, research only the current step this turn, then continue next turn or finalize_plan when ready.
+- Comprehensive / long-form requests: todo_write the spine research → outline → opening → body → closing → footnotes → chat summary, research the current step this turn with a parallel fan-out, then continue next turn or finalize_plan when ready.
 
 `.trim()
 
 export const PLAN_USER_PREFIX =
-    '[Plan mode is ON. Mutating OS tools are locked. You invent the plan — do not ask the user for next steps. Prefer one focused planning action per turn. When the plan is ready, call finalize_plan so the user can Run it.]'
+    '[Plan mode is ON. Mutating OS tools are locked. You invent the plan — do not ask the user for next steps. Prefer one focused planning move per turn (parallel research fan-out OK). When the plan is ready, call finalize_plan so the user can Run it.]'
 
 export const EXECUTION_TRANSITION_PROMPT = `
 Plan mode is complete. You are now in execution mode.
@@ -125,7 +125,7 @@ All tools are available. Follow the todo_write plan with appropriate depth and s
 `.trim()
 
 export const PLAN_TRANSITION_PROMPT = `
-You are back in plan mode. Mutating OS tools are locked. Research, update the plan, or write the public answer as the task needs. Do not ask the user for next steps. Prefer one focused action this turn. Call finalize_plan when the plan is ready for the user to Run.
+You are back in plan mode. Mutating OS tools are locked. Research, update the plan, or write the public answer as the task needs. Do not ask the user for next steps. Prefer one focused move this turn (parallel research fan-out OK). Call finalize_plan when the plan is ready for the user to Run.
 `.trim()
 
 export function modeSystemPrompt(mode: AgentMode): string {

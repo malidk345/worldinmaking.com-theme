@@ -54,21 +54,23 @@ export const THINK_PLAN_INSTRUCTION =
 
 /** Plan mode: this step only — not the whole essay approach. */
 export const THINK_PLAN_MODE_INSTRUCTION =
-    'PLANNING STEP (plan mode): In a few short sentences, focus on THIS step only: open questions, sources to check, success criteria for the current todo, and one tool move. Do not plan the entire essay approach. Keep this private to your reasoning. Do not call tools in this thought.'
+    'PLANNING STEP (plan mode): In a few short sentences, focus on THIS step only: open questions, 2–5 targeted search/fetch queries to run together in the next ACT, success criteria for the current todo, and the next move (parallel research fan-out OR scratchpad OR todo_write). Do not plan the entire essay approach. Keep this private to your reasoning. Do not call tools in this thought.'
 
 export const THINK_REFLECT_INSTRUCTION =
     'REFLECTION STEP: In a few short sentences, evaluate if the tool results fully satisfy what the user requested. If more information or another tool is needed, identify it; otherwise, outline how to synthesize the comprehensive final answer. Keep this private to your reasoning. Do not repeat the results. Do not call tools in this thought.'
 
 /** Plan mode reflect: enough for this step? → scratchpad/todo+STOP vs one more focused call. */
 export const THINK_REFLECT_PLAN_INSTRUCTION =
-    'REFLECTION STEP (plan mode): In a few short sentences, is this enough for the CURRENT step? If yes: write_scratchpad (citations/synthesis) and/or todo_write with the SAME ids, then STOP. If no: one more focused tool for this step only. Do not start the next step. Keep this private to your reasoning. Do not call tools in this thought.'
+    'REFLECTION STEP (plan mode): In a few short sentences, is this enough for the CURRENT step? If yes: write_scratchpad (citations/synthesis) and/or todo_write with the SAME ids, then STOP. If no: fan out more targeted research tools for this step in one ACT (several web_search/fetch_url together), or one focused non-research tool. Do not start the next step. Keep this private to your reasoning. Do not call tools in this thought.'
 
 /**
  * Plan-mode research cluster size before requiring scratchpad + stop.
- * N=3: allows a typical search → fetch → read trio without starving deep research;
- * beyond that, findings must hit write_scratchpad and the turn stops (step isolation).
+ * N=5: one THINK can fan out several parallel searches/fetches in a single ACT
+ * (host already Promise.all-s PARALLEL_READ_TOOLS); beyond that, findings must hit
+ * write_scratchpad and the turn stops (step isolation). Raised from 3 so breadth
+ * does not force extra serial THINK→ACT rounds.
  */
-export const PLAN_RESEARCH_CLUSTER_N = 3
+export const PLAN_RESEARCH_CLUSTER_N = 5
 
 /** Research / read tools that count toward the plan-mode research cluster. */
 export const PLAN_RESEARCH_TOOL_NAMES = new Set([
@@ -382,6 +384,8 @@ export interface AgentState {
     researchClusterAwaitingScratchpad: boolean
     /** Plan mode: at least one research tool succeeded (finalize soft gate). */
     usedPlanResearch: boolean
+    /** Per-pipeline dedupe for identical web_search queries (same turn only). */
+    searchCache: Map<string, ToolExecution>
     execNudges: number
     writeNudges: number
     stepCount: number
@@ -720,8 +724,8 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         state.planNudges += 1
         state.pendingReminder =
             state.todos.length === 0
-                ? 'Plan mode is on. Invent the plan yourself — do not ask the user for next steps. Use todo_write (with short done_when) or one research tool if they help, or write the user-facing piece now.'
-                : 'One focused action for the CURRENT step only: one research tool, OR write_scratchpad, OR todo_write (same ids) then STOP, OR finalize_plan when ready. Do not ask the user for next steps. Do not pack several tools to finish the whole plan now.'
+                ? 'Plan mode is on. Invent the plan yourself — do not ask the user for next steps. Use todo_write (with short done_when) or a parallel research fan-out (several web_search/fetch_url in one ACT) if they help, or write the user-facing piece now.'
+                : 'One focused move for the CURRENT step only: parallel research fan-out (several web_search/fetch_url together), OR write_scratchpad, OR todo_write (same ids) then STOP, OR finalize_plan when ready. Do not ask the user for next steps. Do not pack research + drafting + finalize into one weak continuous turn.'
         state.phase = 'decision'
         return
     }
@@ -812,15 +816,17 @@ async function runTaskSubagent(
                 thoughtSignature: call.thoughtSignature,
             })),
         })
-        for (const nested of round.toolCalls.slice(0, 2)) {
+        const nestedBatch = round.toolCalls.slice(0, 2)
+        // Emit running + execute allowed reads in parallel (same host pattern as PARALLEL_READ_TOOLS).
+        const nestedJobs = nestedBatch.map(async (nested) => {
             const nestedName = resolveToolName(nested.name)
             if (!TASK_READ_TOOLS.has(nestedName)) {
-                subMessages.push({
-                    role: 'tool',
-                    tool_call_id: nested.id,
-                    content: JSON.stringify({ ok: false, error: 'subagent may only use read tools' }),
-                })
-                continue
+                return {
+                    nested,
+                    nestedName,
+                    allowed: false as const,
+                    executed: null,
+                }
             }
             params.onTool?.({
                 id: nested.id,
@@ -837,7 +843,22 @@ async function runTaskSubagent(
                 toolName: nestedName,
                 arguments: nested.argumentsJson.slice(0, 800),
             })
-            const nestedExec = await executeToolCall(nested, params.env, params.host, 'ask', params.signal)
+            const executed = await executeToolCall(nested, params.env, params.host, 'ask', params.signal)
+            return { nested, nestedName, allowed: true as const, executed }
+        })
+        const nestedRows = await Promise.all(nestedJobs)
+        for (const row of nestedRows) {
+            if (!row.allowed || !row.executed) {
+                subMessages.push({
+                    role: 'tool',
+                    tool_call_id: row.nested.id,
+                    content: JSON.stringify({ ok: false, error: 'subagent may only use read tools' }),
+                })
+                continue
+            }
+            const nestedExec = row.executed
+            const nestedName = row.nestedName
+            const nested = row.nested
             if (nestedName === 'web_search') state.usedWebSearch = true
             if (nestedExec.citations?.length) state.citations.push(...nestedExec.citations)
             params.onTool?.({
@@ -891,8 +912,48 @@ const PARALLEL_READ_TOOLS = new Set([
     'get_workspace',
     'search_site',
     'list_notebooks',
+    'search_academic_corpus',
+    'verified_corpus_search',
     'run_code_sandbox',
 ])
+
+
+function webSearchCacheKey(call: ToolCall): string | null {
+    if (resolveToolName(call.name) !== 'web_search') return null
+    try {
+        const parsed = JSON.parse(call.argumentsJson || '{}') as { query?: unknown }
+        const q = typeof parsed.query === 'string' ? parsed.query.trim().toLowerCase() : ''
+        return q.length >= 2 ? `web_search:${q}` : null
+    } catch {
+        return null
+    }
+}
+
+async function executeToolCallCached(
+    call: ToolCall,
+    state: AgentState,
+    params: AgentPipelineParams
+): Promise<ToolExecution> {
+    const key = webSearchCacheKey(call)
+    if (key) {
+        const hit = state.searchCache.get(key)
+        if (hit) {
+            return {
+                ...hit,
+                callId: call.id,
+                name: resolveToolName(call.name),
+                summary: hit.summary
+                    ? `${hit.summary} (cached)`
+                    : toolResultSummary(resolveToolName(call.name), hit.ok, hit.result),
+            }
+        }
+    }
+    const executed = await executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
+    if (key && executed.ok) {
+        state.searchCache.set(key, executed)
+    }
+    return executed
+}
 
 function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {
     const name = resolveToolName(call.name)
@@ -929,7 +990,7 @@ async function runOneToolCall(
     const activityId = name === 'todo_write' ? PLAN_ACTIVITY_ID : `tool-${call.id}`
     if (!preExecuted) emitToolRunning(call, params)
 
-    let executed = preExecuted || (await executeToolCall(call, params.env, params.host, state.agentMode, params.signal))
+    let executed = preExecuted || (await executeToolCallCached(call, state, params))
 
     if (executed.artifact) {
         const incoming = executed.artifact
@@ -1198,7 +1259,7 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
             const rows = await Promise.all(
                 batch.map(async (call) => ({
                     call,
-                    executed: await executeToolCall(call, params.env, params.host, state.agentMode, params.signal),
+                    executed: await executeToolCallCached(call, state, params),
                 }))
             )
             for (const row of rows) {
@@ -1236,7 +1297,7 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
     if (current && !state.interrupt && !state.stopAfterTools) {
         const step =
             state.agentMode === 'plan'
-                ? `Current step: ${current.title}. If this step is done: todo_write with the SAME ids (mark completed, next in_progress) then STOP. Else: one focused tool for this step only — do not pack several tools to finish the whole plan.`
+                ? `Current step: ${current.title}. If this step is done: todo_write with the SAME ids (mark completed, next in_progress) then STOP. Else: fan out research tools for this step in one ACT (several web_search/fetch_url together), or write_scratchpad — do not pack the whole plan into one continuous turn.`
                 : `Current step: ${current.title}. Do that work now. You may call several tools. Then todo_write with the SAME ids.`
         state.pendingReminder = state.pendingReminder && state.pendingReminder !== step
             ? `${step}\n${state.pendingReminder}`
@@ -1328,6 +1389,7 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         researchClusterCount: 0,
         researchClusterAwaitingScratchpad: false,
         usedPlanResearch: false,
+        searchCache: new Map(),
         execNudges: 0,
         writeNudges: 0,
         stepCount: 0,
