@@ -268,7 +268,10 @@ function TimelineRow({
   return <ReasoningActivity item={item} isLive={isLive} durationSeconds={durationSeconds} />
 }
 
-function getLiveStatusLabel(items: TimelineItem[]): string {
+function getLiveStatusLabel(
+  items: TimelineItem[],
+  livePhase?: 'thinking' | 'quality' | 'answering' | null
+): string {
   const liveTool = [...items].reverse().find((item) => item.kind === 'tool' && item.status === 'running')
   if (liveTool) {
     const name = (liveTool.toolName || '').toLowerCase()
@@ -309,6 +312,9 @@ function getLiveStatusLabel(items: TimelineItem[]): string {
   if (livePlan) {
     return 'Planning...'
   }
+  // streamStatus from chat host — do not keep "Reasoning..." after tokens / quality gate.
+  if (livePhase === 'answering') return 'Answering...'
+  if (livePhase === 'quality') return 'Checking quality...'
   return 'Reasoning...'
 }
 
@@ -337,6 +343,8 @@ interface ThinkingBlockProps {
   thinking: ThinkingProcess
   toolTrace?: ToolTrace[]
   isLive?: boolean
+  /** Host stream phase — keeps live shimmer honest after public tokens / quality gate. */
+  livePhase?: 'thinking' | 'quality' | 'answering' | null
   model?: ModelOption
   timestamp?: string
   onToolActivate?: (toolName: string, status: TimelineItem['status']) => void
@@ -347,6 +355,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   thinking,
   toolTrace,
   isLive = false,
+  livePhase = null,
   onToolActivate,
   onStop,
 }) => {
@@ -366,7 +375,7 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   const visible = collapseTools && !toolsOpen ? restItems : items
   const liveTool = [...items].reverse().find((item) => item.kind === 'tool' && item.status === 'running')
   const faceMood = pauseMoodFromTool(liveTool?.toolName, liveTool?.status)
-  const statusLabel = getLiveStatusLabel(items)
+  const statusLabel = getLiveStatusLabel(items, livePhase)
   if (!hasItems && !isLive) return null
 
   return (

@@ -1387,10 +1387,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const streamStartedAt = Date.now();
     let streamChunkCount = 0;
     let streamByteLength = 0;
+    /** No meaningful SSE (token/activity/tool/error/done) for this long → treat as hung stream. */
+    const STREAM_STALL_MS = 70_000;
+    let lastMeaningfulAt = streamStartedAt;
+    let stallTimer: ReturnType<typeof setInterval> | null = null;
+    let stalledByWatchdog = false;
     let hadMeaningfulStreamProgress = false;
     let networkRetryUsed = false;
     const markStreamProgress = () => {
       hadMeaningfulStreamProgress = true;
+      lastMeaningfulAt = Date.now();
     };
     try {
 
@@ -1621,6 +1627,15 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       const reader = sseRes.body.getReader();
       streamReaderRef.current = reader;
+      stallTimer = setInterval(() => {
+        if (Date.now() - lastMeaningfulAt < STREAM_STALL_MS) return;
+        stalledByWatchdog = true;
+        try {
+          activeController.abort();
+        } catch {
+          /* ignore */
+        }
+      }, 5_000);
       const decoder = new TextDecoder();
       let buffer = '';
       let streamedCitations: Message['citations'] = [];
@@ -2282,6 +2297,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         const stoppedText = visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent))
         const resumeAbort = resumeAbortRef.current
         resumeAbortRef.current = false
+        if (stalledByWatchdog && !resumeAbort) {
+          updateAssistantMessage(targetChatId, assistantMessageId, {
+            content: stoppedText.trim()
+              ? stoppedText
+              : 'Taking too long — the stream stalled before an answer arrived. Please try again.',
+            thinkingProcess: { ...currentThinkingProcess },
+            toolTrace: streamedToolTrace.length > 0 ? streamedToolTrace : undefined,
+            isStreaming: false,
+            isTypingDone: true,
+            ...(stoppedText.trim() ? {} : { errorKind: 'timeout' }),
+            ...(streamedHumanTurn ? { humanTurn: streamedHumanTurn } : {}),
+            ...(streamedCheckpoint ? { checkpoint: streamedCheckpoint } : {}),
+          })
+        } else {
         updateAssistantMessage(targetChatId, assistantMessageId, {
           content: stoppedText,
           thinkingProcess: { ...currentThinkingProcess },
@@ -2296,6 +2325,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 ...(streamedCheckpoint ? { checkpoint: streamedCheckpoint } : {}),
               }),
         })
+        }
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
 
@@ -2373,6 +2403,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       }
     } finally {
+      if (stallTimer) {
+        clearInterval(stallTimer);
+        stallTimer = null;
+      }
       // Always queue a remote persist for this chat's settled rows.
       persistChatIdRef.current = targetChatId;
       // Only the latest turn may clear shared streaming UI / AbortController refs.
@@ -3047,6 +3081,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 <ChatMessage
                   key={msg.id}
                   message={msg}
+                  livePhase={msg.isStreaming ? streamStatus : null}
                   targetChatId={activeChat.id}
                   modelOptions={models}
                   onOpenArtifact={(art, origin) => {

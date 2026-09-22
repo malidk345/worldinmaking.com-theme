@@ -45,6 +45,8 @@ const TASK_READ_TOOLS = new Set([
 
 /** Cap for the host THINK round. gpt-oss native CoT still counts against this. */
 export const THINK_MAX_TOKENS = 256
+/** Host THINK must not burn the full 45s tool-completion budget — silent UI otherwise. */
+export const THINK_TIMEOUT_MS = 15_000
 
 /** Host THINK is the comprehensive planning round where the entire approach is decided. */
 export const THINK_PLAN_INSTRUCTION =
@@ -399,6 +401,7 @@ export interface AgentPipelineParams {
         onThinking?: (text: string) => void
         omitTools?: boolean
         maxTokens?: number
+        timeoutMs?: number
     }) => Promise<CompletionRound>
     baseMessages: ChatMessage[]
     onToken?: (text: string) => void
@@ -553,6 +556,7 @@ async function runThinkPhase(
         toolChoice: 'none',
         omitTools: true,
         maxTokens: THINK_MAX_TOKENS,
+        timeoutMs: THINK_TIMEOUT_MS,
         onThinking: (delta) => absorb(delta, true),
         onToken: (text) => absorb(text, false),
     })

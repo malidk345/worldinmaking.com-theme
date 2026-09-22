@@ -14,6 +14,7 @@ import {
     runAgentNodePipeline,
     thinkInstructionFor,
     THINK_MAX_TOKENS,
+    THINK_TIMEOUT_MS,
     THINK_PLAN_INSTRUCTION,
     THINK_PLAN_MODE_INSTRUCTION,
     THINK_REFLECT_INSTRUCTION,
@@ -55,6 +56,7 @@ describe('Pipeline Abort Handling', () => {
 describe('Think token budget', () => {
     it('keeps host THINK as a short routing note, not an essay', () => {
         expect(THINK_MAX_TOKENS).toBe(256)
+        expect(THINK_TIMEOUT_MS).toBe(15_000)
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).toContain('few short sentences')
         expect(THINK_PLAN_INSTRUCTION.toLowerCase()).not.toContain('exhaustive')
         expect(THINK_REFLECT_INSTRUCTION.toLowerCase()).toContain('few short sentences')
@@ -100,6 +102,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         const complete: AgentPipelineParams['complete'] = async (input) => {
             round += 1
             if (input.omitTools) {
+                expect(input.timeoutMs).toBe(THINK_TIMEOUT_MS)
                 // Host THINK: native reasoning + content draft (the leak case).
                 input.onThinking?.(NATIVE_PLAN)
                 input.onToken?.(DRAFT_ANSWER)
