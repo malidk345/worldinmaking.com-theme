@@ -51,14 +51,27 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS by Grok Bot / Cursor]`
-- **Task:** Thought first-byte latency — enable modest Gemini native CoT on host THINK; mobile upward-jump re-test on live (no speculative scroll PR).
+- **Status:** `[DONE by Grok Bot / Cursor]`
+- **Task:** Thought first-byte (#801 merged). Mobile upward-jump re-tested on live — **NO repro**; no scroll PR.
 
 
 ---
 
 ## 5. AI Change History & Log
 
+
+### 2026-09-22 — Grok Bot / Cursor (test: mobile upward jump on live after #798 — NO repro)
+- **Scope:** User (TR): upward jump STILL broken despite #794–798. Constraint: only ship scroll fix if proven remaining bug with mobile repro.
+- **Live evidence (worldinmaking.com/workspace-chat, iPhone 13 viewport 390×664):**
+  - Client bundle includes #800 (`livePhase` / Answering / Checking quality) and #798 scroll contract (minified `onScroll` only releases when pinned).
+  - Chat scroller is `<main class="… overflow-y-auto overscroll-contain …">` (not a div).
+  - Seeded 16-turn tall history via `claude_workspace_chats_v7`; real short stream settle.
+  - **at_settle:** scrollTop=9248, userTop=**16** (pin padding), msgs=34.
+  - Synth keyboard-hide (`clientHeight+280` + `scroll` event): scrollTop stayed **9248**, userTop stayed **16**, maxDrop=**0**.
+  - Verdict: **jumped=false** — NO upward jump reproduced.
+- **Unit:** `playwright test tests/mobile-scroll-race.spec.ts tests/chat-scroll.spec.ts` → 13 passed.
+- **Action:** No scroll PR (constraint honored). If user still sees jump, need device-specific capture (real soft-keyboard / Safari) — not more code speculation.
+- **Cleanup:** throwaway `scripts/_live-mobile-scroll*.mjs` not committed.
 
 ### 2026-09-22 — Grok Bot / Cursor (fix: Thought first-byte — modest native THINK)
 - **Scope:** User (TR): Thought does not start flowing immediately (waits). Separate from scroll (#794–798).
