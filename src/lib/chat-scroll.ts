@@ -2,8 +2,8 @@
  * WIM AI chat scroller helpers — lock a user message near the top of the
  * AppWindow chat pane while the assistant reply streams below.
  *
- * One model: pin-to-message (with small top inset). Stick-to-bottom is a
- * separate mode and must stay off while a pin lock is active.
+ * One model: pin-to-message (with small top inset) while the assistant streams.
+ * Manual scroll releases the pin; there is no stick-to-bottom re-arm.
  */
 
 /** Small inset so the bubble sits under the scroller top mask, not flush to 0. */

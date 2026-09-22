@@ -825,11 +825,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   };
 
 
-  const userInteractingRef = useRef(false);
-  const autoScrollRef = useRef(true);
   const pinSpacerRef = useRef<HTMLDivElement>(null);
   const [pinSpacerHeight, setPinSpacerHeight] = useState(0);
-  /** While set, hold this user message near the scroller top; disable stick-to-bottom. */
+  /** While set, hold this user message near the scroller top as the reply streams. */
   const pinnedMessageIdRef = useRef<string | null>(null);
 
   const clearMessagePin = useCallback(() => {
@@ -889,8 +887,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   /** Pin a user bubble near the top of the chat AppWindow scroller (not page). */
   const pinUserMessageToTop = useCallback((messageId: string) => {
     pinnedMessageIdRef.current = messageId;
-    autoScrollRef.current = false;
-    userInteractingRef.current = false;
 
     const attemptPin = (attempt: number) => {
       if (pinnedMessageIdRef.current !== messageId) return;
@@ -901,24 +897,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     attemptPin(0);
   }, [establishMessagePin]);
 
-  const pinChatToBottom = useCallback(() => {
-    // Stick only when armed and not message-pinned. Do NOT bail on isStreaming —
-    // (#766) thinking/tool growth with overflow-anchor:none would flick upward when
-    // near bottom. Pin-lock (send) owns the viewport instead during that turn.
-    if (pinnedMessageIdRef.current) return;
-    if (!autoScrollRef.current || userInteractingRef.current) return;
-    const scroller = chatScrollRef.current;
-    if (!scroller) return;
-    const next = scroller.scrollHeight - scroller.clientHeight;
-    if (Math.abs(scroller.scrollTop - next) > 1) scroller.scrollTop = next;
-  }, []);
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
     pinnedMessageIdRef.current = null;
-    autoScrollRef.current = true;
-    userInteractingRef.current = false;
     setPinSpacerHeight(0);
     if (behavior === 'auto') {
       scroller.scrollTop = scroller.scrollHeight;
@@ -927,118 +910,45 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, []);
 
-  const handleScroll = useCallback(() => {
-    const scroller = chatScrollRef.current;
-    if (!scroller) return;
-    // While message-pinned, ignore near-bottom re-arm (spacer makes distance≈0).
-    if (pinnedMessageIdRef.current) return;
-
-    const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
-
-    if (!userInteractingRef.current) {
-      if (autoScrollRef.current) return;
-      if (distanceToBottom <= 25) {
-        autoScrollRef.current = true;
-          }
-      return;
-    }
-
-    if (distanceToBottom > 48) {
-      autoScrollRef.current = false;
-    } else if (distanceToBottom <= 25) {
-      autoScrollRef.current = true;
-      }
-  }, []);
-
   useEffect(() => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
-    // Do not pin here — rebinding when messages appear/disappear would yank scroll mid-thread.
-
-    let touchTimeout: ReturnType<typeof setTimeout> | undefined;
-    let touchStartY = 0;
 
     const releasePinForManualScroll = () => {
       if (!pinnedMessageIdRef.current) return;
       clearMessagePin();
+      setPinSpacerHeight(0);
     };
 
-    const onTouchStart = (e: TouchEvent) => {
-      userInteractingRef.current = true;
-      touchStartY = e.touches[0]?.clientY ?? 0;
-      if (touchTimeout) clearTimeout(touchTimeout);
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      userInteractingRef.current = true;
-      const y = e.touches[0]?.clientY ?? touchStartY;
-      if (Math.abs(y - touchStartY) > 8) {
+    const onTouchMove = () => {
+      if (pinnedMessageIdRef.current) {
         releasePinForManualScroll();
       }
-      const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
-      if (distanceToBottom > 48) {
-        autoScrollRef.current = false;
-        }
-    };
-
-    const onTouchEnd = () => {
-      touchTimeout = setTimeout(() => {
-        userInteractingRef.current = false;
-        if (!pinnedMessageIdRef.current && autoScrollRef.current) pinChatToBottom();
-      }, 280);
     };
 
     const onWheel = (e: WheelEvent) => {
-      userInteractingRef.current = true;
-      // Meaningful wheel releases the send-pin lock; user owns the viewport.
       if (Math.abs(e.deltaY) > 2 || Math.abs(e.deltaX) > 2) {
         releasePinForManualScroll();
       }
-      const distanceToBottom = scroller.scrollHeight - (scroller.scrollTop + scroller.clientHeight);
-      if (e.deltaY < 0) {
-        // Ignore tiny trackpad noise while still glued to the bottom.
-        if (distanceToBottom > 48) {
-          autoScrollRef.current = false;
-            }
-      } else if (e.deltaY > 0 && distanceToBottom <= 30) {
-        autoScrollRef.current = true;
-          }
-      if (touchTimeout) clearTimeout(touchTimeout);
-      touchTimeout = setTimeout(() => {
-        userInteractingRef.current = false;
-      }, 300);
     };
 
-    scroller.addEventListener('scroll', handleScroll, { passive: true });
-    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
     scroller.addEventListener('touchmove', onTouchMove, { passive: true });
-    scroller.addEventListener('touchend', onTouchEnd, { passive: true });
-    scroller.addEventListener('touchcancel', onTouchEnd, { passive: true });
     scroller.addEventListener('wheel', onWheel, { passive: true });
 
     const observer = new ResizeObserver(() => {
       if (pinnedMessageIdRef.current) {
         maintainPinnedScroll();
-        return;
-      }
-      if (autoScrollRef.current && !userInteractingRef.current) {
-        pinChatToBottom();
       }
     });
     observer.observe(scroller);
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
 
     return () => {
-      scroller.removeEventListener('scroll', handleScroll);
-      scroller.removeEventListener('touchstart', onTouchStart);
       scroller.removeEventListener('touchmove', onTouchMove);
-      scroller.removeEventListener('touchend', onTouchEnd);
-      scroller.removeEventListener('touchcancel', onTouchEnd);
       scroller.removeEventListener('wheel', onWheel);
-      if (touchTimeout) clearTimeout(touchTimeout);
       observer.disconnect();
     };
-  }, [activeChatId, clearMessagePin, handleScroll, maintainPinnedScroll, pinChatToBottom, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, clearMessagePin, maintainPinnedScroll, Boolean(activeChat?.messages.length)]);
 
   // Scroll chat to bottom only on intentional chat switches (not identity/sync rehydrate of same thread).
   useEffect(() => {
@@ -1143,7 +1053,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         messages: [],
       };
       setChats((prev) => [newChat, ...prev]);
-      // New chat created by send: top-align the user bubble (do not arm stick-to-bottom).
+      // New chat created by send: top-align the user bubble (pin-only; no stick mode).
       setActiveChatId(newChat.id);
       targetChatId = newChat.id;
     }
@@ -1239,21 +1149,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
     setIsStreaming(true);
     setStreamStatus('thinking');
-    // On a new user send: lock scroll to that user bubble near the top.
-    // Stick-to-bottom stays off for the turn; ResizeObserver holds the pin as
-    // the reply grows. Manual wheel/touch releases the lock. skipUserAppend
-    // (Continue / resume) keeps prior near-bottom stick behavior.
+    // On a new user send: pin that user bubble near the top. ResizeObserver
+    // holds the pin as the reply grows. Manual wheel/touch releases the lock.
+    // skipUserAppend (Continue / resume): one-shot jump to bottom, no stick mode.
     if (!options?.skipUserAppend) {
       pinBottomOnNextChatRef.current = false;
-      autoScrollRef.current = false;
-      userInteractingRef.current = false;
       const pinId = userMessage.id;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => pinUserMessageToTop(pinId));
       });
     } else {
       clearMessagePin();
-        requestAnimationFrame(() => scrollChatToBottom('auto'));
+      setPinSpacerHeight(0);
+      requestAnimationFrame(() => scrollChatToBottom('auto'));
     }
     abortActiveStream();
     const streamEpoch = ++streamEpochRef.current;
