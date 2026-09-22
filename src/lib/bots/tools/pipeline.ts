@@ -516,9 +516,9 @@ async function runThinkPhase(
      *     fallback). Do NOT paint Thought — models often draft a full answer here
      *     (#775 answer-leak guard).
      *   - Post-tool / reflect THINK (`postTool`): also paint Thought. Gemini host
-     *     THINK uses omitTools → thinkingBudget:0 / no native thoughts, so reflect
-     *     is content-only; without this the second Thought after tools is invisible
-     *     even though reflection still feeds cycleThought → next ACT (#775/#785).
+     *     THINK uses omitTools + modest native budget; if the model still emits
+     *     content-only reflect, paint it so the second Thought after tools is
+     *     visible (#775/#785/#790). Planning content still buffered unpainted.
      */
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
