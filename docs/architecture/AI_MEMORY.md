@@ -60,6 +60,20 @@
 ## 5. AI Change History & Log
 
 
+### 2026-09-22 — Grok Bot / Cursor (fix: Reasoning… stall / stream hang UX)
+- **Scope:** Urgent TR report — WIM AI hangs on "Reasoning…", no answer / intermittent errors. Earlier mobile: stream stall at Reasoning (not CSS). Investigate Thought (#790), plan quality (#793), scroll (#794–798).
+- **Live evidence (worldinmaking.com/api/chat):** short+long prompts still complete; provider always `gemini`; latency 15–65s; 1–2 SSE keep-alives (15–30s) of silence before first thought/token when THINK runs; quality_gate often `corrected:true` and can add ~15–28s after tokens already streamed. Scroll PRs not on stream path.
+- **Root causes (proven):**
+  1. **UI:** `streamStatus` (`thinking|answering|quality`) was updated in chat host but **never passed** to `ThinkingBlock`. Live shimmer always fell through to default **"Reasoning..."** even after public tokens and during quality gate → looks stuck while answer already arrived / backend finishing.
+  2. **Silent THINK:** Pre-tool host THINK (`thinkingBudget:0`, #775) paints no Thought; UI shows blank Reasoning for whole THINK. Tool completion timeout was **45s** per round — THINK could burn that silently before ACT.
+  3. **Hard stall:** No client watchdog if SSE half-opens (keep-alives only / no `done`) — `isStreaming` forever.
+- **Not blamed:** scroll settle (#794–798); plan QUALITY pack (#793) is plan-mode scoped. Keys/quota: live turns succeeded (gemini); no proof of empty keys. Groq never appeared as `done.provider` in probes — possible failover cost, not confirmed without diag secret.
+- **Fix:** Wire `livePhase={streamStatus}` → ThinkingBlock labels Answering… / Checking quality…; `THINK_TIMEOUT_MS=15_000` on host THINK `complete()`; client 70s stall watchdog → timeout card (not Stop).
+- **Files:** ThinkingBlock, ChatMessage, index (chat), pipeline.ts, loop.ts, AI_MEMORY.md
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/pipeline.test.ts --environment node`
+- **Handoff:** PR `fix/wim-ai-reasoning-stall-label` — merge when green.
+- **Residual:** Gemini ACT cold-start still slow; quality critic still adds latency after tokens; post-tool reflect (#790) can still paint long answer-like content into Thought; no CF worker log access this pass.
+
 ### 2026-09-22 — Grok Bot / Cursor (fix: mobile settle sticky wipe via onScroll clamp)
 - **Scope:** User "devam" after mobile test-only report. Proven race: #796 saves settle/sticky scrollTop and restores via useLayoutEffect+RO, but `onScroll` cleared those refs whenever `!pinned`. After Thought collapse / soft-keyboard hide the browser clamps `scrollTop` and fires `scroll`, wiping the saved Y before restore → jump into older history (mobile: scrollTop 2020→1824, user bubble 16→212).
 - **Fix (minimal):** Stop clearing `settleScrollTopRef` / `stickyViewScrollTopRef` in `onScroll` when `!pinned`. User intent clears sticky via `wheel` / `touchmove` after settle. Mid-stream pin + #795/#796 preserve math unchanged. touchmove early pin-release during stream left as-is (not broadened).

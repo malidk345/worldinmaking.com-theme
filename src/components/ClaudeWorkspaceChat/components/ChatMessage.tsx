@@ -62,6 +62,8 @@ interface ChatMessageProps {
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
   onContinue?: (messageId: string) => void;
   onStop?: () => void;
+  /** Live stream phase for the in-flight assistant message only. */
+  livePhase?: 'thinking' | 'quality' | 'answering' | null;
 }
 
 function formatExactTime(ts?: string): string {
@@ -591,6 +593,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   typewriterSpeed = 'smooth',
   onContinue,
   onStop,
+  livePhase = null,
 }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -687,6 +690,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               }
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
+              livePhase={message.isStreaming ? livePhase : null}
               onStop={message.isStreaming ? onStop : undefined}
               onToolActivate={(toolName) => {
                 if (
@@ -1002,6 +1006,7 @@ export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
     prev.message.citations === next.message.citations &&
     prev.message.osAction === next.message.osAction &&
     prev.message.humanTurn === next.message.humanTurn &&
-    prev.message.checkpoint === next.message.checkpoint
+    prev.message.checkpoint === next.message.checkpoint &&
+    prev.livePhase === next.livePhase
   );
 });

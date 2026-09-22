@@ -179,13 +179,14 @@ async function openaiCompletion(params: {
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
     maxTokens?: number
+    timeoutMs?: number
     signal?: AbortSignal
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const timer = setTimeout(() => controller.abort(), params.timeoutMs || REQUEST_TIMEOUT_MS)
     const unlink = linkAbortSignal(controller, params.signal)
     try {
         if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
@@ -296,13 +297,14 @@ async function groqCompletion(params: {
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
     maxTokens?: number
+    timeoutMs?: number
     signal?: AbortSignal
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const timer = setTimeout(() => controller.abort(), params.timeoutMs || REQUEST_TIMEOUT_MS)
     const unlink = linkAbortSignal(controller, params.signal)
     try {
         if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
@@ -433,6 +435,7 @@ async function runToolSteps(params: {
         onThinking?: (text: string) => void
         omitTools?: boolean
         maxTokens?: number
+        timeoutMs?: number
     }) => Promise<CompletionRound>
     baseMessages: ChatMessage[]
     onToken?: (text: string) => void
@@ -668,7 +671,7 @@ export async function runToolLoop(params: {
                 onActivity: params.onActivity,
                 checkpoint: params.checkpoint,
                 agentMode,
-                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                     anthropicToolCompletion({
                         apiKey: anthropicKey,
                         model: anthropicModel,
@@ -733,7 +736,7 @@ export async function runToolLoop(params: {
                 onActivity: params.onActivity,
                 checkpoint: params.checkpoint,
                 agentMode,
-                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                     openaiCompletion({
                         apiKey: byokOpenai,
                         model: openaiModel,
@@ -743,6 +746,7 @@ export async function runToolLoop(params: {
                         onThinking,
                         omitTools,
                         maxTokens,
+                        timeoutMs,
                         tools: toolsForAgentMode(agentMode),
                         signal: params.signal,
                     }),
@@ -798,7 +802,7 @@ export async function runToolLoop(params: {
                     onActivity: params.onActivity,
                     checkpoint: params.checkpoint,
                     agentMode,
-                    complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                    complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                         openaiCompletion({
                             apiKey: nvidiaKey,
                             baseUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
@@ -809,6 +813,7 @@ export async function runToolLoop(params: {
                             onThinking,
                             omitTools,
                             maxTokens,
+                            timeoutMs,
                             tools: toolsForAgentMode(agentMode),
                             signal: params.signal,
                         }),
@@ -868,7 +873,7 @@ export async function runToolLoop(params: {
                         onActivity: params.onActivity,
                         checkpoint: params.checkpoint,
                         agentMode,
-                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                             groqCompletion({
                                 apiKey,
                                 model: groqModel,
@@ -878,6 +883,7 @@ export async function runToolLoop(params: {
                                 onThinking,
                                 omitTools,
                                 maxTokens,
+                                timeoutMs,
                                 tools: toolsForAgentMode(agentMode),
                                 signal: params.signal,
                             }),
@@ -931,7 +937,7 @@ export async function runToolLoop(params: {
                         onActivity: params.onActivity,
                         checkpoint: params.checkpoint,
                         agentMode,
-                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
+                        complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                             geminiToolCompletion({
                                 apiKey,
                                 model,
@@ -942,7 +948,7 @@ export async function runToolLoop(params: {
                                 onThinking,
                                 omitTools,
                                 maxTokens,
-                                timeoutMs: GEMINI_TIMEOUT_MS,
+                                timeoutMs: timeoutMs || GEMINI_TIMEOUT_MS,
                                 tools: toolsForAgentMode(agentMode),
                                 signal: params.signal,
                             }),
