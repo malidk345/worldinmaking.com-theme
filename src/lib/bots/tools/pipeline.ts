@@ -424,8 +424,9 @@ async function runThinkPhase(
     params: AgentPipelineParams,
     thoughtId: string,
     postTool = false
-): Promise<void> {
+): Promise<{ paintedThought: boolean }> {
     let nativeThought = 0
+    let paintedThought = false
     /**
      * Think-phase demux:
      * - Native reasoning (onThinking) → Thought UI + thinkingText.
@@ -439,6 +440,7 @@ async function runThinkPhase(
             nativeThought += delta.length
             state.thinkingText += delta
             emitThoughtDelta(params, thoughtId, delta)
+            paintedThought = true
             return
         }
         // Content during think: never live-stream into Thought UI. If native reasoning
@@ -467,6 +469,7 @@ async function runThinkPhase(
         absorb(think.reasoning, true)
     }
     state.cycleThought = state.thinkingText.slice(started)
+    return { paintedThought }
 }
 
 async function runDecisionNode(state: AgentState, params: AgentPipelineParams): Promise<void> {
@@ -476,6 +479,10 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     const hasNewToolResults =
         state.messages.length > 0 && state.messages[state.messages.length - 1]?.role === 'tool'
 
+    // Thought UI already painted in think phase (native only). Content-buffered
+    // cycleThought alone must NOT suppress decision native streaming — that was
+    // the #775 regression (Thought dumped only when decision reasoning arrived).
+    let thoughtUiPainted = false
     if (
         shouldRunThinkPhase({
             userPrompt: lastUserText(state.messages),
@@ -485,7 +492,8 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
             hasNewToolResults,
         })
     ) {
-        await runThinkPhase(state, params, thoughtId, hasNewToolResults)
+        const thinkResult = await runThinkPhase(state, params, thoughtId, hasNewToolResults)
+        thoughtUiPainted = thinkResult.paintedThought
     }
     const isLastStep = state.stepCount >= state.maxSteps - 1
     const toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' = isLastStep
@@ -536,7 +544,10 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         },
         onThinking: (delta) => {
             if (!delta) return
-            if (state.cycleThought) return
+            // Suppress only when think phase already streamed native Thought UI.
+            // cycleThought may be content-only (#775 buffer) with empty Thought —
+            // still stream decision native reasoning in that case.
+            if (thoughtUiPainted) return
             streamedThought += delta.length
             state.thinkingText += delta
             emitThoughtDelta(params, thoughtId, delta)
@@ -553,7 +564,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         return
     }
 
-    if (round.reasoning && streamedThought === 0) {
+    if (round.reasoning && streamedThought === 0 && !thoughtUiPainted) {
         streamedThought += round.reasoning.length
         state.thinkingText += round.reasoning
         emitThoughtDelta(params, thoughtId, round.reasoning)
