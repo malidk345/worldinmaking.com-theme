@@ -184,4 +184,21 @@ test.describe('Fail-closed nacks are present', () => {
     expect(stampAt).toBeLessThan(bindAt);
   });
 
+
+  test('handleResetData clears notebook↔chat bind', async () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+      'utf-8'
+    );
+    const start = src.indexOf('const handleResetData');
+    expect(start).toBeGreaterThan(-1);
+    const end = src.indexOf('useEffect(() => {', start);
+    expect(end).toBeGreaterThan(start);
+    const fn = src.slice(start, end);
+    // Reset chat data must wipe bind storage (local+session) + notify applyBind(null).
+    expect(fn).toContain('clearNotebookChatBind()');
+    expect(src).toContain('clearNotebookChatBind,');
+  });
+
+
 });
