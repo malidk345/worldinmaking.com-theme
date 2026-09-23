@@ -1,10 +1,10 @@
 import { PHILOSOPHER_BOTS } from './persona-engine'
 import { matchPhilosopherId, type PhilosopherId } from './philosopher-avatar'
 import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from './wim-identity'
+import { patchLocalSettingsDefaultModel, readLocalSettings } from './workspace-local'
 
 export const PERSONAL_ASSISTANT_EVENT = 'wim-personal-assistant-changed'
 const STORAGE_BASE = 'wim_personal_assistant_v1'
-const SETTINGS_KEY = 'claude_workspace_settings'
 
 export type PersonalAssistantId = PhilosopherId
 
@@ -29,15 +29,7 @@ export function readPersonalAssistantId(): PersonalAssistantId | null {
 }
 
 function syncWorkspaceDefaultModel(id: PersonalAssistantId): void {
-    if (typeof window === 'undefined') return
-    try {
-        const raw = window.localStorage.getItem(SETTINGS_KEY)
-        const parsed = raw ? JSON.parse(raw) : {}
-        const next = parsed && typeof parsed === 'object' ? parsed : {}
-        window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...next, defaultModel: id }))
-    } catch {
-        /* quota / parse */
-    }
+    patchLocalSettingsDefaultModel(id)
 }
 
 export function writePersonalAssistantId(id: PersonalAssistantId): void {
@@ -73,8 +65,7 @@ export function adoptWimAiDefaultIfNeeded(): PersonalAssistantId | null {
     if (current) return current
     if (typeof window === 'undefined') return null
     try {
-        const raw = window.localStorage.getItem(SETTINGS_KEY)
-        const parsed = raw ? JSON.parse(raw) : {}
+        const parsed = readLocalSettings()
         const fromWimAi = matchPhilosopherId(String(parsed?.defaultModel || ''))
         if (fromWimAi && isPersonalAssistantId(fromWimAi)) {
             writePersonalAssistantId(fromWimAi)

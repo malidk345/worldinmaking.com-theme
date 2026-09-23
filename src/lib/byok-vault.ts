@@ -7,6 +7,13 @@
  * Ensures zero-server persistence of private enterprise API keys.
  */
 
+import {
+    DEVICE_CHAT_OWNER_KEY,
+    getActiveOwnerKey,
+    getAuthUserId,
+    namespacedStorageKey,
+} from './wim-identity'
+
 export interface ByokProviderConfig {
     providerId: 'gemini' | 'groq' | 'openai' | 'anthropic'
     name: string
@@ -17,7 +24,12 @@ export interface ByokProviderConfig {
     status: 'idle' | 'valid' | 'invalid'
 }
 
-const STORAGE_KEY = 'wim_byok_vault_v1'
+const STORAGE_BASE = 'wim_byok_vault_v1'
+
+function storageKey(): string {
+    return namespacedStorageKey(STORAGE_BASE, getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY))
+}
+
 
 const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
     gemini: {
@@ -57,7 +69,18 @@ const DEFAULT_CONFIGS: Record<string, ByokProviderConfig> = {
 export function loadByokConfigs(): Record<string, ByokProviderConfig> {
     if (typeof window === 'undefined') return DEFAULT_CONFIGS
     try {
-        const raw = localStorage.getItem(STORAGE_KEY)
+        let raw = localStorage.getItem(storageKey())
+        if (!raw && !getAuthUserId()) {
+            // Guest-only legacy migrate; never copy into a signed-in account.
+            raw = localStorage.getItem(STORAGE_BASE)
+            if (raw) {
+                try {
+                    localStorage.setItem(storageKey(), raw)
+                } catch {
+                    /* quota */
+                }
+            }
+        }
         if (!raw) return { ...DEFAULT_CONFIGS }
         const parsed = JSON.parse(raw) as Record<string, ByokProviderConfig>
         return {
@@ -74,7 +97,7 @@ export function saveByokConfig(config: ByokProviderConfig): void {
     try {
         const current = loadByokConfigs()
         current[config.providerId] = { ...config }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
+        localStorage.setItem(storageKey(), JSON.stringify(current))
         window.dispatchEvent(new CustomEvent('wim_byok_updated', { detail: current }))
     } catch (e) {
         console.error('Failed to save BYOK configuration', e)
@@ -88,7 +111,7 @@ export function removeByokKey(providerId: string): void {
         current[providerId].apiKey = ''
         current[providerId].enabled = false
         current[providerId].status = 'idle'
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
+        localStorage.setItem(storageKey(), JSON.stringify(current))
         window.dispatchEvent(new CustomEvent('wim_byok_updated', { detail: current }))
     }
 }

@@ -124,6 +124,15 @@ import { guardOpenThreadRemote } from '../../lib/chat-merge';
 import { WIM_IDENTITY_EVENT } from '../../lib/wim-identity';
 import { updateCachedTokenQuota } from '../../lib/chat-usage-client';
 import {
+  clearLocalWorkspacePrefs,
+  getDefaultWorkspaceSettings,
+  readLocalProjects,
+  readLocalSettings,
+  syncWorkspaceLocalForIdentity,
+  writeLocalProjects,
+  writeLocalSettings,
+} from '../../lib/workspace-local';
+import {
   CHAT_PIN_TOP_PADDING_PX,
   applyMinSpacerForScrollTop,
   applyMinSpacerToPreserveScrollTop,
@@ -134,7 +143,6 @@ import {
 import { getActiveByokPayload } from '../../lib/byok-vault';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
-const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
 
 function readStored<T>(keys: string[], fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -212,21 +220,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
 
   const [projects, setProjects] = useState<ProjectSpace[]>(() => {
-    const stored = readStored<unknown>(PROJECT_STORAGE_KEYS, INITIAL_PROJECTS);
-    return Array.isArray(stored) ? (stored as ProjectSpace[]) : INITIAL_PROJECTS;
+    const stored = readLocalProjects(INITIAL_PROJECTS);
+    return Array.isArray(stored) ? stored : INITIAL_PROJECTS;
   });
 
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    const defaults: UserSettings = {
-      typewriterSpeed: 'smooth',
-      defaultThinkingBudget: 'balanced',
-      defaultModel: 'nietzsche',
-      autoOpenArtifacts: false,
-      soundEffects: false,
-    };
-    const stored = readStored<Partial<UserSettings> | null>(['claude_workspace_settings'], null);
-    return stored && typeof stored === 'object' ? { ...defaults, ...stored } : defaults;
-  });
+  const [settings, setSettings] = useState<UserSettings>(() => readLocalSettings(getDefaultWorkspaceSettings()));
 
   const { addWindow, closeWindow, updateWindow, bringToFront, setChatParams, updateSiteSettings } = useAppActions();
   const { chatParams } = useAppUIState();
@@ -605,19 +603,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, [chats, isStreaming, flushLocalChats]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem('claude_workspace_projects_v7', JSON.stringify(projects));
-    } catch {
-      // Projects are local convenience data; persistence is best effort.
-    }
+    writeLocalProjects(projects);
   }, [projects]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem('claude_workspace_settings', JSON.stringify(settings));
-    } catch {
-      // Settings persistence is best effort.
-    }
+    writeLocalSettings(settings);
   }, [settings]);
 
   const knownChatIdsRef = useRef<Set<string>>(new Set())
@@ -751,11 +741,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const onIdentity = () => {
       // Global bind is not owner-namespaced — drop on logout / account switch (parity with reset).
       syncNotebookChatBindForIdentity()
+      syncWorkspaceLocalForIdentity()
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
       setChats(settleInterruptedStreams(Array.isArray(stored) ? stored : []))
+      // Projects/settings were global — reload owner-namespaced rows so systemPrompt/prefs do not leak.
+      setProjects(readLocalProjects(INITIAL_PROJECTS))
+      setSettings(readLocalSettings(getDefaultWorkspaceSettings()))
+      setActiveProjectId(undefined)
       startLiveRemote()
       if (canSyncChatsToRemote()) {
         void syncFromRemote(true)
@@ -3080,14 +3075,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const handleResetData = () => {
     if (typeof window !== 'undefined') {
-      [...CHAT_STORAGE_KEYS, ...PROJECT_STORAGE_KEYS, 'claude_workspace_settings'].forEach((key) => {
+      CHAT_STORAGE_KEYS.forEach((key) => {
         window.localStorage.removeItem(key);
       });
+      clearLocalWorkspacePrefs();
       // Wipe notebook↔chat bind with chats — leftover key would keep tools on a deleted bind.
       clearNotebookChatBind();
     }
     setChats(INITIAL_CHATS);
     setProjects(INITIAL_PROJECTS);
+    setSettings(getDefaultWorkspaceSettings());
+    setActiveProjectId(undefined);
     pinBottomOnNextChatRef.current = true;
     setActiveChatId(INITIAL_CHATS[0]?.id || '');
     setActiveArtifact(null);

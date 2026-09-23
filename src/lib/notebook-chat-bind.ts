@@ -11,12 +11,13 @@ export const NOTEBOOK_CHAT_BIND_EVENT = 'wimNotebookChatBind'
 /** Bind key is global (not owner-namespaced); drop it when chat/notebook owner switches. */
 let lastBindOwnerKey: string | null = null
 
-/** Clear leftover bind after logout / account switch. Same-owner identity events (token refresh) keep it. */
+/** Clear leftover bind + sticky selection after logout / account switch. Same-owner identity events (token refresh) keep them. */
 export function syncNotebookChatBindForIdentity(): void {
     if (typeof window === 'undefined') return
     const next = getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY)
     if (lastBindOwnerKey !== null && lastBindOwnerKey !== next) {
         clearNotebookChatBind()
+        clearStickyNotebookSelection()
     }
     lastBindOwnerKey = next
 }
@@ -168,6 +169,12 @@ export function peekStickyNotebookSelection(): string {
 
 export function consumeStickyNotebookSelection(): string {
     const val = peekStickyNotebookSelection()
+    clearStickyNotebookSelection()
+    return val
+}
+
+/** Drop session sticky selection (identity swap / logout). */
+export function clearStickyNotebookSelection(): void {
     stickySelectionCache = ''
     try {
         if (typeof sessionStorage !== 'undefined') {
@@ -176,7 +183,6 @@ export function consumeStickyNotebookSelection(): string {
     } catch {
         // ignore storage access errors
     }
-    return val
 }
 
 /** How much of the notebook body we pack into chat context. */

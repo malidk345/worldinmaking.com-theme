@@ -58,6 +58,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: identity namespace projects/settings/scratchpad)
+
+- **Scope:** P3 residual after #830 — hunt NEW global (non-owner-namespaced) keys that leak across logout like `wim_chat_notebook_bind`. Skip THINK / iOS invent / re-polish of reset+bind identity clears just shipped.
+- **Proven leaks:**
+  1. **`claude_workspace_projects_v7` / `claude_workspace_settings` global:** chats were namespaced; projects (incl. `systemPrompt`) + settings were not. `onIdentity` reloaded chats only — previous owner's projects stayed in React state and LS.
+  2. **`wim_os_scratchpad_v3` global:** documents/nodes/memories fed into WIM AI context after logout.
+  3. **`wim_byok_vault_v1` global:** API keys usable by the next account on the same browser.
+  4. **session leftovers:** `wim_sticky_notebook_selection`, `wim_forum_topic_draft_v1`, `wim_ai_draft_prompt`; **`wim_token_quota_cache_v1`** stale `allowed:true` after owner swap.
+- **Fixes:** `workspace-local.ts` owner-namespaced projects/settings (+ legacy guest-only migrate, never into signed-in); scratchpad + BYOK namespaced; sticky cleared with bind identity sync; draft leftovers via `syncWorkspaceLocalForIdentity`; quota cache clear+refetch on `WIM_IDENTITY_EVENT`. Chat `onIdentity` reloads projects/settings and drops `activeProjectId`.
+- **Files:** `workspace-local.ts`(+test), `ClaudeWorkspaceChat/index.tsx`, `personal-assistant.ts`, `scratchpad-store.ts`(+test), `byok-vault.ts`, `notebook-chat-bind.ts`(+test), `chat-usage-client.ts`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest workspace-local|notebook-chat-bind|scratchpad-store; Playwright needle `identity namespaces projects/settings/scratchpad`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (device Safari); mid-cluster THINK parked (product — needs "THINK'e gir").
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: identity clears notebook↔chat bind)
 
 - **Scope:** P3 residual after #829 — same class as reset wipe. Global `wim_chat_notebook_bind` is not owner-namespaced while chats/notebooks are. Logout/sign-in left tools/`applyBind` on the previous owner's notebookId (orphan `chat-nb-*` risk). No THINK / iOS invent.

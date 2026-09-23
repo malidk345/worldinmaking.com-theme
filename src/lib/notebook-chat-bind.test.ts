@@ -124,4 +124,37 @@ describe('notebook chat bind persistence', () => {
         expect(bindMod.readNotebookChatBind()).toEqual({ notebookId: 'nb-keep', title: 'Keep' })
     })
 
+    it('clears sticky notebook selection when identity owner changes', async () => {
+        vi.resetModules()
+        const sessionStorage = memoryStorage()
+        const localStorage = memoryStorage()
+        const listeners = new Map<string, Set<(event: Event) => void>>()
+        ;(globalThis as { window?: unknown }).window = {
+            sessionStorage,
+            localStorage,
+            dispatchEvent(event: Event) {
+                listeners.get(event.type)?.forEach((fn) => fn(event))
+                return true
+            },
+            addEventListener(type: string, fn: (event: Event) => void) {
+                if (!listeners.has(type)) listeners.set(type, new Set())
+                listeners.get(type)!.add(fn)
+            },
+            removeEventListener(type: string, fn: (event: Event) => void) {
+                listeners.get(type)?.delete(fn)
+            },
+        }
+        localStorage.setItem('wim_auth_user_id', 'user-aaaa-bbbb-cccc-ddddeeee')
+        const bindMod = await import('./notebook-chat-bind')
+        const { WIM_IDENTITY_EVENT } = await import('./wim-identity')
+        bindMod.rememberStickyNotebookSelection('selected paragraph from alice notebook')
+        expect(bindMod.peekStickyNotebookSelection()).toContain('alice notebook')
+
+        localStorage.removeItem('wim_auth_user_id')
+        window.dispatchEvent(new Event(WIM_IDENTITY_EVENT))
+        expect(bindMod.peekStickyNotebookSelection()).toBe('')
+        expect(sessionStorage.getItem('wim_sticky_notebook_selection')).toBeNull()
+    })
+
+
 })
