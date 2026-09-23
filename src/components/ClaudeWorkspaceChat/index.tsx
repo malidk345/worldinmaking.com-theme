@@ -55,6 +55,7 @@ import {
   clearNotebookChatBind,
   readNotebookChatBind,
   readNotebookSelection,
+  syncNotebookChatBindForIdentity,
   withNotebookBind,
 } from '../../lib/notebook-chat-bind';
 import { IconDocument } from '@posthog/icons';
@@ -748,6 +749,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     startLiveRemote()
 
     const onIdentity = () => {
+      // Global bind is not owner-namespaced — drop on logout / account switch (parity with reset).
+      syncNotebookChatBindForIdentity()
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])

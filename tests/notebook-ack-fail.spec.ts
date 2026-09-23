@@ -201,4 +201,21 @@ test.describe('Fail-closed nacks are present', () => {
   });
 
 
+
+  test('identity owner change clears notebook↔chat bind', async () => {
+    const bindSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/notebook-chat-bind.ts'),
+      'utf-8'
+    );
+    const chatSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+      'utf-8'
+    );
+    // Global bind key is not owner-namespaced — must clear on logout/account switch.
+    expect(bindSrc).toContain('syncNotebookChatBindForIdentity');
+    expect(bindSrc).toContain('WIM_IDENTITY_EVENT');
+    expect(bindSrc).toContain('lastBindOwnerKey');
+    expect(chatSrc).toContain('syncNotebookChatBindForIdentity()');
+  });
+
 });

@@ -58,6 +58,17 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: identity clears notebook↔chat bind)
+
+- **Scope:** P3 residual after #829 — same class as reset wipe. Global `wim_chat_notebook_bind` is not owner-namespaced while chats/notebooks are. Logout/sign-in left tools/`applyBind` on the previous owner's notebookId (orphan `chat-nb-*` risk). No THINK / iOS invent.
+- **Survey A (mid-cluster THINK):** Deferred sketch (#797 / prior CLEAN) is product: `shouldRunThinkPhase(hasNewToolResults)` always reflects by design. Skip mid-cluster THINK = quality risk. **DO NOT SHIP** without explicit "THINK'e gir".
+- **Survey B (iOS chrome):** Still needs device Safari — **SKIP**.
+- **Bug fixed:**
+  1. **Identity owner change leaves notebook↔chat bind:** `syncNotebookChatBindForIdentity` + `WIM_IDENTITY_EVENT` guard clears bind only when `getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY)` changes (logout / account switch). Same-owner token refresh keeps bind. Chat `onIdentity` also calls sync (parity with reset).
+- **Files:** `notebook-chat-bind.ts`, `notebook-chat-bind.test.ts`, `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest notebook-chat-bind; Playwright needle `identity owner change clears notebook↔chat bind`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (device Safari); mid-cluster THINK parked (product — needs "THINK'e gir").
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: reset clears notebook↔chat bind)
 
 - **Scope:** P3 residual from post-#828 CLEAN survey — `handleResetData` left `wim_chat_notebook_bind` after wiping chats. No THINK / iOS / other invent.
