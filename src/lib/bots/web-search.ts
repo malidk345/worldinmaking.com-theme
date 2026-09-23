@@ -8,6 +8,7 @@
 import { getRuntimeEnv, readFamilyBindingValues, type EnvStore } from './runtime-env'
 import { isNewsQuery } from './search-intent'
 import { collectApiKeys, rotateKeys } from './search-keys'
+import { fetchPublicUrl } from './tools/fetch-url'
 
 export type SearchSource = 'Tavily' | 'Brave' | 'DuckDuckGo API' | 'DuckDuckGo Web' | 'Wikipedia'
 
@@ -16,15 +17,17 @@ export interface SearchResultItem {
     url: string
     snippet: string
     source: SearchSource
+    /** Text read from the page itself. Snippets stay the lead when the page cannot be fetched. */
+    excerpt?: string
 }
 
 export function formatSearchResults(results: SearchResultItem[]): string {
     if (results.length === 0) return ''
     return results
-        .map(
-            (r, i) =>
-                `[Source ${i + 1} - ${r.source}]\nTitle: ${r.title}\nURL: ${r.url}\nSummary: ${r.snippet}`
-        )
+        .map((r, i) => {
+            const page = r.excerpt ? `\nPage: ${r.excerpt}` : ''
+            return `[Source ${i + 1} - ${r.source}]\nTitle: ${r.title}\nURL: ${r.url}\nSummary: ${r.snippet}${page}`
+        })
         .join('\n\n')
 }
 
@@ -175,7 +178,8 @@ async function searchTavily(query: string, apiKey: string, signal?: AbortSignal)
             const payload: Record<string, unknown> = {
                 api_key: apiKey,
                 query,
-                search_depth: 'advanced',
+                // basic is the interactive path. advanced runs only when basic is empty.
+                search_depth: 'basic',
                 max_results: 6,
                 include_answer: false,
                 topic,
@@ -189,7 +193,7 @@ async function searchTavily(query: string, apiKey: string, signal?: AbortSignal)
                     Authorization: `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify(payload),
-                signal: searchFetchSignal(12_000, signal),
+                signal: searchFetchSignal(8_000, signal),
             })
             if (!res.ok) {
                 retryable = retryable || isRetryableSearchStatus(res.status)
@@ -220,6 +224,24 @@ async function searchTavily(query: string, apiKey: string, signal?: AbortSignal)
                 results?: Array<{ title?: string; url?: string; content?: string; raw_content?: string }>
             }
             const hits = tavilyHitsFromPayload(data)
+            if (hits.length >= 3) return { hits, retryable: false }
+            payload.search_depth = 'advanced'
+            const deep = await fetch('https://api.tavily.com/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify(payload),
+                signal: searchFetchSignal(10_000, signal),
+            })
+            if (deep.ok) {
+                const deepData = (await deep.json()) as {
+                    results?: Array<{ title?: string; url?: string; content?: string; raw_content?: string }>
+                }
+                const deepHits = tavilyHitsFromPayload(deepData)
+                if (deepHits.length > hits.length) return { hits: deepHits, retryable: false }
+            }
             if (hits.length > 0) return { hits, retryable: false }
         }
         return { hits: [], retryable }
@@ -263,35 +285,37 @@ async function searchWikipedia(query: string, signal?: AbortSignal): Promise<Sea
     assertSearchNotAborted(signal)
     const title = query.trim().replace(/\s+/g, '_')
     if (!title) return []
-    const hits: SearchResultItem[] = []
-    for (const lang of ['tr', 'en']) {
-        assertSearchNotAborted(signal)
-        try {
-            const wikiUrl = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
-            const wikiRes = await fetch(wikiUrl, {
-                headers: { 'User-Agent': 'WorldInMakingOS/1.0' },
-                signal: searchFetchSignal(3000, signal),
-            })
-            if (!wikiRes.ok) continue
-            const wikiData = (await wikiRes.json()) as {
-                title?: string
-                extract?: string
-                content_urls?: { desktop?: { page?: string } }
-            }
-            if (wikiData.extract && wikiData.content_urls?.desktop?.page) {
-                pushUnique(hits, {
+    const pages = await Promise.all(
+        (['tr', 'en'] as const).map(async (lang) => {
+            assertSearchNotAborted(signal)
+            try {
+                const wikiUrl = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+                const wikiRes = await fetch(wikiUrl, {
+                    headers: { 'User-Agent': 'WorldInMakingOS/1.0' },
+                    signal: searchFetchSignal(3000, signal),
+                })
+                if (!wikiRes.ok) return null
+                const wikiData = (await wikiRes.json()) as {
+                    title?: string
+                    extract?: string
+                    content_urls?: { desktop?: { page?: string } }
+                }
+                if (!wikiData.extract || !wikiData.content_urls?.desktop?.page) return null
+                return {
                     title: wikiData.title || query,
                     url: wikiData.content_urls.desktop.page,
                     snippet: wikiData.extract,
-                    source: 'Wikipedia',
-                })
-                break
+                    source: 'Wikipedia' as const,
+                }
+            } catch (err) {
+                if (isClientSearchAbort(signal, err)) throw err
+                return null
             }
-        } catch (err) {
-            if (isClientSearchAbort(signal, err)) throw err
-            /* next language */
-        }
-    }
+        })
+    )
+    const hits: SearchResultItem[] = []
+    const preferred = pages[0] || pages[1]
+    if (preferred) pushUnique(hits, preferred)
     return hits
 }
 
@@ -375,13 +399,45 @@ async function searchDuckDuckGoLite(query: string, signal?: AbortSignal): Promis
     return hits
 }
 
+const PAGE_EXCERPT_CHARS = 900
+const PAGE_READ_LIMIT = 2
+
+/** Read the top result pages so the model answers from the article, not only the snippet. */
+export async function attachPageExcerpts(
+    hits: SearchResultItem[],
+    signal?: AbortSignal,
+    limit = PAGE_READ_LIMIT
+): Promise<SearchResultItem[]> {
+    if (hits.length === 0 || signal?.aborted) return hits
+    const top = hits.slice(0, limit)
+    const rest = hits.slice(limit)
+    const read = await Promise.all(
+        top.map(async (hit) => {
+            if (signal?.aborted) return hit
+            try {
+                const pageSignal = searchFetchSignal(4_500, signal)
+                const page = await fetchPublicUrl(hit.url, pageSignal)
+                if (!page.ok) return hit
+                const excerpt = page.text.replace(/\s+/g, ' ').trim().slice(0, PAGE_EXCERPT_CHARS)
+                return excerpt.length >= 80 ? { ...hit, excerpt } : hit
+            } catch (err) {
+                if (isClientSearchAbort(signal, err)) throw err
+                return hit
+            }
+        })
+    )
+    return [...read, ...rest]
+}
+
 /**
  * Multi-tier web search. Returns structured hits for citations + LLM context.
+ * Pass `readPages` when the model (or the host fallback) will write from these hits.
  */
 export async function searchWebSources(
     query: string,
     envStore?: EnvStore,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    options?: { readPages?: boolean }
 ): Promise<SearchResultItem[]> {
     const cleanQuery = query.trim()
     if (!cleanQuery) return []
@@ -451,7 +507,9 @@ export async function searchWebSources(
     }
 
     assertSearchNotAborted(signal)
-    return results.slice(0, 6)
+    const capped = results.slice(0, 6)
+    if (!options?.readPages || capped.length === 0) return capped
+    return attachPageExcerpts(capped, signal)
 }
 
 /**

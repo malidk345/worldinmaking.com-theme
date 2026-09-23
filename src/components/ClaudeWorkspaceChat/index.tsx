@@ -3172,7 +3172,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Floating Input Dock with smooth fade allowing messages to flow underneath */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-1 [padding-bottom:calc(0.2rem+var(--keyboard-inset,0px)+env(safe-area-inset-bottom,0px))] will-change-[padding-bottom]"
+          className="pointer-events-none absolute inset-x-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-[max(0.2rem,env(safe-area-inset-bottom,0px))] will-change-[bottom]"
+          style={{ bottom: 'var(--keyboard-inset, 0px)' }}
         >
           <div className="pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4">
             <ChatInput

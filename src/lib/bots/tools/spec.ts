@@ -142,7 +142,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'web_search',
             description:
-                'Search the live web for current facts, news, or sources. Use only when the question needs information you do not already have. For breadth, call several web_search tools with different focused queries in the same ACT — the host runs them in parallel.',
+                'Search the live web and read the top pages. Results include a snippet plus a Page excerpt from the article itself. Use when the question needs information you do not already have. For breadth, call several web_search tools with different focused queries in the same ACT — the host runs them in parallel. Do not fetch_url a URL that already has a Page excerpt unless you need a later section.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,

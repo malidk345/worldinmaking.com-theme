@@ -51,8 +51,8 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** HARDEN-ONLY — make EXISTING desk + WIM AI + notebook paths complete every time (abort, persist/rehydrate, notebook tool writes, wallpaper chrome).
+- **Status:** `[DONE by Grok 4.7]`
+- **Task:** WIM AI — model web search reads top pages; Ask AI composer tracks the keyboard. Remote #810 is in.
 
 
 
@@ -72,6 +72,19 @@
 - **Files:** `orchestrate.ts`, `loop.ts`, `anthropic.ts`, `ClaudeWorkspaceChat/index.tsx`, `App.tsx`, `SpotlightSearch/actions.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
 - **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts tests/notebook-ack-fail.spec.ts`; `pnpm exec vitest run src/lib/wallpaperChrome.test.ts src/lib/bots/web-search.abort.test.ts --environment node`
 - **Residual:** Soft-keyboard / iOS theme-color bounce may still need visibility relock (existing); host search abort still depends on provider fetch honoring signal (covered by web-search.abort tests).
+
+### 2026-09-23 — Grok 4.7 (fix: model web search reads the top pages)
+- **Gap:** `web_search` and the host live-web fallback handed the model titles and snippets only. The model then answered from the blurb or spent another step on `fetch_url`.
+- **Fix:** After the provider hits, the top two public URLs are read in parallel (4.5s each, same SSRF path as `fetch_url`). A Page excerpt (900 chars) is attached when the page yields real text; a failed read keeps the snippet. Tool spec tells the model not to re-fetch a URL that already has a Page excerpt. Host prompt prefers page text over the snippet. Academic corpus search is unchanged.
+- **Files:** `web-search.ts`, `execute.ts`, `orchestrate.ts`, `spec.ts`, `web-search.excerpt.test.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/web-search.excerpt.test.ts src/lib/bots/web-search.abort.test.ts` — 4 passed.
+
+### 2026-09-23 — Grok 4.7 (fix: Ask AI composer over the keyboard + faster search backstop)
+- **Keyboard:** AppWindow ignores height-only resizes, but `useKeyboardInset` measured against the already-shrunk `innerHeight`, so Android reported inset 0 and the composer stayed under the keyboard. `nextStableLayoutHeight` keeps the pre-keyboard height until rotation or growth. The Ask AI dock now sits at `bottom: var(--keyboard-inset)` instead of padding. Removed the competing `[data-writing-dock]` padding (it overrode the dock and also targeted the notebook canvas).
+- **Search:** Tavily no longer starts at `search_depth: advanced` (up to 12s). `basic` returns immediately at 3+ hits (8s cap). Fewer than 3 hits get one `advanced` pass (10s); the richer set wins. Wikipedia `tr` and `en` run together; Turkish is preferred when it hits. Read-only tools were already `Promise.all`.
+- **Files:** `useKeyboardInset.ts`, `useKeyboardInset.test.ts`, `ClaudeWorkspaceChat/index.tsx`, `global.css`, `web-search.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/hooks/useKeyboardInset.test.ts src/lib/bots/web-search.abort.test.ts` — 5 passed. No device browser in this session, so the live iOS/Android keyboard was not clicked.
+- **Leftover:** Notebook canvas still carries `data-writing-dock` (editor, not a dock) but the global pad that made that attribute matter is gone. Quality gate stays fail-open. No second orchestrator.
 
 ### 2026-09-23 — Grok 4.7 (fix: Anthropic tool loop matches provider deadline standard)
 - **Gap:** Groq, Gemini, NVIDIA, and OpenAI completions abort on `timeoutMs` (45s) and retry transient 429/5xx. Anthropic ignored the loop's `timeoutMs` (TS6133, and `typecheck:shell` failed on it), used a bare `fetch`, and split SSE on each chunk so a tool-call JSON line cut mid-chunk was dropped.

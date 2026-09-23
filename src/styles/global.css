@@ -3312,9 +3312,9 @@ html[data-keyboard='open'] #app-container {
     transform: none !important;
 }
 
-[data-writing-dock] {
-    padding-bottom: calc(0.75rem + var(--keyboard-inset, 0px));
-}
+/* Composer lift is `bottom: var(--keyboard-inset)` on the Ask AI dock.
+   Do not also pad [data-writing-dock] — that fought the dock's own padding
+   and padded the notebook canvas, which already has its own bottom space. */
 
 [data-writing-surface] {
     scroll-margin-bottom: calc(var(--keyboard-inset, 0px) + 12px);

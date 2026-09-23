@@ -365,7 +365,7 @@ async function executeWebSearch(
         return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
     }
     try {
-        const hits = await searchWebSources(query, env, signal)
+        const hits = await searchWebSources(query, env, signal, { readPages: true })
         if (signal?.aborted) {
             return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
         }

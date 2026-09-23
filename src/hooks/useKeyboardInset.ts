@@ -7,6 +7,21 @@ const WINDOW_CONTENT_ATTR = 'data-window-content'
 const WRITING_DOCK = '[data-writing-dock], .keyboard-lift'
 const NOTEBOOK_EDITOR = '.MarkdownNotebook, [data-markdown-notebook-editor]'
 
+export type LayoutLock = { width: number; height: number }
+
+/**
+ * Height to compare with the visual viewport.
+ * Android Chrome shrinks `innerHeight` with the keyboard while AppWindow stays
+ * at the pre-keyboard size (height-only resizes are ignored). Using the shrunk
+ * height reports inset 0 and the composer stays under the keyboard.
+ * A width change (rotation) starts a new lock. Growth updates the lock.
+ */
+export function nextStableLayoutHeight(prev: LayoutLock | null, width: number, height: number): LayoutLock {
+    if (!prev || Math.abs(prev.width - width) > 1) return { width, height }
+    if (height > prev.height) return { width, height }
+    return { width: prev.width, height: prev.height }
+}
+
 export function measureKeyboardOverlay(
     layoutHeight: number,
     visualHeight: number,
@@ -179,6 +194,7 @@ function resetVisualPan(vv: VisualViewport | null | undefined): void {
 export function useKeyboardInset(): void {
     useEffect(() => {
         const root = document.documentElement
+        let layoutLock: LayoutLock | null = null
 
         const apply = (keepCaret = false) => {
             const vv = window.visualViewport
@@ -186,8 +202,9 @@ export function useKeyboardInset(): void {
             const notebook = isNotebookEditing()
             // Always cancel browser layout/visual-viewport pan so headers & windows stay put.
             resetVisualPan(vv)
-            const layoutH = window.innerHeight
-            const visibleH = vv?.height ?? layoutH
+            layoutLock = nextStableLayoutHeight(layoutLock, window.innerWidth, window.innerHeight)
+            const layoutH = layoutLock.height
+            const visibleH = vv?.height ?? window.innerHeight
             const offsetTop = vv?.offsetTop ?? 0
             const { inset, pan, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
 

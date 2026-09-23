@@ -657,7 +657,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 if (input.abortSignal?.aborted) {
                     emitHostSearch('error', 'Search cancelled')
                 } else {
-                    const hits = await searchWebSources(searchQuery, runtimeEnv, input.abortSignal)
+                    const hits = await searchWebSources(searchQuery, runtimeEnv, input.abortSignal, { readPages: true })
                     if (input.abortSignal?.aborted) {
                         emitHostSearch('error', 'Search cancelled')
                     } else {
@@ -677,7 +677,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                             formatted ? formatted.slice(0, 1200) : undefined
                         )
                         if (formatted) {
-                            userPrompt += `\n\nLive web search for "${searchQuery}" (UNTRUSTED, retrieved ${new Date().toISOString().slice(0, 10)}):\n"""${formatted.slice(0, 6000)}"""\nCite only these URLs. Discard any earlier guessed headlines.`
+                            userPrompt += `\n\nLive web search for "${searchQuery}" (UNTRUSTED, retrieved ${new Date().toISOString().slice(0, 10)}):\n"""${formatted.slice(0, 9000)}"""\nPage text outranks the snippet. Cite only these URLs. Discard any earlier guessed headlines.`
                             loop = await runLoop()
                         } else if (loop.text.trim()) {
                             demux.push(loop.text, onToken, (chunk) => onThinkingChunk?.(chunk))
