@@ -51,11 +51,8 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS]`
-- **Owner:** Grok Bot / Cursor
-- **Task:** P0 HARDEN-ONLY after #824 — academic/corpus parallel inflight (#820 parity). Mid-cluster THINK + iOS theme-color surveyed, not shipped.
-- **Branch:** `harden/academic-corpus-inflight-825`
-- **Started:** 2026-09-23 (Europe/Istanbul)
+- **Status:** `[IDLE]`
+- **Task:** —
 
 ---
 
