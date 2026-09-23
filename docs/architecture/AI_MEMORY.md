@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: reset clears notebook↔chat bind)
+
+- **Scope:** P3 residual from post-#828 CLEAN survey — `handleResetData` left `wim_chat_notebook_bind` after wiping chats. No THINK / iOS / other invent.
+- **Proof reset should wipe bind:** Settings confirm is "Reset all chats and local demo data?"; handler already clears `CHAT_STORAGE_KEYS` / `PROJECT_STORAGE_KEYS` / `claude_workspace_settings` and resets to `INITIAL_CHATS`. `readNotebookChatBind()` still feeds tools / ChatMessage / `applyBind` — stale key would keep a deleted notebook bound after wipe. `clearNotebookChatBind` existed but was production-unused (tests only).
+- **Bugs fixed:**
+  1. **Reset leaves notebook↔chat bind:** call `clearNotebookChatBind()` inside `handleResetData` (clears local+session `wim_chat_notebook_bind` and dispatches `NOTEBOOK_CHAT_BIND_EVENT` with null so `applyBind` drops in-memory bind).
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; Playwright needle `handleResetData clears notebook↔chat bind`; `pnpm run test:smoke`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (device Safari); mid-cluster THINK parked (product).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: create_notebook stamp-before-bind)
 
 - **Scope:** P0 HARDEN-ONLY residual of #827 — bind-before-stamp orphan `chat-nb-*` race. No THINK / iOS / re-polish of exhausted classes.

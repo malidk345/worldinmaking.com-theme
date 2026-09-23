@@ -52,6 +52,7 @@ import {
   type NotebookChatBind,
   bindNotebookChat,
   buildNotebookAgentContext,
+  clearNotebookChatBind,
   readNotebookChatBind,
   readNotebookSelection,
   withNotebookBind,
@@ -3079,6 +3080,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       [...CHAT_STORAGE_KEYS, ...PROJECT_STORAGE_KEYS, 'claude_workspace_settings'].forEach((key) => {
         window.localStorage.removeItem(key);
       });
+      // Wipe notebook↔chat bind with chats — leftover key would keep tools on a deleted bind.
+      clearNotebookChatBind();
     }
     setChats(INITIAL_CHATS);
     setProjects(INITIAL_PROJECTS);
