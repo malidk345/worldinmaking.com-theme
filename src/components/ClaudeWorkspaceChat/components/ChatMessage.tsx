@@ -994,6 +994,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
 export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
   // Include every field the bubble renders. Missing errorKind/qualityGate/attachments
   // let settle patches no-op the UI while sibling stream paints keep firing.
+  //
+  // Handler identity is intentionally ignored: parent stream paints allocate new
+  // arrows; comparing them would defeat memo. Presence of onContinue gates the
+  // Stopped→Continue control (plan/execute can toggle without message fields).
   return (
     prev.message.id === next.message.id &&
     prev.message.content === next.message.content &&
@@ -1014,6 +1018,7 @@ export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
     prev.message.attachments === next.message.attachments &&
     prev.livePhase === next.livePhase &&
     prev.typewriterSpeed === next.typewriterSpeed &&
-    prev.targetChatId === next.targetChatId
+    prev.targetChatId === next.targetChatId &&
+    Boolean(prev.onContinue) === Boolean(next.onContinue)
   );
 });

@@ -100,4 +100,36 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(todoBlock).toContain('updatedAt: new Date().toISOString()')
   })
 
+  test('Sidebar memo + MessageList handler hoist + onContinue presence + stable handleNewChat', async () => {
+    const sidebar = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/Sidebar.tsx'),
+      'utf-8'
+    )
+    expect(sidebar).toContain('export const Sidebar = React.memo(SidebarComponent')
+    expect(sidebar).toContain('prev.chats.length !== next.chats.length')
+    expect(sidebar).toContain('a.id !== b.id || a.title !== b.title')
+    expect(sidebar).toContain('const ChatItem = React.memo(ChatItemComponent')
+
+    const msg = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx'),
+      'utf-8'
+    )
+    expect(msg).toContain('Boolean(prev.onContinue) === Boolean(next.onContinue)')
+    expect(msg).toContain('Handler identity is intentionally ignored')
+
+    const src = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
+    expect(src).toContain('const handleNewChat = useCallback((projId?: string) => {')
+    expect(src).toContain('stream paint tore down/rebound window keydown')
+    expect(src).toContain('continueHandlerForMessages')
+    expect(src).toContain('handleOpenArtifactFromMessage')
+    expect(src).toContain('onContinue={continueHandlerForMessages}')
+    expect(src).toContain('onOpenArtifact={handleOpenArtifactFromMessage}')
+    // Must not reintroduce per-row Continue arrows in the map.
+    const mapStart = src.indexOf('{activeChat.messages.map((msg) => (')
+    expect(mapStart).toBeGreaterThan(-1)
+    const mapBlock = src.slice(mapStart, mapStart + 1200)
+    expect(mapBlock).not.toContain("void handleSendMessage('Continue.', [])")
+    expect(mapBlock).not.toContain('onOpenByok={() => setSidebarOpen(true)}')
+  })
+
 })

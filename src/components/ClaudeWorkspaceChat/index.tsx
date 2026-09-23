@@ -1183,19 +1183,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scrollChatToBottom('auto');
   }, [activeChatId, scrollChatToBottom]);
 
-  // Handle New Chat Creation
-  const handleNewChat = (projId?: string) => {
+  // Handle New Chat Creation.
+  // Stabilized: keyboard shortcut effect depends on this — without useCallback every
+  // stream paint tore down/rebound window keydown (handleNewChat was a new identity).
+  const handleNewChat = useCallback((projId?: string) => {
     if (isStreamingRef.current) {
       abortActiveStream()
       setIsStreaming(false)
       setStreamStatus(null)
     }
+    const bind = notebookBind
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
-      title: notebookBind?.title ? `Notebook: ${notebookBind.title}` : 'New chat',
-      notebookId: notebookBind?.notebookId,
+      title: bind?.title ? `Notebook: ${bind.title}` : 'New chat',
+      notebookId: bind?.notebookId,
       projectId: projId || activeProjectId,
-      modelId: selectedModelId,
+      modelId: selectedModelIdRef.current,
       starred: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -1210,7 +1213,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setActiveArtifact(null);
     closeArtifacts();
     setComposerDraftNonce((n) => n + 1);
-  };
+  }, [abortActiveStream, notebookBind, activeProjectId]);
 
   // Handle HTML/JSON Chat Import
   const handleImportChat = (importedChat: Chat) => {
@@ -3170,32 +3173,89 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setNotebookBind(null)
   }, [activeNotebookInfo?.id])
 
+  // MessageList: hoist callbacks outside messages.map. ChatMessage memo ignores
+  // handler identity (stream paints would otherwise defeat memo); presence of
+  // onContinue is compared. Hoisting still cuts per-row arrow allocs each rAF.
+  // Latest openArtifact / insertIntoNotebook without rebinding every stream paint.
+  const openArtifactRef = useRef(openArtifact)
+  openArtifactRef.current = openArtifact
+  const insertIntoNotebookRef = useRef(insertIntoNotebook)
+  insertIntoNotebookRef.current = insertIntoNotebook
+
+  const handleOpenArtifactFromMessage = useCallback(
+    (art: Artifact, origin?: DOMRect) => {
+      if (isArtifactsOpen && activeArtifact?.id === art.id && !isArtifactExpanded) {
+        setIsArtifactExpanded(true)
+      } else {
+        openArtifactRef.current(art, { origin })
+      }
+    },
+    [isArtifactsOpen, activeArtifact?.id, isArtifactExpanded]
+  )
+
+  const handleAddMessageToNotebook = useCallback((message: Message) => {
+    insertIntoNotebookRef.current(messageToNotebookMarkdown(message))
+  }, [])
+
+  const handleOpenByokFromMessage = useCallback(() => {
+    setSidebarOpen(true)
+  }, [])
+
+  const handleCloseSidebar = useCallback(() => {
+    setSidebarOpen(false)
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((open) => !open)
+  }, [])
+
+  const handleSendMessageRef = useRef(handleSendMessage)
+  handleSendMessageRef.current = handleSendMessage
+
+  const handleContinueFromMessage = useCallback((_messageId: string) => {
+    void handleSendMessageRef.current('Continue.', [])
+  }, [])
+
+  // Hide Continue while execute-mode plan still has open steps (same gate as before).
+  const continueHandlerForMessages = useMemo(() => {
+    const mode = activeChat?.agentMode || 'ask'
+    const plan = activeChat?.activePlan || []
+    const planBusy =
+      mode === 'execute' && plan.some((item) => item.status === 'in_progress' || item.status === 'pending')
+    return planBusy ? undefined : handleContinueFromMessage
+  }, [activeChat?.agentMode, activeChat?.activePlan, handleContinueFromMessage])
+
+  const handleSelectChatFromSidebar = useCallback(
+    (id: string) => {
+      if (id !== activeChatId && isStreamingRef.current) {
+        abortActiveStream()
+        setIsStreaming(false)
+        setStreamStatus(null)
+        pinnedMessageIdRef.current = null
+        setPinSpacerHeight(0)
+      }
+      if (id !== activeChatId) {
+        pinBottomOnNextChatRef.current = true
+        pinnedMessageIdRef.current = null
+        setPinSpacerHeight(0)
+      }
+      setActiveChatId(id)
+      setComposerDraftNonce((n) => n + 1)
+    },
+    [activeChatId, abortActiveStream]
+  )
+
   return (
     <LemonScope fill>
     <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-sans overflow-hidden antialiased">
       {/* Left Collapsible Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={handleCloseSidebar}
         chats={chats}
         activeChatId={activeChatId}
-        onSelectChat={(id) => {
-          if (id !== activeChatId && isStreamingRef.current) {
-            abortActiveStream()
-            setIsStreaming(false)
-            setStreamStatus(null)
-            pinnedMessageIdRef.current = null
-            setPinSpacerHeight(0)
-          }
-          if (id !== activeChatId) {
-            pinBottomOnNextChatRef.current = true
-            pinnedMessageIdRef.current = null
-            setPinSpacerHeight(0)
-          }
-          setActiveChatId(id)
-          setComposerDraftNonce((n) => n + 1)
-        }}
-        onNewChat={() => handleNewChat()}
+        onSelectChat={handleSelectChatFromSidebar}
+        onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
         onRenameChat={handleRenameChat}
         onToggleStarChat={handleToggleStarChat}
@@ -3223,7 +3283,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
         {/* Top Header Bar */}
         <Header
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={handleToggleSidebar}
           onOpenScratchpad={() => addWindow({ path: '/scratchpad', title: 'Scratchpad' })}
         />
 
@@ -3272,13 +3332,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   livePhase={msg.isStreaming ? streamStatus : null}
                   targetChatId={activeChat.id}
                   modelOptions={models}
-                  onOpenArtifact={(art, origin) => {
-                    if (isArtifactsOpen && activeArtifact?.id === art.id && !isArtifactExpanded) {
-                      setIsArtifactExpanded(true)
-                    } else {
-                      openArtifact(art, { origin })
-                    }
-                  }}
+                  onOpenArtifact={handleOpenArtifactFromMessage}
                   onOpenSources={openSources}
                   onEditPrompt={handleEditPrompt}
                   onRetry={handleRetry}
@@ -3286,20 +3340,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                   onUpdateMessage={updateAssistantMessage}
                   onExecuteOSAction={executeOSAction}
                   onHumanRespond={handleHumanRespond}
-                  onAddToNotebook={(message) => insertIntoNotebook(messageToNotebookMarkdown(message))}
-                  onOpenByok={() => setSidebarOpen(true)}
+                  onAddToNotebook={handleAddMessageToNotebook}
+                  onOpenByok={handleOpenByokFromMessage}
                   typewriterSpeed={settings.typewriterSpeed}
                   onStop={handleStopStreaming}
-                  onContinue={
-                    (activeChat?.agentMode || 'ask') === 'execute' &&
-                    (activeChat.activePlan || []).some(
-                      (item) => item.status === 'in_progress' || item.status === 'pending'
-                    )
-                      ? undefined
-                      : () => {
-                          void handleSendMessage('Continue.', [])
-                        }
-                  }
+                  onContinue={continueHandlerForMessages}
                 />
               ))}
               <div
