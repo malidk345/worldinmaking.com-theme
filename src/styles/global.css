@@ -707,9 +707,11 @@ body::before {
     background-color: transparent;
 }
 
-[data-app='AppWindow']:focus-visible {
-    outline: 2px solid var(--accent, #f54e00);
-    outline-offset: -2px;
+@media (min-width: 768px) {
+    [data-app='AppWindow']:focus-visible {
+        outline: 2px solid var(--accent, #f54e00);
+        outline-offset: -2px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -3237,6 +3239,13 @@ article.reader-view-content-container:has(.quest-sidebar) {
 @media (max-width: 767px) {
     #app-container div[data-app='AppWindow']:not([data-fixed-size]) {
         @apply size-full rounded-tr-none rounded-tl-none;
+    }
+
+    #app-container div[data-app='AppWindow'],
+    #app-container div[data-app='AppWindow']:focus,
+    #app-container div[data-app='AppWindow']:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
     }
 
     #app-container div[data-app='AppWindow']:not([data-fixed-size]) > .size-full.flex-grow {
