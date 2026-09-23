@@ -176,6 +176,12 @@ test.describe('Fail-closed nacks are present', () => {
     expect(block).toContain('notebookId: nb.id');
     expect(block).toContain('void pushChatToRemote(stamped)');
     expect(block).toContain("wimNotebookAck");
+    // Stamp must precede bind: applyBind creates chat-nb-* when no chat has notebookId yet.
+    const stampAt = block.indexOf('setChats((prev) =>');
+    const bindAt = block.indexOf('bindNotebookChat({ notebookId: nb.id');
+    expect(stampAt).toBeGreaterThan(-1);
+    expect(bindAt).toBeGreaterThan(-1);
+    expect(stampAt).toBeLessThan(bindAt);
   });
 
 });
