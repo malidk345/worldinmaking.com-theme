@@ -95,6 +95,46 @@ test.describe('Fail-closed nacks are present', () => {
     expect(fn).toContain('if (editorOwnsTarget)');
   });
 
+
+  test('bound replace/annotate/footnote adopt setTitle with content (idle title poison)', async () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
+    for (const name of ['handleReplaceSelection', 'handleAddAnnotation', 'handleAddFootnote'] as const) {
+      const start = src.indexOf(`const ${name}`);
+      expect(start, name).toBeGreaterThan(-1);
+      const end =
+        name === 'handleAddFootnote'
+          ? src.indexOf("window.addEventListener('wimNotebookAddFootnote'")
+          : name === 'handleReplaceSelection'
+            ? src.indexOf('const handleAddAnnotation')
+            : src.indexOf('const handleAddFootnote');
+      expect(end, name).toBeGreaterThan(start);
+      const fn = src.slice(start, end);
+      // Insert/patch/#822 parity: adopting another notebook must setTitle(target.title)
+      // so idle persist cannot write the previous editor title into the bound target.
+      expect(fn).toContain('setTitle(target.title)');
+      expect(fn).toContain('setCurrentNotebook(target)');
+      expect(fn).toContain('setMarkdown(');
+    }
+    // Insert + patch already had setTitle — keep the invariant explicit.
+    for (const name of ['handleInsertText', 'handlePatchText'] as const) {
+      const start = src.indexOf(`const ${name}`);
+      const end = name === 'handleInsertText' ? src.indexOf('const handlePatchText') : src.indexOf('const handleSetTitle');
+      const fn = src.slice(start, end);
+      expect(fn, name).toContain('setTitle(target.title)');
+    }
+  });
+
+  test('assistant-actions insert_notebook_block fails closed on missing bound id', async () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'src/lib/assistant-actions.ts'), 'utf-8');
+    const start = src.indexOf('function resolveNotebook');
+    expect(start).toBeGreaterThan(-1);
+    const end = src.indexOf('export function applyAssistantAction');
+    const fn = src.slice(start, end);
+    // When id is provided, must return getNotebook(id) only — never fall through to first notebook.
+    expect(fn).toContain('return getNotebook(id) || null');
+    expect(fn).not.toMatch(/if \(id\) \{[\s\S]*?if \(found\) return found[\s\S]*?\}[\s\S]*?return getNotebooks/);
+  });
+
   test('bound replace/annotate/footnote never use another editor markdownRef', async () => {
     const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
     for (const name of ['handleReplaceSelection', 'handleAddAnnotation', 'handleAddFootnote', 'handlePatchText'] as const) {

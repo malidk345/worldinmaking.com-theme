@@ -1062,6 +1062,9 @@ export function App() {
       const next =
         current.substring(0, match.index) + text + current.substring(match.index + targetPhrase.length)
       setCurrentNotebook(target)
+      // Insert/patch/#822 parity: adopt title with content so idle persist
+      // cannot write the previous editor title into the bound target.
+      setTitle(target.title)
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Replaced selection' })
@@ -1136,6 +1139,7 @@ export function App() {
       const nextMarkdown = serializeMarkdownNotebook(nextDocument)
 
       setCurrentNotebook(target)
+      setTitle(target.title)
       setMarkdown(nextMarkdown)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: nextMarkdown }, { snapshot: true, snapshotLabel: 'Added annotation' })
@@ -1239,6 +1243,7 @@ export function App() {
       }
 
       setCurrentNotebook(target)
+      setTitle(target.title)
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: `Added footnote [^${marker}]` })

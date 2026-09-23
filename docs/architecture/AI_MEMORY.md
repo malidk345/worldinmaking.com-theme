@@ -51,12 +51,27 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** —
+- **Status:** `[IN PROGRESS]`
+- **Owner:** Grok Bot / Cursor (malidk345)
+- **Task:** COMPLETE AUDIT notebook OS/tool write handlers — bound-target + markdownRef + fail-closed nack parity after #818/#821/#822; fix-all or CLEAN checklist
+- **Started:** 2026-09-23 ~13:47 Europe/Istanbul
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: notebook write-handler audit + adopt title parity)
+
+- **Scope:** P0 HARDEN-ONLY complete audit after #818/#821/#822 — bound-target + markdownRef + fail-closed nack parity across every notebook OS/tool write path; no redesign.
+- **Audit (file evidence):** Enumerated OS listeners in `App.tsx` (insert/rewrite, patch, setTitle, replace, annotate, footnote), OS Apply card path in `ClaudeWorkspaceChat`, Diff Apply → patch, tool host builders (`host.ts`), UI create/delete/duplicate/open, `assistant-actions` insert/create.
+- **Already solid:** insert/rewrite (#818), replace/annotate/footnote/patch markdownRef gate + no_target (#821), setTitle adopt + empty/no_target (#822), OS Apply in-flight (no executed:true flip), Diff Apply patchAck fail-closed, host tools fail-closed when unbound, create_notebook ack-from-caller, UI delete/create (current-only, no notebookId).
+- **Bugs fixed:**
+  1. **Bound replace/annotate/footnote title adopt:** `setCurrentNotebook(target)` + `setMarkdown(next)` without `setTitle(target.title)` — idle `persistOpenNotebookDraft` could write the previous editor title into the bound notebook (inverse of #822 markdown poison). Now insert/patch parity: always `setTitle(target.title)` on adopt.
+  2. **assistant-actions resolveNotebook fail-open:** supplied but missing `notebookId` fell through to most-recent notebook. Now fail-closed `getNotebook(id) || null`.
+- **Files:** `notebook-app/App.tsx`, `assistant-actions.ts`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: bound setTitle buffer parity)
 
