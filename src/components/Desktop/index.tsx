@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import Link from 'components/Link'
@@ -41,6 +41,9 @@ function Desktop() {
     const { windows } = useAppWindows()
     const { confetti, isClaudeChatOpen, isNotificationsPanelOpen } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
+    // Both icon trees exist for the first paint so server HTML matches. After that,
+    // keep only the layout the viewport actually shows. `sm` is 640px.
+    const [iconLayout, setIconLayout] = useState<'both' | 'mobile' | 'desktop'>('both')
     const [chatMounted, setChatMounted] = useState(false)
     const [notifMounted, setNotifMounted] = useState(false)
     const router = useRouter()
@@ -174,6 +177,14 @@ function Desktop() {
     const leftApps = applyGlow([...productLinks, ...visiblePinned])
     const rightApps = applyGlow(apps)
 
+    useLayoutEffect(() => {
+        const query = window.matchMedia('(min-width: 640px)')
+        const apply = () => setIconLayout(query.matches ? 'desktop' : 'mobile')
+        apply()
+        query.addEventListener('change', apply)
+        return () => query.removeEventListener('change', apply)
+    }, [])
+
     const mobileIconListClassName = 'list-none m-0 p-0 flex flex-row flex-wrap pointer-events-auto w-full sm:hidden'
     const desktopIconListClassName = 'list-none m-0 p-0 flex flex-col content-start pointer-events-auto'
     const desktopIconListStyle = {
@@ -221,11 +232,14 @@ function Desktop() {
                     <Wallpapers wallpaper={siteSettings.wallpaper} reduceMotion={siteSettings.performanceBoost} />
 
                     <nav className="relative z-10 px-1 pb-[env(safe-area-inset-bottom)]" style={{ paddingTop: `calc(${DESKTOP_TOP_OFFSET + 16}px + env(safe-area-inset-top))` }}>
-                        <ul className={mobileIconListClassName}>
-                            {[...leftApps, ...rightApps].map((app) => (
-                                <DesktopIcon key={app.label} app={app} />
-                            ))}
-                        </ul>
+                        {iconLayout !== 'desktop' && (
+                            <ul className={mobileIconListClassName}>
+                                {[...leftApps, ...rightApps].map((app) => (
+                                    <DesktopIcon key={app.label} app={app} />
+                                ))}
+                            </ul>
+                        )}
+                        {iconLayout !== 'mobile' && (
                         <div className="hidden sm:flex sm:justify-between items-start">
                             <ul className={`${desktopIconListClassName} flex-wrap`} style={desktopIconListStyle}>
                                 {leftApps.map((app) => (
@@ -241,6 +255,7 @@ function Desktop() {
                                 ))}
                             </ul>
                         </div>
+                        )}
                     </nav>
                 </div>
                 <HedgeHogModeEmbed />

@@ -635,22 +635,22 @@ html.dark[data-wallpaper='rain-embers'] {
 html[data-wallpaper='plaza-bang'] {
     --browser-chrome: #e6dfd2;
     --browser-chrome-bottom: #e6dfd2;
-    --browser-chrome-field: #e6dfd2;
+    --browser-chrome-field: linear-gradient(180deg, #e6dfd2 0%, #e6dfd2 100%);
 }
 html.dark[data-wallpaper='plaza-bang'] {
     --browser-chrome: #141e40;
     --browser-chrome-bottom: #141e40;
-    --browser-chrome-field: #141e40;
+    --browser-chrome-field: linear-gradient(180deg, #141e40 0%, #141e40 100%);
 }
 html[data-wallpaper='paper-white'] {
     --browser-chrome: #ffffff;
     --browser-chrome-bottom: #ffffff;
-    --browser-chrome-field: #ffffff;
+    --browser-chrome-field: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
 }
 html.dark[data-wallpaper='paper-white'] {
     --browser-chrome: #121212;
     --browser-chrome-bottom: #121212;
-    --browser-chrome-field: #121212;
+    --browser-chrome-field: linear-gradient(180deg, #121212 0%, #121212 100%);
 }
 
 html,

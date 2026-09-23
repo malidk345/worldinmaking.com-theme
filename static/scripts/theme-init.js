@@ -48,12 +48,12 @@
             dark: { top: '#0F2236', bottom: '#0C1A28', css: 'linear-gradient(180deg, #0F2236 0%, #17324A 50%, #0C1A28 100%)' },
         },
         'plaza-bang': {
-            light: { top: '#E6DFD2', bottom: '#E6DFD2', css: '#E6DFD2' },
-            dark: { top: '#141E40', bottom: '#141E40', css: '#141E40' },
+            light: { top: '#E6DFD2', bottom: '#E6DFD2', css: 'linear-gradient(180deg, #E6DFD2 0%, #E6DFD2 100%)' },
+            dark: { top: '#141E40', bottom: '#141E40', css: 'linear-gradient(180deg, #141E40 0%, #141E40 100%)' },
         },
         'paper-white': {
-            light: { top: '#FFFFFF', bottom: '#FFFFFF', css: '#FFFFFF' },
-            dark: { top: '#121212', bottom: '#121212', css: '#121212' },
+            light: { top: '#FFFFFF', bottom: '#FFFFFF', css: 'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 100%)' },
+            dark: { top: '#121212', bottom: '#121212', css: 'linear-gradient(180deg, #121212 0%, #121212 100%)' },
         },
     }
     var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang', 'paper-white']

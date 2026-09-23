@@ -116,12 +116,28 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
         },
     },
     'plaza-bang': {
-        light: { top: '#E6DFD2', bottom: '#E6DFD2', css: '#E6DFD2' },
-        dark: { top: '#141E40', bottom: '#141E40', css: '#141E40' },
+        light: {
+            top: '#E6DFD2',
+            bottom: '#E6DFD2',
+            css: 'linear-gradient(180deg, #E6DFD2 0%, #E6DFD2 100%)',
+        },
+        dark: {
+            top: '#141E40',
+            bottom: '#141E40',
+            css: 'linear-gradient(180deg, #141E40 0%, #141E40 100%)',
+        },
     },
     'paper-white': {
-        light: { top: '#FFFFFF', bottom: '#FFFFFF', css: '#FFFFFF' },
-        dark: { top: '#121212', bottom: '#121212', css: '#121212' },
+        light: {
+            top: '#FFFFFF',
+            bottom: '#FFFFFF',
+            css: 'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 100%)',
+        },
+        dark: {
+            top: '#121212',
+            bottom: '#121212',
+            css: 'linear-gradient(180deg, #121212 0%, #121212 100%)',
+        },
     },
 }
 
