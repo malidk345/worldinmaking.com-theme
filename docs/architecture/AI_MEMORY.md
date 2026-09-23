@@ -52,11 +52,22 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[IDLE]`
-- **Task:** Performance optimization of AppWindow chrome, resize handles, and desktop re-renders.
+- **Task:** —
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: ChatMessage memo + index updateAssistantMessage)
+
+- **Scope:** P1 HARDEN-ONLY — stream list correctness/perf; no redesign, no P2 iOS theme-color, no mid-cluster THINK.
+- **Change:**
+  1. **ChatMessage memo:** compare `errorKind`, `qualityGate`, `attachments`, `typewriterSpeed`, `targetChatId` (UI already renders error/quality banners; settle patches must not skip paint).
+  2. **updateAssistantMessage:** findIndex + slice replace instead of `prev.map` over all chats/messages each rAF paint; short-circuit when UI-relevant fields are unchanged (keeps chat/message refs).
+- **Files:** `ChatMessage.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color bounce (P2, needs device Safari) untouched; mid-cluster THINK latency parked; MessageList still remounts inline handlers per parent paint (memo ignores callbacks — optional later useCallback pass).
+
 
 ### 2026-09-23 — Antigravity (perf: optimize AppWindow chrome, resize handles, and desktop re-renders)
 - **Scope:** Zero-regression rendering performance and tree-traversal optimization without feature or UI design alterations.

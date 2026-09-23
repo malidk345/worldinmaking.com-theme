@@ -992,6 +992,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
 };
 
 export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
+  // Include every field the bubble renders. Missing errorKind/qualityGate/attachments
+  // let settle patches no-op the UI while sibling stream paints keep firing.
   return (
     prev.message.id === next.message.id &&
     prev.message.content === next.message.content &&
@@ -1007,6 +1009,11 @@ export const ChatMessage = React.memo(ChatMessageComponent, (prev, next) => {
     prev.message.osAction === next.message.osAction &&
     prev.message.humanTurn === next.message.humanTurn &&
     prev.message.checkpoint === next.message.checkpoint &&
-    prev.livePhase === next.livePhase
+    prev.message.errorKind === next.message.errorKind &&
+    prev.message.qualityGate === next.message.qualityGate &&
+    prev.message.attachments === next.message.attachments &&
+    prev.livePhase === next.livePhase &&
+    prev.typewriterSpeed === next.typewriterSpeed &&
+    prev.targetChatId === next.targetChatId
   );
 });

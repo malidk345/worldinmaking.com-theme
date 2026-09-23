@@ -2515,27 +2515,49 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   };
 
-  // Helper to update specific assistant message in chat
+  // Helper to update specific assistant message in chat.
+  // Index + slice (not map-all-chats) — stream paints hit this every rAF; only the
+  // target chat/message allocate. No-op when patch leaves UI-relevant fields equal.
   const updateAssistantMessage = (chatId: string, msgId: string, patch: Partial<Message>) => {
-    setChats((prev) =>
-      prev.map((c) => {
-        if (c.id === chatId) {
-          return {
-            ...c,
-            messages: c.messages.map((m) => {
-              if (m.id !== msgId) return m
-              const next: Message = { ...m, ...patch }
-              // Late stream flush must not revive a settled ask_user / plan_approval as pending
-              if ('humanTurn' in patch) {
-                next.humanTurn = resolveHumanTurn(m.humanTurn, patch.humanTurn)
-              }
-              return next
-            }),
-          };
-        }
-        return c;
-      })
-    );
+    setChats((prev) => {
+      const chatIdx = prev.findIndex((c) => c.id === chatId)
+      if (chatIdx < 0) return prev
+      const chat = prev[chatIdx]
+      const msgIdx = chat.messages.findIndex((m) => m.id === msgId)
+      if (msgIdx < 0) return prev
+      const prevMsg = chat.messages[msgIdx]
+      const nextMsg: Message = { ...prevMsg, ...patch }
+      // Late stream flush must not revive a settled ask_user / plan_approval as pending
+      if ('humanTurn' in patch) {
+        nextMsg.humanTurn = resolveHumanTurn(prevMsg.humanTurn, patch.humanTurn)
+      }
+      if (
+        nextMsg.content === prevMsg.content &&
+        nextMsg.isStreaming === prevMsg.isStreaming &&
+        nextMsg.isTypingDone === prevMsg.isTypingDone &&
+        nextMsg.stopped === prevMsg.stopped &&
+        nextMsg.liked === prevMsg.liked &&
+        nextMsg.modelUsed === prevMsg.modelUsed &&
+        nextMsg.thinkingProcess === prevMsg.thinkingProcess &&
+        nextMsg.toolTrace === prevMsg.toolTrace &&
+        nextMsg.artifacts === prevMsg.artifacts &&
+        nextMsg.citations === prevMsg.citations &&
+        nextMsg.osAction === prevMsg.osAction &&
+        nextMsg.humanTurn === prevMsg.humanTurn &&
+        nextMsg.checkpoint === prevMsg.checkpoint &&
+        nextMsg.errorKind === prevMsg.errorKind &&
+        nextMsg.qualityGate === prevMsg.qualityGate &&
+        nextMsg.attachments === prevMsg.attachments &&
+        nextMsg.provider === prevMsg.provider
+      ) {
+        return prev
+      }
+      const nextMessages = chat.messages.slice()
+      nextMessages[msgIdx] = nextMsg
+      const nextChats = prev.slice()
+      nextChats[chatIdx] = { ...chat, messages: nextMessages }
+      return nextChats
+    })
   };
 
   const handleStopStreaming = () => {
