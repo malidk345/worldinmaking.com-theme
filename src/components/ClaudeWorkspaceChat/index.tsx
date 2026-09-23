@@ -342,6 +342,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
         pinBottomOnNextChatRef.current = true
         setActiveChatId(boundChat.id)
+        // Persist notebook_id so cold open / other device can rehydrate the bind.
+        void pushChatToRemote(boundChat)
         return [boundChat, ...prev]
       })
     }
@@ -2844,7 +2846,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const handleAgentModeChange = useCallback((mode: AgentMode) => {
     if (!activeChatId) return;
-    setChats((prev) => prev.map((c) => (c.id === activeChatId ? { ...c, agentMode: mode, updatedAt: new Date().toISOString() } : c)));
+    setChats((prev) => {
+      const next = prev.map((c) => (c.id === activeChatId ? { ...c, agentMode: mode, updatedAt: new Date().toISOString() } : c));
+      const chat = next.find((item) => item.id === activeChatId);
+      // Dual-device: mode must reach wim_chats.agent_mode without waiting for the next send.
+      if (chat) void pushChatToRemote(chat);
+      return next;
+    });
   }, [activeChatId]);
 
   const handleMessageFeedback = (messageId: string, liked: boolean | null) => {

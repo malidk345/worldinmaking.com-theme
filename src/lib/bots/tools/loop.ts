@@ -684,6 +684,7 @@ export async function runToolLoop(params: {
                         maxTokens,
                         tools: toolsForAgentMode(agentMode),
                         signal: params.signal,
+                        timeoutMs,
                     }),
             })
             if (step.kind === 'done') return step.result

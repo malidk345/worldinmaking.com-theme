@@ -653,31 +653,73 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             }
             emitHostSearch('running', searchQuery)
             try {
-                const hits = await searchWebSources(searchQuery, runtimeEnv)
-                hostCitations.push(
-                    ...hits.slice(0, 6).map((item, index) => ({
-                        id: index + 1,
-                        title: item.title,
-                        url: item.url,
-                        snippet: item.snippet.slice(0, 280),
-                        source: item.source,
-                    }))
-                )
-                const formatted = formatSearchResults(hits)
-                emitHostSearch(
-                    hits.length > 0 ? 'done' : 'error',
-                    hits.length > 0 ? 'Search complete' : 'No live hits',
-                    formatted ? formatted.slice(0, 1200) : undefined
-                )
-                if (formatted) {
-                    userPrompt += `\n\nLive web search for "${searchQuery}" (UNTRUSTED, retrieved ${new Date().toISOString().slice(0, 10)}):\n"""${formatted.slice(0, 6000)}"""\nCite only these URLs. Discard any earlier guessed headlines.`
-                    loop = await runLoop()
-                } else if (loop.text.trim()) {
-                    demux.push(loop.text, onToken, (chunk) => onThinkingChunk?.(chunk))
+                // Stop / window close must abort host Tavily/Brave too (tool path already passes signal).
+                if (input.abortSignal?.aborted) {
+                    emitHostSearch('error', 'Search cancelled')
+                } else {
+                    const hits = await searchWebSources(searchQuery, runtimeEnv, input.abortSignal)
+                    if (input.abortSignal?.aborted) {
+                        emitHostSearch('error', 'Search cancelled')
+                    } else {
+                        hostCitations.push(
+                            ...hits.slice(0, 6).map((item, index) => ({
+                                id: index + 1,
+                                title: item.title,
+                                url: item.url,
+                                snippet: item.snippet.slice(0, 280),
+                                source: item.source,
+                            }))
+                        )
+                        const formatted = formatSearchResults(hits)
+                        emitHostSearch(
+                            hits.length > 0 ? 'done' : 'error',
+                            hits.length > 0 ? 'Search complete' : 'No live hits',
+                            formatted ? formatted.slice(0, 1200) : undefined
+                        )
+                        if (formatted) {
+                            userPrompt += `\n\nLive web search for "${searchQuery}" (UNTRUSTED, retrieved ${new Date().toISOString().slice(0, 10)}):\n"""${formatted.slice(0, 6000)}"""\nCite only these URLs. Discard any earlier guessed headlines.`
+                            loop = await runLoop()
+                        } else if (loop.text.trim()) {
+                            demux.push(loop.text, onToken, (chunk) => onThinkingChunk?.(chunk))
+                        }
+                    }
                 }
-            } catch {
-                emitHostSearch('error', 'Search failed')
-                if (loop.text.trim()) demux.push(loop.text, onToken, (chunk) => onThinkingChunk?.(chunk))
+            } catch (err) {
+                const aborted =
+                    Boolean(input.abortSignal?.aborted) ||
+                    (err instanceof Error && err.name === 'AbortError')
+                if (aborted) {
+                    // Do not flush held public tokens after Stop during host search.
+                    emitHostSearch('error', 'Search cancelled')
+                } else {
+                    emitHostSearch('error', 'Search failed')
+                    if (loop.text.trim()) demux.push(loop.text, onToken, (chunk) => onThinkingChunk?.(chunk))
+                }
+            }
+        }
+        // Abort before finish so held public tokens are not flushed after Stop mid host-search.
+        if (input.abortSignal?.aborted || loop.error === 'client request aborted') {
+            return {
+                success: false,
+                philosopher: persona.name,
+                epistemicStance: persona.epistemicStance,
+                reply: '',
+                thought: '',
+                thinking: {
+                    summary: '',
+                    stages: [],
+                    structured: false,
+                    depth: input.thinkingDepth || 'standard',
+                    source: 'none',
+                },
+                provider: 'none',
+                confident: false,
+                error: 'aborted',
+                host: 'cloudflare-pages-edge',
+                configured: getProviderKeyFlags(runtimeEnv),
+                attempts: ['client aborted during generation'],
+                latencyMs: Date.now() - streamStarted,
+                taskType,
             }
         }
         demux.finish(onToken, (chunk) => onThinkingChunk?.(chunk))

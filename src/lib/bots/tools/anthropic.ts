@@ -81,13 +81,18 @@ export async function anthropicToolCompletion(params: {
     maxTokens?: number
     tools?: OpenAiToolSpec[]
     signal?: AbortSignal
+    timeoutMs?: number
 }): Promise<
     | { ok: true; content: string; toolCalls: ToolCall[]; reasoning?: string }
     | { ok: false; detail: string; status?: number }
 > {
     const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), params.timeoutMs || 45_000)
     const onAbort = () => controller.abort()
-    if (params.signal?.aborted) return { ok: false, detail: 'client request aborted' }
+    if (params.signal?.aborted) {
+        clearTimeout(timer)
+        return { ok: false, detail: 'client request aborted' }
+    }
     params.signal?.addEventListener('abort', onAbort)
 
     try {
@@ -194,6 +199,7 @@ export async function anthropicToolCompletion(params: {
         if (err instanceof Error && err.name === 'AbortError') return { ok: false, detail: 'client request aborted' }
         return { ok: false, detail: err instanceof Error ? err.message : 'Unknown error' }
     } finally {
+        clearTimeout(timer)
         params.signal?.removeEventListener('abort', onAbort)
     }
 }

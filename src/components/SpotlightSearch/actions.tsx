@@ -16,6 +16,7 @@ import {
     IconX,
 } from '@posthog/icons'
 import { useApp, SiteSettings } from '../../context/App'
+import { applyWallpaperBrowserChrome } from '../../lib/wallpaperChrome'
 import { useToast } from '../../context/Toast'
 import { themeOptions } from '../../hooks/useTheme'
 import { useHedgehogMode } from 'components/HedgehogMode'
@@ -95,9 +96,25 @@ export const useSpotlightActions = (): SpotlightAction[] => {
     const changeWallpaper = () => {
         const currentIndex = themeOptions.findIndex((theme) => theme.value === siteSettings.wallpaper)
         const nextWallpaper = themeOptions[(currentIndex + 1) % themeOptions.length]
+        const wallpaper = nextWallpaper.value as SiteSettings['wallpaper']
+        applyWallpaperBrowserChrome({
+            wallpaper,
+            colorMode: siteSettings.colorMode,
+            theme:
+                typeof document !== 'undefined' &&
+                (document.documentElement.classList.contains('dark') ||
+                    document.body.classList.contains('dark'))
+                    ? 'dark'
+                    : 'light',
+            force: true,
+        })
+        if (typeof document !== 'undefined') {
+            document.documentElement.setAttribute('data-wallpaper', wallpaper)
+            document.body.setAttribute('data-wallpaper', wallpaper)
+        }
         updateSiteSettings({
             ...siteSettings,
-            wallpaper: nextWallpaper.value as SiteSettings['wallpaper'],
+            wallpaper,
         })
         toast(<IconImage className="size-5 inline-block mr-1" />, `Wallpaper: ${nextWallpaper.label}`)
     }
